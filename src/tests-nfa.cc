@@ -86,3 +86,50 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 }
 
 
+TEST_CASE("VataNG::Nfa::intersection()")
+{
+	Nfa a, b, res;
+	ProductMap prod_map;
+
+	SECTION("Intersection of empty automata")
+	{
+		intersection(&res, &a, &b, &prod_map);
+
+		REQUIRE(res.initialstates.empty());
+		REQUIRE(res.finalstates.empty());
+		REQUIRE(res.transitions.empty());
+		REQUIRE(prod_map.empty());
+	}
+
+	SECTION("Intersection of automata with no transitions")
+	{
+		a.initialstates = {1, 3};
+		a.finalstates = {3, 5};
+
+		b.initialstates = {4, 6};
+		b.finalstates = {4, 2};
+
+		intersection(&res, &a, &b, &prod_map);
+
+		REQUIRE(!res.initialstates.empty());
+		REQUIRE(!res.finalstates.empty());
+
+		State init_fin_st = prod_map[std::make_pair(3, 4)];
+
+		REQUIRE(res.initialstates.count(init_fin_st) == 1);
+		REQUIRE(res.finalstates.count(init_fin_st) == 1);
+	}
+
+	SECTION("Intersection of automata with some transitions")
+	{
+		a.initialstates = {1, 3};
+		a.finalstates = {3, 5};
+
+		b.initialstates = {4, 6};
+		b.finalstates = {4, 2};
+
+		intersection(&res, &a, &b, &prod_map);
+
+		REQUIRE(false);
+	}
+}
