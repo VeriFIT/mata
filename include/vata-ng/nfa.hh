@@ -26,6 +26,8 @@ struct Trans
 	State src;
 	Symbol symb;
 	State tgt;
+
+	Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
 };
 
 
@@ -46,14 +48,9 @@ struct Nfa
 };
 
 
-/**
- * @brief  Checks disjointness of states
- *
- * If @p lhs and @p rhs have disjoint names of states, returns @c true,
- * otherwise returns @p false.
- *
- * @todo
- */
+void add_trans(Nfa* nfa, const Trans* trans);
+void add_trans(Nfa* nfa, State src, Symbol symb, State tgt);
+
 bool are_disjoint(const Nfa* lhs, const Nfa* rhs);
 
 // NAMESPACES AND GUARDS
