@@ -1,0 +1,52 @@
+cmake_minimum_required(VERSION 2.8.2)
+
+set(CMAKE_COLOR_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
+project(vata-ng)
+
+# Export compile commands to be used with YouCompleteMe
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# Flags
+set(cxx_compiler_flags
+  -pedantic-errors
+  -Wextra
+  -Wall
+  -Wfloat-equal
+  -fdiagnostics-show-option
+  -march=native
+  -std=c++11
+  -Wctor-dtor-privacy
+  -Weffc++
+  -fPIC
+	-fno-strict-aliasing
+  -Woverloaded-virtual
+  -Wold-style-cast
+)
+
+foreach(flag ${cxx_compiler_flags})
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+endforeach()
+
+# uncomment for profiling
+#add_definitions(-pg)
+#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+
+include_directories(../include)
+
+add_library(libvata-ng STATIC
+	nfa.cc
+)
+
+set_target_properties(libvata-ng PROPERTIES
+  OUTPUT_NAME vata-ng
+  CLEAN_DIRECT_OUTPUT 1
+)
+
+add_executable(tests
+	tests-main.cc
+	tests-nfa.cc
+)
+
+target_link_libraries(tests libvata-ng)
