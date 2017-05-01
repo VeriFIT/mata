@@ -32,12 +32,25 @@ void VataNG::Nfa::Nfa::add_trans(const Trans* trans)
 	}
 } // add_trans }}}
 
-
-void VataNG::Nfa::Nfa::add_trans(State src, Symbol symb, State tgt)
+bool VataNG::Nfa::Nfa::has_trans(const Trans* trans) const
 { // {{{
-	Trans trans = {src, symb, tgt};
-	this->add_trans(&trans);
-} // add_trans }}}
+	assert(nullptr != trans);
+
+	auto it = this->transitions.find(trans->src);
+	if (it == this->transitions.end())
+	{
+		return false;
+	}
+
+	const PostSymb& post = it->second;
+	auto jt = post.find(trans->symb);
+	if (jt == post.end())
+	{
+		return false;
+	}
+
+	return jt->second.find(trans->tgt) != jt->second.end();
+} // has_trans }}}
 
 VataNG::Nfa::Nfa::const_iterator VataNG::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{

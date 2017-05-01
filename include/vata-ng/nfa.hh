@@ -67,8 +67,27 @@ struct Nfa
 	std::set<State> finalstates = {};
 	StateToPostMap transitions = {};
 
+	bool is_initial(State state) const
+	{ // {{{
+		return this->initialstates.find(state) != this->initialstates.end();
+	} // }}}
+	bool is_final(State state) const
+	{ // {{{
+		return this->finalstates.find(state) != this->finalstates.end();
+	} // }}}
+
 	void add_trans(const Trans* trans);
-	void add_trans(State src, Symbol symb, State tgt);
+	void add_trans(State src, Symbol symb, State tgt)
+	{ // {{{
+		Trans trans = {src, symb, tgt};
+		this->add_trans(&trans);
+	} // }}}
+	bool has_trans(const Trans* trans) const;
+	bool has_trans(State src, Symbol symb, State tgt) const
+	{ // {{{
+		Trans trans = {src, symb, tgt};
+		return this->has_trans(&trans);
+	} // }}}
 
 	struct const_iterator
 	{ // {{{

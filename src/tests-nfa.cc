@@ -5,8 +5,35 @@
 #include <vata-ng/nfa.hh>
 using namespace VataNG::Nfa;
 
+TEST_CASE("VataNG::Nfa::Nfa::add_trans()/has_trans()")
+{ // {{{
+	Nfa a;
+
+	SECTION("Empty automata have now transitions")
+	{
+		REQUIRE(!a.has_trans(1, 'a', 1));
+	}
+
+	SECTION("If I add a transition, it is in the automaton")
+	{
+		a.add_trans(1, 'a', 1);
+
+		REQUIRE(a.has_trans(1, 'a', 1));
+	}
+
+	SECTION("If I add a transition, only it is added")
+	{
+		a.add_trans(1, 'a', 1);
+
+		REQUIRE(a.has_trans(1, 'a', 1));
+		REQUIRE(!a.has_trans(1, 'a', 2));
+		REQUIRE(!a.has_trans(1, 'b', 2));
+		REQUIRE(!a.has_trans(2, 'a', 1));
+	}
+} // }}}
+
 TEST_CASE("VataNG::Nfa::are_disjoint()")
-{
+{ // {{{
 	Nfa a, b;
 
 	SECTION("Empty automata are disjoint")
@@ -18,9 +45,9 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 	{
 		b.initialstates = {1, 4, 6};
 		b.finalstates = {4, 7, 9, 0};
-		b.add_trans(1, 1, 1);
-		b.add_trans(2, 1, 8);
-		b.add_trans(0, 3, 394093820488);
+		b.add_trans(1, 'a', 1);
+		b.add_trans(2, 'a', 8);
+		b.add_trans(0, 'c', 394093820488);
 
 		REQUIRE(are_disjoint(&a, &b));
 	}
@@ -29,9 +56,9 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 	{
 		a.initialstates = {1, 4, 6};
 		a.finalstates = {4, 7, 9, 0};
-		a.add_trans(1, 1, 1);
-		a.add_trans(2, 1, 8);
-		a.add_trans(0, 3, 394093820488);
+		a.add_trans(1, 'a', 1);
+		a.add_trans(2, 'a', 8);
+		a.add_trans(0, 'c', 394093820488);
 
 		REQUIRE(are_disjoint(&a, &b));
 	}
@@ -60,10 +87,10 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.initialstates = {11, 3};
 		b.finalstates = {3, 9, 8};
 
-		a.add_trans(1, 4, 7);
-		a.add_trans(1, 2, 7);
-		b.add_trans(3, 2, 11);
-		b.add_trans(3, 2, 6);
+		a.add_trans(1, 'a', 7);
+		a.add_trans(1, 'b', 7);
+		b.add_trans(3, 'b', 11);
+		b.add_trans(3, 'b', 6);
 
 		REQUIRE(!are_disjoint(&a, &b));
 	}
@@ -76,18 +103,20 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.initialstates = {11, 3};
 		b.finalstates = {3, 9, 6, 8};
 
-		a.add_trans(1, 4, 7);
-		a.add_trans(1, 3, 7);
-		b.add_trans(3, 2, 11);
-		b.add_trans(3, 2, 5);
+		a.add_trans(1, 'a', 7);
+		a.add_trans(1, 'b', 7);
+		a.add_trans(1, 'c', 7);
+		b.add_trans(3, 'c', 11);
+		b.add_trans(3, 'c', 5);
+		b.add_trans(11, 'a', 3);
 
 		REQUIRE(!are_disjoint(&a, &b));
 	}
-}
+} // }}}
 
 
 TEST_CASE("VataNG::Nfa::intersection()")
-{
+{ // {{{
 	Nfa a, b, res;
 	ProductMap prod_map;
 
@@ -114,22 +143,51 @@ TEST_CASE("VataNG::Nfa::intersection()")
 		REQUIRE(!res.initialstates.empty());
 		REQUIRE(!res.finalstates.empty());
 
-		State init_fin_st = prod_map[std::make_pair(3, 4)];
+		State init_fin_st = prod_map[{3, 4}];
 
-		REQUIRE(res.initialstates.count(init_fin_st) == 1);
-		REQUIRE(res.finalstates.count(init_fin_st) == 1);
+		REQUIRE(res.is_initial(init_fin_st));
+		REQUIRE(res.is_final(init_fin_st));
 	}
 
 	SECTION("Intersection of automata with some transitions")
 	{
 		a.initialstates = {1, 3};
-		a.finalstates = {3, 5};
+		a.finalstates = {5};
+		a.add_trans(1, 'a', 3);
+		a.add_trans(1, 'a', 10);
+		a.add_trans(1, 'b', 7);
+		a.add_trans(3, 'a', 7);
+		a.add_trans(3, 'b', 9);
+		a.add_trans(9, 'a', 9);
+		a.add_trans(7, 'b', 1);
+		a.add_trans(7, 'a', 3);
+		a.add_trans(7, 'c', 3);
+		a.add_trans(10, 'a', 7);
+		a.add_trans(10, 'b', 7);
+		a.add_trans(10, 'c', 7);
+		a.add_trans(7, 'a', 5);
+		a.add_trans(5, 'a', 5);
+		a.add_trans(5, 'c', 9);
 
-		b.initialstates = {4, 6};
-		b.finalstates = {4, 2};
+		b.initialstates = {4};
+		b.finalstates = {2, 12};
+		b.add_trans(4, 'c', 8);
+		b.add_trans(4, 'a', 8);
+		b.add_trans(8, 'b', 4);
+		b.add_trans(4, 'a', 6);
+		b.add_trans(4, 'b', 6);
+		b.add_trans(6, 'a', 2);
+		b.add_trans(2, 'b', 2);
+		b.add_trans(2, 'a', 0);
+		b.add_trans(0, 'a', 0);
+		b.add_trans(2, 'c', 12);
+		b.add_trans(12, 'a', 14);
+		b.add_trans(14, 'b', 12);
 
 		intersection(&res, &a, &b, &prod_map);
 
+		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
+
 		REQUIRE(false);
 	}
-}
+} // }}}
