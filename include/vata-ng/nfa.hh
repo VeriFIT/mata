@@ -67,11 +67,11 @@ struct Nfa
 	std::set<State> finalstates = {};
 	StateToPostMap transitions = {};
 
-	bool is_initial(State state) const
+	bool has_initial(State state) const
 	{ // {{{
 		return this->initialstates.find(state) != this->initialstates.end();
 	} // }}}
-	bool is_final(State state) const
+	bool has_final(State state) const
 	{ // {{{
 		return this->finalstates.find(state) != this->finalstates.end();
 	} // }}}

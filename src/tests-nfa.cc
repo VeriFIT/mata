@@ -145,8 +145,8 @@ TEST_CASE("VataNG::Nfa::intersection()")
 
 		State init_fin_st = prod_map[{3, 4}];
 
-		REQUIRE(res.is_initial(init_fin_st));
-		REQUIRE(res.is_final(init_fin_st));
+		REQUIRE(res.has_initial(init_fin_st));
+		REQUIRE(res.has_final(init_fin_st));
 	}
 
 	SECTION("Intersection of automata with some transitions")
@@ -179,15 +179,51 @@ TEST_CASE("VataNG::Nfa::intersection()")
 		b.add_trans(6, 'a', 2);
 		b.add_trans(2, 'b', 2);
 		b.add_trans(2, 'a', 0);
-		b.add_trans(0, 'a', 0);
+		b.add_trans(0, 'a', 2);
 		b.add_trans(2, 'c', 12);
 		b.add_trans(12, 'a', 14);
 		b.add_trans(14, 'b', 12);
 
 		intersection(&res, &a, &b, &prod_map);
 
-		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
+		REQUIRE(res.has_initial(prod_map[{1, 4}]));
+		REQUIRE(res.has_initial(prod_map[{3, 4}]));
+		REQUIRE(res.has_final(prod_map[{5, 2}]));
 
-		REQUIRE(false);
+		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
+		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
+		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
+		REQUIRE(res.has_trans(prod_map[{1, 4}], 'b', prod_map[{7, 6}]));
+		REQUIRE(res.has_trans(prod_map[{3, 6}], 'a', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{3, 0}]));
+		REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{5, 0}]));
+		REQUIRE(res.has_trans(prod_map[{7, 2}], 'b', prod_map[{1, 2}]));
+		REQUIRE(res.has_trans(prod_map[{3, 0}], 'a', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{10, 0}]));
+		REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{3, 0}]));
+		REQUIRE(res.has_trans(prod_map[{1, 2}], 'b', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{10, 0}], 'a', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{5, 0}], 'a', prod_map[{5, 2}]));
+		REQUIRE(res.has_trans(prod_map[{5, 2}], 'a', prod_map[{5, 0}]));
+		REQUIRE(res.has_trans(prod_map[{10, 6}], 'a', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{5, 2}]));
+		REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{3, 2}]));
+		REQUIRE(res.has_trans(prod_map[{10, 8}], 'b', prod_map[{7, 4}]));
+		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 6}]));
+		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 8}]));
+		REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
+		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{5, 6}]));
+		REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
+		REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{3, 2}]));
+		REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{10, 2}]));
+		REQUIRE(res.has_trans(prod_map[{10, 2}], 'b', prod_map[{7, 2}]));
+		REQUIRE(res.has_trans(prod_map[{10, 2}], 'a', prod_map[{7, 0}]));
+		REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{5, 2}]));
+		REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{3, 2}]));
+		REQUIRE(res.has_trans(prod_map[{3, 2}], 'a', prod_map[{7, 0}]));
+		REQUIRE(res.has_trans(prod_map[{5, 6}], 'a', prod_map[{5, 2}]));
+		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
+		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 8}]));
+		REQUIRE(res.has_trans(prod_map[{7, 8}], 'b', prod_map[{1, 4}]));
 	}
 } // }}}
