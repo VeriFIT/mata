@@ -18,9 +18,9 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 	{
 		b.initialstates = {1, 4, 6};
 		b.finalstates = {4, 7, 9, 0};
-		add_trans(&b, 1, 1, 1);
-		add_trans(&b, 2, 1, 8);
-		add_trans(&b, 0, 3, 394093820488);
+		b.add_trans(1, 1, 1);
+		b.add_trans(2, 1, 8);
+		b.add_trans(0, 3, 394093820488);
 
 		REQUIRE(are_disjoint(&a, &b));
 	}
@@ -29,9 +29,9 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 	{
 		a.initialstates = {1, 4, 6};
 		a.finalstates = {4, 7, 9, 0};
-		add_trans(&a, 1, 1, 1);
-		add_trans(&a, 2, 1, 8);
-		add_trans(&a, 0, 3, 394093820488);
+		a.add_trans(1, 1, 1);
+		a.add_trans(2, 1, 8);
+		a.add_trans(0, 3, 394093820488);
 
 		REQUIRE(are_disjoint(&a, &b));
 	}
@@ -60,10 +60,10 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.initialstates = {11, 3};
 		b.finalstates = {3, 9, 8};
 
-		add_trans(&a, 1, 4, 7);
-		add_trans(&a, 1, 2, 7);
-		add_trans(&b, 3, 2, 11);
-		add_trans(&b, 3, 2, 6);
+		a.add_trans(1, 4, 7);
+		a.add_trans(1, 2, 7);
+		b.add_trans(3, 2, 11);
+		b.add_trans(3, 2, 6);
 
 		REQUIRE(!are_disjoint(&a, &b));
 	}
@@ -76,10 +76,10 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.initialstates = {11, 3};
 		b.finalstates = {3, 9, 6, 8};
 
-		add_trans(&a, 1, 4, 7);
-		add_trans(&a, 1, 3, 7);
-		add_trans(&b, 3, 2, 11);
-		add_trans(&b, 3, 2, 5);
+		a.add_trans(1, 4, 7);
+		a.add_trans(1, 3, 7);
+		b.add_trans(3, 2, 11);
+		b.add_trans(3, 2, 5);
 
 		REQUIRE(!are_disjoint(&a, &b));
 	}

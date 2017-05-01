@@ -38,6 +38,9 @@ namespace Nfa
 
 using State = uintptr_t;
 using Symbol = uintptr_t;
+using StateSet = std::set<State>;                           // set of states
+using PostSymb = std::unordered_map<Symbol, StateSet>;      // post over a symbol
+using StateToPostMap = std::unordered_map<State, PostSymb>; // transitions
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
 
@@ -50,6 +53,7 @@ struct Trans
 	Symbol symb;
 	State tgt;
 
+	Trans() : src(), symb(), tgt() { }
 	Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
 };
 
@@ -61,18 +65,49 @@ struct Nfa
 {
 	std::set<State> initialstates = {};
 	std::set<State> finalstates = {};
+	StateToPostMap transitions = {};
 
-	/**
-	 * @brief  The transitions of the NFA
-	 *
-	 * This data structure needs to be refined in future.
-	 */
-	std::vector<Trans> transitions = {};
+	void add_trans(const Trans* trans);
+	void add_trans(State src, Symbol symb, State tgt);
+
+	struct const_iterator
+	{ // {{{
+		const Nfa* nfa;
+		StateToPostMap::const_iterator stpmIt;
+		PostSymb::const_iterator psIt;
+		StateSet::const_iterator ssIt;
+		Trans trans;
+		bool is_end = { false };
+
+		const_iterator() : nfa(), stpmIt(), psIt(), ssIt(), trans() { };
+		static const_iterator for_begin(const Nfa* nfa);
+		static const_iterator for_end(const Nfa* /* nfa */)
+		{ // {{{
+			const_iterator result;
+			result.is_end = true;
+			return result;
+		} // }}}
+
+		void refresh_trans()
+		{ // {{{
+			this->trans = {this->stpmIt->first, this->psIt->first, *(this->ssIt)};
+		} // }}}
+
+		const Trans& operator*() const {return this->trans; }
+
+		bool operator==(const const_iterator& rhs) const
+		{ // {{{
+			if (this->is_end && rhs.is_end) { return true; }
+			return ssIt == rhs.ssIt && psIt == rhs.psIt && stpmIt == rhs.stpmIt;
+		} // }}}
+		bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
+		const_iterator& operator++();
+	}; // }}}
+
+	const_iterator begin() const { return const_iterator::for_begin(this); }
+	const_iterator end() const { return const_iterator::for_end(this); }
 };
 
-
-void add_trans(Nfa* nfa, const Trans* trans);
-void add_trans(Nfa* nfa, State src, Symbol symb, State tgt);
 
 bool are_disjoint(const Nfa* lhs, const Nfa* rhs);
 void intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, ProductMap* prod_map = nullptr);

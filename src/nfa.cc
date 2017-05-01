@@ -7,22 +7,111 @@
 
 using std::tie;
 
-void VataNG::Nfa::add_trans(Nfa* nfa, const Trans* trans)
+void VataNG::Nfa::Nfa::add_trans(const Trans* trans)
 { // {{{
-	assert(nullptr != nfa);
 	assert(nullptr != trans);
 
-	nfa->transitions.push_back(Trans(*trans));
+	auto it = this->transitions.find(trans->src);
+	if (it != this->transitions.end())
+	{
+		PostSymb& post = it->second;
+		auto jt = post.find(trans->symb);
+		if (jt != post.end())
+		{
+			jt->second.insert(trans->tgt);
+		}
+		else
+		{
+			post.insert({trans->symb, StateSet({trans->tgt})});
+		}
+	}
+	else
+	{
+		this->transitions.insert(
+			{trans->src, PostSymb({{trans->symb, StateSet({trans->tgt})}})});
+	}
 } // add_trans }}}
 
 
-void VataNG::Nfa::add_trans(Nfa* nfa, State src, Symbol symb, State tgt)
+void VataNG::Nfa::Nfa::add_trans(State src, Symbol symb, State tgt)
+{ // {{{
+	Trans trans = {src, symb, tgt};
+	this->add_trans(&trans);
+} // add_trans }}}
+
+VataNG::Nfa::Nfa::const_iterator VataNG::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
 	assert(nullptr != nfa);
 
-	nfa->transitions.push_back(Trans(src, symb, tgt));
-} // add_trans }}}
+	const_iterator result;
+	if (nfa->transitions.empty())
+	{
+		result.is_end = true;
+		return result;
+	}
 
+	result.nfa = nfa;
+	result.stpmIt = nfa->transitions.begin();
+	const PostSymb& post = result.stpmIt->second;
+	assert(!post.empty());
+	result.psIt = post.begin();
+	const StateSet& state_set = result.psIt->second;
+	assert(!state_set.empty());
+	result.ssIt = state_set.begin();
+
+	result.refresh_trans();
+
+	return result;
+} // for_begin }}}
+
+VataNG::Nfa::Nfa::const_iterator& VataNG::Nfa::Nfa::const_iterator::operator++()
+{ // {{{
+	assert(nullptr != nfa);
+
+	++(this->ssIt);
+	const StateSet& state_set = this->psIt->second;
+	assert(!state_set.empty());
+	if (this->ssIt != state_set.end())
+	{
+		this->refresh_trans();
+		return *this;
+	}
+
+	// out of state set
+	++(this->psIt);
+	const PostSymb& post_map = this->stpmIt->second;
+	assert(!post_map.empty());
+	if (this->psIt != post_map.end())
+	{
+		const StateSet& new_state_set = this->psIt->second;
+		assert(!new_state_set.empty());
+		this->ssIt = new_state_set.begin();
+
+		this->refresh_trans();
+		return *this;
+	}
+
+	// out of post map
+	++(this->stpmIt);
+	assert(!this->nfa->transitions.empty());
+	if (this->stpmIt != this->nfa->transitions.end())
+	{
+		const PostSymb& new_post_map = this->stpmIt->second;
+		assert(!new_post_map.empty());
+		this->psIt = new_post_map.begin();
+		const StateSet& new_state_set = this->psIt->second;
+		assert(!new_state_set.empty());
+		this->ssIt = new_state_set.begin();
+
+		this->refresh_trans();
+		return *this;
+	}
+
+	// out of transitions
+	this->is_end = true;
+
+	return *this;
+} // operator++ }}}
 
 bool VataNG::Nfa::are_disjoint(const Nfa* lhs, const Nfa* rhs)
 { // {{{
@@ -34,7 +123,7 @@ bool VataNG::Nfa::are_disjoint(const Nfa* lhs, const Nfa* rhs)
 	lhs_states.insert(lhs->initialstates.begin(), lhs->initialstates.end());
 	lhs_states.insert(lhs->finalstates.begin(), lhs->finalstates.end());
 
-	for (auto trans : lhs->transitions)
+	for (auto trans : *lhs)
 	{
 		lhs_states.insert({trans.src, trans.tgt});
 	}
@@ -56,7 +145,7 @@ bool VataNG::Nfa::are_disjoint(const Nfa* lhs, const Nfa* rhs)
 		}
 	}
 
-	for (auto trans : rhs->transitions)
+	for (auto trans : *rhs)
 	{
 		if (lhs_states.find(trans.src) != lhs_states.end()
 				|| lhs_states.find(trans.tgt) != lhs_states.end())
@@ -69,7 +158,11 @@ bool VataNG::Nfa::are_disjoint(const Nfa* lhs, const Nfa* rhs)
 	return true;
 } // are_disjoint }}}
 
-void VataNG::Nfa::intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, ProductMap* prod_map)
+void VataNG::Nfa::intersection(
+	Nfa* result,
+	const Nfa* lhs,
+	const Nfa* rhs,
+	ProductMap* prod_map)
 { // {{{
 	assert(nullptr != result);
 	assert(nullptr != lhs);
@@ -92,7 +185,7 @@ void VataNG::Nfa::intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, Prod
 	{
 		for (const auto rhs_st : rhs->initialstates)
 		{
-			prod_map->insert(std::make_pair(std::make_pair(lhs_st, rhs_st), cnt_state));
+			prod_map->insert({{lhs_st, rhs_st}, cnt_state});
 			result->initialstates.insert(cnt_state);
 			worklist.push_back(std::make_tuple(lhs_st, rhs_st, cnt_state));
 			++cnt_state;
@@ -112,11 +205,11 @@ void VataNG::Nfa::intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, Prod
 		}
 
 		// TODO: a very inefficient implementation
-		for (const auto lhs_tr : lhs->transitions)
+		for (const auto lhs_tr : *lhs)
 		{
 			if (lhs_tr.src == lhs_st)
 			{
-				for (const auto rhs_tr : rhs->transitions)
+				for (const auto rhs_tr : *rhs)
 				{
 					if (rhs_tr.src == rhs_st)
 					{
@@ -126,22 +219,21 @@ void VataNG::Nfa::intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, Prod
 							State tgt_state;
 							ProductMap::iterator it;
 							bool ins;
-							tie(it, ins) = prod_map->insert(std::make_pair(
-								std::make_pair(lhs_tr.tgt, rhs_tr.tgt), cnt_state));
+							tie(it, ins) = prod_map->insert(
+								{{lhs_tr.tgt, rhs_tr.tgt}, cnt_state});
 							if (ins)
 							{
 								tgt_state = cnt_state;
 								++cnt_state;
 
-								worklist.push_back(std::make_tuple(
-									lhs_tr.tgt, rhs_tr.tgt, tgt_state));
+								worklist.push_back({lhs_tr.tgt, rhs_tr.tgt, tgt_state});
 							}
 							else
 							{
 								tgt_state = it->second;
 							}
 
-							add_trans(result, res_st, lhs_tr.symb, tgt_state);
+							result->add_trans(res_st, lhs_tr.symb, tgt_state);
 						}
 					}
 				}
