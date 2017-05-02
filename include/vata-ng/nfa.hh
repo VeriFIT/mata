@@ -38,11 +38,12 @@ namespace Nfa
 
 using State = uintptr_t;
 using Symbol = uintptr_t;
-using StateSet = std::set<State>;                           // set of states
-using PostSymb = std::unordered_map<Symbol, StateSet>;      // post over a symbol
-using StateToPostMap = std::unordered_map<State, PostSymb>; // transitions
+using StateSet = std::set<State>;                           /// set of states
+using PostSymb = std::unordered_map<Symbol, StateSet>;      /// post over a symbol
+using StateToPostMap = std::unordered_map<State, PostSymb>; /// transitions
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using Cex = std::vector<Symbol>;       /// counterexample
 
 /**
  * @brief  A transition
@@ -125,11 +126,26 @@ struct Nfa
 
 	const_iterator begin() const { return const_iterator::for_begin(this); }
 	const_iterator end() const { return const_iterator::for_end(this); }
+
+	const PostSymb* get_post(State state) const
+	{ // {{{
+		auto it = transitions.find(state);
+		return (transitions.end() == it)? nullptr : &it->second;
+	} // }}}
 };
 
+/** Do the automata have disjoint sets of states? */
+bool are_state_disjoint(const Nfa* lhs, const Nfa* rhs);
+/** Is the language of the automaton empty? */
+bool is_lang_empty(const Nfa* aut, Cex* cex = nullptr);
+/** Is the language of the automaton universal? */
+bool is_lang_universal(const Nfa* aut, Cex* cex = nullptr);
 
-bool are_disjoint(const Nfa* lhs, const Nfa* rhs);
-void intersection(Nfa* result, const Nfa* lhs, const Nfa* rhs, ProductMap* prod_map = nullptr);
+void intersection(
+	Nfa* result,
+	const Nfa* lhs,
+	const Nfa* rhs,
+	ProductMap* prod_map = nullptr);
 
 
 // CLOSING NAMESPACES AND GUARDS

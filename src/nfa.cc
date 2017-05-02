@@ -126,7 +126,7 @@ VataNG::Nfa::Nfa::const_iterator& VataNG::Nfa::Nfa::const_iterator::operator++()
 	return *this;
 } // operator++ }}}
 
-bool VataNG::Nfa::are_disjoint(const Nfa* lhs, const Nfa* rhs)
+bool VataNG::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 { // {{{
 	assert(nullptr != lhs);
 	assert(nullptr != rhs);
@@ -259,3 +259,57 @@ void VataNG::Nfa::intersection(
 		delete prod_map;
 	}
 } // intersection }}}
+
+bool VataNG::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
+{ // {{{
+	assert(nullptr != aut);
+
+	std::list<State> worklist(
+		aut->initialstates.begin(), aut->initialstates.end());
+	std::unordered_set<State> processed(
+		aut->initialstates.begin(), aut->initialstates.end());
+
+	while (!worklist.empty())
+	{
+		State state = worklist.front();
+		worklist.pop_front();
+
+		if (aut->finalstates.find(state) != aut->finalstates.end())
+		{
+			// TODO process the CEX
+			if (nullptr != cex)
+			{
+				*cex = {1,2};
+			}
+
+			return false;
+		}
+
+		const PostSymb* post_map = aut->get_post(state);
+		if (nullptr == post_map) { continue; }
+		for (const auto& symb_stateset : *post_map)
+		{
+			const StateSet& stateset = symb_stateset.second;
+			for (auto tgt_state : stateset)
+			{
+				bool inserted;
+				std::tie(std::ignore, inserted) = processed.insert(tgt_state);
+				if (inserted) { worklist.push_back(tgt_state); }
+			}
+		}
+	}
+
+	return true;
+} // is_lang_empty }}}
+
+bool VataNG::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
+{ // {{{
+	assert(nullptr != aut);
+
+	assert(false);
+
+	*cex = {1,2};
+
+	return true;
+
+} // is_lang_universal }}}

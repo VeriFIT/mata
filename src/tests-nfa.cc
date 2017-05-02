@@ -32,16 +32,16 @@ TEST_CASE("VataNG::Nfa::Nfa::add_trans()/has_trans()")
 	}
 } // }}}
 
-TEST_CASE("VataNG::Nfa::are_disjoint()")
+TEST_CASE("VataNG::Nfa::are_state_disjoint()")
 { // {{{
 	Nfa a, b;
 
-	SECTION("Empty automata are disjoint")
+	SECTION("Empty automata are state disjoint")
 	{
-		REQUIRE(are_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(&a, &b));
 	}
 
-	SECTION("Left-hand side empty automaton is disjoint with anything")
+	SECTION("Left-hand side empty automaton is state disjoint with anything")
 	{
 		b.initialstates = {1, 4, 6};
 		b.finalstates = {4, 7, 9, 0};
@@ -49,10 +49,10 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.add_trans(2, 'a', 8);
 		b.add_trans(0, 'c', 394093820488);
 
-		REQUIRE(are_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(&a, &b));
 	}
 
-	SECTION("Right-hand side empty automaton is disjoint with anything")
+	SECTION("Right-hand side empty automaton is state disjoint with anything")
 	{
 		a.initialstates = {1, 4, 6};
 		a.finalstates = {4, 7, 9, 0};
@@ -60,26 +60,26 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		a.add_trans(2, 'a', 8);
 		a.add_trans(0, 'c', 394093820488);
 
-		REQUIRE(are_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(&a, &b));
 	}
 
-	SECTION("Automata with intersecting initial states are not disjoint")
+	SECTION("Automata with intersecting initial states are not state disjoint")
 	{
 		a.initialstates = {1, 4, 6};
 		b.initialstates = {3, 9, 6, 8};
 
-		REQUIRE(!are_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(&a, &b));
 	}
 
-	SECTION("Automata with intersecting final states are not disjoint")
+	SECTION("Automata with intersecting final states are not state disjoint")
 	{
 		a.finalstates = {1, 4, 6};
 		b.finalstates = {3, 9, 6, 8};
 
-		REQUIRE(!are_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(&a, &b));
 	}
 
-	SECTION("Automata with disjoint states are disjoint")
+	SECTION("Automata with disjoint sets of states are state disjoint")
 	{
 		a.initialstates = {0, 5, 16};
 		a.finalstates = {1, 4, 6};
@@ -90,9 +90,9 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		a.add_trans(1, 'a', 7);
 		a.add_trans(1, 'b', 7);
 		b.add_trans(3, 'b', 11);
-		b.add_trans(3, 'b', 6);
+		b.add_trans(3, 'b', 9);
 
-		REQUIRE(!are_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(&a, &b));
 	}
 
 	SECTION("Automata with intersecting states are not disjoint")
@@ -110,7 +110,7 @@ TEST_CASE("VataNG::Nfa::are_disjoint()")
 		b.add_trans(3, 'c', 5);
 		b.add_trans(11, 'a', 3);
 
-		REQUIRE(!are_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(&a, &b));
 	}
 } // }}}
 
@@ -227,3 +227,59 @@ TEST_CASE("VataNG::Nfa::intersection()")
 		REQUIRE(res.has_trans(prod_map[{7, 8}], 'b', prod_map[{1, 4}]));
 	}
 } // }}}
+
+TEST_CASE("VataNG::Nfa::is_lang_empty()")
+{
+	Nfa aut;
+	Cex cex;
+
+	SECTION("An empty automaton has an empty language")
+	{
+		REQUIRE(is_lang_empty(&aut));
+	}
+
+	SECTION("An automaton with a state that is both initial and final does not have an empty language")
+	{
+		aut.initialstates = {1, 2};
+		aut.finalstates = {2, 3};
+
+		bool is_empty = is_lang_empty(&aut, &cex);
+		REQUIRE(!is_empty);
+	}
+
+	SECTION("More complicated automaton")
+	{
+		aut.initialstates = {1,2};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'a', 3);
+		aut.add_trans(1, 'b', 4);
+		aut.add_trans(2, 'a', 2);
+		aut.add_trans(2, 'a', 3);
+		aut.add_trans(2, 'b', 4);
+		aut.add_trans(3, 'b', 4);
+		aut.add_trans(3, 'c', 7);
+		aut.add_trans(3, 'b', 2);
+		aut.add_trans(7, 'a', 8);
+
+		SECTION("with final states")
+		{
+			aut.finalstates = {7};
+			REQUIRE(!is_lang_empty(&aut));
+		}
+
+		SECTION("without final states")
+		{
+			REQUIRE(is_lang_empty(&aut));
+		}
+	}
+
+	SECTION("An automaton with a state that is both initial and final does not have an empty language")
+	{
+		aut.initialstates = {1, 2};
+		aut.finalstates = {2, 3};
+
+		bool is_empty = is_lang_empty(&aut, &cex);
+		REQUIRE(!is_empty);
+		REQUIRE(cex.empty());
+	}
+}
