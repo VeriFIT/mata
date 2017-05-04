@@ -25,6 +25,24 @@ namespace std
 			return seed;
 		} // operator() }}}
 	};
+
+	/**
+	 * @brief  A hasher for sets
+	 */
+	template <class A>
+	struct hash<std::set<A>>
+	{
+		size_t operator()(const std::set<A>& k) const
+		{ // {{{
+			// TODO: check whether it is OK
+			size_t seed = 0;
+			for (auto i : k)
+			{
+				seed ^= i + 0x9e3779b9 + (seed<<6) + (seed>>2);
+			}
+			return seed;
+		} // operator() }}}
+	};
 } // namespace std }}}
 
 
@@ -43,6 +61,7 @@ using PostSymb = std::unordered_map<Symbol, StateSet>;      /// post over a symb
 using StateToPostMap = std::unordered_map<State, PostSymb>; /// transitions
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using SubsetMap = std::unordered_map<StateSet, State>;
 using Cex = std::vector<Symbol>;       /// counterexample
 
 /**
@@ -141,11 +160,18 @@ bool is_lang_empty(const Nfa* aut, Cex* cex = nullptr);
 /** Is the language of the automaton universal? */
 bool is_lang_universal(const Nfa* aut, Cex* cex = nullptr);
 
+/** Compute intersection of a pair of automata */
 void intersection(
 	Nfa* result,
 	const Nfa* lhs,
 	const Nfa* rhs,
 	ProductMap* prod_map = nullptr);
+
+/** Determinize an automaton */
+void determinize(
+	Nfa* result,
+	const Nfa* aut,
+	SubsetMap* subset_map = nullptr);
 
 
 // CLOSING NAMESPACES AND GUARDS

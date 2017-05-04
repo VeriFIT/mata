@@ -324,3 +324,43 @@ TEST_CASE("VataNG::Nfa::is_lang_empty()")
 		// REQUIRE(cex.empty());
 	}
 }
+
+TEST_CASE("VataNG::Nfa::determinize()")
+{
+	Nfa aut;
+	Nfa result;
+	SubsetMap subset_map;
+
+	SECTION("empty automaton")
+	{
+		determinize(&result, &aut);
+
+		REQUIRE(result.has_initial(subset_map[{}]));
+		REQUIRE(result.finalstates.empty());
+		REQUIRE(result.transitions.empty());
+	}
+
+	SECTION("simple automaton 1")
+	{
+		aut.initialstates = { 1 };
+		aut.finalstates = { 1 };
+		determinize(&result, &aut, &subset_map);
+
+		REQUIRE(result.has_initial(subset_map[{1}]));
+		REQUIRE(result.has_final(subset_map[{1}]));
+		REQUIRE(result.transitions.empty());
+	}
+
+	SECTION("simple automaton 2")
+	{
+		aut.initialstates = { 1 };
+		aut.finalstates = { 2 };
+		aut.add_trans(1, 'a', 2);
+		determinize(&result, &aut, &subset_map);
+
+		REQUIRE(result.has_initial(subset_map[{1}]));
+		REQUIRE(result.has_final(subset_map[{2}]));
+		REQUIRE(result.has_trans(subset_map[{1}], 'a', subset_map[{2}]));
+	}
+}
+

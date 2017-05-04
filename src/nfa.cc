@@ -1,11 +1,13 @@
 // TODO: add header
 
 #include <vata-ng/nfa.hh>
+#include <vata-ng/util.hh>
 
 #include <list>
 #include <unordered_set>
 
 using std::tie;
+using namespace VataNG::util;
 
 void VataNG::Nfa::Nfa::add_trans(const Trans* trans)
 { // {{{
@@ -313,3 +315,46 @@ bool VataNG::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
 	return true;
 
 } // is_lang_universal }}}
+
+void VataNG::Nfa::determinize(
+	Nfa* result,
+	const Nfa* aut,
+	SubsetMap* subset_map)
+{ // {{{
+	assert(nullptr != result);
+	assert(nullptr != aut);
+
+	bool delete_map = false;
+	if (nullptr == subset_map)
+	{
+		subset_map = new SubsetMap();
+		delete_map = true;
+	}
+
+	State cnt_state = 0;
+	std::list<std::pair<const StateSet*, State>> worklist;
+
+	auto it_bool_pair = subset_map->insert({aut->initialstates, cnt_state});
+	result->initialstates = {cnt_state};
+	worklist.push_back({&it_bool_pair.first->first, cnt_state});
+	++cnt_state;
+
+	while (!worklist.empty())
+	{
+		const StateSet* state_set;
+		State new_state;
+		tie(state_set, new_state) = worklist.front();
+		worklist.pop_front();
+
+		// set the state final
+		if (!are_disjoint(state_set, &aut->finalstates))
+		{
+			result->finalstates.insert(new_state);
+		}
+	}
+
+	if (delete_map)
+	{
+		delete subset_map;
+	}
+} // determinize }}}
