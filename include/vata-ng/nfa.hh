@@ -64,6 +64,8 @@ using ProductMap = std::unordered_map<std::pair<State, State>, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
 using Cex = std::vector<Symbol>;       /// counterexample
 
+const PostSymb EMPTY_POST;
+
 /**
  * @brief  A transition
  */
@@ -146,6 +148,17 @@ struct Nfa
 	const_iterator begin() const { return const_iterator::for_begin(this); }
 	const_iterator end() const { return const_iterator::for_end(this); }
 
+	const PostSymb& operator[](State state) const
+	{
+		const PostSymb* post = get_post(state);
+		if (nullptr == post)
+		{
+			return EMPTY_POST;
+		}
+
+		return *post;
+	}
+
 	const PostSymb* get_post(State state) const
 	{ // {{{
 		auto it = transitions.find(state);
@@ -172,6 +185,9 @@ void determinize(
 	Nfa* result,
 	const Nfa* aut,
 	SubsetMap* subset_map = nullptr);
+
+/** .vtf output serializer */
+std::string serialize_vtf(const Nfa* aut);
 
 
 // CLOSING NAMESPACES AND GUARDS

@@ -345,11 +345,41 @@ void VataNG::Nfa::determinize(
 		State new_state;
 		tie(state_set, new_state) = worklist.front();
 		worklist.pop_front();
+		assert(nullptr != state_set);
 
 		// set the state final
 		if (!are_disjoint(state_set, &aut->finalstates))
 		{
 			result->finalstates.insert(new_state);
+		}
+
+		// create the post of new_state
+		PostSymb post_symb;
+		for (State s : *state_set)
+		{
+			for (auto symb_post_pair : (*aut)[s])
+			{
+				Symbol symb = symb_post_pair.first;
+				const StateSet& post = symb_post_pair.second;
+				post_symb[symb].insert(post.begin(), post.end());
+			}
+		}
+
+		for (auto it : post_symb)
+		{
+			Symbol symb = it.first;
+			const StateSet& post = it.second;
+
+			// insert the new state in the map
+			auto it_bool_pair = subset_map->insert({post, cnt_state});
+			if (it_bool_pair.second)
+			{ // if not processed yet, add to the queue
+				worklist.push_back({&it_bool_pair.first->first, cnt_state});
+				++cnt_state;
+			}
+
+			State post_state = it_bool_pair.first->second;
+			result->add_trans(new_state, symb, post_state);
 		}
 	}
 
@@ -358,3 +388,36 @@ void VataNG::Nfa::determinize(
 		delete subset_map;
 	}
 } // determinize }}}
+
+std::string VataNG::Nfa::serialize_vtf(const Nfa* aut)
+{ // {{{
+	assert(nullptr != aut);
+
+	std::string result;
+	result += "NFA\n";
+	result += "%Initial";
+	for (State s : aut->initialstates)
+	{
+		result += " q" + std::to_string(s);
+	}
+
+	result += "\n";
+	result += "%Final";
+	for (State s : aut->finalstates)
+	{
+		result += " q" + std::to_string(s);
+	}
+
+	result += "\n";
+	result += "%Transitions\n";
+	for (auto trans : *aut)
+	{
+		result +=
+			"q" + std::to_string(trans.src) +
+			" a" + std::to_string(trans.symb) +
+			" q" + std::to_string(trans.tgt) +
+			"\n";
+	}
+
+	return result;
+} // serialize_vtf }}}
