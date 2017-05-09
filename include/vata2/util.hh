@@ -1,9 +1,9 @@
 // TODO: add header
 
-#ifndef _VATA_NG_UTIL_HH_
-#define _VATA_NG_UTIL_HH_
+#ifndef _VATA2_UTIL_HH_
+#define _VATA2_UTIL_HH_
 
-namespace VataNG
+namespace Vata2
 {
 namespace util
 {
@@ -29,6 +29,6 @@ bool are_disjoint(const std::set<T>* lhs, const std::set<T>* rhs)
 
 // CLOSING NAMESPACES AND GUARDS
 } /* util */
-} /* VataNG */
+} /* Vata2 */
 
-#endif /* _VATA_NG_UTIL_HH_ */
+#endif /* _VATA2_UTIL_HH_ */

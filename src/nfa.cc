@@ -1,15 +1,15 @@
 // TODO: add header
 
-#include <vata-ng/nfa.hh>
-#include <vata-ng/util.hh>
+#include <vata2/nfa.hh>
+#include <vata2/util.hh>
 
 #include <list>
 #include <unordered_set>
 
 using std::tie;
-using namespace VataNG::util;
+using namespace Vata2::util;
 
-void VataNG::Nfa::Nfa::add_trans(const Trans* trans)
+void Vata2::Nfa::Nfa::add_trans(const Trans* trans)
 { // {{{
 	assert(nullptr != trans);
 
@@ -34,7 +34,7 @@ void VataNG::Nfa::Nfa::add_trans(const Trans* trans)
 	}
 } // add_trans }}}
 
-bool VataNG::Nfa::Nfa::has_trans(const Trans* trans) const
+bool Vata2::Nfa::Nfa::has_trans(const Trans* trans) const
 { // {{{
 	assert(nullptr != trans);
 
@@ -54,7 +54,7 @@ bool VataNG::Nfa::Nfa::has_trans(const Trans* trans) const
 	return jt->second.find(trans->tgt) != jt->second.end();
 } // has_trans }}}
 
-VataNG::Nfa::Nfa::const_iterator VataNG::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
+Vata2::Nfa::Nfa::const_iterator Vata2::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
 	assert(nullptr != nfa);
 
@@ -79,7 +79,7 @@ VataNG::Nfa::Nfa::const_iterator VataNG::Nfa::Nfa::const_iterator::for_begin(con
 	return result;
 } // for_begin }}}
 
-VataNG::Nfa::Nfa::const_iterator& VataNG::Nfa::Nfa::const_iterator::operator++()
+Vata2::Nfa::Nfa::const_iterator& Vata2::Nfa::Nfa::const_iterator::operator++()
 { // {{{
 	assert(nullptr != nfa);
 
@@ -128,7 +128,7 @@ VataNG::Nfa::Nfa::const_iterator& VataNG::Nfa::Nfa::const_iterator::operator++()
 	return *this;
 } // operator++ }}}
 
-bool VataNG::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
+bool Vata2::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 { // {{{
 	assert(nullptr != lhs);
 	assert(nullptr != rhs);
@@ -173,7 +173,7 @@ bool VataNG::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 	return true;
 } // are_disjoint }}}
 
-void VataNG::Nfa::intersection(
+void Vata2::Nfa::intersection(
 	Nfa* result,
 	const Nfa* lhs,
 	const Nfa* rhs,
@@ -262,7 +262,7 @@ void VataNG::Nfa::intersection(
 	}
 } // intersection }}}
 
-bool VataNG::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
+bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 { // {{{
 	assert(nullptr != aut);
 
@@ -304,7 +304,7 @@ bool VataNG::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 	return true;
 } // is_lang_empty }}}
 
-bool VataNG::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
+bool Vata2::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
 { // {{{
 	assert(nullptr != aut);
 
@@ -316,7 +316,7 @@ bool VataNG::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
 
 } // is_lang_universal }}}
 
-void VataNG::Nfa::determinize(
+void Vata2::Nfa::determinize(
 	Nfa* result,
 	const Nfa* aut,
 	SubsetMap* subset_map)
@@ -389,12 +389,12 @@ void VataNG::Nfa::determinize(
 	}
 } // determinize }}}
 
-std::string VataNG::Nfa::serialize_vtf(const Nfa* aut)
+std::string Vata2::Nfa::serialize_vtf(const Nfa* aut)
 { // {{{
 	assert(nullptr != aut);
 
 	std::string result;
-	result += "NFA\n";
+	result += "@NFA\n";
 	result += "%Initial";
 	for (State s : aut->initialstates)
 	{
@@ -409,7 +409,7 @@ std::string VataNG::Nfa::serialize_vtf(const Nfa* aut)
 	}
 
 	result += "\n";
-	result += "%Transitions\n";
+	result += "%Transitions   # the format is <src> <symbol> <tgt>\n";
 	for (auto trans : *aut)
 	{
 		result +=

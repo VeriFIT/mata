@@ -44,10 +44,10 @@
 
 // }}}
 
-#include <vata-ng/nfa.hh>
-using namespace VataNG::Nfa;
+#include <vata2/nfa.hh>
+using namespace Vata2::Nfa;
 
-TEST_CASE("VataNG::Nfa::Nfa::add_trans()/has_trans()")
+TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
 	Nfa a;
 
@@ -74,7 +74,7 @@ TEST_CASE("VataNG::Nfa::Nfa::add_trans()/has_trans()")
 	}
 } // }}}
 
-TEST_CASE("VataNG::Nfa::are_state_disjoint()")
+TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 { // {{{
 	Nfa a, b;
 
@@ -157,7 +157,7 @@ TEST_CASE("VataNG::Nfa::are_state_disjoint()")
 } // }}}
 
 
-TEST_CASE("VataNG::Nfa::intersection()")
+TEST_CASE("Vata2::Nfa::intersection()")
 { // {{{
 	Nfa a, b, res;
 	ProductMap prod_map;
@@ -253,7 +253,7 @@ TEST_CASE("VataNG::Nfa::intersection()")
 	}
 } // }}}
 
-TEST_CASE("VataNG::Nfa::is_lang_empty()")
+TEST_CASE("Vata2::Nfa::is_lang_empty()")
 {
 	Nfa aut;
 	Cex cex;
@@ -325,7 +325,7 @@ TEST_CASE("VataNG::Nfa::is_lang_empty()")
 	}
 }
 
-TEST_CASE("VataNG::Nfa::determinize()")
+TEST_CASE("Vata2::Nfa::determinize()")
 {
 	Nfa aut;
 	Nfa result;

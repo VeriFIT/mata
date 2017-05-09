@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.2)
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-project(vata-ng)
+project(vata2)
 
 # Export compile commands to be used with YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -35,12 +35,12 @@ endforeach()
 
 include_directories(../include)
 
-add_library(libvata-ng STATIC
+add_library(libvata2 STATIC
 	nfa.cc
 )
 
-set_target_properties(libvata-ng PROPERTIES
-  OUTPUT_NAME vata-ng
+set_target_properties(libvata2 PROPERTIES
+  OUTPUT_NAME vata2
   CLEAN_DIRECT_OUTPUT 1
 )
 
@@ -49,4 +49,4 @@ add_executable(tests
 	tests-nfa.cc
 )
 
-target_link_libraries(tests libvata-ng)
+target_link_libraries(tests libvata2)

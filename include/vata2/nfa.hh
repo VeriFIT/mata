@@ -1,7 +1,7 @@
 // TODO: add header
 
-#ifndef _VATA_NG_NFA_HH_
-#define _VATA_NG_NFA_HH_
+#ifndef _VATA2_NFA_HH_
+#define _VATA2_NFA_HH_
 
 #include <cassert>
 #include <cstdint>
@@ -47,7 +47,7 @@ namespace std
 
 
 
-namespace VataNG
+namespace Vata2
 {
 namespace Nfa
 {
@@ -192,6 +192,6 @@ std::string serialize_vtf(const Nfa* aut);
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
-} /* VataNG */
+} /* Vata2 */
 
-#endif /* _VATA_NG_NFA_HH_ */
+#endif /* _VATA2_NFA_HH_ */

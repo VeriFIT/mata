@@ -1,9 +1,9 @@
 // example1.cc - constructing an automaton, then dumping it
 
-#include <vata-ng/nfa.hh>
+#include <vata2/nfa.hh>
 #include <iostream>
 
-using namespace VataNG::Nfa;
+using namespace Vata2::Nfa;
 
 int main()
 {
