@@ -9,6 +9,9 @@
 #include <unordered_map>
 #include <vector>
 
+// VATA2 headers
+#include <vata2/parser.hh>
+
 namespace std
 { // {{{
 	/**
@@ -44,7 +47,6 @@ namespace std
 		} // operator() }}}
 	};
 } // namespace std }}}
-
 
 
 namespace Vata2
@@ -189,6 +191,10 @@ void determinize(
 /** .vtf output serializer */
 std::string serialize_vtf(const Nfa* aut);
 
+/** Loads an automaton from Parsed object */
+void construct(
+	Nfa* aut,
+	const Vata2::Parser::Parsed* parsed);
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

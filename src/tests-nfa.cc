@@ -364,3 +364,17 @@ TEST_CASE("Vata2::Nfa::determinize()")
 	}
 }
 
+TEST_CASE("Vata2::Nfa::construct()")
+{
+	Nfa aut;
+	Vata2::Parser::Parsed parsed;
+
+	SECTION("construct an empty automaton")
+	{
+		parsed.type = "NFA";
+
+		construct(&aut, &parsed);
+
+		REQUIRE(is_lang_empty(&aut));
+	}
+}

@@ -421,3 +421,16 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa* aut)
 
 	return result;
 } // serialize_vtf }}}
+
+
+void Vata2::Nfa::construct(
+	Nfa* aut,
+	const Vata2::Parser::Parsed* parsed)
+{ // {{{
+	assert(nullptr != aut);
+	assert(nullptr != parsed);
+
+	assert(false);
+
+
+} // construct }}}
