@@ -320,8 +320,31 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 
 		bool is_empty = is_lang_empty(&aut, &cex);
 		REQUIRE(!is_empty);
-		// TODO: check the counterexample
-		// REQUIRE(cex.empty());
+
+		// check the counterexample
+		REQUIRE(cex.size() == 1);
+		REQUIRE(cex[0] == 2);
+	}
+
+	SECTION("Counterexample of an automaton with non-empty language")
+	{
+		aut.initialstates = {1, 2};
+		aut.finalstates = {8, 9};
+		aut.add_trans(1, 'c', 2);
+		aut.add_trans(2, 'a', 4);
+		aut.add_trans(2, 'c', 1);
+		aut.add_trans(2, 'c', 3);
+		aut.add_trans(3, 'e', 5);
+		aut.add_trans(4, 'c', 8);
+
+		bool is_empty = is_lang_empty(&aut, &cex);
+		REQUIRE(!is_empty);
+
+		// check the counterexample
+		REQUIRE(cex.size() == 3);
+		REQUIRE(cex[0] == 2);
+		REQUIRE(cex[1] == 4);
+		REQUIRE(cex[2] == 8);
 	}
 }
 
@@ -364,7 +387,8 @@ TEST_CASE("Vata2::Nfa::determinize()")
 	}
 }
 
-TEST_CASE("Vata2::Nfa::construct()")
+
+TEST_CASE("Vata2::Nfa::construct() correct calls")
 {
 	Nfa aut;
 	Vata2::Parser::Parsed parsed;
@@ -377,4 +401,64 @@ TEST_CASE("Vata2::Nfa::construct()")
 
 		REQUIRE(is_lang_empty(&aut));
 	}
+
+	SECTION("construct a simple non-empty automaton accepting the empty word")
+	{
+		parsed.type = "NFA";
+		parsed.dict.insert({"Initial", {"q1"}});
+		parsed.dict.insert({"Final", {"q1"}});
+
+		construct(&aut, &parsed);
+
+		REQUIRE(!is_lang_empty(&aut));
+	}
+
+	SECTION("construct a simple non-empty automaton accepting only the  word 'a'")
+	{
+		parsed.type = "NFA";
+		parsed.dict.insert({"Initial", {"q1"}});
+		parsed.dict.insert({"Final", {"q2"}});
+		parsed.trans_list = { {"q1", "a", "q2"} };
+
+		construct(&aut, &parsed);
+
+		REQUIRE(!is_lang_empty(&aut));
+
+		assert(false);
+		// REQUIRE(is_in_lang("a", &aut));
+	}
+}
+
+
+TEST_CASE("Vata2::Nfa::construct() invalid calls")
+{
+	Nfa aut;
+	Vata2::Parser::Parsed parsed;
+
+	SECTION("construct() call with invalid Parsed object")
+	{
+		parsed.type = "FA";
+
+		CHECK_THROWS_WITH(construct(&aut, &parsed),
+			Catch::Contains("expecting type"));
+	}
+
+	SECTION("construct() call with an epsilon transition")
+	{
+		parsed.type = "NFA";
+		parsed.trans_list = { {"q1", "q2"}};
+
+		CHECK_THROWS_WITH(construct(&aut, &parsed),
+			Catch::Contains("Invalid transition"));
+	}
+
+	SECTION("construct() call with a nonsense transition")
+	{
+		parsed.type = "NFA";
+		parsed.trans_list = { {"q1", "a", "q2", "q3"}};
+
+		CHECK_THROWS_WITH(construct(&aut, &parsed),
+			Catch::Contains("Invalid transition"));
+	}
+
 }

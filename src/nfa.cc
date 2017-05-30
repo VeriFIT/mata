@@ -3,6 +3,7 @@
 #include <vata2/nfa.hh>
 #include <vata2/util.hh>
 
+#include <algorithm>
 #include <list>
 #include <unordered_set>
 
@@ -271,6 +272,14 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 	std::unordered_set<State> processed(
 		aut->initialstates.begin(), aut->initialstates.end());
 
+	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
+	// 'paths[s] == s' means that 's' is an initial state
+	std::map<State, State> paths;
+	for (State s : worklist)
+	{	// initialize
+		paths[s] = s;
+	}
+
 	while (!worklist.empty())
 	{
 		State state = worklist.front();
@@ -281,7 +290,15 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 			// TODO process the CEX
 			if (nullptr != cex)
 			{
-				*cex = {1,2};
+				cex->clear();
+				cex->push_back(state);
+				while (paths[state] != state)
+				{
+					state = paths[state];
+					cex->push_back(state);
+				}
+
+				std::reverse(cex->begin(), cex->end());
 			}
 
 			return false;
@@ -296,7 +313,17 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 			{
 				bool inserted;
 				std::tie(std::ignore, inserted) = processed.insert(tgt_state);
-				if (inserted) { worklist.push_back(tgt_state); }
+				if (inserted)
+				{
+					worklist.push_back(tgt_state);
+					// also set that tgt_state was accessed from state
+					paths[tgt_state] = state;
+				}
+				else
+				{
+					// the invariant
+					assert(paths.end() != paths.find(tgt_state));
+				}
 			}
 		}
 	}
@@ -430,7 +457,48 @@ void Vata2::Nfa::construct(
 	assert(nullptr != aut);
 	assert(nullptr != parsed);
 
-	assert(false);
+	if (parsed->type != "NFA")
+	{
+		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
+	}
 
+	std::unordered_map<std::string, State> state_map;
+	State cnt_state = 0;
 
+	auto first_last_it = parsed->dict.equal_range("Initial");
+	auto it = first_last_it.first;
+	while (it != first_last_it.second)
+	{
+		auto it_insert_pair = state_map.insert({it->second, cnt_state});
+		State state;
+		if (it_insert_pair.second) { state = cnt_state++; }
+		else { state = it_insert_pair.first->second; }
+		aut->initialstates.insert(state);
+
+		++it;
+	}
+
+	first_last_it = parsed->dict.equal_range("Final");
+	it = first_last_it.first;
+	while (it != first_last_it.second)
+	{
+		auto it_insert_pair = state_map.insert({it->second, cnt_state});
+		State state;
+		if (it_insert_pair.second) { state = cnt_state++; }
+		else { state = it_insert_pair.first->second; }
+		aut->finalstates.insert(state);
+
+		++it;
+	}
+
+	for (auto parsed_trans : parsed->trans_list)
+	{
+		if (parsed_trans.size() != 3)
+		{
+			throw std::runtime_error("Invalid transition: " +
+				std::to_string(parsed_trans));
+		}
+
+		assert(false);
+	}
 } // construct }}}
