@@ -11,43 +11,7 @@
 
 // VATA2 headers
 #include <vata2/parser.hh>
-
-namespace std
-{ // {{{
-	/**
-	 * @brief  A hasher for pairs
-	 */
-	template <class A, class B>
-	struct hash<std::pair<A,B>>
-	{
-		size_t operator()(const std::pair<A,B>& k) const
-		{ // {{{
-			// TODO: check whether it is OK
-			size_t seed = k.first;
-      seed ^= k.second + 0x9e3779b9 + (seed<<6) + (seed>>2);
-			return seed;
-		} // operator() }}}
-	};
-
-	/**
-	 * @brief  A hasher for sets
-	 */
-	template <class A>
-	struct hash<std::set<A>>
-	{
-		size_t operator()(const std::set<A>& k) const
-		{ // {{{
-			// TODO: check whether it is OK
-			size_t seed = 0;
-			for (auto i : k)
-			{
-				seed ^= i + 0x9e3779b9 + (seed<<6) + (seed>>2);
-			}
-			return seed;
-		} // operator() }}}
-	};
-} // namespace std }}}
-
+#include <vata2/util.hh>
 
 namespace Vata2
 {
