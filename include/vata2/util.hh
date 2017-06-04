@@ -3,6 +3,10 @@
 #ifndef _VATA2_UTIL_HH_
 #define _VATA2_UTIL_HH_
 
+#include <iostream>
+
+#define DEBUG_PRINT(x) { std::cout << x << "\n"; }
+
 namespace Vata2
 {
 namespace util

@@ -263,7 +263,7 @@ void Vata2::Nfa::intersection(
 	}
 } // intersection }}}
 
-bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
+bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Path* cex)
 { // {{{
 	assert(nullptr != aut);
 
@@ -331,7 +331,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Cex* cex)
 	return true;
 } // is_lang_empty }}}
 
-bool Vata2::Nfa::is_lang_universal(const Nfa* aut, Cex* cex)
+bool Vata2::Nfa::is_lang_universal(const Nfa* aut, Path* cex)
 { // {{{
 	assert(nullptr != aut);
 
@@ -449,10 +449,54 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa* aut)
 	return result;
 } // serialize_vtf }}}
 
+std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
+	const Nfa& aut,
+	const Path& path)
+{ // {{{
+	if (path.empty())
+	{
+		return {{}, true};
+	}
+
+	Word word;
+	State cur = path[0];
+	for (size_t i = 1; i < path.size(); ++i)
+	{
+		State newSt = path[i];
+		bool found = false;
+
+		auto postCur = aut.get_post(cur);
+		for (auto symbolMap : *postCur)
+		{
+			for (State st : symbolMap.second)
+			{
+				if (st == newSt)
+				{
+					word.push_back(symbolMap.first);
+					found = true;
+					break;
+				}
+			}
+
+			if (found) { break; }
+		}
+
+		if (!found)
+		{
+			return {{}, false};
+		}
+
+		cur = newSt;    // update current state
+	}
+
+	return {word, true};
+} // get_word_for_path }}}
 
 void Vata2::Nfa::construct(
 	Nfa* aut,
-	const Vata2::Parser::Parsed* parsed)
+	const Vata2::Parser::Parsed* parsed,
+	StringToSymbolMap* symbol_map,
+	StringToStateMap* state_map)
 { // {{{
 	assert(nullptr != aut);
 	assert(nullptr != parsed);
@@ -462,19 +506,50 @@ void Vata2::Nfa::construct(
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
 	}
 
-	std::unordered_map<std::string, State> state_map;
+	bool remove_state_map = false;
+	if (nullptr == state_map)
+	{
+		state_map = new StringToStateMap();
+		remove_state_map = true;
+	}
+
+	bool remove_symbol_map = false;
+	if (nullptr == symbol_map)
+	{
+		symbol_map = new StringToSymbolMap();
+		remove_symbol_map = true;
+	}
+
 	State cnt_state = 0;
+	State cnt_symbol = 0;
+
+	// a lambda for translating state names to identifiers
+	auto get_state_name = [state_map, &cnt_state](const std::string& str) {
+		auto it_insert_pair = state_map->insert({str, cnt_state});
+		if (it_insert_pair.second) { return cnt_state++; }
+		else { return it_insert_pair.first->second; }
+	};
+
+	// a lambda for translating symbol names to identifiers
+	auto get_symbol_name = [symbol_map, &cnt_symbol](const std::string& str) {
+		auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
+		if (it_insert_pair.second) { return cnt_symbol++; }
+		else { return it_insert_pair.first->second; }
+	};
+
+	// a lambda for cleanup
+	auto clean_up = [&]() {
+		if (remove_state_map) { delete state_map; }
+		if (remove_symbol_map) { delete symbol_map; }
+	};
+
 
 	auto first_last_it = parsed->dict.equal_range("Initial");
 	auto it = first_last_it.first;
 	while (it != first_last_it.second)
 	{
-		auto it_insert_pair = state_map.insert({it->second, cnt_state});
-		State state;
-		if (it_insert_pair.second) { state = cnt_state++; }
-		else { state = it_insert_pair.first->second; }
+		State state = get_state_name(it->second);
 		aut->initialstates.insert(state);
-
 		++it;
 	}
 
@@ -482,12 +557,8 @@ void Vata2::Nfa::construct(
 	it = first_last_it.first;
 	while (it != first_last_it.second)
 	{
-		auto it_insert_pair = state_map.insert({it->second, cnt_state});
-		State state;
-		if (it_insert_pair.second) { state = cnt_state++; }
-		else { state = it_insert_pair.first->second; }
+		State state = get_state_name(it->second);
 		aut->finalstates.insert(state);
-
 		++it;
 	}
 
@@ -495,10 +566,28 @@ void Vata2::Nfa::construct(
 	{
 		if (parsed_trans.size() != 3)
 		{
-			throw std::runtime_error("Invalid transition: " +
-				std::to_string(parsed_trans));
+			// clean up
+			clean_up();
+
+			if (parsed_trans.size() == 2)
+			{
+				throw std::runtime_error("Epsilon transitions not supported: " +
+					std::to_string(parsed_trans));
+			}
+			else
+			{
+				throw std::runtime_error("Invalid transition: " +
+					std::to_string(parsed_trans));
+			}
 		}
 
-		assert(false);
+		State src_state = get_state_name(parsed_trans[0]);
+		Symbol symbol = get_symbol_name(parsed_trans[1]);
+		State tgt_state = get_state_name(parsed_trans[2]);
+
+		aut->add_trans(src_state, symbol, tgt_state);
 	}
+
+	// do the dishes and take out garbage
+	clean_up();
 } // construct }}}

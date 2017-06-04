@@ -256,7 +256,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 TEST_CASE("Vata2::Nfa::is_lang_empty()")
 {
 	Nfa aut;
-	Cex cex;
+	Word cex;
 
 	SECTION("An empty automaton has an empty language")
 	{
@@ -348,6 +348,83 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 	}
 }
 
+TEST_CASE("Vata2::Nfa::get_word_for_path()")
+{
+	Nfa aut;
+	Path path;
+	Word word;
+
+	SECTION("empty word")
+	{
+		path = { };
+
+		auto word_bool_pair = get_word_for_path(aut, path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.empty());
+	}
+
+	SECTION("empty word 2")
+	{
+		aut.initialstates = {1};
+		path = {1};
+
+		auto word_bool_pair = get_word_for_path(aut, path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first.empty());
+	}
+
+	SECTION("nonempty word")
+	{
+		aut.initialstates = {1};
+		aut.add_trans(1, 'c', 2);
+		aut.add_trans(2, 'a', 4);
+		aut.add_trans(2, 'c', 1);
+		aut.add_trans(2, 'b', 3);
+
+		path = {1,2,3};
+
+		auto word_bool_pair = get_word_for_path(aut, path);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first == Word({'c', 'b'}));
+	}
+
+	SECTION("longer word")
+	{
+		aut.initialstates = {1};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'c', 2);
+		aut.add_trans(2, 'a', 4);
+		aut.add_trans(2, 'c', 1);
+		aut.add_trans(2, 'b', 3);
+		aut.add_trans(3, 'd', 2);
+
+		path = {1,2,3,2,4};
+
+		auto word_bool_pair = get_word_for_path(aut, path);
+		std::set<Word> possible({
+			Word({'c', 'b', 'd', 'a'}),
+			Word({'a', 'b', 'd', 'a'})});
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(possible.find(word_bool_pair.first) != possible.end());
+	}
+
+	SECTION("invalid path")
+	{
+		aut.initialstates = {1};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'c', 2);
+		aut.add_trans(2, 'a', 4);
+		aut.add_trans(2, 'c', 1);
+		aut.add_trans(2, 'b', 3);
+		aut.add_trans(3, 'd', 2);
+
+		path = {1,2,3,1,2};
+
+		auto word_bool_pair = get_word_for_path(aut, path);
+		REQUIRE(!word_bool_pair.second);
+	}
+}
+
 TEST_CASE("Vata2::Nfa::determinize()")
 {
 	Nfa aut;
@@ -392,6 +469,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 {
 	Nfa aut;
 	Vata2::Parser::Parsed parsed;
+	StringToSymbolMap symbol_map;
 
 	SECTION("construct an empty automaton")
 	{
@@ -413,19 +491,20 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		REQUIRE(!is_lang_empty(&aut));
 	}
 
-	SECTION("construct a simple non-empty automaton accepting only the  word 'a'")
+	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
 		parsed.type = "NFA";
 		parsed.dict.insert({"Initial", {"q1"}});
 		parsed.dict.insert({"Final", {"q2"}});
 		parsed.trans_list = { {"q1", "a", "q2"} };
 
-		construct(&aut, &parsed);
+		construct(&aut, &parsed, &symbol_map);
 
-		REQUIRE(!is_lang_empty(&aut));
-
-		assert(false);
-		// REQUIRE(is_in_lang("a", &aut));
+		Path cex;
+		REQUIRE(!is_lang_empty(&aut, &cex));
+		auto word_bool_pair = get_word_for_path(aut, cex);
+		REQUIRE(word_bool_pair.second);
+		REQUIRE(word_bool_pair.first == encode_word(symbol_map, {"a"}));
 	}
 }
 
@@ -449,7 +528,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 		parsed.trans_list = { {"q1", "q2"}};
 
 		CHECK_THROWS_WITH(construct(&aut, &parsed),
-			Catch::Contains("Invalid transition"));
+			Catch::Contains("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition")
