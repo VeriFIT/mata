@@ -1,0 +1,33 @@
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+sudo: false
+
+script:
+  - make debug
+  - make test
+  - make release
+  - make test
+
+addons:
+  apt:
+    sources: 
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-4.8
+      - libstdc++-4.8-dev
+      # - libboost1.54-dev
+      # - libboost-system1.54-dev
+      # - libboost-filesystem1.54-dev
+      # - libboost-test1.54-dev
+
+cache: ccache
+
+os:
+  - linux
+  - osx
+
+dist: trusty
