@@ -171,7 +171,9 @@ void construct(
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)
  *
  * Returns a word that is consistent with @p path of states in automaton @p
- * aut, or sets a flag to @p false if such a word does not exist.
+ * aut, or sets a flag to @p false if such a word does not exist.  Note that
+ * there may be several words with the same path (in case some pair of states
+ * is connected by transitions over more than one symbol.
  *
  * @param[in]  aut   The automaton
  * @param[in]  path  The path of states
