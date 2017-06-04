@@ -27,6 +27,10 @@ message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 
 project(vata-ng)
 
+# Include CTest so that sophisticated testing can be done now
+include(CTest)
+
+
 ##############################################################################
 #                                SUB-MODULES
 ##############################################################################
