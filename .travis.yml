@@ -1,7 +1,7 @@
 language: cpp
 
 compiler:
-  - gcc-6
+  - gcc
   - clang
 
 sudo: false
@@ -28,6 +28,6 @@ os:
   - osx
 
 env:
-  - CXX=g++-6
+  - CC=gcc-6 && CXX=g++-6
 
 dist: trusty
