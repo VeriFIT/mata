@@ -7,9 +7,17 @@ compiler:
 sudo: false
 
 script:
-  - CXX=g++-6 make debug
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
+      CXX=g++-6 make debug
+    else
+      make debug
+    fi
   - make test
-  - CXX=g++-6 make release
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
+      CXX=g++-6 make release
+    else
+      make release
+    fi
   - make test
 
 addons:
