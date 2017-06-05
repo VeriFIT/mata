@@ -5,6 +5,7 @@
 
 #include <list>
 #include <map>
+#include <string>
 
 namespace Vata2
 {
