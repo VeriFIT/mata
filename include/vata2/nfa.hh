@@ -35,7 +35,7 @@ using Word = std::vector<Symbol>;       /// a finite-length word
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
-const PostSymb EMPTY_POST;
+const PostSymb EMPTY_POST{};
 
 /**
  * @brief  A transition

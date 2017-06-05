@@ -8,6 +8,16 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ##############################################################################
+#                             OUTPUT CUSTOMIZATION
+##############################################################################
+
+# Build with Clang? -- currently does nothing, initialize with
+#   $ CXX=clang++ make debug
+# to enable Clang
+option(USE_CLANG "build with clang" OFF)
+# option(USE_CLANG "build with clang" ON)
+
+##############################################################################
 #                               COMPILER FUN
 ##############################################################################
 
