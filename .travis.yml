@@ -8,15 +8,15 @@ sudo: false
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-6 make debug
+      CXX=g++-6 make debug ;
     else
-      make debug
+      make debug ;
     fi
   - make test
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-6 make release
+      CXX=g++-6 make release ;
     else
-      make release
+      make release ;
     fi
   - make test
 
