@@ -7,9 +7,9 @@ compiler:
 sudo: false
 
 script:
-  - make debug
+  - CXX=g++-6 make debug
   - make test
-  - make release
+  - CXX=g++-6 make release
   - make test
 
 addons:
@@ -27,7 +27,7 @@ os:
   - linux
   - osx
 
-env:
-  - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+# env:
+#   - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
 dist: trusty
