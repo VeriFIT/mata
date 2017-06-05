@@ -27,4 +27,7 @@ os:
   - linux
   - osx
 
+env:
+  - CXX=g++-6
+
 dist: trusty
