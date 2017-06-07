@@ -30,9 +30,9 @@ foreach(flag ${cxx_compiler_flags})
 endforeach()
 
 # if DEBUG, also test coverage
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+endif()
 
 # uncomment for profiling
 #add_definitions(-pg)
