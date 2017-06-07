@@ -29,6 +29,11 @@ foreach(flag ${cxx_compiler_flags})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
 
+# if DEBUG, also test coverage
+if(CMAKE_BUILD_TYPE MATCHES DEBUG)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+
 # uncomment for profiling
 #add_definitions(-pg)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
