@@ -69,17 +69,15 @@ struct Nfa
 		return this->finalstates.find(state) != this->finalstates.end();
 	} // }}}
 
-	void add_trans(const Trans* trans);
+	void add_trans(const Trans& trans);
 	void add_trans(State src, Symbol symb, State tgt)
 	{ // {{{
-		Trans trans = {src, symb, tgt};
-		this->add_trans(&trans);
+		this->add_trans({src, symb, tgt});
 	} // }}}
-	bool has_trans(const Trans* trans) const;
+	bool has_trans(const Trans& trans) const;
 	bool has_trans(State src, Symbol symb, State tgt) const
 	{ // {{{
-		Trans trans = {src, symb, tgt};
-		return this->has_trans(&trans);
+		return this->has_trans({src, symb, tgt});
 	} // }}}
 
 	struct const_iterator
@@ -134,38 +132,58 @@ struct Nfa
 	{ // {{{
 		auto it = transitions.find(state);
 		return (transitions.end() == it)? nullptr : &it->second;
-	} // }}}
+	} // get_post }}}
+
+	/** gets a post of a set of states over a symbol */
+	StateSet get_post_of_set(const StateSet& macrostate, Symbol sym) const
+	{ // {{{
+		StateSet result;
+		for (State state : macrostate)
+		{
+			const PostSymb* post = get_post(state);
+			if (nullptr != post)
+			{
+				auto it = post->find(sym);
+				if (post->end() != it)
+				{
+					result.insert(it->second.begin(), it->second.end());
+				}
+			}
+		}
+
+		return result;
+	} // get_post_of_set }}}
 };
 
 /** Do the automata have disjoint sets of states? */
-bool are_state_disjoint(const Nfa* lhs, const Nfa* rhs);
+bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 /** Is the language of the automaton empty? */
-bool is_lang_empty(const Nfa* aut, Path* cex = nullptr);
+bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
 /** Is the language of the automaton universal? */
-bool is_lang_universal(const Nfa* aut, Path* cex = nullptr);
+bool is_lang_universal(const Nfa& aut, Path* cex = nullptr);
 
 /** Compute intersection of a pair of automata */
 void intersection(
-	Nfa* result,
-	const Nfa* lhs,
-	const Nfa* rhs,
-	ProductMap* prod_map = nullptr);
+	Nfa*         result,
+	const Nfa&   lhs,
+	const Nfa&   rhs,
+	ProductMap*  prod_map = nullptr);
 
 /** Determinize an automaton */
 void determinize(
-	Nfa* result,
-	const Nfa* aut,
-	SubsetMap* subset_map = nullptr);
+	Nfa*        result,
+	const Nfa&  aut,
+	SubsetMap*  subset_map = nullptr);
 
 /** .vtf output serializer */
-std::string serialize_vtf(const Nfa* aut);
+std::string serialize_vtf(const Nfa& aut);
 
 /** Loads an automaton from Parsed object */
 void construct(
-	Nfa* aut,
-	const Vata2::Parser::Parsed* parsed,
-	StringToSymbolMap* symbol_map = nullptr,
-	StringToStateMap* state_map = nullptr);
+	Nfa*                          aut,
+	const Vata2::Parser::Parsed&  parsed,
+	StringToSymbolMap*            symbol_map = nullptr,
+	StringToStateMap*             state_map = nullptr);
 
 /**
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)
@@ -183,6 +201,11 @@ void construct(
  *           denotes that the path is invalid in @p aut
  */
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
+
+
+/** Checks whether a string is in the language of an automaton */
+bool is_in_lang(const Nfa& aut, const Word& word);
+
 
 /** Encodes a vector of strings into a @c Word instance */
 inline Word encode_word(

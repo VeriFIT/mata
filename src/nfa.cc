@@ -10,49 +10,45 @@
 using std::tie;
 using namespace Vata2::util;
 
-void Vata2::Nfa::Nfa::add_trans(const Trans* trans)
+void Vata2::Nfa::Nfa::add_trans(const Trans& trans)
 { // {{{
-	assert(nullptr != trans);
-
-	auto it = this->transitions.find(trans->src);
+	auto it = this->transitions.find(trans.src);
 	if (it != this->transitions.end())
 	{
 		PostSymb& post = it->second;
-		auto jt = post.find(trans->symb);
+		auto jt = post.find(trans.symb);
 		if (jt != post.end())
 		{
-			jt->second.insert(trans->tgt);
+			jt->second.insert(trans.tgt);
 		}
 		else
 		{
-			post.insert({trans->symb, StateSet({trans->tgt})});
+			post.insert({trans.symb, StateSet({trans.tgt})});
 		}
 	}
 	else
 	{
 		this->transitions.insert(
-			{trans->src, PostSymb({{trans->symb, StateSet({trans->tgt})}})});
+			{trans.src, PostSymb({{trans.symb, StateSet({trans.tgt})}})});
 	}
 } // add_trans }}}
 
-bool Vata2::Nfa::Nfa::has_trans(const Trans* trans) const
+bool Vata2::Nfa::Nfa::has_trans(const Trans& trans) const
 { // {{{
-	assert(nullptr != trans);
-
-	auto it = this->transitions.find(trans->src);
+	auto it = this->transitions.find(trans.src);
 	if (it == this->transitions.end())
 	{
 		return false;
 	}
 
 	const PostSymb& post = it->second;
-	auto jt = post.find(trans->symb);
+	auto jt = post.find(trans.symb);
 	if (jt == post.end())
 	{
 		return false;
 	}
 
-	return jt->second.find(trans->tgt) != jt->second.end();
+	return jt->second.find(trans.tgt) != jt->second.end();
 } // has_trans }}}
 
 Vata2::Nfa::Nfa::const_iterator Vata2::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
@@ -129,23 +125,20 @@ Vata2::Nfa::Nfa::const_iterator& Vata2::Nfa::Nfa::const_iterator::operator++()
 	return *this;
 } // operator++ }}}
 
-bool Vata2::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
+bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
-	assert(nullptr != lhs);
-	assert(nullptr != rhs);
-
 	// fill lhs_states with all states of lhs
 	std::unordered_set<State> lhs_states;
-	lhs_states.insert(lhs->initialstates.begin(), lhs->initialstates.end());
-	lhs_states.insert(lhs->finalstates.begin(), lhs->finalstates.end());
+	lhs_states.insert(lhs.initialstates.begin(), lhs.initialstates.end());
+	lhs_states.insert(lhs.finalstates.begin(), lhs.finalstates.end());
 
-	for (auto trans : *lhs)
+	for (auto trans : lhs)
 	{
 		lhs_states.insert({trans.src, trans.tgt});
 	}
 
 	// for every state found in rhs, check its presence in lhs_states
-	for (auto rhs_st : rhs->initialstates)
+	for (auto rhs_st : rhs.initialstates)
 	{
 		if (lhs_states.find(rhs_st) != lhs_states.end())
 		{
@@ -153,7 +146,7 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 		}
 	}
 
-	for (auto rhs_st : rhs->finalstates)
+	for (auto rhs_st : rhs.finalstates)
 	{
 		if (lhs_states.find(rhs_st) != lhs_states.end())
 		{
@@ -161,7 +154,7 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 		}
 	}
 
-	for (auto trans : *rhs)
+	for (auto trans : rhs)
 	{
 		if (lhs_states.find(trans.src) != lhs_states.end()
 				|| lhs_states.find(trans.tgt) != lhs_states.end())
@@ -176,14 +169,10 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa* lhs, const Nfa* rhs)
 
 void Vata2::Nfa::intersection(
 	Nfa* result,
-	const Nfa* lhs,
-	const Nfa* rhs,
+	const Nfa& lhs,
+	const Nfa& rhs,
 	ProductMap* prod_map)
 { // {{{
-	assert(nullptr != result);
-	assert(nullptr != lhs);
-	assert(nullptr != rhs);
-
 	bool remove_prod_map = false;
 	if (nullptr == prod_map)
 	{
@@ -197,9 +186,9 @@ void Vata2::Nfa::intersection(
 	std::list<std::tuple<State, State, State>> worklist;
 
 	// translate initial states and initialize worklist
-	for (const auto lhs_st : lhs->initialstates)
+	for (const auto lhs_st : lhs.initialstates)
 	{
-		for (const auto rhs_st : rhs->initialstates)
+		for (const auto rhs_st : rhs.initialstates)
 		{
 			prod_map->insert({{lhs_st, rhs_st}, cnt_state});
 			result->initialstates.insert(cnt_state);
@@ -214,18 +203,18 @@ void Vata2::Nfa::intersection(
 		tie(lhs_st, rhs_st, res_st) = worklist.front();
 		worklist.pop_front();
 
-		if (lhs->finalstates.find(lhs_st) != lhs->finalstates.end() &&
-			rhs->finalstates.find(rhs_st) != rhs->finalstates.end())
+		if (lhs.finalstates.find(lhs_st) != lhs.finalstates.end() &&
+			rhs.finalstates.find(rhs_st) != rhs.finalstates.end())
 		{
 			result->finalstates.insert(res_st);
 		}
 
 		// TODO: a very inefficient implementation
-		for (const auto lhs_tr : *lhs)
+		for (const auto lhs_tr : lhs)
 		{
 			if (lhs_tr.src == lhs_st)
 			{
-				for (const auto rhs_tr : *rhs)
+				for (const auto rhs_tr : rhs)
 				{
 					if (rhs_tr.src == rhs_st)
 					{
@@ -263,14 +252,12 @@ void Vata2::Nfa::intersection(
 	}
 } // intersection }}}
 
-bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Path* cex)
+bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 { // {{{
-	assert(nullptr != aut);
-
 	std::list<State> worklist(
-		aut->initialstates.begin(), aut->initialstates.end());
+		aut.initialstates.begin(), aut.initialstates.end());
 	std::unordered_set<State> processed(
-		aut->initialstates.begin(), aut->initialstates.end());
+		aut.initialstates.begin(), aut.initialstates.end());
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
@@ -285,7 +272,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Path* cex)
 		State state = worklist.front();
 		worklist.pop_front();
 
-		if (aut->finalstates.find(state) != aut->finalstates.end())
+		if (aut.finalstates.find(state) != aut.finalstates.end())
 		{
 			// TODO process the CEX
 			if (nullptr != cex)
@@ -304,7 +291,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Path* cex)
 			return false;
 		}
 
-		const PostSymb* post_map = aut->get_post(state);
+		const PostSymb* post_map = aut.get_post(state);
 		if (nullptr == post_map) { continue; }
 		for (const auto& symb_stateset : *post_map)
 		{
@@ -331,25 +318,21 @@ bool Vata2::Nfa::is_lang_empty(const Nfa* aut, Path* cex)
 	return true;
 } // is_lang_empty }}}
 
-bool Vata2::Nfa::is_lang_universal(const Nfa* aut, Path* cex)
+bool Vata2::Nfa::is_lang_universal(const Nfa& aut, Path* cex)
 { // {{{
-	assert(nullptr != aut);
-
 	assert(false);
 
 	*cex = {1,2};
 
 	return true;
-
 } // is_lang_universal }}}
 
 void Vata2::Nfa::determinize(
-	Nfa* result,
-	const Nfa* aut,
-	SubsetMap* subset_map)
+	Nfa*        result,
+	const Nfa&  aut,
+	SubsetMap*  subset_map)
 { // {{{
 	assert(nullptr != result);
-	assert(nullptr != aut);
 
 	bool delete_map = false;
 	if (nullptr == subset_map)
@@ -361,7 +344,7 @@ void Vata2::Nfa::determinize(
 	State cnt_state = 0;
 	std::list<std::pair<const StateSet*, State>> worklist;
 
-	auto it_bool_pair = subset_map->insert({aut->initialstates, cnt_state});
+	auto it_bool_pair = subset_map->insert({aut.initialstates, cnt_state});
 	result->initialstates = {cnt_state};
 	worklist.push_back({&it_bool_pair.first->first, cnt_state});
 	++cnt_state;
@@ -375,7 +358,7 @@ void Vata2::Nfa::determinize(
 		assert(nullptr != state_set);
 
 		// set the state final
-		if (!are_disjoint(state_set, &aut->finalstates))
+		if (!are_disjoint(*state_set, aut.finalstates))
 		{
 			result->finalstates.insert(new_state);
 		}
@@ -384,11 +367,12 @@ void Vata2::Nfa::determinize(
 		PostSymb post_symb;
 		for (State s : *state_set)
 		{
-			for (auto symb_post_pair : (*aut)[s])
+			for (auto symb_post_pair : aut[s])
 			{
 				Symbol symb = symb_post_pair.first;
 				const StateSet& post = symb_post_pair.second;
 				post_symb[symb].insert(post.begin(), post.end());
+				// TODO: consider using get_post_of_set instead
 			}
 		}
 
@@ -416,28 +400,26 @@ void Vata2::Nfa::determinize(
 	}
 } // determinize }}}
 
-std::string Vata2::Nfa::serialize_vtf(const Nfa* aut)
+std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
 { // {{{
-	assert(nullptr != aut);
-
 	std::string result;
 	result += "@NFA\n";
 	result += "%Initial";
-	for (State s : aut->initialstates)
+	for (State s : aut.initialstates)
 	{
 		result += " q" + std::to_string(s);
 	}
 
 	result += "\n";
 	result += "%Final";
-	for (State s : aut->finalstates)
+	for (State s : aut.finalstates)
 	{
 		result += " q" + std::to_string(s);
 	}
 
 	result += "\n";
 	result += "%Transitions   # the format is <src> <symbol> <tgt>\n";
-	for (auto trans : *aut)
+	for (auto trans : aut)
 	{
 		result +=
 			"q" + std::to_string(trans.src) +
@@ -450,8 +432,8 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa* aut)
 } // serialize_vtf }}}
 
 std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
-	const Nfa& aut,
-	const Path& path)
+	const Nfa&   aut,
+	const Path&  path)
 { // {{{
 	if (path.empty())
 	{
@@ -494,14 +476,13 @@ std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
 
 void Vata2::Nfa::construct(
 	Nfa* aut,
-	const Vata2::Parser::Parsed* parsed,
+	const Vata2::Parser::Parsed& parsed,
 	StringToSymbolMap* symbol_map,
 	StringToStateMap* state_map)
 { // {{{
 	assert(nullptr != aut);
-	assert(nullptr != parsed);
 
-	if (parsed->type != "NFA")
+	if (parsed.type != "NFA")
 	{
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
 	}
@@ -544,7 +525,7 @@ void Vata2::Nfa::construct(
 	};
 
 
-	auto first_last_it = parsed->dict.equal_range("Initial");
+	auto first_last_it = parsed.dict.equal_range("Initial");
 	auto it = first_last_it.first;
 	while (it != first_last_it.second)
 	{
@@ -553,7 +534,7 @@ void Vata2::Nfa::construct(
 		++it;
 	}
 
-	first_last_it = parsed->dict.equal_range("Final");
+	first_last_it = parsed.dict.equal_range("Final");
 	it = first_last_it.first;
 	while (it != first_last_it.second)
 	{
@@ -562,7 +543,7 @@ void Vata2::Nfa::construct(
 		++it;
 	}
 
-	for (auto parsed_trans : parsed->trans_list)
+	for (auto parsed_trans : parsed.trans_list)
 	{
 		if (parsed_trans.size() != 3)
 		{
@@ -591,3 +572,17 @@ void Vata2::Nfa::construct(
 	// do the dishes and take out garbage
 	clean_up();
 } // construct }}}
+
+
+bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
+{ // {{{
+	StateSet cur = aut.initialstates;
+
+	for (Symbol sym : word)
+	{
+		cur = aut.get_post_of_set(cur, sym);
+		if (cur.empty()) { break; }
+	}
+
+	return !are_disjoint(cur, aut.finalstates);
+} // is_in_lang }}}

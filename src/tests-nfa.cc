@@ -80,7 +80,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 
 	SECTION("Empty automata are state disjoint")
 	{
-		REQUIRE(are_state_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(a, b));
 	}
 
 	SECTION("Left-hand side empty automaton is state disjoint with anything")
@@ -91,7 +91,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		b.add_trans(2, 'a', 8);
 		b.add_trans(0, 'c', 394093820488);
 
-		REQUIRE(are_state_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(a, b));
 	}
 
 	SECTION("Right-hand side empty automaton is state disjoint with anything")
@@ -102,7 +102,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		a.add_trans(2, 'a', 8);
 		a.add_trans(0, 'c', 394093820488);
 
-		REQUIRE(are_state_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with intersecting initial states are not state disjoint")
@@ -110,7 +110,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		a.initialstates = {1, 4, 6};
 		b.initialstates = {3, 9, 6, 8};
 
-		REQUIRE(!are_state_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with intersecting final states are not state disjoint")
@@ -118,7 +118,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		a.finalstates = {1, 4, 6};
 		b.finalstates = {3, 9, 6, 8};
 
-		REQUIRE(!are_state_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with disjoint sets of states are state disjoint")
@@ -134,7 +134,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		b.add_trans(3, 'b', 11);
 		b.add_trans(3, 'b', 9);
 
-		REQUIRE(are_state_disjoint(&a, &b));
+		REQUIRE(are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with intersecting states are not disjoint")
@@ -152,7 +152,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 		b.add_trans(3, 'c', 5);
 		b.add_trans(11, 'a', 3);
 
-		REQUIRE(!are_state_disjoint(&a, &b));
+		REQUIRE(!are_state_disjoint(a, b));
 	}
 } // }}}
 
@@ -164,7 +164,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 
 	SECTION("Intersection of empty automata")
 	{
-		intersection(&res, &a, &b, &prod_map);
+		intersection(&res, a, b, &prod_map);
 
 		REQUIRE(res.initialstates.empty());
 		REQUIRE(res.finalstates.empty());
@@ -180,7 +180,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 		b.initialstates = {4, 6};
 		b.finalstates = {4, 2};
 
-		intersection(&res, &a, &b, &prod_map);
+		intersection(&res, a, b, &prod_map);
 
 		REQUIRE(!res.initialstates.empty());
 		REQUIRE(!res.finalstates.empty());
@@ -196,7 +196,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 		FILL_WITH_AUT_A(a);
 		FILL_WITH_AUT_B(b);
 
-		intersection(&res, &a, &b, &prod_map);
+		intersection(&res, a, b, &prod_map);
 
 		REQUIRE(res.has_initial(prod_map[{1, 4}]));
 		REQUIRE(res.has_initial(prod_map[{3, 4}]));
@@ -245,11 +245,11 @@ TEST_CASE("Vata2::Nfa::intersection()")
 		FILL_WITH_AUT_B(b);
 		b.finalstates = {12};
 
-		intersection(&res, &a, &b, &prod_map);
+		intersection(&res, a, b, &prod_map);
 
 		REQUIRE(res.has_initial(prod_map[{1, 4}]));
 		REQUIRE(res.has_initial(prod_map[{3, 4}]));
-		REQUIRE(is_lang_empty(&res));
+		REQUIRE(is_lang_empty(res));
 	}
 } // }}}
 
@@ -260,7 +260,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 
 	SECTION("An empty automaton has an empty language")
 	{
-		REQUIRE(is_lang_empty(&aut));
+		REQUIRE(is_lang_empty(aut));
 	}
 
 	SECTION("An automaton with a state that is both initial and final does not have an empty language")
@@ -268,7 +268,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 		aut.initialstates = {1, 2};
 		aut.finalstates = {2, 3};
 
-		bool is_empty = is_lang_empty(&aut, &cex);
+		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
 	}
 
@@ -289,19 +289,19 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 		SECTION("with final states")
 		{
 			aut.finalstates = {7};
-			REQUIRE(!is_lang_empty(&aut));
+			REQUIRE(!is_lang_empty(aut));
 		}
 
 		SECTION("without final states")
 		{
-			REQUIRE(is_lang_empty(&aut));
+			REQUIRE(is_lang_empty(aut));
 		}
 
 		SECTION("another complicated automaton")
 		{
 			FILL_WITH_AUT_A(aut);
 
-			REQUIRE(!is_lang_empty(&aut));
+			REQUIRE(!is_lang_empty(aut));
 		}
 
 		SECTION("a complicated automaton with unreachable final states")
@@ -309,7 +309,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 			FILL_WITH_AUT_A(aut);
 			aut.finalstates = {13};
 
-			REQUIRE(is_lang_empty(&aut));
+			REQUIRE(is_lang_empty(aut));
 		}
 	}
 
@@ -318,7 +318,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 		aut.initialstates = {1, 2};
 		aut.finalstates = {2, 3};
 
-		bool is_empty = is_lang_empty(&aut, &cex);
+		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
 
 		// check the counterexample
@@ -337,7 +337,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 		aut.add_trans(3, 'e', 5);
 		aut.add_trans(4, 'c', 8);
 
-		bool is_empty = is_lang_empty(&aut, &cex);
+		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
 
 		// check the counterexample
@@ -433,7 +433,7 @@ TEST_CASE("Vata2::Nfa::determinize()")
 
 	SECTION("empty automaton")
 	{
-		determinize(&result, &aut);
+		determinize(&result, aut);
 
 		REQUIRE(result.has_initial(subset_map[{}]));
 		REQUIRE(result.finalstates.empty());
@@ -444,7 +444,7 @@ TEST_CASE("Vata2::Nfa::determinize()")
 	{
 		aut.initialstates = { 1 };
 		aut.finalstates = { 1 };
-		determinize(&result, &aut, &subset_map);
+		determinize(&result, aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
 		REQUIRE(result.has_final(subset_map[{1}]));
@@ -456,7 +456,7 @@ TEST_CASE("Vata2::Nfa::determinize()")
 		aut.initialstates = { 1 };
 		aut.finalstates = { 2 };
 		aut.add_trans(1, 'a', 2);
-		determinize(&result, &aut, &subset_map);
+		determinize(&result, aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
 		REQUIRE(result.has_final(subset_map[{2}]));
@@ -475,9 +475,9 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 	{
 		parsed.type = "NFA";
 
-		construct(&aut, &parsed);
+		construct(&aut, parsed);
 
-		REQUIRE(is_lang_empty(&aut));
+		REQUIRE(is_lang_empty(aut));
 	}
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
@@ -486,9 +486,9 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		parsed.dict.insert({"Initial", {"q1"}});
 		parsed.dict.insert({"Final", {"q1"}});
 
-		construct(&aut, &parsed);
+		construct(&aut, parsed);
 
-		REQUIRE(!is_lang_empty(&aut));
+		REQUIRE(!is_lang_empty(aut));
 	}
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
@@ -498,13 +498,41 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		parsed.dict.insert({"Final", {"q2"}});
 		parsed.trans_list = { {"q1", "a", "q2"} };
 
-		construct(&aut, &parsed, &symbol_map);
+		construct(&aut, parsed, &symbol_map);
 
 		Path cex;
-		REQUIRE(!is_lang_empty(&aut, &cex));
+		REQUIRE(!is_lang_empty(aut, &cex));
 		auto word_bool_pair = get_word_for_path(aut, cex);
 		REQUIRE(word_bool_pair.second);
 		REQUIRE(word_bool_pair.first == encode_word(symbol_map, {"a"}));
+
+		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
+	}
+
+	SECTION("construct a more complicated non-empty automaton")
+	{
+		parsed.type = "NFA";
+		parsed.dict.insert({"Initial", {"q1", "q3"}});
+		parsed.dict.insert({"Final", {"q5"}});
+		parsed.trans_list.push_back({"q1", "a", "q3"});
+		parsed.trans_list.push_back({"q1", "a", "q10"});
+		parsed.trans_list.push_back({"q1", "b", "q7"});
+		parsed.trans_list.push_back({"q3", "a", "q7"});
+		parsed.trans_list.push_back({"q3", "b", "q9"});
+		parsed.trans_list.push_back({"q9", "a", "q9"});
+		parsed.trans_list.push_back({"q7", "b", "q1"});
+		parsed.trans_list.push_back({"q7", "a", "q3"});
+		parsed.trans_list.push_back({"q7", "c", "q3"});
+		parsed.trans_list.push_back({"q10", "a", "q7"});
+		parsed.trans_list.push_back({"q10", "b", "q7"});
+		parsed.trans_list.push_back({"q10", "c", "q7"});
+		parsed.trans_list.push_back({"q7", "a", "q5"});
+		parsed.trans_list.push_back({"q5", "a", "q5"});
+		parsed.trans_list.push_back({"q5", "c", "q9"});
+
+		construct(&aut, parsed, &symbol_map);
+
+		assert(false);
 	}
 }
 
@@ -518,7 +546,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	{
 		parsed.type = "FA";
 
-		CHECK_THROWS_WITH(construct(&aut, &parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsed),
 			Catch::Contains("expecting type"));
 	}
 
@@ -527,7 +555,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 		parsed.type = "NFA";
 		parsed.trans_list = { {"q1", "q2"}};
 
-		CHECK_THROWS_WITH(construct(&aut, &parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsed),
 			Catch::Contains("Epsilon transition"));
 	}
 
@@ -536,7 +564,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 		parsed.type = "NFA";
 		parsed.trans_list = { {"q1", "a", "q2", "q3"}};
 
-		CHECK_THROWS_WITH(construct(&aut, &parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsed),
 			Catch::Contains("Invalid transition"));
 	}
 
