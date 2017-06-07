@@ -37,6 +37,7 @@ addons:
       # - g++-4.8
       - g++-6
       - libstdc++-6-dev
+      - lcov
 
 cache: ccache
 
