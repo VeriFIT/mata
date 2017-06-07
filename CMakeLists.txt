@@ -39,7 +39,12 @@ project(vata-ng)
 
 # Include CTest so that sophisticated testing can be done now
 include(CTest)
+enable_testing()
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+    include(CodeCoverage)
+    setup_target_for_coverage(${PROJECT_NAME}_coverage tests coverage)
+endif()
 
 ##############################################################################
 #                                SUB-MODULES
