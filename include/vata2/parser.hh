@@ -12,7 +12,7 @@ namespace Vata2
 namespace Parser
 {
 
-using KeyListStore = std::multimap<std::string, std::string>;
+using KeyListStore = std::map<std::string, std::vector<std::string>>;
 using ParsedTrans = std::vector<std::string>;
 
 /** Parsed data */

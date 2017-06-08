@@ -525,22 +525,25 @@ void Vata2::Nfa::construct(
 	};
 
 
-	auto first_last_it = parsed.dict.equal_range("Initial");
-	auto it = first_last_it.first;
-	while (it != first_last_it.second)
+	auto it = parsed.dict.find("Initial");
+	if (parsed.dict.end() != it)
 	{
-		State state = get_state_name(it->second);
-		aut->initialstates.insert(state);
-		++it;
+		for (auto str : it->second)
+		{
+			State state = get_state_name(str);
+			aut->initialstates.insert(state);
+		}
 	}
 
-	first_last_it = parsed.dict.equal_range("Final");
-	it = first_last_it.first;
-	while (it != first_last_it.second)
+
+	it = parsed.dict.find("Final");
+	if (parsed.dict.end() != it)
 	{
-		State state = get_state_name(it->second);
-		aut->finalstates.insert(state);
-		++it;
+		for (auto str : it->second)
+		{
+			State state = get_state_name(str);
+			aut->finalstates.insert(state);
+		}
 	}
 
 	for (auto parsed_trans : parsed.trans_list)

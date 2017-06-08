@@ -172,6 +172,15 @@ TEST_CASE("Vata2::Nfa::intersection()")
 		REQUIRE(prod_map.empty());
 	}
 
+	SECTION("Intersection of empty automata 2")
+	{
+		intersection(&res, a, b);
+
+		REQUIRE(res.initialstates.empty());
+		REQUIRE(res.finalstates.empty());
+		REQUIRE(res.transitions.empty());
+	}
+
 	SECTION("Intersection of automata with no transitions")
 	{
 		a.initialstates = {1, 3};
@@ -349,7 +358,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 }
 
 TEST_CASE("Vata2::Nfa::get_word_for_path()")
-{
+{ // {{{
 	Nfa aut;
 	Path path;
 	Word word;
@@ -491,6 +500,18 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		REQUIRE(!is_lang_empty(aut));
 	}
 
+	SECTION("construct an automaton with more than one initial/final states")
+	{
+		parsed.type = "NFA";
+		parsed.dict.insert({"Initial", {"q1", "q2"}});
+		parsed.dict.insert({"Final", {"q1", "q2", "q3"}});
+
+		construct(&aut, parsed);
+
+		REQUIRE(aut.initialstates.size() == 2);
+		REQUIRE(aut.finalstates.size() == 3);
+	}
+
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
 		parsed.type = "NFA";
@@ -532,14 +553,23 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 		construct(&aut, parsed, &symbol_map);
 
-		// TODO: FINISH ###################################################
+		// some samples
+		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
+		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
+		REQUIRE(is_in_lang(aut, encode_word(symbol_map,
+			{"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+		// some wrong samples
+		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
+		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
+		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
+
 		// assert(false);
 	}
-}
+} // }}}
 
 
 TEST_CASE("Vata2::Nfa::construct() invalid calls")
-{
+{ // {{{
 	Nfa aut;
 	Vata2::Parser::Parsed parsed;
 
@@ -568,5 +598,4 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 		CHECK_THROWS_WITH(construct(&aut, parsed),
 			Catch::Contains("Invalid transition"));
 	}
-
-}
+} // }}}
