@@ -4,6 +4,7 @@
 #define _VATA2_UTIL_HH_
 
 #include <iostream>
+#include <sstream>
 
 #define DEBUG_PRINT(x) { std::cout << x << "\n"; }
 
@@ -142,6 +143,15 @@ std::string to_string(const std::set<A>& st)
 
 	return result;
 } // to_string(std::set) }}}
+
+/** arbitrary type with the << operator */
+template <class A>
+std::string to_string(const A& value)
+{ // {{{
+	std::ostringstream os;
+  os << value;
+  return os.str();
+} // to_string(T) }}}
 
 // }}}
 

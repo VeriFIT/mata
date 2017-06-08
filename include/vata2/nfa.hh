@@ -48,6 +48,13 @@ struct Trans
 
 	Trans() : src(), symb(), tgt() { }
 	Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
+
+	friend std::ostream& operator<<(std::ostream& strm, const Trans& trans)
+	{
+		std::string result = "(" + std::to_string(trans.src) + ", " +
+			std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
+		return strm << result;
+	}
 };
 
 
