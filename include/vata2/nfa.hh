@@ -110,11 +110,12 @@ struct Nfa
 			this->trans = {this->stpmIt->first, this->psIt->first, *(this->ssIt)};
 		} // }}}
 
-		const Trans& operator*() const {return this->trans; }
+		const Trans& operator*() const { return this->trans; }
 
 		bool operator==(const const_iterator& rhs) const
 		{ // {{{
 			if (this->is_end && rhs.is_end) { return true; }
+			if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
 			return ssIt == rhs.ssIt && psIt == rhs.psIt && stpmIt == rhs.stpmIt;
 		} // }}}
 		bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
