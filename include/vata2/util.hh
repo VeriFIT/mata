@@ -69,6 +69,23 @@ struct hash<std::set<A>>
 	} // operator() }}}
 };
 
+/*#######################################################
+ #                  std::to_string(TYPE)
+ #######################################################*/
+
+/*======================================================
+ *                     DECLARATIONS
+ *========================================{{{*/
+
+template <class A>
+std::string to_string(const std::set<A>& st);
+
+// }}}
+
+/*======================================================
+ *                       DEFINITIONS
+ *========================================{{{*/
+
 /** String to string */
 inline std::string to_string(const std::string& str) { return str; }
 
@@ -87,7 +104,46 @@ std::string to_string(const std::vector<A>& vec)
 	result += "]";
 
 	return result;
-} // to_string }}}
+} // to_string(std::vector) }}}
+
+/** unordered_map to string */
+template <class A, class B>
+std::string to_string(const std::unordered_map<A, B>& unmap)
+{ // {{{
+	std::string result = "{";
+	bool first = true;
+	for (auto key_val_pair : unmap)
+	{
+		if (!first) { result += ", "; }
+		first = false;
+		result +=
+			std::to_string(key_val_pair.first) +
+			" -> " +
+			std::to_string(key_val_pair.second);
+	}
+	result += "}";
+
+	return result;
+} // to_string(std::unordered_map) }}}
+
+/** set to string */
+template <class A>
+std::string to_string(const std::set<A>& st)
+{ // {{{
+	std::string result = "{";
+	bool first = true;
+	for (auto elem : st)
+	{
+		if (!first) { result += ", "; }
+		first = false;
+		result += std::to_string(elem);
+	}
+	result += "}";
+
+	return result;
+} // to_string(std::set) }}}
+
+// }}}
 
 } // namespace std }}}
 
