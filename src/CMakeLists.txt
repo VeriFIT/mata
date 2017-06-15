@@ -60,3 +60,8 @@ add_test(
 	NAME catch_tests
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
 )
+
+add_test(
+	NAME "catch_tests_valgrind"
+	COMMAND ${VALGRIND_PROGRAM} ${CMAKE_CURRENT_BINARY_DIR}/tests
+)

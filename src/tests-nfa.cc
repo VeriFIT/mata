@@ -562,8 +562,6 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
 		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
 		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
-
-		// assert(false);
 	}
 } // }}}
 
@@ -597,5 +595,15 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 
 		CHECK_THROWS_WITH(construct(&aut, parsed),
 			Catch::Contains("Invalid transition"));
+	}
+} // }}}
+
+TEST_CASE("Vata2::Nfa::serialize_vtf()")
+{ //
+	Nfa aut;
+
+	SECTION("empty automaton")
+	{
+		// assert(false);
 	}
 } // }}}
