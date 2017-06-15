@@ -31,3 +31,5 @@
 # the build directory
 build/
 Testing/
+# documentation
+doc/

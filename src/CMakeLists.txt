@@ -63,5 +63,9 @@ add_test(
 
 add_test(
 	NAME "catch_tests_valgrind"
-	COMMAND ${VALGRIND_PROGRAM} ${CMAKE_CURRENT_BINARY_DIR}/tests
+	COMMAND ${VALGRIND_PROGRAM}
+		--tool=memcheck
+		--leak-check=yes
+		--show-reachable=yes
+		${CMAKE_CURRENT_BINARY_DIR}/tests
 )
