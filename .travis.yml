@@ -7,6 +7,7 @@ compiler:
 sudo: false
 
 script:
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install valgrind; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make debug ;
     else
