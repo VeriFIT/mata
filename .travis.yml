@@ -38,6 +38,8 @@ addons:
       - g++-6
       - libstdc++-6-dev
       - lcov
+      - valgrind
+      - doxygen
 
 cache: ccache
 
