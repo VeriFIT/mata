@@ -2,6 +2,9 @@
 
 #include "../3rdparty/catch.hpp"
 
+#include <vata2/nfa.hh>
+using namespace Vata2::Nfa;
+
 // Some common automata {{{
 
 // Automaton A
@@ -43,9 +46,6 @@
 	b.add_trans(14, 'b', 12); \
 
 // }}}
-
-#include <vata2/nfa.hh>
-using namespace Vata2::Nfa;
 
 TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
@@ -604,6 +604,6 @@ TEST_CASE("Vata2::Nfa::serialize_vtf()")
 
 	SECTION("empty automaton")
 	{
-		// assert(false);
+		DEBUG_PRINT("Vata2::Nfa::serialize_vtf() not tested");
 	}
 } // }}}

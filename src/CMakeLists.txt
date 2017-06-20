@@ -52,6 +52,7 @@ set_target_properties(libvata2 PROPERTIES
 add_executable(tests
 	tests-main.cc
 	tests-nfa.cc
+	tests-parser.cc
 )
 
 target_link_libraries(tests libvata2)

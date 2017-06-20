@@ -400,6 +400,7 @@ void Vata2::Nfa::determinize(
 	}
 } // determinize }}}
 
+
 std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
 { // {{{
 	std::string result;
@@ -430,6 +431,7 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
 
 	return result;
 } // serialize_vtf }}}
+
 
 std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
 	const Nfa&   aut,
@@ -473,6 +475,7 @@ std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
 
 	return {word, true};
 } // get_word_for_path }}}
+
 
 void Vata2::Nfa::construct(
 	Nfa* aut,
