@@ -3,9 +3,11 @@
 #ifndef _VATA2_PARSER_HH_
 #define _VATA2_PARSER_HH_
 
+#include <cassert>
 #include <list>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace Vata2
 {
@@ -26,7 +28,7 @@ struct Parsed
 };
 
 /** Parses a string into an intermediary structure */
-void parse_vtf(Parsed* parsed, const std::string* input);
+Parsed parse_vtf(const std::string& input);
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Parser */

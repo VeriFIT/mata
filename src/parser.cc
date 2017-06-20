@@ -2,10 +2,11 @@
 
 #include <vata2/parser.hh>
 
-void Vata2::Parser::parse_vtf(Parsed* parsed, const std::string* input)
+using Vata2::Parser::Parsed;
+
+Parsed Vata2::Parser::parse_vtf(const std::string& input)
 { // {{{
-	assert(nullptr != parsed);
-	assert(nullptr != input);
+	Parsed result;
 
 	assert(false);
 } // parse_vtf }}}

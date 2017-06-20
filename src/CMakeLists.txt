@@ -42,6 +42,7 @@ include_directories(../include)
 
 add_library(libvata2 STATIC
 	nfa.cc
+	parser.cc
 )
 
 set_target_properties(libvata2 PROPERTIES
