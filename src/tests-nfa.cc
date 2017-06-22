@@ -477,36 +477,36 @@ TEST_CASE("Vata2::Nfa::determinize()")
 TEST_CASE("Vata2::Nfa::construct() correct calls")
 {
 	Nfa aut;
-	Vata2::Parser::Parsed parsed;
+	Vata2::Parser::ParsedSection parsec;
 	StringToSymbolMap symbol_map;
 
 	SECTION("construct an empty automaton")
 	{
-		parsed.type = "NFA";
+		parsec.type = "NFA";
 
-		construct(&aut, parsed);
+		construct(&aut, parsec);
 
 		REQUIRE(is_lang_empty(aut));
 	}
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
 	{
-		parsed.type = "NFA";
-		parsed.dict.insert({"Initial", {"q1"}});
-		parsed.dict.insert({"Final", {"q1"}});
+		parsec.type = "NFA";
+		parsec.dict.insert({"Initial", {"q1"}});
+		parsec.dict.insert({"Final", {"q1"}});
 
-		construct(&aut, parsed);
+		construct(&aut, parsec);
 
 		REQUIRE(!is_lang_empty(aut));
 	}
 
 	SECTION("construct an automaton with more than one initial/final states")
 	{
-		parsed.type = "NFA";
-		parsed.dict.insert({"Initial", {"q1", "q2"}});
-		parsed.dict.insert({"Final", {"q1", "q2", "q3"}});
+		parsec.type = "NFA";
+		parsec.dict.insert({"Initial", {"q1", "q2"}});
+		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-		construct(&aut, parsed);
+		construct(&aut, parsec);
 
 		REQUIRE(aut.initialstates.size() == 2);
 		REQUIRE(aut.finalstates.size() == 3);
@@ -514,12 +514,12 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
-		parsed.type = "NFA";
-		parsed.dict.insert({"Initial", {"q1"}});
-		parsed.dict.insert({"Final", {"q2"}});
-		parsed.trans_list = { {"q1", "a", "q2"} };
+		parsec.type = "NFA";
+		parsec.dict.insert({"Initial", {"q1"}});
+		parsec.dict.insert({"Final", {"q2"}});
+		parsec.trans_list = { {"q1", "a", "q2"} };
 
-		construct(&aut, parsed, &symbol_map);
+		construct(&aut, parsec, &symbol_map);
 
 		Path cex;
 		REQUIRE(!is_lang_empty(aut, &cex));
@@ -532,26 +532,26 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a more complicated non-empty automaton")
 	{
-		parsed.type = "NFA";
-		parsed.dict.insert({"Initial", {"q1", "q3"}});
-		parsed.dict.insert({"Final", {"q5"}});
-		parsed.trans_list.push_back({"q1", "a", "q3"});
-		parsed.trans_list.push_back({"q1", "a", "q10"});
-		parsed.trans_list.push_back({"q1", "b", "q7"});
-		parsed.trans_list.push_back({"q3", "a", "q7"});
-		parsed.trans_list.push_back({"q3", "b", "q9"});
-		parsed.trans_list.push_back({"q9", "a", "q9"});
-		parsed.trans_list.push_back({"q7", "b", "q1"});
-		parsed.trans_list.push_back({"q7", "a", "q3"});
-		parsed.trans_list.push_back({"q7", "c", "q3"});
-		parsed.trans_list.push_back({"q10", "a", "q7"});
-		parsed.trans_list.push_back({"q10", "b", "q7"});
-		parsed.trans_list.push_back({"q10", "c", "q7"});
-		parsed.trans_list.push_back({"q7", "a", "q5"});
-		parsed.trans_list.push_back({"q5", "a", "q5"});
-		parsed.trans_list.push_back({"q5", "c", "q9"});
+		parsec.type = "NFA";
+		parsec.dict.insert({"Initial", {"q1", "q3"}});
+		parsec.dict.insert({"Final", {"q5"}});
+		parsec.trans_list.push_back({"q1", "a", "q3"});
+		parsec.trans_list.push_back({"q1", "a", "q10"});
+		parsec.trans_list.push_back({"q1", "b", "q7"});
+		parsec.trans_list.push_back({"q3", "a", "q7"});
+		parsec.trans_list.push_back({"q3", "b", "q9"});
+		parsec.trans_list.push_back({"q9", "a", "q9"});
+		parsec.trans_list.push_back({"q7", "b", "q1"});
+		parsec.trans_list.push_back({"q7", "a", "q3"});
+		parsec.trans_list.push_back({"q7", "c", "q3"});
+		parsec.trans_list.push_back({"q10", "a", "q7"});
+		parsec.trans_list.push_back({"q10", "b", "q7"});
+		parsec.trans_list.push_back({"q10", "c", "q7"});
+		parsec.trans_list.push_back({"q7", "a", "q5"});
+		parsec.trans_list.push_back({"q5", "a", "q5"});
+		parsec.trans_list.push_back({"q5", "c", "q9"});
 
-		construct(&aut, parsed, &symbol_map);
+		construct(&aut, parsec, &symbol_map);
 
 		// some samples
 		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
@@ -569,31 +569,31 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 TEST_CASE("Vata2::Nfa::construct() invalid calls")
 { // {{{
 	Nfa aut;
-	Vata2::Parser::Parsed parsed;
+	Vata2::Parser::ParsedSection parsec;
 
-	SECTION("construct() call with invalid Parsed object")
+	SECTION("construct() call with invalid ParsedSection object")
 	{
-		parsed.type = "FA";
+		parsec.type = "FA";
 
-		CHECK_THROWS_WITH(construct(&aut, parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsec),
 			Catch::Contains("expecting type"));
 	}
 
 	SECTION("construct() call with an epsilon transition")
 	{
-		parsed.type = "NFA";
-		parsed.trans_list = { {"q1", "q2"}};
+		parsec.type = "NFA";
+		parsec.trans_list = { {"q1", "q2"}};
 
-		CHECK_THROWS_WITH(construct(&aut, parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsec),
 			Catch::Contains("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition")
 	{
-		parsed.type = "NFA";
-		parsed.trans_list = { {"q1", "a", "q2", "q3"}};
+		parsec.type = "NFA";
+		parsec.trans_list = { {"q1", "a", "q2", "q3"}};
 
-		CHECK_THROWS_WITH(construct(&aut, parsed),
+		CHECK_THROWS_WITH(construct(&aut, parsec),
 			Catch::Contains("Invalid transition"));
 	}
 } // }}}

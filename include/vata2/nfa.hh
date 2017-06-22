@@ -188,10 +188,10 @@ std::string serialize_vtf(const Nfa& aut);
 
 /** Loads an automaton from Parsed object */
 void construct(
-	Nfa*                          aut,
-	const Vata2::Parser::Parsed&  parsed,
-	StringToSymbolMap*            symbol_map = nullptr,
-	StringToStateMap*             state_map = nullptr);
+	Nfa*                                 aut,
+	const Vata2::Parser::ParsedSection&  parsed,
+	StringToSymbolMap*                   symbol_map = nullptr,
+	StringToStateMap*                    state_map = nullptr);
 
 /**
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)

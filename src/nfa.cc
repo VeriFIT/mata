@@ -478,10 +478,10 @@ std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
 
 
 void Vata2::Nfa::construct(
-	Nfa* aut,
-	const Vata2::Parser::Parsed& parsed,
-	StringToSymbolMap* symbol_map,
-	StringToStateMap* state_map)
+	Nfa*                                 aut,
+	const Vata2::Parser::ParsedSection&  parsed,
+	StringToSymbolMap*                   symbol_map,
+	StringToStateMap*                    state_map)
 { // {{{
 	assert(nullptr != aut);
 
