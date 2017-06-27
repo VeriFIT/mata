@@ -252,28 +252,17 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(parsec.trans_list.empty());
 	}
 
-	SECTION("file with newlines in names")
+	SECTION("special characters inside strings")
 	{
 		std::string file =
 			"@Type\n"
-			"%key1 \" value  \n"
-			"   1\"\n"
-			"\"value\n"
-			"\n"
-			"\"\n"
-			"\n"
-			"\"value    # comment\n"
-			"3\"";
+			"%key1     value@1  value@2\n"
+			"%key2     value%1  value%2\n";
 
 		parsec = parse_vtf_section(file);
 
-		REQUIRE("Type" == parsec.type);
-		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
-		REQUIRE(ref->size() == 3);
-		REQUIRE((*ref)[0] == "value  \n   1");
-		REQUIRE((*ref)[1] == "value\n\n");
-		REQUIRE((*ref)[2] == "value    # comment\n3");
-		REQUIRE(parsec.trans_list.empty());
+		assert(false);
+
 	}
 }
 
@@ -286,6 +275,18 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 		std::string file =
 			"@\n"
 			"Type"
+			"%key1\n"
+			"%key2\n"
+			"%Transitions\n";
+
+		parse_vtf_section(file);
+
+		assert(false);
+	}
+
+	SECTION("missing type")
+	{
+		std::string file =
 			"%key1\n"
 			"%key2\n"
 			"%Transitions\n";
@@ -332,6 +333,99 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 		assert(false);
 
 		parse_vtf_section(file);
+	}
+
+	SECTION("newlines within names")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1 \" value  \n"
+			"   1\"\n"
+			"\"value\n"
+			"\n"
+			"\"\n"
+			"\n"
+			"\"value    # comment\n"
+			"3\"";
+
+		parsec = parse_vtf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 3);
+		REQUIRE((*ref)[0] == "value  \n   1");
+		REQUIRE((*ref)[1] == "value\n\n");
+		REQUIRE((*ref)[2] == "value    # comment\n3");
+		REQUIRE(parsec.trans_list.empty());
+	}
+
+	SECTION("quoted strings starting in the middle of strings")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1 val\"ue\"\n";
+
+		assert(false);
+
+		parse_vtf_section(file);
+	}
+
+	SECTION("quoted strings ending in the middle of strings")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1 \"val\"ue\n";
+
+		assert(false);
+
+		parse_vtf_section(file);
+	}
+
+	SECTION("incorrect position of special characters")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1 @here";
+
+		assert(false);
+
+		parse_vtf_section(file);
+	}
+
+	SECTION("incorrect position of special characters 2")
+	{
+		std::string file =
+			"@Type\n"
+			"%Transitions\n"
+			"q1 @here q2";
+
+		assert(false);
+
+		parse_vtf_section(file);
+	}
+
+	SECTION("incorrect position of special characters 3")
+	{
+		std::string file =
+			"@Type\n"
+			"%Transitions\n"
+			"q1 %here q2";
+
+		assert(false);
+
+		parse_vtf_section(file);
+	}
+
+	SECTION("no key name")
+	{
+		std::string file =
+			"@Type\n"
+			"%\n"
+			"%key2\n";
+
+		parse_vtf_section(file);
+
+		assert(false);
 	}
 }
 
