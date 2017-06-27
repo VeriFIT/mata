@@ -4,6 +4,7 @@
 #define _VATA2_UTIL_HH_
 
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <unordered_map>
 
