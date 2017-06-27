@@ -6,8 +6,11 @@
 #include <cassert>
 #include <list>
 #include <map>
+#include <ostream>
 #include <string>
 #include <vector>
+
+#include <vata2/util.hh>
 
 namespace Vata2
 {
@@ -25,7 +28,29 @@ struct ParsedSection
 	std::list<ParsedTrans> trans_list;
 
 	ParsedSection() : type(), dict(), trans_list() { }
+
+	/** Output stream operator */
+	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec)
+	{ // {{{
+		os << "Type: " << parsec.type << "\n";
+		os << "Keys:\n";
+		for (auto string_list_pair : parsec.dict)
+		{
+			os << "  " << string_list_pair.first << ": " <<
+				std::to_string(string_list_pair.second) << "\n";
+		}
+
+		os << "Transitions:\n";
+		for (auto transition : parsec.trans_list)
+		{
+			os << "  " << std::to_string(transition) << "\n";
+		}
+
+		return os;
+	} // operator<< }}}
 };
+
+
 
 /** Parsed data */
 using Parsed = std::vector<ParsedSection>;

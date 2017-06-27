@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #define DEBUG_PRINT(x) { std::cout << x << "\n"; }
+#define DEBUG_PRINT_LN(x) { DEBUG_PRINT(__func__ << ":" << __LINE__ << ": " << x) }
 
 namespace Vata2
 {

@@ -10,26 +10,13 @@
 using Vata2::Parser::Parsed;
 using Vata2::Parser::ParsedSection;
 
+// macro for debug prints in the parser
+#define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
+// #define PARSER_DEBUG_PRINT_LN(x) {  }
+
+
 namespace
 {
-/**
- * @brief  Trim whitespaces from a string (both left and right)
- */
-std::string trim(const std::string& str)
-{ // {{{
-	std::string result = str;
-
-	// trim from start
-	result.erase(result.begin(), std::find_if(result.begin(), result.end(),
-		std::not1(std::ptr_fun<int, int>(std::isspace))));
-
-	// trim from end
-	result.erase(std::find_if(result.rbegin(), result.rend(),
-		std::not1(std::ptr_fun<int, int>(std::isspace))).base(), result.end());
-
-	return result;
-} // trim(std::string) }}}
-
 enum class TokenType
 { // {{{
 	UNQUOTED_STRING,
@@ -76,13 +63,36 @@ inline bool is_token_delim(char ch)
 }
 
 
-/** Determines whether @p token corresponds to an automaton type string */
-inline bool token_is_aut_type(const std::string& token)
-{
-	return (token.length() >= 2)
-		&& (token[0] == '@')
-		&& (!std::isspace(token[1]));
-}
+/** Reads from a stream until the next token delimiter */
+std::string read_until_delim(std::istream& input)
+{ // {{{
+	std::string result;
+	while (input.good())
+	{
+		char ch = input.peek();
+		if (!input.good() || is_token_delim(ch)) { break; }
+		result.push_back(ch);
+		input.get();           // eat the character
+	}
+
+	return result;
+} // read_until_delim() }}}
+
+
+/** Reads from a stream until the next token end of line */
+std::string read_until_eol(std::istream& input)
+{ // {{{
+	std::string result;
+	while (input.good())
+	{
+		char ch = input.peek();
+		if (!input.good() || '\n' == ch) { break; }
+		result.push_back(ch);
+		input.get();           // eat the character
+	}
+
+	return result;
+} // read_until_eol() }}}
 
 
 /** Gets one token from a stream
@@ -104,8 +114,7 @@ TokenType get_token(
 
 	if (!input.good())
 	{
-		DEBUG_PRINT(std::to_string(__func__) + ": " +
-			token_type_to_string(TokenType::END_OF_FILE));
+		PARSER_DEBUG_PRINT_LN(token_type_to_string(TokenType::END_OF_FILE));
 		return TokenType::END_OF_FILE;
 	}
 
@@ -116,19 +125,58 @@ TokenType get_token(
 		{
 			input.get();
 
-			DEBUG_PRINT(std::to_string(__func__) + ": " +
-				token_type_to_string(TokenType::END_OF_LINE));
+			PARSER_DEBUG_PRINT_LN(token_type_to_string(TokenType::END_OF_LINE));
 			return TokenType::END_OF_LINE;
 		}
 		case '\"': // quoted strings
 		{
 			input.get();
+			bool is_escaped = false;
+			while (input.good())
+			{ // the state machine that reads quoted strings
+				ch = input.peek();
+				if (!input.good() || '\n' == ch)
+				{ // end of file of line before end of quotes
+					throw std::runtime_error("missing ending quotes: " + *token);
+				}
 
-			// do things
-			assert(false);
+				input.get();
+				if ('\\' == ch)
+				{
+					if (is_escaped)
+					{
+						assert(false);
+					}
+					else
+					{
+						is_escaped = true;
+					}
+				}
+				else if ('\"' == ch)
+				{
+					if (is_escaped)
+					{
+						token->push_back('\"');
+						is_escaped = false;
+					}
+					else
+					{
+						break; // leave the loop
+					}
+				}
+				else
+				{
+					if (is_escaped)
+					{ // if the previous character was escape
+						token->push_back('\\');
+						is_escaped = false;
+					}
 
-			DEBUG_PRINT(std::to_string(__func__) + ": " +
-				token_type_to_string(TokenType::QUOTED_STRING) +
+					token->push_back(ch);
+				}
+			}
+
+			PARSER_DEBUG_PRINT_LN(token_type_to_string(TokenType::QUOTED_STRING) +
 				" - \"" + *token + "\"");
 			return TokenType::QUOTED_STRING;
 		}
@@ -146,9 +194,9 @@ TokenType get_token(
 		}
 		case '#': // comment
 		{
-			input.get();
-
-			assert(false);
+			*token = read_until_eol(input);
+			PARSER_DEBUG_PRINT_LN(token_type_to_string(TokenType::COMMENT) +
+				" - " + *token);
 			return TokenType::COMMENT;
 		}
 		default: // sink hole for other strings
@@ -158,17 +206,13 @@ TokenType get_token(
 		}
 	}
 
-	// read until next whitespace
-	while (input.good())
+	*token = read_until_delim(input);
+	if (token->empty())
 	{
-		ch = input.peek();
-		if (!input.good() || is_token_delim(ch)) { break; }
-		token->push_back(ch);
-		input.get();    // eat the character
+		throw std::runtime_error("empty token found");
 	}
 
-	DEBUG_PRINT(std::to_string(__func__) + ": " + token_type_to_string(type) +
-		" - " + *token);
+	PARSER_DEBUG_PRINT_LN(token_type_to_string(type) + " - " + *token);
 	return type;
 }
 
@@ -237,7 +281,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 	}
 	else if (TokenType::AUT_TYPE != token_type)
 	{
-		throw std::runtime_error("Expecting automaton type (@TYPE), got \"" +
+		throw std::runtime_error("expecting automaton type (@TYPE), got \"" +
 			token + "\" instead");
 	}
 
@@ -269,7 +313,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 				}
 				else if (TokenType::END_OF_LINE != token_type)
 				{
-					DEBUG_PRINT("TokenType = " + token_type_to_string(token_type));
+					PARSER_DEBUG_PRINT_LN("TokenType = " + token_type_to_string(token_type));
 					assert(false);
 				}
 
@@ -286,7 +330,8 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 				}
 				else if (TokenType::KEY_STRING != token_type)
 				{
-					assert(false);
+					throw std::runtime_error("expecting key (%KEY), got " +
+						token_type_to_string(token_type) + ": " + token);
 				}
 
 				key = token;
@@ -378,12 +423,16 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 					assert(!values.empty());
 
 					result.trans_list.push_back(values);
+					values.clear();
+
 					state = ParserState::TRANSITIONS_AT_NEWLINE;
 				}
 				else if ((TokenType::UNQUOTED_STRING == token_type) ||
 					(TokenType::QUOTED_STRING == token_type))
 				{
 					values.push_back(token);
+
+					state = ParserState::TRANSITIONS;
 				}
 				else
 				{

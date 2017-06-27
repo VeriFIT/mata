@@ -96,6 +96,8 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		parsec = parse_vtf_section(file);
 
+		DEBUG_PRINT(std::to_string(parsec));
+
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
 		REQUIRE(ref->size() == 1);
@@ -175,13 +177,15 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		parsec = parse_vtf_section(file);
 
+		DEBUG_PRINT(parsec);
+
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
 		REQUIRE(ref->size() == 1);
 		REQUIRE((*ref)[0] == "value 1");
 		ref = &parsec.dict.at("key2");
 		REQUIRE(ref->size() == 4);
-		REQUIRE((*ref)[0] == "value 2.1");
+		REQUIRE((*ref)[0] == "value2.1");
 		REQUIRE((*ref)[1] == "value2");
 		REQUIRE((*ref)[2] == "2");
 		REQUIRE((*ref)[3] == "value 2 3");
@@ -220,7 +224,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(transitions[4][0] == "");
 		REQUIRE(transitions[5].size() == 1);
 		REQUIRE(transitions[5][0] == "'");
-		REQUIRE(transitions[5].size() == 3);
+		REQUIRE(transitions[6].size() == 3);
 		REQUIRE(transitions[6][0] == "q");
 		REQUIRE(transitions[6][1] == "a");
 		REQUIRE(transitions[6][2] == "q'");
@@ -234,7 +238,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 			"value1.2   # comment\n"
 			"   value1.3\n"
 			"%key2\n"
-			"%key3 value3\n";
+			"%key3 \"value3\"";
 
 		parsec = parse_vtf_section(file);
 
@@ -261,8 +265,16 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		parsec = parse_vtf_section(file);
 
-		assert(false);
-
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 2);
+		REQUIRE((*ref)[0] == "value@1");
+		REQUIRE((*ref)[1] == "value@2");
+		ref = &parsec.dict.at("key2");
+		REQUIRE(ref->size() == 2);
+		REQUIRE((*ref)[0] == "value%1");
+		REQUIRE((*ref)[1] == "value%2");
+		REQUIRE(parsec.trans_list.empty());
 	}
 }
 
@@ -279,9 +291,7 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%Transitions\n";
 
-		parse_vtf_section(file);
-
-		assert(false);
+		CHECK_THROWS_WITH(parse_vtf_section(file), Catch::Contains("empty token"));
 	}
 
 	SECTION("missing type")
@@ -291,9 +301,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%Transitions\n";
 
-		parse_vtf_section(file);
-
-		assert(false);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("expecting automaton type"));
 	}
 
 	SECTION("stray characters")
@@ -305,34 +314,28 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%Transitions\n";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file), Catch::Contains("expecting key"));
 	}
 
 	SECTION("unterminated quote")
 	{
 		std::string file =
 			"@Type\n"
-			"hello\n"
 			"%key1 \"value\n"
 			"%Transitions\n";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("unterminated quote 2")
 	{
 		std::string file =
 			"@Type\n"
-			"hello\n"
 			"%key1 \"\n";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("newlines within names")
@@ -348,15 +351,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"\"value    # comment\n"
 			"3\"";
 
-		parsec = parse_vtf_section(file);
-
-		REQUIRE("Type" == parsec.type);
-		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
-		REQUIRE(ref->size() == 3);
-		REQUIRE((*ref)[0] == "value  \n   1");
-		REQUIRE((*ref)[1] == "value\n\n");
-		REQUIRE((*ref)[2] == "value    # comment\n3");
-		REQUIRE(parsec.trans_list.empty());
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("quoted strings starting in the middle of strings")
@@ -365,9 +361,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 val\"ue\"\n";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("quoted strings ending in the middle of strings")
@@ -376,9 +371,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"val\"ue\n";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("incorrect position of special characters")
@@ -387,9 +381,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 @here";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid position of @TYPE: @here"));
 	}
 
 	SECTION("incorrect position of special characters 2")
@@ -399,9 +392,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%Transitions\n"
 			"q1 @here q2";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid position of @TYPE: @here"));
 	}
 
 	SECTION("incorrect position of special characters 3")
@@ -411,9 +403,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%Transitions\n"
 			"q1 %here q2";
 
-		assert(false);
-
-		parse_vtf_section(file);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid position of %KEY: %here"));
 	}
 
 	SECTION("no key name")
@@ -423,9 +414,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%\n"
 			"%key2\n";
 
-		parse_vtf_section(file);
-
-		assert(false);
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("%KEY name missing"));
 	}
 }
 
