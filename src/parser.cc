@@ -11,8 +11,8 @@ using Vata2::Parser::Parsed;
 using Vata2::Parser::ParsedSection;
 
 // macro for debug prints in the parser
-#define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
-// #define PARSER_DEBUG_PRINT_LN(x) {  }
+// #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
+#define PARSER_DEBUG_PRINT_LN(x) {  }
 
 
 namespace
@@ -161,6 +161,12 @@ TokenType get_token(
 					}
 					else
 					{
+						ch = input.peek();
+						if (input.good() && !isspace(ch))
+						{ // for misplaced quotes
+							throw std::runtime_error("misplaced quotes: \"" + *token + "\"");
+						}
+
 						break; // leave the loop
 					}
 				}
@@ -184,12 +190,26 @@ TokenType get_token(
 		{
 			input.get();
 			type = TokenType::AUT_TYPE;
+
+			ch = input.peek();
+			if (input.good() && is_token_delim(ch))
+			{
+				throw std::runtime_error("@TYPE name missing");
+			}
+
 			break;
 		}
 		case '%': // key
 		{
 			input.get();
 			type = TokenType::KEY_STRING;
+
+			ch = input.peek();
+			if (input.good() && is_token_delim(ch))
+			{
+				throw std::runtime_error("%KEY name missing");
+			}
+
 			break;
 		}
 		case '#': // comment
@@ -209,7 +229,14 @@ TokenType get_token(
 	*token = read_until_delim(input);
 	if (token->empty())
 	{
+		assert(false);
 		throw std::runtime_error("empty token found");
+	}
+
+	ch = input.peek();
+	if (input.good() && '\"' == ch)
+	{
+		throw std::runtime_error("misplaced quotes: " + *token + "\"");
 	}
 
 	PARSER_DEBUG_PRINT_LN(token_type_to_string(type) + " - " + *token);
@@ -266,6 +293,31 @@ Parsed Vata2::Parser::parse_vtf(const std::string& input)
 } // parse_vtf(std::string) }}}
 
 
+enum class ParserState
+{ // {{{
+	AWAITING_NEWLINE,
+	KEY_AT_NEWLINE,
+	KEY_OR_VALUE,
+	KEY_OR_VALUE_AT_NEWLINE,
+	TRANSITIONS,
+	TRANSITIONS_AT_NEWLINE
+};
+
+std::string parser_state_to_string(ParserState state)
+{
+	switch (state)
+	{
+		case ParserState::AWAITING_NEWLINE: return "AWAITING_NEWLINE";
+		case ParserState::KEY_OR_VALUE_AT_NEWLINE: return "KEY_OR_VALUE_AT_NEWLINE";
+		case ParserState::KEY_OR_VALUE: return "KEY_OR_VALUE";
+		case ParserState::KEY_AT_NEWLINE: return "KEY_AT_NEWLINE";
+		case ParserState::TRANSITIONS: return "TRANSITIONS";
+		case ParserState::TRANSITIONS_AT_NEWLINE: return "TRANSITIONS_AT_NEWLINE";
+		default:  throw std::runtime_error("Invalid value of ParserState");
+	}
+} // }}}
+
+
 ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 { // {{{
 	ParsedSection result;
@@ -287,21 +339,12 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 
 	result.type = token;
 
-	enum class ParserState
-	{
-		AWAITING_NEWLINE,
-		KEY_AT_NEWLINE,
-		KEY_OR_VALUE,
-		KEY_OR_VALUE_AT_NEWLINE,
-		TRANSITIONS,
-		TRANSITIONS_AT_NEWLINE
-	};
-
 	ParserState state = ParserState::AWAITING_NEWLINE;
 	std::string key;
 	std::vector<std::string> values;
 	while (true)
 	{
+		PARSER_DEBUG_PRINT_LN("state: " + parser_state_to_string(state));
 		switch (state)
 		{ // the parser's state machine
 			case ParserState::AWAITING_NEWLINE:
@@ -335,7 +378,14 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 				}
 
 				key = token;
-				state = ParserState::KEY_OR_VALUE;
+				if ("Transitions" == key)
+				{
+					state = ParserState::TRANSITIONS_AT_NEWLINE;
+				}
+				else
+				{
+					state = ParserState::KEY_OR_VALUE;
+				}
 				break;
 			}
 			case ParserState::KEY_OR_VALUE: // falling through to the next case!
@@ -394,7 +444,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 					}
 					else
 					{
-						assert(false);
+						throw std::runtime_error("invalid position of @TYPE: @" + token);
 					}
 
 					assert(false);
@@ -433,6 +483,22 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 					values.push_back(token);
 
 					state = ParserState::TRANSITIONS;
+				}
+				else if (TokenType::AUT_TYPE == token_type)
+				{
+					if (ParserState::TRANSITIONS_AT_NEWLINE == state)
+					{
+						assert(false);
+					}
+					else
+					{
+						assert(ParserState::TRANSITIONS == state);
+						throw std::runtime_error("invalid position of @TYPE: @" + token);
+					}
+				}
+				else if (TokenType::KEY_STRING == token_type)
+				{
+					throw std::runtime_error("invalid position of %KEY: %" + token);
 				}
 				else
 				{

@@ -96,8 +96,6 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		parsec = parse_vtf_section(file);
 
-		DEBUG_PRINT(std::to_string(parsec));
-
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
 		REQUIRE(ref->size() == 1);
@@ -176,8 +174,6 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 			"q a q'";
 
 		parsec = parse_vtf_section(file);
-
-		DEBUG_PRINT(parsec);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -276,6 +272,24 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE((*ref)[1] == "value%2");
 		REQUIRE(parsec.trans_list.empty());
 	}
+
+	SECTION("file with no keys")
+	{
+		std::string file =
+			"@Type\n"
+			"%Transitions\n"
+			"a b c\n";
+
+		parsec = parse_vtf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		REQUIRE(parsec.trans_list.size() == 1);
+		std::vector<ParsedTrans> transitions(parsec.trans_list.begin(), parsec.trans_list.end());
+		REQUIRE(transitions[0].size() == 3);
+		REQUIRE(transitions[0][0] == "a");
+		REQUIRE(transitions[0][1] == "b");
+		REQUIRE(transitions[0][2] == "c");
+	}
 }
 
 TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
@@ -291,7 +305,8 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%Transitions\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file), Catch::Contains("empty token"));
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("@TYPE name missing"));
 	}
 
 	SECTION("missing type")
