@@ -549,28 +549,28 @@ void Vata2::Nfa::construct(
 		}
 	}
 
-	for (auto parsed_trans : parsed.trans_list)
+	for (auto body_line : parsed.body)
 	{
-		if (parsed_trans.size() != 3)
+		if (body_line.size() != 3)
 		{
 			// clean up
 			clean_up();
 
-			if (parsed_trans.size() == 2)
+			if (body_line.size() == 2)
 			{
 				throw std::runtime_error("Epsilon transitions not supported: " +
-					std::to_string(parsed_trans));
+					std::to_string(body_line));
 			}
 			else
 			{
 				throw std::runtime_error("Invalid transition: " +
-					std::to_string(parsed_trans));
+					std::to_string(body_line));
 			}
 		}
 
-		State src_state = get_state_name(parsed_trans[0]);
-		Symbol symbol = get_symbol_name(parsed_trans[1]);
-		State tgt_state = get_state_name(parsed_trans[2]);
+		State src_state = get_state_name(body_line[0]);
+		Symbol symbol = get_symbol_name(body_line[1]);
+		State tgt_state = get_state_name(body_line[2]);
 
 		aut->add_trans(src_state, symbol, tgt_state);
 	}

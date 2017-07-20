@@ -21,7 +21,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(parsec.dict.empty());
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("file with some keys")
@@ -38,7 +38,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(parsec.dict.at("key1").empty());
 		REQUIRE(parsec.dict.find("key2") != parsec.dict.end());
 		REQUIRE(parsec.dict.at("key2").empty());
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("file with some keys and values")
@@ -60,7 +60,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		ref = &parsec.dict.at("key3");
 		REQUIRE(ref->size() == 1);
 		REQUIRE((*ref)[0] == "value3");
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("file with multiple values for some keys")
@@ -81,7 +81,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE((*ref)[3] == "value1.4");
 		ref = &parsec.dict.at("key2");
 		REQUIRE(ref->empty());
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("file with some transitions")
@@ -104,17 +104,17 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(ref->size() == 2);
 		REQUIRE((*ref)[0] == "value2.1");
 		REQUIRE((*ref)[1] == "value2.2");
-		REQUIRE(parsec.trans_list.size() == 2);
-		std::vector<ParsedTrans> transitions(parsec.trans_list.begin(), parsec.trans_list.end());
-		REQUIRE(transitions[0].size() == 1);
-		REQUIRE(transitions[0][0] == "a");
-		REQUIRE(transitions[1].size() == 6);
-		REQUIRE(transitions[1][0] == "b0");
-		REQUIRE(transitions[1][1] == "b1");
-		REQUIRE(transitions[1][2] == "b2");
-		REQUIRE(transitions[1][3] == "b3");
-		REQUIRE(transitions[1][4] == "b4");
-		REQUIRE(transitions[1][5] == "b5");
+		REQUIRE(parsec.body.size() == 2);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 1);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[1].size() == 6);
+		REQUIRE(body[1][0] == "b0");
+		REQUIRE(body[1][1] == "b1");
+		REQUIRE(body[1][2] == "b2");
+		REQUIRE(body[1][3] == "b3");
+		REQUIRE(body[1][4] == "b4");
+		REQUIRE(body[1][5] == "b5");
 	}
 
 	SECTION("file with comments and whitespaces")
@@ -144,13 +144,13 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		ref = &parsec.dict.at("key2");
 		REQUIRE(ref->size() == 1);
 		REQUIRE((*ref)[0] == "value2.1");
-		REQUIRE(parsec.trans_list.size() == 2);
-		std::vector<ParsedTrans> transitions(parsec.trans_list.begin(), parsec.trans_list.end());
-		REQUIRE(transitions[0].size() == 1);
-		REQUIRE(transitions[0][0] == "a");
-		REQUIRE(transitions[1].size() == 2);
-		REQUIRE(transitions[1][0] == "b0");
-		REQUIRE(transitions[1][1] == "b1");
+		REQUIRE(parsec.body.size() == 2);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 1);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[1].size() == 2);
+		REQUIRE(body[1][0] == "b0");
+		REQUIRE(body[1][1] == "b1");
 	}
 
 	SECTION("using double quotes and escaping for names")
@@ -198,32 +198,32 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(ref->size() == 0);
 		ref = &parsec.dict.at("key8");
 		REQUIRE(ref->size() == 0);
-		REQUIRE(parsec.trans_list.size() == 7);
-		std::vector<ParsedTrans> transitions(parsec.trans_list.begin(), parsec.trans_list.end());
-		REQUIRE(transitions[0].size() == 2);
-		REQUIRE(transitions[0][0] == "a");
-		REQUIRE(transitions[0][1] == "");
-		REQUIRE(transitions[1].size() == 4);
-		REQUIRE(transitions[1][0] == "b0");
-		REQUIRE(transitions[1][1] == "b 1");
-		REQUIRE(transitions[1][2] == "c");
-		REQUIRE(transitions[1][3] == "d");
-		REQUIRE(transitions[2].size() == 5);
-		REQUIRE(transitions[2][0] == "c");
-		REQUIRE(transitions[2][1] == "0");
-		REQUIRE(transitions[2][2] == "\"he's so cool,\" he said");
-		REQUIRE(transitions[2][3] == "c");
-		REQUIRE(transitions[2][4] == "d");
-		REQUIRE(transitions[3].size() == 1);
-		REQUIRE(transitions[3][0] == "a");
-		REQUIRE(transitions[4].size() == 1);
-		REQUIRE(transitions[4][0] == "");
-		REQUIRE(transitions[5].size() == 1);
-		REQUIRE(transitions[5][0] == "'");
-		REQUIRE(transitions[6].size() == 3);
-		REQUIRE(transitions[6][0] == "q");
-		REQUIRE(transitions[6][1] == "a");
-		REQUIRE(transitions[6][2] == "q'");
+		REQUIRE(parsec.body.size() == 7);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 2);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "");
+		REQUIRE(body[1].size() == 4);
+		REQUIRE(body[1][0] == "b0");
+		REQUIRE(body[1][1] == "b 1");
+		REQUIRE(body[1][2] == "c");
+		REQUIRE(body[1][3] == "d");
+		REQUIRE(body[2].size() == 5);
+		REQUIRE(body[2][0] == "c");
+		REQUIRE(body[2][1] == "0");
+		REQUIRE(body[2][2] == "\"he's so cool,\" he said");
+		REQUIRE(body[2][3] == "c");
+		REQUIRE(body[2][4] == "d");
+		REQUIRE(body[3].size() == 1);
+		REQUIRE(body[3][0] == "a");
+		REQUIRE(body[4].size() == 1);
+		REQUIRE(body[4][0] == "");
+		REQUIRE(body[5].size() == 1);
+		REQUIRE(body[5][0] == "'");
+		REQUIRE(body[6].size() == 3);
+		REQUIRE(body[6][0] == "q");
+		REQUIRE(body[6][1] == "a");
+		REQUIRE(body[6][2] == "q'");
 	}
 
 	SECTION("file with newlines among keys")
@@ -249,7 +249,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		ref = &parsec.dict.at("key3");
 		REQUIRE(ref->size() == 1);
 		REQUIRE((*ref)[0] == "value3");
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("special characters inside strings")
@@ -270,7 +270,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(ref->size() == 2);
 		REQUIRE((*ref)[0] == "value%1");
 		REQUIRE((*ref)[1] == "value%2");
-		REQUIRE(parsec.trans_list.empty());
+		REQUIRE(parsec.body.empty());
 	}
 
 	SECTION("file with no keys")
@@ -283,12 +283,12 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		parsec = parse_vtf_section(file);
 
 		REQUIRE("Type" == parsec.type);
-		REQUIRE(parsec.trans_list.size() == 1);
-		std::vector<ParsedTrans> transitions(parsec.trans_list.begin(), parsec.trans_list.end());
-		REQUIRE(transitions[0].size() == 3);
-		REQUIRE(transitions[0][0] == "a");
-		REQUIRE(transitions[0][1] == "b");
-		REQUIRE(transitions[0][2] == "c");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 3);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "b");
+		REQUIRE(body[0][2] == "c");
 	}
 }
 

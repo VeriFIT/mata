@@ -462,7 +462,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 				{
 					if (ParserState::TRANSITIONS_AT_NEWLINE != state)
 					{
-						result.trans_list.push_back(values);
+						result.body.push_back(values);
 					}
 
 					return result;
@@ -472,7 +472,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 					assert(ParserState::TRANSITIONS_AT_NEWLINE != state);
 					assert(!values.empty());
 
-					result.trans_list.push_back(values);
+					result.body.push_back(values);
 					values.clear();
 
 					state = ParserState::TRANSITIONS_AT_NEWLINE;
