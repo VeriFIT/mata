@@ -268,6 +268,165 @@ TokenType get_nonwhite_token(
 
 	return token_type;
 } // get_nonwhite_token }}}
+
+
+/**
+ * @brief  Gets a token from the input stream
+ *
+ * The function assumes that the stream does not span lines
+ */
+std::string get_token_new(std::istream& input, bool* quoted)
+{ // {{{
+	assert(nullptr != quoted);
+
+	enum class TokenizerState
+	{
+		INIT,
+		UNQUOTED,
+		QUOTED,
+		QUOTED_ESCAPE
+	};
+
+	std::string result;
+	*quoted = false;
+	TokenizerState state = TokenizerState::INIT;
+	int ch = input.get();
+	while (input.good())
+	{
+		assert(std::char_traits<char>::eof() != ch);
+
+		switch (state)
+		{
+			case TokenizerState::INIT:
+			{
+				if (std::isblank(ch))
+				{ /* do nothing */ }
+				else if ('"' == ch)
+				{
+					state = TokenizerState::QUOTED;
+					*quoted = true;
+				}
+				else if ('#' == ch)
+				{ // clear the rest of the line
+					std::string aux;
+					std::getline(input, aux);
+					return std::string();
+				}
+				else
+				{
+					result += ch;
+					state = TokenizerState::UNQUOTED;
+				}
+				break;
+			}
+			case TokenizerState::UNQUOTED:
+			{
+				if (std::isblank(ch)) return result;
+				else if ('#' == ch)
+				{ // clear the rest of the line
+					std::string aux;
+					std::getline(input, aux);
+					return result;
+				}
+				else if ('"' == ch)
+				{
+					std::string context;
+					std::getline(input, context);
+					throw std::runtime_error("misplaced quotes: " + result + "_\"_" +
+						context);
+				}
+				else
+				{
+					result += ch;
+				}
+				break;
+			}
+			case TokenizerState::QUOTED:
+			{
+				if ('"' == ch)
+				{
+					ch = input.peek();
+					if (!std::isblank(ch) && std::char_traits<char>::eof() != ch)
+					{
+						std::string context;
+						std::getline(input, context);
+						throw std::runtime_error("misplaced quotes: \"" + result + "_\"_" +
+							context);
+					}
+
+					return result;
+				}
+				else if ('\\' == ch)
+				{
+					state = TokenizerState::QUOTED_ESCAPE;
+				}
+				else
+				{
+					result += ch;
+				}
+				break;
+			}
+			case TokenizerState::QUOTED_ESCAPE:
+			{
+				if ('"' != ch)
+				{
+					result += '\\';
+				}
+				result += ch;
+				state = TokenizerState::QUOTED;
+				break;
+			}
+			default:
+			{
+				throw std::runtime_error("Invalid tokenizer state");
+			}
+		}
+
+		ch = input.get();
+	}
+
+	if (TokenizerState::QUOTED == state || TokenizerState::QUOTED_ESCAPE == state)
+	{
+		throw std::runtime_error("missing ending quotes: " + result);
+	}
+
+	return result;
+} // get_token_new(istream) }}}
+
+/**
+ * @brief  Transforms a line into a vector of tokens
+ */
+std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
+{
+	std::vector<std::pair<std::string, bool>> result;
+	std::istringstream stream(line);
+	bool first = true;
+	while (stream.good())
+	{
+		bool quoted;
+		std::string token = get_token_new(stream, &quoted);
+		if (!quoted && token.empty()) { break; }
+
+		result.push_back({ token, quoted });
+
+		if (!first && !quoted)
+		{
+			assert(!token.empty());
+			if ('@' == token[0])
+			{
+				throw std::runtime_error("invalid position of @TYPE: " + line);
+			}
+			else if ('%' == token[0])
+			{
+				throw std::runtime_error("invalid position of %KEY: " + line);
+			}
+		}
+
+		first = false;
+	}
+
+	return result;
+} // tokenize_line
 } // anonymous namespace
 
 
@@ -293,31 +452,6 @@ Parsed Vata2::Parser::parse_vtf(const std::string& input)
 } // parse_vtf(std::string) }}}
 
 
-enum class ParserState
-{ // {{{
-	AWAITING_NEWLINE,
-	KEY_AT_NEWLINE,
-	KEY_OR_VALUE,
-	KEY_OR_VALUE_AT_NEWLINE,
-	TRANSITIONS,
-	TRANSITIONS_AT_NEWLINE
-};
-
-std::string parser_state_to_string(ParserState state)
-{
-	switch (state)
-	{
-		case ParserState::AWAITING_NEWLINE: return "AWAITING_NEWLINE";
-		case ParserState::KEY_OR_VALUE_AT_NEWLINE: return "KEY_OR_VALUE_AT_NEWLINE";
-		case ParserState::KEY_OR_VALUE: return "KEY_OR_VALUE";
-		case ParserState::KEY_AT_NEWLINE: return "KEY_AT_NEWLINE";
-		case ParserState::TRANSITIONS: return "TRANSITIONS";
-		case ParserState::TRANSITIONS_AT_NEWLINE: return "TRANSITIONS_AT_NEWLINE";
-		default:  throw std::runtime_error("Invalid value of ParserState");
-	}
-} // }}}
-
-
 ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 { // {{{
 	ParsedSection result;
@@ -339,178 +473,49 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 
 	result.type = token;
 
-	ParserState state = ParserState::AWAITING_NEWLINE;
-	std::string key;
-	std::vector<std::string> values;
-	while (true)
+	while (input.good())
 	{
-		PARSER_DEBUG_PRINT_LN("state: " + parser_state_to_string(state));
-		switch (state)
-		{ // the parser's state machine
-			case ParserState::AWAITING_NEWLINE:
-			{
-				token_type = get_nonwhite_token(input, &token, false);
-				if (TokenType::END_OF_FILE == token_type)
-				{
-					return result;
-				}
-				else if (TokenType::END_OF_LINE != token_type)
-				{
-					PARSER_DEBUG_PRINT_LN("TokenType = " + token_type_to_string(token_type));
-					assert(false);
-				}
+		std::string line;
+		getline(input, line);
 
-				state = ParserState::KEY_AT_NEWLINE;
-				break;
+		std::vector<std::pair<std::string, bool>> token_line = tokenize_line(line);
+		if (token_line.empty()) continue;
+
+		const std::string& maybe_key = token_line[0].first;
+		const bool& quoted = token_line[0].second;
+		if (!quoted && '%' == maybe_key[0])
+		{
+			std::string key = maybe_key.substr(1);
+			if (key.empty())
+			{
+				throw std::runtime_error("%KEY name missing: " + line);
 			}
 
-			case ParserState::KEY_AT_NEWLINE:
-			{
-				token_type = get_nonwhite_token(input, &token, true);
-				if (TokenType::END_OF_FILE == token_type)
-				{
-					return result;
-				}
-				else if (TokenType::KEY_STRING != token_type)
-				{
-					throw std::runtime_error("expecting key (%KEY), got " +
-						token_type_to_string(token_type) + ": " + token);
-				}
-
-				key = token;
-				if ("Transitions" == key)
-				{
-					state = ParserState::TRANSITIONS_AT_NEWLINE;
-				}
-				else
-				{
-					state = ParserState::KEY_OR_VALUE;
-				}
-				break;
-			}
-			case ParserState::KEY_OR_VALUE: // falling through to the next case!
-			case ParserState::KEY_OR_VALUE_AT_NEWLINE:
-			{
-				token_type = get_nonwhite_token(input, &token, false);
-				if (TokenType::END_OF_FILE == token_type)
-				{
-					// process value for the previous key first
-					result.dict.insert({key, values});
-
-					return result;
-				}
-				else if (TokenType::END_OF_LINE == token_type)
-				{
-					state = ParserState::KEY_OR_VALUE_AT_NEWLINE;
-				}
-				else if (TokenType::KEY_STRING == token_type)
-				{
-					// process value for the previous key first
-					result.dict.insert({key, values});
-
-					// start processing the new key
-					key = token;
-					values = {};
-
-					if (result.dict.find(key) != result.dict.end())
-					{
-						assert(false);
-					}
-
-					if ("Transitions" == key)
-					{
-						if (ParserState::KEY_OR_VALUE_AT_NEWLINE == state)
-						{
-							state = ParserState::TRANSITIONS_AT_NEWLINE;
-						}
-						else
-						{
-							assert(false);
-						}
-					}
-					else { state = ParserState::KEY_OR_VALUE; }
-				}
-				else if ((TokenType::UNQUOTED_STRING == token_type) ||
-					(TokenType::QUOTED_STRING == token_type))
-				{
-					values.push_back(token);
-				}
-				else if (TokenType::AUT_TYPE == token_type)
-				{
-					if (ParserState::KEY_OR_VALUE_AT_NEWLINE == state)
-					{
-						assert(false);
-
-					}
-					else
-					{
-						throw std::runtime_error("invalid position of @TYPE: @" + token);
-					}
-
-					assert(false);
-				}
-
-				break;
+			auto it = result.dict.find(key);
+			if (result.dict.end() == it)
+			{ // insert an empty list
+				std::tie(it, std::ignore) =
+					result.dict.insert({ key, std::vector<std::string>() });
 			}
 
-			case ParserState::TRANSITIONS:
-			case ParserState::TRANSITIONS_AT_NEWLINE:
-			{
-				bool skip_eols = (ParserState::TRANSITIONS_AT_NEWLINE == state);
-				token_type = get_nonwhite_token(input, &token, skip_eols);
-				if (TokenType::END_OF_FILE == token_type)
-				{
-					if (ParserState::TRANSITIONS_AT_NEWLINE != state)
-					{
-						result.body.push_back(values);
-					}
-
-					return result;
-				}
-				else if (TokenType::END_OF_LINE == token_type)
-				{
-					assert(ParserState::TRANSITIONS_AT_NEWLINE != state);
-					assert(!values.empty());
-
-					result.body.push_back(values);
-					values.clear();
-
-					state = ParserState::TRANSITIONS_AT_NEWLINE;
-				}
-				else if ((TokenType::UNQUOTED_STRING == token_type) ||
-					(TokenType::QUOTED_STRING == token_type))
-				{
-					values.push_back(token);
-
-					state = ParserState::TRANSITIONS;
-				}
-				else if (TokenType::AUT_TYPE == token_type)
-				{
-					if (ParserState::TRANSITIONS_AT_NEWLINE == state)
-					{
-						assert(false);
-					}
-					else
-					{
-						assert(ParserState::TRANSITIONS == state);
-						throw std::runtime_error("invalid position of @TYPE: @" + token);
-					}
-				}
-				else if (TokenType::KEY_STRING == token_type)
-				{
-					throw std::runtime_error("invalid position of %KEY: %" + token);
-				}
-				else
-				{
-					assert(false);
-				}
-
-				break;
-			}
+			std::vector<std::string>& val_list = it->second;
+			std::transform(token_line.begin() + 1, token_line.end(),
+				std::back_inserter(val_list),
+				[](const std::pair<std::string, bool> token) { return token.first; });
+		}
+		else if (!quoted && '@' == maybe_key[0])
+		{
+			assert(false);
+		}
+		else
+		{
+			std::vector<std::string> stripped_token_line;
+			std::transform(token_line.begin(), token_line.end(),
+				std::back_inserter(stripped_token_line),
+				[](const std::pair<std::string, bool>& token) { return token.first; });
+			result.body.push_back(stripped_token_line);
 		}
 	}
-
-	assert(false);
 
 	return result;
 } // parse_vtf_section(std::istream) }}}

@@ -110,6 +110,23 @@ std::string to_string(const std::vector<A>& vec)
 	return result;
 } // to_string(std::vector) }}}
 
+/** List to string */
+template <class A>
+std::string to_string(const std::list<A>& vec)
+{ // {{{
+	std::string result = "[";
+	bool first = true;
+	for (auto elem : vec)
+	{
+		if (!first) { result += ", "; }
+		first = false;
+		result += std::to_string(elem);
+	}
+	result += "]";
+
+	return result;
+} // to_string(std::list) }}}
+
 /** unordered_map to string */
 template <class A, class B>
 std::string to_string(const std::unordered_map<A, B>& unmap)
