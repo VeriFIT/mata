@@ -290,6 +290,15 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 {
 	ParsedSection parsec;
 
+	SECTION("empty section")
+	{
+		std::string file =
+			"";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("Empty section"));
+	}
+
 	SECTION("no type")
 	{
 		std::string file =
@@ -299,7 +308,7 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n";
 
 		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("@TYPE name missing"));
+			Catch::Contains("Invalid @TYPE declaration"));
 	}
 
 	SECTION("missing type")
