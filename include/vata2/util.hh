@@ -4,9 +4,11 @@
 #define _VATA2_UTIL_HH_
 
 #include <iostream>
+#include <list>
 #include <set>
 #include <sstream>
 #include <unordered_map>
+#include <vector>
 
 #define DEBUG_PRINT(x) { std::cout << x << "\n"; }
 #define DEBUG_PRINT_LN(x) { DEBUG_PRINT(__func__ << ":" << __LINE__ << ": " << x) }

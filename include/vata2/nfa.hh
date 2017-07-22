@@ -58,6 +58,12 @@ struct Trans
 };
 
 
+struct Nfa;
+
+/** .vtf output serializer */
+std::string serialize_vtf(const Nfa& aut);
+
+
 /**
  * @brief  An NFA
  */
@@ -161,6 +167,11 @@ struct Nfa
 
 		return result;
 	} // get_post_of_set }}}
+
+	friend std::ostream& operator<<(std::ostream& strm, const Nfa& nfa)
+	{
+		return strm << serialize_vtf(nfa);
+	}
 };
 
 /** Do the automata have disjoint sets of states? */
@@ -183,9 +194,6 @@ void determinize(
 	const Nfa&  aut,
 	SubsetMap*  subset_map = nullptr);
 
-/** .vtf output serializer */
-std::string serialize_vtf(const Nfa& aut);
-
 /** Loads an automaton from Parsed object */
 void construct(
 	Nfa*                                 aut,
@@ -193,13 +201,24 @@ void construct(
 	StringToSymbolMap*                   symbol_map = nullptr,
 	StringToStateMap*                    state_map = nullptr);
 
+/** Loads an automaton from Parsed object */
+inline Nfa construct(
+	const Vata2::Parser::ParsedSection&  parsed,
+	StringToSymbolMap*                   symbol_map = nullptr,
+	StringToStateMap*                    state_map = nullptr)
+{ // {{{
+	Nfa result;
+	construct(&result, parsed, symbol_map, state_map);
+	return result;
+} // construct }}}
+
 /**
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)
  *
  * Returns a word that is consistent with @p path of states in automaton @p
  * aut, or sets a flag to @p false if such a word does not exist.  Note that
  * there may be several words with the same path (in case some pair of states
- * is connected by transitions over more than one symbol.
+ * is connected by transitions over more than one symbol).
  *
  * @param[in]  aut   The automaton
  * @param[in]  path  The path of states

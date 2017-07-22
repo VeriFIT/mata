@@ -9,7 +9,7 @@ int main()
 {
 	Nfa aut;
 
-	std::cout << "Language empty: " << is_lang_empty(&aut) << "\n";
+	std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
 
 	aut.initialstates = {1, 3};
 	aut.finalstates = {5};
@@ -29,5 +29,5 @@ int main()
 	aut.add_trans(5, 'a', 5);
 	aut.add_trans(5, 'c', 9);
 
-	std::cout << "Language empty: " << is_lang_empty(&aut) << "\n";
+	std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
 }
