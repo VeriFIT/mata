@@ -517,7 +517,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		parsec.type = "NFA";
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
-		parsec.trans_list = { {"q1", "a", "q2"} };
+		parsec.body = { {"q1", "a", "q2"} };
 
 		construct(&aut, parsec, &symbol_map);
 
@@ -535,21 +535,21 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 		parsec.type = "NFA";
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
-		parsec.trans_list.push_back({"q1", "a", "q3"});
-		parsec.trans_list.push_back({"q1", "a", "q10"});
-		parsec.trans_list.push_back({"q1", "b", "q7"});
-		parsec.trans_list.push_back({"q3", "a", "q7"});
-		parsec.trans_list.push_back({"q3", "b", "q9"});
-		parsec.trans_list.push_back({"q9", "a", "q9"});
-		parsec.trans_list.push_back({"q7", "b", "q1"});
-		parsec.trans_list.push_back({"q7", "a", "q3"});
-		parsec.trans_list.push_back({"q7", "c", "q3"});
-		parsec.trans_list.push_back({"q10", "a", "q7"});
-		parsec.trans_list.push_back({"q10", "b", "q7"});
-		parsec.trans_list.push_back({"q10", "c", "q7"});
-		parsec.trans_list.push_back({"q7", "a", "q5"});
-		parsec.trans_list.push_back({"q5", "a", "q5"});
-		parsec.trans_list.push_back({"q5", "c", "q9"});
+		parsec.body.push_back({"q1", "a", "q3"});
+		parsec.body.push_back({"q1", "a", "q10"});
+		parsec.body.push_back({"q1", "b", "q7"});
+		parsec.body.push_back({"q3", "a", "q7"});
+		parsec.body.push_back({"q3", "b", "q9"});
+		parsec.body.push_back({"q9", "a", "q9"});
+		parsec.body.push_back({"q7", "b", "q1"});
+		parsec.body.push_back({"q7", "a", "q3"});
+		parsec.body.push_back({"q7", "c", "q3"});
+		parsec.body.push_back({"q10", "a", "q7"});
+		parsec.body.push_back({"q10", "b", "q7"});
+		parsec.body.push_back({"q10", "c", "q7"});
+		parsec.body.push_back({"q7", "a", "q5"});
+		parsec.body.push_back({"q5", "a", "q5"});
+		parsec.body.push_back({"q5", "c", "q9"});
 
 		construct(&aut, parsec, &symbol_map);
 
@@ -582,7 +582,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	SECTION("construct() call with an epsilon transition")
 	{
 		parsec.type = "NFA";
-		parsec.trans_list = { {"q1", "q2"}};
+		parsec.body = { {"q1", "q2"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),
 			Catch::Contains("Epsilon transition"));
@@ -591,7 +591,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	SECTION("construct() call with a nonsense transition")
 	{
 		parsec.type = "NFA";
-		parsec.trans_list = { {"q1", "a", "q2", "q3"}};
+		parsec.body = { {"q1", "a", "q2", "q3"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),
 			Catch::Contains("Invalid transition"));

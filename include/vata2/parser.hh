@@ -18,16 +18,16 @@ namespace Parser
 {
 
 using KeyListStore = std::map<std::string, std::vector<std::string>>;
-using ParsedTrans = std::vector<std::string>;
+using BodyLine = std::vector<std::string>;
 
 /** Parsed data (single section) */
 struct ParsedSection
 {
 	std::string type;
 	KeyListStore dict;
-	std::list<ParsedTrans> trans_list;
+	std::list<BodyLine> body;
 
-	ParsedSection() : type(), dict(), trans_list() { }
+	ParsedSection() : type(), dict(), body() { }
 
 	/** Output stream operator */
 	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec)
@@ -40,10 +40,10 @@ struct ParsedSection
 				std::to_string(string_list_pair.second) << "\n";
 		}
 
-		os << "Transitions:\n";
-		for (auto transition : parsec.trans_list)
+		os << "Body:\n";
+		for (auto body_line : parsec.body)
 		{
-			os << "  " << std::to_string(transition) << "\n";
+			os << "  " << std::to_string(body_line) << "\n";
 		}
 
 		return os;
