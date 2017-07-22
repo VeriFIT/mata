@@ -17,56 +17,16 @@ using Vata2::Parser::ParsedSection;
 
 namespace
 {
-
 /** Eats all whitespaces in the input stream */
 void eat_whites(std::istream& input)
-{
+{ // {{{
 	while (input.good())
 	{
 		int ch = input.peek();
 		if (!std::isblank(ch)) { return; }
 		input.get();
 	}
-}
-
-
-/** Determines whether the character is a token delimiter */
-inline bool is_token_delim(char ch)
-{
-	return isspace(ch) || ('#' == ch) || ('\"' == ch);
-}
-
-
-/** Reads from a stream until the next token delimiter */
-std::string read_until_delim(std::istream& input)
-{ // {{{
-	std::string result;
-	while (input.good())
-	{
-		char ch = input.peek();
-		if (!input.good() || is_token_delim(ch)) { break; }
-		result.push_back(ch);
-		input.get();           // eat the character
-	}
-
-	return result;
-} // read_until_delim() }}}
-
-
-/** Reads from a stream until the next token end of line */
-std::string read_until_eol(std::istream& input)
-{ // {{{
-	std::string result;
-	while (input.good())
-	{
-		char ch = input.peek();
-		if (!input.good() || '\n' == ch) { break; }
-		result.push_back(ch);
-		input.get();           // eat the character
-	}
-
-	return result;
-} // read_until_eol() }}}
+} // eat_whites(istream) }}}
 
 
 /**
@@ -74,7 +34,7 @@ std::string read_until_eol(std::istream& input)
  *
  * The function assumes that the stream does not span lines
  */
-std::string get_token_new(std::istream& input, bool* quoted)
+std::string get_token_from_line(std::istream& input, bool* quoted)
 { // {{{
 	assert(nullptr != quoted);
 
@@ -192,18 +152,19 @@ std::string get_token_new(std::istream& input, bool* quoted)
 	return result;
 } // get_token_new(istream) }}}
 
+
 /**
  * @brief  Transforms a line into a vector of tokens
  */
 std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
-{
+{ // {{{
 	std::vector<std::pair<std::string, bool>> result;
 	std::istringstream stream(line);
 	bool first = true;
 	while (stream.good())
 	{
 		bool quoted;
-		std::string token = get_token_new(stream, &quoted);
+		std::string token = get_token_from_line(stream, &quoted);
 		if (!quoted && token.empty()) { break; }
 
 		result.push_back({ token, quoted });
@@ -225,7 +186,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 	}
 
 	return result;
-} // tokenize_line
+} // tokenize_lin(string) }}}
 } // anonymous namespace
 
 
