@@ -299,7 +299,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 			for (auto tgt_state : stateset)
 			{
 				bool inserted;
-				std::tie(std::ignore, inserted) = processed.insert(tgt_state);
+				tie(std::ignore, inserted) = processed.insert(tgt_state);
 				if (inserted)
 				{
 					worklist.push_back(tgt_state);
@@ -480,10 +480,11 @@ std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
 void Vata2::Nfa::construct(
 	Nfa*                                 aut,
 	const Vata2::Parser::ParsedSection&  parsed,
-	StringToSymbolMap*                   symbol_map,
+	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map)
 { // {{{
 	assert(nullptr != aut);
+	assert(nullptr != alphabet);
 
 	if (parsed.type != "NFA")
 	{
@@ -497,15 +498,7 @@ void Vata2::Nfa::construct(
 		remove_state_map = true;
 	}
 
-	bool remove_symbol_map = false;
-	if (nullptr == symbol_map)
-	{
-		symbol_map = new StringToSymbolMap();
-		remove_symbol_map = true;
-	}
-
 	State cnt_state = 0;
-	State cnt_symbol = 0;
 
 	// a lambda for translating state names to identifiers
 	auto get_state_name = [state_map, &cnt_state](const std::string& str) {
@@ -514,17 +507,9 @@ void Vata2::Nfa::construct(
 		else { return it_insert_pair.first->second; }
 	};
 
-	// a lambda for translating symbol names to identifiers
-	auto get_symbol_name = [symbol_map, &cnt_symbol](const std::string& str) {
-		auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
-		if (it_insert_pair.second) { return cnt_symbol++; }
-		else { return it_insert_pair.first->second; }
-	};
-
 	// a lambda for cleanup
 	auto clean_up = [&]() {
 		if (remove_state_map) { delete state_map; }
-		if (remove_symbol_map) { delete symbol_map; }
 	};
 
 
@@ -569,7 +554,7 @@ void Vata2::Nfa::construct(
 		}
 
 		State src_state = get_state_name(body_line[0]);
-		Symbol symbol = get_symbol_name(body_line[1]);
+		Symbol symbol = alphabet->translate_symb(body_line[1]);
 		State tgt_state = get_state_name(body_line[2]);
 
 		aut->add_trans(src_state, symbol, tgt_state);
@@ -578,6 +563,32 @@ void Vata2::Nfa::construct(
 	// do the dishes and take out garbage
 	clean_up();
 } // construct }}}
+
+
+void Vata2::Nfa::construct(
+	Nfa*                                 aut,
+	const Vata2::Parser::ParsedSection&  parsed,
+	StringToSymbolMap*                   symbol_map,
+	StringToStateMap*                    state_map)
+{ // {{{
+	assert(nullptr != aut);
+
+	bool remove_symbol_map = false;
+	if (nullptr == symbol_map)
+	{
+		symbol_map = new StringToSymbolMap();
+		remove_symbol_map = true;
+	}
+
+	OnTheFlyAlphabet alphabet(symbol_map);
+
+	construct(aut, parsed, &alphabet, state_map);
+
+	if (remove_symbol_map)
+	{
+		delete symbol_map;
+	}
+} // construct(StringToSymbolMap) }}}
 
 
 bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)

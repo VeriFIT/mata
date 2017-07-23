@@ -57,6 +57,53 @@ struct Trans
 	}
 };
 
+// ALPHABET {{{
+class Alphabet
+{
+public:
+	virtual Symbol translate_symb(const std::string& symb) = 0;
+
+	virtual ~Alphabet() { }
+};
+
+class OnTheFlyAlphabet : public Alphabet
+{
+private:
+	StringToSymbolMap* symbol_map;
+	Symbol cnt_symbol;
+
+private:
+	OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
+	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
+
+public:
+
+	OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+		symbol_map(str_sym_map), cnt_symbol(init_symbol)
+	{
+		assert(nullptr != symbol_map);
+	}
+
+	virtual Symbol translate_symb(const std::string& str)
+	{
+		auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
+		if (it_insert_pair.second) { return cnt_symbol++; }
+		else { return it_insert_pair.first->second; }
+	}
+};
+
+class DirectAlphabet : public Alphabet
+{
+	virtual Symbol translate_symb(const std::string& str)
+	{
+		Symbol symb;
+		std::istringstream stream(str);
+		stream >> symb;
+		return symb;
+	}
+};
+// }}}
+
 
 struct Nfa;
 
@@ -211,6 +258,24 @@ inline Nfa construct(
 	construct(&result, parsed, symbol_map, state_map);
 	return result;
 } // construct }}}
+
+/** Loads an automaton from Parsed object */
+void construct(
+	Nfa*                                 aut,
+	const Vata2::Parser::ParsedSection&  parsed,
+	Alphabet*                            alphabet,
+	StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+inline Nfa construct(
+	const Vata2::Parser::ParsedSection&  parsed,
+	Alphabet*                            alphabet,
+	StringToStateMap*                    state_map = nullptr)
+{ // {{{
+	Nfa result;
+	construct(&result, parsed, alphabet, state_map);
+	return result;
+} // construct(Alphabet) }}}
 
 /**
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)
