@@ -15,6 +15,7 @@ CFLAGS=-std=c++11 \
   -fdiagnostics-show-option \
   -march=native \
 	-O2
+	# -g
 
 
 INCLUDE=-I../../include

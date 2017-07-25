@@ -14,7 +14,11 @@
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/ip6.h>
+#include <netinet/icmp6.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 
 // Ethernet 802.1Q header
 // copied from
@@ -39,6 +43,15 @@ size_t vlan_packets = 0;
 size_t ipv4_packets = 0;
 size_t ipv6_packets = 0;
 size_t tcp_packets = 0;
+size_t udp_packets = 0;
+size_t ipip_packets = 0;
+size_t esp_packets = 0;
+size_t icmp_packets = 0;
+size_t gre_packets = 0;
+size_t icmp6_packets = 0;
+size_t v6_fragment_packets = 0;
+size_t ip6_in_ip4_packets = 0;
+size_t pim_packets = 0;
 size_t other_l3_packets = 0;
 size_t other_l4_packets = 0;
 size_t incons_packets = 0;
@@ -46,6 +59,8 @@ size_t accepted_aut1 = 0;
 size_t accepted_aut2 = 0;
 Nfa aut1;
 Nfa aut2;
+
+std::vector<size_t> packet_lengths(2048);
 
 // FUNCTION DECLARATIONS
 void packetHandler(u_char *userData, const pcap_pkthdr* pkthdr, const u_char* packet);
@@ -129,9 +144,18 @@ int main(int argc, char** argv)
 	std::cout << "Total packets in " << packets_file << ": " << total_packets << "\n";
 	std::cout << "Packets with VLAN: " << vlan_packets << "\n";
 	std::cout << "Packets with IPv4: " << ipv4_packets << "\n";
-	std::cout << "Packets with IPv6 (not processed): " << ipv6_packets << "\n";
+	std::cout << "Packets with IPv6: " << ipv6_packets << "\n";
 	std::cout << "Packets with other L3 (not processed): " << other_l3_packets << "\n";
 	std::cout << "Packets with TCP: " << tcp_packets << "\n";
+	std::cout << "Packets with UDP: " << udp_packets << "\n";
+	std::cout << "Packets with IPv4-in-IPv4: " << ipip_packets << "\n";
+	std::cout << "Packets with ESP: " << esp_packets << "\n";
+	std::cout << "Packets with ICMP: " << icmp_packets << "\n";
+	std::cout << "Packets with GRE (not processed): " << gre_packets << "\n";
+	std::cout << "Packets with ICMPv6: " << icmp6_packets << "\n";
+	std::cout << "Packets with IPv6 fragment: " << v6_fragment_packets << "\n";
+	std::cout << "Packets with IPv6-in-IPv4: " << ip6_in_ip4_packets << "\n";
+	std::cout << "Packets with PIM (not processed): " << pim_packets << "\n";
 	std::cout << "Packets with other L4 (not processed): " << other_l4_packets << "\n";
 	std::cout << "Packets with payload: " << payloaded_packets << "\n";
 	std::cout << "Accepted in Aut1: " << accepted_aut1 << "\n";
@@ -140,6 +164,11 @@ int main(int argc, char** argv)
 	std::cout << "Time: " <<
 		std::chrono::duration_cast<std::chrono::nanoseconds>(opTime).count() * 1e-9
 		<< "\n";
+
+	for (size_t i = 0; i < 2048; ++i)
+	{
+		// std::cout << i << " " << packet_lengths[i] << "\n";
+	}
 
 	return EXIT_SUCCESS;
 }
@@ -168,34 +197,23 @@ Word get_payload(
 	// std::cout << "Packet #" << total_packets-1 << ": ";
 	// std::cout << std::to_string(pac) << "\n";
 
+	unsigned l4_proto;
+
 	if (ETHERTYPE_IP == ether_type)
 	{
 		++ipv4_packets;
 
 		const ip* ip_hdr = reinterpret_cast<const ip*>(packet + offset);
 		offset += sizeof(ip);
-		if (ip_hdr->ip_p == IPPROTO_TCP)
-		{
-			++tcp_packets;
-			offset += sizeof(tcphdr);
-			size_t data_length = pkthdr->len - offset;
-
-			return Word(packet + offset, packet + offset + data_length);
-		}
-		else
-		{
-			++other_l4_packets;
-			// std::cout << std::hex << static_cast<unsigned>(ip_hdr->ip_p) << std::dec << "\n";
-			// std::cout << static_cast<unsigned>(ip_hdr->ip_p) << "\n";
-
-			return Word();
-		}
+		l4_proto = ip_hdr->ip_p;
 	}
 	else if (ETHERTYPE_IPV6 == ether_type)
 	{
 		++ipv6_packets;
 
-		return Word();
+		const ip6_hdr* ip_hdr = reinterpret_cast<const ip6_hdr*>(packet + offset);
+		offset += sizeof(ip6_hdr);
+		l4_proto = ip_hdr->ip6_nxt;
 	}
 	else
 	{
@@ -203,7 +221,98 @@ Word get_payload(
 		return Word();
 	}
 
-	return Word();
+	bool ip_in_ip = false;
+
+	bool processing = true;
+	while (processing)
+	{
+		processing = false;
+		if (IPPROTO_TCP == l4_proto)
+		{
+			++tcp_packets;
+			const tcphdr* tcp_hdr = reinterpret_cast<const tcphdr*>(packet + offset);
+			size_t tcp_hdr_size = tcp_hdr->th_off * 4;
+			offset += tcp_hdr_size;
+		}
+		else if (IPPROTO_UDP == l4_proto)
+		{
+			++udp_packets;
+			offset += sizeof(udphdr);
+		}
+		else if (IPPROTO_IPIP == l4_proto)
+		{
+			++ipip_packets;
+
+			if (ip_in_ip) { assert(false); }
+
+			ip_in_ip = true;
+
+			const ip* ip_hdr = reinterpret_cast<const ip*>(packet + offset);
+			offset += sizeof(ip);
+			l4_proto = ip_hdr->ip_p;
+
+			processing = true;
+		}
+		else if (IPPROTO_ESP == l4_proto)
+		{
+			++esp_packets;
+			offset += 8;
+		}
+		else if (IPPROTO_ICMP == l4_proto)
+		{
+			++icmp_packets;
+
+			offset += sizeof(icmphdr);
+		}
+		else if (IPPROTO_GRE == l4_proto)
+		{
+			++gre_packets;
+
+			return Word();
+		}
+		else if (IPPROTO_ICMPV6 == l4_proto)
+		{
+			++icmp6_packets;
+
+			offset += sizeof(icmp6_hdr);
+		}
+		else if (IPPROTO_FRAGMENT == l4_proto)
+		{
+			++v6_fragment_packets;
+
+			const ip6_frag* ip_hdr = reinterpret_cast<const ip6_frag*>(packet + offset);
+			offset += sizeof(ip6_frag);
+			l4_proto = ip_hdr->ip6f_nxt;
+
+			processing = true;
+		}
+		else if (IPPROTO_IPV6 == l4_proto)
+		{
+			++ip6_in_ip4_packets;
+
+			const ip6_hdr* ip_hdr = reinterpret_cast<const ip6_hdr*>(packet + offset);
+			offset += sizeof(ip6_hdr);
+			l4_proto = ip_hdr->ip6_nxt;
+		}
+		else if (IPPROTO_PIM == l4_proto)
+		{
+			++pim_packets;
+
+			return Word();
+		}
+		else
+		{
+			std::cout << "L4 protocol over IPv4: " << l4_proto << "\n";
+			++other_l4_packets;
+			// std::cout << std::hex << static_cast<unsigned>(ip_hdr->ip_p) << std::dec << "\n";
+			// std::cout << static_cast<unsigned>(ip_hdr->ip_p) << "\n";
+
+			return Word();
+		}
+	}
+
+	return Word(packet + offset, packet + std::max(static_cast<size_t>(pkthdr->len), offset));
+	// return Word(packet + offset, packet + pkthdr->len);
 }
 
 void packetHandler(
@@ -213,6 +322,8 @@ void packetHandler(
 {
 	assert(nullptr != pkthdr);
 	assert(nullptr != packet);
+
+	packet_lengths[pkthdr->len] += 1;
 
 	++total_packets;
 
@@ -235,6 +346,7 @@ void packetHandler(
 	if (in_aut1 != in_aut2)
 	{
 		++incons_packets;
+		// std::cerr << total_packets - 1 <<std::endl;
 	}
 
 	if (total_packets % 1000 == 0)
