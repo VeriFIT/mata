@@ -75,6 +75,24 @@ struct hash<std::set<A>>
 	} // operator() }}}
 };
 
+/**
+ * @brief  A hasher for vectors
+ */
+template <class A>
+struct hash<std::vector<A>>
+{
+	size_t operator()(const std::vector<A>& k) const
+	{ // {{{
+		// TODO: check whether it is OK
+		size_t seed = 0;
+		for (auto i : k)
+		{
+			seed ^= i + 0x9e3779b9 + (seed<<6) + (seed>>2);
+		}
+		return seed;
+	} // operator() }}}
+};
+
 /*#######################################################
  #                  std::to_string(TYPE)
  #######################################################*/
