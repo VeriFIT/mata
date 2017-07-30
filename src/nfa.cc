@@ -598,8 +598,23 @@ bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
 	for (Symbol sym : word)
 	{
 		cur = aut.get_post_of_set(cur, sym);
-		if (cur.empty()) { break; }
+		if (cur.empty()) { return false; }
 	}
 
 	return !are_disjoint(cur, aut.finalstates);
 } // is_in_lang }}}
+
+
+bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
+{ // {{{
+	StateSet cur = aut.initialstates;
+
+	for (Symbol sym : word)
+	{
+	  if (!are_disjoint(cur, aut.finalstates)) { return true; }
+		cur = aut.get_post_of_set(cur, sym);
+		if (cur.empty()) { return false; }
+	}
+
+	return !are_disjoint(cur, aut.finalstates);
+} // is_prfx_in_lang }}}

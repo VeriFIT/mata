@@ -36,6 +36,9 @@ using namespace Vata2::Parser;
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
+// FUNCTION DECLARATIONS
+void packetHandler(u_char *userData, const pcap_pkthdr* pkthdr, const u_char* packet);
+
 // GLOBAL VARIABLES
 size_t total_packets = 0;
 size_t payloaded_packets = 0;
@@ -57,18 +60,20 @@ size_t other_l4_packets = 0;
 size_t incons_packets = 0;
 size_t accepted_aut1 = 0;
 size_t accepted_aut2 = 0;
+size_t accepted_aut1_not_aut2 = 0;
+size_t accepted_aut2_not_aut1 = 0;
+bool prefix_acceptance = false;
 Nfa aut1;
 Nfa aut2;
 
-std::vector<size_t> packet_lengths(2048);
-
-// FUNCTION DECLARATIONS
-void packetHandler(u_char *userData, const pcap_pkthdr* pkthdr, const u_char* packet);
 
 
 void print_usage(const char* prog_name)
 {
-	std::cout << "usage: " << prog_name << " aut1.vtf aut2.vtf packets.pcap\n";
+	std::cout << "usage: " << prog_name << " [-p] aut1.vtf aut2.vtf packets.pcap\n";
+	std::cout << "\n";
+	std::cout << "Options:\n";
+	std::cout << "  -p    prefix acceptance\n";
 }
 
 Nfa load_aut(const std::string& file_name)
@@ -89,15 +94,38 @@ Nfa load_aut(const std::string& file_name)
 
 int main(int argc, char** argv)
 {
-	if (argc != 4)
+	// PARSING COMMAND LINE ARGUMENTS
+	size_t param_start = 1;
+	if (argc != 4 && argc != 5)
 	{
 		print_usage(argv[0]);
 		return EXIT_FAILURE;
 	}
 
-	std::string aut1_file = argv[1];
-	std::string aut2_file = argv[2];
-	std::string packets_file = argv[3];
+	if (std::to_string(argv[1]) == "-p")
+	{
+		prefix_acceptance = true;
+		param_start = 2;
+
+		if (argc != 5)
+		{
+			print_usage(argv[0]);
+			return EXIT_FAILURE;
+		}
+	}
+	else
+	{
+		if (argc != 4)
+		{
+			print_usage(argv[0]);
+			return EXIT_FAILURE;
+		}
+	}
+
+	// LOADING INPUTS
+	std::string aut1_file = argv[param_start + 0];
+	std::string aut2_file = argv[param_start + 1];
+	std::string packets_file = argv[param_start + 2];
 
 	try
 	{
@@ -109,13 +137,6 @@ int main(int argc, char** argv)
 		std::cerr << "Error loading automata: " << ex.what() << "\n";
 		return EXIT_FAILURE;
 	}
-
-	std::cout << "aut1:\n";
-	std::cout << std::to_string(aut1);
-	std::cout << "===================================\n";
-	std::cout << "aut2:\n";
-	std::cout << std::to_string(aut2);
-	std::cout << "===================================\n";
 
 	pcap_t *descr = nullptr;
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -160,15 +181,12 @@ int main(int argc, char** argv)
 	std::cout << "Packets with payload: " << payloaded_packets << "\n";
 	std::cout << "Accepted in Aut1: " << accepted_aut1 << "\n";
 	std::cout << "Accepted in Aut2: " << accepted_aut2 << "\n";
+	std::cout << "Accepted in Aut1 but not in Aut2: " << accepted_aut1_not_aut2 << "\n";
+	std::cout << "Accepted in Aut2 but not in Aut1: " << accepted_aut2_not_aut1 << "\n";
 	std::cout << "Inconsistent packets: " << incons_packets << "\n";
 	std::cout << "Time: " <<
 		std::chrono::duration_cast<std::chrono::nanoseconds>(opTime).count() * 1e-9
 		<< "\n";
-
-	for (size_t i = 0; i < 2048; ++i)
-	{
-		// std::cout << i << " " << packet_lengths[i] << "\n";
-	}
 
 	return EXIT_SUCCESS;
 }
@@ -323,8 +341,6 @@ void packetHandler(
 	assert(nullptr != pkthdr);
 	assert(nullptr != packet);
 
-	packet_lengths[pkthdr->len] += 1;
-
 	++total_packets;
 
 	Word payload = get_payload(pkthdr, packet);
@@ -337,8 +353,19 @@ void packetHandler(
 
 	// std::cout << std::to_string(payload);
 
-	bool in_aut1 = is_in_lang(aut1, payload);
-	bool in_aut2 = is_in_lang(aut2, payload);
+	bool in_aut1;
+	bool in_aut2;
+
+	if (prefix_acceptance)
+	{
+		in_aut1 = is_prfx_in_lang(aut1, payload);
+		in_aut2 = is_prfx_in_lang(aut2, payload);
+	}
+	else
+	{
+		in_aut1 = is_in_lang(aut1, payload);
+		in_aut2 = is_in_lang(aut2, payload);
+	}
 
 	if (in_aut1) { ++accepted_aut1; }
 	if (in_aut2) { ++accepted_aut2; }
@@ -346,12 +373,24 @@ void packetHandler(
 	if (in_aut1 != in_aut2)
 	{
 		++incons_packets;
-		// std::cerr << total_packets - 1 <<std::endl;
+
+		if (in_aut1 && !in_aut2)
+		{
+			++accepted_aut1_not_aut2;
+		}
+		else if (in_aut2 && !in_aut1)
+		{
+			++accepted_aut2_not_aut1;
+		}
+		else
+		{
+			assert(false);
+		}
 	}
 
-	if (total_packets % 1000 == 0)
+	if (total_packets % 10000 == 0)
 	{
-		std::cout << "#";
-		std::cout.flush();
+		std::clog << "#";
+		std::clog.flush();
 	}
 }

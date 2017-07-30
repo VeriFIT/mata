@@ -298,6 +298,8 @@ std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
 /** Checks whether a string is in the language of an automaton */
 bool is_in_lang(const Nfa& aut, const Word& word);
 
+/** Checks whether the prefix of a string is in the language of an automaton */
+bool is_prfx_in_lang(const Nfa& aut, const Word& word);
 
 /** Encodes a vector of strings into a @c Word instance */
 inline Word encode_word(
