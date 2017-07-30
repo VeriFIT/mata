@@ -34,9 +34,47 @@ bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 	return true;
 }
 
+/**
+ * @brief  Combine two hash values
+ *
+ * Values taken from
+ * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ *
+ * TODO: fix to be more suitable for 64b
+ */
+template <class T>
+inline size_t hash_combine(size_t lhs, const T& rhs)
+{ // {{{
+	size_t rhs_hash = std::hash<T>{}(rhs);
+  lhs ^= rhs_hash + 0x9e3779b9 + (lhs<<6) + (lhs>>2);
+	return lhs;
+} // hash_combine }}}
+
+
+/**
+ * @brief  Hashes a range
+ *
+ * Inspired by
+ * http://www.boost.org/doc/libs/1_64_0/boost/functional/hash/hash.hpp
+ */
+template <typename It>
+size_t hash_range(It first, It last)
+{ // {{{
+	size_t accum = 0;
+
+	for (; first != last; ++first)
+	{
+		accum = hash_combine(accum, *first);
+	}
+
+	return accum;
+} // hash_range(It, It) }}}
+
+
 // CLOSING NAMESPACES AND GUARDS
 } /* util */
 } /* Vata2 */
+
 
 // Some things that need to go to std
 namespace std
@@ -48,12 +86,10 @@ namespace std
 template <class A, class B>
 struct hash<std::pair<A,B>>
 {
-	size_t operator()(const std::pair<A,B>& k) const
+	inline size_t operator()(const std::pair<A,B>& k) const
 	{ // {{{
-		// TODO: check whether it is OK
-		size_t seed = k.first;
-		seed ^= k.second + 0x9e3779b9 + (seed<<6) + (seed>>2);
-		return seed;
+		size_t accum = std::hash<A>{}(k.first);
+		return Vata2::util::hash_combine(accum, k.second);
 	} // operator() }}}
 };
 
@@ -63,15 +99,9 @@ struct hash<std::pair<A,B>>
 template <class A>
 struct hash<std::set<A>>
 {
-	size_t operator()(const std::set<A>& k) const
+	inline size_t operator()(const std::set<A>& cont) const
 	{ // {{{
-		// TODO: check whether it is OK
-		size_t seed = 0;
-		for (auto i : k)
-		{
-			seed ^= i + 0x9e3779b9 + (seed<<6) + (seed>>2);
-		}
-		return seed;
+		return Vata2::util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -81,15 +111,9 @@ struct hash<std::set<A>>
 template <class A>
 struct hash<std::vector<A>>
 {
-	size_t operator()(const std::vector<A>& k) const
+	inline size_t operator()(const std::vector<A>& cont) const
 	{ // {{{
-		// TODO: check whether it is OK
-		size_t seed = 0;
-		for (auto i : k)
-		{
-			seed ^= i + 0x9e3779b9 + (seed<<6) + (seed>>2);
-		}
-		return seed;
+		return Vata2::util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
