@@ -41,7 +41,7 @@ void packetHandler(u_char *userData, const pcap_pkthdr* pkthdr, const u_char* pa
 // GLOBAL VARIABLES
 size_t total_packets = 0;
 size_t payloaded_packets = 0;
-size_t accepted_aut = 0;
+size_t filtered_packets = 0;
 bool prefix_acceptance = false;
 bool keep_in_language = true;
 Nfa aut;
@@ -65,7 +65,7 @@ Nfa load_aut(const std::string& file_name)
 	if (input.is_open())
 	{
 		ParsedSection parsec = parse_vtf_section(input);
-		Vata2::Nfa::DirectAlphabet alphabet;
+		Vata2::Nfa::CharAlphabet alphabet;
 		return construct(parsec, &alphabet);
 	}
 	else
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
 	std::cout << "\n";
 	std::cout << "Total packets in " << packets_file << ": " << total_packets << "\n";
 	std::cout << "Packets with payload: " << payloaded_packets << "\n";
-	std::cout << "Accepted in Aut: " << accepted_aut << "\n";
+	std::cout << "Filtered packets: " << filtered_packets << "\n";
 	std::cout << "Time: " <<
 		std::chrono::duration_cast<std::chrono::nanoseconds>(opTime).count() * 1e-9
 		<< "\n";
@@ -322,13 +322,9 @@ void packetHandler(
 		in_lang = is_in_lang(aut, payload);
 	}
 
-	if (in_lang)
-	{
-		++accepted_aut;
-	}
-
 	if ((in_lang && keep_in_language) || (!in_lang && !keep_in_language))
 	{
+		++filtered_packets;
 		pcap_dump((u_char*)dumper, pkthdr, packet);
 	}
 

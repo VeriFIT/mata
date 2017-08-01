@@ -102,6 +102,22 @@ class DirectAlphabet : public Alphabet
 		return symb;
 	}
 };
+
+class CharAlphabet : public Alphabet
+{
+	virtual Symbol translate_symb(const std::string& str)
+	{
+		if (str.length() == 3 && str[0] == '\'' && str[2] == '\'')
+		{ // direct occurence of a character
+			return str[1];
+		}
+
+		Symbol symb;
+		std::istringstream stream(str);
+		stream >> symb;
+		return symb;
+	}
+};
 // }}}
 
 
