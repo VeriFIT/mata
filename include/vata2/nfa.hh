@@ -37,9 +37,7 @@ using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
 const PostSymb EMPTY_POST{};
 
-/**
- * @brief  A transition
- */
+/// A transition
 struct Trans
 {
 	State src;
@@ -49,12 +47,7 @@ struct Trans
 	Trans() : src(), symb(), tgt() { }
 	Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
 
-	friend std::ostream& operator<<(std::ostream& strm, const Trans& trans)
-	{
-		std::string result = "(" + std::to_string(trans.src) + ", " +
-			std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
-		return strm << result;
-	}
+	friend std::ostream& operator<<(std::ostream& strm, const Trans& trans);
 };
 
 // ALPHABET {{{
@@ -107,7 +100,10 @@ class CharAlphabet : public Alphabet
 {
 	virtual Symbol translate_symb(const std::string& str)
 	{
-		if (str.length() == 3 && str[0] == '\'' && str[2] == '\'')
+		if (str.length() == 3 &&
+			((str[0] == '\'' && str[2] == '\'') ||
+			(str[0] == '\"' && str[2] == '\"')
+			 ))
 		{ // direct occurence of a character
 			return str[1];
 		}
@@ -123,15 +119,13 @@ class CharAlphabet : public Alphabet
 
 struct Nfa;
 
-/** .vtf output serializer */
+/// .vtf output serializer
 std::string serialize_vtf(const Nfa& aut);
 
 
-/**
- * @brief  An NFA
- */
+///  An NFA
 struct Nfa
-{
+{ // {{{
 	std::set<State> initialstates = {};
 	std::set<State> finalstates = {};
 	StateToPostMap transitions = {};
@@ -150,6 +144,7 @@ struct Nfa
 	{ // {{{
 		this->add_trans({src, symb, tgt});
 	} // }}}
+
 	bool has_trans(const Trans& trans) const;
 	bool has_trans(State src, Symbol symb, State tgt) const
 	{ // {{{
@@ -195,7 +190,7 @@ struct Nfa
 	const_iterator end() const { return const_iterator::for_end(this); }
 
 	const PostSymb& operator[](State state) const
-	{
+	{ // {{{
 		const PostSymb* post = get_post(state);
 		if (nullptr == post)
 		{
@@ -203,7 +198,7 @@ struct Nfa
 		}
 
 		return *post;
-	}
+	} // operator[] }}}
 
 	const PostSymb* get_post(State state) const
 	{ // {{{
@@ -211,31 +206,11 @@ struct Nfa
 		return (transitions.end() == it)? nullptr : &it->second;
 	} // get_post }}}
 
-	/** gets a post of a set of states over a symbol */
-	StateSet get_post_of_set(const StateSet& macrostate, Symbol sym) const
-	{ // {{{
-		StateSet result;
-		for (State state : macrostate)
-		{
-			const PostSymb* post = get_post(state);
-			if (nullptr != post)
-			{
-				auto it = post->find(sym);
-				if (post->end() != it)
-				{
-					result.insert(it->second.begin(), it->second.end());
-				}
-			}
-		}
+	/// gets a post of a set of states over a symbol
+	StateSet get_post_of_set(const StateSet& macrostate, Symbol sym) const;
 
-		return result;
-	} // get_post_of_set }}}
-
-	friend std::ostream& operator<<(std::ostream& strm, const Nfa& nfa)
-	{
-		return strm << serialize_vtf(nfa);
-	}
-};
+	friend std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
+}; // Nfa }}}
 
 /** Do the automata have disjoint sets of states? */
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
@@ -317,15 +292,15 @@ bool is_in_lang(const Nfa& aut, const Word& word);
 /** Checks whether the prefix of a string is in the language of an automaton */
 bool is_prfx_in_lang(const Nfa& aut, const Word& word);
 
-/** Encodes a vector of strings into a @c Word instance */
+/** Encodes a vector of strings (each corresponding to one symbol) into a @c Word instance */
 inline Word encode_word(
 	const StringToSymbolMap&         symbol_map,
 	const std::vector<std::string>&  input)
-{
+{ // {{{
 	Word result;
 	for (auto str : input) { result.push_back(symbol_map.at(str)); }
 	return result;
-}
+} // encode_word }}}
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

@@ -10,6 +10,14 @@
 using std::tie;
 using namespace Vata2::util;
 
+std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
+{ // {{{
+	std::string result = "(" + std::to_string(trans.src) + ", " +
+		std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
+	return strm << result;
+} // operator<<(ostream, Trans) }}}
+
+
 void Vata2::Nfa::Nfa::add_trans(const Trans& trans)
 { // {{{
 	auto it = this->transitions.find(trans.src);
@@ -124,6 +132,35 @@ Vata2::Nfa::Nfa::const_iterator& Vata2::Nfa::Nfa::const_iterator::operator++()
 
 	return *this;
 } // operator++ }}}
+
+
+Vata2::Nfa::StateSet Vata2::Nfa::Nfa::get_post_of_set(
+	const StateSet&  macrostate,
+	Symbol           sym) const
+{ // {{{
+	StateSet result;
+	for (State state : macrostate)
+	{
+		const PostSymb* post = get_post(state);
+		if (nullptr != post)
+		{
+			auto it = post->find(sym);
+			if (post->end() != it)
+			{
+				result.insert(it->second.begin(), it->second.end());
+			}
+		}
+	}
+
+	return result;
+} // get_post_of_set }}}
+
+
+std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Nfa& nfa)
+{
+	return strm << serialize_vtf(nfa);
+}
+
 
 bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
