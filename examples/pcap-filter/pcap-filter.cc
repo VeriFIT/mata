@@ -195,10 +195,6 @@ Word get_payload(
 		ether_type = ntohs(vlan_hdr->ether_type);
 	}
 
-	// Word pac(packet, packet + pkthdr->len);
-	// std::cout << "Packet #" << total_packets-1 << ": ";
-	// std::cout << std::to_string(pac) << "\n";
-
 	unsigned l4_proto;
 
 	if (ETHERTYPE_IP == ether_type)
@@ -282,10 +278,6 @@ Word get_payload(
 		}
 		else
 		{
-			std::cout << "L4 protocol over IPv4: " << l4_proto << "\n";
-			// std::cout << std::hex << static_cast<unsigned>(ip_hdr->ip_p) << std::dec << "\n";
-			// std::cout << static_cast<unsigned>(ip_hdr->ip_p) << "\n";
-
 			return Word();
 		}
 	}
