@@ -69,5 +69,6 @@ add_test(
 		--tool=memcheck
 		--leak-check=yes
 		--show-reachable=yes
+		--error-exitcode=1
 		${CMAKE_CURRENT_BINARY_DIR}/tests
 )

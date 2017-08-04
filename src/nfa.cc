@@ -766,14 +766,21 @@ void Vata2::Nfa::construct(
 		remove_symbol_map = true;
 	}
 
+	auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
 	OnTheFlyAlphabet alphabet(symbol_map);
 
-	construct(aut, parsed, &alphabet, state_map);
-
-	if (remove_symbol_map)
+	try
 	{
-		delete symbol_map;
+		construct(aut, parsed, &alphabet, state_map);
 	}
+	catch (std::exception&)
+	{
+		release_res();
+		throw;
+	}
+
+	release_res();
 } // construct(StringToSymbolMap) }}}
 
 
