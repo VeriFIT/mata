@@ -641,7 +641,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 
 	SECTION("empty automaton, empty alphabet")
 	{
-		EnumAlphabet alph{};
+		EnumAlphabet alph = { };
 
 		make_complete(&aut, alph, 0);
 
@@ -696,7 +696,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 
 	SECTION("bigger automaton")
 	{
-		EnumAlphabet alph{"a", "b", "c"};
+		EnumAlphabet alph = {"a", "b", "c"};
 		const State SINK = 9;
 
 		aut.initialstates = {1, 2};
@@ -733,6 +733,20 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 		REQUIRE(aut.has_trans(SINK, alph["b"], SINK));
 		REQUIRE(aut.has_trans(SINK, alph["c"], SINK));
 	}
-
-	DEBUG_PRINT("Vata2::Nfa::make_complete() not tested properly");
 } // }}}
+
+TEST_CASE("Vata2::Nfa::complement()")
+{
+	Nfa aut;
+	Nfa cmpl;
+
+	SECTION("empty automaton, empty alphabet")
+	{
+		EnumAlphabet alph = {};
+
+		cmpl = complement(aut, alph);
+
+		REQUIRE(is_in_lang(cmpl, { }));
+	}
+
+}

@@ -554,9 +554,31 @@ void Vata2::Nfa::complement(
 
 	State last_state_num;
 	*result = determinize(aut, subset_map, &last_state_num);
-	make_complete(result, alphabet, last_state_num + 1);
+	State sink_state = last_state_num + 1;
+	auto it_inserted_pair = subset_map->insert({{}, sink_state});
+	if (!it_inserted_pair.second)
+	{
+		sink_state = it_inserted_pair.first->second;
+	}
 
-	assert(false);
+	make_complete(result, alphabet, sink_state);
+	std::set<State> old_fs = std::move(result->finalstates);
+	result->finalstates = { };
+	assert(result->initialstates.size() == 1);
+
+	auto make_final_if_not_in_old = [&](const State& state) {
+		if (old_fs.find(*result->initialstates.begin()) == old_fs.end())
+		{
+			result->finalstates.insert(state);
+		}
+	};
+
+	make_final_if_not_in_old(*result->initialstates.begin());
+
+	for (auto tr : *result)
+	{
+		make_final_if_not_in_old(tr.tgt);
+	}
 
 	if (delete_subset_map)
 	{
