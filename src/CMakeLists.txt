@@ -63,12 +63,15 @@ add_test(
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
 )
 
-add_test(
-	NAME "catch_tests_valgrind"
-	COMMAND ${VALGRIND_PROGRAM}
-		--tool=memcheck
-		--leak-check=yes
-		--show-reachable=yes
-		--error-exitcode=1
-		${CMAKE_CURRENT_BINARY_DIR}/tests
-)
+# problems with valgrind under appleOS
+if(NOT APPLE)
+	add_test(
+		NAME "catch_tests_valgrind"
+		COMMAND ${VALGRIND_PROGRAM}
+			--tool=memcheck
+			--leak-check=yes
+			--show-reachable=yes
+			--error-exitcode=1
+			${CMAKE_CURRENT_BINARY_DIR}/tests
+	)
+endif()
