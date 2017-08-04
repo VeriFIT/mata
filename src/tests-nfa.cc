@@ -265,7 +265,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 TEST_CASE("Vata2::Nfa::is_lang_empty()")
 {
 	Nfa aut;
-	Word cex;
+	Path cex;
 
 	SECTION("An empty automaton has an empty language")
 	{
@@ -434,6 +434,34 @@ TEST_CASE("Vata2::Nfa::get_word_for_path()")
 	}
 }
 
+
+TEST_CASE("Vata2::Nfa::is_lang_empty_word()")
+{
+	Nfa aut;
+	Word cex;
+
+	SECTION("Counterexample of an automaton with non-empty language")
+	{
+		aut.initialstates = {1, 2};
+		aut.finalstates = {8, 9};
+		aut.add_trans(1, 'c', 2);
+		aut.add_trans(2, 'a', 4);
+		aut.add_trans(2, 'c', 1);
+		aut.add_trans(2, 'c', 3);
+		aut.add_trans(3, 'e', 5);
+		aut.add_trans(4, 'c', 8);
+
+		bool is_empty = is_lang_empty_word(aut, &cex);
+		REQUIRE(!is_empty);
+
+		// check the counterexample
+		REQUIRE(cex.size() == 2);
+		REQUIRE(cex[0] == 'a');
+		REQUIRE(cex[1] == 'c');
+	}
+}
+
+
 TEST_CASE("Vata2::Nfa::determinize()")
 {
 	Nfa aut;
@@ -565,7 +593,6 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 	}
 } // }}}
 
-
 TEST_CASE("Vata2::Nfa::construct() invalid calls")
 { // {{{
 	Nfa aut;
@@ -599,11 +626,113 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 } // }}}
 
 TEST_CASE("Vata2::Nfa::serialize_vtf()")
-{ //
+{ // {{{
 	Nfa aut;
 
 	SECTION("empty automaton")
 	{
 		DEBUG_PRINT("Vata2::Nfa::serialize_vtf() not tested");
 	}
+} // }}}
+
+TEST_CASE("Vata2::Nfa::make_complete()")
+{ // {{{
+	Nfa aut;
+
+	SECTION("empty automaton, empty alphabet")
+	{
+		EnumAlphabet alph{};
+
+		make_complete(&aut, alph, 0);
+
+		REQUIRE(aut.initialstates.empty());
+		REQUIRE(aut.finalstates.empty());
+		REQUIRE(aut.transitions.empty());
+	}
+
+	SECTION("empty automaton")
+	{
+		EnumAlphabet alph = {"a", "b"};
+
+		make_complete(&aut, alph, 0);
+
+		REQUIRE(aut.initialstates.empty());
+		REQUIRE(aut.finalstates.empty());
+		REQUIRE(aut.has_trans(0, alph["a"], 0));
+		REQUIRE(aut.has_trans(0, alph["b"], 0));
+	}
+
+	SECTION("non-empty automaton, empty alphabet")
+	{
+		EnumAlphabet alphabet{};
+
+		aut.initialstates = {1};
+
+		make_complete(&aut, alphabet, 0);
+
+		REQUIRE(aut.initialstates.size() == 1);
+		REQUIRE(*aut.initialstates.begin() == 1);
+		REQUIRE(aut.finalstates.empty());
+		REQUIRE(aut.transitions.empty());
+	}
+
+	SECTION("one-state automaton")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		const State SINK = 10;
+
+		aut.initialstates = {1};
+
+		make_complete(&aut, alph, SINK);
+
+		REQUIRE(aut.initialstates.size() == 1);
+		REQUIRE(*aut.initialstates.begin() == 1);
+		REQUIRE(aut.finalstates.empty());
+		REQUIRE(aut.has_trans(1, alph["a"], SINK));
+		REQUIRE(aut.has_trans(1, alph["b"], SINK));
+		REQUIRE(aut.has_trans(SINK, alph["a"], SINK));
+		REQUIRE(aut.has_trans(SINK, alph["b"], SINK));
+	}
+
+	SECTION("bigger automaton")
+	{
+		EnumAlphabet alph{"a", "b", "c"};
+		const State SINK = 9;
+
+		aut.initialstates = {1, 2};
+		aut.finalstates = {8};
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["a"], 4);
+		aut.add_trans(2, alph["c"], 1);
+		aut.add_trans(2, alph["c"], 3);
+		aut.add_trans(3, alph["b"], 5);
+		aut.add_trans(4, alph["c"], 8);
+
+		make_complete(&aut, alph, SINK);
+
+		REQUIRE(aut.has_trans(1, alph["a"], 2));
+		REQUIRE(aut.has_trans(1, alph["b"], SINK));
+		REQUIRE(aut.has_trans(1, alph["c"], SINK));
+		REQUIRE(aut.has_trans(2, alph["a"], 4));
+		REQUIRE(aut.has_trans(2, alph["c"], 1));
+		REQUIRE(aut.has_trans(2, alph["c"], 3));
+		REQUIRE(aut.has_trans(2, alph["b"], SINK));
+		REQUIRE(aut.has_trans(3, alph["b"], 5));
+		REQUIRE(aut.has_trans(3, alph["a"], SINK));
+		REQUIRE(aut.has_trans(3, alph["c"], SINK));
+		REQUIRE(aut.has_trans(4, alph["c"], 8));
+		REQUIRE(aut.has_trans(4, alph["a"], SINK));
+		REQUIRE(aut.has_trans(4, alph["b"], SINK));
+		REQUIRE(aut.has_trans(5, alph["a"], SINK));
+		REQUIRE(aut.has_trans(5, alph["b"], SINK));
+		REQUIRE(aut.has_trans(5, alph["c"], SINK));
+		REQUIRE(aut.has_trans(8, alph["a"], SINK));
+		REQUIRE(aut.has_trans(8, alph["b"], SINK));
+		REQUIRE(aut.has_trans(8, alph["c"], SINK));
+		REQUIRE(aut.has_trans(SINK, alph["a"], SINK));
+		REQUIRE(aut.has_trans(SINK, alph["b"], SINK));
+		REQUIRE(aut.has_trans(SINK, alph["c"], SINK));
+	}
+
+	DEBUG_PRINT("Vata2::Nfa::make_complete() not tested properly");
 } // }}}

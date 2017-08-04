@@ -8,9 +8,12 @@
 #include <unordered_set>
 
 using std::tie;
-using namespace Vata2::util;
 
-std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
+using namespace Vata2::util;
+using namespace Vata2::Nfa;
+using Vata2::Nfa::Symbol;
+
+std::ostream& operator<<(std::ostream& strm, const Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " +
 		std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
@@ -18,7 +21,41 @@ std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
 } // operator<<(ostream, Trans) }}}
 
 
-void Vata2::Nfa::Nfa::add_trans(const Trans& trans)
+Symbol OnTheFlyAlphabet::translate_symb(const std::string& str)
+{ // {{{
+	auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
+	if (it_insert_pair.second) { return cnt_symbol++; }
+	else { return it_insert_pair.first->second; }
+} // OnTheFlyAlphabet::translate_symb }}}
+
+std::list<Symbol> OnTheFlyAlphabet::get_complement(
+	const std::set<Symbol>& syms) const
+{
+	(void)syms;
+	throw std::runtime_error("Unimplemented");
+}
+
+std::list<Symbol> EnumAlphabet::get_complement(
+	const std::set<Symbol>& syms) const
+{
+	std::list<Symbol> result;
+
+	// TODO: could be optimized
+	std::set<Symbol> symbols_alphabet;
+	for (auto str_sym_pair : this->symbol_map)
+	{
+		symbols_alphabet.insert(str_sym_pair.second);
+	}
+
+	std::set_difference(
+		symbols_alphabet.begin(), symbols_alphabet.end(),
+		syms.begin(), syms.end(),
+		std::inserter(result, result.end()));
+
+	return result;
+}
+
+void Nfa::add_trans(const Trans& trans)
 { // {{{
 	auto it = this->transitions.find(trans.src);
 	if (it != this->transitions.end())
@@ -41,7 +78,7 @@ void Vata2::Nfa::Nfa::add_trans(const Trans& trans)
 	}
 } // add_trans }}}
 
-bool Vata2::Nfa::Nfa::has_trans(const Trans& trans) const
+bool Nfa::has_trans(const Trans& trans) const
 { // {{{
 	auto it = this->transitions.find(trans.src);
 	if (it == this->transitions.end())
@@ -59,7 +96,7 @@ bool Vata2::Nfa::Nfa::has_trans(const Trans& trans) const
 	return jt->second.find(trans.tgt) != jt->second.end();
 } // has_trans }}}
 
-Vata2::Nfa::Nfa::const_iterator Vata2::Nfa::Nfa::const_iterator::for_begin(const Nfa* nfa)
+Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
 	assert(nullptr != nfa);
 
@@ -84,7 +121,7 @@ Vata2::Nfa::Nfa::const_iterator Vata2::Nfa::Nfa::const_iterator::for_begin(const
 	return result;
 } // for_begin }}}
 
-Vata2::Nfa::Nfa::const_iterator& Vata2::Nfa::Nfa::const_iterator::operator++()
+Nfa::const_iterator& Nfa::const_iterator::operator++()
 { // {{{
 	assert(nullptr != nfa);
 
@@ -134,7 +171,7 @@ Vata2::Nfa::Nfa::const_iterator& Vata2::Nfa::Nfa::const_iterator::operator++()
 } // operator++ }}}
 
 
-Vata2::Nfa::StateSet Vata2::Nfa::Nfa::get_post_of_set(
+StateSet Nfa::get_post_of_set(
 	const StateSet&  macrostate,
 	Symbol           sym) const
 { // {{{
@@ -156,7 +193,7 @@ Vata2::Nfa::StateSet Vata2::Nfa::Nfa::get_post_of_set(
 } // get_post_of_set }}}
 
 
-std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Nfa& nfa)
+std::ostream& Vata2::Nfa::operator<<(std::ostream& strm, const Nfa& nfa)
 {
 	return strm << serialize_vtf(nfa);
 }
@@ -328,9 +365,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 			return false;
 		}
 
-		const PostSymb* post_map = aut.get_post(state);
-		if (nullptr == post_map) { continue; }
-		for (const auto& symb_stateset : *post_map)
+		for (const auto& symb_stateset : aut[state])
 		{
 			const StateSet& stateset = symb_stateset.second;
 			for (auto tgt_state : stateset)
@@ -355,19 +390,36 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 	return true;
 } // is_lang_empty }}}
 
-bool Vata2::Nfa::is_lang_universal(const Nfa& aut, Path* cex)
+
+bool Vata2::Nfa::is_lang_empty_word(const Nfa& aut, Word* cex)
 { // {{{
-	assert(false);
+	assert(nullptr != cex);
 
-	*cex = {1,2};
+	Path path = { };
+	bool result = is_lang_empty(aut, &path);
+	if (result) { return true; }
+	bool consistent;
+	tie(*cex, consistent) = get_word_for_path(aut, path);
+	assert(consistent);
 
-	return true;
+	return false;
+} // is_lang_empty_word }}}
+
+
+bool Vata2::Nfa::is_lang_universal(
+	const Nfa&       aut,
+	const Alphabet&  alphabet,
+	Path*            cex)
+{ // {{{
+	Nfa cmpl = complement(aut, alphabet);
+	return !is_lang_empty(cmpl, cex);
 } // is_lang_universal }}}
 
 void Vata2::Nfa::determinize(
 	Nfa*        result,
 	const Nfa&  aut,
-	SubsetMap*  subset_map)
+	SubsetMap*  subset_map,
+	State*      last_state_num)
 { // {{{
 	assert(nullptr != result);
 
@@ -435,7 +487,82 @@ void Vata2::Nfa::determinize(
 	{
 		delete subset_map;
 	}
+
+	if (nullptr != last_state_num)
+	{
+		*last_state_num = cnt_state - 1;
+	}
 } // determinize }}}
+
+
+void Vata2::Nfa::make_complete(
+	Nfa*             aut,
+	const Alphabet&  alphabet,
+	State            sink_state)
+{
+	assert(nullptr != aut);
+
+	std::list<State> worklist(aut->initialstates.begin(),
+		aut->initialstates.end());
+	std::unordered_set<State> processed(aut->initialstates.begin(),
+		aut->initialstates.end());
+	worklist.push_back(sink_state);
+	processed.insert(sink_state);
+
+	while (!worklist.empty())
+	{
+		State state = *worklist.begin();
+		worklist.pop_front();
+
+		std::set<Symbol> used_symbols;
+		for (const auto& symb_stateset : (*aut)[state])
+		{
+			used_symbols.insert(symb_stateset.first);
+
+			const StateSet& stateset = symb_stateset.second;
+			for (auto tgt_state : stateset)
+			{
+				bool inserted;
+				tie(std::ignore, inserted) = processed.insert(tgt_state);
+				if (inserted) { worklist.push_back(tgt_state); }
+			}
+		}
+
+		auto unused_symbols = alphabet.get_complement(used_symbols);
+		for (Symbol symb : unused_symbols)
+		{
+			aut->add_trans(state, symb, sink_state);
+		}
+	}
+}
+
+
+void Vata2::Nfa::complement(
+	Nfa*             result,
+	const Nfa&       aut,
+	const Alphabet&  alphabet,
+	SubsetMap*       subset_map)
+{
+	assert(nullptr != result);
+
+	bool delete_subset_map = false;
+	if  (nullptr == subset_map)
+	{
+		subset_map = new SubsetMap();
+		delete_subset_map = true;
+	}
+
+	State last_state_num;
+	*result = determinize(aut, subset_map, &last_state_num);
+	make_complete(result, alphabet, last_state_num + 1);
+
+	assert(false);
+
+	if (delete_subset_map)
+	{
+		delete subset_map;
+	}
+}
 
 
 std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
@@ -470,7 +597,7 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
 } // serialize_vtf }}}
 
 
-std::pair<Vata2::Nfa::Word, bool> Vata2::Nfa::get_word_for_path(
+std::pair<Word, bool> Vata2::Nfa::get_word_for_path(
 	const Nfa&   aut,
 	const Path&  path)
 { // {{{

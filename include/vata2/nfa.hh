@@ -54,7 +54,13 @@ struct Trans
 class Alphabet
 {
 public:
+
+	/// translates a string into a symbol
 	virtual Symbol translate_symb(const std::string& symb) = 0;
+	/// also translates strings to symbols
+	Symbol operator[](const std::string& symb) {return this->translate_symb(symb);}
+	/// complement of a set of symbols wrt the alphabet
+	virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const=0;
 
 	virtual ~Alphabet() { }
 };
@@ -77,28 +83,29 @@ public:
 		assert(nullptr != symbol_map);
 	}
 
-	virtual Symbol translate_symb(const std::string& str)
-	{
-		auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
-		if (it_insert_pair.second) { return cnt_symbol++; }
-		else { return it_insert_pair.first->second; }
-	}
+	virtual Symbol translate_symb(const std::string& str) override;
+
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
 {
-	virtual Symbol translate_symb(const std::string& str)
+	virtual Symbol translate_symb(const std::string& str) override
 	{
 		Symbol symb;
 		std::istringstream stream(str);
 		stream >> symb;
 		return symb;
 	}
+
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
 };
 
 class CharAlphabet : public Alphabet
 {
-	virtual Symbol translate_symb(const std::string& str)
+	virtual Symbol translate_symb(const std::string& str) override
 	{
 		if (str.length() == 3 &&
 			((str[0] == '\'' && str[2] == '\'') ||
@@ -113,6 +120,56 @@ class CharAlphabet : public Alphabet
 		stream >> symb;
 		return symb;
 	}
+
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
+};
+
+class EnumAlphabet : public Alphabet
+{
+private:
+	StringToSymbolMap symbol_map;
+
+private:
+	EnumAlphabet(const EnumAlphabet& rhs);
+	EnumAlphabet& operator=(const EnumAlphabet& rhs);
+
+public:
+
+	EnumAlphabet() : symbol_map() { }
+
+	template <class InputIt>
+	EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
+	{ // {{{
+		size_t cnt = 0;
+		for (; first != last; ++first)
+		{
+			bool inserted;
+			std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
+			if (!inserted)
+			{
+				throw std::runtime_error("multiple occurrence of the same symbol");
+			}
+		}
+	} // }}}
+
+	EnumAlphabet(std::initializer_list<std::string> l) :
+		EnumAlphabet(l.begin(), l.end())
+	{ }
+
+	virtual Symbol translate_symb(const std::string& str) override
+	{
+		auto it = symbol_map.find(str);
+		if (symbol_map.end() == it)
+		{
+			throw std::runtime_error("unknown symbol \'" + str + "\'");
+		}
+
+		return it->second;
+	}
+
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
 };
 // }}}
 
@@ -208,29 +265,77 @@ struct Nfa
 
 	/// gets a post of a set of states over a symbol
 	StateSet get_post_of_set(const StateSet& macrostate, Symbol sym) const;
-
-	friend std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 }; // Nfa }}}
 
-/** Do the automata have disjoint sets of states? */
+/// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
-/** Is the language of the automaton empty? */
+/// Is the language of the automaton empty?
 bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
-/** Is the language of the automaton universal? */
-bool is_lang_universal(const Nfa& aut, Path* cex = nullptr);
+bool is_lang_empty_word(const Nfa& aut, Word* cex);
 
-/** Compute intersection of a pair of automata */
+
+/// Is the language of the automaton universal?
+bool is_lang_universal(
+	const Nfa&       aut,
+	const Alphabet&  alphabet,
+	Path*            cex = nullptr);
+
+/// Compute intersection of a pair of automata
 void intersection(
 	Nfa*         result,
 	const Nfa&   lhs,
 	const Nfa&   rhs,
 	ProductMap*  prod_map = nullptr);
 
-/** Determinize an automaton */
+inline Nfa intersection(
+	const Nfa&   lhs,
+	const Nfa&   rhs,
+	ProductMap*  prod_map = nullptr)
+{ // {{{
+	Nfa result;
+	intersection(&result, lhs, rhs, prod_map);
+	return result;
+} // intersection }}}
+
+/// Determinize an automaton
 void determinize(
 	Nfa*        result,
 	const Nfa&  aut,
-	SubsetMap*  subset_map = nullptr);
+	SubsetMap*  subset_map = nullptr,
+	State*      last_state_num = nullptr);
+
+inline Nfa determinize(
+	const Nfa&  aut,
+	SubsetMap*  subset_map = nullptr,
+	State*      last_state_num = nullptr)
+{ // {{{
+	Nfa result;
+	determinize(&result, aut, subset_map, last_state_num);
+	return result;
+} // determinize }}}
+
+/// makes the transition relation complete
+void make_complete(
+	Nfa*             aut,
+	const Alphabet&  alphabet,
+	State            sink_state);
+
+/// Complement
+void complement(
+	Nfa*             result,
+	const Nfa&       aut,
+	const Alphabet&  alphabet,
+	SubsetMap*       subset_map = nullptr);
+
+inline Nfa complement(
+	const Nfa&       aut,
+	const Alphabet&  alphabet,
+	SubsetMap*       subset_map = nullptr)
+{ // {{{
+	Nfa result;
+	complement(&result, aut, alphabet, subset_map);
+	return result;
+} // complement }}}
 
 /** Loads an automaton from Parsed object */
 void construct(
@@ -286,10 +391,10 @@ inline Nfa construct(
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
 
 
-/** Checks whether a string is in the language of an automaton */
+/// Checks whether a string is in the language of an automaton
 bool is_in_lang(const Nfa& aut, const Word& word);
 
-/** Checks whether the prefix of a string is in the language of an automaton */
+/// Checks whether the prefix of a string is in the language of an automaton
 bool is_prfx_in_lang(const Nfa& aut, const Word& word);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a @c Word instance */
@@ -301,6 +406,9 @@ inline Word encode_word(
 	for (auto str : input) { result.push_back(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
+
+/// operator<<
+std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
