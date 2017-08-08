@@ -96,6 +96,23 @@ bool Nfa::has_trans(const Trans& trans) const
 	return jt->second.find(trans.tgt) != jt->second.end();
 } // has_trans }}}
 
+
+size_t Nfa::trans_size() const
+{ // {{{
+	size_t cnt = 0;
+	for (auto state_post_symb_map_pair : this->transitions)
+	{
+		const PostSymb& symb_set_map = state_post_symb_map_pair.second;
+		for (auto symb_state_set_pair : symb_set_map)
+		{
+			cnt += symb_state_set_pair.second.size();
+		}
+	}
+
+	return cnt;
+} // trans_size() }}}
+
+
 Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
 	assert(nullptr != nfa);
@@ -391,7 +408,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 } // is_lang_empty }}}
 
 
-bool Vata2::Nfa::is_lang_empty_word(const Nfa& aut, Word* cex)
+bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
 { // {{{
 	assert(nullptr != cex);
 
@@ -403,17 +420,29 @@ bool Vata2::Nfa::is_lang_empty_word(const Nfa& aut, Word* cex)
 	assert(consistent);
 
 	return false;
-} // is_lang_empty_word }}}
+} // is_lang_empty_cex }}}
 
 
-bool Vata2::Nfa::is_lang_universal(
+bool Vata2::Nfa::is_universal(
 	const Nfa&       aut,
 	const Alphabet&  alphabet,
-	Path*            cex)
+	Word*            cex)
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
-	return !is_lang_empty(cmpl, cex);
-} // is_lang_universal }}}
+
+	bool result;
+	if (nullptr == cex)
+	{
+		result = is_lang_empty(cmpl);
+	}
+	else
+	{
+		result = is_lang_empty_cex(cmpl, cex);
+	}
+
+	return result;
+} // is_universal }}}
+
 
 void Vata2::Nfa::determinize(
 	Nfa*        result,
@@ -567,7 +596,7 @@ void Vata2::Nfa::complement(
 	assert(result->initialstates.size() == 1);
 
 	auto make_final_if_not_in_old = [&](const State& state) {
-		if (old_fs.find(*result->initialstates.begin()) == old_fs.end())
+		if (old_fs.find(state) == old_fs.end())
 		{
 			result->finalstates.insert(state);
 		}

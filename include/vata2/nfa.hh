@@ -183,9 +183,17 @@ std::string serialize_vtf(const Nfa& aut);
 ///  An NFA
 struct Nfa
 { // {{{
+private:
+
+	// private transitions in order to avoid the use of transitions.size() which
+	// returns something else than expected (basically returns the number of
+	// states with outgoing edges in the NFA
+	StateToPostMap transitions = {};
+
+public:
+
 	std::set<State> initialstates = {};
 	std::set<State> finalstates = {};
-	StateToPostMap transitions = {};
 
 	bool has_initial(State state) const
 	{ // {{{
@@ -207,6 +215,9 @@ struct Nfa
 	{ // {{{
 		return this->has_trans({src, symb, tgt});
 	} // }}}
+
+	bool trans_empty() const { return this->transitions.empty();};// no transitions
+	size_t trans_size() const;/// number of transitions; has linear time complexity
 
 	struct const_iterator
 	{ // {{{
@@ -271,14 +282,14 @@ struct Nfa
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 /// Is the language of the automaton empty?
 bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
-bool is_lang_empty_word(const Nfa& aut, Word* cex);
+bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
 
 /// Is the language of the automaton universal?
-bool is_lang_universal(
+bool is_universal(
 	const Nfa&       aut,
 	const Alphabet&  alphabet,
-	Path*            cex = nullptr);
+	Word*            cex = nullptr);
 
 /// Compute intersection of a pair of automata
 void intersection(

@@ -168,7 +168,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 
 		REQUIRE(res.initialstates.empty());
 		REQUIRE(res.finalstates.empty());
-		REQUIRE(res.transitions.empty());
+		REQUIRE(res.trans_empty());
 		REQUIRE(prod_map.empty());
 	}
 
@@ -178,7 +178,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 
 		REQUIRE(res.initialstates.empty());
 		REQUIRE(res.finalstates.empty());
-		REQUIRE(res.transitions.empty());
+		REQUIRE(res.trans_empty());
 	}
 
 	SECTION("Intersection of automata with no transitions")
@@ -435,7 +435,7 @@ TEST_CASE("Vata2::Nfa::get_word_for_path()")
 }
 
 
-TEST_CASE("Vata2::Nfa::is_lang_empty_word()")
+TEST_CASE("Vata2::Nfa::is_lang_empty_cex()")
 {
 	Nfa aut;
 	Word cex;
@@ -451,7 +451,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty_word()")
 		aut.add_trans(3, 'e', 5);
 		aut.add_trans(4, 'c', 8);
 
-		bool is_empty = is_lang_empty_word(aut, &cex);
+		bool is_empty = is_lang_empty_cex(aut, &cex);
 		REQUIRE(!is_empty);
 
 		// check the counterexample
@@ -474,7 +474,7 @@ TEST_CASE("Vata2::Nfa::determinize()")
 
 		REQUIRE(result.has_initial(subset_map[{}]));
 		REQUIRE(result.finalstates.empty());
-		REQUIRE(result.transitions.empty());
+		REQUIRE(result.trans_empty());
 	}
 
 	SECTION("simple automaton 1")
@@ -485,7 +485,7 @@ TEST_CASE("Vata2::Nfa::determinize()")
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
 		REQUIRE(result.has_final(subset_map[{1}]));
-		REQUIRE(result.transitions.empty());
+		REQUIRE(result.trans_empty());
 	}
 
 	SECTION("simple automaton 2")
@@ -647,7 +647,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 
 		REQUIRE(aut.initialstates.empty());
 		REQUIRE(aut.finalstates.empty());
-		REQUIRE(aut.transitions.empty());
+		REQUIRE(aut.trans_empty());
 	}
 
 	SECTION("empty automaton")
@@ -673,7 +673,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 		REQUIRE(aut.initialstates.size() == 1);
 		REQUIRE(*aut.initialstates.begin() == 1);
 		REQUIRE(aut.finalstates.empty());
-		REQUIRE(aut.transitions.empty());
+		REQUIRE(aut.trans_empty());
 	}
 
 	SECTION("one-state automaton")
@@ -747,6 +747,193 @@ TEST_CASE("Vata2::Nfa::complement()")
 		cmpl = complement(aut, alph);
 
 		REQUIRE(is_in_lang(cmpl, { }));
+		REQUIRE(cmpl.initialstates.size() == 1);
+		REQUIRE(cmpl.finalstates.size() == 1);
+		REQUIRE(cmpl.trans_empty());
+		REQUIRE(*cmpl.initialstates.begin() == *cmpl.finalstates.begin());
+	}
+
+	SECTION("empty automaton")
+	{
+		EnumAlphabet alph = {"a", "b"};
+
+		cmpl = complement(aut, alph);
+
+		REQUIRE(is_in_lang(cmpl, { }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["b"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["a"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["b"], alph["b"], alph["a"] }));
+
+		// TODO: consider removing the structural tests (in case a more
+		// sophisticated complementation algorithm is used)
+		REQUIRE(cmpl.initialstates.size() == 1);
+		REQUIRE(cmpl.finalstates.size() == 1);
+
+		State init_state = *cmpl.initialstates.begin();
+		State fin_state = *cmpl.finalstates.begin();
+		REQUIRE(init_state == fin_state);
+		REQUIRE(cmpl.trans_size() == 2);
+		REQUIRE(cmpl.has_trans(init_state, alph["a"], init_state));
+		REQUIRE(cmpl.has_trans(init_state, alph["b"], init_state));
+	}
+
+	SECTION("empty automaton accepting epsilon, empty alphabet")
+	{
+		EnumAlphabet alph = {};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
+
+		cmpl = complement(aut, alph);
+
+		REQUIRE(!is_in_lang(cmpl, { }));
+		REQUIRE(cmpl.initialstates.size() == 1);
+		REQUIRE(cmpl.finalstates.size() == 0);
+		REQUIRE(cmpl.trans_empty());
+	}
+
+	SECTION("empty automaton accepting epsilon")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
+
+		cmpl = complement(aut, alph);
+
+		REQUIRE(!is_in_lang(cmpl, { }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["b"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["a"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["b"], alph["b"], alph["a"] }));
+		REQUIRE(cmpl.initialstates.size() == 1);
+		REQUIRE(cmpl.finalstates.size() == 1);
+		REQUIRE(cmpl.trans_size() == 4);
+	}
+
+	SECTION("non-empty automaton accepting a*b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2};
+
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
+
+		cmpl = complement(aut, alph);
+
+		REQUIRE(!is_in_lang(cmpl, { }));
+		REQUIRE(!is_in_lang(cmpl, { alph["a"] }));
+		REQUIRE(!is_in_lang(cmpl, { alph["b"] }));
+		REQUIRE(!is_in_lang(cmpl, { alph["a"], alph["a"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["b"], alph["b"], alph["a"] }));
+		REQUIRE(!is_in_lang(cmpl, { alph["a"], alph["a"], alph["b"], alph["b"] }));
+		REQUIRE(is_in_lang(cmpl, { alph["b"], alph["a"], alph["a"], alph["a"] }));
+
+		REQUIRE(cmpl.initialstates.size() == 1);
+		REQUIRE(cmpl.finalstates.size() == 1);
+		REQUIRE(cmpl.trans_size() == 6);
+	}
+}
+
+TEST_CASE("Vata2::Nfa::is_universal()")
+{
+	Nfa aut;
+	Word cex;
+
+	SECTION("empty automaton, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+
+		bool is_univ = is_universal(aut, alph);
+
+		REQUIRE(!is_univ);
+	}
+
+	SECTION("empty automaton accepting epsilon, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+		aut.initialstates = {1};
+		aut.finalstates = {1};
+
+		bool is_univ = is_universal(aut, alph, &cex);
+
+		REQUIRE(is_univ);
+		REQUIRE(Word{ } == cex);
+	}
+
+	SECTION("empty automaton accepting epsilon")
+	{
+		EnumAlphabet alph = {"a"};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
+
+		bool is_univ = is_universal(aut, alph, &cex);
+
+		REQUIRE(!is_univ);
+
+		REQUIRE(((cex == Word{alph["a"]}) || (cex == Word{alph["b"]})));
+	}
+
+	SECTION("automaton for a*b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2};
+
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
+
+		bool is_univ = is_universal(aut, alph);
+
+		REQUIRE(!is_univ);
+	}
+
+	SECTION("automaton for a* + b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2};
+
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(2, alph["b"], 2);
+
+		bool is_univ = is_universal(aut, alph);
+
+		REQUIRE(!is_univ);
+	}
+
+	SECTION("automaton for (a + b)*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
+
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(1, alph["b"], 1);
+
+		bool is_univ = is_universal(aut, alph);
+
+		REQUIRE(is_univ);
+	}
+
+	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,3};
+		aut.finalstates = {1,2,4};
+
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(3, alph["b"], 4);
+		aut.add_trans(4, alph["a"], 4);
+		aut.add_trans(4, alph["b"], 4);
+
+		bool is_univ = is_universal(aut, alph, &cex);
+
+		REQUIRE(is_univ);
 	}
 
 }
