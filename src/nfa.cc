@@ -28,16 +28,21 @@ Symbol OnTheFlyAlphabet::translate_symb(const std::string& str)
 	else { return it_insert_pair.first->second; }
 } // OnTheFlyAlphabet::translate_symb }}}
 
-std::list<Symbol> OnTheFlyAlphabet::get_complement(
-	const std::set<Symbol>& syms) const
-{
-	(void)syms;
-	throw std::runtime_error("Unimplemented");
-}
+
+std::list<Symbol> EnumAlphabet::get_symbols() const
+{ // {{{
+	std::list<Symbol> result;
+	for (const auto& str_sym_pair : this->symbol_map)
+	{
+		result.push_back(str_sym_pair.second);
+	}
+
+	return result;
+} // EnumAlphabet::get_symbols }}}
 
 std::list<Symbol> EnumAlphabet::get_complement(
 	const std::set<Symbol>& syms) const
-{
+{ // {{{
 	std::list<Symbol> result;
 
 	// TODO: could be optimized
@@ -53,7 +58,7 @@ std::list<Symbol> EnumAlphabet::get_complement(
 		std::inserter(result, result.end()));
 
 	return result;
-}
+} // EnumAlphabet::get_complement }}}
 
 void Nfa::add_trans(const Trans& trans)
 { // {{{

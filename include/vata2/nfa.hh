@@ -61,8 +61,18 @@ public:
 	virtual Symbol translate_symb(const std::string& symb) = 0;
 	/// also translates strings to symbols
 	Symbol operator[](const std::string& symb) {return this->translate_symb(symb);}
+	/// gets a list of symbols in the alphabet
+	virtual std::list<Symbol> get_symbols() const
+	{ // {{{
+		throw std::runtime_error("Unimplemented");
+	} // }}}
+
 	/// complement of a set of symbols wrt the alphabet
-	virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const=0;
+	virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const
+	{ // {{{
+		(void)syms;
+		throw std::runtime_error("Unimplemented");
+	} // }}}
 
 	virtual ~Alphabet() { }
 };
@@ -86,9 +96,6 @@ public:
 	}
 
 	virtual Symbol translate_symb(const std::string& str) override;
-
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
@@ -100,9 +107,6 @@ class DirectAlphabet : public Alphabet
 		stream >> symb;
 		return symb;
 	}
-
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
 };
 
 class CharAlphabet : public Alphabet
@@ -122,9 +126,6 @@ class CharAlphabet : public Alphabet
 		stream >> symb;
 		return symb;
 	}
-
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
 };
 
 class EnumAlphabet : public Alphabet
@@ -170,6 +171,7 @@ public:
 		return it->second;
 	}
 
+	virtual std::list<Symbol> get_symbols() const override;
 	virtual std::list<Symbol> get_complement(
 		const std::set<Symbol>& syms) const override;
 };
