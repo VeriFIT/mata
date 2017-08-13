@@ -2,6 +2,8 @@
 
 #include "../3rdparty/catch.hpp"
 
+#include <unordered_set>
+
 #include <vata2/nfa.hh>
 using namespace Vata2::Nfa;
 using namespace Vata2::util;
@@ -841,100 +843,112 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 {
 	Nfa aut;
 	Word cex;
+	StringDict params;
 
-	SECTION("empty automaton, empty alphabet")
+	const std::unordered_set<std::string> ALGORITHMS = {
+		"naive",
+		"antichains",
+	};
+
+	// run a matrix of tests
+	for (const auto& algo : ALGORITHMS)
 	{
-		EnumAlphabet alph = { };
+		params["algo"] = algo;
 
-		bool is_univ = is_universal(aut, alph);
+		SECTION("empty automaton, empty alphabet")
+		{
+			EnumAlphabet alph = { };
+			DEBUG_PRINT("algo: " + std::to_string(algo));
 
-		REQUIRE(!is_univ);
+			bool is_univ = is_universal(aut, alph, params);
+
+			REQUIRE(!is_univ);
+		}
+
+		SECTION("empty automaton accepting epsilon, empty alphabet")
+		{
+			EnumAlphabet alph = { };
+			aut.initialstates = {1};
+			aut.finalstates = {1};
+
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(is_univ);
+			REQUIRE(Word{ } == cex);
+		}
+
+		SECTION("empty automaton accepting epsilon")
+		{
+			EnumAlphabet alph = {"a"};
+			aut.initialstates = {1};
+			aut.finalstates = {1};
+
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(!is_univ);
+
+			REQUIRE(((cex == Word{alph["a"]}) || (cex == Word{alph["b"]})));
+		}
+
+		SECTION("automaton for a*b*")
+		{
+			EnumAlphabet alph = {"a", "b"};
+			aut.initialstates = {1,2};
+			aut.finalstates = {1,2};
+
+			aut.add_trans(1, alph["a"], 1);
+			aut.add_trans(1, alph["a"], 2);
+			aut.add_trans(2, alph["b"], 2);
+
+			bool is_univ = is_universal(aut, alph, params);
+
+			REQUIRE(!is_univ);
+		}
+
+		SECTION("automaton for a* + b*")
+		{
+			EnumAlphabet alph = {"a", "b"};
+			aut.initialstates = {1,2};
+			aut.finalstates = {1,2};
+
+			aut.add_trans(1, alph["a"], 1);
+			aut.add_trans(2, alph["b"], 2);
+
+			bool is_univ = is_universal(aut, alph, params);
+
+			REQUIRE(!is_univ);
+		}
+
+		SECTION("automaton for (a + b)*")
+		{
+			EnumAlphabet alph = {"a", "b"};
+			aut.initialstates = {1};
+			aut.finalstates = {1};
+
+			aut.add_trans(1, alph["a"], 1);
+			aut.add_trans(1, alph["b"], 1);
+
+			bool is_univ = is_universal(aut, alph, params);
+
+			REQUIRE(is_univ);
+		}
+
+		SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
+		{
+			EnumAlphabet alph = {"a", "b"};
+			aut.initialstates = {1,3};
+			aut.finalstates = {1,2,4};
+
+			aut.add_trans(1, alph["a"], 2);
+			aut.add_trans(2, alph["a"], 2);
+			aut.add_trans(2, alph["b"], 2);
+			aut.add_trans(3, alph["b"], 4);
+			aut.add_trans(4, alph["a"], 4);
+			aut.add_trans(4, alph["b"], 4);
+
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(is_univ);
+		}
 	}
-
-	SECTION("empty automaton accepting epsilon, empty alphabet")
-	{
-		EnumAlphabet alph = { };
-		aut.initialstates = {1};
-		aut.finalstates = {1};
-
-		bool is_univ = is_universal(aut, alph, &cex);
-
-		REQUIRE(is_univ);
-		REQUIRE(Word{ } == cex);
-	}
-
-	SECTION("empty automaton accepting epsilon")
-	{
-		EnumAlphabet alph = {"a"};
-		aut.initialstates = {1};
-		aut.finalstates = {1};
-
-		bool is_univ = is_universal(aut, alph, &cex);
-
-		REQUIRE(!is_univ);
-
-		REQUIRE(((cex == Word{alph["a"]}) || (cex == Word{alph["b"]})));
-	}
-
-	SECTION("automaton for a*b*")
-	{
-		EnumAlphabet alph = {"a", "b"};
-		aut.initialstates = {1,2};
-		aut.finalstates = {1,2};
-
-		aut.add_trans(1, alph["a"], 1);
-		aut.add_trans(1, alph["a"], 2);
-		aut.add_trans(2, alph["b"], 2);
-
-		bool is_univ = is_universal(aut, alph);
-
-		REQUIRE(!is_univ);
-	}
-
-	SECTION("automaton for a* + b*")
-	{
-		EnumAlphabet alph = {"a", "b"};
-		aut.initialstates = {1,2};
-		aut.finalstates = {1,2};
-
-		aut.add_trans(1, alph["a"], 1);
-		aut.add_trans(2, alph["b"], 2);
-
-		bool is_univ = is_universal(aut, alph);
-
-		REQUIRE(!is_univ);
-	}
-
-	SECTION("automaton for (a + b)*")
-	{
-		EnumAlphabet alph = {"a", "b"};
-		aut.initialstates = {1};
-		aut.finalstates = {1};
-
-		aut.add_trans(1, alph["a"], 1);
-		aut.add_trans(1, alph["b"], 1);
-
-		bool is_univ = is_universal(aut, alph);
-
-		REQUIRE(is_univ);
-	}
-
-	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
-	{
-		EnumAlphabet alph = {"a", "b"};
-		aut.initialstates = {1,3};
-		aut.finalstates = {1,2,4};
-
-		aut.add_trans(1, alph["a"], 2);
-		aut.add_trans(2, alph["a"], 2);
-		aut.add_trans(2, alph["b"], 2);
-		aut.add_trans(3, alph["b"], 4);
-		aut.add_trans(4, alph["a"], 4);
-		aut.add_trans(4, alph["b"], 4);
-
-		bool is_univ = is_universal(aut, alph, &cex);
-
-		REQUIRE(is_univ);
-	}
-
 }

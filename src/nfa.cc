@@ -415,27 +415,6 @@ bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
 } // is_lang_empty_cex }}}
 
 
-bool Vata2::Nfa::is_universal(
-	const Nfa&       aut,
-	const Alphabet&  alphabet,
-	Word*            cex)
-{ // {{{
-	Nfa cmpl = complement(aut, alphabet);
-
-	bool result;
-	if (nullptr == cex)
-	{
-		result = is_lang_empty(cmpl);
-	}
-	else
-	{
-		result = is_lang_empty_cex(cmpl, cex);
-	}
-
-	return result;
-} // is_universal }}}
-
-
 void Vata2::Nfa::determinize(
 	Nfa*        result,
 	const Nfa&  aut,

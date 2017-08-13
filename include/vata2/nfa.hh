@@ -35,6 +35,8 @@ using Word = std::vector<Symbol>;       /// a finite-length word
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
+using StringDict = std::unordered_map<std::string, std::string>;
+
 const PostSymb EMPTY_POST{};
 
 /// A transition
@@ -287,9 +289,18 @@ bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
 /// Is the language of the automaton universal?
 bool is_universal(
-	const Nfa&       aut,
-	const Alphabet&  alphabet,
-	Word*            cex = nullptr);
+	const Nfa&         aut,
+	const Alphabet&    alphabet,
+	Word*              cex = nullptr,
+	const StringDict&  params = {});
+
+inline bool is_universal(
+	const Nfa&         aut,
+	const Alphabet&    alphabet,
+	const StringDict&  params)
+{ // {{{
+	return is_universal(aut, alphabet, nullptr, params);
+} // }}}
 
 /// Compute intersection of a pair of automata
 void intersection(
