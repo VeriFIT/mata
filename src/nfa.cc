@@ -47,7 +47,7 @@ std::list<Symbol> EnumAlphabet::get_complement(
 
 	// TODO: could be optimized
 	std::set<Symbol> symbols_alphabet;
-	for (auto str_sym_pair : this->symbol_map)
+	for (const auto& str_sym_pair : this->symbol_map)
 	{
 		symbols_alphabet.insert(str_sym_pair.second);
 	}
@@ -105,10 +105,10 @@ bool Nfa::has_trans(const Trans& trans) const
 size_t Nfa::trans_size() const
 { // {{{
 	size_t cnt = 0;
-	for (auto state_post_symb_map_pair : this->transitions)
+	for (const auto& state_post_symb_map_pair : this->transitions)
 	{
 		const PostSymb& symb_set_map = state_post_symb_map_pair.second;
-		for (auto symb_state_set_pair : symb_set_map)
+		for (const auto& symb_state_set_pair : symb_set_map)
 		{
 			cnt += symb_state_set_pair.second.size();
 		}
@@ -228,23 +228,23 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 	lhs_states.insert(lhs.initialstates.begin(), lhs.initialstates.end());
 	lhs_states.insert(lhs.finalstates.begin(), lhs.finalstates.end());
 
-	for (auto trans : lhs)
+	for (const auto& trans : lhs)
 	{
 		lhs_states.insert({trans.src, trans.tgt});
 	}
 
 	// for every state found in rhs, check its presence in lhs_states
-	for (auto rhs_st : rhs.initialstates)
+	for (const auto& rhs_st : rhs.initialstates)
 	{
 		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
-	for (auto rhs_st : rhs.finalstates)
+	for (const auto& rhs_st : rhs.finalstates)
 	{
 		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
-	for (auto trans : rhs)
+	for (const auto& trans : rhs)
 	{
 		if (haskey(lhs_states, trans.src) || haskey(lhs_states, trans.tgt))
 		{
@@ -275,9 +275,9 @@ void Vata2::Nfa::intersection(
 	std::list<std::tuple<State, State, State>> worklist;
 
 	// translate initial states and initialize worklist
-	for (const auto lhs_st : lhs.initialstates)
+	for (const auto& lhs_st : lhs.initialstates)
 	{
-		for (const auto rhs_st : rhs.initialstates)
+		for (const auto& rhs_st : rhs.initialstates)
 		{
 			prod_map->insert({{lhs_st, rhs_st}, cnt_state});
 			result->initialstates.insert(cnt_state);
@@ -298,11 +298,11 @@ void Vata2::Nfa::intersection(
 		}
 
 		// TODO: a very inefficient implementation
-		for (const auto lhs_tr : lhs)
+		for (const auto& lhs_tr : lhs)
 		{
 			if (lhs_tr.src == lhs_st)
 			{
-				for (const auto rhs_tr : rhs)
+				for (const auto& rhs_tr : rhs)
 				{
 					if (rhs_tr.src == rhs_st)
 					{
@@ -382,7 +382,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 		for (const auto& symb_stateset : aut[state])
 		{
 			const StateSet& stateset = symb_stateset.second;
-			for (auto tgt_state : stateset)
+			for (const auto& tgt_state : stateset)
 			{
 				bool inserted;
 				tie(std::ignore, inserted) = processed.insert(tgt_state);
@@ -461,7 +461,7 @@ void Vata2::Nfa::determinize(
 		PostSymb post_symb;
 		for (State s : *state_set)
 		{
-			for (auto symb_post_pair : aut[s])
+			for (const auto& symb_post_pair : aut[s])
 			{
 				Symbol symb = symb_post_pair.first;
 				const StateSet& post = symb_post_pair.second;
@@ -470,7 +470,7 @@ void Vata2::Nfa::determinize(
 			}
 		}
 
-		for (auto it : post_symb)
+		for (const auto& it : post_symb)
 		{
 			Symbol symb = it.first;
 			const StateSet& post = it.second;
@@ -507,6 +507,9 @@ void Vata2::Nfa::make_complete(
 {
 	assert(nullptr != aut);
 
+	// TODO: is it necessary to do a traversal? shouldn't checking transitions be
+	// enough?
+
 	std::list<State> worklist(aut->initialstates.begin(),
 		aut->initialstates.end());
 	std::unordered_set<State> processed(aut->initialstates.begin(),
@@ -525,7 +528,7 @@ void Vata2::Nfa::make_complete(
 			used_symbols.insert(symb_stateset.first);
 
 			const StateSet& stateset = symb_stateset.second;
-			for (auto tgt_state : stateset)
+			for (const auto& tgt_state : stateset)
 			{
 				bool inserted;
 				tie(std::ignore, inserted) = processed.insert(tgt_state);
@@ -580,7 +583,7 @@ void Vata2::Nfa::complement(
 
 	make_final_if_not_in_old(*result->initialstates.begin());
 
-	for (auto tr : *result)
+	for (const auto& tr : *result)
 	{
 		make_final_if_not_in_old(tr.tgt);
 	}
@@ -611,7 +614,7 @@ std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
 
 	result += "\n";
 	result += "%Transitions   # the format is <src> <symbol> <tgt>\n";
-	for (auto trans : aut)
+	for (const auto& trans : aut)
 	{
 		result +=
 			"q" + std::to_string(trans.src) +
@@ -640,8 +643,8 @@ std::pair<Word, bool> Vata2::Nfa::get_word_for_path(
 		State newSt = path[i];
 		bool found = false;
 
-		auto postCur = aut.get_post(cur);
-		for (auto symbolMap : *postCur)
+		const auto& postCur = aut.get_post(cur);
+		for (const auto& symbolMap : *postCur)
 		{
 			for (State st : symbolMap.second)
 			{
@@ -707,7 +710,7 @@ void Vata2::Nfa::construct(
 	auto it = parsed.dict.find("Initial");
 	if (parsed.dict.end() != it)
 	{
-		for (auto str : it->second)
+		for (const auto& str : it->second)
 		{
 			State state = get_state_name(str);
 			aut->initialstates.insert(state);
@@ -718,14 +721,14 @@ void Vata2::Nfa::construct(
 	it = parsed.dict.find("Final");
 	if (parsed.dict.end() != it)
 	{
-		for (auto str : it->second)
+		for (const auto& str : it->second)
 		{
 			State state = get_state_name(str);
 			aut->finalstates.insert(state);
 		}
 	}
 
-	for (auto body_line : parsed.body)
+	for (const auto& body_line : parsed.body)
 	{
 		if (body_line.size() != 3)
 		{
