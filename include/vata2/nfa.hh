@@ -197,11 +197,11 @@ public:
 
 	bool has_initial(State state) const
 	{ // {{{
-		return this->initialstates.find(state) != this->initialstates.end();
+		return Vata2::util::haskey(this->initialstates, state);
 	} // }}}
 	bool has_final(State state) const
 	{ // {{{
-		return this->finalstates.find(state) != this->finalstates.end();
+		return Vata2::util::haskey(this->finalstates, state);
 	} // }}}
 
 	void add_trans(const Trans& trans);

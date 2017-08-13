@@ -21,7 +21,7 @@ namespace util
 /** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
-{
+{ // {{{
 	auto itLhs = lhs.begin();
 	auto itRhs = rhs.begin();
 	while (itLhs != lhs.end() && itRhs != rhs.end())
@@ -32,7 +32,7 @@ bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 	}
 
 	return true;
-}
+} // }}}
 
 /**
  * @brief  Combine two hash values
@@ -69,6 +69,13 @@ size_t hash_range(It first, It last)
 
 	return accum;
 } // hash_range(It, It) }}}
+
+/// checks whether a container with @p find contains a key
+template <class T, class K>
+inline bool haskey(const T& cont, const K& key)
+{
+	return cont.find(key) != cont.cend();
+}
 
 
 // CLOSING NAMESPACES AND GUARDS

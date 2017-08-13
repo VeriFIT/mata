@@ -93,7 +93,7 @@ bool Nfa::has_trans(const Trans& trans) const
 		return false;
 	}
 
-	return jt->second.find(trans.tgt) != jt->second.end();
+	return haskey(jt->second, trans.tgt);
 } // has_trans }}}
 
 
@@ -231,24 +231,17 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 	// for every state found in rhs, check its presence in lhs_states
 	for (auto rhs_st : rhs.initialstates)
 	{
-		if (lhs_states.find(rhs_st) != lhs_states.end())
-		{
-			return false;
-		}
+		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
 	for (auto rhs_st : rhs.finalstates)
 	{
-		if (lhs_states.find(rhs_st) != lhs_states.end())
-		{
-			return false;
-		}
+		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
 	for (auto trans : rhs)
 	{
-		if (lhs_states.find(trans.src) != lhs_states.end()
-				|| lhs_states.find(trans.tgt) != lhs_states.end())
+		if (haskey(lhs_states, trans.src) || haskey(lhs_states, trans.tgt))
 		{
 			return false;
 		}
@@ -294,8 +287,7 @@ void Vata2::Nfa::intersection(
 		tie(lhs_st, rhs_st, res_st) = worklist.front();
 		worklist.pop_front();
 
-		if (lhs.finalstates.find(lhs_st) != lhs.finalstates.end() &&
-			rhs.finalstates.find(rhs_st) != rhs.finalstates.end())
+		if (haskey(lhs.finalstates, lhs_st) && haskey(rhs.finalstates, rhs_st))
 		{
 			result->finalstates.insert(res_st);
 		}
@@ -363,7 +355,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 		State state = worklist.front();
 		worklist.pop_front();
 
-		if (aut.finalstates.find(state) != aut.finalstates.end())
+		if (haskey(aut.finalstates, state))
 		{
 			// TODO process the CEX
 			if (nullptr != cex)
@@ -398,7 +390,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 				else
 				{
 					// the invariant
-					assert(paths.end() != paths.find(tgt_state));
+					assert(haskey(paths, tgt_state));
 				}
 			}
 		}
@@ -596,7 +588,7 @@ void Vata2::Nfa::complement(
 	assert(result->initialstates.size() == 1);
 
 	auto make_final_if_not_in_old = [&](const State& state) {
-		if (old_fs.find(state) == old_fs.end())
+		if (!haskey(old_fs, state))
 		{
 			result->finalstates.insert(state);
 		}

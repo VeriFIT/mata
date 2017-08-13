@@ -6,6 +6,7 @@
 #include <vata2/util.hh>
 
 using namespace Vata2::Parser;
+using namespace Vata2::util;
 
 
 TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
@@ -34,9 +35,9 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		parsec = parse_vtf_section(file);
 
 		REQUIRE("Type" == parsec.type);
-		REQUIRE(parsec.dict.find("key1") != parsec.dict.end());
+		REQUIRE(haskey(parsec.dict, "key1"));
 		REQUIRE(parsec.dict.at("key1").empty());
-		REQUIRE(parsec.dict.find("key2") != parsec.dict.end());
+		REQUIRE(haskey(parsec.dict, "key2"));
 		REQUIRE(parsec.dict.at("key2").empty());
 		REQUIRE(parsec.body.empty());
 	}

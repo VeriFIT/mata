@@ -4,6 +4,7 @@
 
 #include <vata2/nfa.hh>
 using namespace Vata2::Nfa;
+using namespace Vata2::util;
 
 // Some common automata {{{
 
@@ -414,7 +415,7 @@ TEST_CASE("Vata2::Nfa::get_word_for_path()")
 			Word({'c', 'b', 'd', 'a'}),
 			Word({'a', 'b', 'd', 'a'})});
 		REQUIRE(word_bool_pair.second);
-		REQUIRE(possible.find(word_bool_pair.first) != possible.end());
+		REQUIRE(haskey(possible, word_bool_pair.first));
 	}
 
 	SECTION("invalid path")
