@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.2)
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-project(vata2)
+project(libvata2)
 
 # Export compile commands to be used with YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

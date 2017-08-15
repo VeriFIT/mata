@@ -52,8 +52,6 @@ message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 #                                 PROJECT
 ##############################################################################
 
-project(vata-ng)
-
 # Include CTest so that sophisticated testing can be done now
 include(CTest)
 enable_testing()
@@ -69,3 +67,4 @@ endif()
 
 # Process subdirectories
 add_subdirectory(src)
+add_subdirectory(cli)
