@@ -1,0 +1,11 @@
+// TODO: add header
+
+
+/// The version number
+const char* VATA_VERSION = "2.0";
+
+/// The git SHA of the commit
+const char* VATA_GIT_SHA = "@GIT_SHA1@";
+
+/// The git --describe output
+const char* VATA_GIT_DESCRIBE = "@GIT_DESCRIBE@";
