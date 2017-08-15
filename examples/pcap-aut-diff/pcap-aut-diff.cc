@@ -1,4 +1,4 @@
-// diff-sampler - gets a pair of NFAs A1 and A2 and a set of network packets P
+// pcap-aut-diff - gets a pair of NFAs A1 and A2 and a set of network packets P
 // in the pcap format, and tests how many packets from P lie in the symmetric
 // difference of the languages of A1 and A2
 
