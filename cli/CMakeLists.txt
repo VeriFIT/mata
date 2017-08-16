@@ -5,6 +5,27 @@ set(CMAKE_COLOR_MAKEFILE ON)
 
 project(vata2-cli)
 
+# Flags
+set(cxx_compiler_flags
+  -pedantic-errors
+  -Wextra
+  -Wall
+  -Wfloat-equal
+  -fdiagnostics-show-option
+  -march=native
+  -std=c++11
+  -Wctor-dtor-privacy
+  -Weffc++
+  -fPIC
+  -fno-strict-aliasing
+  -Woverloaded-virtual
+  -Wold-style-cast
+)
+
+foreach(flag ${cxx_compiler_flags})
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+endforeach()
+
 # VATA2 headers
 include_directories(../include)
 
@@ -13,6 +34,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.cc.in
    ${CMAKE_CURRENT_BINARY_DIR}/version.cc @ONLY)
 
 add_executable(vata
+	interpreter.cc
 	vata.cc
   ${CMAKE_CURRENT_BINARY_DIR}/version.cc
 )

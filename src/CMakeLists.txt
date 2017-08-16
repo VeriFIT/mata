@@ -20,7 +20,7 @@ set(cxx_compiler_flags
   -Wctor-dtor-privacy
   -Weffc++
   -fPIC
-	-fno-strict-aliasing
+  -fno-strict-aliasing
   -Woverloaded-virtual
   -Wold-style-cast
 )

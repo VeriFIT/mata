@@ -3,6 +3,7 @@
 #ifndef _VATA2_UTIL_HH_
 #define _VATA2_UTIL_HH_
 
+#include <functional>
 #include <iostream>
 #include <list>
 #include <set>
