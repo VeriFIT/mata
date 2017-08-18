@@ -1,0 +1,2 @@
+# VTF-code philosophy
+
