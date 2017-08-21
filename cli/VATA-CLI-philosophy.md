@@ -11,7 +11,7 @@ For example, the command
 ```
 ./vata union aut1.vtf aut2.vtf
 ```
-would generate the following `.vtf` file and then pass it into `/.vata`:
+would generate the following `.vtf` file and then pass it into `./vata`:
 ```
 @CODE
 a1 = (load_aut "aut1.vtf")
