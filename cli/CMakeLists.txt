@@ -33,8 +33,8 @@ include_directories(../include)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.cc.in
    ${CMAKE_CURRENT_BINARY_DIR}/version.cc @ONLY)
 
-add_executable(vata
+add_executable(vata-code
 	interpreter.cc
-	vata.cc
+	vata-code.cc
   ${CMAKE_CURRENT_BINARY_DIR}/version.cc
 )
