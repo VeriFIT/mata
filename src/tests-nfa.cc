@@ -952,3 +952,78 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 		}
 	}
 }
+
+TEST_CASE("Vata2::Nfa::revert()")
+{
+	Nfa aut;
+
+	SECTION("empty automaton")
+	{
+		Nfa result = revert(aut);
+
+		REQUIRE(result.trans_size() == 0);
+		REQUIRE(result.initialstates.size() == 0);
+		REQUIRE(result.finalstates.size() == 0);
+	}
+
+	SECTION("no-transition automaton")
+	{
+		aut.add_initial(1);
+		aut.add_initial(3);
+
+		aut.add_final(2);
+		aut.add_final(5);
+
+		Nfa result = revert(aut);
+
+		REQUIRE(result.trans_size() == 0);
+		REQUIRE(result.has_initial(2));
+		REQUIRE(result.has_initial(5));
+		REQUIRE(result.has_final(1));
+		REQUIRE(result.has_final(3));
+	}
+
+	SECTION("one-transition automaton")
+	{
+		aut.add_initial(1);
+		aut.add_final(2);
+		aut.add_trans(1, 'a', 2);
+
+		Nfa result = revert(aut);
+
+		REQUIRE(result.has_initial(2));
+		REQUIRE(result.has_final(1));
+		REQUIRE(result.has_trans(2, 'a', 1));
+		REQUIRE(result.trans_size() == aut.trans_size());
+	}
+
+	SECTION("bigger automaton")
+	{
+		aut.initialstates = {1,2};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'a', 3);
+		aut.add_trans(1, 'b', 4);
+		aut.add_trans(2, 'a', 2);
+		aut.add_trans(2, 'a', 3);
+		aut.add_trans(2, 'b', 4);
+		aut.add_trans(3, 'b', 4);
+		aut.add_trans(3, 'c', 7);
+		aut.add_trans(3, 'b', 2);
+		aut.add_trans(7, 'a', 8);
+		aut.finalstates = {3};
+
+		Nfa result = revert(aut);
+		REQUIRE(result.finalstates == StateSet({1,2}));
+		REQUIRE(result.has_trans(2, 'a', 1));
+		REQUIRE(result.has_trans(3, 'a', 1));
+		REQUIRE(result.has_trans(4, 'b', 1));
+		REQUIRE(result.has_trans(2, 'a', 2));
+		REQUIRE(result.has_trans(3, 'a', 2));
+		REQUIRE(result.has_trans(4, 'b', 2));
+		REQUIRE(result.has_trans(4, 'b', 3));
+		REQUIRE(result.has_trans(7, 'c', 3));
+		REQUIRE(result.has_trans(2, 'b', 3));
+		REQUIRE(result.has_trans(8, 'a', 7));
+		REQUIRE(result.initialstates == StateSet({3}));
+	}
+}

@@ -671,6 +671,20 @@ std::pair<Word, bool> Vata2::Nfa::get_word_for_path(
 } // get_word_for_path }}}
 
 
+void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
+{ // {{{
+	assert(nullptr != result);
+
+	result->initialstates = aut.finalstates;
+	result->finalstates = aut.initialstates;
+
+	for (auto trans : aut)
+	{
+		result->add_trans(trans.tgt, trans.symb, trans.src);
+	}
+} // revert }}}
+
+
 void Vata2::Nfa::construct(
 	Nfa*                                 aut,
 	const Vata2::Parser::ParsedSection&  parsed,

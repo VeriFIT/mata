@@ -199,10 +199,12 @@ public:
 	std::set<State> initialstates = {};
 	std::set<State> finalstates = {};
 
+	void add_initial(State state) { this->initialstates.insert(state); }
 	bool has_initial(State state) const
 	{ // {{{
 		return Vata2::util::haskey(this->initialstates, state);
 	} // }}}
+	void add_final(State state) { this->finalstates.insert(state); }
 	bool has_final(State state) const
 	{ // {{{
 		return Vata2::util::haskey(this->finalstates, state);
@@ -360,6 +362,17 @@ inline Nfa complement(
 	complement(&result, aut, alphabet, subset_map);
 	return result;
 } // complement }}}
+
+/// Reverting the automaton
+void revert(Nfa* result, const Nfa& aut);
+
+inline Nfa revert(const Nfa& aut)
+{ // {{{
+	Nfa result;
+	revert(&result, aut);
+	return result;
+} // revert }}}
+
 
 /** Loads an automaton from Parsed object */
 void construct(
