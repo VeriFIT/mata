@@ -9,6 +9,7 @@
 
 using Vata2::Parser::Parsed;
 using Vata2::Parser::ParsedSection;
+using Vata2::util::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
@@ -23,10 +24,17 @@ void eat_whites(std::istream& input)
 	while (input.good())
 	{
 		int ch = input.peek();
-		if (!std::isblank(ch)) { return; }
+		if (!std::isspace(ch)) { return; }
 		input.get();
 	}
 } // eat_whites(istream) }}}
+
+/// Determines whether the character is a character of a string
+bool is_string_char(char ch)
+{ // {{{
+	return !std::isblank(ch) &&
+		!(haskey(std::set<char>{'\"', '(', ')', '#', '%', '@', '\\'}, ch));
+} // is_string_char }}}
 
 
 /**
@@ -58,7 +66,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 		{
 			case TokenizerState::INIT:
 			{
-				if (std::isblank(ch))
+				if (std::isspace(ch))
 				{ /* do nothing */ }
 				else if ('"' == ch)
 				{
@@ -71,6 +79,10 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 					std::getline(input, aux);
 					return std::string();
 				}
+				else if ('(' == ch || ')' == ch)
+				{
+					return std::to_string(static_cast<char>(ch));
+				}
 				else
 				{
 					result += ch;
@@ -80,7 +92,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 			}
 			case TokenizerState::UNQUOTED:
 			{
-				if (std::isblank(ch)) return result;
+				if (std::isspace(ch)) { return result; }
 				else if ('#' == ch)
 				{ // clear the rest of the line
 					std::string aux;
@@ -94,6 +106,19 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 					throw std::runtime_error("misplaced quotes: " + result + "_\"_" +
 						context);
 				}
+				else if ('(' == ch || ')' == ch)
+				{
+					input.unget();
+					return result;
+				}
+				else if ('@' == ch || '%' == ch)
+				{
+					std::string context;
+					std::getline(input, context);
+					throw std::runtime_error(std::to_string("misplaced character \'") +
+						static_cast<char>(ch) + "\' in string \"" + result +
+						static_cast<char>(ch) + context + "\"");
+				}
 				else
 				{
 					result += ch;
@@ -105,7 +130,8 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 				if ('"' == ch)
 				{
 					ch = input.peek();
-					if (!std::isblank(ch) && std::char_traits<char>::eof() != ch)
+					if (!std::isspace(ch) && ('#' != ch) && (')' != ch) &&
+						std::char_traits<char>::eof() != ch)
 					{
 						std::string context;
 						std::getline(input, context);
@@ -232,23 +258,43 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 
 		if (reading_type)
 		{ // we're expecting a @TYPE declaration
-			if ('#' == ch || '\n' == ch) { continue; /* skip the rest of the line */ }
-			else if ('@' != ch)
+			assert(ch == line[0]);
+			if ('#' == line[0] || '\n' == line[0])
+			{ continue; /* skip the rest of the line */ }
+			else if ('@' != line[0])
 			{
 				throw std::runtime_error("expecting automaton type (@TYPE), got \"" +
 					line + "\" instead");
 			}
 
-			std::vector<std::pair<std::string, bool>> token_line = tokenize_line(line);
-			if (1 != token_line.size() ||
-				token_line[0].second ||             /* quoted or not? */
-				'@' != token_line[0].first[0] ||
-				1 == token_line[0].first.size())
+			std::string type;
+			size_t i;
+			for (i = 1; i < line.size(); ++i)
 			{
-				throw std::runtime_error("Invalid @TYPE declaration: " + line);
+				if (!is_string_char(line[i])) { break; }
+
+				type += line[i];
 			}
 
-			result.type = std::string(token_line[0].first.begin() + 1, token_line[0].first.end());
+			if (type.empty())
+			{
+				throw std::runtime_error("expecting automaton type (@TYPE), got \"" +
+					line + "\" instead");
+			}
+
+			while (i < line.size())
+			{
+				if (std::isspace(line[i])) { ++i; }
+				else if ('#' == line[i]) { break; }
+				else
+				{
+					std::string trailing(line, i);
+					throw std::runtime_error("invalid trailing characters \"" +
+						trailing + "\" on the line \"" + line + "\"");
+				}
+			}
+
+			result.type = type;
 			reading_type = false;
 			continue;
 		}

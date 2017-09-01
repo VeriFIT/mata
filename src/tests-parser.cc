@@ -248,12 +248,12 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(parsec.body.empty());
 	}
 
-	SECTION("special characters inside strings")
+	SECTION("special characters inside quoted strings")
 	{
 		std::string file =
 			"@Type\n"
-			"%key1     value@1  value@2\n"
-			"%key2     value%1  value%2\n";
+			"%key1     \"value@1\"  \"value@2\"#new\n"
+			"%key2     \"value%1\"  (\"value%2\")\n";
 
 		parsec = parse_vtf_section(file);
 
@@ -263,9 +263,11 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE((*ref)[0] == "value@1");
 		REQUIRE((*ref)[1] == "value@2");
 		ref = &parsec.dict.at("key2");
-		REQUIRE(ref->size() == 2);
+		REQUIRE(ref->size() == 4);
 		REQUIRE((*ref)[0] == "value%1");
-		REQUIRE((*ref)[1] == "value%2");
+		REQUIRE((*ref)[1] == "(");
+		REQUIRE((*ref)[2] == "value%2");
+		REQUIRE((*ref)[3] == ")");
 		REQUIRE(parsec.body.empty());
 	}
 
@@ -285,7 +287,37 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(body[0][1] == "b");
 		REQUIRE(body[0][2] == "c");
 	}
+
+	SECTION("correct handling of parentheses")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1 (a b)\n"
+			"a (b   c  d)(e\n";
+
+		parsec = parse_vtf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 4);
+		REQUIRE((*ref)[0] == "(");
+		REQUIRE((*ref)[1] == "a");
+		REQUIRE((*ref)[2] == "b");
+		REQUIRE((*ref)[3] == ")");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 8);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "(");
+		REQUIRE(body[0][2] == "b");
+		REQUIRE(body[0][3] == "c");
+		REQUIRE(body[0][4] == "d");
+		REQUIRE(body[0][5] == ")");
+		REQUIRE(body[0][6] == "(");
+		REQUIRE(body[0][7] == "e");
+	}
 }
+
 
 TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 {
@@ -309,7 +341,16 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 			"%key2\n";
 
 		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("Invalid @TYPE declaration"));
+			Catch::Contains("expecting automaton type"));
+	}
+
+	SECTION("trailing characters behind @TYPE")
+	{
+		std::string file =
+			"@Type another\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid trailing characters"));
 	}
 
 	SECTION("missing type")
@@ -432,6 +473,55 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 
 		CHECK_THROWS_WITH(parse_vtf_section(file),
 			Catch::Contains("%KEY name missing"));
+	}
+
+	SECTION("special characters inside strings 1")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1     value@1\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("misplaced character \'@\'"));
+	}
+
+	SECTION("special characters inside strings 2")
+	{
+		std::string file =
+			"@Type\n"
+			"%key2     value%1\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("misplaced character \'%\'"));
+	}
+
+	SECTION("special characters inside strings 3")
+	{
+		std::string file =
+			"@Type\n"
+			"%key1     @value\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid position of @TYPE"));
+	}
+
+	SECTION("special characters inside strings 4")
+	{
+		std::string file =
+			"@Type\n"
+			"%key2     %value\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("invalid position of %KEY"));
+	}
+
+	SECTION("invalid use of quotes")
+	{
+		std::string file =
+			"\"@Type\"\n";
+
+		CHECK_THROWS_WITH(parse_vtf_section(file),
+			Catch::Contains("expecting automaton type"));
 	}
 }
 
