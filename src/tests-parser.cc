@@ -10,7 +10,7 @@ using namespace Vata2::util;
 
 
 TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
-{
+{ // {{{
 	ParsedSection parsec;
 
 	SECTION("empty file")
@@ -316,11 +316,33 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(body[0][6] == "(");
 		REQUIRE(body[0][7] == "e");
 	}
-}
+
+	SECTION("correct handling of start of another section")
+	{
+		std::string file =
+			"@Type1\n"
+			"%key1\n"
+			"@Type2\n"
+			"%key2\n";
+
+		std::istringstream stream(file);
+
+		parsec = parse_vtf_section(stream);
+
+		REQUIRE("Type1" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 0);
+
+		// check what remains
+		std::string remains = stream.str().substr(stream.tellg());
+		// getline(stream, remains, std::char_traits<char>::eof());
+		REQUIRE("@Type2\n%key2\n" == remains);
+	}
+} // parse_vtf_section correct }}}
 
 
 TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
-{
+{ // {{{
 	ParsedSection parsec;
 
 	SECTION("empty section")
@@ -523,7 +545,7 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 		CHECK_THROWS_WITH(parse_vtf_section(file),
 			Catch::Contains("expecting automaton type"));
 	}
-}
+} // parse_vtf_section incorrect }}}
 
 
 TEST_CASE("correct use of Vata2::Parser::parse_vtf()")

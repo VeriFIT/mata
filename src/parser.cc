@@ -252,9 +252,15 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 		{
 			break;
 		}
+		else if (!reading_type && '@' == ch)
+		{ // another @TYPE declaration
+			break;
+		}
 
 		std::string line;
 		getline(input, line);
+
+		PARSER_DEBUG_PRINT_LN(line);
 
 		if (reading_type)
 		{ // we're expecting a @TYPE declaration
