@@ -548,7 +548,7 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 
 
 TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
-{
+{ // {{{
 	Parsed parsed;
 
 	SECTION("empty file")
@@ -561,5 +561,31 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
 		REQUIRE(parsed.empty());
 	}
 
-	DEBUG_PRINT("Insufficent testing of Vata2::Parser::parse_vtf()");
-}
+	SECTION("one section")
+	{
+		std::string file =
+			"@Type1\n"
+			"%key1\n";
+
+		parsed = parse_vtf(file);
+		REQUIRE(parsed.size() == 1);
+		REQUIRE(parsed[0].type == "Type1");
+		REQUIRE(haskey(parsed[0].dict, "key1"));
+	}
+
+	SECTION("two sections")
+	{
+		std::string file =
+			"@Type1\n"
+			"%key1\n"
+			"@Type2\n"
+			"%key2\n";
+
+		parsed = parse_vtf(file);
+		REQUIRE(parsed.size() == 2);
+		REQUIRE(parsed[0].type == "Type1");
+		REQUIRE(haskey(parsed[0].dict, "key1"));
+		REQUIRE(parsed[1].type == "Type2");
+		REQUIRE(haskey(parsed[1].dict, "key2"));
+	}
+} // parse_vtf }}}
