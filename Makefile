@@ -5,6 +5,7 @@ TEST_FLAGS=-j 50
 .PHONY: all debug release doc clean test
 
 all:
+	./clean_gcda.sh
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
 
 debug:
