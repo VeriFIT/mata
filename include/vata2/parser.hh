@@ -29,6 +29,9 @@ struct ParsedSection
 
 	ParsedSection() : type(), dict(), body() { }
 
+	/// Is the section empty?
+	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
+
 	/** Output stream operator */
 	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec)
 	{ // {{{

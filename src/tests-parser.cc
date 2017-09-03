@@ -16,6 +16,15 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 	SECTION("empty file")
 	{
 		std::string file =
+			"";
+
+		parsec = parse_vtf_section(file);
+		REQUIRE(parsec.empty());
+	}
+
+	SECTION("empty section")
+	{
+		std::string file =
 			"@Type\n";
 
 		parsec = parse_vtf_section(file);
@@ -335,7 +344,6 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 
 		// check what remains
 		std::string remains = stream.str().substr(stream.tellg());
-		// getline(stream, remains, std::char_traits<char>::eof());
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
 } // parse_vtf_section correct }}}
@@ -344,15 +352,6 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 { // {{{
 	ParsedSection parsec;
-
-	SECTION("empty section")
-	{
-		std::string file =
-			"";
-
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("Empty section"));
-	}
 
 	SECTION("no type")
 	{
@@ -550,5 +549,17 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 
 TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
 {
+	Parsed parsed;
+
+	SECTION("empty file")
+	{
+		std::string file =
+			"";
+
+		parsed = parse_vtf(file);
+
+		REQUIRE(parsed.empty());
+	}
+
 	DEBUG_PRINT("Insufficent testing of Vata2::Parser::parse_vtf()");
 }

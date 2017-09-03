@@ -226,10 +226,14 @@ Parsed Vata2::Parser::parse_vtf(const std::string& input)
 		try
 		{
 			ParsedSection parsec = parse_vtf_section(stream);
-			result.push_back(parsec);
+			if (!parsec.empty())
+			{
+				result.push_back(parsec);
+			}
 		}
 		catch (const std::exception& ex)
 		{
+			DEBUG_PRINT(ex.what());
 			assert(false);
 		}
 	}
@@ -346,11 +350,6 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 				[](const std::pair<std::string, bool>& token) { return token.first; });
 			result.body.push_back(stripped_token_line);
 		}
-	}
-
-	if (reading_type)
-	{
-		throw std::runtime_error("Empty section");
 	}
 
 	return result;
