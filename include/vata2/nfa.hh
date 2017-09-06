@@ -377,36 +377,36 @@ inline Nfa revert(const Nfa& aut)
 /** Loads an automaton from Parsed object */
 void construct(
 	Nfa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map = nullptr,
 	StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 inline Nfa construct(
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map = nullptr,
 	StringToStateMap*                    state_map = nullptr)
 { // {{{
 	Nfa result;
-	construct(&result, parsed, symbol_map, state_map);
+	construct(&result, parsec, symbol_map, state_map);
 	return result;
 } // construct }}}
 
 /** Loads an automaton from Parsed object */
 void construct(
 	Nfa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 inline Nfa construct(
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map = nullptr)
 { // {{{
 	Nfa result;
-	construct(&result, parsed, alphabet, state_map);
+	construct(&result, parsec, alphabet, state_map);
 	return result;
 } // construct(Alphabet) }}}
 
@@ -434,7 +434,9 @@ bool is_in_lang(const Nfa& aut, const Word& word);
 /// Checks whether the prefix of a string is in the language of an automaton
 bool is_prfx_in_lang(const Nfa& aut, const Word& word);
 
-/** Encodes a vector of strings (each corresponding to one symbol) into a @c Word instance */
+/** Encodes a vector of strings (each corresponding to one symbol) into a
+ *  @c Word instance
+ */
 inline Word encode_word(
 	const StringToSymbolMap&         symbol_map,
 	const std::vector<std::string>&  input)
@@ -446,6 +448,9 @@ inline Word encode_word(
 
 /// operator<<
 std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
+
+/// global constructor to be called at program startup (from vm-dispatch)
+void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

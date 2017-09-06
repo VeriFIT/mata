@@ -61,6 +61,9 @@ using Parsed = std::vector<ParsedSection>;
 /** Parses a string into an intermediary structure */
 Parsed parse_vtf(const std::string& input);
 
+/** Parses a stream into an intermediary structure */
+Parsed parse_vtf(std::istream& input);
+
 /** Parses one section from a stream into an intermediary structure */
 ParsedSection parse_vtf_section(std::istream& input);
 

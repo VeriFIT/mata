@@ -2,6 +2,7 @@
 
 #include <vata2/nfa.hh>
 #include <vata2/util.hh>
+#include <vata2/vm-dispatch.hh>
 
 #include <algorithm>
 #include <list>
@@ -687,14 +688,14 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
 
 void Vata2::Nfa::construct(
 	Nfa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map)
 { // {{{
 	assert(nullptr != aut);
 	assert(nullptr != alphabet);
 
-	if (parsed.type != "NFA")
+	if (parsec.type != "NFA")
 	{
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
 	}
@@ -721,8 +722,8 @@ void Vata2::Nfa::construct(
 	};
 
 
-	auto it = parsed.dict.find("Initial");
-	if (parsed.dict.end() != it)
+	auto it = parsec.dict.find("Initial");
+	if (parsec.dict.end() != it)
 	{
 		for (const auto& str : it->second)
 		{
@@ -732,8 +733,8 @@ void Vata2::Nfa::construct(
 	}
 
 
-	it = parsed.dict.find("Final");
-	if (parsed.dict.end() != it)
+	it = parsec.dict.find("Final");
+	if (parsec.dict.end() != it)
 	{
 		for (const auto& str : it->second)
 		{
@@ -742,7 +743,7 @@ void Vata2::Nfa::construct(
 		}
 	}
 
-	for (const auto& body_line : parsed.body)
+	for (const auto& body_line : parsec.body)
 	{
 		if (body_line.size() != 3)
 		{
@@ -775,7 +776,7 @@ void Vata2::Nfa::construct(
 
 void Vata2::Nfa::construct(
 	Nfa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsed,
+	const Vata2::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map,
 	StringToStateMap*                    state_map)
 { // {{{
@@ -794,7 +795,7 @@ void Vata2::Nfa::construct(
 
 	try
 	{
-		construct(aut, parsed, &alphabet, state_map);
+		construct(aut, parsec, &alphabet, state_map);
 	}
 	catch (std::exception&)
 	{
@@ -833,3 +834,55 @@ bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 
 	return !are_disjoint(cur, aut.finalstates);
 } // is_prfx_in_lang }}}
+
+namespace
+{
+	Vata2::VM::VMValue nfa_dispatch(
+		const Vata2::VM::VMFuncName&  func_name,
+		const Vata2::VM::VMFuncArgs&  func_args)
+	{
+		DEBUG_PRINT("calling function \"" + func_name + "\" for NFA");
+
+		if (func_name == "construct")
+		{
+			if (func_args.size() != 1)
+			{
+				throw std::runtime_error("Invalid number of arguments");
+			}
+
+			const Vata2::VM::VMValue& val = func_args[0];
+			if (val.first != "Parsec")
+			{
+				assert(false);
+			}
+
+			const Vata2::Parser::ParsedSection& parsec =
+				*static_cast<const Vata2::Parser::ParsedSection*>(val.second);
+
+			Nfa aut = Vata2::Nfa::construct(parsec);
+			DEBUG_PRINT(aut);
+
+			assert(false);
+		}
+
+		if (func_name == "is_univ")
+		{
+			if (func_args.size() != 2)
+			{
+				throw std::runtime_error("Invalid number of arguments");
+			}
+
+			assert(false);
+		}
+
+
+		assert(false);
+
+		// TODO
+	}
+}
+
+void Vata2::Nfa::init()
+{
+	Vata2::VM::reg_dispatcher("NFA", nfa_dispatch);
+}

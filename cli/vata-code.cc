@@ -13,26 +13,26 @@ extern const char* VATA_VERSION;
 extern const char* VATA_GIT_SHA;
 extern const char* VATA_GIT_DESCRIBE;
 
-void interpret_input(const std::istream& is);
+int interpret_input(std::istream& is);
 
 
 /// The entry point
 int main(int argc, const char* argv[])
 {
-	args::ArgumentParser parser("A CLI interface to the libVATA2 automata library");
-	args::HelpFlag flag_help(parser, "help", "Display this help menu", {'h', "help"});
-	args::Flag flag_version(parser, "version", "test flag", {'v', "version"});
-	args::Positional<std::string> pos_inputfile(parser,
+	args::ArgumentParser arg_parser("A CLI interface to the libVATA2 automata library");
+	args::HelpFlag flag_help(arg_parser, "help", "Display this help menu", {'h', "help"});
+	args::Flag flag_version(arg_parser, "version", "test flag", {'v', "version"});
+	args::Positional<std::string> pos_inputfile(arg_parser,
 		"input", "An input .vtf @CODE file; if not supplied, read from STDIN");
-	parser.helpParams.showTerminator = false;
+	arg_parser.helpParams.showTerminator = false;
 
 	try
 	{
-		parser.ParseCLI(argc, argv);
+		arg_parser.ParseCLI(argc, argv);
 	}
 	catch (args::Help)
 	{
-		std::cout << parser;
+		std::cout << arg_parser;
 		return EXIT_SUCCESS;
 	}
 	catch (args::Error e)
@@ -40,6 +40,8 @@ int main(int argc, const char* argv[])
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
+
+	int ret_val;
 
 	if (flag_version)
 	{
@@ -52,6 +54,7 @@ int main(int argc, const char* argv[])
 
 		std::cout << " [git: " << git_sha_crop << "]";
 		std::cout << "\n";
+		return EXIT_SUCCESS;
 	}
 	else if (pos_inputfile)
 	{
@@ -62,14 +65,14 @@ int main(int argc, const char* argv[])
 			std::cerr << "Could not open file \'" << filename << "'\n";
 		}
 
-		interpret_input(fs);
+		ret_val = interpret_input(fs);
 
 		fs.close();
 	}
 	else
 	{ // the input goes from stdin
-		interpret_input(std::cin);
+		ret_val = interpret_input(std::cin);
 	}
 
-	return EXIT_SUCCESS;
+	return ret_val;
 }

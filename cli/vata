@@ -88,27 +88,34 @@ def run_main(args):
 
 Runs the main program according to the arguments obtained from the parser.
 '''
+    if len(args.inputs) == 1:
+        unary_load = '(load_aut "{0}")'.format(args.inputs[0])
+    elif len(args.inputs) == 2:
+        binary_load = '(load_aut "{0}") (load_aut "{1}")'.format(args.inputs[0], args.inputs[1])
+    else:
+        assert False
+
     if args.oper == 'load':
         check_num_params(1, len(args.inputs))
-        cmds = '(load_aut "' + args.inputs[0] + '")'
+        cmds = unary_load
     elif args.oper == 'union':
         check_num_params(2, len(args.inputs))
-        cmds = '(union (load_aut "' + args.inputs[0] + '") (load_aut "' + args.inputs[1] + '"))'
+        cmds = '(union {})'.format(binary_load)
     elif args.oper == 'isect':
         check_num_params(2, len(args.inputs))
-        cmds = '(isect (load_aut "' + args.inputs[0] + '") (load_aut "' + args.inputs[1] + '"))'
+        cmds = '(isect {})'.format(binary_load)
     elif args.oper == 'empty':
         check_num_params(1, len(args.inputs))
-        cmds = '(is_empty (load_aut "' + args.inputs[0] + '"))'
+        cmds = '(is_empty {})'.format(unary_load)
     elif args.oper == 'univ':
         check_num_params(1, len(args.inputs))
-        cmds = '(is_univ (load_aut "' + args.inputs[0] + '"))'
+        cmds = '(is_univ {})'.format(unary_load)
     elif args.oper == 'incl':
         check_num_params(2, len(args.inputs))
-        cmds = '(is_incl (load_aut "' + args.inputs[0] + '") (load_aut "' + args.inputs[1] + '"))'
+        cmds = '(is_incl {})'.format(binary_load)
     elif args.oper == 'eq':
         check_num_params(2, len(args.inputs))
-        cmds = '(is_eq (load_aut "' + args.inputs[0] + '") (load_aut "' + args.inputs[1] + '"))'
+        cmds = '(is_eq {})'.format(binary_load)
     else:
         assert False    # should never get here
 
@@ -124,26 +131,26 @@ Runs the main program according to the arguments obtained from the parser.
 
 ###########################################
 if __name__ == '__main__':
-    VATA_PATH = find_vata_path()
-    CLI_OPERATIONS = ['load', 'isect', 'union', 'empty', 'univ', 'incl', 'eq']
-    vata_version_str = get_vata_version()
-
-    parser = argparse.ArgumentParser(description='User interface to libVATA2')
-    parser.add_argument('oper', metavar='op', choices=CLI_OPERATIONS,
-                        help='operation to be performed (one of {' +
-                        ', '.join(CLI_OPERATIONS) + '})')
-
-    parser.add_argument('inputs', metavar='AUT', nargs='*',
-                        help='files with input automata in the .vtf format')
-
-    parser.add_argument('-v', '--version', action='version', version=vata_version_str)
-    parser.add_argument('-f', '--file', action='store_true',
-        help='only output a @CODE file in the ' + '.vtf format, do not run ' +
-        VATA_CODE_NAME)
-
-    args = parser.parse_args()
-
     try:
+        VATA_PATH = find_vata_path()
+        CLI_OPERATIONS = ['load', 'isect', 'union', 'empty', 'univ', 'incl', 'eq']
+        vata_version_str = get_vata_version()
+
+        parser = argparse.ArgumentParser(description='User interface to libVATA2')
+        parser.add_argument('oper', metavar='op', choices=CLI_OPERATIONS,
+                            help='operation to be performed (one of {' +
+                            ', '.join(CLI_OPERATIONS) + '})')
+
+        parser.add_argument('inputs', metavar='AUT', nargs='*',
+                            help='files with input automata in the .vtf format')
+
+        parser.add_argument('-v', '--version', action='version', version=vata_version_str)
+        parser.add_argument('-f', '--file', action='store_true',
+            help='only output a @CODE file in the ' + '.vtf format, do not run ' +
+            VATA_CODE_NAME)
+
+        args = parser.parse_args()
+
         run_main(args)
     except Exception as ex:
         errprint(str(ex))

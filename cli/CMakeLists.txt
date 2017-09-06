@@ -26,6 +26,10 @@ foreach(flag ${cxx_compiler_flags})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
 
+if(CMAKE_BUILD_TYPE MATCHES "Debug")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+endif()
+
 # VATA2 headers
 include_directories(../include)
 
@@ -38,3 +42,5 @@ add_executable(vata-code
 	vata-code.cc
   ${CMAKE_CURRENT_BINARY_DIR}/version.cc
 )
+
+target_link_libraries(vata-code libvata2)

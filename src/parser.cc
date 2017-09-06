@@ -218,28 +218,26 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 
 Parsed Vata2::Parser::parse_vtf(const std::string& input)
 { // {{{
-	Parsed result;
 	std::istringstream stream(input);
+	return parse_vtf(stream);
+} // parse_vtf(std::string) }}}
 
-	while (stream)
+
+Parsed Vata2::Parser::parse_vtf(std::istream& input)
+{ // {{{
+	Parsed result;
+
+	while (input)
 	{
-		try
+		ParsedSection parsec = parse_vtf_section(input);
+		if (!parsec.empty())
 		{
-			ParsedSection parsec = parse_vtf_section(stream);
-			if (!parsec.empty())
-			{
-				result.push_back(parsec);
-			}
-		}
-		catch (const std::exception& ex)
-		{
-			DEBUG_PRINT(ex.what());
-			assert(false);
+			result.push_back(parsec);
 		}
 	}
 
 	return result;
-} // parse_vtf(std::string) }}}
+} // parse_vtf(std::istream) }}}
 
 
 ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)

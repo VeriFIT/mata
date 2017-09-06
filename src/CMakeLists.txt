@@ -44,6 +44,8 @@ add_library(libvata2 STATIC
 	nfa.cc
 	nfa-universal.cc
 	parser.cc
+	vm.cc
+	vm-dispatch.cc
 )
 
 set_target_properties(libvata2 PROPERTIES
