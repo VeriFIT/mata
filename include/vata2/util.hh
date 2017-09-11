@@ -79,6 +79,9 @@ inline bool haskey(const T& cont, const K& key)
 }
 
 
+template<class Tuple, std::size_t N>
+struct TuplePrinter;
+
 // CLOSING NAMESPACES AND GUARDS
 } /* util */
 } /* Vata2 */
@@ -141,6 +144,14 @@ std::string to_string(const std::set<A>& st);
 /*======================================================
  *                       DEFINITIONS
  *========================================{{{*/
+
+/** Character to string */
+inline std::string to_string(char ch)
+{
+	std::string str;
+	str += ch;
+	return str;
+}
 
 /** String to string */
 inline std::string to_string(const std::string& str) { return str; }
@@ -216,6 +227,18 @@ std::string to_string(const std::set<A>& st)
 	return result;
 } // to_string(std::set) }}}
 
+
+/** tuple to string */
+template <class... Ts>
+std::string to_string(const std::tuple<Ts...>& tup)
+{ // {{{
+	std::string str = "<";
+  str += Vata2::util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
+	str += ">";
+
+	return str;
+} // to_string(tuple) }}}
+
 /** arbitrary type with the << operator */
 template <class A>
 std::string to_string(const A& value)
@@ -229,5 +252,31 @@ std::string to_string(const A& value)
 
 } // namespace std }}}
 
+namespace Vata2
+{
+namespace util
+{
 
+// Taken from
+//   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
+template<class Tuple, size_t N>
+struct TuplePrinter
+{
+    static std::string print(const Tuple& t)
+    {
+			std::string res = TuplePrinter<Tuple, N-1>::print(t);
+			return res + ", " + std::to_string(std::get<N-1>(t));
+    }
+};
+
+template<class Tuple>
+struct TuplePrinter<Tuple, 1> {
+    static std::string print(const Tuple& t)
+    {
+        return std::to_string(std::get<0>(t));
+    }
+};
+
+}
+}
 #endif /* _VATA2_UTIL_HH_ */
