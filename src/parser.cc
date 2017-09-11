@@ -7,6 +7,8 @@
 #include <cstring>
 #include <sstream>
 
+using std::tie;
+
 using Vata2::Parser::Parsed;
 using Vata2::Parser::ParsedSection;
 using Vata2::util::haskey;
@@ -327,7 +329,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 			auto it = result.dict.find(key);
 			if (result.dict.end() == it)
 			{ // insert an empty list
-				std::tie(it, std::ignore) =
+				tie(it, std::ignore) =
 					result.dict.insert({ key, std::vector<std::string>() });
 			}
 
