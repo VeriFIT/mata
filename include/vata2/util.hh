@@ -147,11 +147,11 @@ std::string to_string(const std::set<A>& st);
 
 /** Character to string */
 inline std::string to_string(char ch)
-{
+{ // {{{
 	std::string str;
 	str += ch;
 	return str;
-}
+} // to_string(char) }}}
 
 /** String to string */
 inline std::string to_string(const std::string& str) { return str; }
@@ -237,7 +237,13 @@ std::string to_string(const std::tuple<Ts...>& tup)
 	str += ">";
 
 	return str;
-} // to_string(tuple) }}}
+} // to_string(std::tuple) }}}
+
+template <class T1, class T2>
+inline std::string to_string(const std::pair<T1, T2>& p)
+{ // {{{
+	return std::to_string(std::tuple<T1, T2>(p.first, p.second));
+} // to_string(std::pair) }}}
 
 /** arbitrary type with the << operator */
 template <class A>
