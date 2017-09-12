@@ -12,12 +12,16 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install graphviz; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-7 make debug ;
+    elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
+      CXX=clang++-5.0 make debug ;
     else
       make debug ;
     fi
   - make test
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-7 make release ;
+    elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
+      CXX=clang++-5.0 make release ;
     else
       make release ;
     fi
@@ -37,6 +41,7 @@ addons:
   apt:
     sources: 
       - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-5.0
     packages:
       # - g++-4.8
       - g++-7
