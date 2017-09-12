@@ -39,7 +39,7 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       # - g++-4.8
-      - g++-6
+      - g++-7
       - graphviz
       - libstdc++-6-dev
       - lcov
