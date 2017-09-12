@@ -16,7 +16,7 @@ set(cxx_compiler_flags
   -Wfloat-equal
   -fdiagnostics-show-option
   -march=native
-  -std=c++11
+  -std=c++1z
   -Wctor-dtor-privacy
   -Weffc++
   -fPIC
@@ -42,6 +42,7 @@ include_directories(../include)
 
 add_library(libvata2 STATIC
 	nfa.cc
+	nfa-dispatch.cc
 	nfa-universal.cc
 	parser.cc
 	vm.cc

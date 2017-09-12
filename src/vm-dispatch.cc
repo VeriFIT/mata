@@ -5,6 +5,8 @@
 // Headers of user data types
 #include <vata2/nfa.hh>
 
+using std::tie;
+
 using Vata2::VM::VMDispatcherFunc;
 using Vata2::VM::VMType;
 
@@ -57,7 +59,7 @@ void Vata2::VM::reg_dispatcher(
 	const VMDispatcherFunc&  func)
 { // {{{
 	bool inserted;
-	std::tie(std::ignore, inserted) = dispatch_dict.insert({type_name, func});
+	tie(std::ignore, inserted) = dispatch_dict.insert({type_name, func});
 	if (!inserted)
 	{
 		throw std::runtime_error("trying to register dispatcher for \"" +
