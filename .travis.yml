@@ -11,7 +11,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install doxygen; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install graphviz; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install --with-toolchain llvm; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then travis_wait brew install --with-toolchain llvm; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install lcov; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-7 make debug ;
