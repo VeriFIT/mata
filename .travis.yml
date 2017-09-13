@@ -18,6 +18,8 @@ script:
       CXX=clang++-5.0 make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-7 make debug ;
+    elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
+      CXX=clang++-5.0 make debug ;
     else
       make debug ;
     fi
@@ -28,6 +30,8 @@ script:
       CXX=clang++-5.0 make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-7 make release ;
+    elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
+      CXX=clang++-5.0 make release ;
     else
       make release ;
     fi
