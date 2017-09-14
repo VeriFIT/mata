@@ -48,7 +48,7 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       # - g++-4.8
-      - g++
+      - g++-5
       - clang
       - libstdc++-7-dev
       - lcov
