@@ -5,12 +5,14 @@
 #include <vata2/nfa.hh>
 #include <vata2/vm-dispatch.hh>
 
+#include "metaprog.hh"
+
 using namespace Vata2::Nfa;
 using namespace Vata2::VM;
+using namespace Vata2::metaprog;
 
 using Vata2::Parser::ParsedSection;
 
-// #define BLAH(name, ...)
 
 
 template <class T>
@@ -24,42 +26,6 @@ const T& unpack_type(const std::string& expected_type_name, const VMValue& val)
 	return *static_cast<const T *>(val.second);
 } // unpack_type }}}
 
-
-template <size_t I, class T>
-struct tuple_n
-{
-	template <typename... Args> using type = typename tuple_n<I-1, T>::template type<T, Args...>;
-};
-
-template <class T>
-struct tuple_n<0, T> {
-	template <typename... Args> using type = std::tuple<Args...>;
-};
-template <size_t I,typename T> using tuple_of = typename tuple_n<I,T>::template type<>;
-
-
-template <size_t N, class TTuple, class TVec>
-void vector_to_tuple_copy_elem(TTuple& tup, const std::vector<TVec> vec)
-{ // {{{
-	static_assert(N < std::tuple_size<TTuple>::value, "Accessing invalid tuple index");
-
-	std::get<N>(tup) = vec[N];
-} // vector_to_tuple_copy_elem }}}
-
-
-template <size_t N, class T>
-tuple_of<N, T> vector_to_tuple(const std::vector<T>& vec)
-{ // {{{
-	assert(vec.size() == N);
-
-	if constexpr(N == 1) { return tuple_of<1, T>(*vec.begin()); }
-	else
-	{
-		std::vector<T> vec_tail(vec.begin() + 1, vec.end());
-		tuple_of<N-1, T> tup_tail = vector_to_tuple<N-1>(vec_tail);
-		return std::tuple_cat(std::tuple<T>(*vec.begin()), tup_tail);
-	}
-} // vector_to_tuple }}}
 
 
 template <class T>
@@ -120,7 +86,9 @@ void BLAH(
 
 	auto f_args = construct_args<typename std::decay<Ts>::type...>(
 		tup_type_names, tup_args);
-	std::apply(f, f_args);
+
+	// a local substitute for std::apply from C++17
+	apply(f, f_args);
 }
 
 

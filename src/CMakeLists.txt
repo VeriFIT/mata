@@ -16,7 +16,7 @@ set(cxx_compiler_flags
   -Wfloat-equal
   -fdiagnostics-show-option
   -march=native
-  -std=c++1z
+  -std=c++14
   -Wctor-dtor-privacy
   -Weffc++
   -fPIC
