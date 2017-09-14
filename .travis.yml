@@ -7,36 +7,31 @@ compiler:
 sudo: false
 
 script:
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install valgrind; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install doxygen; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install graphviz; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install lcov; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-7 make debug ;
+      CXX=g++ make debug ;
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++-5.0 make debug ;
+      CXX=clang++ make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-7 make debug ;
+      CXX=g++ make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      echo "No build for clang++ on OS X --- problems getting clang++-5.0 on brew"
+      CXX=clang++ make debug ;
     else
       make debug ;
     fi
   - make test
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-7 make release ;
+      CXX=g++ make release ;
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++-5.0 make release ;
+      CXX=clang++ make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-7 make release ;
+      CXX=g++ make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      echo "No build for clang++ on OS X --- problems getting clang++-5.0 on brew"
+      CXX=clang++ make release ;
     else
       make release ;
     fi
   - make test
-  - make doc
 
 after_success:
     # Creating report
@@ -51,16 +46,13 @@ addons:
   apt:
     sources: 
       - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-5.0
     packages:
       # - g++-4.8
-      - g++-7
-      - clang-5.0
-      - graphviz
+      - g++
+      - clang
       - libstdc++-7-dev
       - lcov
       - valgrind
-      - doxygen
 
 cache: ccache
 
@@ -71,10 +63,10 @@ os:
 # env:
 #   - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
-matrix:
-  exclude:
-    # clang on OSX not working ATM due to issues with brew downloading LLVM 5
-    - os: osx
-      compiler: clang
+# matrix:
+#   exclude:
+#     # clang on OSX not working ATM due to issues with brew downloading LLVM 5
+#     - os: osx
+#       compiler: clang
 
 dist: trusty
