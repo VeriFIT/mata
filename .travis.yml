@@ -14,9 +14,9 @@ script:
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
       CXX=clang++ make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++6 make debug ;
+      CXX=g++-6 make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++5 make debug ;
+      CXX=clang++-5 make debug ;
     else
       make debug ;
     fi
@@ -26,9 +26,9 @@ script:
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
       CXX=clang++ make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++6 make release ;
+      CXX=g++-6 make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++5 make release ;
+      CXX=clang++-5 make release ;
     else
       make release ;
     fi
