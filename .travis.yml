@@ -8,6 +8,7 @@ sudo: false
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install lcov; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make debug ;
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
