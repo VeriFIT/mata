@@ -10,7 +10,7 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install lcov; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc6; fi
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install --with-toolchain llvm; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install llvm38; fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make debug ;
     elif [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "clang++" ]; then
@@ -18,7 +18,7 @@ script:
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make debug ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++-5.0 make debug ;
+      CXX=clang++-3.8 make debug ;
     else
       make debug ;
     fi
@@ -30,7 +30,7 @@ script:
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make release ;
     elif [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      CXX=clang++-5.0 make release ;
+      CXX=clang++-3.8 make release ;
     else
       make release ;
     fi
