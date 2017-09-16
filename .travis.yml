@@ -65,10 +65,10 @@ os:
 # env:
 #   - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
 
-# matrix:
-#   exclude:
-#     # clang on OSX not working ATM due to issues with brew downloading LLVM 5
-#     - os: osx
-#       compiler: clang
+matrix:
+  exclude:
+    # clang on OSX not working ATM due to issues with brew downloading LLVM 5
+    - os: osx
+      compiler: clang
 
 dist: trusty
