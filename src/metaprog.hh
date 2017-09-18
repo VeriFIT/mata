@@ -51,7 +51,7 @@ template <>
 struct VecToTuple<0>
 {
 	template <class T>
-	inline tuple_of<0, T> operator()([[maybe_unused]] const std::vector<T>& vec) const
+	inline tuple_of<0, T> operator()(const std::vector<T>& vec) const
 	{
 		assert(vec.empty());
 		return { };
