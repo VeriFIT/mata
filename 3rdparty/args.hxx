@@ -1,15 +1,15 @@
 /* Copyright (c) 2016 Taylor C. Richberger <taywee@gmx.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
  * deal in the Software without restriction, including without limitation the
  * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
  * sell copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -649,9 +649,9 @@ namespace args
                 }
             };
             /// If help is empty, this group will not be printed in help output
-            Group(const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare) : Base(help_), validator(validator_) {}
+            Group(const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare) : Base(help_), children(), validator(validator_) {}
             /// If help is empty, this group will not be printed in help output
-            Group(Group &group_, const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare) : Base(help_), validator(validator_)
+            Group(Group &group_, const std::string &help_ = std::string(), const std::function<bool(const Group &)> &validator_ = Validators::DontCare) : Base(help_), children(), validator(validator_)
             {
                 group_.Add(*this);
             }
@@ -916,6 +916,8 @@ namespace args
             } helpParams;
             ArgumentParser(const std::string &description_, const std::string &epilog_ = std::string()) :
                 Group("", Group::Validators::AllChildGroups),
+                prog(),
+                proglinePostfix(),
                 description(description_),
                 epilog(epilog_),
                 longprefix("--"),
@@ -925,7 +927,8 @@ namespace args
                 allowJoinedShortValue(true),
                 allowJoinedLongValue(true),
                 allowSeparateShortValue(true),
-                allowSeparateLongValue(true) {}
+                allowSeparateLongValue(true),
+                helpParams() {}
 
             /** The program name for help generation
              */
@@ -953,7 +956,7 @@ namespace args
              */
             void Description(const std::string &description_)
             { this->description = description_; }
-            
+
             /** The description that appears below options
              */
             const std::string &Epilog() const
@@ -1572,7 +1575,7 @@ namespace args
     };
 
     /** An argument-accepting flag class
-     * 
+     *
      * \tparam T the type to extract the argument as
      * \tparam Reader The functor type used to read the argument, taking the name, value, and destination reference with operator(), and returning a bool (if ARGS_NOEXCEPT is defined)
      */
@@ -1615,7 +1618,7 @@ namespace args
     };
 
     /** An argument-accepting flag class that pushes the found values into a list
-     * 
+     *
      * \tparam T the type to extract the argument as
      * \tparam List the list type that houses the values
      * \tparam Reader The functor type used to read the argument, taking the name, value, and destination reference with operator(), and returning a bool (if ARGS_NOEXCEPT is defined)
@@ -1630,7 +1633,7 @@ namespace args
             using Container = List<T>;
             Container values;
             Reader reader;
-            
+
         public:
 
             typedef T value_type;
@@ -1705,7 +1708,7 @@ namespace args
                 return values.end();
             }
 
-            const_iterator end() const noexcept 
+            const_iterator end() const noexcept
             {
                 return values.end();
             }
@@ -1717,7 +1720,7 @@ namespace args
     };
 
     /** A mapping value flag class
-     * 
+     *
      * \tparam K the type to extract the argument as
      * \tparam T the type to store the result as
      * \tparam Reader The functor type used to read the argument, taking the name, value, and destination reference with operator(), and returning a bool (if ARGS_NOEXCEPT is defined)
@@ -1780,7 +1783,7 @@ namespace args
     };
 
     /** A mapping value flag list class
-     * 
+     *
      * \tparam K the type to extract the argument as
      * \tparam T the type to store the result as
      * \tparam List the list type that houses the values
@@ -1887,7 +1890,7 @@ namespace args
                 return values.end();
             }
 
-            const_iterator end() const noexcept 
+            const_iterator end() const noexcept
             {
                 return values.end();
             }
@@ -1912,7 +1915,7 @@ namespace args
             T value;
             Reader reader;
         public:
-            Positional(Group &group_, const std::string &name_, const std::string &help_, const T &defaultValue_ = T()): PositionalBase(name_, help_), value(defaultValue_)
+            Positional(Group &group_, const std::string &name_, const std::string &help_, const T &defaultValue_ = T()): PositionalBase(name_, help_), value(defaultValue_), reader()
             {
                 group_.Add(*this);
             }
@@ -1942,7 +1945,7 @@ namespace args
     };
 
     /** A positional argument class that pushes the found values into a list
-     * 
+     *
      * \tparam T the type to extract the argument as
      * \tparam List the list type that houses the values
      * \tparam Reader The functor type used to read the argument, taking the name, value, and destination reference with operator(), and returning a bool (if ARGS_NOEXCEPT is defined)
@@ -2032,7 +2035,7 @@ namespace args
                 return values.end();
             }
 
-            const_iterator end() const noexcept 
+            const_iterator end() const noexcept
             {
                 return values.end();
             }
@@ -2044,7 +2047,7 @@ namespace args
     };
 
     /** A positional argument mapping class
-     * 
+     *
      * \tparam K the type to extract the argument as
      * \tparam T the type to store the result as
      * \tparam Reader The functor type used to read the argument, taking the name, value, and destination reference with operator(), and returning a bool (if ARGS_NOEXCEPT is defined)
@@ -2109,7 +2112,7 @@ namespace args
     };
 
     /** A positional argument mapping list class
-     * 
+     *
      * \tparam K the type to extract the argument as
      * \tparam T the type to store the result as
      * \tparam List the list type that houses the values
@@ -2218,7 +2221,7 @@ namespace args
                 return values.end();
             }
 
-            const_iterator end() const noexcept 
+            const_iterator end() const noexcept
             {
                 return values.end();
             }
