@@ -1027,3 +1027,23 @@ TEST_CASE("Vata2::Nfa::revert()")
 		REQUIRE(result.initialstates == StateSet({3}));
 	}
 }
+
+TEST_CASE("Vata2::Nfa::is_deterministic()")
+{
+	Nfa aut;
+
+	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	{
+		DEBUG_PRINT("Vata2::Nfa::is_deterministic() not tested");
+	}
+}
+
+TEST_CASE("Vata2::Nfa::is_complete()")
+{
+	Nfa aut;
+
+	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	{
+		DEBUG_PRINT("Vata2::Nfa::is_complete() not tested");
+	}
+}

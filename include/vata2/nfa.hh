@@ -49,7 +49,11 @@ struct Trans
 	Trans() : src(), symb(), tgt() { }
 	Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
 
-	friend std::ostream& operator<<(std::ostream& strm, const Trans& trans);
+	bool operator==(const Trans& rhs) const
+	{ // {{{
+		return src == rhs.src && symb == rhs.symb && tgt == rhs.tgt;
+	} // operator== }}}
+	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
 
 // ALPHABET {{{
@@ -111,6 +115,8 @@ class DirectAlphabet : public Alphabet
 
 class CharAlphabet : public Alphabet
 {
+public:
+
 	virtual Symbol translate_symb(const std::string& str) override
 	{
 		if (str.length() == 3 &&
@@ -126,6 +132,10 @@ class CharAlphabet : public Alphabet
 		stream >> symb;
 		return symb;
 	}
+
+	virtual std::list<Symbol> get_symbols() const override;
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
 };
 
 class EnumAlphabet : public Alphabet
@@ -374,6 +384,12 @@ inline Nfa revert(const Nfa& aut)
 } // revert }}}
 
 
+/// Test for automaton determinism
+bool is_deterministic(const Nfa& aut);
+
+/// Test for automaton completeness wrt an alphabet
+bool is_complete(const Nfa& aut, const Alphabet& alphabet);
+
 /** Loads an automaton from Parsed object */
 void construct(
 	Nfa*                                 aut,
@@ -455,5 +471,22 @@ void init();
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
 } /* Vata2 */
+
+namespace std
+{ // {{{
+	template <>
+	struct hash<Vata2::Nfa::Trans>
+	{
+		inline size_t operator()(const Vata2::Nfa::Trans& trans) const
+		{
+			size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
+			accum = Vata2::util::hash_combine(accum, trans.symb);
+			accum = Vata2::util::hash_combine(accum, trans.tgt);
+			return accum;
+		}
+	};
+} // std }}}
+
+std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
 
 #endif /* _VATA2_NFA_HH_ */

@@ -14,7 +14,7 @@ using namespace Vata2::util;
 using namespace Vata2::Nfa;
 using Vata2::Nfa::Symbol;
 
-std::ostream& operator<<(std::ostream& strm, const Trans& trans)
+std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " +
 		std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
@@ -60,6 +60,37 @@ std::list<Symbol> EnumAlphabet::get_complement(
 
 	return result;
 } // EnumAlphabet::get_complement }}}
+
+
+std::list<Symbol> CharAlphabet::get_symbols() const
+{ // {{{
+	std::list<Symbol> result;
+	for (size_t i = 0; i < 256; ++i)
+	{
+		result.push_back(i);
+	}
+
+	return result;
+} // CharAlphabet::get_symbols }}}
+
+std::list<Symbol> CharAlphabet::get_complement(
+	const std::set<Symbol>& syms) const
+{ // {{{
+	std::list<Symbol> result;
+
+	std::list<Symbol> symb_list = this->get_symbols();
+
+	// TODO: could be optimized
+	std::set<Symbol> symbols_alphabet(symb_list.begin(), symb_list.end());
+
+	std::set_difference(
+		symbols_alphabet.begin(), symbols_alphabet.end(),
+		syms.begin(), syms.end(),
+		std::inserter(result, result.end()));
+
+	return result;
+} // CharAlphabet::get_complement }}}
+
 
 void Nfa::add_trans(const Trans& trans)
 { // {{{
@@ -834,3 +865,47 @@ bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 
 	return !are_disjoint(cur, aut.finalstates);
 } // is_prfx_in_lang }}}
+
+
+bool Vata2::Nfa::is_deterministic(const Nfa& aut)
+{ // {{{
+	if (aut.initialstates.size() != 1) { return false; }
+
+	for (const auto& trans : aut)
+	{
+		const PostSymb& post = aut[trans.src];
+		if (post.at(trans.symb).size() != 1) { return false; }
+	}
+
+	return true;
+} // is_deterministic }}}
+
+
+bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
+{ // {{{
+	if (aut.initialstates.size() == 0) { return false; }
+	std::list<Symbol> symbs = alphabet.get_symbols();
+
+	auto test_state_is_complete = [&symbs, &aut](const State& st) {
+		const PostSymb& post = aut[st];
+		for (const auto& symb : symbs)
+		{
+			if (post.find(symb) == post.end()) { return false; }
+		}
+
+		return true;
+	};
+
+	for (const auto& st : aut.initialstates)
+	{
+		if (!test_state_is_complete(st)) { return false; }
+	}
+
+	for (const auto& trans : aut)
+	{
+		if (!test_state_is_complete(trans.src)) { return false; }
+		if (!test_state_is_complete(trans.tgt)) { return false; }
+	}
+
+	return true;
+} // is_complete }}}
