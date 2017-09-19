@@ -2,7 +2,7 @@ BUILD_DIR=build
 MAKE_FLAGS=-j 4
 TEST_FLAGS=-j 50
 
-.PHONY: all debug release doc clean test
+.PHONY: all debug release coverage doc clean test
 
 all:
 	./clean_gcda.sh
@@ -13,6 +13,9 @@ debug:
 
 release:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
+
+coverage:
+	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Coverage .. && $(MAKE) $(MAKE_FLAGS)
 
 doc:
 	cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) doc
