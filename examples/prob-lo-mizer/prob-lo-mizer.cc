@@ -185,22 +185,26 @@ int main(int argc, char** argv)
 	TimePoint finishTime = std::chrono::high_resolution_clock::now();
   std::chrono::duration<double> opTime = finishTime - startTime;
 
+	// set precision of output
+	std::cout.precision(std::numeric_limits<double>::max_digits10);
+
 	std::cout << "@DPA\n";
 	std::cout << "%Initial " << *aut.initialstates.begin() << ":1.0\n";
 	std::cout << "%Final ";
 	for (const auto& st_acc : state_accept_cnt)
 	{
-		std::cout << st_acc.first << ":" <<
-			(static_cast<double>(st_acc.second) / state_occur_cnt[st_acc.first]) << " ";
+		double prod = (static_cast<double>(st_acc.second) / state_occur_cnt[st_acc.first]);
+		std::cout << st_acc.first << ":" << prod << " ";
 	}
 	std::cout << "\n";
 
 	for (const auto& trans_acc : trans_occur_cnt)
 	{
+		double prob = (static_cast<double>(trans_acc.second) /
+			state_occur_cnt[trans_acc.first.src]);
 		const Trans& trans = trans_acc.first;
 		std::cout << trans.src << " ";
-		std::cout << trans.symb << ":" <<
-			(static_cast<double>(trans_acc.second) / state_occur_cnt[trans_acc.first.src]) << " ";
+		std::cout << trans.symb << ":" << prob << " ";
 		std::cout << trans.tgt << "\n";
 	}
 
