@@ -1,2 +1,7 @@
 example*
 !example*.cc
+
+pcap-filter/pcap-filter
+prob-lo-mizer/prob-lo-mizer
+pcap-aut-diff/pcap-aut-diff
+
