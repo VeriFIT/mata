@@ -302,7 +302,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 } // }}}
 
 TEST_CASE("Vata2::Nfa::is_lang_empty()")
-{
+{ // {{{
 	Nfa aut;
 	Path cex;
 
@@ -394,7 +394,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 		REQUIRE(cex[1] == 4);
 		REQUIRE(cex[2] == 8);
 	}
-}
+} // }}}
 
 TEST_CASE("Vata2::Nfa::get_word_for_path()")
 { // {{{
@@ -775,7 +775,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 } // }}}
 
 TEST_CASE("Vata2::Nfa::complement()")
-{
+{ // {{{
 	Nfa aut;
 	Nfa cmpl;
 
@@ -873,10 +873,10 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(cmpl.finalstates.size() == 1);
 		REQUIRE(cmpl.trans_size() == 6);
 	}
-}
+} // }}}
 
 TEST_CASE("Vata2::Nfa::is_universal()")
-{
+{ // {{{
 	Nfa aut;
 	Word cex;
 	StringDict params;
@@ -987,10 +987,10 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 			REQUIRE(is_univ);
 		}
 	}
-}
+} // }}}
 
 TEST_CASE("Vata2::Nfa::revert()")
-{
+{ // {{{
 	Nfa aut;
 
 	SECTION("empty automaton")
@@ -1062,24 +1062,24 @@ TEST_CASE("Vata2::Nfa::revert()")
 		REQUIRE(result.has_trans(8, 'a', 7));
 		REQUIRE(result.initialstates == StateSet({3}));
 	}
-}
+} // }}}
 
 TEST_CASE("Vata2::Nfa::is_deterministic()")
-{
+{ // {{{
 	Nfa aut;
 
 	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 	{
 		DEBUG_PRINT("Vata2::Nfa::is_deterministic() not tested");
 	}
-}
+} // }}}
 
 TEST_CASE("Vata2::Nfa::is_complete()")
-{
+{ // {{{
 	Nfa aut;
 
 	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 	{
 		DEBUG_PRINT("Vata2::Nfa::is_complete() not tested");
 	}
-}
+} // }}}

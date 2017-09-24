@@ -174,7 +174,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 			"b0 \"b 1\" c d\n"
 			"\"%key6\"\n"
 			"%key7\n"
-			"c 0 \"\\\"he's so cool,\\\" he said\" c d\n"
+			"c 0 \"\\\"he's so cool,\\\" he said \\/\" c d\n"
 			"\"a\"\n"
 			"\"\"\n"
 			"'\n"
@@ -217,7 +217,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 		REQUIRE(body[3].size() == 5);
 		REQUIRE(body[3][0] == "c");
 		REQUIRE(body[3][1] == "0");
-		REQUIRE(body[3][2] == "\"he's so cool,\" he said");
+		REQUIRE(body[3][2] == "\"he's so cool,\" he said \\/");
 		REQUIRE(body[3][3] == "c");
 		REQUIRE(body[3][4] == "d");
 		REQUIRE(body[4].size() == 1);

@@ -1,13 +1,19 @@
 #!/bin/sh
-TRAVIS_BUILD_DIR=build
+BUILD_DIR=build
+OUTPUT_DIR=cov_html
+COV_FILE=coverage.info
 
-cd ${TRAVIS_BUILD_DIR}
+rm ${OUTPUT_DIR}
 
 # capture coverage info
-lcov --directory . --capture --output-file coverage.info
+lcov --directory ${BUILD_DIR} --capture --output-file ${COV_FILE}
 
-# filter out system
-lcov --remove coverage.info '/usr/*' --output-file coverage.info
+# filter out system files
+lcov --remove ${COV_FILE} '/usr/*' --output-file ${COV_FILE}
+lcov --remove ${COV_FILE} '*/3rdparty/*' --output-file ${COV_FILE}
 
 # debug info
-lcov --list coverage.info
+lcov --list ${COV_FILE}
+
+# generate HTML
+genhtml ${COV_FILE} --output-directory ${OUTPUT_DIR}

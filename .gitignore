@@ -33,3 +33,6 @@ build/
 Testing/
 # documentation
 doc/
+
+coverage.info
+cov_html

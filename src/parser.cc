@@ -35,7 +35,7 @@ void eat_whites(std::istream& input)
 bool is_string_char(char ch)
 { // {{{
 	return !std::isblank(ch) &&
-		!(haskey(std::set<char>{'\"', '(', ')', '#', '%', '@', '\\'}, ch));
+		!(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
 } // is_string_char }}}
 
 
