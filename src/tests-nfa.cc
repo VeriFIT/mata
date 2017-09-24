@@ -77,6 +77,42 @@ TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 	}
 } // }}}
 
+TEST_CASE("Vata2::Nfa::Nfa iteration")
+{ // {{{
+	Nfa aut;
+
+	SECTION("empty automaton")
+	{
+		auto it = aut.begin();
+		REQUIRE(it == aut.end());
+	}
+
+	SECTION("a non-empty automaton")
+	{
+		aut.add_trans('q', 'a', 'r');
+		aut.add_trans('q', 'b', 'r');
+		auto it = aut.begin();
+		auto jt = aut.begin();
+		REQUIRE(it == jt);
+		++it;
+		REQUIRE(it != jt);
+		REQUIRE((it != aut.begin() && it != aut.end()));
+		REQUIRE(jt == aut.begin());
+
+		++jt;
+		REQUIRE(it == jt);
+		REQUIRE((jt != aut.begin() && jt != aut.end()));
+
+		++jt;
+		REQUIRE(it != jt);
+		REQUIRE((jt != aut.begin() && jt == aut.end()));
+
+		++it;
+		REQUIRE(it == jt);
+		REQUIRE((it != aut.begin() && it == aut.end()));
+	}
+} // }}}
+
 TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 { // {{{
 	Nfa a, b;
