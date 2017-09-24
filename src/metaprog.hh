@@ -1,5 +1,7 @@
 // TODO: header
 
+#ifndef _VATA2_METAPROG_HH_
+#define _VATA2_METAPROG_HH_
 
 namespace Vata2
 {
@@ -120,4 +122,6 @@ decltype(auto) apply(F&& fn, Tuple&& t)
 
 } /* metaprog */
 } /* Vata2 */
+
+#endif /* _METAPROG_HH_ */
 
