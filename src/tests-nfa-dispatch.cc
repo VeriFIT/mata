@@ -17,10 +17,11 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 
 		VMValue res = find_dispatcher("NFA")("construct", {{"Parsec", &parsec}});
 		REQUIRE("NFA" == res.first);
-		const Nfa& aut = *static_cast<const Nfa*>(res.second);
-		REQUIRE(aut.trans_empty());
-		REQUIRE(aut.initialstates.empty());
-		REQUIRE(aut.finalstates.empty());
+		const Nfa* aut = static_cast<const Nfa*>(res.second);
+		REQUIRE(aut->trans_empty());
+		REQUIRE(aut->initialstates.empty());
+		REQUIRE(aut->finalstates.empty());
+		delete aut;
 	}
 
 	SECTION("invalid function")
