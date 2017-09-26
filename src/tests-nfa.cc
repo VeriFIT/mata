@@ -195,7 +195,6 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 	}
 } // }}}
 
-
 TEST_CASE("Vata2::Nfa::intersection()")
 { // {{{
 	Nfa a, b, res;

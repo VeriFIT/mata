@@ -20,7 +20,8 @@ const T& unpack_type(
 { // {{{
 	if (expected_type_name != val.first)
 	{
-		assert(false);
+		throw std::runtime_error("unpack_type: invalid type: " +
+			std::to_string(val.first) + " (expected " + expected_type_name + ")");
 	}
 
 	return *static_cast<const T *>(val.second);
@@ -58,7 +59,6 @@ std::tuple<T, Ts...> construct_args(
 
 template <class... Ts>
 void test_and_call(
-	Vata2::VM::VMValue*             result,
 	const std::string&              name,
 	const Vata2::VM::VMFuncName&    func_name,
 	const std::vector<std::string>  args_types_names,
@@ -66,21 +66,25 @@ void test_and_call(
 	const std::string&              result_type_name,
 	Vata2::VM::VMPointer            (*f)(Ts...))
 {
-	assert(nullptr != result);
 	assert(nullptr != f);
-	assert(!result_type_name.empty());
-
-	// in case the result has already been computed
-	if (!result->first.empty()) { return; }
 
 	// in case the function name does not match
 	if (name != func_name) { return; }
 
 	constexpr size_t arity = sizeof...(Ts);
 
-	if ((args_types_names.size() != arity) || (args.size() != arity))
-	{ // if the number of arguments and arity do not match
-		assert(false);
+	if (args_types_names.size() != arity)
+	{
+		throw std::runtime_error(
+			"test_and_call: args_types_names does not match arity of " +
+			std::to_string(func_name));
+	}
+
+	if (args.size() != arity)
+	{
+		throw std::runtime_error(
+			"test_and_call: args does not match arity of " +
+			std::to_string(func_name));
 	}
 
 	Vata2::metaprog::tuple_of<arity, std::string> tup_type_names =
@@ -88,15 +92,17 @@ void test_and_call(
 	Vata2::metaprog::tuple_of<arity, Vata2::VM::VMValue> tup_args =
 		Vata2::metaprog::vector_to_tuple<arity>(args);
 
-	DEBUG_PRINT("type names = " + std::to_string(tup_type_names));
-	DEBUG_PRINT("args = " + std::to_string(tup_args));
+	// DEBUG_PRINT("type names = " + std::to_string(tup_type_names));
+	// DEBUG_PRINT("args = " + std::to_string(tup_args));
 
 	auto f_args = construct_args<typename std::decay<Ts>::type...>(
 		tup_type_names, tup_args);
 
 	// a local substitute for std::apply from C++17
 	Vata2::VM::VMPointer f_res = Vata2::metaprog::apply(f, f_args);
-	*result = { result_type_name, f_res };
+
+	Vata2::VM::VMValue result{result_type_name, f_res};
+	throw result;
 }
 
 

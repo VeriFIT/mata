@@ -22,18 +22,22 @@ namespace
 	{
 		DEBUG_PRINT("calling function \"" + func_name + "\" for NFA");
 
-		VMValue res;
+		// we use throw to return result from test_and_call
+		try {
 
-		test_and_call(&res, "construct", func_name, {"Parsec"}, func_args, "NFA",
-			*[](const ParsedSection& parsec) -> auto {
-				DEBUG_PRINT("In <noname>()!");
-				DEBUG_PRINT(std::to_string(parsec));
-				return static_cast<VMPointer>(new Nfa(construct(parsec)));
-			});
+			test_and_call("construct", func_name, {"Parsec"}, func_args, "NFA",
+				*[](const ParsedSection& parsec) -> auto {
+					return static_cast<VMPointer>(new Nfa(construct(parsec)));
+				});
 
-		assert(false);
+		}
+		catch (VMValue res)
+		{
+			return res;
+		}
 
-		// TODO
+		throw std::runtime_error("invalid function name in nfa_dispatch: " +
+			std::to_string(func_name));
 	}
 }
 
