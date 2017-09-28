@@ -78,6 +78,24 @@ inline bool haskey(const T& cont, const K& key)
 	return cont.find(key) != cont.cend();
 }
 
+/// inverts a map (should work for std::map and std::unordered_map)
+template <template <class, class, class...> class Map, class T1, class T2, class... Args>
+Map<T2, T1> invert_map(const Map<T1, T2>& mp)
+{ // {{{
+	Map<T2, T1> result;
+
+	for (const auto& key_val_pair : mp)
+	{
+		auto it_ins_pair = result.insert({key_val_pair.second, key_val_pair.first});
+		if (!it_ins_pair.second)
+		{
+			throw std::runtime_error("duplicate key when inverting a map");
+		}
+	}
+
+	return result;
+} // invert_map }}}
+
 
 template<class Tuple, std::size_t N>
 struct TuplePrinter;

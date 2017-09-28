@@ -537,11 +537,10 @@ TEST_CASE("Vata2::Nfa::determinize()")
 		REQUIRE(result.has_final(subset_map[{2}]));
 		REQUIRE(result.has_trans(subset_map[{1}], 'a', subset_map[{2}]));
 	}
-}
-
+} // }}}
 
 TEST_CASE("Vata2::Nfa::construct() correct calls")
-{
+{ // {{{
 	Nfa aut;
 	Vata2::Parser::ParsedSection parsec;
 	StringToSymbolMap symbol_map;
@@ -663,15 +662,58 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::serialize_vtf()")
+TEST_CASE("Vata2::Nfa::serialize()")
 { // {{{
 	Nfa aut;
 
 	SECTION("empty automaton")
 	{
-		DEBUG_PRINT("Vata2::Nfa::serialize_vtf() not tested");
+		std::string str = std::to_string(serialize(aut));
+
+		Vata2::Parser::ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
+		Nfa res = construct(parsec);
+
+		REQUIRE(res.initialstates.empty());
+		REQUIRE(res.finalstates.empty());
+		REQUIRE(res.trans_empty());
+	}
+
+	SECTION("small automaton")
+	{
+		aut.initialstates = { 'q', 'r', 's' };
+		aut.finalstates = { 'r', 's', 't' };
+
+		aut.add_trans('q', 'a', 'r');
+		aut.add_trans('r', 'b', 'q');
+		aut.add_trans('s', 'c', 'q');
+		aut.add_trans('s', 'd', 'q');
+		aut.add_trans('q', 'a', 'q');
+
+		Vata2::Nfa::StateToStringMap state_dict =
+			{{'q', "q"}, {'r', "r"}, {'s', "s"}, {'t', "t"}};
+		Vata2::Nfa::SymbolToStringMap symb_dict =
+			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
+		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
+
+		Vata2::Parser::ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
+
+		Vata2::Nfa::StringToStateMap inv_state_dict =
+			Vata2::util::invert_map(state_dict);
+		Vata2::Nfa::StringToSymbolMap inv_symb_dict =
+			Vata2::util::invert_map(symb_dict);
+		Nfa res = construct(parsec, &inv_symb_dict, &inv_state_dict);
+
+		REQUIRE(res.initialstates == aut.initialstates);
+		REQUIRE(res.finalstates == aut.finalstates);
+		REQUIRE(res.trans_size() == aut.trans_size());
+		REQUIRE(res.has_trans('q', 'a', 'r'));
+		REQUIRE(res.has_trans('r', 'b', 'q'));
+		REQUIRE(res.has_trans('s', 'c', 'q'));
+		REQUIRE(res.has_trans('s', 'd', 'q'));
+		REQUIRE(res.has_trans('q', 'a', 'q'));
 	}
 } // }}}
+
 
 TEST_CASE("Vata2::Nfa::make_complete()")
 { // {{{

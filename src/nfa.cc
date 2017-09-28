@@ -249,7 +249,7 @@ StateSet Nfa::get_post_of_set(
 
 std::ostream& Vata2::Nfa::operator<<(std::ostream& strm, const Nfa& nfa)
 {
-	return strm << serialize_vtf(nfa);
+	return strm << std::to_string(serialize(nfa));
 }
 
 
@@ -371,6 +371,7 @@ void Vata2::Nfa::intersection(
 		delete prod_map;
 	}
 } // intersection }}}
+
 
 bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 { // {{{
@@ -536,7 +537,7 @@ void Vata2::Nfa::make_complete(
 	Nfa*             aut,
 	const Alphabet&  alphabet,
 	State            sink_state)
-{
+{ // {{{
 	assert(nullptr != aut);
 
 	// TODO: is it necessary to do a traversal? shouldn't checking transitions be
@@ -574,7 +575,7 @@ void Vata2::Nfa::make_complete(
 			aut->add_trans(state, symb, sink_state);
 		}
 	}
-}
+} // make_complete }}}
 
 
 void Vata2::Nfa::complement(
@@ -582,7 +583,7 @@ void Vata2::Nfa::complement(
 	const Nfa&       aut,
 	const Alphabet&  alphabet,
 	SubsetMap*       subset_map)
-{
+{ // {{{
 	assert(nullptr != result);
 
 	bool delete_subset_map = false;
@@ -624,39 +625,80 @@ void Vata2::Nfa::complement(
 	{
 		delete subset_map;
 	}
-}
+} // complement }}}
 
 
-std::string Vata2::Nfa::serialize_vtf(const Nfa& aut)
+Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
+	const Nfa&                aut,
+	const SymbolToStringMap*  symbol_map,
+	const StateToStringMap*   state_map)
 { // {{{
-	std::string result;
-	result += "@NFA\n";
-	result += "%Initial";
+	Vata2::Parser::ParsedSection parsec;
+	parsec.type = "NFA";
+
+	std::function<std::string(State)> state_namer = nullptr;
+	if (nullptr == state_map)
+	{
+		state_namer = [](State st) -> std::string {
+			return "q" + std::to_string(st);
+		};
+	}
+	else
+	{
+		state_namer = [&state_map](State st) -> std::string {
+			auto it = state_map->find(st);
+			if (it != state_map->end()) { return it->second; }
+			else {
+				throw std::runtime_error("cannot translate state " + std::to_string(st));
+			}
+		};
+	}
+
+	std::function<std::string(Symbol)> symbol_namer = nullptr;
+	if (nullptr == symbol_map)
+	{
+		symbol_namer = [](Symbol sym) -> std::string {
+			return "a" + std::to_string(sym);
+		};
+	}
+	else
+	{
+		symbol_namer = [&symbol_map](Symbol sym) -> std::string {
+			auto it = symbol_map->find(sym);
+			if (it != symbol_map->end()) { return it->second; }
+			else {
+				throw std::runtime_error("cannot translate symbol " + std::to_string(sym));
+			}
+		};
+	}
+
+	// construct initial states
+	std::vector<std::string> init_states;
 	for (State s : aut.initialstates)
 	{
-		result += " q" + std::to_string(s);
+		init_states.push_back(state_namer(s));
 	}
+	parsec.dict["Initial"] = init_states;
 
-	result += "\n";
-	result += "%Final";
+	// construct final states
+	std::vector<std::string> fin_states;
 	for (State s : aut.finalstates)
 	{
-		result += " q" + std::to_string(s);
+		fin_states.push_back(state_namer(s));
 	}
+	parsec.dict["Final"] = fin_states;
 
-	result += "\n";
-	result += "%Transitions   # the format is <src> <symbol> <tgt>\n";
 	for (const auto& trans : aut)
 	{
-		result +=
-			"q" + std::to_string(trans.src) +
-			" a" + std::to_string(trans.symb) +
-			" q" + std::to_string(trans.tgt) +
-			"\n";
+		parsec.body.push_back({
+				state_namer(trans.src),
+				symbol_namer(trans.symb),
+				state_namer(trans.tgt)
+			});
 	}
 
-	return result;
-} // serialize_vtf }}}
+	return parsec;
+} // serialize }}}
 
 
 std::pair<Word, bool> Vata2::Nfa::get_word_for_path(

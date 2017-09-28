@@ -34,6 +34,8 @@ using Word = std::vector<Symbol>;       /// a finite-length word
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
+using StateToStringMap = std::unordered_map<State, std::string>;
+using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
@@ -190,8 +192,11 @@ public:
 
 struct Nfa;
 
-/// .vtf output serializer
-std::string serialize_vtf(const Nfa& aut);
+/// serializes Nfa into a ParsedSection
+Vata2::Parser::ParsedSection serialize(
+	const Nfa&                aut,
+	const SymbolToStringMap*  symbol_map = nullptr,
+	const StateToStringMap*   state_map = nullptr);
 
 
 ///  An NFA

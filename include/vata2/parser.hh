@@ -35,18 +35,29 @@ struct ParsedSection
 	/** Output stream operator */
 	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec)
 	{ // {{{
-		os << "Type: " << parsec.type << "\n";
-		os << "Keys:\n";
-		for (auto string_list_pair : parsec.dict)
+		os << "@" << parsec.type << "\n";
+		for (const auto& string_list_pair : parsec.dict)
 		{
-			os << "  " << string_list_pair.first << ": " <<
-				std::to_string(string_list_pair.second) << "\n";
+			os << "%" << string_list_pair.first;
+			for (const std::string& str : string_list_pair.second)
+			{
+				os << " " << str;
+			}
+
+			os << "\n";
 		}
 
-		os << "Body:\n";
-		for (auto body_line : parsec.body)
+		os << "# Body:\n";
+		for (const auto& body_line : parsec.body)
 		{
-			os << "  " << std::to_string(body_line) << "\n";
+			bool first = true;
+			for (const std::string& str : body_line)
+			{
+				if (!first) { os << " ";}
+				first = false;
+				os << str;
+			}
+			os << "\n";
 		}
 
 		return os;

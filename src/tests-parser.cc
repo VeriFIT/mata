@@ -589,3 +589,13 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
 		REQUIRE(haskey(parsed[1].dict, "key2"));
 	}
 } // parse_vtf }}}
+
+
+TEST_CASE("Vata2::Parser::ParsedSection::operator<<(ostream&)")
+{ // {{{
+	SECTION("aux")
+	{
+		DEBUG_PRINT("Insufficient testing of Vata2::Parser::ParsedSection::operator<<(ostream&)");
+	}
+
+} // }}}
