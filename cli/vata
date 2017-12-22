@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import subprocess
-import os
-import sys
 import argparse
+import os
+import subprocess
+import sys
+import tempfile
 
 
-VATA_CODE_NAME='vata-code'
-
+VATA_CODE_NAME = 'vata-code'
+GDB_COMMAND = os.path.expandvars('$GDB')
 
 
 ###########################################
@@ -34,7 +35,7 @@ Retrieves the version of libVATA.
 
 
 ###########################################
-def call_vata_code(params=None, input=None):
+def call_vata_code(params=None, input=None, debug=False):
     '''call_vata_code([params], input=None) -> str
 
 Calls vata-code with the given 'params' and 'input'.  Input is fed into
@@ -44,10 +45,23 @@ vata-code on STDIN.  The string from STDOUT is returned.
     if params:
         command += params
 
-    compl_proc = subprocess.run(command, input=input,
-        universal_newlines=True, stdout=subprocess.PIPE)
-    compl_proc.check_returncode()  # raises an exception if non-0
-    return compl_proc.stdout
+    if not debug:
+        compl_proc = subprocess.run(
+            command,
+            input=input,
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+            check=True)
+        return compl_proc.stdout
+    else:
+        assert debug
+        tmp = tempfile.NamedTemporaryFile(mode='w+t',delete=False)
+        tmp.write(input)
+        tmp.close()
+        command = command + [tmp.name]
+        command = [GDB_COMMAND, '--args'] + command
+        os.execvp(GDB_COMMAND, [GDB_COMMAND] + command)
+        # exec removes the python script
 
 
 ###########################################
@@ -88,42 +102,43 @@ def run_main(args):
 
 Runs the main program according to the arguments obtained from the parser.
 '''
-    if len(args.inputs) == 1:
-        unary_load = '(load_aut "{0}")'.format(args.inputs[0])
-    elif len(args.inputs) == 2:
-        binary_load = '(load_aut "{0}") (load_aut "{1}")'.format(args.inputs[0], args.inputs[1])
-    else:
-        assert False
+    # we create lambdas - cannot construct the strings yet because we don't
+    # know how many arguments we have
+    unary_load = lambda : '(load_aut "{0}")'.format(args.inputs[0])
+    binary_load = lambda : '(load_aut "{0}") (load_aut "{1}")'.format(args.inputs[0], args.inputs[1])
 
+    # according to the operation
     if args.oper == 'load':
         check_num_params(1, len(args.inputs))
         cmds = unary_load
     elif args.oper == 'union':
         check_num_params(2, len(args.inputs))
-        cmds = '(union {})'.format(binary_load)
+        cmds = '(union {})'.format(binary_load())
     elif args.oper == 'isect':
         check_num_params(2, len(args.inputs))
-        cmds = '(isect {})'.format(binary_load)
+        cmds = '(isect {})'.format(binary_load())
     elif args.oper == 'empty':
         check_num_params(1, len(args.inputs))
-        cmds = '(is_empty {})'.format(unary_load)
+        cmds = '(is_empty {})'.format(unary_load())
     elif args.oper == 'univ':
         check_num_params(1, len(args.inputs))
-        cmds = '(is_univ {})'.format(unary_load)
+        cmds = '(is_univ {})'.format(unary_load())
     elif args.oper == 'incl':
         check_num_params(2, len(args.inputs))
-        cmds = '(is_incl {})'.format(binary_load)
+        cmds = '(is_incl {})'.format(binary_load())
     elif args.oper == 'eq':
         check_num_params(2, len(args.inputs))
-        cmds = '(is_eq {})'.format(binary_load)
+        cmds = '(is_eq {})'.format(binary_load())
     else:
-        assert False    # should never get here
+        raise Exception('unknown operation \'' + args.oper + '\'')
+
+    print('blah')
 
     assert cmds
     cmds = 'res = ' + cmds + '\n(print res)\n';
     code_str = create_code_str(cmds)
     if not args.file:
-        res = call_vata_code(input=code_str)
+        res = call_vata_code(input=code_str, debug=args.debug)
         print(res)
     else:
         print(code_str)
@@ -148,6 +163,8 @@ if __name__ == '__main__':
         parser.add_argument('-f', '--file', action='store_true',
             help='only output a @CODE file in the ' + '.vtf format, do not run ' +
             VATA_CODE_NAME)
+        parser.add_argument('-d', '--debug', action='store_true',
+            help='run ' + VATA_CODE_NAME + ' in $GDB')
 
         args = parser.parse_args()
 
