@@ -158,7 +158,6 @@ struct hash<std::vector<A>>
  *========================================{{{*/
 
 template <class A> std::string to_string(const std::set<A>& st);
-template <class A> std::string to_string(const A* ptr);
 template <class A> std::string to_string(const std::vector<A>& vec);
 template <class A> std::string to_string(const std::list<A>& vec);
 template <class A> std::string to_string(const std::set<A>& st);
@@ -293,14 +292,6 @@ std::string to_string(const A& value)
   os << value;
   return os.str();
 } // to_string(T) }}}
-
-template <class A>
-std::string to_string(const A* ptr)
-{ // {{{
-	std::ostringstream os;
-  os << static_cast<const void*>(ptr);
-  return os.str();
-} // to_string(T*) }}}
 
 // }}}
 
