@@ -132,8 +132,6 @@ Runs the main program according to the arguments obtained from the parser.
     else:
         raise Exception('unknown operation \'' + args.oper + '\'')
 
-    print('blah')
-
     assert cmds
     cmds = 'res = ' + cmds + '\n(print res)\n';
     code_str = create_code_str(cmds)

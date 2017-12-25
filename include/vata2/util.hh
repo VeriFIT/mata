@@ -3,16 +3,19 @@
 #ifndef _VATA2_UTIL_HH_
 #define _VATA2_UTIL_HH_
 
+#include <algorithm>
 #include <functional>
 #include <iostream>
 #include <list>
 #include <set>
 #include <sstream>
+#include <stack>
 #include <unordered_map>
 #include <vector>
 
-#define DEBUG_PRINT(x) { std::cout << x << "\n"; }
+#define DEBUG_PRINT(x) { std::cerr << "debug: " << x << "\n"; }
 #define DEBUG_PRINT_LN(x) { DEBUG_PRINT(__func__ << ":" << __LINE__ << ": " << x) }
+#define WARN_PRINT(x) { std::cerr << "warning: " << x << "\n"; }
 
 namespace Vata2
 {
@@ -154,8 +157,14 @@ struct hash<std::vector<A>>
  *                     DECLARATIONS
  *========================================{{{*/
 
-template <class A>
-std::string to_string(const std::set<A>& st);
+template <class A> std::string to_string(const std::set<A>& st);
+template <class A> std::string to_string(const A* ptr);
+template <class A> std::string to_string(const std::vector<A>& vec);
+template <class A> std::string to_string(const std::list<A>& vec);
+template <class A> std::string to_string(const std::set<A>& st);
+template <class A> std::string to_string(const std::stack<A>& stck);
+template <class A, class B> std::string to_string(const std::pair<A, B>& p);
+template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
 
 // }}}
 
@@ -245,6 +254,19 @@ std::string to_string(const std::set<A>& st)
 	return result;
 } // to_string(std::set) }}}
 
+/** stack to string */
+template <class A>
+std::string to_string(const std::stack<A>& stck)
+{ // {{{
+	std::stack<A> copy = stck;
+	std::vector<A> vec;
+	while (!copy.empty()) {
+		vec.push_back(copy.top());
+		copy.pop();
+	}
+	std::reverse(vec.begin(), vec.end());
+	return std::to_string(vec);
+} // to_string(std::stack) }}}
 
 /** tuple to string */
 template <class... Ts>
@@ -257,10 +279,10 @@ std::string to_string(const std::tuple<Ts...>& tup)
 	return str;
 } // to_string(std::tuple) }}}
 
-template <class T1, class T2>
-inline std::string to_string(const std::pair<T1, T2>& p)
+template <class A, class B>
+std::string to_string(const std::pair<A, B>& p)
 { // {{{
-	return std::to_string(std::tuple<T1, T2>(p.first, p.second));
+	return std::to_string(std::tuple<A, B>(p.first, p.second));
 } // to_string(std::pair) }}}
 
 /** arbitrary type with the << operator */
@@ -271,6 +293,14 @@ std::string to_string(const A& value)
   os << value;
   return os.str();
 } // to_string(T) }}}
+
+template <class A>
+std::string to_string(const A* ptr)
+{ // {{{
+	std::ostringstream os;
+  os << static_cast<const void*>(ptr);
+  return os.str();
+} // to_string(T*) }}}
 
 // }}}
 

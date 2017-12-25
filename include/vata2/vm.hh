@@ -4,6 +4,8 @@
 #ifndef _VATA2_VM_HH_
 #define _VATA2_VM_HH_
 
+#include <stack>
+
 #include <vata2/parser.hh>
 
 namespace Vata2
@@ -31,12 +33,19 @@ class VirtualMachine
 private:
 
 	/// The memory assigning values to names
-	VMStorage mem;
+	VMStorage mem = {};
+	std::stack<VMValue> exec_stack = {};
 
 public:
 
 	void run(const Vata2::Parser::Parsed& parsed);
 	void run(const Vata2::Parser::ParsedSection& parsec);
+	void run_code(const Vata2::Parser::ParsedSection& parsec);
+
+	/// Executes one line of code
+	void execute_line(const Parser::BodyLine& line);
+	void process_token(const std::string& tok);
+	void exec_cmd(const std::vector<VMValue>& exec_vec);
 
 };
 

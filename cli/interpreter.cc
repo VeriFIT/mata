@@ -13,15 +13,6 @@ int interpret_input(std::istream& is)
 
 		Vata2::VM::VirtualMachine mach;
 		mach.run(parsed);
-
-		std::cout << "VATA-CODE START\n";
-
-		for (auto elem : parsed)
-		{
-			std::cout << std::to_string(elem);
-		}
-
-		std::cout << "VATA-CODE END\n";
 	}
 	catch (const std::exception& ex)
 	{

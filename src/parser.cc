@@ -344,7 +344,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 		}
 		else
 		{
-			std::vector<std::string> stripped_token_line;
+			BodyLine stripped_token_line;
 			std::transform(token_line.begin(), token_line.end(),
 				std::back_inserter(stripped_token_line),
 				[](const std::pair<std::string, bool>& token) { return token.first; });
