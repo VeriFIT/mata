@@ -33,8 +33,8 @@ class VirtualMachine
 private:
 
 	/// The memory assigning values to names
-	VMStorage mem = {};
-	std::stack<VMValue> exec_stack = {};
+	VMStorage mem;
+	std::stack<VMValue> exec_stack;
 
 public:
 
