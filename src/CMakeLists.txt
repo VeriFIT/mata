@@ -45,6 +45,7 @@ add_library(libvata2 STATIC
 	nfa-dispatch.cc
 	nfa-universal.cc
 	parser.cc
+	str-dispatch.cc
 	vm.cc
 	vm-dispatch.cc
 )
@@ -59,6 +60,7 @@ add_executable(tests
 	tests-nfa.cc
 	tests-nfa-dispatch.cc
 	tests-parser.cc
+	tests-vm.cc
 	tests-vm-dispatch.cc
 )
 

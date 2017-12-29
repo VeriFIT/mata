@@ -77,7 +77,6 @@ void Vata2::VM::VirtualMachine::run_code(
 	}
 	DEBUG_PRINT("VATA-CODE END");
 	DEBUG_PRINT("Stack: " + std::to_string(this->exec_stack));
-	assert(false);
 } // run_code(ParsedSection) }}}
 
 
@@ -95,7 +94,7 @@ void Vata2::VM::VirtualMachine::process_token(
 { // {{{
 	if (")" != tok) { // nothing special
 		std::string* str = new std::string(tok);
-		VMValue val("token", str);
+		VMValue val("string", str);
 		this->exec_stack.push(val);
 	} else { // closing parenthesis - execute action
 		assert(")" == tok);
@@ -104,9 +103,9 @@ void Vata2::VM::VirtualMachine::process_token(
 		bool closed = false;
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
-			if ("token" == st_top.first) {
-				assert(nullptr != st_top.second);
-				const std::string& val = *static_cast<const std::string*>(st_top.second);
+			if ("string" == st_top.type) {
+				assert(nullptr != st_top.ptr);
+				const std::string& val = *static_cast<const std::string*>(st_top.ptr);
 				if ("(" == val) {
 					closed = true;
 					this->exec_stack.pop();
@@ -126,12 +125,32 @@ void Vata2::VM::VirtualMachine::process_token(
 	}
 } // process_token(string) }}}
 
+
 void Vata2::VM::VirtualMachine::exec_cmd(
 	const std::vector<VMValue>& exec_vec)
 { // {{{
 	DEBUG_PRINT("Executing " + std::to_string(exec_vec));
 
-	VMValue ret_val("result", nullptr);
+	// getting the function name
+	assert(exec_vec.size() >= 2);
+	const VMValue& fnc_val = exec_vec[0];
+	assert("string" == fnc_val.type);
+	assert(nullptr != fnc_val.ptr);
+	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.ptr);
+
+	// getting the object type (type of the first argument of the function)
+	const VMValue& arg1_val = exec_vec[1];
+	const std::string& arg1_type = arg1_val.type;
+
+	// constructing the arguments
+	std::vector<VMValue> args(exec_vec.begin() + 1, exec_vec.end());
+
+	VMValue ret_val = find_dispatcher(arg1_type)(fnc_name, args);
+
+
+
+	// mess
+	// VMValue ret_val("result", nullptr);
 
 	this->exec_stack.push(ret_val);
 } // exec_cmd(std::vector) }}}

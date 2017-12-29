@@ -25,12 +25,12 @@ using VMDispatcherFunc = std::function<VMValue(const VMFuncName&, const VMFuncAr
 
 /// registers a dispatcher function for a VATA data type
 void reg_dispatcher(
-	const VMType&            type_name,
+	const std::string&       type_name,
 	const VMDispatcherFunc&  func);
 
 
 /// finds the dispatcher function for a given type
-const VMDispatcherFunc& find_dispatcher(const VMType& type_name);
+const VMDispatcherFunc& find_dispatcher(const std::string& type_name);
 
 
 // CLOSING NAMESPACES AND GUARDS

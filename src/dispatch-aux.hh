@@ -18,13 +18,13 @@ const T& unpack_type(
 	const std::string&         expected_type_name,
 	const Vata2::VM::VMValue&  val)
 { // {{{
-	if (expected_type_name != val.first)
+	if (expected_type_name != val.type)
 	{
 		throw std::runtime_error("unpack_type: invalid type: " +
-			std::to_string(val.first) + " (expected " + expected_type_name + ")");
+			std::to_string(val.type) + " (expected " + expected_type_name + ")");
 	}
 
-	return *static_cast<const T *>(val.second);
+	return *static_cast<const T*>(val.ptr);
 } // unpack_type }}}
 
 template <class T>

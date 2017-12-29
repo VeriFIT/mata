@@ -4,14 +4,14 @@
 
 // Headers of user data types
 #include <vata2/nfa.hh>
+#include "str.hh"
 
 using std::tie;
 
 using Vata2::VM::VMDispatcherFunc;
-using Vata2::VM::VMType;
 
 /// A dictionary mapping types to dispatcher function pointers
-using VMDispatcherDict = std::unordered_map<VMType, VMDispatcherFunc>;
+using VMDispatcherDict = std::unordered_map<std::string, VMDispatcherFunc>;
 
 /// init function type
 using VMInitFunc = std::function<void()>;
@@ -28,6 +28,7 @@ VMDispatcherDict dispatch_dict = { };
 const VMInitFunc INIT_FUNCTIONS[] =
 {
 	Vata2::Nfa::init,
+	Vata2::Str::init
 };
 
 
@@ -55,7 +56,7 @@ bool is_dispatch_dict_init = init_dispatch_dict();
 
 
 void Vata2::VM::reg_dispatcher(
-	const VMType&            type_name,
+	const std::string&       type_name,
 	const VMDispatcherFunc&  func)
 { // {{{
 	bool inserted;
@@ -69,7 +70,7 @@ void Vata2::VM::reg_dispatcher(
 
 
 const VMDispatcherFunc& Vata2::VM::find_dispatcher(
-	const VMType&            type_name)
+	const std::string&       type_name)
 { // {{{
 	auto it = dispatch_dict.find(type_name);
 	if (dispatch_dict.end() == it)

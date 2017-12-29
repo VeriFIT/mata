@@ -157,6 +157,7 @@ struct hash<std::vector<A>>
  *                     DECLARATIONS
  *========================================{{{*/
 
+template <class A> std::string to_string(const A& value);
 template <class A> std::string to_string(const std::set<A>& st);
 template <class A> std::string to_string(const std::vector<A>& vec);
 template <class A> std::string to_string(const std::list<A>& vec);
