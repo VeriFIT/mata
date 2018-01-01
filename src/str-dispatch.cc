@@ -31,8 +31,7 @@ namespace
 			return res;
 		}
 
-		throw std::runtime_error("invalid function name in string_dispatch: " +
-			std::to_string(func_name));
+		return VMValue("NaV", nullptr);
 	}
 }
 

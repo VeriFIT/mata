@@ -1111,7 +1111,7 @@ TEST_CASE("Vata2::Nfa::is_deterministic()")
 
 	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 	{
-		DEBUG_PRINT("Vata2::Nfa::is_deterministic() not tested");
+		WARN_PRINT("Vata2::Nfa::is_deterministic() not tested");
 	}
 } // }}}
 
@@ -1121,6 +1121,6 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 
 	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 	{
-		DEBUG_PRINT("Vata2::Nfa::is_complete() not tested");
+		WARN_PRINT("Vata2::Nfa::is_complete() not tested");
 	}
 } // }}}

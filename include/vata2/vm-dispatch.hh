@@ -32,6 +32,11 @@ void reg_dispatcher(
 /// finds the dispatcher function for a given type
 const VMDispatcherFunc& find_dispatcher(const std::string& type_name);
 
+/// Default dispatcher function
+VMValue default_dispatch(
+	const VMFuncName&  func_name,
+	const VMFuncArgs&  func_args);
+
 
 // CLOSING NAMESPACES AND GUARDS
 } /* VM */

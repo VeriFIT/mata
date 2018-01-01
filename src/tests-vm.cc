@@ -35,7 +35,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 	SECTION("aux")
 	{
-		DEBUG_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
 	}
 
 }
@@ -51,25 +51,52 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 	{
 		sec.body.push_back({"(", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
-			Catch::Contains("XXXXXXXXXXXXXXXXXXXXXXXXXX"));
+			Catch::Contains("is not a valid function call"));
 	}
 
 	SECTION("incorrectly formed code 2")
 	{
-		sec.body.push_back({"(", "(", "load_aut", "a", ")", ")"});
+		sec.body.push_back({"(", "(", "return", "a", ")", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
-			Catch::Contains("XXXXXXXXXXXXXXXXXXXXXXXXXX"));
+			Catch::Contains("is not a valid function call"));
 	}
 
 	SECTION("incorrectly formed code 3")
 	{
 		sec.body.push_back({"(", "load_aut", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
-			Catch::Contains("XXXXXXXXXXXXXXXXXXXXXXXXXX"));
+			Catch::Contains("is not a valid function call"));
 	}
 
 	SECTION("aux")
 	{
-		DEBUG_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+	}
+}
+
+TEST_CASE("Vata2::VM::VirtualMachine::default_dispatch() calls")
+{
+	// setting the environment
+	VirtualMachine mach;
+	ParsedSection sec;
+	sec.type = "CODE";
+
+	SECTION("return with more than 1 argument")
+	{
+		sec.body.push_back({"(", "return", "arg1", "args2", ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("requires 1 argument"));
+	}
+
+	SECTION("invalid function name")
+	{
+		sec.body.push_back({"(", "invalid_func_name", "arg1", ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("is not a defined function"));
+	}
+
+	SECTION("aux")
+	{
+		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
 	}
 }

@@ -595,7 +595,7 @@ TEST_CASE("Vata2::Parser::ParsedSection::operator<<(ostream&)")
 { // {{{
 	SECTION("aux")
 	{
-		DEBUG_PRINT("Insufficient testing of Vata2::Parser::ParsedSection::operator<<(ostream&)");
+		WARN_PRINT("Insufficient testing of Vata2::Parser::ParsedSection::operator<<(ostream&)");
 	}
 
 } // }}}

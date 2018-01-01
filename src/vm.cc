@@ -131,12 +131,19 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 { // {{{
 	DEBUG_PRINT("Executing " + std::to_string(exec_vec));
 
+	if (exec_vec.empty()) {
+		throw VMException("\"()\" is not a valid function call");
+	}
+
 	// getting the function name
-	assert(exec_vec.size() >= 2);
 	const VMValue& fnc_val = exec_vec[0];
 	assert("string" == fnc_val.type);
 	assert(nullptr != fnc_val.ptr);
 	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.ptr);
+
+	if (exec_vec.size() == 1) {
+		throw VMException("\"(" + fnc_name + ")\" is not a valid function call");
+	}
 
 	// getting the object type (type of the first argument of the function)
 	const VMValue& arg1_val = exec_vec[1];
@@ -146,11 +153,31 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 	std::vector<VMValue> args(exec_vec.begin() + 1, exec_vec.end());
 
 	VMValue ret_val = find_dispatcher(arg1_type)(fnc_name, args);
-
-
-
-	// mess
-	// VMValue ret_val("result", nullptr);
+	if ("NaV" == ret_val.type) {
+		ret_val = default_dispatch(fnc_name, args);
+		if ("NaV" == ret_val.type) {
+			throw VMException(fnc_name + " is not a defined function");
+		}
+	}
 
 	this->exec_stack.push(ret_val);
 } // exec_cmd(std::vector) }}}
+
+
+Vata2::VM::VMValue Vata2::VM::default_dispatch(
+	const VMFuncName&  func_name,
+	const VMFuncArgs&  func_args)
+{ // {{{
+	DEBUG_PRINT("calling function \"" + func_name + "\" for default dispatcher");
+
+	if ("return" == func_name) {
+		if (func_args.size() != 1) {
+			throw VMException("\"return\" requires 1 argument (" +
+				std::to_string(func_args.size()) + " provided)");
+		}
+
+		return func_args[0];
+	}
+
+	return VMValue("NaV", nullptr);
+} // default_dispatch() }}}

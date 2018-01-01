@@ -91,6 +91,15 @@ public:
 
 };
 
+/// The exception for virtual machine errors
+class VMException : public std::runtime_error
+{
+public:
+	// use base class constructors
+	using std::runtime_error::runtime_error;
+
+};
+
 // CLOSING NAMESPACES AND GUARDS
 } /* VM */
 } /* Vata2 */

@@ -44,6 +44,6 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 
 	SECTION("aux")
 	{
-		DEBUG_PRINT("Insufficient testing of Vata2::VM::find_dispatcher(\"NFA\")");
+		WARN_PRINT("Insufficient testing of Vata2::VM::find_dispatcher(\"NFA\")");
 	}
 }
