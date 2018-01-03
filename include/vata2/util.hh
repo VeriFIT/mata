@@ -163,6 +163,7 @@ template <class A> std::string to_string(const std::vector<A>& vec);
 template <class A> std::string to_string(const std::list<A>& vec);
 template <class A> std::string to_string(const std::set<A>& st);
 template <class A> std::string to_string(const std::stack<A>& stck);
+template <class A> std::string to_string(const std::function<A>& func);
 template <class A, class B> std::string to_string(const std::pair<A, B>& p);
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
 
@@ -267,6 +268,13 @@ std::string to_string(const std::stack<A>& stck)
 	std::reverse(vec.begin(), vec.end());
 	return std::to_string(vec);
 } // to_string(std::stack) }}}
+
+/** function to string */
+template <class A>
+std::string to_string(const std::function<A>& fun)
+{ // {{{
+	return std::to_string(static_cast<const void*>(&fun));
+} // to_string(std::function) }}}
 
 /** tuple to string */
 template <class... Ts>

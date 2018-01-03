@@ -9,10 +9,6 @@ using namespace Vata2::VM;
 
 TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 {
-	// we wish to catch output
-	std::stringstream cout_buf;
-	std::streambuf* old_cout = std::cout.rdbuf(cout_buf.rdbuf());
-
 	// setting the environment
 	VirtualMachine mach;
 	ParsedSection sec;
@@ -26,12 +22,17 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 	SECTION("Hello World")
 	{
 		sec.body.push_back({"(", "print", "Hello World!", ")"});
+
+		// we wish to catch output
+		std::ostringstream cout_buf;
+		std::streambuf* old_cout = std::cout.rdbuf(cout_buf.rdbuf());
+
 		mach.run_code(sec);
 
-		REQUIRE(cout_buf.str() == "Hello World!");
-	}
+		std::cout.rdbuf(old_cout);
 
-	std::cout.rdbuf(old_cout);
+		REQUIRE((cout_buf.str() == "Hello World!"));
+	}
 
 	SECTION("aux")
 	{

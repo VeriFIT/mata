@@ -56,7 +56,8 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 		}
 	}
 
-	VMFuncArgs args = {{"Parsec", &parsec}};
+	VMValue arg("Parsec", new Parser::ParsedSection(parsec));
+	VMFuncArgs args = {arg};
 	VMValue val = dispatch("construct", args);
 	if (!name.empty()) {
 		this->mem[name] = val;
@@ -93,6 +94,7 @@ void Vata2::VM::VirtualMachine::process_token(
 	const std::string& tok)
 { // {{{
 	if (")" != tok) { // nothing special
+		DEBUG_PRINT("allocating memory for string " + tok);
 		std::string* str = new std::string(tok);
 		VMValue val("string", str);
 		this->exec_stack.push(val);
@@ -103,12 +105,15 @@ void Vata2::VM::VirtualMachine::process_token(
 		bool closed = false;
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
+			DEBUG_PRINT("top of stack type: " + st_top.type);
 			if ("string" == st_top.type) {
-				assert(nullptr != st_top.ptr);
-				const std::string& val = *static_cast<const std::string*>(st_top.ptr);
+				assert(nullptr != st_top.get_ptr());
+				const std::string& val = *static_cast<const std::string*>(st_top.get_ptr());
+				DEBUG_PRINT("top of stack string value: " + val);
 				if ("(" == val) {
 					closed = true;
 					this->exec_stack.pop();
+					call_dispatch_with_self(st_top, "delete");
 					break;
 				}
 			}
@@ -122,6 +127,12 @@ void Vata2::VM::VirtualMachine::process_token(
 		}
 
 		this->exec_cmd(exec_vec);
+
+		// deallocate elements in exec_vec
+		for (const auto& val : exec_vec) {
+			DEBUG_PRINT("deleting " + std::to_string(val));
+			call_dispatch_with_self(val, "delete");
+		}
 	}
 } // process_token(string) }}}
 
@@ -138,8 +149,8 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 	// getting the function name
 	const VMValue& fnc_val = exec_vec[0];
 	assert("string" == fnc_val.type);
-	assert(nullptr != fnc_val.ptr);
-	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.ptr);
+	assert(nullptr != fnc_val.get_ptr());
+	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.get_ptr());
 
 	if (exec_vec.size() == 1) {
 		throw VMException("\"(" + fnc_name + ")\" is not a valid function call");
@@ -176,7 +187,12 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 				std::to_string(func_args.size()) + " provided)");
 		}
 
-		return func_args[0];
+		VMValue ret_val = call_dispatch_with_self(func_args[0], "copy");
+		if ("NaV" == ret_val.type) {
+			throw VMException("The type \"" + func_args[0].type +
+				"\" does not implement the \"copy\" operation");
+		}
+		return ret_val;
 	}
 
 	return VMValue("NaV", nullptr);

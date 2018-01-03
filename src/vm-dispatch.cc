@@ -28,7 +28,8 @@ VMDispatcherDict dispatch_dict = { };
 const VMInitFunc INIT_FUNCTIONS[] =
 {
 	Vata2::Nfa::init,
-	Vata2::Str::init
+	Vata2::Str::init,
+	Vata2::Parser::init
 };
 
 
@@ -47,6 +48,8 @@ bool init_dispatch_dict()
 		std::cerr << "An error occurred at startup: " << ex.what() << "\n";
 		exit(EXIT_FAILURE);
 	}
+
+	DEBUG_PRINT("dispatcher dictionary initialized");
 
 	return true;
 }

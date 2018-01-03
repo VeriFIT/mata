@@ -20,22 +20,24 @@ using VMPointer = const void*;
  * Data type representing a value, which is composed of a type and a pointer to
  * a general memory
 */
-struct VMValue
+class VMValue
 { // {{{
+public:
 	/// name of the type
 	std::string type;
+
+private:
+
 	/// pointer to the object
 	VMPointer ptr;
 
+public:
 	/// default constructor
 	VMValue() : type(), ptr() { }
 	/// standard constructor
 	VMValue(const std::string& type, VMPointer ptr) : type(type), ptr(ptr) { }
 	/// copy constructor
-	VMValue(const VMValue& rhs) : type(rhs.type), ptr(rhs.ptr)
-	{
-		// FIXME: expecting memory issues here
-	}
+	VMValue(const VMValue& rhs) : type(rhs.type), ptr(rhs.ptr) { }
 	/// assignment operator
 	VMValue& operator=(const VMValue& rhs)
 	{ // {{{
@@ -44,8 +46,12 @@ struct VMValue
 			this->ptr = rhs.ptr;
 		}
 
+		// FIXME: expecting memory issues here
 		return *this;
 	} // operator=() }}}
+
+	/// returns the included pointer
+	VMPointer get_ptr() const { return this->ptr; }
 
 	/// conversion to string
 	friend std::ostream& operator<<(std::ostream& os, const VMValue& val)
@@ -53,9 +59,9 @@ struct VMValue
 		os << "<" << val.type << ": ";
 		if ("string" == val.type) {
 			// FIXME: dispatch this call to val.type dispatcher
-			os << *static_cast<const std::string*>(val.ptr);
+			os << *static_cast<const std::string*>(val.get_ptr());
 		} else {
-			os << val.ptr;
+			os << val.get_ptr();
 		}
 
 		os << ">";

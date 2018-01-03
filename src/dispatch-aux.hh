@@ -24,7 +24,8 @@ const T& unpack_type(
 			std::to_string(val.type) + " (expected " + expected_type_name + ")");
 	}
 
-	return *static_cast<const T*>(val.ptr);
+	assert(nullptr != val.get_ptr());
+	return *static_cast<const T*>(val.get_ptr());
 } // unpack_type }}}
 
 template <class T>

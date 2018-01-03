@@ -24,6 +24,6 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 
 		VMValue val = find_dispatcher("FOO")("BAR", { });
 		REQUIRE(val.type == "ANSWER");
-		REQUIRE(val.ptr == &n42);
+		REQUIRE(val.get_ptr() == &n42);
 	}
 }

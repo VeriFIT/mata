@@ -81,6 +81,9 @@ ParsedSection parse_vtf_section(std::istream& input);
 /** Parses one section from a string into an intermediary structure */
 ParsedSection parse_vtf_section(const std::string& input);
 
+/// registers dispatcher
+void init();
+
 // CLOSING NAMESPACES AND GUARDS
 } /* Parser */
 } /* Vata2 */
