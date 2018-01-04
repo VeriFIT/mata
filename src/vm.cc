@@ -126,13 +126,36 @@ void Vata2::VM::VirtualMachine::process_token(
 			assert(false);
 		}
 
-		this->exec_cmd(exec_vec);
+		auto clean_exec_vec = [&exec_vec]()
+			{
+				// deallocate elements in exec_vec
+				for (const auto& val : exec_vec) {
+					DEBUG_PRINT("exec_vec: deleting " + std::to_string(val));
+					call_dispatch_with_self(val, "delete");
+				}
+			};
 
-		// deallocate elements in exec_vec
-		for (const auto& val : exec_vec) {
-			DEBUG_PRINT("deleting " + std::to_string(val));
-			call_dispatch_with_self(val, "delete");
+		// below here, we should have a try block, catch exceptions, and deallocate
+		// the memory taken by the content of the execution stack
+		try {
+			this->exec_cmd(exec_vec);
 		}
+		catch (const VMException& ex) {
+			// clean exec_vec and the whole stack
+			clean_exec_vec();
+
+			while (!this->exec_stack.empty()) {
+				const auto& val = this->exec_stack.top();
+				call_dispatch_with_self(val, "delete");
+			}
+
+			throw;
+		}
+		catch (...) {
+			assert(false);
+		}
+
+		clean_exec_vec();
 	}
 } // process_token(string) }}}
 
