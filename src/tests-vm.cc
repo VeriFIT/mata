@@ -7,6 +7,32 @@
 using namespace Vata2::Parser;
 using namespace Vata2::VM;
 
+namespace {
+
+class cout_redirect
+{
+private:
+	std::streambuf* old;
+
+public:
+	cout_redirect(std::streambuf* new_buf) : old(std::cout.rdbuf(new_buf)) { }
+	cout_redirect(const cout_redirect& rhs) = delete;
+	cout_redirect& operator=(const cout_redirect& rhs) = delete;
+	~cout_redirect() { this->release(); }
+
+	void release()
+	{
+		if (nullptr != this->old) {
+			std::cout.rdbuf(this->old);
+		}
+
+		this->old = nullptr;
+	}
+};
+
+} /* anonymous namespace */
+
+
 TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 {
 	// setting the environment
@@ -25,13 +51,11 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 		// we wish to catch output
 		std::ostringstream cout_buf;
-		std::streambuf* old_cout = std::cout.rdbuf(cout_buf.rdbuf());
+		cout_redirect cout_guard(cout_buf.rdbuf());
 
 		mach.run_code(sec);
 
-		std::cout.rdbuf(old_cout);
-
-		REQUIRE((cout_buf.str() == "Hello World!"));
+		REQUIRE(cout_buf.str() == "Hello World!");
 	}
 
 	SECTION("aux")
