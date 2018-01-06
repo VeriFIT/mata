@@ -112,8 +112,8 @@ void Vata2::VM::VirtualMachine::process_token(
 				DEBUG_PRINT("top of stack string value: " + val);
 				if ("(" == val) {
 					closed = true;
-					this->exec_stack.pop();
 					call_dispatch_with_self(st_top, "delete");
+					this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
 					break;
 				}
 			}

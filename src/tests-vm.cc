@@ -9,6 +9,7 @@ using namespace Vata2::VM;
 
 namespace {
 
+/// A helper class that guards rebinding of std::cout.rdbuf()
 class cout_redirect
 {
 private:
@@ -22,10 +23,7 @@ public:
 
 	void release()
 	{
-		if (nullptr != this->old) {
-			std::cout.rdbuf(this->old);
-		}
-
+		if (nullptr != this->old) { std::cout.rdbuf(this->old); }
 		this->old = nullptr;
 	}
 };
