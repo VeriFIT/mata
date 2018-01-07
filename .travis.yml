@@ -32,7 +32,7 @@ script:
   - make test
   - make clean
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=g++-6 make coverage ; fi
+      CXX=g++-6 make coverage ; make test ; make clean ; fi
 
 after_success:
     # Creating coverage report
