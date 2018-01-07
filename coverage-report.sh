@@ -3,7 +3,7 @@ BUILD_DIR=build
 OUTPUT_DIR=cov_html
 COV_FILE=coverage.info
 
-rm ${OUTPUT_DIR}
+rm -rf ${OUTPUT_DIR}
 
 # capture coverage info
 lcov --directory ${BUILD_DIR} --capture --output-file ${COV_FILE}
