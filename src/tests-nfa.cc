@@ -33,20 +33,20 @@ using namespace Vata2::util;
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
-	b.initialstates = {4}; \
-	b.finalstates = {2, 12}; \
-	b.add_trans(4, 'c', 8); \
-	b.add_trans(4, 'a', 8); \
-	b.add_trans(8, 'b', 4); \
-	b.add_trans(4, 'a', 6); \
-	b.add_trans(4, 'b', 6); \
-	b.add_trans(6, 'a', 2); \
-	b.add_trans(2, 'b', 2); \
-	b.add_trans(2, 'a', 0); \
-	b.add_trans(0, 'a', 2); \
-	b.add_trans(2, 'c', 12); \
-	b.add_trans(12, 'a', 14); \
-	b.add_trans(14, 'b', 12); \
+	x.initialstates = {4}; \
+	x.finalstates = {2, 12}; \
+	x.add_trans(4, 'c', 8); \
+	x.add_trans(4, 'a', 8); \
+	x.add_trans(8, 'b', 4); \
+	x.add_trans(4, 'a', 6); \
+	x.add_trans(4, 'b', 6); \
+	x.add_trans(6, 'a', 2); \
+	x.add_trans(2, 'b', 2); \
+	x.add_trans(2, 'a', 0); \
+	x.add_trans(0, 'a', 2); \
+	x.add_trans(2, 'c', 12); \
+	x.add_trans(12, 'a', 14); \
+	x.add_trans(14, 'b', 12); \
 
 // }}}
 
@@ -662,13 +662,25 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::serialize()")
+TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 { // {{{
 	Nfa aut;
 
 	SECTION("empty automaton")
 	{
-		std::string str = std::to_string(serialize(aut));
+		std::string str;
+
+		SECTION("serialize()")
+		{
+			str = std::to_string(serialize(aut));
+		}
+
+		SECTION("operator<<")
+		{
+			std::ostringstream os;
+			os << aut;
+			str = os.str();
+		}
 
 		Vata2::Parser::ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
 		Nfa res = construct(parsec);
@@ -713,7 +725,6 @@ TEST_CASE("Vata2::Nfa::serialize()")
 		REQUIRE(res.has_trans('q', 'a', 'q'));
 	}
 } // }}}
-
 
 TEST_CASE("Vata2::Nfa::make_complete()")
 { // {{{
@@ -1122,5 +1133,43 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
 	{
 		WARN_PRINT("Vata2::Nfa::is_complete() not tested");
+	}
+} // }}}
+
+TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
+{ // {{{
+	Nfa aut;
+
+	SECTION("empty automaton 1")
+	{
+		Word w = {'a', 'b', 'd'};
+		bool result = is_prfx_in_lang(aut, w);
+
+		REQUIRE(!result);
+	}
+
+	SECTION("empty automaton 2")
+	{
+		Word w = { };
+		bool result = is_prfx_in_lang(aut, w);
+
+		REQUIRE(!result);
+	}
+
+	SECTION("small automaton")
+	{
+		FILL_WITH_AUT_B(aut);
+		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
+	}
+
+	SECTION("larger automaton")
+	{
+		FILL_WITH_AUT_A(aut);
+		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
+	}
+
+	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	{
+		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
 	}
 } // }}}
