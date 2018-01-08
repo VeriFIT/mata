@@ -122,10 +122,6 @@ void Vata2::VM::VirtualMachine::process_token(
 			this->exec_stack.pop();
 		}
 
-		if (!closed) {
-			assert(false);
-		}
-
 		auto clean_exec_vec = [&exec_vec]()
 			{
 				// deallocate elements in exec_vec
@@ -138,6 +134,10 @@ void Vata2::VM::VirtualMachine::process_token(
 		// below here, we should have a try block, catch exceptions, and deallocate
 		// the memory taken by the content of the execution stack
 		try {
+			if (!closed) {
+				throw VMException("mismatched parenthesis");
+			}
+
 			this->exec_cmd(exec_vec);
 		}
 		catch (const VMException& ex) {

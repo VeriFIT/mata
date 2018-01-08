@@ -91,6 +91,21 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 			Catch::Contains("is not a valid function call"));
 	}
 
+	SECTION("incorrectly formed code 4")
+	{
+		sec.body.push_back({"(", "return", "a", ")", ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("mismatched parenthesis"));
+	}
+
+	SECTION("incorrect number of parameters")
+	{
+		sec.body.push_back({"(", "print", "Hello", "World", ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("does not match arity of print"));
+	}
+
+
 	SECTION("aux")
 	{
 		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");

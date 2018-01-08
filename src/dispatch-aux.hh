@@ -3,6 +3,7 @@
 #ifndef _VATA2_DISPATCH_AUX_HH_
 #define _VATA2_DISPATCH_AUX_HH_
 
+#include <vata2/vm.hh>
 #include <vata2/vm-dispatch.hh>
 
 #include "metaprog.hh"
@@ -20,7 +21,7 @@ const T& unpack_type(
 { // {{{
 	if (expected_type_name != val.type)
 	{
-		throw std::runtime_error("unpack_type: invalid type: " +
+		throw Vata2::VM::VMException("unpack_type: invalid type: " +
 			std::to_string(val.type) + " (expected " + expected_type_name + ")");
 	}
 
@@ -76,14 +77,14 @@ void test_and_call(
 
 	if (args_types_names.size() != arity)
 	{
-		throw std::runtime_error(
+		throw Vata2::VM::VMException(
 			"test_and_call: args_types_names does not match arity of " +
 			std::to_string(func_name));
 	}
 
 	if (args.size() != arity)
 	{
-		throw std::runtime_error(
+		throw Vata2::VM::VMException(
 			"test_and_call: args does not match arity of " +
 			std::to_string(func_name));
 	}
