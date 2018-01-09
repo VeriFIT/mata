@@ -1120,9 +1120,57 @@ TEST_CASE("Vata2::Nfa::is_deterministic()")
 { // {{{
 	Nfa aut;
 
-	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	SECTION("(almost) empty automaton")
 	{
-		WARN_PRINT("Vata2::Nfa::is_deterministic() not tested");
+		// no initial states
+		REQUIRE(!is_deterministic(aut));
+
+		// add an initial state
+		aut.add_initial('q');
+		REQUIRE(is_deterministic(aut));
+
+		// add the same initial state
+		aut.add_initial('q');
+		REQUIRE(is_deterministic(aut));
+
+		// add another initial state
+		aut.add_initial('r');
+		REQUIRE(!is_deterministic(aut));
+
+		// add a final state
+		aut.add_final('q');
+		REQUIRE(!is_deterministic(aut));
+	}
+
+	SECTION("trivial automata")
+	{
+		aut.add_initial('q');
+		aut.add_trans('q', 'a', 'r');
+		REQUIRE(is_deterministic(aut));
+
+		// unreachable states
+		aut.add_trans('s', 'a', 'r');
+		REQUIRE(is_deterministic(aut));
+
+		// transitions over a different symbol
+		aut.add_trans('q', 'b', 'h');
+		REQUIRE(is_deterministic(aut));
+
+		// nondeterminism
+		aut.add_trans('q', 'a', 's');
+		REQUIRE(!is_deterministic(aut));
+	}
+
+	SECTION("larger automaton 1")
+	{
+		FILL_WITH_AUT_A(aut);
+		REQUIRE(!is_deterministic(aut));
+	}
+
+	SECTION("larger automaton 2")
+	{
+		FILL_WITH_AUT_B(aut);
+		REQUIRE(!is_deterministic(aut));
 	}
 } // }}}
 
@@ -1140,36 +1188,56 @@ TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
 { // {{{
 	Nfa aut;
 
-	SECTION("empty automaton 1")
+	SECTION("empty automaton")
 	{
-		Word w = {'a', 'b', 'd'};
-		bool result = is_prfx_in_lang(aut, w);
+		Word w;
+		w = {'a', 'b', 'd'};
+		REQUIRE(!is_prfx_in_lang(aut, w));
 
-		REQUIRE(!result);
+		w = { };
+		REQUIRE(!is_prfx_in_lang(aut, w));
 	}
 
-	SECTION("empty automaton 2")
+	SECTION("automaton accepting only epsilon")
 	{
-		Word w = { };
-		bool result = is_prfx_in_lang(aut, w);
+		aut.add_initial('q');
+		aut.add_final('q');
 
-		REQUIRE(!result);
+		Word w;
+		w = { };
+		REQUIRE(is_prfx_in_lang(aut, w));
+
+		w = {'a', 'b'};
+		REQUIRE(is_prfx_in_lang(aut, w));
 	}
 
 	SECTION("small automaton")
 	{
 		FILL_WITH_AUT_B(aut);
-		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
-	}
 
-	SECTION("larger automaton")
-	{
-		FILL_WITH_AUT_A(aut);
-		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
-	}
+		Word w;
+		w = {'b', 'a'};
+		REQUIRE(is_prfx_in_lang(aut, w));
 
-	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
-	{
-		WARN_PRINT("Vata2::Nfa::is_prfx_in_lang() not tested properly");
+		w = { };
+		REQUIRE(!is_prfx_in_lang(aut, w));
+
+		w = {'c', 'b', 'a'};
+		REQUIRE(!is_prfx_in_lang(aut, w));
+
+		w = {'c', 'b', 'a', 'a'};
+		REQUIRE(is_prfx_in_lang(aut, w));
+
+		w = {'a', 'a'};
+		REQUIRE(is_prfx_in_lang(aut, w));
+
+		w = {'c', 'b', 'b', 'a', 'c', 'b'};
+		REQUIRE(is_prfx_in_lang(aut, w));
+
+		w = Word(100000, 'a');
+		REQUIRE(is_prfx_in_lang(aut, w));
+
+		w = Word(100000, 'b');
+		REQUIRE(!is_prfx_in_lang(aut, w));
 	}
 } // }}}

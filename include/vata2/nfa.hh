@@ -389,7 +389,8 @@ inline Nfa revert(const Nfa& aut)
 } // revert }}}
 
 
-/// Test for automaton determinism
+/// Test for automaton determinism.  Checks the whole automaton, not only the
+/// reachable part
 bool is_deterministic(const Nfa& aut);
 
 /// Test for automaton completeness wrt an alphabet
