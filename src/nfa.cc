@@ -29,6 +29,36 @@ Symbol OnTheFlyAlphabet::translate_symb(const std::string& str)
 	else { return it_insert_pair.first->second; }
 } // OnTheFlyAlphabet::translate_symb }}}
 
+std::list<Symbol> OnTheFlyAlphabet::get_symbols() const
+{ // {{{
+	std::list<Symbol> result;
+	for (const auto& str_sym_pair : *(this->symbol_map))
+	{
+		result.push_back(str_sym_pair.second);
+	}
+
+	return result;
+} // OnTheFlyAlphabet::get_symbols }}}
+
+std::list<Symbol> OnTheFlyAlphabet::get_complement(
+	const std::set<Symbol>& syms) const
+{ // {{{
+	std::list<Symbol> result;
+
+	// TODO: could be optimized
+	std::set<Symbol> symbols_alphabet;
+	for (const auto& str_sym_pair : *(this->symbol_map))
+	{
+		symbols_alphabet.insert(str_sym_pair.second);
+	}
+
+	std::set_difference(
+		symbols_alphabet.begin(), symbols_alphabet.end(),
+		syms.begin(), syms.end(),
+		std::inserter(result, result.end()));
+
+	return result;
+} // OnTheFlyAlphabet::get_complement }}}
 
 std::list<Symbol> EnumAlphabet::get_symbols() const
 { // {{{
@@ -540,9 +570,6 @@ void Vata2::Nfa::make_complete(
 { // {{{
 	assert(nullptr != aut);
 
-	// TODO: is it necessary to do a traversal? shouldn't checking transitions be
-	// enough?
-
 	std::list<State> worklist(aut->initialstates.begin(),
 		aut->initialstates.end());
 	std::unordered_set<State> processed(aut->initialstates.begin(),
@@ -925,28 +952,41 @@ bool Vata2::Nfa::is_deterministic(const Nfa& aut)
 
 bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 { // {{{
-	if (aut.initialstates.size() == 0) { return false; }
-	std::list<Symbol> symbs = alphabet.get_symbols();
+	std::list<Symbol> symbs_ls = alphabet.get_symbols();
+	std::unordered_set<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
 
-	auto test_state_is_complete = [&symbs, &aut](const State& st) {
-		const PostSymb& post = aut[st];
-		for (const auto& symb : symbs)
+	// TODO: make a general function for traversal over reachable states that can
+	// be shared by other functions?
+	std::list<State> worklist(aut.initialstates.begin(),
+		aut.initialstates.end());
+	std::unordered_set<State> processed(aut.initialstates.begin(),
+		aut.initialstates.end());
+
+	while (!worklist.empty())
+	{
+		State state = *worklist.begin();
+		worklist.pop_front();
+
+		size_t n = 0;      // counter of symbols
+		for (const auto& symb_stateset : aut[state])
 		{
-			if (post.find(symb) == post.end()) { return false; }
+			++n;
+			if (!haskey(symbs, symb_stateset.first))
+			{
+				throw std::runtime_error(std::to_string(__func__) +
+					": encountered a symbol that is not in the provided alphabet");
+			}
+
+			const StateSet& stateset = symb_stateset.second;
+			for (const auto& tgt_state : stateset)
+			{
+				bool inserted;
+				tie(std::ignore, inserted) = processed.insert(tgt_state);
+				if (inserted) { worklist.push_back(tgt_state); }
+			}
 		}
 
-		return true;
-	};
-
-	for (const auto& st : aut.initialstates)
-	{
-		if (!test_state_is_complete(st)) { return false; }
-	}
-
-	for (const auto& trans : aut)
-	{
-		if (!test_state_is_complete(trans.src)) { return false; }
-		if (!test_state_is_complete(trans.tgt)) { return false; }
+		if (symbs.size() != n) { return false; }
 	}
 
 	return true;

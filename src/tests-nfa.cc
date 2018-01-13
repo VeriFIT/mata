@@ -1178,9 +1178,65 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 { // {{{
 	Nfa aut;
 
-	SECTION("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX")
+	SECTION("empty automaton")
 	{
-		WARN_PRINT("Vata2::Nfa::is_complete() not tested");
+		StringToSymbolMap ssmap;
+		OnTheFlyAlphabet alph(&ssmap);
+
+		// is complete for the empty alphabet
+		REQUIRE(is_complete(aut, alph));
+
+		alph.translate_symb("a1");
+		alph.translate_symb("a2");
+
+		// the empty automaton is complete even for a non-empty alphabet
+		REQUIRE(is_complete(aut, alph));
+
+		// add a non-reachable state (the automaton should still be complete)
+		aut.add_trans('q', alph["a1"], 'q');
+		REQUIRE(is_complete(aut, alph));
+	}
+
+	SECTION("small automaton")
+	{
+		StringToSymbolMap ssmap;
+		OnTheFlyAlphabet alph(&ssmap);
+
+		aut.add_initial(4);
+		aut.add_trans(4, alph["a"], 8);
+		aut.add_trans(4, alph["c"], 8);
+		aut.add_trans(4, alph["a"], 6);
+		aut.add_trans(4, alph["b"], 6);
+		aut.add_trans(8, alph["b"], 4);
+		aut.add_trans(6, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(2, alph["a"], 0);
+		aut.add_trans(2, alph["c"], 12);
+		aut.add_trans(0, alph["a"], 2);
+		aut.add_trans(12, alph["a"], 14);
+		aut.add_trans(14, alph["b"], 12);
+		aut.add_final({2, 12});
+
+		REQUIRE(!is_complete(aut, alph));
+
+		make_complete(&aut, alph, 100);
+		REQUIRE(is_complete(aut, alph));
+	}
+
+	SECTION("using a non-alphabet symbol")
+	{
+		StringToSymbolMap ssmap;
+		OnTheFlyAlphabet alph(&ssmap);
+
+		aut.add_initial(4);
+		aut.add_trans(4, alph["a"], 8);
+		aut.add_trans(4, alph["c"], 8);
+		aut.add_trans(4, alph["a"], 6);
+		aut.add_trans(4, alph["b"], 6);
+		aut.add_trans(6, 100, 4);
+
+		CHECK_THROWS_WITH(is_complete(aut, alph),
+			Catch::Contains("symbol that is not in the provided alphabet"));
 	}
 } // }}}
 

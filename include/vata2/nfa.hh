@@ -101,7 +101,10 @@ public:
 		assert(nullptr != symbol_map);
 	}
 
+	virtual std::list<Symbol> get_symbols() const override;
 	virtual Symbol translate_symb(const std::string& str) override;
+	virtual std::list<Symbol> get_complement(
+		const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
@@ -215,11 +218,20 @@ public:
 	std::set<State> finalstates = {};
 
 	void add_initial(State state) { this->initialstates.insert(state); }
+	void add_initial(const std::vector<State> vec)
+	{ // {{{
+		for (const State& st : vec) { this->add_initial(st); }
+	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
 		return Vata2::util::haskey(this->initialstates, state);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
+	void add_final(const std::vector<State> vec)
+	{ // {{{
+		for (const State& st : vec) { this->add_final(st); }
+	} // }}}
+
 	bool has_final(State state) const
 	{ // {{{
 		return Vata2::util::haskey(this->finalstates, state);
@@ -389,11 +401,14 @@ inline Nfa revert(const Nfa& aut)
 } // revert }}}
 
 
-/// Test for automaton determinism.  Checks the whole automaton, not only the
-/// reachable part
+/// Test whether an automaton is deterministic, i.e., whether it has exactly
+/// one initial state and every state has at most one outgoing transition over
+/// every symbol.  Checks the whole automaton, not only the reachable part
 bool is_deterministic(const Nfa& aut);
 
-/// Test for automaton completeness wrt an alphabet
+/// Test for automaton completeness wrt an alphabet.  An automaton is complete
+/// if every reachable state has at least one outgoing transition over every
+/// symbol.
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
