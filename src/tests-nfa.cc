@@ -7,6 +7,7 @@
 #include <vata2/nfa.hh>
 using namespace Vata2::Nfa;
 using namespace Vata2::util;
+using namespace Vata2::Parser;
 
 // Some common automata {{{
 
@@ -49,6 +50,13 @@ using namespace Vata2::util;
 	x.add_trans(14, 'b', 12); \
 
 // }}}
+
+TEST_CASE("Vata2::Nfa::Trans::operator<<")
+{ // {{{
+	Trans trans(1, 2, 3);
+
+	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+} // }}}
 
 TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
@@ -707,7 +715,7 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
 		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
 
-		Vata2::Parser::ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
+		ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
 
 		Vata2::Nfa::StringToStateMap inv_state_dict =
 			Vata2::util::invert_map(state_dict);
@@ -723,6 +731,36 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 		REQUIRE(res.has_trans('s', 'c', 'q'));
 		REQUIRE(res.has_trans('s', 'd', 'q'));
 		REQUIRE(res.has_trans('q', 'a', 'q'));
+	}
+
+	SECTION("implicit state and symbol mapper")
+	{
+		aut.add_trans(1, 2, 3);
+
+		ParsedSection parsec = serialize(aut);
+
+		REQUIRE(parsec.body.size() == 1);
+		REQUIRE(*parsec.body.cbegin() == BodyLine{"q1", "a2", "q3"});
+	}
+
+	SECTION("incorrect state mapper")
+	{
+		Vata2::Nfa::StateToStringMap state_dict = {{'q', "q"}};
+		Vata2::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		aut.add_trans('q', 'a', 'r');
+
+		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
+			Catch::Contains("cannot translate state"));
+	}
+
+	SECTION("incorrect symbol mapper")
+	{
+		Vata2::Nfa::StateToStringMap state_dict = {{'q', "q"}, {'r', "r"}};
+		Vata2::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		aut.add_trans('q', 'b', 'r');
+
+		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
+			Catch::Contains("cannot translate symbol"));
 	}
 } // }}}
 
@@ -1237,6 +1275,31 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 
 		CHECK_THROWS_WITH(is_complete(aut, alph),
 			Catch::Contains("symbol that is not in the provided alphabet"));
+	}
+
+	SECTION("a small automaton using CharAlphabet")
+	{
+		CharAlphabet alph;
+
+		aut.add_initial(4);
+		aut.add_trans(4, 'a', 8);
+		aut.add_trans(4, 'c', 8);
+		aut.add_trans(4, 'a', 6);
+		aut.add_trans(4, 'b', 6);
+		aut.add_trans(8, 'b', 4);
+		aut.add_trans(6, 'a', 2);
+		aut.add_trans(2, 'b', 2);
+		aut.add_trans(2, 'a', 0);
+		aut.add_trans(2, 'c', 12);
+		aut.add_trans(0, 'a', 2);
+		aut.add_trans(12, 'a', 14);
+		aut.add_trans(14, 'b', 12);
+		aut.add_final({2, 12});
+
+		REQUIRE(!is_complete(aut, alph));
+
+		make_complete(&aut, alph, 100);
+		REQUIRE(is_complete(aut, alph));
 	}
 } // }}}
 

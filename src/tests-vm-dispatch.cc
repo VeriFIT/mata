@@ -26,4 +26,10 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 		REQUIRE(val.type == "ANSWER");
 		REQUIRE(val.get_ptr() == &n42);
 	}
+
+	SECTION("trying to re-register a dispatcher")
+	{
+		CHECK_THROWS_WITH(reg_dispatcher("string", nullptr),
+			Catch::Contains("already registered"));
+	}
 }

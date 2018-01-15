@@ -14,7 +14,7 @@ using namespace Vata2::util;
 using namespace Vata2::Nfa;
 using Vata2::Nfa::Symbol;
 
-std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
+std::ostream& std::operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " +
 		std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";

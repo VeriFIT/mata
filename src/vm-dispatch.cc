@@ -43,11 +43,11 @@ bool init_dispatch_dict()
 			init_func();
 		}
 	}
-	catch (const std::exception& ex)
+	catch (const std::exception& ex) // LCOV_EXCL_START
 	{
 		std::cerr << "An error occurred at startup: " << ex.what() << "\n";
 		exit(EXIT_FAILURE);
-	}
+	} // LCOV_EXCL_STOP
 
 	DEBUG_PRINT("dispatcher dictionary initialized");
 

@@ -495,19 +495,20 @@ void init();
 
 namespace std
 { // {{{
-	template <>
-	struct hash<Vata2::Nfa::Trans>
+template <>
+struct hash<Vata2::Nfa::Trans>
+{
+	inline size_t operator()(const Vata2::Nfa::Trans& trans) const
 	{
-		inline size_t operator()(const Vata2::Nfa::Trans& trans) const
-		{
-			size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
-			accum = Vata2::util::hash_combine(accum, trans.symb);
-			accum = Vata2::util::hash_combine(accum, trans.tgt);
-			return accum;
-		}
-	};
-} // std }}}
+		size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
+		accum = Vata2::util::hash_combine(accum, trans.symb);
+		accum = Vata2::util::hash_combine(accum, trans.tgt);
+		return accum;
+	}
+};
 
 std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
+} // std }}}
+
 
 #endif /* _VATA2_NFA_HH_ */
