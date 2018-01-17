@@ -740,7 +740,7 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 		ParsedSection parsec = serialize(aut);
 
 		REQUIRE(parsec.body.size() == 1);
-		REQUIRE(*parsec.body.cbegin() == BodyLine{"q1", "a2", "q3"});
+		REQUIRE(*parsec.body.cbegin() == BodyLine({"q1", "a2", "q3"}));
 	}
 
 	SECTION("incorrect state mapper")
