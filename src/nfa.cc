@@ -663,39 +663,37 @@ Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
 	Vata2::Parser::ParsedSection parsec;
 	parsec.type = "NFA";
 
-	std::function<std::string(State)> state_namer = nullptr;
+	using bool_str_pair = std::pair<bool, std::string>;
+
+	std::function<bool_str_pair(State)> state_namer = nullptr;
 	if (nullptr == state_map)
 	{
-		state_namer = [](State st) -> std::string {
-			return "q" + std::to_string(st);
+		state_namer = [](State st) -> auto {
+			return bool_str_pair(true, "q" + std::to_string(st));
 		};
 	}
 	else
 	{
-		state_namer = [&state_map](State st) -> std::string {
+		state_namer = [&state_map](State st) -> auto {
 			auto it = state_map->find(st);
-			if (it != state_map->end()) { return it->second; }
-			else {
-				throw std::runtime_error("cannot translate state " + std::to_string(st));
-			}
+			if (it != state_map->end()) { return bool_str_pair(true, it->second); }
+			else { return bool_str_pair(false, ""); }
 		};
 	}
 
-	std::function<std::string(Symbol)> symbol_namer = nullptr;
+	std::function<bool_str_pair(Symbol)> symbol_namer = nullptr;
 	if (nullptr == symbol_map)
 	{
-		symbol_namer = [](Symbol sym) -> std::string {
-			return "a" + std::to_string(sym);
+		symbol_namer = [](Symbol sym) -> auto {
+			return bool_str_pair(true, "a" + std::to_string(sym));
 		};
 	}
 	else
 	{
-		symbol_namer = [&symbol_map](Symbol sym) -> std::string {
+		symbol_namer = [&symbol_map](Symbol sym) -> auto {
 			auto it = symbol_map->find(sym);
-			if (it != symbol_map->end()) { return it->second; }
-			else {
-				throw std::runtime_error("cannot translate symbol " + std::to_string(sym));
-			}
+			if (it != symbol_map->end()) { return bool_str_pair(true, it->second); }
+			else { return bool_str_pair(false, ""); }
 		};
 	}
 
@@ -703,7 +701,9 @@ Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
 	std::vector<std::string> init_states;
 	for (State s : aut.initialstates)
 	{
-		init_states.push_back(state_namer(s));
+		bool_str_pair bsp = state_namer(s);
+		if (!bsp.first) { throw std::runtime_error("cannot translate state " + std::to_string(s)); }
+		init_states.push_back(bsp.second);
 	}
 	parsec.dict["Initial"] = init_states;
 
@@ -711,17 +711,22 @@ Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
 	std::vector<std::string> fin_states;
 	for (State s : aut.finalstates)
 	{
-		fin_states.push_back(state_namer(s));
+		bool_str_pair bsp = state_namer(s);
+		if (!bsp.first) { throw std::runtime_error("cannot translate state " + std::to_string(s)); }
+		fin_states.push_back(bsp.second);
 	}
 	parsec.dict["Final"] = fin_states;
 
 	for (const auto& trans : aut)
 	{
-		parsec.body.push_back({
-				state_namer(trans.src),
-				symbol_namer(trans.symb),
-				state_namer(trans.tgt)
-			});
+		bool_str_pair src_bsp = state_namer(trans.src);
+		if (!src_bsp.first) { throw std::runtime_error("cannot translate state " + std::to_string(trans.src)); }
+		bool_str_pair tgt_bsp = state_namer(trans.tgt);
+		if (!tgt_bsp.first) { throw std::runtime_error("cannot translate state " + std::to_string(trans.tgt)); }
+		bool_str_pair sym_bsp = symbol_namer(trans.symb);
+		if (!sym_bsp.first) { throw std::runtime_error("cannot translate symbol " + std::to_string(trans.symb)); }
+
+		parsec.body.push_back({ src_bsp.second, sym_bsp.second, tgt_bsp.second });
 	}
 
 	return parsec;
