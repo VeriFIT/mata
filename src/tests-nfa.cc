@@ -1090,6 +1090,23 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 			REQUIRE(is_univ);
 		}
 	}
+
+	SECTION("wrong parameters 1")
+	{
+		EnumAlphabet alph = { };
+
+		CHECK_THROWS_WITH(is_universal(aut, alph, params),
+			Catch::Contains("requires setting the \"algo\" key"));
+	}
+
+	SECTION("wrong parameters 2")
+	{
+		EnumAlphabet alph = { };
+		params["algo"] = "foo";
+
+		CHECK_THROWS_WITH(is_universal(aut, alph, params),
+			Catch::Contains("received an unknown value"));
+	}
 } // }}}
 
 TEST_CASE("Vata2::Nfa::revert()")

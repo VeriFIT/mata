@@ -165,28 +165,24 @@ bool Vata2::Nfa::is_universal(
 
 	// setting the default algorithm
 	decltype(is_universal_naive)* algo = is_universal_naive;
-	if (!params.empty())
+	if (!haskey(params, "algo"))
 	{
-		if (!haskey(params, "algo"))
-		{
-			throw std::runtime_error(std::to_string(__func__) +
-				" requires setting the \"algo\" key in the \"params\" argument; "
-				"received: " + std::to_string(params));
-		}
+		throw std::runtime_error(std::to_string(__func__) +
+			" requires setting the \"algo\" key in the \"params\" argument; "
+			"received: " + std::to_string(params));
+	}
 
-		const std::string& str_algo = params.at("algo");
-		if ("naive" == str_algo)
-		{ }
-		else if ("antichains" == str_algo)
-		{
-			algo = is_universal_antichains;
-		}
-		else
-		{
-			throw std::runtime_error(std::to_string(__func__) +
-				" received an unknown value of the \"algo\" key: " + str_algo);
-		}
-
+	const std::string& str_algo = params.at("algo");
+	if ("naive" == str_algo)
+	{ }
+	else if ("antichains" == str_algo)
+	{
+		algo = is_universal_antichains;
+	}
+	else
+	{
+		throw std::runtime_error(std::to_string(__func__) +
+			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
 	return algo(aut, alphabet, cex, params);
