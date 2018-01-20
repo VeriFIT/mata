@@ -976,102 +976,115 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 		"antichains",
 	};
 
-	// run a matrix of tests
-	for (const auto& algo : ALGORITHMS)
+	SECTION("empty automaton, empty alphabet")
 	{
-		params["algo"] = algo;
+		EnumAlphabet alph = { };
 
-		SECTION("empty automaton, empty alphabet")
-		{
-			EnumAlphabet alph = { };
-			DEBUG_PRINT("algo: " + std::to_string(algo));
-
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
 		}
+	}
 
-		SECTION("empty automaton accepting epsilon, empty alphabet")
-		{
-			EnumAlphabet alph = { };
-			aut.initialstates = {1};
-			aut.finalstates = {1};
+	SECTION("empty automaton accepting epsilon, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+		aut.initialstates = {1};
+		aut.finalstates = {1};
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);
 			REQUIRE(Word{ } == cex);
 		}
+	}
 
-		SECTION("empty automaton accepting epsilon")
-		{
-			EnumAlphabet alph = {"a"};
-			aut.initialstates = {1};
-			aut.finalstates = {1};
+	SECTION("empty automaton accepting epsilon")
+	{
+		EnumAlphabet alph = {"a"};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(!is_univ);
-
 			REQUIRE(((cex == Word{alph["a"]}) || (cex == Word{alph["b"]})));
 		}
+	}
 
-		SECTION("automaton for a*b*")
-		{
-			EnumAlphabet alph = {"a", "b"};
-			aut.initialstates = {1,2};
-			aut.finalstates = {1,2};
+	SECTION("automaton for a*b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2};
 
-			aut.add_trans(1, alph["a"], 1);
-			aut.add_trans(1, alph["a"], 2);
-			aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
 		}
+	}
 
-		SECTION("automaton for a* + b*")
-		{
-			EnumAlphabet alph = {"a", "b"};
-			aut.initialstates = {1,2};
-			aut.finalstates = {1,2};
+	SECTION("automaton for a* + b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2};
 
-			aut.add_trans(1, alph["a"], 1);
-			aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(2, alph["b"], 2);
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
 		}
+	}
 
-		SECTION("automaton for (a + b)*")
-		{
-			EnumAlphabet alph = {"a", "b"};
-			aut.initialstates = {1};
-			aut.finalstates = {1};
+	SECTION("automaton for (a + b)*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1};
+		aut.finalstates = {1};
 
-			aut.add_trans(1, alph["a"], 1);
-			aut.add_trans(1, alph["b"], 1);
+		aut.add_trans(1, alph["a"], 1);
+		aut.add_trans(1, alph["b"], 1);
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(is_univ);
 		}
+	}
 
-		SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
-		{
-			EnumAlphabet alph = {"a", "b"};
-			aut.initialstates = {1,3};
-			aut.finalstates = {1,2,4};
+	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,3};
+		aut.finalstates = {1,2,4};
 
-			aut.add_trans(1, alph["a"], 2);
-			aut.add_trans(2, alph["a"], 2);
-			aut.add_trans(2, alph["b"], 2);
-			aut.add_trans(3, alph["b"], 4);
-			aut.add_trans(4, alph["a"], 4);
-			aut.add_trans(4, alph["b"], 4);
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(2, alph["a"], 2);
+		aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(3, alph["b"], 4);
+		aut.add_trans(4, alph["a"], 4);
+		aut.add_trans(4, alph["b"], 4);
 
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);

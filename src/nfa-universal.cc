@@ -38,7 +38,6 @@ bool is_universal_antichains(
 	const StringDict&  params)
 { // {{{
 	(void)params;
-	(void)cex;
 
 	using WorklistType = std::list<StateSet>;
 	using ProcessedType = std::list<StateSet>;
