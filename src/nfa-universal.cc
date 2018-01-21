@@ -93,10 +93,11 @@ bool is_universal_antichains(
 				{
 					cex->clear();
 					cex->push_back(symb);
-					while (paths[succ].first != succ)
-					{
-						cex->push_back(paths[succ].second);
-						succ = paths[succ].first;
+					StateSet trav = state;
+					while (paths[trav].first != trav)
+					{ // go back until initial state
+						cex->push_back(paths[trav].second);
+						trav = paths[trav].first;
 					}
 
 					std::reverse(cex->begin(), cex->end());

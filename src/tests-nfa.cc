@@ -1070,6 +1070,40 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 		}
 	}
 
+	SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1};
+		aut.finalstates = {1, 2, 3, 4, 5};
+
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(1, alph["b"], 2);
+		aut.add_trans(2, alph["a"], 3);
+		aut.add_trans(2, alph["b"], 3);
+
+		aut.add_trans(3, alph["a"], 4);
+		aut.add_trans(4, alph["a"], 4);
+
+		aut.add_trans(3, alph["b"], 5);
+		aut.add_trans(5, alph["b"], 5);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(!is_univ);
+
+			DEBUG_PRINT(std::to_string(cex));
+
+			REQUIRE(cex.size() == 4);
+			REQUIRE((cex[0] == alph["a"] || cex[0] == alph["b"]));
+			REQUIRE((cex[1] == alph["a"] || cex[1] == alph["b"]));
+			REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
+			REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
+			REQUIRE(cex[2] != cex[3]);
+		}
+	}
+
 	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
 	{
 		EnumAlphabet alph = {"a", "b"};
