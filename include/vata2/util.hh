@@ -7,6 +7,7 @@
 #include <functional>
 #include <iostream>
 #include <list>
+#include <map>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -161,11 +162,11 @@ template <class A> std::string to_string(const A& value);
 template <class A> std::string to_string(const std::set<A>& st);
 template <class A> std::string to_string(const std::vector<A>& vec);
 template <class A> std::string to_string(const std::list<A>& vec);
-template <class A> std::string to_string(const std::set<A>& st);
 template <class A> std::string to_string(const std::stack<A>& stck);
 template <class A> std::string to_string(const std::function<A>& func);
 template <class A, class B> std::string to_string(const std::pair<A, B>& p);
 template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
+template <class A, class B> std::string to_string(const std::map<A, B>& mp);
 
 // }}}
 
@@ -237,6 +238,26 @@ std::string to_string(const std::unordered_map<A, B>& unmap)
 
 	return result;
 } // to_string(std::unordered_map) }}}
+
+/** map to string */
+template <class A, class B>
+std::string to_string(const std::map<A, B>& mp)
+{ // {{{
+	std::string result = "{";
+	bool first = true;
+	for (auto key_val_pair : mp)
+	{
+		if (!first) { result += ", "; }
+		first = false;
+		result +=
+			std::to_string(key_val_pair.first) +
+			" -> " +
+			std::to_string(key_val_pair.second);
+	}
+	result += "}";
+
+	return result;
+} // to_string(std::map) }}}
 
 /** set to string */
 template <class A>
