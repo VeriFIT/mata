@@ -1150,7 +1150,7 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
-		// "antichains",
+		"antichains",
 	};
 
 	SECTION("{} <= {}, empty alphabet")

@@ -19,12 +19,9 @@ bool is_incl_naive(
 	Nfa nfa_isect = intersection(smaller, bigger_cmpl);
 
 	bool result;
-	if (nullptr == cex)
-	{
+	if (nullptr == cex) {
 		result = is_lang_empty(nfa_isect);
-	}
-	else
-	{
+	} else {
 		result = is_lang_empty_cex(nfa_isect, cex);
 	}
 
@@ -43,119 +40,129 @@ bool is_incl_antichains(
 	(void)params;
 	(void)alphabet;
 
-	assert(false);
-	// using WorklistType = std::list<StateSet>;
-	// using ProcessedType = std::list<StateSet>;
-  //
-	// auto subsumes = [](const StateSet& lhs, const StateSet& rhs) {
-	// 	return std::includes(rhs.begin(), rhs.end(), lhs.begin(), lhs.end());
-	// };
-  //
-	// // process parameters
-	// // TODO: set correctly!!!!
-	// bool is_dfs = true;
-  //
-	// // check the initial state
-	// if (are_disjoint(aut.initialstates, aut.finalstates))
-	// {
-	// 	if (nullptr != cex) { cex->clear(); }
-  //
-	// 	return false;
-	// }
-  //
-	// // initialize
-	// WorklistType worklist = { aut.initialstates };
-	// ProcessedType processed = { aut.initialstates };
-	// std::list<Symbol> alph_symbols = alphabet.get_symbols();
-  //
-	// // 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// // 'paths[s] == s' means that 's' is an initial state
-	// std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-	// 	{ {aut.initialstates, {aut.initialstates, 0}} };
-  //
-	// while (!worklist.empty())
-	// {
-	// 	// get a next state
-	// 	StateSet state;
-	// 	if (is_dfs)
-	// 	{
-	// 		state = *worklist.rbegin();
-	// 		worklist.pop_back();
-	// 	}
-	// 	else
-	// 	{ // BFS
-	// 		state = *worklist.begin();
-	// 		worklist.pop_front();
-	// 	}
-  //
-	// 	// process it
-	// 	for (Symbol symb : alph_symbols)
-	// 	{
-	// 		StateSet succ = aut.post(state, symb);
-	// 		if (are_disjoint(succ, aut.finalstates))
-	// 		{
-	// 			if (nullptr != cex)
-	// 			{
-	// 				cex->clear();
-	// 				cex->push_back(symb);
-	// 				StateSet trav = state;
-	// 				while (paths[trav].first != trav)
-	// 				{ // go back until initial state
-	// 					cex->push_back(paths[trav].second);
-	// 					trav = paths[trav].first;
-	// 				}
-  //
-	// 				std::reverse(cex->begin(), cex->end());
-	// 			}
-  //
-	// 			return false;
-	// 		}
-  //
-	// 		bool is_subsumed = false;
-	// 		for (const auto& anti_state : processed)
-	// 		{ // trying to find a smaller state in processed
-	// 			if (anti_state.size() > succ.size())
-	// 			{ // larger sets cannot be subsets
-	// 				continue;
-	// 			}
-  //
-	// 			if (subsumes(anti_state, succ))
-	// 			{
-	// 				is_subsumed = true;
-	// 				break;
-	// 			}
-	// 		}
-  //
-	// 		if (is_subsumed) { continue; }
-  //
-	// 		// prune data structures and insert succ inside
-	// 		for (std::list<StateSet>* ds : {&processed, &worklist})
-	// 		{
-	// 			auto it = ds->begin();
-	// 			while (it != ds->end())
-	// 			{
-	// 				if (subsumes(succ, *it))
-	// 				{
-	// 					auto to_remove = it;
-	// 					++it;
-	// 					ds->erase(to_remove);
-	// 				}
-	// 				else
-	// 				{
-	// 					++it;
-	// 				}
-	// 			}
-  //
-	// 			// TODO: set pushing strategy
-	// 			ds->push_back(succ);
-	// 		}
-  //
-	// 		// also set that succ was accessed from state
-	// 		paths[succ] = {state, symb};
-	// 	}
-	// }
-  //
-	// return true;
+	using ProdStateType = std::pair<State, StateSet>;
+	using WorklistType = std::list<ProdStateType>;
+	using ProcessedType = std::list<ProdStateType>;
+
+	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
+		if (lhs.first != rhs.first) {
+			return false;
+		}
+
+		const StateSet& lhs_bigger = lhs.second;
+		const StateSet& rhs_bigger = rhs.second;
+		if (rhs_bigger.size() > lhs_bigger.size()) { // bigger set cannot be subset
+			return false;
+		}
+
+		return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
+			lhs_bigger.begin(), lhs_bigger.end());
+	};
+
+	// process parameters
+	// TODO: set correctly!!!!
+	bool is_dfs = true;
+
+	// initialize
+	WorklistType worklist = { };
+	ProcessedType processed = { };
+
+	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
+	// 'paths[s] == s' means that 's' is an initial state
+	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
+
+	// check initial states first
+	for (const auto& state : smaller.initialstates) {
+		if (smaller.has_final(state) &&
+			are_disjoint(bigger.initialstates, bigger.finalstates))
+		{
+			if (nullptr != cex) { cex->clear(); }
+			return false;
+		}
+
+		ProdStateType st = std::make_pair(state, bigger.initialstates);
+		worklist.push_back(st);
+		processed.push_back(st);
+
+		paths.insert({ st, {st, 0}});
+	}
+
+	while (!worklist.empty()) {
+		// get a next product state
+		ProdStateType prod_state;
+		if (is_dfs) {
+			prod_state = *worklist.rbegin();
+			worklist.pop_back();
+		} else { // BFS
+			prod_state = *worklist.begin();
+			worklist.pop_front();
+		}
+
+		const State& smaller_state = prod_state.first;
+		const StateSet& bigger_set = prod_state.second;
+
+		// process transitions leaving smaller_state
+		for (const auto& post_symb : smaller[smaller_state]) {
+			const Symbol& symb = post_symb.first;
+
+			for (const State& smaller_succ : post_symb.second) {
+				StateSet bigger_succ = bigger.post(bigger_set, symb);
+				ProdStateType succ = {smaller_succ, bigger_succ};
+
+				if (smaller.has_final(smaller_succ) &&
+					are_disjoint(bigger_succ, bigger.finalstates))
+				{
+					if (nullptr != cex) {
+						cex->clear();
+						cex->push_back(symb);
+						ProdStateType trav = prod_state;
+						while (paths[trav].first != trav)
+						{ // go back until initial state
+							cex->push_back(paths[trav].second);
+							trav = paths[trav].first;
+						}
+
+						std::reverse(cex->begin(), cex->end());
+					}
+
+					return false;
+				}
+
+				bool is_subsumed = false;
+				for (const auto& anti_state : processed)
+				{ // trying to find a smaller state in processed
+					if (subsumes(anti_state, succ)) {
+						is_subsumed = true;
+						break;
+					}
+				}
+
+				if (is_subsumed) { continue; }
+
+				// prune data structures and insert succ inside
+				for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
+					auto it = ds->begin();
+					while (it != ds->end()) {
+						if (subsumes(succ, *it)) {
+							auto to_remove = it;
+							++it;
+							ds->erase(to_remove);
+						} else {
+							++it;
+						}
+					}
+
+					// TODO: set pushing strategy
+					ds->push_back(succ);
+				}
+
+				// also set that succ was accessed from state
+				paths[succ] = {prod_state, symb};
+			}
+		}
+	}
+
+	return true;
 } // }}}
 
 } // namespace
@@ -172,26 +179,20 @@ bool Vata2::Nfa::is_incl(
 
 	// setting the default algorithm
 	decltype(is_incl_naive)* algo = is_incl_naive;
-	if (!haskey(params, "algo"))
-	{
+	if (!haskey(params, "algo")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
 			"received: " + std::to_string(params));
 	}
 
 	const std::string& str_algo = params.at("algo");
-	if ("naive" == str_algo)
-	{ }
-	else if ("antichains" == str_algo)
-	{
+	if ("naive" == str_algo) { }
+	else if ("antichains" == str_algo) {
 		algo = is_incl_antichains;
-	}
-	else
-	{
+	} else {
 		throw std::runtime_error(std::to_string(__func__) +
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
 	return algo(smaller, bigger, alphabet, cex, params);
 } // is_incl }}}
-
