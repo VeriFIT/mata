@@ -255,18 +255,18 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 } // operator++ }}}
 
 
-StateSet Nfa::get_post_of_set(
+StateSet Nfa::post(
 	const StateSet&  macrostate,
 	Symbol           sym) const
 { // {{{
 	StateSet result;
 	for (State state : macrostate)
 	{
-		const PostSymb* post = get_post(state);
-		if (nullptr != post)
+		const PostSymb* post_s = this->post(state);
+		if (nullptr != post_s)
 		{
-			auto it = post->find(sym);
-			if (post->end() != it)
+			auto it = post_s->find(sym);
+			if (post_s->end() != it)
 			{
 				result.insert(it->second.begin(), it->second.end());
 			}
@@ -274,7 +274,7 @@ StateSet Nfa::get_post_of_set(
 	}
 
 	return result;
-} // get_post_of_set }}}
+} // post }}}
 
 
 std::ostream& Vata2::Nfa::operator<<(std::ostream& strm, const Nfa& nfa)
@@ -529,7 +529,7 @@ void Vata2::Nfa::determinize(
 				Symbol symb = symb_post_pair.first;
 				const StateSet& post = symb_post_pair.second;
 				post_symb[symb].insert(post.begin(), post.end());
-				// TODO: consider using get_post_of_set instead
+				// TODO: consider using post() instead
 			}
 		}
 
@@ -749,7 +749,7 @@ std::pair<Word, bool> Vata2::Nfa::get_word_for_path(
 		State newSt = path[i];
 		bool found = false;
 
-		const auto& postCur = aut.get_post(cur);
+		const auto& postCur = aut.post(cur);
 		for (const auto& symbolMap : *postCur)
 		{
 			for (State st : symbolMap.second)
@@ -918,7 +918,7 @@ bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
 
 	for (Symbol sym : word)
 	{
-		cur = aut.get_post_of_set(cur, sym);
+		cur = aut.post(cur, sym);
 		if (cur.empty()) { return false; }
 	}
 
@@ -933,7 +933,7 @@ bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 	for (Symbol sym : word)
 	{
 	  if (!are_disjoint(cur, aut.finalstates)) { return true; }
-		cur = aut.get_post_of_set(cur, sym);
+		cur = aut.post(cur, sym);
 		if (cur.empty()) { return false; }
 	}
 

@@ -66,7 +66,7 @@ bool is_universal_antichains(
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
 	std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-		{{aut.initialstates, {aut.initialstates, 0}}};
+		{ {aut.initialstates, {aut.initialstates, 0}} };
 
 	while (!worklist.empty())
 	{
@@ -86,7 +86,7 @@ bool is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols)
 		{
-			StateSet succ = aut.get_post_of_set(state, symb);
+			StateSet succ = aut.post(state, symb);
 			if (are_disjoint(succ, aut.finalstates))
 			{
 				if (nullptr != cex)

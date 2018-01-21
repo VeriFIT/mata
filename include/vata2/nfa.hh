@@ -292,23 +292,23 @@ public:
 
 	const PostSymb& operator[](State state) const
 	{ // {{{
-		const PostSymb* post = get_post(state);
-		if (nullptr == post)
+		const PostSymb* post_s = this->post(state);
+		if (nullptr == post_s)
 		{
 			return EMPTY_POST;
 		}
 
-		return *post;
+		return *post_s;
 	} // operator[] }}}
 
-	const PostSymb* get_post(State state) const
+	const PostSymb* post(State state) const
 	{ // {{{
 		auto it = transitions.find(state);
 		return (transitions.end() == it)? nullptr : &it->second;
-	} // get_post }}}
+	} // post }}}
 
 	/// gets a post of a set of states over a symbol
-	StateSet get_post_of_set(const StateSet& macrostate, Symbol sym) const;
+	StateSet post(const StateSet& macrostate, Symbol sym) const;
 }; // Nfa }}}
 
 /// Do the automata have disjoint sets of states?
