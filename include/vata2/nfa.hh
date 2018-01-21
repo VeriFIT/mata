@@ -333,6 +333,23 @@ inline bool is_universal(
 	return is_universal(aut, alphabet, nullptr, params);
 } // }}}
 
+/// Checks inclusion of languages of two automata (smaller <= bigger)?
+bool is_incl(
+	const Nfa&         smaller,
+	const Nfa&         bigger,
+	const Alphabet&    alphabet,
+	Word*              cex = nullptr,
+	const StringDict&  params = {});
+
+inline bool is_incl(
+	const Nfa&         smaller,
+	const Nfa&         bigger,
+	const Alphabet&    alphabet,
+	const StringDict&  params)
+{ // {{{
+	return is_incl(smaller, bigger, alphabet, nullptr, params);
+} // }}}
+
 /// Compute intersection of a pair of automata
 void intersection(
 	Nfa*         result,

@@ -1093,8 +1093,6 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 
 			REQUIRE(!is_univ);
 
-			DEBUG_PRINT(std::to_string(cex));
-
 			REQUIRE(cex.size() == 4);
 			REQUIRE((cex[0] == alph["a"] || cex[0] == alph["b"]));
 			REQUIRE((cex[1] == alph["a"] || cex[1] == alph["b"]));
@@ -1139,6 +1137,175 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 		params["algo"] = "foo";
 
 		CHECK_THROWS_WITH(is_universal(aut, alph, params),
+			Catch::Contains("received an unknown value"));
+	}
+} // }}}
+
+TEST_CASE("Vata2::Nfa::is_incl()")
+{ // {{{
+	Nfa smaller;
+	Nfa bigger;
+	Word cex;
+	StringDict params;
+
+	const std::unordered_set<std::string> ALGORITHMS = {
+		"naive",
+		// "antichains",
+	};
+
+	SECTION("{} <= {}, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, params);
+
+			REQUIRE(is_included);
+		}
+	}
+
+	SECTION("{} <= {epsilon}, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+		bigger.initialstates = {1};
+		bigger.finalstates = {1};
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			REQUIRE(is_included);
+		}
+	}
+
+	SECTION("{epsilon} <= {epsilon}, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+		smaller.initialstates = {1};
+		smaller.finalstates = {1};
+		bigger.initialstates = {101};
+		bigger.finalstates = {101};
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			REQUIRE(is_included);
+		}
+	}
+
+	SECTION("{epsilon} !<= {}, empty alphabet")
+	{
+		EnumAlphabet alph = { };
+		smaller.initialstates = {1};
+		smaller.finalstates = {1};
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			REQUIRE(!is_included);
+			REQUIRE(cex == Word{});
+		}
+	}
+
+	SECTION("a* + b* <= (a+b)*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		smaller.initialstates = {1,2};
+		smaller.finalstates = {1,2};
+		smaller.add_trans(1, alph["a"], 1);
+		smaller.add_trans(2, alph["b"], 2);
+
+		bigger.initialstates = {101};
+		bigger.finalstates = {101};
+		bigger.add_trans(101, alph["a"], 101);
+		bigger.add_trans(101, alph["b"], 101);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, params);
+
+			REQUIRE(is_included);
+		}
+	}
+
+	SECTION("(a+b)* !<= a* + b*")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		smaller.initialstates = {1};
+		smaller.finalstates = {1};
+		smaller.add_trans(1, alph["a"], 1);
+		smaller.add_trans(1, alph["b"], 1);
+
+		bigger.initialstates = {101, 102};
+		bigger.finalstates = {101, 102};
+		bigger.add_trans(101, alph["a"], 101);
+		bigger.add_trans(102, alph["b"], 102);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			REQUIRE(!is_included);
+			REQUIRE((
+				cex == Word{alph["a"], alph["b"]} ||
+				cex == Word{alph["b"], alph["a"]}));
+		}
+	}
+
+	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		smaller.initialstates = {1};
+		smaller.finalstates = {1};
+		smaller.add_trans(1, alph["a"], 1);
+		smaller.add_trans(1, alph["b"], 1);
+
+		bigger.initialstates = {101};
+		bigger.finalstates = {101, 102, 103, 104, 105};
+
+		bigger.add_trans(101, alph["a"], 102);
+		bigger.add_trans(101, alph["b"], 102);
+		bigger.add_trans(102, alph["a"], 103);
+		bigger.add_trans(102, alph["b"], 103);
+
+		bigger.add_trans(103, alph["a"], 104);
+		bigger.add_trans(104, alph["a"], 104);
+
+		bigger.add_trans(103, alph["b"], 105);
+		bigger.add_trans(105, alph["b"], 105);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			REQUIRE(!is_included);
+
+			REQUIRE(cex.size() == 4);
+			REQUIRE((cex[0] == alph["a"] || cex[0] == alph["b"]));
+			REQUIRE((cex[1] == alph["a"] || cex[1] == alph["b"]));
+			REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
+			REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
+			REQUIRE(cex[2] != cex[3]);
+		}
+	}
+
+	SECTION("wrong parameters 1")
+	{
+		EnumAlphabet alph = { };
+
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
+			Catch::Contains("requires setting the \"algo\" key"));
+	}
+
+	SECTION("wrong parameters 2")
+	{
+		EnumAlphabet alph = { };
+		params["algo"] = "foo";
+
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
 			Catch::Contains("received an unknown value"));
 	}
 } // }}}

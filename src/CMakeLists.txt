@@ -43,6 +43,7 @@ include_directories(../include)
 add_library(libvata2 STATIC
 	nfa.cc
 	nfa-dispatch.cc
+	nfa-incl.cc
 	nfa-universal.cc
 	parser.cc
 	parser-dispatch.cc
