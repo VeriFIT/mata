@@ -350,6 +350,23 @@ inline bool is_incl(
 	return is_incl(smaller, bigger, alphabet, nullptr, params);
 } // }}}
 
+/// Compute union of a pair of automata
+/// Assumes that sets of states of lhs, rhs, and result are disjoint
+void union_norename(
+	Nfa*        result,
+	const Nfa&  lhs,
+	const Nfa&  rhs);
+
+/// Compute union of a pair of automata
+inline Nfa union_norename(
+	const Nfa&  lhs,
+	const Nfa&  rhs)
+{ // {{{
+	Nfa result;
+	union_norename(&result, lhs, rhs);
+	return result;
+} // union_norename }}}
+
 /// Compute intersection of a pair of automata
 void intersection(
 	Nfa*         result,

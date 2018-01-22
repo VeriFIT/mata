@@ -278,9 +278,9 @@ StateSet Nfa::post(
 
 
 std::ostream& Vata2::Nfa::operator<<(std::ostream& strm, const Nfa& nfa)
-{
+{ // {{{
 	return strm << std::to_string(serialize(nfa));
-}
+} // Nfa::operator<<(ostream) }}}
 
 
 bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
@@ -318,11 +318,40 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 	return true;
 } // are_disjoint }}}
 
+
+void Vata2::Nfa::union_norename(
+	Nfa*        result,
+	const Nfa&  lhs,
+	const Nfa&  rhs)
+{ // {{{
+	assert(nullptr != result);
+
+	result->initialstates.insert(
+		lhs.initialstates.cbegin(),
+		lhs.initialstates.cend());
+
+	result->initialstates.insert(
+		rhs.initialstates.cbegin(),
+		rhs.initialstates.cend());
+
+	result->finalstates.insert(
+		lhs.finalstates.cbegin(),
+		lhs.finalstates.cend());
+
+	result->finalstates.insert(
+		rhs.finalstates.cbegin(),
+		rhs.finalstates.cend());
+
+	for (const auto& trans : lhs) { result->add_trans(trans); }
+	for (const auto& trans : rhs) { result->add_trans(trans); }
+} // union_norename }}}
+
+
 void Vata2::Nfa::intersection(
-	Nfa* result,
-	const Nfa& lhs,
-	const Nfa& rhs,
-	ProductMap* prod_map)
+	Nfa*         result,
+	const Nfa&   lhs,
+	const Nfa&   rhs,
+	ProductMap*  prod_map)
 { // {{{
 	bool remove_prod_map = false;
 	if (nullptr == prod_map)

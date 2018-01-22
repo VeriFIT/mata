@@ -203,6 +203,111 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 	}
 } // }}}
 
+TEST_CASE("Vata2::Nfa::union_norename()")
+{ // {{{
+	Nfa a, b, res;
+
+	SECTION("Union of empty automata")
+	{
+		union_norename(&res, a, b);
+
+		REQUIRE(res.initialstates.empty());
+		REQUIRE(res.finalstates.empty());
+		REQUIRE(res.trans_empty());
+	}
+
+	SECTION("Union of automata with no transitions")
+	{
+		a.initialstates = {1, 3};
+		a.finalstates = {3, 5};
+
+		b.initialstates = {4, 6};
+		b.finalstates = {4, 2};
+
+		union_norename(&res, a, b);
+
+		REQUIRE(!res.initialstates.empty());
+		REQUIRE(!res.finalstates.empty());
+
+		REQUIRE(res.has_initial(1));
+		REQUIRE(res.has_initial(3));
+		REQUIRE(res.has_initial(4));
+		REQUIRE(res.has_initial(6));
+		REQUIRE(res.has_final(3));
+		REQUIRE(res.has_final(5));
+		REQUIRE(res.has_final(4));
+		REQUIRE(res.has_final(2));
+	}
+
+	SECTION("Union of automata with some transitions")
+	{
+		FILL_WITH_AUT_A(a);
+		FILL_WITH_AUT_B(b);
+
+		union_norename(&res, a, b);
+
+		EnumAlphabet alph = {"a", "b"};
+		StringDict params;
+		params["algo"] = "antichains";
+
+		REQUIRE(is_incl(a, res, alph, params));
+		REQUIRE(is_incl(b, res, alph, params));
+
+		// REQUIRE(res.has_initial(prod_map[{1, 4}]));
+		// REQUIRE(res.has_initial(prod_map[{3, 4}]));
+		// REQUIRE(res.has_final(prod_map[{5, 2}]));
+    //
+		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'b', prod_map[{7, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{3, 6}], 'a', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{3, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{5, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'b', prod_map[{1, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{3, 0}], 'a', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{10, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{3, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'b', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{10, 0}], 'a', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{5, 0}], 'a', prod_map[{5, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{5, 2}], 'a', prod_map[{5, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{10, 6}], 'a', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{5, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{3, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{10, 8}], 'b', prod_map[{7, 4}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 8}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{5, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{3, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{10, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{10, 2}], 'b', prod_map[{7, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{10, 2}], 'a', prod_map[{7, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{5, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{3, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{3, 2}], 'a', prod_map[{7, 0}]));
+		// REQUIRE(res.has_trans(prod_map[{5, 6}], 'a', prod_map[{5, 2}]));
+		// REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
+		// REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 8}]));
+		// REQUIRE(res.has_trans(prod_map[{7, 8}], 'b', prod_map[{1, 4}]));
+		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
+	}
+
+	SECTION("Union of automata with some transitions but without a final state")
+	{
+		FILL_WITH_AUT_A(a);
+		FILL_WITH_AUT_B(b);
+		b.finalstates = {12};
+
+		union_norename(&res, a, b);
+
+		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
+	}
+} // }}}
+
+
 TEST_CASE("Vata2::Nfa::intersection()")
 { // {{{
 	Nfa a, b, res;
