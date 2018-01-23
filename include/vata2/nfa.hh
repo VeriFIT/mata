@@ -1,4 +1,19 @@
-// TODO: add header
+/* nfa.hh -- nondeterministic finite automaton (over finite words)
+ *
+ * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+ *
+ * This file is a part of libvata2.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #ifndef _VATA2_NFA_HH_
 #define _VATA2_NFA_HH_

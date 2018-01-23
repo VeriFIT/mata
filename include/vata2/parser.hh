@@ -1,4 +1,20 @@
-// TODO: some header
+/* parser.hh -- VTF format parser
+ *
+ * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+ *
+ * This file is a part of libvata2.
+ *
+ * this program is free software; you can redistribute it and/or modify
+ * it under the terms of the gnu general public license as published by
+ * the free software foundation; either version 3 of the license, or
+ * (at your option) any later version.
+ *
+ * this program is distributed in the hope that it will be useful,
+ * but without any warranty; without even the implied warranty of
+ * merchantability or fitness for a particular purpose.  see the
+ * gnu general public license for more details.
+ */
+
 
 #ifndef _VATA2_PARSER_HH_
 #define _VATA2_PARSER_HH_
@@ -10,6 +26,7 @@
 #include <string>
 #include <vector>
 
+// VATA headers
 #include <vata2/util.hh>
 
 namespace Vata2

@@ -1,5 +1,21 @@
-// TODO: add header
+/* nfa-incl.cc -- NFA language inclusion
+ *
+ * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+ *
+ * This file is a part of libvata2.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
+// VATA headers
 #include <vata2/nfa.hh>
 
 using namespace Vata2::Nfa;

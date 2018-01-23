@@ -1,13 +1,30 @@
-// TODO: add header
-//
+/* vm-dispatch.hh -- dispatcher for virtual machine function calls
+ *
+ * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+ *
+ * This file is a part of libvata2.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
 // The purpose of this code is to provide an interface through which classes
 // for automata types could register their 'dispatcher' functions for
-// operations called from the virtual machine.  The code is deliberately made
-// separate from vata2/vm.hh in order to decrease the number of dependencies.
+// operations called from within the virtual machine.  The code is deliberately
+// made separate from vata2/vm.hh in order to decrease the number of
+// dependencies.
 
 #ifndef _VM_DISPATCH_HH_
 #define _VM_DISPATCH_HH_
 
+// VATA headers
 #include <vata2/vm.hh>
 
 namespace Vata2
