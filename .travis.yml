@@ -91,7 +91,7 @@ deploy:
   provider: pages
   skip-cleanup: true
   github-token: $GITHUB_TOKEN
-  local_dir: $TRAVIS_BUILD_DIR/doc/html
+  local_dir: doc/html
   keep-history: true
   on:
     branch: master
