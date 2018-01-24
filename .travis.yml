@@ -60,6 +60,7 @@ addons:
       - libstdc++-7-dev
       - lcov
       - valgrind
+      - doxygen
 
 
 cache: ccache
