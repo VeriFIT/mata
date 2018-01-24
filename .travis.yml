@@ -96,3 +96,5 @@ deploy:
   keep-history: true
   on:
     branch: master
+    os: linux
+    compiler: gcc
