@@ -61,6 +61,7 @@ addons:
       - lcov
       - valgrind
       - doxygen
+      - graphviz
 
 
 cache: ccache
