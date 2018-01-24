@@ -96,5 +96,4 @@ deploy:
   keep-history: true
   on:
     branch: master
-    os: linux
-    compiler: gcc
+    condition: $TRAVIS_OS_NAME = "linux" && $CXX = "g++"
