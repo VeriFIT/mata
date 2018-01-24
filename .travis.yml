@@ -1,10 +1,15 @@
+sudo: false
+
+branches:
+  except:
+    - gh-pages
+
 language: cpp
 
 compiler:
   - gcc
   - clang
 
-sudo: false
 
 script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
@@ -33,6 +38,9 @@ script:
   - make clean
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       CXX=g++-6 make coverage ; make test ; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
+      make doc ; fi
+
 
 after_success:
     # Creating coverage report
@@ -53,14 +61,20 @@ addons:
       - lcov
       - valgrind
 
+
 cache: ccache
 
 os:
   - linux
   - osx
 
-# env:
-#   - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
+# Environment
+env:
+  global:
+    # - GH_REPO_REF: github.com/ondrik/libvata2.git
+    # - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
 
 matrix:
   exclude:
@@ -68,4 +82,15 @@ matrix:
     - os: osx
       compiler: clang
 
+# Ubuntu distribution
 dist: trusty
+
+# Deployment of GitHub pages
+deploy:
+  provider: pages
+  skip-cleanup: true
+  github-token: $GITHUB_TOKEN
+  local_dir: $TRAVIS_BUILD_DIR/doc/html
+  keep-history: true
+  on:
+    branch: master
