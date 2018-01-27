@@ -252,56 +252,22 @@ TEST_CASE("Vata2::Nfa::union_norename()")
 
 		REQUIRE(is_incl(a, res, alph, params));
 		REQUIRE(is_incl(b, res, alph, params));
-
-		// REQUIRE(res.has_initial(prod_map[{1, 4}]));
-		// REQUIRE(res.has_initial(prod_map[{3, 4}]));
-		// REQUIRE(res.has_final(prod_map[{5, 2}]));
-    //
-		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 4}], 'b', prod_map[{7, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{3, 6}], 'a', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{3, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{5, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'b', prod_map[{1, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{3, 0}], 'a', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{10, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{3, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'b', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 0}], 'a', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{5, 0}], 'a', prod_map[{5, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{5, 2}], 'a', prod_map[{5, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 6}], 'a', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{5, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{3, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 8}], 'b', prod_map[{7, 4}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 8}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{5, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{3, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{10, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 2}], 'b', prod_map[{7, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 2}], 'a', prod_map[{7, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{5, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{3, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{3, 2}], 'a', prod_map[{7, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{5, 6}], 'a', prod_map[{5, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 8}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 8}], 'b', prod_map[{1, 4}]));
-		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
 	}
 
 	SECTION("Union of automata with some transitions but without a final state")
 	{
 		FILL_WITH_AUT_A(a);
 		FILL_WITH_AUT_B(b);
-		b.finalstates = {12};
+		b.finalstates = {};
 
 		union_norename(&res, a, b);
+
+		EnumAlphabet alph = {"a", "b"};
+		StringDict params;
+		params["algo"] = "antichains";
+
+		REQUIRE(is_incl(a, res, alph, params));
+		REQUIRE(is_incl(res, a, alph, params));
 
 		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
 	}
@@ -1219,6 +1185,46 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 		aut.add_trans(3, alph["b"], 4);
 		aut.add_trans(4, alph["a"], 4);
 		aut.add_trans(4, alph["b"], 4);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(is_univ);
+		}
+	}
+
+	SECTION("example from Abdulla et al. TACAS'10")
+	{
+		EnumAlphabet alph = {"a", "b"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1,2,3};
+
+		aut.add_trans(1, alph["b"], 1);
+		aut.add_trans(1, alph["a"], 2);
+		aut.add_trans(1, alph["b"], 4);
+		aut.add_trans(2, alph["b"], 2);
+		aut.add_trans(2, alph["a"], 3);
+		aut.add_trans(3, alph["b"], 3);
+		aut.add_trans(3, alph["a"], 1);
+		aut.add_trans(4, alph["b"], 2);
+		aut.add_trans(4, alph["b"], 3);
+
+		for (const auto& algo : ALGORITHMS) {
+			params["algo"] = algo;
+			bool is_univ = is_universal(aut, alph, &cex, params);
+
+			REQUIRE(is_univ);
+		}
+	}
+
+	SECTION("subsumption-pruning in processed")
+	{
+		EnumAlphabet alph = {"a"};
+		aut.initialstates = {1,2};
+		aut.finalstates = {1};
+
+		aut.add_trans(1, alph["a"], 1);
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;

@@ -67,7 +67,7 @@ bool is_incl_antichains(
 
 		const StateSet& lhs_bigger = lhs.second;
 		const StateSet& rhs_bigger = rhs.second;
-		if (rhs_bigger.size() > lhs_bigger.size()) { // bigger set cannot be subset
+		if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
 			return false;
 		}
 

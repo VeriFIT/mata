@@ -56,7 +56,7 @@ bool is_universal_antichains(
 	using ProcessedType = std::list<StateSet>;
 
 	auto subsumes = [](const StateSet& lhs, const StateSet& rhs) {
-		if (rhs.size() > lhs.size()) { // bigger set cannot be subset
+		if (lhs.size() > rhs.size()) { // bigger set cannot be subset
 			return false;
 		}
 
