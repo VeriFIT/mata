@@ -1,4 +1,19 @@
-// TODO: some header
+/* tests-nfa-dispatch.cc -- tests of NFA dispatch functions
+ *
+ * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+ *
+ * This file is a part of libvata2.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #include "../3rdparty/catch.hpp"
 
@@ -26,8 +41,8 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 
 	SECTION("invalid function")
 	{
-		CHECK_THROWS_WITH(find_dispatcher("NFA")("barrel-roll", { }),
-			Catch::Contains("invalid function name"));
+		VMValue res = find_dispatcher("NFA")("barrel-roll", { });
+		REQUIRE("NaV" == res.type);
 	}
 
 	SECTION("invalid arguments 1")
