@@ -3,6 +3,7 @@ sudo: false
 branches:
   except:
     - gh-pages
+    - doxygen-gen
 
 language: cpp
 
