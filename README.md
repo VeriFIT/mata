@@ -11,3 +11,6 @@ git clone https://github.com/ondrik/libvata2
 cd libvata2
 make release
 ```
+
+# Documentation
+see [https://ondrik.github.io/libvata2](this web page)
