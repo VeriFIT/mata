@@ -94,6 +94,7 @@ deploy:
   github-token: $GITHUB_TOKEN
   local_dir: doc
   keep-history: true
+  target-branch: doxygen-gen
   on:
     branch: master
     condition: $TRAVIS_OS_NAME = "linux" && $CXX = "g++"
