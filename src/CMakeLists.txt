@@ -62,6 +62,7 @@ add_executable(tests
 	tests-nfa.cc
 	tests-nfa-dispatch.cc
 	tests-parser.cc
+	tests-parser-dispatch.cc
 	tests-vm.cc
 	tests-vm-dispatch.cc
 )

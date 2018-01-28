@@ -49,7 +49,7 @@ struct ParsedSection
 	/// Is the section empty?
 	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
 
-	/** Output stream operator */
+	/// Output stream operator
 	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec)
 	{ // {{{
 		os << "@" << parsec.type << "\n";
@@ -79,6 +79,16 @@ struct ParsedSection
 
 		return os;
 	} // operator<< }}}
+
+	/// Equality operator
+	bool operator==(const ParsedSection& rhs) const
+	{ // {{{
+		return
+			this->type == rhs.type &&
+			this->dict == rhs.dict &&
+			this->body == rhs.body;
+	} // }}}
+	bool operator!=(const ParsedSection& rhs) const { return !(*this == rhs); }
 };
 
 
