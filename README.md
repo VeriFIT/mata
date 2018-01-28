@@ -13,4 +13,4 @@ make release
 ```
 
 # Documentation
-see [this page](https://ondrik.github.io/libvata2)
+see [this page](https://ondrik.github.io/libvata2/api)
