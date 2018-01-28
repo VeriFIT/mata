@@ -25,4 +25,4 @@ test:
 
 clean:
 	cd $(BUILD_DIR) && rm -rf *
-	rm -rf html
+	rm -rf doc

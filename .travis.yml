@@ -92,7 +92,7 @@ deploy:
   provider: pages
   skip-cleanup: true
   github-token: $GITHUB_TOKEN
-  local_dir: doc/html
+  local_dir: doc
   keep-history: true
   on:
     branch: master
