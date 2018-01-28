@@ -8,6 +8,14 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ##############################################################################
+#                                     CCACHE
+##############################################################################
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+endif()
+
+##############################################################################
 #                             OUTPUT CUSTOMIZATION
 ##############################################################################
 
