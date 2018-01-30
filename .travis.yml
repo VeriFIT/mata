@@ -77,10 +77,10 @@ addons:
     notification_email: ondra.lengal@gmail.com
 
     # Commands to prepare for build_command
-    build_command_prepend: mkdir build && cd build && CXX=g++-6 cmake -DCMAKE_BUILD_TYPE=Debug ..
+    build_command_prepend: "cov-configure --comptype gcc --compiler g++-6 --template
 
     # The command that will be added as an argument to "cov-build" to compile your project for analysis,
-    build_command: make
+    build_command: make debug
 
     # Pattern to match selecting branches that will run analysis.
     # branch_pattern: coverity_scan
