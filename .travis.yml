@@ -77,7 +77,7 @@ addons:
     notification_email: ondra.lengal@gmail.com
 
     # Commands to prepare for build_command
-    build_command_prepend: make debug
+    build_command_prepend: CXX=g++-6 make debug
 
     # The command that will be added as an argument to "cov-build" to compile your project for analysis,
     build_command: make
