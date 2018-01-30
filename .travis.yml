@@ -50,7 +50,9 @@ after_success:
   # Uploading report to CodeCov
   - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
 
+
 addons:
+# Missing packages {{{
   apt:
     sources: 
       - ubuntu-toolchain-r-test
@@ -62,20 +64,28 @@ addons:
       - valgrind
       - doxygen
       - graphviz
+# }}}
+# Coverity {{{
+  coverity_scan:
+    # GitHub project metadata
+    project:
+      name: ondrik/libvata2
+      version: 0.1
+      description: "libvata2: an automata library"
 
+    # Where email notification of build analysis results will be sent
+    notification_email: ondra.lengal@gmail.com
 
-cache: ccache
+    # Commands to prepare for build_command
+    build_command_prepend: make debug
 
-os:
-  - linux
-  - osx
+    # The command that will be added as an argument to "cov-build" to compile your project for analysis,
+    build_command: make
 
-
-# Environment
-env:
-  global:
-    # - GH_REPO_REF: github.com/ondrik/libvata2.git
-    # - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+    # Pattern to match selecting branches that will run analysis.
+    # branch_pattern: coverity_scan
+    branch_pattern: master
+# }}}
 
 
 matrix:
@@ -87,7 +97,8 @@ matrix:
 # Ubuntu distribution
 dist: trusty
 
-# Deployment of GitHub pages
+
+# Deployment of GitHub pages {{{
 deploy:
   provider: pages
   skip-cleanup: true
@@ -98,3 +109,22 @@ deploy:
   on:
     branch: master
     condition: $TRAVIS_OS_NAME = "linux" && $CXX = "g++"
+# }}}
+
+
+cache: ccache
+
+os:
+  - linux
+  - osx
+
+
+# Environment {{{
+env:
+  global:
+    # - GH_REPO_REF: github.com/ondrik/libvata2.git
+    # - MATRIX_EVAL="CC=gcc-6 && CXX=g++-6"
+
+    # COVERITY_SCAN_TOKEN
+    secure: "cxTPPBztxd/ItNqdp6vwDJgt7Qd1qbZMGlraLu9xi3A+CeQ5mga9C0HYwhDS/3AKUNepZ1Kn608f6Li5EtgSwaonUBgUhNGipuy4iqhKNuZnkhfpoVXgeGxXmzin4RStJ0ecNvREVAnvpDIYLIpG42bh7RT12b7jQO/q5YY0xxjcxov9Psdk4iED9t/GnyhuvfuAGMdPx++EV0OX2NJGF9p+nr74wyvE3QTGMMdeD5OyB1MKIvnTyM1HF0WHajIeGEUaJqxv5WCVKA2wBHXbIMwhYltRNPi1ZSWcwm2ggmkYnBxO8i4Cb9WEkNapOCH1iX+iWtcZxPFYljuBicJTL7/aidglCCLt6l8onfRvz5CQKaOzRCFwzHeeu6bLvUcx41EJpL1fju3tXOqSIg7uKSHb50zZp1Tp6CSoICR6/U+sg6732QR9HXqCMnOheosr2m+buC4X4lYxcAgK8C8i6A+rUan2qc40Nwh1hbvjByXGUGE2GHPyPjQwK1cgeWbCYKModKh147Yt7A4V4DCwkXA4SbrWOkSykhPDU6ACf85xSyHWG0b6/R8ElbBU0sHfVqwaneeAfMdZ1eUlKaNQbFyehsLKhJ/+auw1yrINsvBq/5vnN8IIj2hjVdT8qwotPJhT2HtOym65G2mvNXLbsYopV8ngMa2G/FvhudQSp3Q="
+# }}}
