@@ -75,77 +75,54 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 	*quoted = false;
 	TokenizerState state = TokenizerState::INIT;
 	int ch = input.get();
-	while (input.good())
-	{
+	while (input.good()) {
 		assert(std::char_traits<char>::eof() != ch);
 
-		switch (state)
-		{
-			case TokenizerState::INIT:
-			{
-				if (std::isspace(ch))
-				{ /* do nothing */ }
-				else if ('"' == ch)
-				{
+		switch (state) {
+			case TokenizerState::INIT: {
+				if (std::isspace(ch)) { /* do nothing */ }
+				else if ('"' == ch) {
 					state = TokenizerState::QUOTED;
 					*quoted = true;
-				}
-				else if ('#' == ch)
-				{ // clear the rest of the line
+				} else if ('#' == ch) { // clear the rest of the line
 					std::string aux;
 					std::getline(input, aux);
 					return std::string();
-				}
-				else if ('(' == ch || ')' == ch)
-				{
+				} else if ('(' == ch || ')' == ch) {
 					return std::to_string(static_cast<char>(ch));
-				}
-				else
-				{
+				} else {
 					result += ch;
 					state = TokenizerState::UNQUOTED;
 				}
 				break;
 			}
-			case TokenizerState::UNQUOTED:
-			{
+			case TokenizerState::UNQUOTED: {
 				if (std::isspace(ch)) { return result; }
-				else if ('#' == ch)
-				{ // clear the rest of the line
+				else if ('#' == ch) { // clear the rest of the line
 					std::string aux;
 					std::getline(input, aux);
 					return result;
-				}
-				else if ('"' == ch)
-				{
+				} else if ('"' == ch) {
 					std::string context;
 					std::getline(input, context);
 					throw std::runtime_error("misplaced quotes: " + result + "_\"_" +
 						context);
-				}
-				else if ('(' == ch || ')' == ch)
-				{
+				} else if ('(' == ch || ')' == ch) {
 					input.unget();
 					return result;
-				}
-				else if ('@' == ch || '%' == ch)
-				{
+				} else if ('@' == ch || '%' == ch) {
 					std::string context;
 					std::getline(input, context);
 					throw std::runtime_error(std::to_string("misplaced character \'") +
 						static_cast<char>(ch) + "\' in string \"" + result +
 						static_cast<char>(ch) + context + "\"");
-				}
-				else
-				{
+				} else {
 					result += ch;
 				}
 				break;
 			}
-			case TokenizerState::QUOTED:
-			{
-				if ('"' == ch)
-				{
+			case TokenizerState::QUOTED: {
+				if ('"' == ch) {
 					ch = input.peek();
 					if (!std::isspace(ch) && ('#' != ch) && (')' != ch) &&
 						std::char_traits<char>::eof() != ch)
@@ -157,38 +134,26 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 					}
 
 					return result;
-				}
-				else if ('\\' == ch)
-				{
+				} else if ('\\' == ch) {
 					state = TokenizerState::QUOTED_ESCAPE;
-				}
-				else
-				{
-					result += ch;
-				}
+				} else { result += ch; }
 				break;
 			}
-			case TokenizerState::QUOTED_ESCAPE:
-			{
-				if ('"' != ch)
-				{
-					result += '\\';
-				}
+			case TokenizerState::QUOTED_ESCAPE: {
+				if ('"' != ch) { result += '\\'; }
 				result += ch;
 				state = TokenizerState::QUOTED;
 				break;
 			}
-			default:
-			{
+			default: { // LCOV_EXCL_START
 				throw std::runtime_error("Invalid tokenizer state");
-			}
+			} // LCOV_EXCL_STOP
 		}
 
 		ch = input.get();
 	}
 
-	if (TokenizerState::QUOTED == state || TokenizerState::QUOTED_ESCAPE == state)
-	{
+	if (TokenizerState::QUOTED == state || TokenizerState::QUOTED_ESCAPE == state) {
 		throw std::runtime_error("missing ending quotes: " + result);
 	}
 
@@ -263,14 +228,10 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 
 	bool reading_type = true;
 
-	while (input.good())
-	{
+	while (input.good()) {
 		eat_whites(input);
 		int ch = input.peek();
-		if (std::char_traits<char>::eof() == ch)
-		{
-			break;
-		}
+		if (std::char_traits<char>::eof() == ch) { break; }
 		else if (!reading_type && '@' == ch)
 		{ // another @TYPE declaration
 			break;
@@ -281,38 +242,36 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 
 		PARSER_DEBUG_PRINT_LN(line);
 
-		if (reading_type)
-		{ // we're expecting a @TYPE declaration
+		if (reading_type) { // we're expecting a @TYPE declaration
 			assert(ch == line[0]);
-			if ('#' == line[0] || '\n' == line[0])
-			{ continue; /* skip the rest of the line */ }
-			else if ('@' != line[0])
-			{
+			if ('#' == line[0] || '\n' == line[0]) {
+				continue; /* skip the rest of the line */
+			} else if ('@' != line[0]) {
 				throw std::runtime_error("expecting automaton type (@TYPE), got \"" +
 					line + "\" instead");
 			}
 
 			std::string type;
 			size_t i;
-			for (i = 1; i < line.size(); ++i)
-			{
-				if (!is_string_char(line[i])) { break; }
+			for (i = 1; i < line.size(); ++i) {
+				if (!is_string_char(line[i])) {
+					break;
+				}
 
 				type += line[i];
 			}
 
-			if (type.empty())
-			{
+			if (type.empty()) {
 				throw std::runtime_error("expecting automaton type (@TYPE), got \"" +
 					line + "\" instead");
 			}
 
-			while (i < line.size())
-			{
-				if (std::isspace(line[i])) { ++i; }
-				else if ('#' == line[i]) { break; }
-				else
-				{
+			while (i < line.size()) {
+				if (std::isspace(line[i])) {
+					++i;
+				} else if ('#' == line[i]) {
+					break;
+				} else {
 					std::string trailing(line, i);
 					throw std::runtime_error("invalid trailing characters \"" +
 						trailing + "\" on the line \"" + line + "\"");
@@ -323,27 +282,24 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 			reading_type = false;
 			continue;
 		}
-		else if (!reading_type && '@' == ch)
-		{ // next type declaration
-			return result;
-		}
 
 		std::vector<std::pair<std::string, bool>> token_line = tokenize_line(line);
-		if (token_line.empty()) continue;
+		if (token_line.empty()) {
+			continue;
+		}
 
 		const std::string& maybe_key = token_line[0].first;
 		const bool& quoted = token_line[0].second;
-		if (!quoted && '%' == maybe_key[0])
-		{
+		assert(quoted || '@' != maybe_key[0]);
+
+		if (!quoted && '%' == maybe_key[0]) {
 			std::string key = maybe_key.substr(1);
-			if (key.empty())
-			{
+			if (key.empty()) {
 				throw std::runtime_error("%KEY name missing: " + line);
 			}
 
 			auto it = result.dict.find(key);
-			if (result.dict.end() == it)
-			{ // insert an empty list
+			if (result.dict.end() == it) { // insert an empty list
 				tie(it, std::ignore) =
 					result.dict.insert({ key, std::vector<std::string>() });
 			}
@@ -352,17 +308,13 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 			std::transform(token_line.begin() + 1, token_line.end(),
 				std::back_inserter(val_list),
 				[](const std::pair<std::string, bool> token) { return token.first; });
-		}
-		else if (!quoted && '@' == maybe_key[0])
-		{
-			assert(false);
-		}
-		else
-		{
+		} else {
 			BodyLine stripped_token_line;
 			std::transform(token_line.begin(), token_line.end(),
 				std::back_inserter(stripped_token_line),
-				[](const std::pair<std::string, bool>& token) { return token.first; });
+				[](const std::pair<std::string, bool>& token) {
+					return token.first;
+				});
 			result.body.push_back(stripped_token_line);
 		}
 	}
