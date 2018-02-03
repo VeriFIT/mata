@@ -80,8 +80,7 @@ addons:
     notification_email: ondra.lengal@gmail.com
 
     # Commands to prepare for build_command
-    # build_command_prepend: "cov-configure --comptype gcc --compiler g++-6 --template"
-    build_command_prepend: "export CXX=$CXXCOMP"
+    build_command_prepend: "cov-configure --comptype gcc --compiler g++-6 --template ; export CXX=$CXXCOMP"
 
     # The command that will be added as an argument to "cov-build" to compile your project for analysis,
     build_command: "make debug"
