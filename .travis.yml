@@ -69,26 +69,27 @@ addons:
       - graphviz
 # }}}
 # Coverity {{{
-  # coverity_scan:
-  #   # GitHub project metadata
-  #   project:
-  #     name: ondrik/libvata2
-  #     version: 0.1
-  #     description: "libvata2: an automata library"
-  #
-  #   # Where email notification of build analysis results will be sent
-  #   notification_email: ondra.lengal@gmail.com
-  #
-  #   # Commands to prepare for build_command
-  #   build_command_prepend: "cov-configure --comptype gcc --compiler g++-6 --template"
-  #
-  #   # The command that will be added as an argument to "cov-build" to compile your project for analysis,
-  #   build_command: make debug
-  #
-  #   # Pattern to match selecting branches that will run analysis.
-  #   # branch_pattern: coverity_scan
-  #   branch_pattern: master
-# }}}
+  coverity_scan:
+    # GitHub project metadata
+    project:
+      name: ondrik/libvata2
+      version: 0.1
+      description: "libvata2: an automata library"
+
+    # Where email notification of build analysis results will be sent
+    notification_email: ondra.lengal@gmail.com
+
+    # Commands to prepare for build_command
+    # build_command_prepend: "cov-configure --comptype gcc --compiler g++-6 --template"
+    build_command_prepend: "export CXX=$CXXCOMP"
+
+    # The command that will be added as an argument to "cov-build" to compile your project for analysis,
+    build_command: make debug
+
+    # Pattern to match selecting branches that will run analysis.
+    # branch_pattern: coverity_scan
+    branch_pattern: master
+}}}
 
 
 matrix:
