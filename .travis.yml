@@ -31,7 +31,7 @@ script:
   - make test
   - make clean
   - if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
-      echo "Unsupported!" ; exit 1 ; fi
+      echo "Unsupported!" ; exit 1 ;
     else
       CXX=$CXXCOMP make release ;
     fi
