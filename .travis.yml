@@ -33,12 +33,12 @@ script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ] && [ "$CXX" = "clang++" ]; then
       echo "Unsupported!" ; exit 1 ; fi
     else
-      CXX=CXXCOMP make release ;
+      CXX=$CXXCOMP make release ;
     fi
   - make test
   - make clean
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      CXX=CXXCOMP make coverage ; make test ;
+      CXX=$CXXCOMP make coverage ; make test ;
     fi
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
       make doc ;
