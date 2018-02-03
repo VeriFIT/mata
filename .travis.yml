@@ -84,12 +84,12 @@ addons:
     build_command_prepend: "export CXX=$CXXCOMP"
 
     # The command that will be added as an argument to "cov-build" to compile your project for analysis,
-    build_command: make debug
+    build_command: "make debug"
 
     # Pattern to match selecting branches that will run analysis.
     # branch_pattern: coverity_scan
-    branch_pattern: master
-}}}
+    branch_pattern: "master"
+# }}}
 
 
 matrix:
