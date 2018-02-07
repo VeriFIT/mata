@@ -221,6 +221,13 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 	return result;
 } // for_begin }}}
 
+Nfa::const_iterator Nfa::const_iterator::for_end(const Nfa* /* nfa*/)
+{ // {{{
+	const_iterator result;
+	result.is_end = true;
+	return result;
+} // for_end }}}
+
 Nfa::const_iterator& Nfa::const_iterator::operator++()
 { // {{{
 	assert(nullptr != nfa);

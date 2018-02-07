@@ -278,12 +278,7 @@ public:
 
 		const_iterator() : nfa(), stpmIt(), psIt(), ssIt(), trans() { };
 		static const_iterator for_begin(const Nfa* nfa);
-		static const_iterator for_end(const Nfa* /* nfa */)
-		{ // {{{
-			const_iterator result;
-			result.is_end = true;
-			return result;
-		} // }}}
+		static const_iterator for_end(const Nfa* nfa);
 
 		void refresh_trans()
 		{ // {{{
