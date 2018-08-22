@@ -85,4 +85,15 @@ if(NOT APPLE)
 			--error-exitcode=1
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 	)
+else()    # for appleOS
+	add_test(
+		NAME "catch_tests_valgrind"
+		COMMAND ${VALGRIND_PROGRAM}
+			--tool=memcheck
+			--leak-check=yes
+			--show-reachable=yes
+			--error-exitcode=1
+			--suppressions=${CMAKE_SOURCE_DIR}/darwin17-7.suppressions
+			${CMAKE_CURRENT_BINARY_DIR}/tests
+	)
 endif()
