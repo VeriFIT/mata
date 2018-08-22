@@ -15,6 +15,9 @@ install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install lcov; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew cask uninstal oclint; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install gcc6; fi
+    # Workaround for some faulty travis image
+    #  # https://github.com/travis-ci/travis-ci/issues/9640
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then softwareupdate -i "Command Line Tools (macOS High Sierra version 10.13) for Xcode-9.4" ; fi
 
 before_script:
   - if [ "$CXX" = "g++" ]; then
