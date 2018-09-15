@@ -110,6 +110,8 @@ public:
 	void process_token(const std::string& tok);
 	void exec_cmd(const std::vector<VMValue>& exec_vec);
 
+	/// Cleans the stack
+	void clean_stack();
 };
 
 /// The exception for virtual machine errors

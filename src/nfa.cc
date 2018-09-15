@@ -852,14 +852,12 @@ void Vata2::Nfa::construct(
 	assert(nullptr != aut);
 	assert(nullptr != alphabet);
 
-	if (parsec.type != "NFA")
-	{
+	if (parsec.type != "NFA") {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
 	}
 
 	bool remove_state_map = false;
-	if (nullptr == state_map)
-	{
+	if (nullptr == state_map) {
 		state_map = new StringToStateMap();
 		remove_state_map = true;
 	}

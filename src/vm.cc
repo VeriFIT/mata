@@ -93,18 +93,15 @@ void Vata2::VM::VirtualMachine::run_code(
 		this->execute_line(line);
 
 		if (this->exec_stack.size() > 1) {
-			throw VMException("dangling code in a CODE section: " +
-				std::to_string(this->exec_stack));
+			std::string dangling = std::to_string(this->exec_stack);
+			this->clean_stack();
+			throw VMException("dangling code in a CODE section: " + dangling);
 		}
 
 		if (1 == this->exec_stack.size()) {
 			WARN_PRINT("throwing away an unused value at the stack: " +
 				std::to_string(this->exec_stack.top()));
-
-			// get rid of the unused value
-			const VMValue& st_top = this->exec_stack.top();
-			call_dispatch_with_self(st_top, "delete");
-			this->exec_stack.pop();
+			this->clean_stack();
 		}
 	}
 
@@ -177,13 +174,7 @@ void Vata2::VM::VirtualMachine::process_token(
 		catch (const VMException& ex) {
 			// clean exec_vec and the whole stack
 			clean_exec_vec();
-
-			while (!this->exec_stack.empty()) {
-				const auto& val = this->exec_stack.top();
-				call_dispatch_with_self(val, "delete");
-				this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
-			}
-
+			this->clean_stack();
 			throw;
 		}
 		catch (...) {
@@ -255,3 +246,14 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 
 	return VMValue("NaV", nullptr);
 } // default_dispatch() }}}
+
+
+void Vata2::VM::VirtualMachine::clean_stack()
+{ // {{{
+	while (!this->exec_stack.empty()) {
+		const auto& val = this->exec_stack.top();
+		call_dispatch_with_self(val, "delete");
+		this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
+	}
+} // clean_stack() }}}
+
