@@ -95,6 +95,7 @@ else()    # for appleOS
 			--show-reachable=yes
 			--error-exitcode=1
 			--suppressions=${CMAKE_SOURCE_DIR}/darwin17-7.suppressions
+			--gen-suppressions=all
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 	)
 endif()
