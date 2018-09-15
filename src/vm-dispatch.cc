@@ -5,6 +5,7 @@
 // Headers of user data types
 #include <vata2/nfa.hh>
 #include "str.hh"
+#include "void.hh"
 
 using std::tie;
 
@@ -29,7 +30,8 @@ const VMInitFunc INIT_FUNCTIONS[] =
 {
 	Vata2::Nfa::init,
 	Vata2::Str::init,
-	Vata2::Parser::init
+	Vata2::Parser::init,
+	Vata2::Void::init,
 };
 
 

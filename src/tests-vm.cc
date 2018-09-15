@@ -93,9 +93,23 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 
 	SECTION("incorrectly formed code 4")
 	{
+		sec.body.push_back({"foo", "(", ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("is not a valid function call"));
+	}
+
+	SECTION("mismatched parenthesis 1")
+	{
 		sec.body.push_back({"(", "return", "a", ")", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
 			Catch::Contains("mismatched parenthesis"));
+	}
+
+	SECTION("mismatched parenthesis 2")
+	{
+		sec.body.push_back({"(", "foo", "(", "return", "a",  ")"});
+		CHECK_THROWS_WITH(mach.run_code(sec),
+			Catch::Contains("dangling code"));
 	}
 
 	SECTION("incorrect number of parameters")

@@ -86,11 +86,28 @@ void Vata2::VM::VirtualMachine::run_code(
 	const Vata2::Parser::ParsedSection& parsec)
 { // {{{
 	DEBUG_PRINT("VATA-CODE START");
-	for (const auto& line : parsec.body)
-	{
+	for (const auto& line : parsec.body) {
+		assert(this->exec_stack.empty());
+
 		DEBUG_PRINT(std::to_string(line));
 		this->execute_line(line);
+
+		if (this->exec_stack.size() > 1) {
+			throw VMException("dangling code in a CODE section: " +
+				std::to_string(this->exec_stack));
+		}
+
+		if (1 == this->exec_stack.size()) {
+			WARN_PRINT("throwing away an unused value at the stack: " +
+				std::to_string(this->exec_stack.top()));
+
+			// get rid of the unused value
+			const VMValue& st_top = this->exec_stack.top();
+			call_dispatch_with_self(st_top, "delete");
+			this->exec_stack.pop();
+		}
 	}
+
 	DEBUG_PRINT("VATA-CODE END");
 	DEBUG_PRINT("Stack: " + std::to_string(this->exec_stack));
 } // run_code(ParsedSection) }}}
@@ -131,7 +148,9 @@ void Vata2::VM::VirtualMachine::process_token(
 					this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
 					break;
 				}
+				else { /* do nothing */ }
 			}
+			else { /* do nothing */ }
 
 			exec_vec.insert(exec_vec.begin(), st_top);
 			this->exec_stack.pop();
@@ -162,6 +181,7 @@ void Vata2::VM::VirtualMachine::process_token(
 			while (!this->exec_stack.empty()) {
 				const auto& val = this->exec_stack.top();
 				call_dispatch_with_self(val, "delete");
+				this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
 			}
 
 			throw;

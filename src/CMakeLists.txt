@@ -50,6 +50,7 @@ add_library(libvata2 STATIC
 	str-dispatch.cc
 	vm.cc
 	vm-dispatch.cc
+	void-dispatch.cc
 )
 
 set_target_properties(libvata2 PROPERTIES

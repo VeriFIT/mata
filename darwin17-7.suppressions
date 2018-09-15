@@ -177,3 +177,39 @@
    fun:_os_object_init
    fun:libdispatch_init
 }
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:__smakebuf
+   fun:__swsetup
+   fun:__sfvwrite
+   fun:fwrite
+   fun:_ZNSt3__116__pad_and_outputIcNS_11char_traitsIcEEEENS_19ostreambuf_iteratorIT_T0_EES6_PKS4_S8_S8_RNS_8ios_baseES4_
+   fun:_ZNSt3__124__put_character_sequenceIcNS_11char_traitsIcEEEERNS_13basic_ostreamIT_T0_EES7_PKS4_m
+   fun:_ZNSt3__1lsINS_11char_traitsIcEEEERNS_13basic_ostreamIcT_EES6_c
+   fun:_ZN5Catch12_GLOBAL__N_115PosixColourImpl9setColourEPKc
+   fun:_ZN5Catch12_GLOBAL__N_115PosixColourImpl3useENS_6Colour4CodeE
+   fun:_ZN5Catch6Colour3useENS0_4CodeE
+   fun:_ZN5Catch6ColourC2ENS0_4CodeE
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:malloc
+   fun:atexit_register
+   fun:__cxa_atexit
+   fun:__cxx_global_var_init.7
+   fun:_GLOBAL__sub_I_tests_parser.cc
+   fun:_ZN16ImageLoaderMachO18doModInitFunctionsERKN11ImageLoader11LinkContextE
+   fun:_ZN16ImageLoaderMachO16doInitializationERKN11ImageLoader11LinkContextE
+   fun:_ZN11ImageLoader23recursiveInitializationERKNS_11LinkContextEjPKcRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader19processInitializersERKNS_11LinkContextEjRNS_21InitializerTimingListERNS_15UninitedUpwardsE
+   fun:_ZN11ImageLoader15runInitializersERKNS_11LinkContextERNS_21InitializerTimingListE
+   fun:_ZN4dyld24initializeMainExecutableEv
+   fun:_ZN4dyld5_mainEPK12macho_headermiPPKcS5_S5_Pm
+}
