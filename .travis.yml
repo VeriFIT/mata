@@ -52,10 +52,9 @@ script:
 after_success:
     # Creating coverage report
   - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$CXX" = "g++" ]; then
-      lcov --directory build --capture --output-file coverage.info ; # capture coverage info \
-      lcov --remove coverage.info '/usr/*' --output-file coverage.info ; # filter out system \
-      lcov --list coverage.info ; #debug info \
-      # Uploading report to CodeCov
+      lcov --directory build --capture --output-file coverage.info ; \
+      lcov --remove coverage.info '/usr/*' --output-file coverage.info ; \
+      lcov --list coverage.info ; \
       bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports" ; \
     fi
 
