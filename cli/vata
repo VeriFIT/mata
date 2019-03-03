@@ -104,8 +104,8 @@ Runs the main program according to the arguments obtained from the parser.
 '''
     # we create lambdas - cannot construct the strings yet because we don't
     # know how many arguments we have
-    unary_load = lambda : '(load_aut "{0}")'.format(args.inputs[0])
-    binary_load = lambda : '(load_aut "{0}") (load_aut "{1}")'.format(args.inputs[0], args.inputs[1])
+    unary_load = lambda : '(load_file "{0}")'.format(args.inputs[0])
+    binary_load = lambda : '(load_file "{0}") (load_file "{1}")'.format(args.inputs[0], args.inputs[1])
 
     # according to the operation
     if args.oper == 'load':

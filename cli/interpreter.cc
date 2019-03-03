@@ -7,15 +7,13 @@
 
 int interpret_input(std::istream& is)
 {
-	try
-	{
+	try {
 		Vata2::Parser::Parsed parsed = Vata2::Parser::parse_vtf(is);
 
 		Vata2::VM::VirtualMachine mach;
 		mach.run(parsed);
 	}
-	catch (const std::exception& ex)
-	{
+	catch (const std::exception& ex) {
 		std::cerr << "libVATA2 error: " << ex.what() << "\n";
 		return EXIT_FAILURE;
 	}

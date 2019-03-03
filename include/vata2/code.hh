@@ -3,7 +3,7 @@
 #ifndef _VATA2_CODE_HH_
 #define _VATA2_CODE_HH_
 
-namespace VATA2
+namespace Vata2
 {
 namespace Code
 {

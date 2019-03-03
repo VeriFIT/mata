@@ -29,7 +29,7 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 
 	SECTION("trying to re-register a dispatcher")
 	{
-		CHECK_THROWS_WITH(reg_dispatcher("string", nullptr),
+		CHECK_THROWS_WITH(reg_dispatcher("str", nullptr),
 			Catch::Contains("already registered"));
 	}
 }

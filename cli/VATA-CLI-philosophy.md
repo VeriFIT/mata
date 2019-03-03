@@ -14,8 +14,8 @@ For example, the command
 would generate the following `.vtf` file and then pass it into `./vata-code`:
 ```
 @CODE
-a1 = (load_aut "aut1.vtf")
-a2 = (load_aut "aut2.vtf")
+a1 = (load_file "aut1.vtf")
+a2 = (load_file "aut2.vtf")
 a3 = (union a1 a2)
 (print a3)
 ```

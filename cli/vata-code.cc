@@ -26,25 +26,21 @@ int main(int argc, const char* argv[])
 		"input", "An input .vtf @CODE file; if not supplied, read from STDIN");
 	arg_parser.helpParams.showTerminator = false;
 
-	try
-	{
+	try {
 		arg_parser.ParseCLI(argc, argv);
 	}
-	catch (args::Help)
-	{
+	catch (args::Help) {
 		std::cout << arg_parser;
 		return EXIT_SUCCESS;
 	}
-	catch (args::Error e)
-	{
+	catch (args::Error e) {
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 
 	int ret_val;
 
-	if (flag_version)
-	{
+	if (flag_version) {
 		std::cout << "vata-code version " << VATA_VERSION;
 		std::cout << " (" << VATA_GIT_DESCRIBE << ")";
 
@@ -55,22 +51,18 @@ int main(int argc, const char* argv[])
 		std::cout << " [git: " << git_sha_crop << "]";
 		std::cout << "\n";
 		return EXIT_SUCCESS;
-	}
-	else if (pos_inputfile)
-	{
+	} else if (pos_inputfile) {
 		std::string filename = args::get(pos_inputfile);
 		std::fstream fs(filename, std::ios::in);
-		if (!fs)
-		{
+		if (!fs) {
 			std::cerr << "Could not open file \'" << filename << "'\n";
+			return EXIT_FAILURE;
 		}
 
 		ret_val = interpret_input(fs);
 
 		fs.close();
-	}
-	else
-	{ // the input goes from stdin
+	} else { // the input goes from stdin
 		ret_val = interpret_input(std::cin);
 	}
 

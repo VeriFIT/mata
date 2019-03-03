@@ -86,7 +86,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 
 	SECTION("incorrectly formed code 3")
 	{
-		sec.body.push_back({"(", "load_aut", ")"});
+		sec.body.push_back({"(", "load_file", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
 			Catch::Contains("is not a valid function call"));
 	}
@@ -129,6 +129,60 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 	SECTION("aux")
 	{
 		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+	}
+}
+
+TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
+{
+	VirtualMachine mach;
+	ParsedSection sec;
+
+	SECTION("call for an empty CODE section")
+	{
+		sec.type = "CODE";
+		mach.run(sec);
+	}
+
+	SECTION("call for an unnamed empty automaton")
+	{
+		sec.type = "NFA";
+		mach.run(sec);
+	}
+
+	SECTION("call for a named empty automaton")
+	{
+		sec.type = "NFA";
+		sec.dict.insert({"Name", {"a1"}});
+		mach.run(sec);
+
+		VMValue val_a1 = mach.get_from_storage("a1");
+		REQUIRE(val_a1.type == "NFA");
+	}
+
+	SECTION("aux")
+	{
+		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run()");
+	}
+}
+
+TEST_CASE("Vata2::VM::VirtualMachine::get_from_storage() calls")
+{
+	VirtualMachine mach;
+	SECTION("accessing a missing element 1")
+	{
+		CHECK_THROWS_WITH(mach.get_from_storage("foo"),
+			Catch::Contains("is not in the memory"));
+	}
+
+	SECTION("accessing a missing element 1")
+	{
+		ParsedSection sec;
+		sec.type = "NFA";
+		sec.dict.insert({"Name", {"foo"}});
+		mach.run(sec);
+
+		CHECK_THROWS_WITH(mach.get_from_storage("bar"),
+			Catch::Contains("is not in the memory"));
 	}
 }
 

@@ -38,7 +38,15 @@ using VMPointer = const void*;
 class VMValue
 { // {{{
 public:
-	/// name of the type
+	/**
+	 * Name of the type
+	 *
+	 * Built-in types:
+	 *   NaV      : Not a Value
+	 *   str      : a string of characters
+	 *   void     : a void type (e.g. a return type of a procedure)
+	 *   Parsec   : parsed section
+	 */
 	std::string type;
 
 private:
@@ -72,7 +80,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const VMValue& val)
 	{ // {{{
 		os << "<" << val.type << ": ";
-		if ("string" == val.type) {
+		if ("str" == val.type) {
 			// FIXME: dispatch this call to val.type dispatcher
 			os << *static_cast<const std::string*>(val.get_ptr());
 		} else {
@@ -84,17 +92,81 @@ public:
 	} // operator<<(std::ostream) }}}
 }; // VMValue }}}
 
-/// A dictionary mapping names to values
-using VMStorage = std::unordered_map<std::string, VMValue>;
-
-/// The virtual machine executing VATA code
+/**
+ * @brief  The virtual machine executing VATA code
+ *
+ * The virtual machine executing VATA code.  It consists of a storage, which
+ * contains named objects, and an execution stack.  The virtual machine is a
+ * stack machine that interprets input code written in the VATA@CODE syntax.
+ *
+ * FIXME: is the following correct?
+ * A program in VATA@CODE is a sequence of statements, separated by ends of
+ * lines.  Programs are straight-line, i.e., no control flow or loops statements
+ * are present (at least for now).  Statements are either **variable
+ * assignments** or **procedure calls**.  **Variable assignments** are of the
+ * form `lhs = expr`, e.g.,
+ *
+ * @code{.vata}
+ *   aut = (load_file "nfa1.vtf")
+ * @endcode
+ *
+ * where `aut` is a variable name and `(load_file "nfa1.vtf")` is the expression
+ * the value of which is to be assigned to `aut`.  **Procedure calls** are of
+ * the form `expr`, e.g.,
+ *
+ * @code{.vata}
+ *   (print (string "Hello World"))
+ * @endcode
+ *
+ * where `print` is a function with a `void` return type (i.e., a procedure).
+ *
+ * ## Expressions
+ * An expression is a either a *token* or a *function application*. **Token** is
+ * the same as defined in [.vtf syntax](README.md) and **function application**
+ * is of the form
+ *
+ * @code{.vata}
+ *   (func-name arg1 arg2 ... argN)
+ * @endcode
+ *
+ * where `func-name` is the function name and `arg1`, `arg2`, ..., `argN` is a
+ * list of positional arguments, which are also expressions.
+ *
+ * We do not force functions to have a fixed number of arguments.
+ *
+ * ## Types
+ * Every expression has a type, which are:
+ *  ** **basic**: e.g. `void`, `bool`, or `string`
+ *  ** **complex**: e.g. `NFA`, `NTA`, or `STATE-REL`
+ *
+ * ### A "Hello World" Example
+ * @code{.vata}
+ *   @CODE
+ *   (print (string "Hello World"))
+ * @endcode
+ *
+ * ## Function selection
+ * VATA Virtual Machine has a polymorphis extensible function mechanism.  This
+ * means that with an exception of a few in-built functions, any data type can
+ * define its own function handlers.  The resolution of a function to call is
+ * based on the type of the first argument of the function --- the function call
+ * will be passed to its dispatcher function.
+ */
 class VirtualMachine
 {
 private:
 
+	/// A dictionary mapping names to values
+	using VMStorage = std::unordered_map<std::string, VMValue>;
+	/// A stack for VMValues
+	using VMStack = std::stack<VMValue>;
+
 	/// The memory assigning values to names
 	VMStorage mem;
-	std::stack<VMValue> exec_stack;
+	VMStack exec_stack;
+
+	/// Pushes a new value on top of the execution stack
+	void push_to_stack(VMValue val);
 
 public:
 
@@ -110,6 +182,18 @@ public:
 	void process_token(const std::string& tok);
 	void exec_cmd(const std::vector<VMValue>& exec_vec);
 
+	/**
+	 * Storage accessor
+	 *
+	 * @param[in]  name  Name of the object in the storage
+	 *
+	 * @returns  VMValue with the object stored at position @p name
+	 *
+	 * @throws  VMException  If there is nothing at position @p name, an exception
+	 *                       is thrown
+	 */
+	VMValue get_from_storage(const std::string& name) const;
+
 	/// Cleans the stack
 	void clean_stack();
 };
@@ -120,7 +204,6 @@ class VMException : public std::runtime_error
 public:
 	// use base class constructors
 	using std::runtime_error::runtime_error;
-
 };
 
 // CLOSING NAMESPACES AND GUARDS

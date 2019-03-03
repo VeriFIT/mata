@@ -18,6 +18,7 @@
 #include <vata2/vm.hh>
 #include <vata2/vm-dispatch.hh>
 
+#include <fstream>
 
 void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
 { // {{{
@@ -77,8 +78,6 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 	if (!name.empty()) {
 		this->mem[name] = val;
 	}
-
-	assert(false);
 } // run(ParsedSection) }}}
 
 
@@ -125,8 +124,8 @@ void Vata2::VM::VirtualMachine::process_token(
 	if (")" != tok) { // nothing special
 		DEBUG_PRINT("allocating memory for string " + tok);
 		std::string* str = new std::string(tok);
-		VMValue val("string", str);
-		this->exec_stack.push(val);
+		VMValue val("str", str);
+		this->push_to_stack(val);
 	} else { // closing parenthesis - execute action
 		assert(")" == tok);
 
@@ -135,7 +134,7 @@ void Vata2::VM::VirtualMachine::process_token(
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
 			DEBUG_PRINT("top of stack type: " + st_top.type);
-			if ("string" == st_top.type) {
+			if ("str" == st_top.type) {
 				assert(nullptr != st_top.get_ptr());
 				const std::string& val = *static_cast<const std::string*>(st_top.get_ptr());
 				DEBUG_PRINT("top of stack string value: " + val);
@@ -172,9 +171,13 @@ void Vata2::VM::VirtualMachine::process_token(
 			this->exec_cmd(exec_vec);
 		}
 		catch (const VMException& ex) {
+			DEBUG_PRINT("VM: caught the following VMException: " + std::to_string(ex.what()));
 			// clean exec_vec and the whole stack
+			DEBUG_PRINT("VM: cleaning the execution vector and execution stack");
 			clean_exec_vec();
+			DEBUG_PRINT("VM: execution vector clean");
 			this->clean_stack();
+			DEBUG_PRINT("VM: execution stack clean");
 			throw;
 		}
 		catch (...) {
@@ -197,7 +200,7 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 
 	// getting the function name
 	const VMValue& fnc_val = exec_vec[0];
-	assert("string" == fnc_val.type);
+	assert("str" == fnc_val.type);
 	assert(nullptr != fnc_val.get_ptr());
 	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.get_ptr());
 
@@ -220,7 +223,7 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 		}
 	}
 
-	this->exec_stack.push(ret_val);
+	this->push_to_stack(ret_val);
 } // exec_cmd(std::vector) }}}
 
 
@@ -244,14 +247,64 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		return ret_val;
 	}
 
+	if ("load_file" == func_name) {
+		if (func_args.size() != 1) {
+			throw VMException("\"load_file\" requires 1 argument (" +
+				std::to_string(func_args.size()) + " provided)");
+		}
+
+		if (func_args[0].type != "str") {
+			throw VMException("\"load_file\" requires 1 argument of the type \"str\"; an argument "
+				"of the type \"" + func_args[0].type + "\" provided instead");
+		}
+
+		const std::string& filename = *(static_cast<const std::string*>(func_args[0].get_ptr()));
+		DEBUG_PRINT("loading file " + filename);
+		std::fstream fs(filename, std::ios::in);
+		if (!fs) {
+			throw VMException("could not open file \"" + filename + "\"");
+		}
+
+		Parser::Parsed prs = Parser::parse_vtf(fs);
+		if (prs.size() != 1) {
+			throw VMException("load_file loaded a file with " + std::to_string(prs.size()) +
+				" sections; only 1 section per loaded file is supported in load_file calls");
+		}
+
+		Parser::ParsedSection* sec = new Parser::ParsedSection(std::move(prs[0]));
+		DEBUG_PRINT("loaded a section of the type \"" + sec->type + "\" from file " + filename);
+		return VMValue(sec->type, sec);
+	}
+
 	return VMValue("NaV", nullptr);
 } // default_dispatch() }}}
+
+
+void Vata2::VM::VirtualMachine::push_to_stack(VMValue val)
+{ // {{{
+	DEBUG_PRINT("VM: pushing " + std::to_string(val) + " on the stack");
+	this->exec_stack.push(val);
+} // push_to_stack() }}}
+
+
+Vata2::VM::VMValue Vata2::VM::VirtualMachine::get_from_storage(
+	const std::string& name) const
+{ // {{{
+	DEBUG_PRINT("VM: retrieving object \"" + name + "\" from the memory");
+	auto it = this->mem.find(name);
+	if (this->mem.end() == it){
+		throw VMException("Trying to access object \'" + name + "\', which is not in the memory");
+	}
+
+	return it->second;
+} // get_from_storage() }}}
 
 
 void Vata2::VM::VirtualMachine::clean_stack()
 { // {{{
 	while (!this->exec_stack.empty()) {
 		const auto& val = this->exec_stack.top();
+		DEBUG_PRINT("VM: cleaning " + std::to_string(val) + " from the stack");
 		call_dispatch_with_self(val, "delete");
 		this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
 	}
