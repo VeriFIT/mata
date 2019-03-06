@@ -40,8 +40,8 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 				{ },
 			};
 
-		VMValue res = find_dispatcher("Parsec")("copy", {{"Parsec", &parsec}});
-		REQUIRE("Parsec" == res.type);
+		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("copy", {{Vata2::TYPE_PARSEC, &parsec}});
+		REQUIRE(Vata2::TYPE_PARSEC == res.type);
 		const ParsedSection* parsec_copy =
 			static_cast<const ParsedSection*>(res.get_ptr());
 		REQUIRE((*parsec_copy == parsec));
@@ -63,9 +63,9 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 				{ },
 			};
 
-		VMValue res = find_dispatcher("Parsec")("copy", {{"Parsec", &parsec}});
+		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("copy", {{Vata2::TYPE_PARSEC, &parsec}});
 		parsec.body.pop_back();   // remove an element from body
-		REQUIRE("Parsec" == res.type);
+		REQUIRE(Vata2::TYPE_PARSEC == res.type);
 		const ParsedSection* parsec_copy =
 			static_cast<const ParsedSection*>(res.get_ptr());
 		REQUIRE((*parsec_copy != parsec));
@@ -74,7 +74,7 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 
 	SECTION("invalid function")
 	{
-		VMValue res = find_dispatcher("Parsec")("barrel-roll", { });
-		REQUIRE("NaV" == res.type);
+		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("barrel-roll", { });
+		REQUIRE(Vata2::TYPE_NOT_A_VALUE == res.type);
 	}
 }

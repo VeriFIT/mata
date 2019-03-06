@@ -15,12 +15,19 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for Parsec");
+		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_PARSEC);
+
+		if ("info" == func_name) {
+			assert(func_args.size() == 0);
+			std::string* new_str = new std::string;
+			*new_str = "parsed section (one section of .vtf format)";
+			return VMValue(Vata2::TYPE_STR, new_str);
+		}
 
 		// we use throw to return result from test_and_call
 		try {
 
-			test_and_call("copy", func_name, {"Parsec"}, func_args, "Parsec",
+			test_and_call("copy", func_name, {Vata2::TYPE_PARSEC}, func_args, Vata2::TYPE_PARSEC,
 				*[](const ParsedSection& sec) -> auto {
 					ParsedSection* new_parsec = new ParsedSection(sec);
 					return static_cast<VMPointer>(new_parsec);
@@ -32,12 +39,12 @@ namespace
 			return res;
 		}
 
-		return VMValue("NaV", nullptr);
+		return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
 	}
 }
 
 
 void Vata2::Parser::init()
 {
-	reg_dispatcher("Parsec", parsec_dispatch);
+	reg_dispatcher(Vata2::TYPE_PARSEC, parsec_dispatch);
 }

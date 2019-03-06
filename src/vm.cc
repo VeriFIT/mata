@@ -20,6 +20,14 @@
 
 #include <fstream>
 
+
+/// definition
+const std::string Vata2::TYPE_STR = "str";
+const std::string Vata2::TYPE_VOID = "void";
+const std::string Vata2::TYPE_NOT_A_VALUE = "nav";
+const std::string Vata2::TYPE_PARSEC = "parsec";
+
+
 void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
 { // {{{
 	for (const auto& parsec : parsed)
@@ -72,7 +80,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 		}
 	}
 
-	VMValue arg("Parsec", new Parser::ParsedSection(parsec));
+	VMValue arg(Vata2::TYPE_PARSEC, new Parser::ParsedSection(parsec));
 	VMFuncArgs args = {arg};
 	VMValue val = dispatch("construct", args);
 	if (!name.empty()) {
@@ -124,7 +132,7 @@ void Vata2::VM::VirtualMachine::process_token(
 	if (")" != tok) { // nothing special
 		DEBUG_PRINT("allocating memory for string " + tok);
 		std::string* str = new std::string(tok);
-		VMValue val("str", str);
+		VMValue val(TYPE_STR, str);
 		this->push_to_stack(val);
 	} else { // closing parenthesis - execute action
 		assert(")" == tok);
@@ -134,7 +142,7 @@ void Vata2::VM::VirtualMachine::process_token(
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
 			DEBUG_PRINT("top of stack type: " + st_top.type);
-			if ("str" == st_top.type) {
+			if (TYPE_STR == st_top.type) {
 				assert(nullptr != st_top.get_ptr());
 				const std::string& val = *static_cast<const std::string*>(st_top.get_ptr());
 				DEBUG_PRINT("top of stack string value: " + val);
@@ -200,7 +208,7 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 
 	// getting the function name
 	const VMValue& fnc_val = exec_vec[0];
-	assert("str" == fnc_val.type);
+	assert(TYPE_STR == fnc_val.type);
 	assert(nullptr != fnc_val.get_ptr());
 	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.get_ptr());
 
@@ -216,9 +224,9 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 	std::vector<VMValue> args(exec_vec.begin() + 1, exec_vec.end());
 
 	VMValue ret_val = find_dispatcher(arg1_type)(fnc_name, args);
-	if ("NaV" == ret_val.type) {
+	if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
 		ret_val = default_dispatch(fnc_name, args);
-		if ("NaV" == ret_val.type) {
+		if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
 			throw VMException(fnc_name + " is not a defined function");
 		}
 	}
@@ -240,7 +248,7 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		}
 
 		VMValue ret_val = call_dispatch_with_self(func_args[0], "copy");
-		if ("NaV" == ret_val.type) {
+		if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
 			throw VMException("The type \"" + func_args[0].type +
 				"\" does not implement the \"copy\" operation");
 		}
@@ -253,9 +261,10 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 				std::to_string(func_args.size()) + " provided)");
 		}
 
-		if (func_args[0].type != "str") {
-			throw VMException("\"load_file\" requires 1 argument of the type \"str\"; an argument "
-				"of the type \"" + func_args[0].type + "\" provided instead");
+		if (func_args[0].type != TYPE_STR) {
+			throw VMException("\"load_file\" requires 1 argument of the type \"" +
+				std::string(TYPE_STR) + "\"; an argument of the type \"" + func_args[0].type +
+				"\" provided instead");
 		}
 
 		const std::string& filename = *(static_cast<const std::string*>(func_args[0].get_ptr()));
@@ -276,7 +285,7 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		return VMValue(sec->type, sec);
 	}
 
-	return VMValue("NaV", nullptr);
+	return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
 } // default_dispatch() }}}
 
 

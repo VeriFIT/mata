@@ -626,7 +626,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct an empty automaton")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 
 		construct(&aut, parsec);
 
@@ -635,7 +635,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
@@ -646,7 +646,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct an automaton with more than one initial/final states")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
@@ -658,7 +658,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a", "q2"} };
@@ -676,7 +676,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a more complicated non-empty automaton")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
 		parsec.body.push_back({"q1", "a", "q3"});
@@ -724,7 +724,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 
 	SECTION("construct() call with an epsilon transition")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "q2"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),
@@ -733,7 +733,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 
 	SECTION("construct() call with a nonsense transition")
 	{
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "a", "q2", "q3"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),

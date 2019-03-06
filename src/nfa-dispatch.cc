@@ -37,12 +37,20 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for NFA");
+		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::Nfa::TYPE_NFA);
+
+		if ("info" == func_name) {
+			assert(func_args.size() == 0);
+			std::string* new_str = new std::string;
+			*new_str = "basic nondeterministic finite automaton";
+			return VMValue(Vata2::TYPE_STR, new_str);
+		}
 
 		// we use throw to return result from test_and_call
 		try {
 
-			test_and_call("construct", func_name, {"Parsec"}, func_args, "NFA",
+			test_and_call("construct", func_name, {Vata2::TYPE_PARSEC}, func_args,
+				Vata2::Nfa::TYPE_NFA,
 				*[](const ParsedSection& parsec) -> auto {
 					return static_cast<VMPointer>(new Nfa(construct(parsec)));
 				});
@@ -53,12 +61,12 @@ namespace
 			return res;
 		}
 
-		return VMValue("NaV", nullptr);
+		return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
 	}
 }
 
 
 void Vata2::Nfa::init()
 {
-	reg_dispatcher("NFA", nfa_dispatch);
+	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch);
 }

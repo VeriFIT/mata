@@ -25,6 +25,16 @@
 
 namespace Vata2
 {
+
+/// the type name of the string data type
+extern const std::string TYPE_STR;
+/// the type name of the void data type
+extern const std::string TYPE_VOID;
+/// the type name of Not a Value
+extern const std::string TYPE_NOT_A_VALUE;
+/// the type name of parsed section
+extern const std::string TYPE_PARSEC;
+
 namespace VM
 {
 
@@ -80,7 +90,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const VMValue& val)
 	{ // {{{
 		os << "<" << val.type << ": ";
-		if ("str" == val.type) {
+		if (TYPE_STR == val.type) {
 			// FIXME: dispatch this call to val.type dispatcher
 			os << *static_cast<const std::string*>(val.get_ptr());
 		} else {

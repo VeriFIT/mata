@@ -14,19 +14,26 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for void");
+		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_VOID);
 
 		if ("delete" == func_name) {
 			assert(func_args.size() == 1);
-			return VMValue("void", nullptr);
+			return VMValue(Vata2::TYPE_VOID, nullptr);
 		}
 
-		return VMValue("NaV", nullptr);
+		if ("info" == func_name) {
+			assert(func_args.size() == 0);
+			std::string* new_str = new std::string;
+			*new_str = "void; similar to void in C, used as a return type of procedures";
+			return VMValue(Vata2::TYPE_STR, new_str);
+		}
+
+		return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
 	}
 }
 
 
 void Vata2::Void::init()
 {
-	reg_dispatcher("void", void_dispatch);
+	reg_dispatcher(Vata2::TYPE_VOID, void_dispatch);
 }

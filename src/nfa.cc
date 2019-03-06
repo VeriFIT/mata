@@ -30,6 +30,8 @@ using namespace Vata2::util;
 using namespace Vata2::Nfa;
 using Vata2::Nfa::Symbol;
 
+const std::string Vata2::Nfa::TYPE_NFA = "NFA";
+
 std::ostream& std::operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " +
@@ -713,7 +715,7 @@ Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
 	const StateToStringMap*   state_map)
 { // {{{
 	Vata2::Parser::ParsedSection parsec;
-	parsec.type = "NFA";
+	parsec.type = Vata2::Nfa::TYPE_NFA;
 
 	using bool_str_pair = std::pair<bool, std::string>;
 
@@ -852,8 +854,9 @@ void Vata2::Nfa::construct(
 	assert(nullptr != aut);
 	assert(nullptr != alphabet);
 
-	if (parsec.type != "NFA") {
-		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"NFA\"");
+	if (parsec.type != Vata2::Nfa::TYPE_NFA) {
+		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
+			Vata2::Nfa::TYPE_NFA + "\"");
 	}
 
 	bool remove_state_map = false;

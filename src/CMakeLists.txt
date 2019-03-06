@@ -41,6 +41,7 @@ endif()
 include_directories(../include)
 
 add_library(libvata2 STATIC
+	vm.cc
 	nfa.cc
 	nfa-dispatch.cc
 	nfa-incl.cc
@@ -48,7 +49,6 @@ add_library(libvata2 STATIC
 	parser.cc
 	parser-dispatch.cc
 	str-dispatch.cc
-	vm.cc
 	vm-dispatch.cc
 	void-dispatch.cc
 )

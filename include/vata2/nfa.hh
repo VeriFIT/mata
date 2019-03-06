@@ -33,6 +33,7 @@ namespace Vata2
 {
 namespace Nfa
 {
+extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
 

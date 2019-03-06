@@ -32,13 +32,12 @@ namespace Vata2
 namespace VM
 {
 
-/// Data type for function names
+/// data type for function names
 using VMFuncName = std::string;
-/// Data type for function arguments
+/// data type for function arguments
 using VMFuncArgs = std::vector<VMValue>;
-/// Data type for dispatcher function pointer
+/// data type for dispatcher function pointer
 using VMDispatcherFunc = std::function<VMValue(const VMFuncName&, const VMFuncArgs&)>;
-
 
 /// registers a dispatcher function for a VATA data type
 void reg_dispatcher(
@@ -49,19 +48,29 @@ void reg_dispatcher(
 /// finds the dispatcher function for a given type
 const VMDispatcherFunc& find_dispatcher(const std::string& type_name);
 
+/// calls a dispatcher function for the given type
+inline VMValue call_dispatch(
+	const std::string& type_name,
+	const VMFuncName& func_name,
+	const VMFuncArgs& args)
+{ return find_dispatcher(type_name)(func_name, args); }
 
 /// calls a dispatcher function for the given value with it as the only argument
 inline VMValue call_dispatch_with_self(
 	const VMValue&    val,
 	const VMFuncName& func_name)
-{ return find_dispatcher(val.type)(func_name, {val}); }
+{ return call_dispatch(val.type, func_name, {val}); }
 
-
-/// Default dispatcher function
+/// default dispatcher function
 VMValue default_dispatch(
 	const VMFuncName&  func_name,
 	const VMFuncArgs&  func_args);
 
+/// data type for type description
+using VMTypeDesc = std::map<std::string, std::string>;
+
+/// returns a list of registered types with description
+VMTypeDesc get_types_description();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* VM */

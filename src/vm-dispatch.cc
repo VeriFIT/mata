@@ -86,3 +86,22 @@ const VMDispatcherFunc& Vata2::VM::find_dispatcher(
 
 	return it->second;
 } // find_dispatcher }}}
+
+
+Vata2::VM::VMTypeDesc Vata2::VM::get_types_description()
+{ // {{{
+	VMTypeDesc desc;
+	for (auto type_disp_pair : dispatch_dict) {
+		VMValue ret_val = call_dispatch(type_disp_pair.first, "info", {});
+		if (ret_val.type != TYPE_STR) {
+			throw std::runtime_error("Invalid return value of \"info\" function for type \"" +
+				type_disp_pair.first + "\"");
+		}
+
+		const std::string& type_desc = *static_cast<const std::string*>(ret_val.get_ptr());
+		desc.insert({type_disp_pair.first, type_desc});
+		call_dispatch_with_self(ret_val, "delete");
+	}
+
+	return desc;
+} // get_types_description }}}

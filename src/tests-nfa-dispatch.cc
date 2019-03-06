@@ -28,10 +28,11 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 	SECTION("construct")
 	{
 		Vata2::Parser::ParsedSection parsec;
-		parsec.type = "NFA";
+		parsec.type = Vata2::Nfa::TYPE_NFA;
 
-		VMValue res = find_dispatcher("NFA")("construct", {{"Parsec", &parsec}});
-		REQUIRE("NFA" == res.type);
+		VMValue res = find_dispatcher(Vata2::Nfa::TYPE_NFA)("construct",
+			{{Vata2::TYPE_PARSEC, &parsec}});
+		REQUIRE(Vata2::Nfa::TYPE_NFA == res.type);
 		const Nfa* aut = static_cast<const Nfa*>(res.get_ptr());
 		REQUIRE(aut->trans_empty());
 		REQUIRE(aut->initialstates.empty());
@@ -41,19 +42,19 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 
 	SECTION("invalid function")
 	{
-		VMValue res = find_dispatcher("NFA")("barrel-roll", { });
-		REQUIRE("NaV" == res.type);
+		VMValue res = find_dispatcher(Vata2::Nfa::TYPE_NFA)("barrel-roll", { });
+		REQUIRE(Vata2::TYPE_NOT_A_VALUE == res.type);
 	}
 
 	SECTION("invalid arguments 1")
 	{
-		CHECK_THROWS_WITH(find_dispatcher("NFA")("construct", { }),
+		CHECK_THROWS_WITH(find_dispatcher(Vata2::Nfa::TYPE_NFA)("construct", { }),
 			Catch::Contains("does not match arity"));
 	}
 
 	SECTION("invalid arguments 2")
 	{
-		CHECK_THROWS_WITH(find_dispatcher("NFA")("construct", {{"Foo", nullptr}}),
+		CHECK_THROWS_WITH(find_dispatcher(Vata2::Nfa::TYPE_NFA)("construct", {{"Foo", nullptr}}),
 			Catch::Contains("invalid type"));
 	}
 
