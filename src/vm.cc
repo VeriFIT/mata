@@ -21,17 +21,17 @@
 #include <fstream>
 
 
-/// definition
+/// definitions
 const std::string Vata2::TYPE_STR = "str";
 const std::string Vata2::TYPE_VOID = "void";
 const std::string Vata2::TYPE_NOT_A_VALUE = "nav";
 const std::string Vata2::TYPE_PARSEC = "parsec";
 
+unsigned Vata2::LOG_VERBOSITY = 0;
 
 void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
 { // {{{
-	for (const auto& parsec : parsed)
-	{
+	for (const auto& parsec : parsed) {
 		this->run(parsec);
 	}
 } // run(Parsed) }}}

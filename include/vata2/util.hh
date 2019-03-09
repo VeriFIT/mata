@@ -30,12 +30,28 @@
 #include <unordered_map>
 #include <vector>
 
-#define DEBUG_PRINT(x) { std::cerr << "debug: " << x << "\n"; }
-#define DEBUG_PRINT_LN(x) { DEBUG_PRINT(__func__ << ":" << __LINE__ << ": " << x) }
-#define WARN_PRINT(x) { std::cerr << "warning: " << x << "\n"; }
+/// macro for debug outputs
+#define PRINT_VERBOSE_LVL(lvl, title, x) {\
+	if (Vata2::LOG_VERBOSITY >= lvl) {\
+		std::cerr << title << ": " << x << "\n";\
+	}\
+}
+
+#define PRINT_VERBOSE_LVL_LN(lvl, title, x) {\
+	PRINT_VERBOSE_LVL(lvl, title, __func__ << ":" << __LINE__ << ": ")\
+}
+
+// #define DEBUG_PRINT(x) { std::cerr << "debug: " << x << "\n"; }
+#define DEBUG_PRINT(x) { PRINT_VERBOSE_LVL(2, "debug", x); }
+#define DEBUG_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(2, "debug", x); }
+#define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning: ", x); }
 
 namespace Vata2
 {
+
+/// log verbosity
+extern unsigned LOG_VERBOSITY;
+
 namespace util
 {
 

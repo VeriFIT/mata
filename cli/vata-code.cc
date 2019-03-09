@@ -17,14 +17,21 @@ extern const char* VATA_GIT_DESCRIBE;
 
 int interpret_input(std::istream& is);
 
+/// maximum level of verbosity
+const unsigned MAX_VERBOSITY = 3;
+const unsigned DEFAULT_VERBOSITY = 1;
 
 /// The entry point
 int main(int argc, const char* argv[])
 {
 	args::ArgumentParser arg_parser("A CLI interface to the libVATA2 automata library");
 	args::HelpFlag flag_help(arg_parser, "help", "Display this help menu", {'h', "help"});
-	args::Flag flag_version(arg_parser, "version", "Print the version of VATA", {'v', "version"});
+	args::Flag flag_version(arg_parser, "version", "Print the version of VATA",
+		{'v', "version"});
 	args::Flag flag_types(arg_parser, "types", "Print out info about types", {'t', "types"});
+	args::Flag flag_verbose(arg_parser, "types", "Print out info about types", {'t', "types"});
+	args::ValueFlag<unsigned> flag_debug(arg_parser, "level", "Debug level (from 0 to " +
+		std::to_string(MAX_VERBOSITY) + ")", {'d', "debug"}, DEFAULT_VERBOSITY);
 	args::Positional<std::string> pos_inputfile(arg_parser,
 		"input", "An input .vtf @CODE file; if not supplied, read from STDIN");
 	arg_parser.helpParams.showTerminator = false;
@@ -79,6 +86,13 @@ int main(int argc, const char* argv[])
 			return EXIT_FAILURE;
 		}
 	}
+
+	unsigned verbosity = flag_debug.Get();
+	if (verbosity > MAX_VERBOSITY) {
+		verbosity = MAX_VERBOSITY;
+	}
+	Vata2::LOG_VERBOSITY = verbosity;
+	DEBUG_PRINT("verbosity set to " + std::to_string(Vata2::LOG_VERBOSITY));
 
 	if (pos_inputfile) {
 		std::string filename = args::get(pos_inputfile);
