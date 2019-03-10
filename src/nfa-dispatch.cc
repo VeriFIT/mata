@@ -39,13 +39,6 @@ namespace
 	{
 		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::Nfa::TYPE_NFA);
 
-		if ("info" == func_name) {
-			assert(func_args.size() == 0);
-			std::string* new_str = new std::string;
-			*new_str = "basic nondeterministic finite automaton";
-			return VMValue(Vata2::TYPE_STR, new_str);
-		}
-
 		// we use throw to return result from test_and_call
 		try {
 
@@ -68,5 +61,5 @@ namespace
 
 void Vata2::Nfa::init()
 {
-	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch);
+	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch, "basic nondeterministic finite automaton");
 }

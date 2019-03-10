@@ -29,7 +29,6 @@ int main(int argc, const char* argv[])
 	args::Flag flag_version(arg_parser, "version", "Print the version of VATA",
 		{'v', "version"});
 	args::Flag flag_types(arg_parser, "types", "Print out info about types", {'t', "types"});
-	args::Flag flag_verbose(arg_parser, "types", "Print out info about types", {'t', "types"});
 	args::ValueFlag<unsigned> flag_debug(arg_parser, "level", "Debug level (from 0 to " +
 		std::to_string(MAX_VERBOSITY) + ")", {'d', "debug"}, DEFAULT_VERBOSITY);
 	args::Positional<std::string> pos_inputfile(arg_parser,

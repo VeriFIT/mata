@@ -7,19 +7,30 @@
 #include "str.hh"
 #include "void.hh"
 
-using std::tie;
-
-using Vata2::VM::VMDispatcherFunc;
-
-/// A dictionary mapping types to dispatcher function pointers
-using VMDispatcherDict = std::unordered_map<std::string, VMDispatcherFunc>;
-
-/// init function type
-using VMInitFunc = std::function<void()>;
 
 // definitions
 namespace
 {
+using std::tie;
+
+using Vata2::VM::VMDispatcherFunc;
+
+/// the structure that contains information about a type
+struct VMDispatcherStruct
+{
+	/// the dispatcher function
+	VMDispatcherFunc func;
+
+	/// information about a type
+	std::string info;
+};
+
+
+/// A dictionary mapping types to dispatcher function pointers
+using VMDispatcherDict = std::unordered_map<std::string, VMDispatcherStruct>;
+
+/// init function type
+using VMInitFunc = std::function<void()>;
 
 /// the dispatch function dictionary
 VMDispatcherDict dispatch_dict = { };
@@ -62,10 +73,11 @@ bool is_dispatch_dict_init = init_dispatch_dict();
 
 void Vata2::VM::reg_dispatcher(
 	const std::string&       type_name,
-	const VMDispatcherFunc&  func)
+	const VMDispatcherFunc&  func,
+	const std::string&       info)
 { // {{{
 	bool inserted;
-	tie(std::ignore, inserted) = dispatch_dict.insert({type_name, func});
+	tie(std::ignore, inserted) = dispatch_dict.insert({type_name, {func, info}});
 	if (!inserted)
 	{
 		throw std::runtime_error("trying to register dispatcher for \"" +
@@ -84,7 +96,7 @@ const VMDispatcherFunc& Vata2::VM::find_dispatcher(
 			type_name + "\"");
 	}
 
-	return it->second;
+	return it->second.func;
 } // find_dispatcher }}}
 
 
@@ -92,15 +104,7 @@ Vata2::VM::VMTypeDesc Vata2::VM::get_types_description()
 { // {{{
 	VMTypeDesc desc;
 	for (auto type_disp_pair : dispatch_dict) {
-		VMValue ret_val = call_dispatch(type_disp_pair.first, "info", {});
-		if (ret_val.type != TYPE_STR) {
-			throw std::runtime_error("Invalid return value of \"info\" function for type \"" +
-				type_disp_pair.first + "\"");
-		}
-
-		const std::string& type_desc = *static_cast<const std::string*>(ret_val.get_ptr());
-		desc.insert({type_disp_pair.first, type_desc});
-		call_dispatch_with_self(ret_val, "delete");
+		desc.insert({type_disp_pair.first, type_disp_pair.second.info});
 	}
 
 	return desc;

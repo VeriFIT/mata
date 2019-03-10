@@ -17,13 +17,6 @@ namespace
 	{
 		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_PARSEC);
 
-		if ("info" == func_name) {
-			assert(func_args.size() == 0);
-			std::string* new_str = new std::string;
-			*new_str = "parsed section (one section of .vtf format)";
-			return VMValue(Vata2::TYPE_STR, new_str);
-		}
-
 		// we use throw to return result from test_and_call
 		try {
 
@@ -46,5 +39,6 @@ namespace
 
 void Vata2::Parser::init()
 {
-	reg_dispatcher(Vata2::TYPE_PARSEC, parsec_dispatch);
+	reg_dispatcher(Vata2::TYPE_PARSEC, parsec_dispatch,
+		"parsed section (one section of .vtf format)");
 }

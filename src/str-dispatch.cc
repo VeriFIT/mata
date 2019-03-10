@@ -26,13 +26,6 @@ namespace
 			return VMValue(Vata2::TYPE_VOID, nullptr);
 		}
 
-		if ("info" == func_name) {
-			assert(func_args.size() == 0);
-			std::string* new_str = new std::string;
-			*new_str = "a string data type";
-			return VMValue(Vata2::TYPE_STR, new_str);
-		}
-
 		// we use throw to return result from test_and_call
 		try {
 
@@ -61,5 +54,5 @@ namespace
 
 void Vata2::Str::init()
 {
-	reg_dispatcher(TYPE_STR, str_dispatch);
+	reg_dispatcher(TYPE_STR, str_dispatch, "a string data type");
 }

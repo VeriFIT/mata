@@ -21,7 +21,7 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 		auto f = [&n42](const VMFuncName&, const VMFuncArgs&) -> VMValue {
 			return VMValue("ANSWER", &n42); };
 
-		reg_dispatcher("FOO", f);
+		reg_dispatcher("FOO", f, "a foo data type");
 
 		VMValue val = find_dispatcher("FOO")("BAR", { });
 		REQUIRE(val.type == "ANSWER");
@@ -30,7 +30,7 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 
 	SECTION("trying to re-register a dispatcher")
 	{
-		CHECK_THROWS_WITH(reg_dispatcher(Vata2::TYPE_STR, nullptr),
+		CHECK_THROWS_WITH(reg_dispatcher(Vata2::TYPE_STR, nullptr, "a string data type"),
 			Catch::Contains("already registered"));
 	}
 }
