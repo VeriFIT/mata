@@ -42,15 +42,15 @@ include_directories(../include)
 
 add_library(libvata2 STATIC
 	vm.cc
-	nfa.cc
-	nfa-dispatch.cc
-	nfa-incl.cc
-	nfa-universal.cc
 	parser.cc
 	parser-dispatch.cc
 	str-dispatch.cc
-	vm-dispatch.cc
+	nfa/nfa.cc
+	nfa/nfa-dispatch.cc
+	nfa/nfa-incl.cc
+	nfa/nfa-universal.cc
 	void-dispatch.cc
+	vm-dispatch.cc           # this should be the last one
 )
 
 set_target_properties(libvata2 PROPERTIES
@@ -60,12 +60,12 @@ set_target_properties(libvata2 PROPERTIES
 
 add_executable(tests
 	tests-main.cc
-	tests-nfa.cc
-	tests-nfa-dispatch.cc
 	tests-parser.cc
 	tests-parser-dispatch.cc
 	tests-vm.cc
 	tests-vm-dispatch.cc
+	nfa/tests-nfa.cc
+	nfa/tests-nfa-dispatch.cc
 )
 
 target_link_libraries(tests libvata2)

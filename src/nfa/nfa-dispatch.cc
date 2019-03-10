@@ -22,7 +22,7 @@
 #include <vata2/vm-dispatch.hh>
 
 // local headers
-#include "dispatch-aux.hh"
+#include "../dispatch-aux.hh"
 
 using namespace Vata2::Nfa;
 using namespace Vata2::VM;
