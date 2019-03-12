@@ -45,12 +45,14 @@ namespace
 			test_and_call("construct", func_name, {Vata2::TYPE_PARSEC}, func_args,
 				Vata2::Nfa::TYPE_NFA,
 				*[](const ParsedSection& parsec) -> auto {
-					return static_cast<VMPointer>(new Nfa(construct(parsec)));
+					NfaWrapper* nfa_wrap = new NfaWrapper;
+					// TODO: do sth with alphabet!!!!
+					construct(&nfa_wrap->nfa, parsec, nfa_wrap->alphabet, &nfa_wrap->state_dict);
+					return static_cast<VMPointer>(nfa_wrap);
 				});
 
 		}
-		catch (VMValue res)
-		{
+		catch (VMValue res) {
 			return res;
 		}
 
@@ -61,5 +63,6 @@ namespace
 
 void Vata2::Nfa::init()
 {
-	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch, "basic nondeterministic finite automaton");
+	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch,
+		"basic nondeterministic finite automaton");
 }

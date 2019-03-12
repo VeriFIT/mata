@@ -9,6 +9,18 @@ import tempfile
 VATA_CODE_NAME = 'vata-code'
 GDB_COMMAND = os.path.expandvars('$GDB')
 
+# operations of the CLI
+CLI_OPERATIONS_DEF = {
+    'load' : {'arity': 1},
+    'isect': {'arity': 2, 'vata-name': 'isect'},
+    'union': {'arity': 2, 'vata-name': 'union'},
+    'empty': {'arity': 1, 'vata-name': 'is_empty'},
+    'univ' : {'arity': 1, 'vata-name': 'is_univ'},
+    'incl' : {'arity': 2, 'vata-name': 'is_incl'},
+    'eq'   : {'arity': 2, 'vata-name': 'is_equiv'}
+}
+
+CLI_OPERATIONS = CLI_OPERATIONS_DEF.keys()
 
 ###########################################
 def find_vata_path():
@@ -35,17 +47,28 @@ Retrieves the version of libVATA.
 
 
 ###########################################
-def call_vata_code(params=None, input=None, debug=False):
-    '''call_vata_code([params], input=None) -> str
+def is_binary_op(operation):
+    '''is_binary_op(operation) -> bool
 
-Calls vata-code with the given 'params' and 'input'.  Input is fed into
-vata-code on STDIN.  The string from STDOUT is returned.
+Checks whether the passed string denotes a binary operation
 '''
-    command = [VATA_PATH]
+    assert operation in CLI_OPERATIONS_DEF
+    return True if CLI_OPERATIONS_DEF[operation]['arity'] == 2 else False
+
+
+###########################################
+def call_vata_code(params=None, input=None, gdb=False, debug=1):
+    '''call_vata_code([params], input=None, gdb=False, debug=1) -> str
+
+Calls vata-code with the given 'params' and 'input'.  If 'gdb' is provided,
+then vata-code is run within $GDB.  The 'debug' flag specifies the verbosity.
+Input is fed into vata-code on STDIN.  The string from STDOUT is returned.
+'''
+    command = [VATA_PATH, '-d', str(debug)]
     if params:
         command += params
 
-    if not debug:
+    if not gdb:
         compl_proc = subprocess.run(
             command,
             input=input,
@@ -54,7 +77,7 @@ vata-code on STDIN.  The string from STDOUT is returned.
             check=True)
         return compl_proc.stdout
     else:
-        assert debug
+        assert gdb
         tmp = tempfile.NamedTemporaryFile(mode='w+t',delete=False)
         tmp.write(input)
         tmp.close()
@@ -102,41 +125,29 @@ def run_main(args):
 
 Runs the main program according to the arguments obtained from the parser.
 '''
-    # we create lambdas - cannot construct the strings yet because we don't
-    # know how many arguments we have
-    unary_load = lambda : '(load_file "{0}")'.format(args.inputs[0])
-    binary_load = lambda : '(load_file "{0}") (load_file "{1}")'.format(args.inputs[0], args.inputs[1])
+    # check the number of arguments is OK from below (i.e. that at least the
+    # number is not less than should be
+    assert args.oper in CLI_OPERATIONS_DEF
+    check_num_params(CLI_OPERATIONS_DEF[args.oper]['arity'], len(args.inputs))
+
+    # load the arguments
+    cmds = ''
+    cmds += 'a1 = (load_file "{0}")\n'.format(args.inputs[0])
+    if (is_binary_op(args.oper)):
+        cmds += 'a2 = (load_file "{0}")\n'.format(args.inputs[1])
 
     # according to the operation
     if args.oper == 'load':
-        check_num_params(1, len(args.inputs))
-        cmds = unary_load
-    elif args.oper == 'union':
-        check_num_params(2, len(args.inputs))
-        cmds = '(union {})'.format(binary_load())
-    elif args.oper == 'isect':
-        check_num_params(2, len(args.inputs))
-        cmds = '(isect {})'.format(binary_load())
-    elif args.oper == 'empty':
-        check_num_params(1, len(args.inputs))
-        cmds = '(is_empty {})'.format(unary_load())
-    elif args.oper == 'univ':
-        check_num_params(1, len(args.inputs))
-        cmds = '(is_univ {})'.format(unary_load())
-    elif args.oper == 'incl':
-        check_num_params(2, len(args.inputs))
-        cmds = '(is_incl {})'.format(binary_load())
-    elif args.oper == 'eq':
-        check_num_params(2, len(args.inputs))
-        cmds = '(is_eq {})'.format(binary_load())
+        cmds += 'res = a1\n'
     else:
-        raise Exception('unknown operation \'' + args.oper + '\'')
+        cmds += 'res = (' + CLI_OPERATIONS_DEF[args.oper]['vata-name'] + ' a1 a2)\n'
 
     assert cmds
-    cmds = 'res = ' + cmds + '\n(print res)\n';
+    cmds += '(print res)\n';
     code_str = create_code_str(cmds)
+
     if not args.file:
-        res = call_vata_code(input=code_str, debug=args.debug)
+        res = call_vata_code(input=code_str, gdb=args.gdb, debug=args.debug)
         print(res)
     else:
         print(code_str)
@@ -146,7 +157,6 @@ Runs the main program according to the arguments obtained from the parser.
 if __name__ == '__main__':
     try:
         VATA_PATH = find_vata_path()
-        CLI_OPERATIONS = ['load', 'isect', 'union', 'empty', 'univ', 'incl', 'eq']
         vata_version_str = get_vata_version()
 
         parser = argparse.ArgumentParser(description='User interface to libVATA2')
@@ -161,8 +171,10 @@ if __name__ == '__main__':
         parser.add_argument('-f', '--file', action='store_true',
             help='only output a @CODE file in the ' + '.vtf format, do not run ' +
             VATA_CODE_NAME)
-        parser.add_argument('-d', '--debug', action='store_true',
+        parser.add_argument('--gdb', action='store_true',
             help='run ' + VATA_CODE_NAME + ' in $GDB')
+        parser.add_argument('-d', '--debug', type=int, metavar='N', default=1,
+            help='set debug verbosity to N (default: %(default)s)')
 
         args = parser.parse_args()
 

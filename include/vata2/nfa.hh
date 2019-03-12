@@ -322,6 +322,21 @@ public:
 	StateSet post(const StateSet& macrostate, Symbol sym) const;
 }; // Nfa }}}
 
+
+/// a wrapper encapsulating @p Nfa for higher-level use
+struct NfaWrapper
+{ // {{{
+	/// the NFA
+	Nfa nfa;
+
+	/// the alphabet
+	Alphabet* alphabet;
+
+	/// mapping of state names (as strings) to their numerical values
+	StringToStateMap state_dict;
+}; // NfaWrapper }}}
+
+
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 /// Is the language of the automaton empty?
