@@ -1,0 +1,150 @@
+#!/usr/bin/env python3
+#
+# pycobench - a small benchmarking solution
+#
+# A small environment for running benchmarks
+#
+# If you need something more elaborate, check, e.g., benchexec
+#   ( https://github.com/sosy-lab/benchexec )
+
+import argparse
+import queue
+import subprocess
+import sys
+import threading
+import yaml
+
+# thread-safe queue for distributing tasks
+task_queue = queue.Queue()
+
+# thread-safe queue for collecting results
+result_queue = queue.Queue()
+
+# a dictionary of commands to run
+cmd_dict = { }
+
+# timeout for subprocesses
+timeout = 5
+
+###########################################
+def execute_benchmark(params):
+    '''execute_benchmark(params) -> void
+
+Executes one benchmark.
+'''
+    global cmd_dict
+    name, inpar = params
+    cmd = cmd_dict[name]['cmd']
+    cmd = cmd.split()
+    cmd.extend(inpar.split())
+
+    subprocess.run(cmd)
+    print(name + ': ' + str(cmd))
+    return 42
+
+
+###########################################
+def worker():
+    '''worker() -> void
+
+Main function of a thread for processing tasks.
+'''
+    while True:
+        item = task_queue.get()
+        if item is None:     # None signals end of processing
+            result_queue.put(None)   # signal termination of worker
+            break
+        res = execute_benchmark(item)
+        result_queue.put((item, res))
+        task_queue.task_done()
+
+
+###########################################
+def process_input_line(line):
+    '''process_input_line(str) -> void
+
+Processes one input line.
+'''
+    for k in cmd_dict:
+        task_queue.put((k, line))
+
+
+###########################################
+def process_result(result):
+    '''process_result(result) -> void
+
+Processes one obtained result.
+'''
+    print(str(result))
+
+
+###########################################
+def process_conf_file(conf_file):
+    '''process_conf_file(conf_file) -> void
+
+Processes the configuration file.
+'''
+    global cmd_dict
+    config = yaml.load(conf_file, Loader=yaml.FullLoader)
+    cmd_dict = config
+
+
+###########################################
+def run_main(args):
+    '''run_main(args) -> ()
+
+Runs the main program according to the arguments obtained from the parser.
+'''
+    assert(len(args.conf) == 1)
+    with open(args.conf[0], 'r') as conf_file:
+        process_conf_file(conf_file)
+
+    print('continuing...')
+
+    # TODO: change
+    num_worker_threads = 4
+    threads = []
+    for i in range(num_worker_threads):
+        t = threading.Thread(target=worker)
+        t.start()
+        threads.append(t)
+
+    # processing the input
+    for line in sys.stdin:
+        line = line.rstrip()
+        process_input_line(line)
+
+    # send the END OF TASKS message
+    for t in threads:
+        task_queue.put(None)
+
+    # processing the results
+    finished_workers = 0
+    while finished_workers < len(threads):
+        result = result_queue.get()
+        if result is None:
+            print("worker terminated")
+            finished_workers += 1
+            continue
+        process_result(result)
+
+    # a barrier
+    for t in threads:
+        t.join()
+
+
+###########################################
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='''pycobench - \
+Executes benchmarks given using a configuration file on cases given on the \
+standard input''')
+    parser.add_argument('conf', metavar='file.conf', nargs=1,
+                        help='configuration file')
+
+    args = parser.parse_args()
+    run_main(args)
+
+# WHAT I WANT:
+#   * make a queue with requests
+#   * clients will read from the queue
+#   * when killed, possible to restart
