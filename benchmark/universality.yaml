@@ -1,0 +1,5 @@
+vata-antichain:
+  cmd: ../cli/vata univ $1
+
+vata-naive:
+  cmd: ../cli/vata univ $1

@@ -8,6 +8,7 @@
 #   ( https://github.com/sosy-lab/benchexec )
 
 import argparse
+import os
 import queue
 import subprocess
 import sys
@@ -15,16 +16,16 @@ import threading
 import yaml
 
 # thread-safe queue for distributing tasks
-task_queue = queue.Queue()
+g_task_queue = queue.Queue()
 
 # thread-safe queue for collecting results
-result_queue = queue.Queue()
+g_result_queue = queue.Queue()
 
 # a dictionary of commands to run
-cmd_dict = { }
+g_cmd_dict = { }
 
-# timeout for subprocesses
-timeout = 5
+# timeout for subprocesses (in seconds)
+g_timeout = 600
 
 ###########################################
 def execute_benchmark(params):
@@ -32,15 +33,33 @@ def execute_benchmark(params):
 
 Executes one benchmark.
 '''
-    global cmd_dict
-    name, inpar = params
-    cmd = cmd_dict[name]['cmd']
+    global g_cmd_dict
+    name, in_params = params
+    cmd = g_cmd_dict[name]['cmd']
     cmd = cmd.split()
-    cmd.extend(inpar.split())
+    in_params = in_params.split()
 
-    subprocess.run(cmd)
-    print(name + ': ' + str(cmd))
-    return 42
+    # substitute $1, $2, etc. with the real parameters
+    for i in range(len(cmd)):
+        if len(cmd[i]) == 2 and cmd[i][0] == '$':
+            try:
+                x = int(cmd[i][1])
+            except:
+                raise Exception('invalid placeholder \"' + cmd[i] + '\" in the command to run')
+
+            if x > len(in_params):
+                raise Exception('parameter ' + cmd[i] + ' not provided (only ' +
+                    str(len(in_params)) + ' parameters passed)')
+            else:
+                cmd[i] = in_params[x-1]
+
+    try:
+        # subprocess.run(["sleep", "10"], timeout=g_timeout)
+        proc = subprocess.run(cmd, timeout=g_timeout, capture_output=True)
+        print(str(proc))
+        return 42 # TODO
+    except subprocess.TimeoutExpired:
+        return 'Timeout'
 
 
 ###########################################
@@ -50,13 +69,13 @@ def worker():
 Main function of a thread for processing tasks.
 '''
     while True:
-        item = task_queue.get()
+        item = g_task_queue.get()
         if item is None:     # None signals end of processing
-            result_queue.put(None)   # signal termination of worker
+            g_result_queue.put(None)   # signal termination of worker
             break
         res = execute_benchmark(item)
-        result_queue.put((item, res))
-        task_queue.task_done()
+        g_result_queue.put((item, res))
+        g_task_queue.task_done()
 
 
 ###########################################
@@ -65,8 +84,8 @@ def process_input_line(line):
 
 Processes one input line.
 '''
-    for k in cmd_dict:
-        task_queue.put((k, line))
+    for k in g_cmd_dict:
+        g_task_queue.put((k, line))
 
 
 ###########################################
@@ -84,9 +103,9 @@ def process_conf_file(conf_file):
 
 Processes the configuration file.
 '''
-    global cmd_dict
+    global g_cmd_dict
     config = yaml.load(conf_file, Loader=yaml.FullLoader)
-    cmd_dict = config
+    g_cmd_dict = config
 
 
 ###########################################
@@ -101,8 +120,11 @@ Runs the main program according to the arguments obtained from the parser.
 
     print('continuing...')
 
-    # TODO: change
-    num_worker_threads = 4
+    # set
+    num_worker_threads = args.jobs
+    if num_worker_threads is None:
+        num_worker_threads = 1
+
     threads = []
     for i in range(num_worker_threads):
         t = threading.Thread(target=worker)
@@ -116,12 +138,12 @@ Runs the main program according to the arguments obtained from the parser.
 
     # send the END OF TASKS message
     for t in threads:
-        task_queue.put(None)
+        g_task_queue.put(None)
 
     # processing the results
     finished_workers = 0
     while finished_workers < len(threads):
-        result = result_queue.get()
+        result = g_result_queue.get()
         if result is None:
             print("worker terminated")
             finished_workers += 1
@@ -139,7 +161,9 @@ if __name__ == '__main__':
 Executes benchmarks given using a configuration file on cases given on the \
 standard input''')
     parser.add_argument('conf', metavar='file.conf', nargs=1,
-                        help='configuration file')
+        help='configuration file')
+    parser.add_argument('-j', '--jobs', type=int, default = os.cpu_count(),
+        help='The number of jobs (workers) to run concurrently (default: %(default)s)')
 
     args = parser.parse_args()
     run_main(args)
