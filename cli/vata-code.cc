@@ -18,7 +18,7 @@ extern const char* VATA_GIT_DESCRIBE;
 int interpret_input(std::istream& is);
 
 /// maximum level of verbosity
-const unsigned MAX_VERBOSITY = 3;
+const unsigned MAX_VERBOSITY = 5;
 const unsigned DEFAULT_VERBOSITY = 1;
 
 /// The entry point

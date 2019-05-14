@@ -26,6 +26,8 @@
 namespace Vata2
 {
 
+/// the type name of the boolean data type
+extern const std::string TYPE_BOOL;
 /// the type name of the string data type
 extern const std::string TYPE_STR;
 /// the type name of the void data type
@@ -193,7 +195,7 @@ public:
 	void exec_cmd(const std::vector<VMValue>& exec_vec);
 
 	/**
-	 * Storage accessor
+	 * @brief  Storage get accessor
 	 *
 	 * @param[in]  name  Name of the object in the storage
 	 *
@@ -202,7 +204,15 @@ public:
 	 * @throws  VMException  If there is nothing at position @p name, an exception
 	 *                       is thrown
 	 */
-	VMValue get_from_storage(const std::string& name) const;
+	VMValue load_from_storage(const std::string& name) const;
+
+	/**
+	 * @brief  Storage set accessor
+	 *
+	 * @param[in]  name  Name of the object in the storage
+	 * @param[in]  val   The value to store in the storage
+	 */
+	void save_to_storage(const std::string& name, VMValue val);
 
 	/// Cleans the stack
 	void clean_stack();

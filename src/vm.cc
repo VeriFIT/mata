@@ -22,6 +22,7 @@
 
 
 /// definitions
+const std::string Vata2::TYPE_BOOL = "bool";
 const std::string Vata2::TYPE_STR = "str";
 const std::string Vata2::TYPE_VOID = "void";
 const std::string Vata2::TYPE_NOT_A_VALUE = "nav";
@@ -58,7 +59,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 		return;
 	}
 
-	DEBUG_PRINT_LN(parsec.type << "\n");
+	DEBUG_VM_LOW_PRINT_LN(parsec.type << "\n");
 
 	VMDispatcherFunc dispatch = Vata2::VM::find_dispatcher(parsec.type);
 	std::string name;
@@ -84,6 +85,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 	VMFuncArgs args = {arg};
 	VMValue val = dispatch("construct", args);
 	if (!name.empty()) {
+		this->save_to_storage(name, val);
 		this->mem[name] = val;
 	}
 } // run(ParsedSection) }}}
@@ -92,28 +94,62 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 void Vata2::VM::VirtualMachine::run_code(
 	const Vata2::Parser::ParsedSection& parsec)
 { // {{{
-	DEBUG_PRINT("VATA-CODE START");
+	DEBUG_VM_LOW_PRINT("VATA-CODE START");
 	for (const auto& line : parsec.body) {
 		assert(this->exec_stack.empty());
 
-		DEBUG_PRINT(std::to_string(line));
+		DEBUG_VM_LOW_PRINT(std::to_string(line));
 		this->execute_line(line);
 
-		if (this->exec_stack.size() > 1) {
+		if (1 == this->exec_stack.size()) {
+			// dead return value
+			WARN_PRINT("throwing away an unused value at the stack: " +
+				std::to_string(this->exec_stack.top()));
+			this->clean_stack();
+		}
+		else if (3 == this->exec_stack.size()) {
+			// assignment
+
+			// the returned value
+			VMValue val = this->exec_stack.top();
+			this->exec_stack.pop();
+
+			// the assignment operator '='
+			VMValue asgn = this->exec_stack.top();
+			if (TYPE_STR != asgn.type || "=" != *static_cast<const std::string*>(asgn.get_ptr())) {
+				call_dispatch_with_self(val, "delete");
+				throw VMException("dangling code or invalid token: " + std::to_string(asgn) +
+					" (expecting '=')");
+			}
+			this->exec_stack.pop();
+			call_dispatch_with_self(asgn, "delete");
+
+			// the target variable
+			VMValue var_name = this->exec_stack.top();
+			if (TYPE_STR != var_name.type) {
+				call_dispatch_with_self(val, "delete");
+				throw VMException("dangling code or invalid token: " + std::to_string(asgn) +
+					" (expecting '=')");
+			}
+			this->exec_stack.pop();
+			std::string var_name_str = *static_cast<const std::string*>(var_name.get_ptr());
+			assert(this->exec_stack.empty());
+			call_dispatch_with_self(var_name, "delete");
+
+			// TODO: check var_name_str is a good variable name
+			this->save_to_storage(var_name_str, val);
+		}
+		else {
+			assert(this->exec_stack.size() > 1);
 			std::string dangling = std::to_string(this->exec_stack);
 			this->clean_stack();
 			throw VMException("dangling code in a CODE section: " + dangling);
 		}
 
-		if (1 == this->exec_stack.size()) {
-			WARN_PRINT("throwing away an unused value at the stack: " +
-				std::to_string(this->exec_stack.top()));
-			this->clean_stack();
-		}
 	}
 
-	DEBUG_PRINT("VATA-CODE END");
-	DEBUG_PRINT("Stack: " + std::to_string(this->exec_stack));
+	DEBUG_VM_LOW_PRINT("VATA-CODE END");
+	DEBUG_VM_LOW_PRINT("Stack: " + std::to_string(this->exec_stack));
 } // run_code(ParsedSection) }}}
 
 
@@ -130,7 +166,7 @@ void Vata2::VM::VirtualMachine::process_token(
 	const std::string& tok)
 { // {{{
 	if (")" != tok) { // nothing special
-		DEBUG_PRINT("allocating memory for string " + tok);
+		DEBUG_VM_LOW_PRINT("allocating memory for string " + tok);
 		std::string* str = new std::string(tok);
 		VMValue val(TYPE_STR, str);
 		this->push_to_stack(val);
@@ -141,11 +177,11 @@ void Vata2::VM::VirtualMachine::process_token(
 		bool closed = false;
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
-			DEBUG_PRINT("top of stack type: " + st_top.type);
+			DEBUG_VM_LOW_PRINT("top of stack type: " + st_top.type);
 			if (TYPE_STR == st_top.type) {
 				assert(nullptr != st_top.get_ptr());
 				const std::string& val = *static_cast<const std::string*>(st_top.get_ptr());
-				DEBUG_PRINT("top of stack string value: " + val);
+				DEBUG_VM_LOW_PRINT("top of stack string value: " + val);
 				if ("(" == val) {
 					closed = true;
 					call_dispatch_with_self(st_top, "delete");
@@ -164,7 +200,7 @@ void Vata2::VM::VirtualMachine::process_token(
 			{
 				// deallocate elements in exec_vec
 				for (const auto& val : exec_vec) {
-					DEBUG_PRINT("exec_vec: deleting " + std::to_string(val));
+					DEBUG_VM_LOW_PRINT("exec_vec: deleting " + std::to_string(val));
 					call_dispatch_with_self(val, "delete");
 				}
 			};
@@ -179,13 +215,14 @@ void Vata2::VM::VirtualMachine::process_token(
 			this->exec_cmd(exec_vec);
 		}
 		catch (const VMException& ex) {
-			DEBUG_PRINT("VM: caught the following VMException: " + std::to_string(ex.what()));
+			DEBUG_VM_HIGH_PRINT("VM: caught the following VMException: " +
+				std::to_string(ex.what()));
 			// clean exec_vec and the whole stack
-			DEBUG_PRINT("VM: cleaning the execution vector and execution stack");
+			DEBUG_VM_LOW_PRINT("VM: cleaning the execution vector and execution stack");
 			clean_exec_vec();
-			DEBUG_PRINT("VM: execution vector clean");
+			DEBUG_VM_LOW_PRINT("VM: execution vector clean");
 			this->clean_stack();
-			DEBUG_PRINT("VM: execution stack clean");
+			DEBUG_VM_LOW_PRINT("VM: execution stack clean");
 			throw;
 		}
 		catch (...) {
@@ -200,7 +237,7 @@ void Vata2::VM::VirtualMachine::process_token(
 void Vata2::VM::VirtualMachine::exec_cmd(
 	const std::vector<VMValue>& exec_vec)
 { // {{{
-	DEBUG_PRINT("Executing " + std::to_string(exec_vec));
+	DEBUG_VM_HIGH_PRINT("Executing " + std::to_string(exec_vec));
 
 	if (exec_vec.empty()) {
 		throw VMException("\"()\" is not a valid function call");
@@ -239,7 +276,7 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 	const VMFuncName&  func_name,
 	const VMFuncArgs&  func_args)
 { // {{{
-	DEBUG_PRINT("calling function \"" + func_name + "\" for default dispatcher");
+	DEBUG_VM_HIGH_PRINT("calling function \"" + func_name + "\" for default dispatcher");
 
 	if ("return" == func_name) {
 		if (func_args.size() != 1) {
@@ -268,7 +305,7 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		}
 
 		const std::string& filename = *(static_cast<const std::string*>(func_args[0].get_ptr()));
-		DEBUG_PRINT("loading file " + filename);
+		DEBUG_VM_HIGH_PRINT("loading file " + filename);
 		std::fstream fs(filename, std::ios::in);
 		if (!fs) {
 			throw VMException("could not open file \"" + filename + "\"");
@@ -281,7 +318,8 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		}
 
 		Parser::ParsedSection* sec = new Parser::ParsedSection(std::move(prs[0]));
-		DEBUG_PRINT("loaded a section of the type \"" + sec->type + "\" from file " + filename);
+		DEBUG_VM_HIGH_PRINT("loaded a section of the type \"" + sec->type +
+			"\" from file " + filename);
 		return VMValue(sec->type, sec);
 	}
 
@@ -291,29 +329,39 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 
 void Vata2::VM::VirtualMachine::push_to_stack(VMValue val)
 { // {{{
-	DEBUG_PRINT("VM: pushing " + std::to_string(val) + " on the stack");
+	DEBUG_VM_LOW_PRINT("VM: pushing " + std::to_string(val) + " on the stack");
 	this->exec_stack.push(val);
 } // push_to_stack() }}}
 
+void Vata2::VM::VirtualMachine::save_to_storage(
+	const std::string&  name,
+	VMValue             val)
+{
+	auto iter = this->mem.find(name);
+	if (this->mem.end() != iter) { // name already used
+		WARN_PRINT("rewriting stored value of " + name + ": " + std::to_string(val));
+	}
+	this->mem[name] = val;
+} // save_to_storage()
 
-Vata2::VM::VMValue Vata2::VM::VirtualMachine::get_from_storage(
+Vata2::VM::VMValue Vata2::VM::VirtualMachine::load_from_storage(
 	const std::string& name) const
 { // {{{
-	DEBUG_PRINT("VM: retrieving object \"" + name + "\" from the memory");
+	DEBUG_VM_LOW_PRINT("VM: retrieving object \"" + name + "\" from the memory");
 	auto it = this->mem.find(name);
 	if (this->mem.end() == it){
 		throw VMException("Trying to access object \'" + name + "\', which is not in the memory");
 	}
 
 	return it->second;
-} // get_from_storage() }}}
+} // load_from_storage() }}}
 
 
 void Vata2::VM::VirtualMachine::clean_stack()
 { // {{{
 	while (!this->exec_stack.empty()) {
 		const auto& val = this->exec_stack.top();
-		DEBUG_PRINT("VM: cleaning " + std::to_string(val) + " from the stack");
+		DEBUG_VM_LOW_PRINT("VM: cleaning " + std::to_string(val) + " from the stack");
 		call_dispatch_with_self(val, "delete");
 		this->exec_stack.pop();   // NEEDS TO BE AFTER THE CALL!!
 	}

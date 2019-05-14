@@ -4,6 +4,7 @@
 
 // Headers of user data types
 #include <vata2/nfa.hh>
+#include "bool.hh"
 #include "str.hh"
 #include "void.hh"
 
@@ -39,6 +40,7 @@ VMDispatcherDict dispatch_dict = { };
 /// list of init functions --- ADD HERE FUNCTIONS TO BE RUN AT STARTUP
 const VMInitFunc INIT_FUNCTIONS[] =
 {
+	Vata2::Bool::init,
 	Vata2::Nfa::init,
 	Vata2::Str::init,
 	Vata2::Parser::init,

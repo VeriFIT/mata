@@ -56,6 +56,17 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 		REQUIRE(cout_buf.str() == "Hello World!");
 	}
 
+	SECTION("load_file")
+	{
+		sec.body.push_back({"a1", "=", "(", "load_file", "nfa-a.vtf", ")"});
+
+		// we wish to catch output
+		std::ostringstream cout_buf;
+		cout_redirect cout_guard(cout_buf.rdbuf());
+
+		mach.run_code(sec);
+	}
+
 	SECTION("aux")
 	{
 		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
@@ -155,7 +166,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
 		sec.dict.insert({"Name", {"a1"}});
 		mach.run(sec);
 
-		VMValue val_a1 = mach.get_from_storage("a1");
+		VMValue val_a1 = mach.load_from_storage("a1");
 		REQUIRE(val_a1.type == "NFA");
 	}
 
@@ -165,12 +176,12 @@ TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
 	}
 }
 
-TEST_CASE("Vata2::VM::VirtualMachine::get_from_storage() calls")
+TEST_CASE("Vata2::VM::VirtualMachine::load_from_storage() calls")
 {
 	VirtualMachine mach;
 	SECTION("accessing a missing element 1")
 	{
-		CHECK_THROWS_WITH(mach.get_from_storage("foo"),
+		CHECK_THROWS_WITH(mach.load_from_storage("foo"),
 			Catch::Contains("is not in the memory"));
 	}
 
@@ -181,7 +192,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::get_from_storage() calls")
 		sec.dict.insert({"Name", {"foo"}});
 		mach.run(sec);
 
-		CHECK_THROWS_WITH(mach.get_from_storage("bar"),
+		CHECK_THROWS_WITH(mach.load_from_storage("bar"),
 			Catch::Contains("is not in the memory"));
 	}
 }

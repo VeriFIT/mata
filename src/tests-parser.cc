@@ -34,6 +34,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 			"";
 
 		parsec = parse_vtf_section(file);
+		DEBUG_PRINT(std::to_string(parsec));
 		REQUIRE(parsec.empty());
 	}
 

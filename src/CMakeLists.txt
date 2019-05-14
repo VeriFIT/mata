@@ -41,7 +41,7 @@ endif()
 include_directories(../include)
 
 add_library(libvata2 STATIC
-	vm.cc
+	bool-dispatch.cc
 	parser.cc
 	parser-dispatch.cc
 	str-dispatch.cc
@@ -50,6 +50,7 @@ add_library(libvata2 STATIC
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	void-dispatch.cc
+	vm.cc
 	vm-dispatch.cc           # this should be the last one
 )
 
@@ -73,6 +74,7 @@ target_link_libraries(tests libvata2)
 add_test(
 	NAME catch_tests
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/unit-test-data
 )
 
 # problems with valgrind under appleOS

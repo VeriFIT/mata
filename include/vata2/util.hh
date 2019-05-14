@@ -38,12 +38,16 @@
 }
 
 #define PRINT_VERBOSE_LVL_LN(lvl, title, x) {\
-	PRINT_VERBOSE_LVL(lvl, title, __func__ << ":" << __LINE__ << ": ")\
+	PRINT_VERBOSE_LVL(lvl, title, __FILE__ << ":" << __func__ << ":" << __LINE__ << ": ")\
 }
 
 // #define DEBUG_PRINT(x) { std::cerr << "debug: " << x << "\n"; }
 #define DEBUG_PRINT(x) { PRINT_VERBOSE_LVL(2, "debug", x); }
 #define DEBUG_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(2, "debug", x); }
+#define DEBUG_VM_HIGH_PRINT(x) { PRINT_VERBOSE_LVL(3, "debug VM", x); }
+#define DEBUG_VM_HIGH_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(3, "debug VM", x); }
+#define DEBUG_VM_LOW_PRINT(x) { PRINT_VERBOSE_LVL(4, "debug VM", x); }
+#define DEBUG_VM_LOW_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(4, "debug VM", x); }
 #define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning: ", x); }
 
 namespace Vata2

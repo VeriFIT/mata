@@ -14,7 +14,7 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{ // {{{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_STR);
+		DEBUG_VM_HIGH_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_STR);
 
 		if ("delete" == func_name) {
 			assert(func_args.size() == 1);

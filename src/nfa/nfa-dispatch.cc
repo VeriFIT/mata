@@ -46,11 +46,40 @@ namespace
 				Vata2::Nfa::TYPE_NFA,
 				*[](const ParsedSection& parsec) -> auto {
 					NfaWrapper* nfa_wrap = new NfaWrapper;
-					// TODO: do sth with alphabet!!!!
+					DEBUG_PRINT("constructing NFA " + std::to_string(parsec["Name"]));
+
+					// choosing the alphabet to use
+					if (parsec.haskey("CharAlphabet")) {
+						DEBUG_PRINT("using CharAlphabet");
+						nfa_wrap->alphabet = new CharAlphabet();
+					} else if (parsec.haskey("DirectAlphabet")) {
+						DEBUG_PRINT("using DirectAlphabet");
+						nfa_wrap->alphabet = new DirectAlphabet();
+					} else if (parsec.haskey("EnumAlphabet")) {
+						DEBUG_PRINT("using EnumAlphabet");
+						// TODO: load the alphabet
+						assert(false);
+						nfa_wrap->alphabet = new EnumAlphabet();
+					} else { // default
+						DEBUG_PRINT("using OnTheFlyAlphabet");
+						// TODO: fix resource leak
+						StringToSymbolMap* sym_map = new StringToSymbolMap();
+						nfa_wrap->alphabet = new OnTheFlyAlphabet(sym_map);
+					}
+
+					// TODO: do sth with state_dict!!!!
 					construct(&nfa_wrap->nfa, parsec, nfa_wrap->alphabet, &nfa_wrap->state_dict);
 					return static_cast<VMPointer>(nfa_wrap);
 				});
 
+			test_and_call("is_univ", func_name, {Vata2::Nfa::TYPE_NFA}, func_args,
+				Vata2::TYPE_BOOL,
+				*[](const NfaWrapper& nfa) -> auto {
+					assert(false);
+
+					bool* is_univ = new bool(true);
+					return static_cast<VMPointer>(is_univ);
+				});
 		}
 		catch (VMValue res) {
 			return res;
