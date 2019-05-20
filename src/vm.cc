@@ -106,8 +106,11 @@ void Vata2::VM::VirtualMachine::run_code(
 
 		if (1 == this->exec_stack.size()) {
 			// dead return value
-			WARN_PRINT("throwing away an unused value at the stack: " +
-				std::to_string(this->exec_stack.top()));
+			const VMValue& last_val = this->exec_stack.top();
+			if (TYPE_VOID != last_val.type) {
+				WARN_PRINT("throwing away an unused value at the stack: " +
+					std::to_string(this->exec_stack.top()));
+			}
 			this->clean_stack();
 		}
 		else if (3 == this->exec_stack.size()) {

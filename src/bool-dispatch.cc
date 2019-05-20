@@ -31,8 +31,7 @@ namespace
 
 			test_and_call("print", func_name, {Vata2::TYPE_BOOL}, func_args, Vata2::TYPE_VOID,
 				*[](bool b) -> auto {
-					// TODO: remove the EOL
-					std::cout << b << "\n";
+					std::cout << b;
 					return static_cast<VMPointer>(nullptr);
 				});
 
