@@ -49,8 +49,7 @@ void eat_whites(std::istream& input)
 /// Determines whether the character is a character of a string
 bool is_string_char(char ch)
 { // {{{
-	return !std::isblank(ch) &&
-		!(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
+	return !(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
 } // is_string_char }}}
 
 
@@ -198,20 +197,24 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 } // anonymous namespace
 
 
-Parsed Vata2::Parser::parse_vtf(const std::string& input)
+Parsed Vata2::Parser::parse_vtf(
+	const std::string&  input,
+	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	return parse_vtf(stream);
+	return parse_vtf(stream, keepQuotes);
 } // parse_vtf(std::string) }}}
 
 
-Parsed Vata2::Parser::parse_vtf(std::istream& input)
+Parsed Vata2::Parser::parse_vtf(
+	std::istream&  input,
+	bool           keepQuotes)
 { // {{{
 	Parsed result;
 
 	while (input)
 	{
-		ParsedSection parsec = parse_vtf_section(input);
+		ParsedSection parsec = parse_vtf_section(input, keepQuotes);
 		if (!parsec.empty())
 		{
 			result.push_back(parsec);
@@ -222,7 +225,9 @@ Parsed Vata2::Parser::parse_vtf(std::istream& input)
 } // parse_vtf(std::istream) }}}
 
 
-ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
+ParsedSection Vata2::Parser::parse_vtf_section(
+	std::istream&  input,
+	bool           keepQuotes)
 { // {{{
 	ParsedSection result;
 
@@ -312,8 +317,9 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 			BodyLine stripped_token_line;
 			std::transform(token_line.begin(), token_line.end(),
 				std::back_inserter(stripped_token_line),
-				[](const std::pair<std::string, bool>& token) {
-					return token.first;
+				[&](const std::pair<std::string, bool>& token) {
+					if (keepQuotes && token.second) return "\"" + token.first + "\"";
+					else return token.first;
 				});
 			result.body.push_back(stripped_token_line);
 		}
@@ -323,9 +329,11 @@ ParsedSection Vata2::Parser::parse_vtf_section(std::istream& input)
 } // parse_vtf_section(std::istream) }}}
 
 
-ParsedSection Vata2::Parser::parse_vtf_section(const std::string& input)
+ParsedSection Vata2::Parser::parse_vtf_section(
+	const std::string&  input,
+	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	ParsedSection result = parse_vtf_section(stream);
+	ParsedSection result = parse_vtf_section(stream, keepQuotes);
 	return result;
 } // parse_vtf_section(std::string) }}}

@@ -34,6 +34,7 @@ namespace Vata2
 namespace Parser
 {
 
+// TODO: make into a multimap
 using KeyListStore = std::map<std::string, std::vector<std::string>>;
 using BodyLine = std::vector<std::string>;
 
@@ -44,7 +45,10 @@ struct ParsedSection
 	KeyListStore dict;
 	std::list<BodyLine> body;
 
-	ParsedSection() : type(), dict(), body() { }
+	ParsedSection() : type(), dict(), body()
+	{  // {{{
+		this->dict.insert({"",{}});   // for non-found values
+	} // }}}
 
 	/// Is the section empty?
 	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
@@ -89,6 +93,23 @@ struct ParsedSection
 			this->body == rhs.body;
 	} // }}}
 	bool operator!=(const ParsedSection& rhs) const { return !(*this == rhs); }
+
+	/// subscript operator for the key-value store
+	const std::vector<std::string>& operator[](const std::string& key) const
+	{ // {{{
+		auto it = this->dict.find(key);
+		if (this->dict.end() == it) {
+			return this->dict.at("");
+		}
+
+		return it->second;
+	} // operator[] }}}
+
+	/// check whether the key-value store contains a key
+	bool haskey(const std::string& key) const
+	{
+		return this->dict.end() != this->dict.find(key);
+	}
 };
 
 
@@ -97,16 +118,24 @@ struct ParsedSection
 using Parsed = std::vector<ParsedSection>;
 
 /** Parses a string into an intermediary structure */
-Parsed parse_vtf(const std::string& input);
+Parsed parse_vtf(
+	const std::string&  input,
+	bool                keepQuotes = false);
 
 /** Parses a stream into an intermediary structure */
-Parsed parse_vtf(std::istream& input);
+Parsed parse_vtf(
+	std::istream&  input,
+	bool           keepQuotes = false);
 
 /** Parses one section from a stream into an intermediary structure */
-ParsedSection parse_vtf_section(std::istream& input);
+ParsedSection parse_vtf_section(
+	std::istream&  input,
+	bool           keepQuotes = false);
 
 /** Parses one section from a string into an intermediary structure */
-ParsedSection parse_vtf_section(const std::string& input);
+ParsedSection parse_vtf_section(
+	const std::string&  input,
+	bool                keepQuotes = false);
 
 /// registers dispatcher
 void init();

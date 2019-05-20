@@ -320,6 +320,23 @@ public:
 
 	/// gets a post of a set of states over a symbol
 	StateSet post(const StateSet& macrostate, Symbol sym) const;
+
+	// /// ostream& << operator
+	// friend std::ostream& operator<<(std::ostream& os, const Nfa& nfa)
+	// {
+	// 	os << "{NFA|initial: " << std::to_string(nfa.initialstates) <<
+	// 		"|final: " << std::to_string(nfa.finalstates) << "|transitions: ";
+	// 	bool first = true;
+	// 	for (auto tr : nfa) {
+	// 		if (!first) {
+	// 			os << ", ";
+	// 		}
+	// 		first = false;
+	// 		os << std::to_string(tr);
+	// 	}
+	// 	os << "}";
+	// 	return os;
+	// }
 }; // Nfa }}}
 
 
@@ -568,6 +585,7 @@ struct hash<Vata2::Nfa::Trans>
 };
 
 std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap);
 } // std }}}
 
 

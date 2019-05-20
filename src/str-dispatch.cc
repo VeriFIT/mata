@@ -19,7 +19,7 @@ namespace
 		if ("delete" == func_name) {
 			assert(func_args.size() == 1);
 			const VMValue& arg1 = func_args[0];
-			assert(Vata2::TYPE_STR == arg1.type);
+			assert(Vata2::TYPE_STR == arg1.type || Vata2::TYPE_TOKEN == arg1.type);
 			const std::string* str = static_cast<const std::string*>(arg1.get_ptr());
 			assert(nullptr != str);
 			delete str;
@@ -31,7 +31,8 @@ namespace
 
 			test_and_call("print", func_name, {Vata2::TYPE_STR}, func_args, Vata2::TYPE_VOID,
 				*[](const std::string& str) -> auto {
-					std::cout << str;
+					// TODO: remove the EOL
+					std::cout << str << "\n";
 					return static_cast<VMPointer>(nullptr);
 				});
 
@@ -55,4 +56,5 @@ namespace
 void Vata2::Str::init()
 {
 	reg_dispatcher(TYPE_STR, str_dispatch, "a string data type");
+	reg_dispatcher(TYPE_TOKEN, str_dispatch, "a token data type");
 }

@@ -26,6 +26,8 @@
 namespace Vata2
 {
 
+/// the type of tokens
+extern const std::string TYPE_TOKEN;
 /// the type name of the boolean data type
 extern const std::string TYPE_BOOL;
 /// the type name of the string data type
@@ -92,7 +94,7 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const VMValue& val)
 	{ // {{{
 		os << "<" << val.type << ": ";
-		if (TYPE_STR == val.type) {
+		if (TYPE_STR == val.type || TYPE_TOKEN == val.type) {
 			// FIXME: dispatch this call to val.type dispatcher
 			os << *static_cast<const std::string*>(val.get_ptr());
 		} else {

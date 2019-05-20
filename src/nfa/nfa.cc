@@ -1049,3 +1049,10 @@ bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 
 	return true;
 } // is_complete }}}
+
+std::ostream& std::operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap)
+{ // {{{
+	os << "{NFA wrapper|NFA: " << nfa_wrap.nfa << "|alphabet: " << nfa_wrap.alphabet <<
+		"|state_dict: " << std::to_string(nfa_wrap.state_dict) << "}";
+	return os;
+} // operator<<(NfaWrapper) }}}

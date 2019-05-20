@@ -37,7 +37,15 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::Nfa::TYPE_NFA);
+		DEBUG_PRINT("calling function \"" + func_name + "\" for " +
+			Vata2::Nfa::TYPE_NFA + " with arguments " + std::to_string(func_args));
+
+		const VMValue& arg0 = func_args[0];
+		if (TYPE_NFA == arg0.type) {
+			const NfaWrapper& wrap = *static_cast<const NfaWrapper*>(arg0.get_ptr());
+			DEBUG_VM_LOW_PRINT("NFA: " + std::to_string(wrap.nfa));
+			DEBUG_VM_LOW_PRINT("alphabet: " + std::to_string(wrap.alphabet));
+		}
 
 		// we use throw to return result from test_and_call
 		try {
@@ -62,6 +70,7 @@ namespace
 						nfa_wrap->alphabet = new EnumAlphabet();
 					} else { // default
 						DEBUG_PRINT("using OnTheFlyAlphabet");
+
 						// TODO: fix resource leak
 						StringToSymbolMap* sym_map = new StringToSymbolMap();
 						nfa_wrap->alphabet = new OnTheFlyAlphabet(sym_map);
@@ -72,13 +81,21 @@ namespace
 					return static_cast<VMPointer>(nfa_wrap);
 				});
 
+			test_and_call("print", func_name, {TYPE_NFA}, func_args, Vata2::TYPE_VOID,
+				*[](const NfaWrapper& nfa_wrap) -> auto {
+					std::cout << nfa_wrap;
+					return static_cast<VMPointer>(nullptr);
+				});
+
 			test_and_call("is_univ", func_name, {Vata2::Nfa::TYPE_NFA}, func_args,
 				Vata2::TYPE_BOOL,
-				*[](const NfaWrapper& nfa) -> auto {
-					assert(false);
-
-					bool* is_univ = new bool(true);
-					return static_cast<VMPointer>(is_univ);
+				*[](const NfaWrapper& nfa_wrap) -> auto {
+					Word cex;
+					// TODO: FIX
+					StringDict params{{"algo", "naive"}};
+					bool* result = new bool;
+					*result = is_universal(nfa_wrap.nfa, *nfa_wrap.alphabet, &cex, params);
+					return static_cast<VMPointer>(result);
 				});
 		}
 		catch (VMValue res) {

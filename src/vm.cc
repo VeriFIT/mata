@@ -22,6 +22,7 @@
 
 
 /// definitions
+const std::string Vata2::TYPE_TOKEN = "token";
 const std::string Vata2::TYPE_BOOL = "bool";
 const std::string Vata2::TYPE_STR = "str";
 const std::string Vata2::TYPE_VOID = "void";
@@ -81,6 +82,8 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 		}
 	}
 
+	// TODO: is the dispatch OK? shouldn't weget the type of the parsec first?
+
 	VMValue arg(Vata2::TYPE_PARSEC, new Parser::ParsedSection(parsec));
 	VMFuncArgs args = {arg};
 	VMValue val = dispatch("construct", args);
@@ -116,7 +119,7 @@ void Vata2::VM::VirtualMachine::run_code(
 
 			// the assignment operator '='
 			VMValue asgn = this->exec_stack.top();
-			if (TYPE_STR != asgn.type || "=" != *static_cast<const std::string*>(asgn.get_ptr())) {
+			if (TYPE_TOKEN != asgn.type || "=" != *static_cast<const std::string*>(asgn.get_ptr())) {
 				call_dispatch_with_self(val, "delete");
 				throw VMException("dangling code or invalid token: " + std::to_string(asgn) +
 					" (expecting '=')");
@@ -126,14 +129,14 @@ void Vata2::VM::VirtualMachine::run_code(
 
 			// the target variable
 			VMValue var_name = this->exec_stack.top();
-			if (TYPE_STR != var_name.type) {
+			if (TYPE_TOKEN != var_name.type) {
 				call_dispatch_with_self(val, "delete");
 				throw VMException("dangling code or invalid token: " + std::to_string(asgn) +
 					" (expecting '=')");
 			}
 			this->exec_stack.pop();
-			std::string var_name_str = *static_cast<const std::string*>(var_name.get_ptr());
 			assert(this->exec_stack.empty());
+			std::string var_name_str = *static_cast<const std::string*>(var_name.get_ptr());
 			call_dispatch_with_self(var_name, "delete");
 
 			// TODO: check var_name_str is a good variable name
@@ -166,10 +169,16 @@ void Vata2::VM::VirtualMachine::process_token(
 	const std::string& tok)
 { // {{{
 	if (")" != tok) { // nothing special
-		DEBUG_VM_LOW_PRINT("allocating memory for string " + tok);
-		std::string* str = new std::string(tok);
-		VMValue val(TYPE_STR, str);
-		this->push_to_stack(val);
+		DEBUG_VM_LOW_PRINT("allocating memory for token " + tok);
+		if (('\"' == tok[0]) && ('\"' == tok[tok.length()-1])) { // for strings
+			std::string* str = new std::string(tok, 1, tok.length()-2);
+			VMValue val(TYPE_STR, str);
+			this->push_to_stack(val);
+		} else { // for tokens
+			std::string* str = new std::string(tok);
+			VMValue val(TYPE_TOKEN, str);
+			this->push_to_stack(val);
+		}
 	} else { // closing parenthesis - execute action
 		assert(")" == tok);
 
@@ -178,10 +187,10 @@ void Vata2::VM::VirtualMachine::process_token(
 		while (!this->exec_stack.empty()) {
 			const VMValue& st_top = this->exec_stack.top();
 			DEBUG_VM_LOW_PRINT("top of stack type: " + st_top.type);
-			if (TYPE_STR == st_top.type) {
+			if (TYPE_TOKEN == st_top.type) {
 				assert(nullptr != st_top.get_ptr());
 				const std::string& val = *static_cast<const std::string*>(st_top.get_ptr());
-				DEBUG_VM_LOW_PRINT("top of stack string value: " + val);
+				DEBUG_VM_LOW_PRINT("top of stack token value: " + val);
 				if ("(" == val) {
 					closed = true;
 					call_dispatch_with_self(st_top, "delete");
@@ -245,20 +254,30 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 
 	// getting the function name
 	const VMValue& fnc_val = exec_vec[0];
-	assert(TYPE_STR == fnc_val.type);
+	assert(TYPE_TOKEN == fnc_val.type);
 	assert(nullptr != fnc_val.get_ptr());
 	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.get_ptr());
 
-	if (exec_vec.size() == 1) {
+	if (exec_vec.size() <= 1) {
 		throw VMException("\"(" + fnc_name + ")\" is not a valid function call");
 	}
 
-	// getting the object type (type of the first argument of the function)
-	const VMValue& arg1_val = exec_vec[1];
-	const std::string& arg1_type = arg1_val.type;
-
 	// constructing the arguments
-	std::vector<VMValue> args(exec_vec.begin() + 1, exec_vec.end());
+	std::vector<VMValue> args;
+	for (auto it = exec_vec.begin() + 1; it != exec_vec.end(); ++it) {
+		if (TYPE_TOKEN == it->type) {
+			const std::string& var_name = *static_cast<const std::string*>(it->get_ptr());
+			VMValue val = load_from_storage(var_name);
+			args.push_back(val);
+		} else {
+			args.push_back(*it);
+		}
+	}
+
+	// getting the object type (type of the first argument of the function) and
+	// removing it from the arguments
+	VMValue arg1_val = args[0];
+	const std::string& arg1_type = arg1_val.type;
 
 	VMValue ret_val = find_dispatcher(arg1_type)(fnc_name, args);
 	if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
@@ -311,16 +330,25 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 			throw VMException("could not open file \"" + filename + "\"");
 		}
 
+		// TODO: handle keepQuotes?
 		Parser::Parsed prs = Parser::parse_vtf(fs);
 		if (prs.size() != 1) {
 			throw VMException("load_file loaded a file with " + std::to_string(prs.size()) +
 				" sections; only 1 section per loaded file is supported in load_file calls");
 		}
 
+		// Parser::ParsedSection* sec = new Parser::ParsedSection(std::move(prs[0]));
+		// TODO: handle more sections
 		Parser::ParsedSection* sec = new Parser::ParsedSection(std::move(prs[0]));
+		assert(prs.size() == 1);
 		DEBUG_VM_HIGH_PRINT("loaded a section of the type \"" + sec->type +
 			"\" from file " + filename);
-		return VMValue(sec->type, sec);
+		VMValue sec_val(TYPE_PARSEC, sec);
+		VMFuncArgs args = {sec_val};
+		VMDispatcherFunc dispatch = Vata2::VM::find_dispatcher(sec->type);
+		VMValue res = dispatch("construct", args);
+
+		return res;
 	}
 
 	return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
@@ -337,6 +365,7 @@ void Vata2::VM::VirtualMachine::save_to_storage(
 	const std::string&  name,
 	VMValue             val)
 {
+	DEBUG_VM_HIGH_PRINT("storing a new value of " + name + ": " + std::to_string(val));
 	auto iter = this->mem.find(name);
 	if (this->mem.end() != iter) { // name already used
 		WARN_PRINT("rewriting stored value of " + name + ": " + std::to_string(val));
@@ -347,7 +376,7 @@ void Vata2::VM::VirtualMachine::save_to_storage(
 Vata2::VM::VMValue Vata2::VM::VirtualMachine::load_from_storage(
 	const std::string& name) const
 { // {{{
-	DEBUG_VM_LOW_PRINT("VM: retrieving object \"" + name + "\" from the memory");
+	DEBUG_VM_LOW_PRINT("retrieving object \"" + name + "\" from the memory");
 	auto it = this->mem.find(name);
 	if (this->mem.end() == it){
 		throw VMException("Trying to access object \'" + name + "\', which is not in the memory");

@@ -8,7 +8,7 @@
 int interpret_input(std::istream& is)
 {
 	try {
-		Vata2::Parser::Parsed parsed = Vata2::Parser::parse_vtf(is);
+		Vata2::Parser::Parsed parsed = Vata2::Parser::parse_vtf(is, true);
 
 		Vata2::VM::VirtualMachine mach;
 		mach.run(parsed);
