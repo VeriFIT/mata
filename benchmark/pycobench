@@ -22,6 +22,7 @@
 #     benchmarks from the task list file (parameter -c).
 # TODO:
 #   * better docs
+#   * obtain time from the output of the commands
 #   * prettier printing of results (csv, html, latex, ...)
 #   * functionality as a converter from .tasks file to an output format
 #   * check whether the output of the commands matches
