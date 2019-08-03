@@ -6,10 +6,18 @@
 #
 # If you need something more elaborate, check, e.g., benchexec
 #   ( https://github.com/sosy-lab/benchexec )
+#
+# The main idea of how this works is:
+#   * makes a queue with requests
+#   * workers will read from the queue
+#   * when killed, possible to restart
+#   * TODO: better docs
 
 import argparse
+import csv
 import os
 import queue
+import resource
 import subprocess
 import sys
 import threading
@@ -27,14 +35,22 @@ g_cmd_dict = { }
 # timeout for subprocesses (in seconds)
 g_timeout = 600
 
+# The file that contains information about submitted and finished tasks.  This
+# can be later used for restarting a prematurely stopped benchmark.
+g_tasks = 'pycobench.tasks'
+
+# results file
+g_results = 'pycobench-results.csv'
+
 ###########################################
 def execute_benchmark(params):
-    '''execute_benchmark(params) -> void
+    """execute_benchmark(params) -> None
 
 Executes one benchmark.
-'''
+"""
     global g_cmd_dict
-    name, in_params = params
+    name = params['method']
+    in_params = params['params']
     cmd = g_cmd_dict[name]['cmd']
     cmd = cmd.split()
     in_params = in_params.split()
@@ -54,106 +70,166 @@ Executes one benchmark.
                 cmd[i] = in_params[x-1]
 
     try:
-        # subprocess.run(["sleep", "10"], timeout=g_timeout)
         proc = subprocess.run(cmd, timeout=g_timeout, capture_output=True)
-        print(str(proc))
-        return 42 # TODO
+        result = {}
+        result['returncode'] = proc.returncode
+        result['stdout'] = proc.stdout.decode().strip()
+        result['stderr'] = proc.stderr.decode().strip()
+
+        rusage = resource.getrusage(resource.RUSAGE_CHILDREN)
+
+        result['time'] = rusage.ru_utime
+        # print(str(proc))
+        return result
     except subprocess.TimeoutExpired:
         return 'Timeout'
 
+###########################################
+def merge_two_dicts(x, y):
+    z = x.copy()   # start with x's keys and values
+    z.update(y)    # modifies z with y's keys and values & returns None
+    return z
 
 ###########################################
 def worker():
-    '''worker() -> void
+    """worker() -> None
 
 Main function of a thread for processing tasks.
-'''
+"""
     while True:
         item = g_task_queue.get()
         if item is None:     # None signals end of processing
             g_result_queue.put(None)   # signal termination of worker
             break
         res = execute_benchmark(item)
-        g_result_queue.put((item, res))
+        g_result_queue.put(merge_two_dicts(item, res))
         g_task_queue.task_done()
 
 
 ###########################################
-def process_input_line(line):
-    '''process_input_line(str) -> void
+def process_result(writer, result):
+    """process_result(writer, result) -> None
 
-Processes one input line.
-'''
-    for k in g_cmd_dict:
-        g_task_queue.put((k, line))
-
-
-###########################################
-def process_result(result):
-    '''process_result(result) -> void
-
-Processes one obtained result.
-'''
+Processes one obtained result (writes it using writer).
+"""
+    writer.writerow(['finished', result['method'], result['params'],
+        result['returncode'], result['stdout'], result['stderr'],
+        result['time']])
     print(str(result))
 
 
 ###########################################
+def create_writer(opened_file):
+    """create_writer(opened_file) -> CsvWriter """
+    writer = csv.writer(
+        opened_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    return writer
+
+
+###########################################
 def process_conf_file(conf_file):
-    '''process_conf_file(conf_file) -> void
+    """process_conf_file(conf_file) -> None
 
 Processes the configuration file.
-'''
+"""
     global g_cmd_dict
     config = yaml.load(conf_file, Loader=yaml.FullLoader)
     g_cmd_dict = config
 
 
 ###########################################
+def prepare_list_of_tasks_from_tasklist(tasklist_filename):
+    """prepare_list_of_tasks_from_tasklist(str tasklist_filename) -> list
+
+Checkes the file 'tasklist_filename' and extracts from it tasks that have not
+been finished yet.  These are then returned in a list.
+"""
+    executed_tasks = set()
+    finished_tasks = set()
+    with open(tasklist_filename, 'r') as tasklist_file:
+        reader = csv.reader(
+            tasklist_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        try:
+            for row in reader:
+                # create two sets
+                if row[0] == 'execute':
+                    executed_tasks.add((row[1], row[2]))
+                elif row[0] == 'finished':
+                    finished_tasks.add((row[1], row[2]))
+        except Exception as ex:
+            print('Error reading a task list at line ' + str(reader.line_num) + ': '
+                + str(ex))
+            sys.exit(1)
+
+    unfinished_business = executed_tasks - finished_tasks
+    list_of_tasks = [{'method': x, 'params': y} for (x,y) in unfinished_business]
+
+    return list_of_tasks
+
+
+###########################################
 def run_main(args):
-    '''run_main(args) -> ()
+    """run_main(args) -> ()
 
 Runs the main program according to the arguments obtained from the parser.
-'''
+"""
     assert(len(args.conf) == 1)
     with open(args.conf[0], 'r') as conf_file:
         process_conf_file(conf_file)
 
-    print('continuing...')
+    list_of_tasks = []   # this is where we keep the tasks that are to be procecessed
+    if args.tasklist:   # we want to continue in a tasklist
+        list_of_tasks = prepare_list_of_tasks_from_tasklist(args.tasklist)
+    else:  # take the tasks from stdin
+        # processing the input
+        for line in sys.stdin:
+            line = line.rstrip()
+            for k in g_cmd_dict:
+                list_of_tasks.append({'method': k, 'params': line})
+        with open(g_tasks, 'w') as task_file:
+            writer = create_writer(task_file)
+            for task in list_of_tasks:
+                writer.writerow(['execute', task['method'], task['params']])
 
-    # set
+    print('task queue = ' + str(list_of_tasks))
+
+    # set the number of workers
     num_worker_threads = args.jobs
     if num_worker_threads is None:
         num_worker_threads = 1
 
+    # start the workers
     threads = []
     for i in range(num_worker_threads):
         t = threading.Thread(target=worker)
         t.start()
         threads.append(t)
 
-    # processing the input
-    for line in sys.stdin:
-        line = line.rstrip()
-        process_input_line(line)
+    # queue the tasks
+    for task in list_of_tasks:
+        g_task_queue.put(task)
 
     # send the END OF TASKS message
     for t in threads:
         g_task_queue.put(None)
 
-    # processing the results
-    finished_workers = 0
-    while finished_workers < len(threads):
-        result = g_result_queue.get()
-        if result is None:
-            print("worker terminated")
-            finished_workers += 1
-            continue
-        process_result(result)
+    with open(g_tasks, 'a') as task_file:
+        writer = create_writer(task_file)
+
+        # processing the results
+        finished_workers = 0
+        while finished_workers < len(threads):
+            result = g_result_queue.get()
+            if result is None:
+                print("worker terminated")
+                finished_workers += 1
+                continue
+            else:
+                process_result(writer, result)
 
     # a barrier
     for t in threads:
         t.join()
-
 
 ###########################################
 if __name__ == '__main__':
@@ -164,11 +240,7 @@ standard input''')
         help='configuration file')
     parser.add_argument('-j', '--jobs', type=int, default = os.cpu_count(),
         help='The number of jobs (workers) to run concurrently (default: %(default)s)')
+    parser.add_argument('-t', '--tasklist', help='A tasklist with unfinished tasks')
 
     args = parser.parse_args()
     run_main(args)
-
-# WHAT I WANT:
-#   * make a queue with requests
-#   * clients will read from the queue
-#   * when killed, possible to restart
