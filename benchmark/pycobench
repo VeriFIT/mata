@@ -7,11 +7,24 @@
 # If you need something more elaborate, check, e.g., benchexec
 #   ( https://github.com/sosy-lab/benchexec )
 #
-# The main idea of how this works is:
-#   * makes a queue with requests
-#   * workers will read from the queue
-#   * when killed, possible to restart
-#   * TODO: better docs
+# Description:
+#   * Runs benchmarks in parallel using a parameterized number of workers.
+#   * One benchmark is run using different execution engines, specified in a
+#     configuration file.
+#     * The configuration file is a YAML where each engine is given a command
+#       to run (with $1, $2, $3,... denoting input parameters).
+#   * Benchmarks are provided on standard input, one per line.  Each line
+#     contains a whitespace-separated list of parameters (which are then input
+#     into the engine commands in the place of $1, $2, $3, ...)
+#   * The tasks to be run are written into a file and results of finished tasks
+#     are appended to the file as well.
+#   * When interrupted, it is possible to continue executing the unfinished
+#     benchmarks from the task list file (parameter -c).
+# TODO:
+#   * better docs
+#   * prettier printing of results (csv, html, latex, ...)
+#   * functionality as a converter from .tasks file to an output format
+#   * check whether the output of the commands matches
 
 import argparse
 import csv
@@ -70,16 +83,16 @@ Executes one benchmark.
                 cmd[i] = in_params[x-1]
 
     try:
+        rusage_before = resource.getrusage(resource.RUSAGE_CHILDREN)
         proc = subprocess.run(cmd, timeout=g_timeout, capture_output=True)
+        rusage_after = resource.getrusage(resource.RUSAGE_CHILDREN)
         result = {}
         result['returncode'] = proc.returncode
         result['stdout'] = proc.stdout.decode().strip()
         result['stderr'] = proc.stderr.decode().strip()
 
-        rusage = resource.getrusage(resource.RUSAGE_CHILDREN)
 
-        result['time'] = rusage.ru_utime
-        # print(str(proc))
+        result['time'] = rusage_after.ru_utime - rusage_before.ru_utime
         return result
     except subprocess.TimeoutExpired:
         return 'Timeout'
@@ -120,7 +133,7 @@ Processes one obtained result (writes it using writer).
 
 ###########################################
 def create_writer(opened_file):
-    """create_writer(opened_file) -> CsvWriter """
+    """create_writer(opened_file) -> csv.Writer """
     writer = csv.writer(
         opened_file, delimiter=';', quotechar='"', quoting=csv.QUOTE_MINIMAL)
     return writer
@@ -169,7 +182,7 @@ been finished yet.  These are then returned in a list.
 
 ###########################################
 def run_main(args):
-    """run_main(args) -> ()
+    """run_main(args) -> None
 
 Runs the main program according to the arguments obtained from the parser.
 """
@@ -190,8 +203,6 @@ Runs the main program according to the arguments obtained from the parser.
             writer = create_writer(task_file)
             for task in list_of_tasks:
                 writer.writerow(['execute', task['method'], task['params']])
-
-    print('task queue = ' + str(list_of_tasks))
 
     # set the number of workers
     num_worker_threads = args.jobs
@@ -237,10 +248,12 @@ if __name__ == '__main__':
 Executes benchmarks given using a configuration file on cases given on the \
 standard input''')
     parser.add_argument('conf', metavar='file.conf', nargs=1,
-        help='configuration file')
+        help='configuration file (in YAML)')
     parser.add_argument('-j', '--jobs', type=int, default = os.cpu_count(),
         help='The number of jobs (workers) to run concurrently (default: %(default)s)')
-    parser.add_argument('-t', '--tasklist', help='A tasklist with unfinished tasks')
+    parser.add_argument('-c', '--continue', metavar='TASKLIST', dest='tasklist',
+        help='''Specifying this argument continues execution of unfinished \
+tasks from %(metavar)s.  No input is read.''')
 
     args = parser.parse_args()
     run_main(args)
