@@ -20,12 +20,15 @@
 #     are appended to the file as well.
 #   * When interrupted, it is possible to continue executing the unfinished
 #     benchmarks from the task list file (parameter -c).
+#
 # TODO:
 #   * better docs
+#   * when restarting, check that the tasklist and YAML configuration are compatible
 #   * obtain time from the output of the commands
 #   * prettier printing of results (csv, html, latex, ...)
 #   * functionality as a converter from .tasks file to an output format
 #   * check whether the output of the commands matches
+#
 
 import argparse
 import csv
