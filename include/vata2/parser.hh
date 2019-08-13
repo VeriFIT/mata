@@ -47,7 +47,8 @@ struct ParsedSection
 
 	ParsedSection() : type(), dict(), body()
 	{  // {{{
-		this->dict.insert({"",{}});   // for non-found values
+		// TODO: definitely remove this?
+		// this->dict.insert({"",{}});   // for non-found values
 	} // }}}
 
 	/// Is the section empty?

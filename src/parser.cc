@@ -49,7 +49,8 @@ void eat_whites(std::istream& input)
 /// Determines whether the character is a character of a string
 bool is_string_char(char ch)
 { // {{{
-	return !(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
+	return !std::isblank(ch) &&
+		!(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
 } // is_string_char }}}
 
 
