@@ -71,11 +71,11 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 	else {
 		const auto& vec_of_strs = parsec.dict.at("Name");
 		if (vec_of_strs.size() == 0) {
-			throw std::runtime_error("the \"name\" attribute provided without value");
+			throw std::runtime_error("the \"Name\" attribute provided without value");
 		}
 		if (vec_of_strs.size() > 1) {
 			throw std::runtime_error(
-				"the \"name\" attribute provided with multiple values");
+				"the \"Name\" attribute provided with multiple values");
 		}
 		else {
 			name = vec_of_strs[0];

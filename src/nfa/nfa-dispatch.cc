@@ -54,7 +54,9 @@ namespace
 				Vata2::Nfa::TYPE_NFA,
 				*[](const ParsedSection& parsec) -> auto {
 					NfaWrapper* nfa_wrap = new NfaWrapper;
-					DEBUG_PRINT("constructing NFA " + std::to_string(parsec["Name"]));
+					DEBUG_PRINT("constructing NFA " + (parsec.haskey("Name")?
+							std::to_string(parsec["Name"]) :
+							"[unnamed]"));
 
 					// choosing the alphabet to use
 					if (parsec.haskey("CharAlphabet")) {

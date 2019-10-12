@@ -100,7 +100,8 @@ struct ParsedSection
 	{ // {{{
 		auto it = this->dict.find(key);
 		if (this->dict.end() == it) {
-			return this->dict.at("");
+			assert(false);
+			// return this->dict.at("");
 		}
 
 		return it->second;

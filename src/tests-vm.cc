@@ -45,7 +45,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 	SECTION("Hello World")
 	{
-		sec.body.push_back({"(", "print", "Hello World!", ")"});
+		sec.body.push_back({"(", "print", "\"Hello World!\"", ")"});
 
 		// we wish to catch output
 		std::ostringstream cout_buf;
@@ -58,7 +58,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 	SECTION("load_file")
 	{
-		sec.body.push_back({"a1", "=", "(", "load_file", "nfa-a.vtf", ")"});
+		sec.body.push_back({"a1", "=", "(", "load_file", "\"nfa-a.vtf\"", ")"});
 
 		// we wish to catch output
 		std::ostringstream cout_buf;
