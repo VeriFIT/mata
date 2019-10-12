@@ -106,6 +106,8 @@ void Vata2::VM::VirtualMachine::run_code(
 
 		if (1 == this->exec_stack.size()) {
 			// dead return value
+			assert(false);
+			// TODO: check it is not void
 			const VMValue& last_val = this->exec_stack.top();
 			if (TYPE_VOID != last_val.type) {
 				WARN_PRINT("throwing away an unused value at the stack: " +
@@ -257,7 +259,17 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 
 	// getting the function name
 	const VMValue& fnc_val = exec_vec[0];
-	assert(TYPE_TOKEN == fnc_val.type);
+	if (TYPE_TOKEN != fnc_val.type) {
+		std::string err_string = "(" + std::to_string(fnc_val);
+		for (size_t i = 1; i < exec_vec.size(); ++i) {
+			err_string += ", " + std::to_string(exec_vec[i]);
+		}
+		err_string += ")";
+
+		throw VMException("\"" + err_string + "\" is not a valid function call");
+	}
+
+	// assert(TYPE_TOKEN == fnc_val.type);
 	assert(nullptr != fnc_val.get_ptr());
 	const std::string& fnc_name = *static_cast<const std::string*>(fnc_val.get_ptr());
 
