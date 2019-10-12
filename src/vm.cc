@@ -104,10 +104,7 @@ void Vata2::VM::VirtualMachine::run_code(
 		DEBUG_VM_LOW_PRINT(std::to_string(line));
 		this->execute_line(line);
 
-		if (1 == this->exec_stack.size()) {
-			// dead return value
-			assert(false);
-			// TODO: check it is not void
+		if (1 == this->exec_stack.size()) { // dead return value
 			const VMValue& last_val = this->exec_stack.top();
 			if (TYPE_VOID != last_val.type) {
 				WARN_PRINT("throwing away an unused value at the stack: " +

@@ -125,7 +125,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 
 	SECTION("incorrect number of parameters 1")
 	{
-		sec.body.push_back({"(", "print", "\"Hello World\"", ")"});
+		sec.body.push_back({"(", "print", "\"Hello\"", "\" World\"", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
 			Catch::Contains("does not match arity of print"));
 	}
@@ -134,7 +134,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 	{
 		sec.body.push_back({"(", "foo", "(", "print", "\"Hello World\"", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
-			Catch::Contains("does not match arity of print"));
+			Catch::Contains("dangling code"));
 	}
 
 	SECTION("aux")
