@@ -126,7 +126,7 @@ cache: ccache
 
 os:
   - linux
-  - osx
+  # - osx
 
 osx_image: xcode11.2
 
