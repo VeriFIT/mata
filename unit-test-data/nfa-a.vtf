@@ -1,0 +1,19 @@
+@NFA
+%Initial r1 r3
+%Final r5
+
+r1  a r3
+r1  a r10
+r1  b r7
+r3  a r7
+r3  b r9
+r9  a r9
+r7  b r1
+r7  a r3
+r7  c r3
+r10 a r7
+r10 b r7
+r10 c r7
+r7  a r5
+r5  a r5
+r5  c r9
