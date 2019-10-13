@@ -206,14 +206,14 @@ TEST_CASE("Vata2::VM::VirtualMachine::default_dispatch() calls")
 
 	SECTION("return with more than 1 argument")
 	{
-		sec.body.push_back({"(", "return", "arg1", "args2", ")"});
+		sec.body.push_back({"(", "return", "\"arg1\"", "\"arg2\"", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
 			Catch::Contains("requires 1 argument"));
 	}
 
 	SECTION("invalid function name")
 	{
-		sec.body.push_back({"(", "invalid_func_name", "arg1", ")"});
+		sec.body.push_back({"(", "invalid_func_name", "\"arg1\"", ")"});
 		CHECK_THROWS_WITH(mach.run_code(sec),
 			Catch::Contains("is not a defined function"));
 	}
