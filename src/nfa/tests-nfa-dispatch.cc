@@ -40,19 +40,21 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 		delete aut;
 	}
 
+	SECTION("no parameters")
+	{
+		CHECK_THROWS_WITH(find_dispatcher(Vata2::Nfa::TYPE_NFA)("barrel-roll", { }),
+			Catch::Contains("with no arguments"));
+	}
+
 	SECTION("invalid function")
 	{
-		VMValue res = find_dispatcher(Vata2::Nfa::TYPE_NFA)("barrel-roll", { });
+		std::string str = "arg1";
+		VMValue res = find_dispatcher(Vata2::Nfa::TYPE_NFA)("barrel-roll",
+			{{Vata2::TYPE_STR, &str}});
 		REQUIRE(Vata2::TYPE_NOT_A_VALUE == res.type);
 	}
 
 	SECTION("invalid arguments 1")
-	{
-		CHECK_THROWS_WITH(find_dispatcher(Vata2::Nfa::TYPE_NFA)("construct", { }),
-			Catch::Contains("does not match arity"));
-	}
-
-	SECTION("invalid arguments 2")
 	{
 		CHECK_THROWS_WITH(find_dispatcher(Vata2::Nfa::TYPE_NFA)("construct", {{"Foo", nullptr}}),
 			Catch::Contains("invalid type"));

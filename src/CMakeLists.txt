@@ -77,6 +77,8 @@ add_test(
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/unit-test-data
 )
 
+if(FALSE)
+
 # problems with valgrind under appleOS
 if(NOT APPLE)
 	add_test(
@@ -100,4 +102,6 @@ else()    # for appleOS
 			--gen-suppressions=all
 			${CMAKE_CURRENT_BINARY_DIR}/tests
 	)
+endif()
+
 endif()

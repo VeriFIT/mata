@@ -40,6 +40,11 @@ namespace
 		DEBUG_PRINT("calling function \"" + func_name + "\" for " +
 			Vata2::Nfa::TYPE_NFA + " with arguments " + std::to_string(func_args));
 
+		if (func_args.size() == 0) {
+			throw VMException("calling function \"" + func_name + "\" for " +
+				Vata2::Nfa::TYPE_NFA + " with no arguments");
+		}
+
 		const VMValue& arg0 = func_args[0];
 		if (TYPE_NFA == arg0.type) {
 			const NfaWrapper& wrap = *static_cast<const NfaWrapper*>(arg0.get_ptr());
