@@ -10,17 +10,27 @@ using namespace Vata2::Nfa;
 using NfaId = size_t;
 
 // bookkeeping functions
+//
 extern "C" void nfa_set_debug_level(unsigned lvl);
-
-/** returns the number of NFAs that are kept track of */
+// returns the number of NFAs that are kept track of
 extern "C" size_t nfa_library_size();
+// clears all automata in the library
+extern "C" void nfa_clear_library();
 
 // mapping of VATA operations
 extern "C" NfaId nfa_init();
 extern "C" void nfa_free(NfaId id_nfa);
+extern "C" void nfa_copy(NfaId dst, NfaId src);
+
 extern "C" void nfa_add_initial(NfaId id_nfa, State state);
+extern "C" void nfa_remove_initial(NfaId id_nfa, State state);
 extern "C" bool nfa_is_initial(NfaId id_nfa, State state);
 extern "C" void nfa_add_final(NfaId id_nfa, State state);
+extern "C" void nfa_remove_final(NfaId id_nfa, State state);
+extern "C" bool nfa_is_final(NfaId id_nfa, State state);
+extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
+extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
+
 extern "C" void nfa_print(NfaId id_nfa);
 extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
 extern "C" NfaId nfa_union(NfaId id_lhs, NfaId id_rhs);
@@ -35,10 +45,19 @@ void nfa_set_debug_level(unsigned verbosity)
 	DEBUG_PRINT("VATA verbosity: " + std::to_string(Vata2::LOG_VERBOSITY));
 }
 
-extern "C" size_t nfa_library_size()
+size_t nfa_library_size()
 {
 	return mem.size();
 }
+
+void nfa_clear_library()
+{
+	for (auto it = mem.begin(); it != mem.end(); ++it) {
+		delete it->second;
+		mem.erase(it);
+	}
+}
+
 
 NfaId nfa_init()
 {
@@ -56,11 +75,33 @@ void nfa_free(NfaId id_nfa)
 	mem.erase(id_nfa);
 }
 
+void nfa_copy(NfaId dst, NfaId src)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[src];
+	Nfa* cp = mem[dst];
+
+	// TODO: inefficient
+	cp->initialstates = aut->initialstates;
+	cp->finalstates = aut->finalstates;
+
+	for (auto tr : *aut) {
+		cp->add_trans(tr);
+	}
+}
+
 void nfa_add_initial(NfaId id_nfa, State state)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
 	aut->initialstates.insert(state);
+}
+
+void nfa_remove_initial(NfaId id_nfa, State state)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+	aut->initialstates.erase(state);
 }
 
 bool nfa_is_initial(NfaId id_nfa, State state)
@@ -75,6 +116,36 @@ void nfa_add_final(NfaId id_nfa, State state)
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
 	aut->finalstates.insert(state);
+}
+
+void nfa_remove_final(NfaId id_nfa, State state)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+	aut->finalstates.erase(state);
+}
+
+bool nfa_is_final(NfaId id_nfa, State state)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+	return aut->has_final(state);
+}
+
+void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	aut->add_trans(src, symb, tgt);
+}
+
+bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	return aut->has_trans(src, symb, tgt);
 }
 
 void nfa_print(NfaId id_nfa)

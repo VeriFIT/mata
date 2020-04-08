@@ -247,7 +247,6 @@ public:
 	{ // {{{
 		for (const State& st : vec) { this->add_final(st); }
 	} // }}}
-
 	bool has_final(State state) const
 	{ // {{{
 		return Vata2::util::haskey(this->finalstates, state);
