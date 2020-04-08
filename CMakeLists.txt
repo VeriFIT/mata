@@ -77,3 +77,4 @@ enable_testing()
 # Process subdirectories
 add_subdirectory(src)
 add_subdirectory(cli)
+add_subdirectory(python_bind)
