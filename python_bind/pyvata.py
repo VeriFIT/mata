@@ -58,7 +58,7 @@ class NFA:
         g_vatalib.nfa_copy(tmp.aut, self.aut)
         return tmp
 
-    ########################### METHODS ###########################
+    #################### NFA MANIPULATION METHODS ######################
     def addInitial(self, state):
         """Adds an initial state"""
         assert type(state) == int
@@ -100,6 +100,15 @@ class NFA:
         assert type(src) == int and type(tgt) == int
         symb_num = NFA.symbToNum(symb)
         return True if g_vatalib.nfa_has_trans(self.aut, src, symb_num, tgt) else False
+
+    #################### STATIC METHODS FOR AUTOMATA OPERATIONS ######################
+    @classmethod
+    def union(cls, lhs, rhs):
+        """Creates a union of lhs and rhs"""
+        assert type(lhs) == NFA and type(rhs) == NFA
+        tmp = NFA()
+        g_vatalib.nfa_union(tmp.aut, lhs.aut, rhs.aut)
+        return tmp
 
 ################################## UNIT TESTS ##################################
 class NFATest(unittest.TestCase):
@@ -148,9 +157,15 @@ class NFATest(unittest.TestCase):
         aut1.removeFinal(42)
         self.assertTrue(aut2.isFinal(42))
 
-    def test_union(params):
-        assert False
-        pass
+    def test_union(self):
+        """Testing union"""
+        aut1 = NFA()
+        aut1.addInitial(41)
+        aut2 = NFA()
+        aut2.addFinal(42)
+        aut3 = NFA.union(aut1, aut2)
+        self.assertTrue(aut3.isInitial(41))
+        self.assertTrue(aut3.isFinal(42))
 
 
 

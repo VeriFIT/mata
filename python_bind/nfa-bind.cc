@@ -17,11 +17,12 @@ extern "C" size_t nfa_library_size();
 // clears all automata in the library
 extern "C" void nfa_clear_library();
 
-// mapping of VATA operations
+// constructors, destructors, etc.
 extern "C" NfaId nfa_init();
 extern "C" void nfa_free(NfaId id_nfa);
 extern "C" void nfa_copy(NfaId dst, NfaId src);
 
+// automata handling
 extern "C" void nfa_add_initial(NfaId id_nfa, State state);
 extern "C" void nfa_remove_initial(NfaId id_nfa, State state);
 extern "C" bool nfa_is_initial(NfaId id_nfa, State state);
@@ -30,10 +31,11 @@ extern "C" void nfa_remove_final(NfaId id_nfa, State state);
 extern "C" bool nfa_is_final(NfaId id_nfa, State state);
 extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
-
 extern "C" void nfa_print(NfaId id_nfa);
+
+// language operations
+extern "C" void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs);
 extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
-extern "C" NfaId nfa_union(NfaId id_lhs, NfaId id_rhs);
 
 /** Library of NFAs */
 std::unordered_map<NfaId, Nfa*> mem;
@@ -162,12 +164,11 @@ bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs)
 	return true;
 }
 
-NfaId nfa_union(NfaId id_lhs, NfaId id_rhs)
+void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* lhs = mem[id_lhs];
 	Nfa* rhs = mem[id_rhs];
-	NfaId rv = nfa_init();
-	*mem[rv] = union_norename(*lhs, *rhs);
-	return rv;
+	Nfa* dst = mem[id_dst];
+	union_norename(dst, *lhs, *rhs);
 }
