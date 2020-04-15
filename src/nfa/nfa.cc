@@ -845,6 +845,24 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
 } // revert }}}
 
 
+void Vata2::Nfa::minimize(
+	Nfa*               result,
+	const Nfa&         aut,
+	const StringDict&  params)
+{ // {{{
+	assert(nullptr != result);
+
+	DEBUG_PRINT("ignoring parameters of minimization and using default");
+
+	// TODO: make controllable using 'params', so far using Brzozowski's
+	// minimization (revert, determinize, revert, determinize)
+	Nfa tmp = revert(aut);
+	tmp = determinize(tmp);
+	tmp = revert(tmp);
+	*result = determinize(tmp);
+} // minimize }}}
+
+
 void Vata2::Nfa::construct(
 	Nfa*                                 aut,
 	const Vata2::Parser::ParsedSection&  parsec,

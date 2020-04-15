@@ -477,6 +477,23 @@ inline Nfa revert(const Nfa& aut)
 } // revert }}}
 
 
+/// Minimizes an NFA.  The method can be set using @p params
+void minimize(
+	Nfa*               result,
+	const Nfa&         aut,
+	const StringDict&  params = {});
+
+
+inline Nfa minimize(
+	const Nfa&         aut,
+	const StringDict&  params = {})
+{ // {{{
+	Nfa result;
+	minimize(&result, aut, params);
+	return result;
+} // minimize }}}
+
+
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
 /// one initial state and every state has at most one outgoing transition over
 /// every symbol.  Checks the whole automaton, not only the reachable part
