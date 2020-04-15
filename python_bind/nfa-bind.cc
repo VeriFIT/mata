@@ -22,13 +22,19 @@ extern "C" NfaId nfa_init();
 extern "C" void nfa_free(NfaId id_nfa);
 extern "C" void nfa_copy(NfaId dst, NfaId src);
 
-// automata handling
+// initial states
 extern "C" void nfa_add_initial(NfaId id_nfa, State state);
 extern "C" void nfa_remove_initial(NfaId id_nfa, State state);
 extern "C" bool nfa_is_initial(NfaId id_nfa, State state);
+extern "C" int  nfa_get_initial(NfaId id_nfa, char* buf, size_t buf_len);
+
+// final states
 extern "C" void nfa_add_final(NfaId id_nfa, State state);
 extern "C" void nfa_remove_final(NfaId id_nfa, State state);
 extern "C" bool nfa_is_final(NfaId id_nfa, State state);
+extern "C" int  nfa_get_final(NfaId id_nfa, char* buf, size_t buf_len);
+
+// transitions
 extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" void nfa_print(NfaId id_nfa);
@@ -36,6 +42,7 @@ extern "C" void nfa_print(NfaId id_nfa);
 // language operations
 extern "C" void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs);
 extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
+extern "C" void nfa_minimize(NfaId id_dst, NfaId id_nfa);
 
 /** Library of NFAs */
 std::unordered_map<NfaId, Nfa*> mem;
@@ -127,6 +134,63 @@ void nfa_remove_final(NfaId id_nfa, State state)
 	aut->finalstates.erase(state);
 }
 
+namespace {
+	template <class T, class Func>
+	int serialize_container(
+		char*                       buf,
+		size_t                      buf_len,
+		typename T::const_iterator  start,
+		typename T::const_iterator  finish,
+		Func                        f)
+	{
+		if (nullptr == buf) return -1;
+
+		// TODO: might be more efficient by writing into buf directly?
+		std::ostringstream os;
+		for (auto it = start; it != finish; ++it) {
+			if (it != start) os << ",";
+			os << std::to_string(*it);
+		}
+
+		if (os.str().size() >= buf_len) return -os.str().size();
+		memcpy(buf, os.str().c_str(), os.str().size());
+
+		return os.str().size();
+	}
+
+	template <class T, class Func>
+	inline int serialize_container(
+		char*     buf,
+		size_t    buf_len,
+		const T&  cont,
+		Func      f)
+	{
+		return serialize_container<T, Func>(buf, buf_len, cont.begin(), cont.end(), f);
+	}
+}
+
+int nfa_get_initial(NfaId id_nfa, char* buf, size_t buf_len)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	int rv = serialize_container(buf, buf_len, aut->initialstates,
+		[](State state){ return std::to_string(state);});
+
+	return rv;
+}
+
+int nfa_get_final(NfaId id_nfa, char* buf, size_t buf_len)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	int rv = serialize_container(buf, buf_len, aut->finalstates,
+		[](State state){ return std::to_string(state);});
+
+	return rv;
+}
+
 bool nfa_is_final(NfaId id_nfa, State state)
 {
 	DEBUG_PRINT("Some bound checking here...");
@@ -171,4 +235,12 @@ void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs)
 	Nfa* rhs = mem[id_rhs];
 	Nfa* dst = mem[id_dst];
 	union_norename(dst, *lhs, *rhs);
+}
+
+void nfa_minimize(NfaId id_dst, NfaId id_nfa)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+	Nfa* dst = mem[id_dst];
+	minimize(dst, *aut);
 }

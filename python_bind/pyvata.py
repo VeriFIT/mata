@@ -30,6 +30,7 @@ class NFA:
 
     @classmethod
     def symbToNum(cls, symb):
+        """Converts a symbol to a number to be used by VATA"""
         if symb in cls.__symbDict:
             return cls.__symbDict[symb]
         else:
@@ -39,8 +40,9 @@ class NFA:
             cls.__numDict[num] = symb
             return num
 
-    @classmethod
-    def clearLibrary(cls):
+    @staticmethod
+    def clearLibrary():
+        """Clears the automata library maintained by VATA"""
         g_vatalib.nfa_clear_library()
 
     ################ CONSTRUCTORS AND DESTRUCTORS #################
@@ -58,7 +60,25 @@ class NFA:
         g_vatalib.nfa_copy(tmp.aut, self.aut)
         return tmp
 
-    #################### NFA MANIPULATION METHODS ######################
+
+    ########################## AUXILIARY METHODS ##########################
+    def getStringListFromVATAFunction(self, vataFuncName, *args):
+        """Calls VATAFuncName TODO TODO TODO"""
+        # TODO: improve
+        buf_len = 128
+        buf = ctypes.create_string_buffer(buf_len)
+        rv = g_vatalib[vataFuncName](self.aut, buf, buf_len, *args)
+        if rv < 0:
+            raise Exception("returned error value from {}: {}".format(vataFuncName, rv))
+
+        out_str = buf.raw[:rv].decode('ascii')
+        if out_str == '':
+            return list()
+        out_list = out_str.split(',')
+        return out_list
+
+
+    ######################## INITIAL STATES ############################
     def addInitial(self, state):
         """Adds an initial state"""
         assert type(state) == int
@@ -74,6 +94,14 @@ class NFA:
         assert type(state) == int
         return True if g_vatalib.nfa_is_initial(self.aut, state) else False
 
+    def getInitial(self):
+        """Gets initial states"""
+        out_str_list = self.getStringListFromVATAFunction("nfa_get_initial")
+        init_states = set([int(x) for x in out_str_list])
+        return init_states
+
+
+    ######################### FINAL STATES #############################
     def addFinal(self, state):
         """Adds a final state"""
         assert type(state) == int
@@ -89,6 +117,14 @@ class NFA:
         assert type(state) == int
         return True if g_vatalib.nfa_is_final(self.aut, state) else False
 
+    def getFinal(self):
+        """Gets final states"""
+        out_str_list = self.getStringListFromVATAFunction("nfa_get_final")
+        fin_states = set([int(x) for x in out_str_list])
+        return fin_states
+
+
+    ######################### TRANSITIONS #############################
     def addTransition(self, src, symb, tgt):
         """Adds a transtion from src to tgt over symb"""
         assert type(src) == int and type(tgt) == int
@@ -101,9 +137,15 @@ class NFA:
         symb_num = NFA.symbToNum(symb)
         return True if g_vatalib.nfa_has_trans(self.aut, src, symb_num, tgt) else False
 
+    def minimize(self):
+        """Returns a minimizes automaton"""
+        tmp = NFA()
+        g_vatalib.nfa_minimize(tmp.aut, self.aut)
+        return tmp
+
     #################### STATIC METHODS FOR AUTOMATA OPERATIONS ######################
     @classmethod
-    def union(cls, lhs, rhs):
+    def union_of_disjoint(cls, lhs, rhs):
         """Creates a union of lhs and rhs"""
         assert type(lhs) == NFA and type(rhs) == NFA
         tmp = NFA()
@@ -132,6 +174,11 @@ class NFATest(unittest.TestCase):
         self.assertTrue(aut.isInitial(42))
         aut.removeInitial(42)
         self.assertFalse(aut.isInitial(42))
+        self.assertEqual(aut.getInitial(), set())
+        aut.addInitial(42)
+        self.assertEqual(aut.getInitial(), {42})
+        aut.addInitial(43)
+        self.assertEqual(aut.getInitial(), {42, 43})
 
     def test_final_states(self):
         """Testing adding and checking of final states"""
@@ -141,6 +188,11 @@ class NFATest(unittest.TestCase):
         self.assertTrue(aut.isFinal(42))
         aut.removeFinal(42)
         self.assertFalse(aut.isFinal(42))
+        self.assertEqual(aut.getFinal(), set())
+        aut.addFinal(42)
+        self.assertEqual(aut.getFinal(), {42})
+        aut.addFinal(43)
+        self.assertEqual(aut.getFinal(), {42, 43})
 
     def test_transitions_simple(self):
         """Testing adding and checking of transitions"""
@@ -163,9 +215,16 @@ class NFATest(unittest.TestCase):
         aut1.addInitial(41)
         aut2 = NFA()
         aut2.addFinal(42)
-        aut3 = NFA.union(aut1, aut2)
+        aut3 = NFA.union_of_disjoint(aut1, aut2)
         self.assertTrue(aut3.isInitial(41))
         self.assertTrue(aut3.isFinal(42))
+
+    def test_minimization(self):
+        """Testing minimization"""
+        aut1 = NFA()
+        aut2 = aut1.minimize()
+
+        assert False
 
 
 
