@@ -37,6 +37,9 @@ extern "C" int  nfa_get_final(NfaId id_nfa, char* buf, size_t buf_len);
 // transitions
 extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
+extern "C" int  nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len);
+
+// auxiliary
 extern "C" void nfa_print(NfaId id_nfa);
 
 // language operations
@@ -135,13 +138,13 @@ void nfa_remove_final(NfaId id_nfa, State state)
 }
 
 namespace {
-	template <class T, class Func>
+	template <class Iter, class Func>
 	int serialize_container(
-		char*                       buf,
-		size_t                      buf_len,
-		typename T::const_iterator  start,
-		typename T::const_iterator  finish,
-		Func                        f)
+		char*   buf,
+		size_t  buf_len,
+		Iter    start,
+		Iter    finish,
+		Func    f)
 	{
 		if (nullptr == buf) return -1;
 
@@ -149,7 +152,7 @@ namespace {
 		std::ostringstream os;
 		for (auto it = start; it != finish; ++it) {
 			if (it != start) os << ",";
-			os << std::to_string(*it);
+			os << f(*it);
 		}
 
 		if (os.str().size() >= buf_len) return -os.str().size();
@@ -165,7 +168,7 @@ namespace {
 		const T&  cont,
 		Func      f)
 	{
-		return serialize_container<T, Func>(buf, buf_len, cont.begin(), cont.end(), f);
+		return serialize_container(buf, buf_len, cont.begin(), cont.end(), f);
 	}
 }
 
@@ -212,6 +215,18 @@ bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
 	Nfa* aut = mem[id_nfa];
 
 	return aut->has_trans(src, symb, tgt);
+}
+
+int nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	int rv = serialize_container(buf, buf_len, aut->begin(), aut->end(),
+		[](const Trans& trans){ return std::to_string(trans.src) + " " +
+			std::to_string(trans.symb) + " " + std::to_string(trans.tgt);});
+
+	return rv;
 }
 
 void nfa_print(NfaId id_nfa)

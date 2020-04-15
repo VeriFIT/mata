@@ -40,6 +40,14 @@ class NFA:
             cls.__numDict[num] = symb
             return num
 
+    @classmethod
+    def numToSymb(cls, num):
+        """Converts a number used by VATA to a symbol"""
+        if num in cls.__numDict:
+            return cls.__numDict[num]
+        else:
+            raise Exception("no translation for {} in {}".format(num, cls.__numDict))
+
     @staticmethod
     def clearLibrary():
         """Clears the automata library maintained by VATA"""
@@ -132,18 +140,34 @@ class NFA:
         g_vatalib.nfa_add_trans(self.aut, src, symb_num, tgt)
 
     def hasTransition(self, src, symb, tgt):
-        """Checks whether there is a transtion from src to tgt over symb"""
+        """Checks whether there is a transition from src to tgt over symb"""
         assert type(src) == int and type(tgt) == int
         symb_num = NFA.symbToNum(symb)
         return True if g_vatalib.nfa_has_trans(self.aut, src, symb_num, tgt) else False
 
+    def getTransitions(self):
+        """Gets all transitions of the automaton"""
+        out_str_list = self.getStringListFromVATAFunction("nfa_get_transitions")
+        trans_set = set()
+        for trans_str in out_str_list:
+            trans_split = trans_str.split(' ')
+            assert len(trans_split) == 3
+            symb = NFA.numToSymb(int(trans_split[1]))
+            trans = (int(trans_split[0]), symb, int(trans_split[2]))
+            trans_set.add(trans)
+
+        return trans_set
+
+
+    ############################### AUTOMATA OPERATIONS ########################
     def minimize(self):
-        """Returns a minimizes automaton"""
+        """Returns a minimized automaton"""
         tmp = NFA()
         g_vatalib.nfa_minimize(tmp.aut, self.aut)
         return tmp
 
-    #################### STATIC METHODS FOR AUTOMATA OPERATIONS ######################
+
+    ################# STATIC METHODS FOR AUTOMATA OPERATIONS ###################
     @classmethod
     def union_of_disjoint(cls, lhs, rhs):
         """Creates a union of lhs and rhs"""
@@ -198,8 +222,10 @@ class NFATest(unittest.TestCase):
         """Testing adding and checking of transitions"""
         aut = NFA()
         self.assertFalse(aut.hasTransition(41, "hello", 42))
+        self.assertEqual(aut.getTransitions(), set())
         aut.addTransition(41, "hello", 42)
         self.assertTrue(aut.hasTransition(41, "hello", 42))
+        self.assertEqual(aut.getTransitions(), {(41, "hello", 42)})
 
     def test_copy(self):
         """Testing copying"""
