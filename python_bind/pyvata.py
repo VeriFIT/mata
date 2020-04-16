@@ -70,7 +70,7 @@ class NFA:
 
 
     ########################## AUXILIARY METHODS ##########################
-    def getStringListFromVATAFunction(self, vataFuncName, *args):
+    def __getStringListFromVATAFunction(self, vataFuncName, *args):
         """Calls VATAFuncName TODO TODO TODO"""
         # TODO: improve
         buf_len = 128
@@ -104,7 +104,7 @@ class NFA:
 
     def getInitial(self):
         """Gets initial states"""
-        out_str_list = self.getStringListFromVATAFunction("nfa_get_initial")
+        out_str_list = self.__getStringListFromVATAFunction("nfa_get_initial")
         init_states = set([int(x) for x in out_str_list])
         return init_states
 
@@ -127,7 +127,7 @@ class NFA:
 
     def getFinal(self):
         """Gets final states"""
-        out_str_list = self.getStringListFromVATAFunction("nfa_get_final")
+        out_str_list = self.__getStringListFromVATAFunction("nfa_get_final")
         fin_states = set([int(x) for x in out_str_list])
         return fin_states
 
@@ -147,7 +147,7 @@ class NFA:
 
     def getTransitions(self):
         """Gets all transitions of the automaton"""
-        out_str_list = self.getStringListFromVATAFunction("nfa_get_transitions")
+        out_str_list = self.__getStringListFromVATAFunction("nfa_get_transitions")
         trans_set = set()
         for trans_str in out_str_list:
             trans_split = trans_str.split(' ')
@@ -166,15 +166,26 @@ class NFA:
         g_vatalib.nfa_minimize(tmp.aut, self.aut)
         return tmp
 
+    def acceptsEpsilon(self):
+        """Checkes whether the automaton accepts epsilon"""
+        return True if g_vatalib.nfa_accepts_epsilon(self.aut) == 1 else False
+
+
+    # TODO: trim (odstran zbytecne prechody/stavy)
+
 
     ################# STATIC METHODS FOR AUTOMATA OPERATIONS ###################
     @classmethod
-    def union_of_disjoint(cls, lhs, rhs):
-        """Creates a union of lhs and rhs"""
+    def union(cls, lhs, rhs):
+        """Creates a union of lhs and rhs.  The states will be renamed to avoid collision."""
         assert type(lhs) == NFA and type(rhs) == NFA
         tmp = NFA()
         g_vatalib.nfa_union(tmp.aut, lhs.aut, rhs.aut)
         return tmp
+
+    # TODO: test inkluze
+
+    # TODO: test na epsilon
 
 ################################## UNIT TESTS ##################################
 class NFATest(unittest.TestCase):
@@ -241,13 +252,39 @@ class NFATest(unittest.TestCase):
         aut1.addInitial(41)
         aut2 = NFA()
         aut2.addFinal(42)
-        aut3 = NFA.union_of_disjoint(aut1, aut2)
+        aut3 = NFA.union(aut1, aut2)
         self.assertTrue(aut3.isInitial(41))
         self.assertTrue(aut3.isFinal(42))
+
+    def test_accepts_epsilon(self):
+        """Testing accepts epsilon"""
+        aut = NFA()
+        self.assertFalse(aut.acceptsEpsilon())
+        aut.addInitial(1)
+        self.assertFalse(aut.acceptsEpsilon())
+        aut.addFinal(2)
+        self.assertFalse(aut.acceptsEpsilon())
+        aut.addInitial(2)
+        self.assertTrue(aut.acceptsEpsilon())
 
     def test_minimization(self):
         """Testing minimization"""
         aut1 = NFA()
+        aut1.addInitial(1)
+        aut1.addTransition(1, "a", 1)
+        aut1.addTransition(1, "b", 1)
+
+        aut1.addTransition(1, "a", 2)
+
+        aut1.addTransition(2, "a", 3)
+        aut1.addTransition(2, "b", 3)
+
+        aut1.addTransition(3, "a", 4)
+        aut1.addTransition(3, "b", 4)
+
+        aut1.addTransition(4, "a", 5)
+        aut1.addTransition(4, "b", 5)
+
         aut2 = aut1.minimize()
 
         assert False

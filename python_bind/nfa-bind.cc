@@ -44,8 +44,10 @@ extern "C" void nfa_print(NfaId id_nfa);
 
 // language operations
 extern "C" void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs);
-extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
 extern "C" void nfa_minimize(NfaId id_dst, NfaId id_nfa);
+
+extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
+extern "C" bool nfa_accepts_epsilon(NfaId id_aut);
 
 /** Library of NFAs */
 std::unordered_map<NfaId, Nfa*> mem;
@@ -232,7 +234,6 @@ int nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len)
 void nfa_print(NfaId id_nfa)
 {
 	DEBUG_PRINT("Some bound checking here...");
-
 	Nfa* aut = mem[id_nfa];
 	DEBUG_PRINT(std::to_string(*aut));
 }
@@ -243,13 +244,21 @@ bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs)
 	return true;
 }
 
+bool nfa_accepts_epsilon(NfaId id_aut)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_aut];
+
+	return accepts_epsilon(*aut);
+}
+
 void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* lhs = mem[id_lhs];
 	Nfa* rhs = mem[id_rhs];
 	Nfa* dst = mem[id_dst];
-	union_norename(dst, *lhs, *rhs);
+	*dst = union_rename(*lhs, *rhs); // using the safe version
 }
 
 void nfa_minimize(NfaId id_dst, NfaId id_nfa)

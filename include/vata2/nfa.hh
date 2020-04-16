@@ -375,6 +375,9 @@ inline bool is_universal(
 	return is_universal(aut, alphabet, nullptr, params);
 } // }}}
 
+/// Does the language of the automaton contain epsilon?
+bool accepts_epsilon(const Nfa& aut);
+
 /// Checks inclusion of languages of two automata (smaller <= bigger)?
 bool is_incl(
 	const Nfa&         smaller,
@@ -408,6 +411,12 @@ inline Nfa union_norename(
 	union_norename(&result, lhs, rhs);
 	return result;
 } // union_norename }}}
+
+/// Compute union of a pair of automata
+/// The states of the automata do not need to be disjoint; renaming will be done
+Nfa union_rename(
+	const Nfa&  lhs,
+	const Nfa&  rhs);
 
 /// Compute intersection of a pair of automata
 void intersection(

@@ -315,26 +315,21 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 	lhs_states.insert(lhs.initialstates.begin(), lhs.initialstates.end());
 	lhs_states.insert(lhs.finalstates.begin(), lhs.finalstates.end());
 
-	for (const auto& trans : lhs)
-	{
+	for (const auto& trans : lhs) {
 		lhs_states.insert({trans.src, trans.tgt});
 	}
 
 	// for every state found in rhs, check its presence in lhs_states
-	for (const auto& rhs_st : rhs.initialstates)
-	{
+	for (const auto& rhs_st : rhs.initialstates) {
 		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
-	for (const auto& rhs_st : rhs.finalstates)
-	{
+	for (const auto& rhs_st : rhs.finalstates) {
 		if (haskey(lhs_states, rhs_st)) { return false; }
 	}
 
-	for (const auto& trans : rhs)
-	{
-		if (haskey(lhs_states, trans.src) || haskey(lhs_states, trans.tgt))
-		{
+	for (const auto& trans : rhs) {
+		if (haskey(lhs_states, trans.src) || haskey(lhs_states, trans.tgt)) {
 			return false;
 		}
 	}
@@ -370,6 +365,49 @@ void Vata2::Nfa::union_norename(
 	for (const auto& trans : lhs) { result->add_trans(trans); }
 	for (const auto& trans : rhs) { result->add_trans(trans); }
 } // union_norename }}}
+
+
+namespace {
+/// Copies @p src to @p result while peforming a (Haskell-like) map @p f on states
+template <class Func>
+void copy_state_map(Nfa* result, const Nfa& src, Func f)
+{ // {{{
+	assert(nullptr != result);
+
+	for (State st : src.initialstates) { result->initialstates.insert(f(st)); }
+	for (State st : src.finalstates) { result->finalstates.insert(f(st)); }
+
+	for (const Trans& tr : src) {
+		result->add_trans(f(tr.src), tr.symb, f(tr.tgt));
+	}
+} // copy_state_map }}}
+}
+
+
+Nfa Vata2::Nfa::union_rename(
+	const Nfa&  lhs,
+	const Nfa&  rhs)
+{ // {{{
+	Nfa result;
+	State cnt = 0;
+	std::unordered_map<State, State> dict;
+
+	// function used to encapsulate translation of states
+	auto transl = [&cnt, &dict](State st) {
+		auto it_bool = dict.insert({ st, cnt });
+		if (it_bool.second) { // if insertion happened
+			++cnt;
+		}
+
+		return it_bool.first->first;
+	};
+
+	copy_state_map(&result, lhs, transl);
+	dict.clear();
+	copy_state_map(&result, rhs, transl);
+
+	return result;
+} // union_rename }}}
 
 
 void Vata2::Nfa::intersection(
@@ -1067,6 +1105,15 @@ bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 
 	return true;
 } // is_complete }}}
+
+bool Vata2::Nfa::accepts_epsilon(const Nfa& aut)
+{ // {{{
+	for (State st : aut.initialstates) {
+		if (aut.finalstates.find(st) != aut.finalstates.end()) return true;
+	}
+
+	return false;
+} // accepts_epsilon }}}
 
 std::ostream& std::operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap)
 { // {{{
