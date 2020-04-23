@@ -72,12 +72,23 @@ class NFA:
     ########################## AUXILIARY METHODS ##########################
     def __getStringListFromVATAFunction(self, vataFuncName, *args):
         """Calls VATAFuncName TODO TODO TODO"""
-        # TODO: improve
-        buf_len = 128
-        buf = ctypes.create_string_buffer(buf_len)
-        rv = g_vatalib[vataFuncName](self.aut, buf, buf_len, *args)
-        if rv < 0:
-            raise Exception("returned error value from {}: {}".format(vataFuncName, rv))
+        def f(aut, buf_len, *args):
+            buf = ctypes.create_string_buffer(buf_len)
+            rv = g_vatalib[vataFuncName](self.aut, buf, buf_len, *args)
+            return rv, buf
+
+        INIT_BUF_LEN = 1024
+        rv, buf = f(self.aut, INIT_BUF_LEN, *args)   # first attempt
+        if rv < 0:          # if there was some problem
+            if rv == -1:    # other error
+                raise Exception("error while communicating with VATA: " +
+                    "returned error value from {}: {}".format(vataFuncName, rv))
+            else:           # memory too small
+                rv, buf = f(self.aut, -rv, *args)   # call again with larger memory
+                if rv < 0:
+                    raise Exception("error while communicating with VATA " +
+                        "(second attempt): " +
+                        "returned error value from {}: {}".format(vataFuncName, rv))
 
         out_str = buf.raw[:rv].decode('ascii')
         if out_str == '':
