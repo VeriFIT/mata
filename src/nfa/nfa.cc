@@ -574,6 +574,36 @@ bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
 	return false;
 } // is_lang_empty_cex }}}
 
+std::unordered_set<State> Vata2::Nfa::get_fwd_reach_states(const Nfa& aut)
+{
+	std::list<State> worklist(
+		aut.initialstates.begin(), aut.initialstates.end());
+	std::unordered_set<State> processed(
+		aut.initialstates.begin(), aut.initialstates.end());
+
+	while (!worklist.empty())
+	{
+		State state = worklist.front();
+		worklist.pop_front();
+
+		for (const auto& symb_stateset : aut[state])
+		{
+			const StateSet& stateset = symb_stateset.second;
+			for (const auto& tgt_state : stateset)
+			{
+				bool inserted;
+				tie(std::ignore, inserted) = processed.insert(tgt_state);
+				if (inserted)
+				{
+					worklist.push_back(tgt_state);
+				}
+			}
+		}
+	}
+
+	return processed;
+}
+
 
 void Vata2::Nfa::determinize(
 	Nfa*        result,
@@ -1109,7 +1139,7 @@ bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 bool Vata2::Nfa::accepts_epsilon(const Nfa& aut)
 { // {{{
 	for (State st : aut.initialstates) {
-		if (aut.finalstates.find(st) != aut.finalstates.end()) return true;
+		if (haskey(aut.finalstates, st)) return true;
 	}
 
 	return false;

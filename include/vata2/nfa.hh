@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 // VATA2 headers
@@ -359,6 +360,8 @@ bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
+/// Retrieves the states reachable from initial states
+std::unordered_set<State> get_fwd_reach_states(const Nfa& aut);
 
 /// Is the language of the automaton universal?
 bool is_universal(

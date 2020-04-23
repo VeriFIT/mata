@@ -170,6 +170,22 @@ class NFA:
         return trans_set
 
 
+    ################################# FOR DEBUGGING ############################
+    def __str__(self):
+        initial = self.getInitial()
+        final = self.getFinal()
+        trans = self.getTransitions()
+        trans_str = ["{} -({})-> {}".format(src, symb, tgt) for (src, symb, tgt) in trans]
+        return "<init: {}, final: {}, trans: {}>".format(initial, final, trans_str)
+
+    ############################## AUXILIARY OPERATIONS ########################
+    def getFwdReachStates(self):
+        """Gets states reachable from initial states"""
+        out_str_list = self.__getStringListFromVATAFunction("nfa_get_fwd_reach_states")
+        fwd_states = set([int(x) for x in out_str_list])
+        return fwd_states
+
+
     ############################### AUTOMATA OPERATIONS ########################
     def minimize(self):
         """Returns a minimized automaton"""
@@ -195,8 +211,6 @@ class NFA:
         return tmp
 
     # TODO: test inkluze
-
-    # TODO: test na epsilon
 
 ################################## UNIT TESTS ##################################
 class NFATest(unittest.TestCase):
@@ -278,6 +292,20 @@ class NFATest(unittest.TestCase):
         aut.addInitial(2)
         self.assertTrue(aut.acceptsEpsilon())
 
+    def test_fwd_reach_states(self):
+        """Testing collection of fwd reachable states"""
+        aut = NFA()
+        aut.addInitial(1)
+        aut.addTransition(1, "a", 1)
+        aut.addTransition(1, "b", 2)
+        aut.addTransition(2, "a", 3)
+        aut.addTransition(3, "a", 4)
+        aut.addTransition(8, "b", 4)
+        aut.addInitial(7)
+        aut.addFinal(42)
+        self.assertEqual(aut.getFwdReachStates(), {1, 2, 3, 4, 7})
+
+
     def test_minimization(self):
         """Testing minimization"""
         aut1 = NFA()
@@ -296,10 +324,12 @@ class NFATest(unittest.TestCase):
         aut1.addTransition(4, "a", 5)
         aut1.addTransition(4, "b", 5)
 
+        aut1.addFinal(5)
+
         aut2 = aut1.minimize()
+        aut2_reach = aut2.getFwdReachStates()
 
-        assert False
-
+        self.assertEqual(len(aut2_reach), 16)
 
 
 ###########################################

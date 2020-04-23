@@ -39,6 +39,9 @@ extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" int  nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len);
 
+// some more getters
+extern "C" int  nfa_get_fwd_reach_states(NfaId id_nfa, char* buf, size_t buf_len);
+
 // auxiliary
 extern "C" void nfa_print(NfaId id_nfa);
 
@@ -227,6 +230,19 @@ int nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len)
 	int rv = serialize_container(buf, buf_len, aut->begin(), aut->end(),
 		[](const Trans& trans){ return std::to_string(trans.src) + " " +
 			std::to_string(trans.symb) + " " + std::to_string(trans.tgt);});
+
+	return rv;
+}
+
+int nfa_get_fwd_reach_states(NfaId id_nfa, char* buf, size_t buf_len)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+
+	auto fwd_states = get_fwd_reach_states(*aut);
+
+	int rv = serialize_container(buf, buf_len, fwd_states,
+		[](State state){ return std::to_string(state);});
 
 	return rv;
 }
