@@ -399,7 +399,7 @@ Nfa Vata2::Nfa::union_rename(
 			++cnt;
 		}
 
-		return it_bool.first->first;
+		return it_bool.first->second;
 	};
 
 	copy_state_map(&result, lhs, transl);

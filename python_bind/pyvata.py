@@ -291,10 +291,12 @@ class NFATest(unittest.TestCase):
         aut1 = NFA()
         aut1.addInitial(41)
         aut2 = NFA()
-        aut2.addFinal(42)
+        aut2.addInitial(41)
+        aut2.addFinal(41)
         aut3 = NFA.union(aut1, aut2)
-        self.assertTrue(aut3.isInitial(41))
-        self.assertTrue(aut3.isFinal(42))
+        self.assertEqual(len(aut3.getInitial()), 2)
+        self.assertEqual(len(aut3.getFinal()), 1)
+
 
     def test_accepts_epsilon(self):
         """Testing accepts epsilon"""
