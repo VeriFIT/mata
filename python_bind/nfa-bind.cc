@@ -51,7 +51,7 @@ extern "C" void nfa_minimize(NfaId id_dst, NfaId id_nfa);
 extern "C" void nfa_remove_epsilon(NfaId id_dst, NfaId id_nfa, Symbol epsilon);
 
 // language tests
-extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
+extern "C" bool nfa_is_incl(NfaId id_lhs, NfaId id_rhs);
 extern "C" bool nfa_accepts_epsilon(NfaId id_aut);
 
 /** Library of NFAs */
@@ -256,10 +256,15 @@ void nfa_print(NfaId id_nfa)
 	DEBUG_PRINT(std::to_string(*aut));
 }
 
-bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs)
+bool nfa_is_incl(NfaId id_lhs, NfaId id_rhs)
 {
-	assert(false);
-	return true;
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* lhs = mem[id_lhs];
+	Nfa* rhs = mem[id_rhs];
+
+	DirectAlphabet alph;
+	bool rv = is_incl(*lhs, *rhs, alph);
+	return rv;
 }
 
 bool nfa_accepts_epsilon(NfaId id_aut)

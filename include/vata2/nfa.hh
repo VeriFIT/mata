@@ -368,7 +368,7 @@ bool is_universal(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Word*              cex = nullptr,
-	const StringDict&  params = {});
+	const StringDict&  params = {{"algo", "antichains"}});
 
 inline bool is_universal(
 	const Nfa&         aut,
@@ -387,7 +387,7 @@ bool is_incl(
 	const Nfa&         bigger,
 	const Alphabet&    alphabet,
 	Word*              cex = nullptr,
-	const StringDict&  params = {});
+	const StringDict&  params = {{"algo", "antichains"}});
 
 inline bool is_incl(
 	const Nfa&         smaller,

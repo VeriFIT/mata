@@ -225,6 +225,13 @@ class NFA:
         g_vatalib.nfa_union(tmp.aut, lhs.aut, rhs.aut)
         return tmp
 
+    @classmethod
+    def isIncl(cls, lhs, rhs):
+        """Tests inclusion of languages of two NFAs."""
+        assert type(lhs) == NFA and type(rhs) == NFA
+        rv = g_vatalib.nfa_is_incl(lhs.aut, rhs.aut)
+        return rv
+
     # TODO: test inkluze
 
 ################################## UNIT TESTS ##################################
@@ -297,7 +304,6 @@ class NFATest(unittest.TestCase):
         self.assertEqual(len(aut3.getInitial()), 2)
         self.assertEqual(len(aut3.getFinal()), 1)
 
-
     def test_accepts_epsilon(self):
         """Testing accepts epsilon"""
         aut = NFA()
@@ -347,6 +353,11 @@ class NFATest(unittest.TestCase):
         aut2_reach = aut2.getFwdReachStates()
 
         self.assertEqual(len(aut2_reach), 16)
+        self.assertTrue(NFA.isIncl(aut1, aut2))
+        self.assertTrue(NFA.isIncl(aut2, aut1))
+        aut1.addTransition(1, "b", 2)
+        self.assertFalse(NFA.isIncl(aut1, aut2))
+        self.assertTrue(NFA.isIncl(aut2, aut1))
 
     def test_removeEpsilon(self):
         """Testing epsilon removing"""
@@ -376,6 +387,11 @@ class NFATest(unittest.TestCase):
         self.assertFalse(aut2.isInitial(2))
         self.assertFalse(aut2.isInitial(3))
         self.assertFalse(aut2.isInitial(4))
+
+    def test_isIncl(self):
+        """Testing language inclusion."""
+        # TODO: write some tests
+        assert True
 
 
 ###########################################
