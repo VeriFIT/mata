@@ -488,6 +488,16 @@ inline Nfa revert(const Nfa& aut)
 	return result;
 } // revert }}}
 
+/// Removing epsilon transitions
+void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
+
+inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
+{ // {{{
+	Nfa result;
+	remove_epsilon(&result, aut, epsilon);
+	return result;
+} // }}}
+
 
 /// Minimizes an NFA.  The method can be set using @p params
 void minimize(

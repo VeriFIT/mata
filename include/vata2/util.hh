@@ -48,7 +48,7 @@
 #define DEBUG_VM_HIGH_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(3, "debug VM", x); }
 #define DEBUG_VM_LOW_PRINT(x) { PRINT_VERBOSE_LVL(4, "debug VM", x); }
 #define DEBUG_VM_LOW_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(4, "debug VM", x); }
-#define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning: ", x); }
+#define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning", x); }
 
 namespace Vata2
 {
@@ -201,8 +201,9 @@ template <class A> std::string to_string(const std::list<A>& vec);
 template <class A> std::string to_string(const std::stack<A>& stck);
 template <class A> std::string to_string(const std::function<A>& func);
 template <class A, class B> std::string to_string(const std::pair<A, B>& p);
-template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
 template <class A, class B> std::string to_string(const std::map<A, B>& mp);
+template <class A, class B> std::string to_string(const std::unordered_map<A, B>& unmap);
+template <class A, class B> std::string to_string(const std::unordered_multimap<A, B>& unmmap);
 
 // }}}
 
@@ -255,6 +256,8 @@ std::string to_string(const std::list<A>& vec)
 	return result;
 } // to_string(std::list) }}}
 
+// TODO: the following functions are similar
+
 /** unordered_map to string */
 template <class A, class B>
 std::string to_string(const std::unordered_map<A, B>& unmap)
@@ -294,6 +297,27 @@ std::string to_string(const std::map<A, B>& mp)
 
 	return result;
 } // to_string(std::map) }}}
+
+/** unordered_multimap to string */
+template <class A, class B>
+std::string to_string(const std::unordered_multimap<A, B>& unmap)
+{ // {{{
+	std::string result = "{";
+	bool first = true;
+	for (auto key_val_pair : unmap)
+	{
+		if (!first) { result += ", "; }
+		first = false;
+		result +=
+			std::to_string(key_val_pair.first) +
+			" -> " +
+			std::to_string(key_val_pair.second);
+	}
+	result += "}";
+
+	return result;
+} // to_string(std::unordered_multimap) }}}
+
 
 /** set to string */
 template <class A>

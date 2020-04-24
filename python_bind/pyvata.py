@@ -53,6 +53,12 @@ class NFA:
         """Clears the automata library maintained by VATA"""
         g_vatalib.nfa_clear_library()
 
+    @staticmethod
+    def setDebugLevel(level):
+        """Sets VATA's debug level"""
+        assert type(level) == int
+        g_vatalib.nfa_set_debug_level(level)
+
     ################ CONSTRUCTORS AND DESTRUCTORS #################
     def __init__(self):
         """The constructor"""
@@ -193,6 +199,15 @@ class NFA:
         g_vatalib.nfa_minimize(tmp.aut, self.aut)
         return tmp
 
+    def removeEpsilon(self, epsilon):
+        """Removes epsilon transitions from the automaton (preserving language)"""
+        tmp = NFA()
+        eps_num = NFA.symbToNum(epsilon)
+        g_vatalib.nfa_remove_epsilon(tmp.aut, self.aut, eps_num)
+        return tmp
+
+
+    ################################## LANGUAGE TESTS ##########################
     def acceptsEpsilon(self):
         """Checkes whether the automaton accepts epsilon"""
         return True if g_vatalib.nfa_accepts_epsilon(self.aut) == 1 else False
@@ -331,7 +346,37 @@ class NFATest(unittest.TestCase):
 
         self.assertEqual(len(aut2_reach), 16)
 
+    def test_removeEpsilon(self):
+        """Testing epsilon removing"""
+        aut1 = NFA()
+
+        aut1.addInitial(1)
+        aut1.addTransition(1, "a", 1)
+        aut1.addTransition(1, "b", 2)
+        aut1.addTransition(2, "a", 3)
+        aut1.addTransition(3, "a", 4)
+        aut1.addTransition(3, "a", 5)
+        aut1.addTransition(5, "b", 4)
+        aut1.addFinal(4)
+
+        aut2 = aut1.removeEpsilon("a")
+
+        self.assertTrue(aut2.isInitial(1))
+        self.assertTrue(aut2.hasTransition(1, "b", 2))
+        self.assertTrue(aut2.hasTransition(2, "b", 4))
+        self.assertTrue(aut2.isFinal(2))
+        self.assertTrue(aut2.isFinal(4))
+
+        self.assertFalse(aut2.hasTransition(1, "b", 1))
+        self.assertFalse(aut2.hasTransition(2, "b", 2))
+        self.assertFalse(aut2.hasTransition(4, "b", 4))
+        self.assertFalse(aut2.isFinal(1))
+        self.assertFalse(aut2.isInitial(2))
+        self.assertFalse(aut2.isInitial(3))
+        self.assertFalse(aut2.isInitial(4))
+
 
 ###########################################
 if __name__ == '__main__':
+    NFA.setDebugLevel(0)
     unittest.main()

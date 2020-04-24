@@ -48,7 +48,9 @@ extern "C" void nfa_print(NfaId id_nfa);
 // language operations
 extern "C" void nfa_union(NfaId id_dst, NfaId id_lhs, NfaId id_rhs);
 extern "C" void nfa_minimize(NfaId id_dst, NfaId id_nfa);
+extern "C" void nfa_remove_epsilon(NfaId id_dst, NfaId id_nfa, Symbol epsilon);
 
+// language tests
 extern "C" bool nfa_test_inclusion(NfaId id_lhs, NfaId id_rhs);
 extern "C" bool nfa_accepts_epsilon(NfaId id_aut);
 
@@ -283,4 +285,12 @@ void nfa_minimize(NfaId id_dst, NfaId id_nfa)
 	Nfa* aut = mem[id_nfa];
 	Nfa* dst = mem[id_dst];
 	minimize(dst, *aut);
+}
+
+void nfa_remove_epsilon(NfaId id_dst, NfaId id_nfa, Symbol epsilon)
+{
+	DEBUG_PRINT("Some bound checking here...");
+	Nfa* aut = mem[id_nfa];
+	Nfa* dst = mem[id_dst];
+	remove_epsilon(dst, *aut, epsilon);
 }

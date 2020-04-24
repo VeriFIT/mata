@@ -913,6 +913,59 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
 } // revert }}}
 
 
+void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
+{ // {{{
+	assert(nullptr != result);
+
+	// cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
+	std::unordered_map<State, StateSet> eps_closure;
+
+	// TODO: grossly inefficient
+	// first we compute the epsilon closure
+	for (auto trans : aut) { // initialize
+		auto it_ins_pair = eps_closure.insert({ trans.src, {trans.src} });
+		if (trans.symb == epsilon) {
+			StateSet& closure = it_ins_pair.first->second;
+			closure.insert(trans.tgt);
+		}
+	}
+
+	bool changed = true;
+	while (changed) { // compute the fixpoint
+		changed = false;
+		for (auto trans : aut) {
+			if (trans.symb == epsilon) {
+				StateSet& src_eps_cl = eps_closure[trans.src];
+				const StateSet& tgt_eps_cl = eps_closure[trans.tgt];
+
+				for (State st : tgt_eps_cl) {
+					auto it_ins_pair = src_eps_cl.insert(st);
+					if (it_ins_pair.second) changed = true;
+				}
+			}
+		}
+	}
+
+	// now we construct the automaton without epsilon transitions
+	result->initialstates.insert(aut.initialstates.begin(), aut.initialstates.end());
+	result->finalstates.insert(aut.finalstates.begin(), aut.finalstates.end());
+	for (auto state_closure_pair : eps_closure) { // for every state
+		State src_state = state_closure_pair.first;
+		for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
+			if (aut.has_final(eps_cl_state)) result->add_final(src_state);
+			for (auto symb_set : aut[eps_cl_state]) {
+				if (symb_set.first == epsilon) continue;
+
+				// TODO: this could be done more efficiently if we had a better add_trans method
+				for (State tgt_state : symb_set.second) {
+					result->add_trans(src_state, symb_set.first, tgt_state);
+				}
+			}
+		}
+	}
+} // remove_epsilon }}}
+
+
 void Vata2::Nfa::minimize(
 	Nfa*               result,
 	const Nfa&         aut,
