@@ -1,5 +1,6 @@
 // TODO: add header
 
+#include <cstring>
 #include <limits>
 
 #include <vata2/nfa.hh>
@@ -163,7 +164,7 @@ namespace {
 		}
 
 		if (os.str().size() > buf_len) return -os.str().size();
-		memcpy(buf, os.str().c_str(), os.str().size());
+		std::memcpy(buf, os.str().c_str(), os.str().size());
 
 		return os.str().size();
 	}
