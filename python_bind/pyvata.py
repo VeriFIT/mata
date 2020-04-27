@@ -117,7 +117,8 @@ class NFA:
     def isInitial(self, state):
         """Checks whether a state is initial"""
         assert type(state) == int
-        return True if g_vatalib.nfa_is_initial(self.aut, state) else False
+        rv = g_vatalib.nfa_is_initial(self.aut, state)
+        return True if rv != 0 else False     # VATA returns int
 
     def getInitial(self):
         """Gets initial states"""
@@ -140,7 +141,8 @@ class NFA:
     def isFinal(self, state):
         """Checks whether a state is final"""
         assert type(state) == int
-        return True if g_vatalib.nfa_is_final(self.aut, state) else False
+        rv = g_vatalib.nfa_is_final(self.aut, state)
+        return True if rv != 0 else False     # VATA returns int
 
     def getFinal(self):
         """Gets final states"""
@@ -182,7 +184,8 @@ class NFA:
         final = self.getFinal()
         trans = self.getTransitions()
         trans_str = ["{} -({})-> {}".format(src, symb, tgt) for (src, symb, tgt) in trans]
-        return "<init: {}, final: {}, trans: {}>".format(initial, final, trans_str)
+        return "<AUT{}; init: {}, final: {}, trans: {}>".format(self.aut,
+            initial, final, trans_str)
 
     ############################## AUXILIARY OPERATIONS ########################
     def getFwdReachStates(self):

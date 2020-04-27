@@ -974,6 +974,9 @@ void Vata2::Nfa::minimize(
 	assert(nullptr != result);
 
 	DEBUG_PRINT("ignoring parameters of minimization and using default");
+	assert(&params);
+
+	// TODO: remove useless states before we start doing anything
 
 	// TODO: make controllable using 'params', so far using Brzozowski's
 	// minimization (revert, determinize, revert, determinize)

@@ -26,18 +26,18 @@ extern "C" void nfa_copy(NfaId dst, NfaId src);
 // initial states
 extern "C" void nfa_add_initial(NfaId id_nfa, State state);
 extern "C" void nfa_remove_initial(NfaId id_nfa, State state);
-extern "C" bool nfa_is_initial(NfaId id_nfa, State state);
+extern "C" int  nfa_is_initial(NfaId id_nfa, State state);
 extern "C" int  nfa_get_initial(NfaId id_nfa, char* buf, size_t buf_len);
 
 // final states
 extern "C" void nfa_add_final(NfaId id_nfa, State state);
 extern "C" void nfa_remove_final(NfaId id_nfa, State state);
-extern "C" bool nfa_is_final(NfaId id_nfa, State state);
+extern "C" int  nfa_is_final(NfaId id_nfa, State state);
 extern "C" int  nfa_get_final(NfaId id_nfa, char* buf, size_t buf_len);
 
 // transitions
 extern "C" void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
-extern "C" bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
+extern "C" int  nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt);
 extern "C" int  nfa_get_transitions(NfaId id_nfa, char* buf, size_t buf_len);
 
 // some more getters
@@ -52,8 +52,8 @@ extern "C" void nfa_minimize(NfaId id_dst, NfaId id_nfa);
 extern "C" void nfa_remove_epsilon(NfaId id_dst, NfaId id_nfa, Symbol epsilon);
 
 // language tests
-extern "C" bool nfa_is_incl(NfaId id_lhs, NfaId id_rhs);
-extern "C" bool nfa_accepts_epsilon(NfaId id_aut);
+extern "C" int  nfa_is_incl(NfaId id_lhs, NfaId id_rhs);
+extern "C" int  nfa_accepts_epsilon(NfaId id_aut);
 
 /** Library of NFAs */
 std::unordered_map<NfaId, Nfa*> mem;
@@ -81,9 +81,9 @@ void nfa_clear_library()
 
 NfaId nfa_init()
 {
-	DEBUG_PRINT("Note that the management of created NFAs is a bit trivial now");
 	assert(cnt < std::numeric_limits<int>::max());
 	mem[cnt] = new Nfa();
+	DEBUG_PRINT("Creating NFA " + std::to_string(cnt));
 	return cnt++;
 }
 
@@ -91,6 +91,7 @@ void nfa_free(NfaId id_nfa)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
+	DEBUG_PRINT("Deleting NFA " + std::to_string(id_nfa));
 	delete aut;
 	mem.erase(id_nfa);
 }
@@ -124,7 +125,7 @@ void nfa_remove_initial(NfaId id_nfa, State state)
 	aut->initialstates.erase(state);
 }
 
-bool nfa_is_initial(NfaId id_nfa, State state)
+int nfa_is_initial(NfaId id_nfa, State state)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
@@ -202,7 +203,7 @@ int nfa_get_final(NfaId id_nfa, char* buf, size_t buf_len)
 	return rv;
 }
 
-bool nfa_is_final(NfaId id_nfa, State state)
+int nfa_is_final(NfaId id_nfa, State state)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
@@ -217,7 +218,7 @@ void nfa_add_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
 	aut->add_trans(src, symb, tgt);
 }
 
-bool nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
+int nfa_has_trans(NfaId id_nfa, State src, Symbol symb, State tgt)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_nfa];
@@ -257,7 +258,7 @@ void nfa_print(NfaId id_nfa)
 	DEBUG_PRINT(std::to_string(*aut));
 }
 
-bool nfa_is_incl(NfaId id_lhs, NfaId id_rhs)
+int nfa_is_incl(NfaId id_lhs, NfaId id_rhs)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* lhs = mem[id_lhs];
@@ -268,7 +269,7 @@ bool nfa_is_incl(NfaId id_lhs, NfaId id_rhs)
 	return rv;
 }
 
-bool nfa_accepts_epsilon(NfaId id_aut)
+int nfa_accepts_epsilon(NfaId id_aut)
 {
 	DEBUG_PRINT("Some bound checking here...");
 	Nfa* aut = mem[id_aut];
