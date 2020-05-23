@@ -41,6 +41,7 @@ endif()
 include_directories(../include)
 
 add_library(libvata2 STATIC
+# add_library(libvata2 SHARED
 	bool-dispatch.cc
 	parser.cc
 	parser-dispatch.cc
@@ -49,6 +50,7 @@ add_library(libvata2 STATIC
 	nfa/nfa-dispatch.cc
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
+	rra/rrt.cc
 	void-dispatch.cc
 	vm.cc
 	vm-dispatch.cc           # this should be the last one
@@ -67,6 +69,7 @@ add_executable(tests
 	tests-vm-dispatch.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-dispatch.cc
+	rra/tests-rrt.cc
 )
 
 target_link_libraries(tests libvata2)
