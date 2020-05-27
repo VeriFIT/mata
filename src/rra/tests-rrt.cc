@@ -8,6 +8,8 @@ using namespace Vata2::util;
 using namespace Vata2::Parser;
 
 using GuardType = Vata2::Rrt::Trans::Guard::GuardType;
+using UpdateType = Vata2::Rrt::Trans::Update::UpdateType;
+using OutputType = Vata2::Rrt::Trans::Output::OutputType;
 
 // Some common automata {{{
 
@@ -51,18 +53,56 @@ using GuardType = Vata2::Rrt::Trans::Guard::GuardType;
 
 // }}}
 
-TEST_CASE("Vata2::Rrt::serialize() and operator<<()")
-{ // {{{
-	Rrt tra;
-	DEBUG_PRINT("ahoj");
 
-	Trans trans;
-	trans.src = 1;
-	trans.lbl.guards = {{GuardType::IN1_VAR, 0},
+TEST_CASE("Vata2::Rrt::Rrt::add_trans()/has_trans()")
+{
+	Rrt rrt;
+
+	Trans trans1;
+	trans1.src = 1;
+	trans1.tgt = 2;
+	trans1.lbl.guards = {{GuardType::IN1_VAR, 0},
+		                   {GuardType::IN2_VAR, 0}};
+  trans1.lbl.updates = {{UpdateType::REG_STORE_IN1, 0},
+                        {UpdateType::REG_STORE_IN1, 1}};
+  trans1.lbl.out1 = {OutputType::PUT_REG, 0};
+  trans1.lbl.out2 = {OutputType::PUT_IN2, 0};    // the second argument is ignored
+
+  REQUIRE(!rrt.has_trans(trans1));
+
+	rrt.add_trans(trans1);
+
+  // check for the transition
+	Trans trans2;
+	trans2.src = 1;
+	trans2.lbl.guards = {{GuardType::IN1_VAR, 0},
 		                  {GuardType::IN2_VAR, 0}};
+  trans2.lbl.updates = {{UpdateType::REG_STORE_IN1, 0},
+                       {UpdateType::REG_STORE_IN1, 1}};
+  trans2.lbl.out1 = {OutputType::PUT_REG, 0};
+  trans2.lbl.out2 = {OutputType::PUT_IN2, 0};    // the second argument is ignored
 
-	trans.tgt = 2;
+	trans2.tgt = 2;
 
-	tra.add_trans(trans);
+  REQUIRE(rrt.has_trans(trans2));
 
-} // }}}
+  WARN_PRINT("Insufficient testing of Vata2::Rrt::Rrt::add_trans()");
+}
+
+
+// TEST_CASE("Vata2::Rrt::serialize() and operator<<()")
+// { // {{{
+	// Rrt rrt;
+//
+	// Trans trans;
+	// trans.src = 1;
+	// trans.lbl.guards = {{GuardType::IN1_VAR, 0},
+											// {GuardType::IN2_VAR, 0}};
+//
+	// trans.tgt = 2;
+//
+	// rrt.add_trans(trans);
+//
+  // assert(false);
+//
+// } // }}}

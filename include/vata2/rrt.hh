@@ -54,6 +54,9 @@ struct Trans
 
 		GuardType type;
 		Symbol val;     // although of type Symbol, it can also store register name
+
+    bool operator==(const Guard& rhs) const;
+    bool operator!=(const Guard& rhs) const { return !this->operator==(rhs); }
 	}; // Guard }}}
 
 	struct Update
@@ -70,6 +73,9 @@ struct Trans
 
 		UpdateType type;
 		Symbol val;        // register or auxiliary memory name (FIXME: smaller data type)
+
+    bool operator==(const Update& rhs) const;
+    bool operator!=(const Update& rhs) const { return !this->operator==(rhs); }
 	}; // Update }}}
 
 	struct Output
@@ -84,6 +90,9 @@ struct Trans
 
 		OutputType type;
 		Symbol val;        // register or auxiliary memory name (FIXME: smaller data type)
+
+    bool operator==(const Output& rhs) const;
+    bool operator!=(const Output& rhs) const { return !this->operator==(rhs); }
 	}; // Output }}}
 
 	using GuardList = std::list<Guard>;
@@ -105,6 +114,8 @@ struct Trans
     : guards(guards), updates(updates), out1(out1), out2(out2)
     { }
 
+    bool operator==(const Label& rhs) const;
+    bool operator!=(const Label& rhs) const { return !this->operator==(rhs); }
   }; // Label }}}
 
 	State src;
@@ -132,10 +143,7 @@ struct Trans
 
 	bool operator==(const Trans& rhs) const
 	{ // {{{
-		// return src == rhs.src && symb == rhs.symb && tgt == rhs.tgt;
-		assert(&rhs);
-		return false;
-    assert(false);
+    return src == rhs.src && lbl == rhs.lbl && tgt == rhs.tgt;
 	} // operator== }}}
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 }; // Trans }}}
@@ -172,6 +180,22 @@ public:
 		State                     tgt)
 	{ // {{{
 		this->add_trans(src, Trans::Label(guards, updates, out1, out2), tgt);
+	} // }}}
+
+	bool has_trans(
+		State                 src,
+		const Trans::Label&   lbl,
+		State                 tgt);
+	bool has_trans(const Trans& trans) { return this->has_trans(trans.src, trans.lbl, trans.tgt); }
+	bool has_trans(
+		State                     src,
+		const Trans::GuardList&   guards,
+		const Trans::UpdateList&  updates,
+		const Trans::Output&      out1,
+		const Trans::Output&      out2,
+		State                     tgt)
+	{ // {{{
+		return this->has_trans(src, Trans::Label(guards, updates, out1, out2), tgt);
 	} // }}}
 
 }; // Rrt }}}

@@ -75,6 +75,13 @@ bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 	return true;
 } // }}}
 
+/** Is there an element in a container? */
+template <class T, class Cont>
+bool is_in(const T& elem, const Cont& cont)
+{ // {{{
+  return (std::find(cont.begin(), cont.end(), elem) != cont.end());
+} // is_in }}}
+
 /**
  * @brief  Combine two hash values
  *
