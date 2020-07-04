@@ -297,30 +297,21 @@ void Vata2::Afa::construct(
 	}
 
 	for (const auto& body_line : parsec.body) {
-		if (body_line.size() != 3) {
+		if (body_line.size() < 2) {
 			// clean up
-			clean_up();
+      clean_up();
 
-			if (body_line.size() == 2) {
-				throw std::runtime_error("Epsilon transitions not supported: " +
-					std::to_string(body_line));
-			} else {
-				throw std::runtime_error("Invalid transition: " +
-					std::to_string(body_line));
-			}
+      throw std::runtime_error("Invalid transition: " +
+        std::to_string(body_line));
 		}
 
 		State src_state = get_state_name(body_line[0]);
-		Symbol symbol = alphabet->translate_symb(body_line[1]);
-		State tgt_state = get_state_name(body_line[2]);
+    std::string formula;
+    for (size_t i = 1; i < body_line.size(); ++i) {
+      formula += body_line[i] + " ";
+    }
 
-    assert(&src_state);
-    assert(&symbol);
-    assert(&tgt_state);
-
-    // TODO
-		// aut->add_trans(src_state, symbol, tgt_state);
-    assert(false);
+    aut->add_trans(src_state, formula);
 	}
 
 	// do the dishes and take out garbage
@@ -336,12 +327,28 @@ void Vata2::Afa::construct(
 { // {{{
 	assert(nullptr != aut);
 
-  assert(&parsec);
-  assert(&symbol_map);
-  assert(&state_map);
+	bool remove_symbol_map = false;
+	if (nullptr == symbol_map)
+	{
+		symbol_map = new StringToSymbolMap();
+		remove_symbol_map = true;
+	}
 
-  // TODO
-  assert(false);
+	auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
+  Vata2::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
+
+	try
+	{
+		construct(aut, parsec, &alphabet, state_map);
+	}
+	catch (std::exception&)
+	{
+		release_res();
+		throw;
+	}
+
+	release_res();
 } // construct(StringToSymbolMap) }}}
 
 
