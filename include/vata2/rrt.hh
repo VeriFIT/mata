@@ -28,12 +28,12 @@ namespace Vata2
 namespace Rrt
 {
 
-using State = Vata2::Nfa::State;
-using Symbol = Vata2::Nfa::Symbol;
+using State = Nfa::State;
+using Symbol = Nfa::Symbol;
 
 /// A transition of a 2-tape RRT (FIXME: probably too specialized)
 struct Trans
-{
+{ // {{{
 	struct Guard
 	{ // {{{
 		enum class GuardType
@@ -151,7 +151,7 @@ struct Trans
 // the post here is more complex than, e.g., for NFAs due to the complicated
 // structure of Label, for which it is not easy to make a hash table; so far,
 // we use a list
-using PostSymb = std::list<std::pair<Trans::Label, State>>;        /// post over a symbol
+using PostSymb = std::list<std::pair<Trans::Label, State>>; /// post over a symbol
 using StateToPostMap = std::unordered_map<State, PostSymb>; /// transitions
 
 ///  A 2-tape RRT
@@ -165,6 +165,28 @@ private:
 	StateToPostMap transitions = {};
 
 public:
+
+	std::set<State> initialstates = {};
+	std::set<State> finalstates = {};
+
+	void add_initial(State state) { this->initialstates.insert(state); }
+	void add_initial(const std::vector<State> vec)
+	{ // {{{
+		for (const State& st : vec) { this->add_initial(st); }
+	} // }}}
+	bool has_initial(State state) const
+	{ // {{{
+		return Vata2::util::haskey(this->initialstates, state);
+	} // }}}
+	void add_final(State state) { this->finalstates.insert(state); }
+	void add_final(const std::vector<State> vec)
+	{ // {{{
+		for (const State& st : vec) { this->add_final(st); }
+	} // }}}
+	bool has_final(State state) const
+	{ // {{{
+		return Vata2::util::haskey(this->finalstates, state);
+	} // }}}
 
 	void add_trans(
 		State                 src,
@@ -200,23 +222,31 @@ public:
 
 }; // Rrt }}}
 
+/** Computes the post of an NFA wrt an RRT
+ *
+ * Note that the symbols in the NFA are addresses of pairs of symbols (to match the RRT)
+ * */
+Nfa::Nfa post_of_nfa(const Rrt& rrt, const Nfa::Nfa& nfa);
+
 // CLOSING NAMESPACES AND GUARDS
 } /* Rrt */
 } /* Vata2 */
 
 namespace std
 { // {{{
-template <>
-struct hash<Vata2::Rrt::Trans>
-{
-	inline size_t operator()(const Vata2::Rrt::Trans& trans) const
-	{
-		size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
-		assert(false);
-		accum = Vata2::util::hash_combine(accum, trans.tgt);
-		return accum;
-	}
-};
+// FIXME: remove?
+//
+// template <>
+// struct hash<Vata2::Rrt::Trans>
+// {
+	// inline size_t operator()(const Vata2::Rrt::Trans& trans) const
+	// {
+		// size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
+		// assert(false);
+		// accum = Vata2::util::hash_combine(accum, trans.tgt);
+		// return accum;
+	// }
+// };
 
 std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
 } // std }}}

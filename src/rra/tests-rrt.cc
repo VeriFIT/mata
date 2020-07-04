@@ -55,7 +55,7 @@ using OutputType = Vata2::Rrt::Trans::Output::OutputType;
 
 
 TEST_CASE("Vata2::Rrt::Rrt::add_trans()/has_trans()")
-{
+{ // {{{
 	Rrt rrt;
 
 	Trans trans1;
@@ -76,19 +76,38 @@ TEST_CASE("Vata2::Rrt::Rrt::add_trans()/has_trans()")
 	Trans trans2;
 	trans2.src = 1;
 	trans2.lbl.guards = {{GuardType::IN1_VAR, 0},
-		                  {GuardType::IN2_VAR, 0}};
+		                   {GuardType::IN2_VAR, 0}};
   trans2.lbl.updates = {{UpdateType::REG_STORE_IN1, 0},
-                       {UpdateType::REG_STORE_IN1, 1}};
+                        {UpdateType::REG_STORE_IN1, 1}};
   trans2.lbl.out1 = {OutputType::PUT_REG, 0};
-  trans2.lbl.out2 = {OutputType::PUT_IN2, 0};    // the second argument is ignored
+  trans2.lbl.out2 = {OutputType::PUT_IN2, 5};    // the second argument is ignored
 
 	trans2.tgt = 2;
 
   REQUIRE(rrt.has_trans(trans2));
 
   WARN_PRINT("Insufficient testing of Vata2::Rrt::Rrt::add_trans()");
-}
+} // }}}
 
+TEST_CASE("Vata2::Rrt::Rrt::add_initial()/has_initial()")
+{ // {{{
+	Rrt rrt;
+
+	REQUIRE(rrt.initialstates.empty());
+  rrt.initialstates = {1,2,3};
+  REQUIRE(rrt.has_initial(3));
+  REQUIRE(!rrt.has_initial(4));
+} // }}}
+
+TEST_CASE("Vata2::Rrt::Rrt::add_final()/has_final()")
+{ // {{{
+	Rrt rrt;
+
+	REQUIRE(rrt.finalstates.empty());
+  rrt.finalstates = {1,2,3};
+  REQUIRE(rrt.has_final(3));
+  REQUIRE(!rrt.has_final(4));
+} // }}}
 
 // TEST_CASE("Vata2::Rrt::serialize() and operator<<()")
 // { // {{{

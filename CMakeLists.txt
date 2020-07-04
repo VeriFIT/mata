@@ -8,6 +8,8 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # Enable verbose output for 'make'
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
+set(CMAKE_MACOSX_RPATH 1)
+
 ##############################################################################
 #                                     CCACHE
 ##############################################################################
@@ -30,7 +32,7 @@ option(USE_CLANG "build with clang" OFF)
 #                                DEPENDENCIES
 ##############################################################################
 
-find_package(Valgrind)
+# find_package(Valgrind)
 
 # Doxygen - voluntary
 find_package(Doxygen)

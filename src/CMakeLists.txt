@@ -77,7 +77,7 @@ target_link_libraries(tests libvata2)
 add_test(
 	NAME catch_tests
 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/unit-test-data
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
 )
 
 if(FALSE)

@@ -58,7 +58,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 	SECTION("load_file")
 	{
-		sec.body.push_back({"a1", "=", "(", "load_file", "\"nfa-a.vtf\"", ")"});
+		sec.body.push_back({"a1", "=", "(", "load_file", "\"unit-test-data/nfa-a.vtf\"", ")"});
 
 		// we wish to catch output
 		std::ostringstream cout_buf;

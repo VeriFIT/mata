@@ -17,6 +17,8 @@
 
 #include <vata2/rrt.hh>
 
+using Vata2::Nfa::Nfa;
+
 bool Vata2::Rrt::Trans::Guard::operator==(const Guard& rhs) const
 { // {{{
   if (this->type != rhs.type) return false;
@@ -113,3 +115,9 @@ bool Vata2::Rrt::Rrt::has_trans(
 
   return false;
 } // has_trans }}}
+
+
+Vata2::Nfa::Nfa Vata2::Rrt::post_of_nfa(const Rrt& rrt, const Vata2::Nfa::Nfa& nfa)
+{ // {{{
+  assert(false);
+} // post_of_nfa }}}

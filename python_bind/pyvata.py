@@ -235,8 +235,6 @@ class NFA:
         rv = g_vatalib.nfa_is_incl(lhs.aut, rhs.aut)
         return rv
 
-    # TODO: test inkluze
-
 ################################## UNIT TESTS ##################################
 class NFATest(unittest.TestCase):
 
