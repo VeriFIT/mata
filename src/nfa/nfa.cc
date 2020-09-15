@@ -727,56 +727,6 @@ void Vata2::Nfa::make_complete(
 } // make_complete }}}
 
 
-void Vata2::Nfa::complement(
-	Nfa*             result,
-	const Nfa&       aut,
-	const Alphabet&  alphabet,
-	SubsetMap*       subset_map)
-{ // {{{
-	assert(nullptr != result);
-
-	bool delete_subset_map = false;
-	if  (nullptr == subset_map)
-	{
-		subset_map = new SubsetMap();
-		delete_subset_map = true;
-	}
-
-	State last_state_num;
-	*result = determinize(aut, subset_map, &last_state_num);
-	State sink_state = last_state_num + 1;
-	auto it_inserted_pair = subset_map->insert({{}, sink_state});
-	if (!it_inserted_pair.second)
-	{
-		sink_state = it_inserted_pair.first->second;
-	}
-
-	make_complete(result, alphabet, sink_state);
-	std::set<State> old_fs = std::move(result->finalstates);
-	result->finalstates = { };
-	assert(result->initialstates.size() == 1);
-
-	auto make_final_if_not_in_old = [&](const State& state) {
-		if (!haskey(old_fs, state))
-		{
-			result->finalstates.insert(state);
-		}
-	};
-
-	make_final_if_not_in_old(*result->initialstates.begin());
-
-	for (const auto& tr : *result)
-	{
-		make_final_if_not_in_old(tr.tgt);
-	}
-
-	if (delete_subset_map)
-	{
-		delete subset_map;
-	}
-} // complement }}}
-
-
 Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
 	const Nfa&                aut,
 	const SymbolToStringMap*  symbol_map,

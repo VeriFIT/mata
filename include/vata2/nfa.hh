@@ -463,18 +463,20 @@ void make_complete(
 
 /// Complement
 void complement(
-	Nfa*             result,
-	const Nfa&       aut,
-	const Alphabet&  alphabet,
-	SubsetMap*       subset_map = nullptr);
+	Nfa*               result,
+	const Nfa&         aut,
+	const Alphabet&    alphabet,
+	const StringDict&  params = {{"algo", "classical"}},
+	SubsetMap*         subset_map = nullptr);
 
 inline Nfa complement(
-	const Nfa&       aut,
-	const Alphabet&  alphabet,
-	SubsetMap*       subset_map = nullptr)
+	const Nfa&         aut,
+	const Alphabet&    alphabet,
+	const StringDict&  params = {{"algo", "classical"}},
+	SubsetMap*         subset_map = nullptr)
 { // {{{
 	Nfa result;
-	complement(&result, aut, alphabet, subset_map);
+	complement(&result, aut, alphabet, params, subset_map);
 	return result;
 } // complement }}}
 

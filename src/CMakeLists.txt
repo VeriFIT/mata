@@ -50,6 +50,7 @@ add_library(libvata2 STATIC
 	nfa/nfa-dispatch.cc
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
+	nfa/nfa-complement.cc
 	rra/rrt.cc
 	void-dispatch.cc
 	vm.cc
