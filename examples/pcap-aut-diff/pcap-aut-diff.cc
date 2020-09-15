@@ -20,6 +20,12 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 
+#ifdef __APPLE__
+#define ETH_ALEN    6       /* Octets in one ethernet addr   */
+#define iphdr ip
+#define icmphdr icmp
+#endif
+
 // Ethernet 802.1Q header
 // copied from
 // https://stackoverflow.com/questions/13166094/build-vlan-header-in-c
