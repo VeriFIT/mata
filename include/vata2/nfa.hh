@@ -624,7 +624,7 @@ struct hash<Vata2::Nfa::Trans>
 	}
 };
 
-std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Vata2::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap);
 } // std }}}
 

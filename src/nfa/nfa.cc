@@ -32,11 +32,11 @@ using Vata2::Nfa::Symbol;
 
 const std::string Vata2::Nfa::TYPE_NFA = "NFA";
 
-std::ostream& std::operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans)
+std::ostream& std::operator<<(std::ostream& os, const Vata2::Nfa::Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " +
 		std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
-	return strm << result;
+	return os << result;
 } // operator<<(ostream, Trans) }}}
 
 
@@ -302,9 +302,9 @@ StateSet Nfa::post(
 } // post }}}
 
 
-std::ostream& Vata2::Nfa::operator<<(std::ostream& strm, const Nfa& nfa)
+std::ostream& Vata2::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
 { // {{{
-	return strm << std::to_string(serialize(nfa));
+	return os << std::to_string(serialize(nfa));
 } // Nfa::operator<<(ostream) }}}
 
 

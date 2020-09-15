@@ -42,6 +42,7 @@ include_directories(../include)
 
 add_library(libvata2 STATIC
 # add_library(libvata2 SHARED
+	afa/afa.cc
 	bool-dispatch.cc
 	parser.cc
 	parser-dispatch.cc
@@ -68,6 +69,7 @@ add_executable(tests
 	tests-parser-dispatch.cc
 	tests-vm.cc
 	tests-vm-dispatch.cc
+	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-dispatch.cc
 	rra/tests-rrt.cc
