@@ -170,7 +170,7 @@ bool Vata2::Nfa::is_universal(
 	}
 
 	const std::string& str_algo = params.at("algo");
-	if ("naive" == str_algo) { }
+	if ("naive" == str_algo) { /* default */ }
 	else if ("antichains" == str_algo) {
 		algo = is_universal_antichains;
 	} else {
