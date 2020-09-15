@@ -28,7 +28,7 @@ int main()
 	aut.add_trans(5, 'a', 5);
 	aut.add_trans(5, 'c', 9);
 
-	determinize(&determ, &aut);
+	determinize(&determ, aut);
 
-	std::cout << serialize_vtf(&determ);
+	std::cout << std::to_string(determ);
 }

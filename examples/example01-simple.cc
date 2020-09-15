@@ -14,5 +14,5 @@ int main()
 	aut.add_trans(1, 'a', 3);
 	aut.add_trans(2, 'b', 4);
 
-	std::cout << serialize_vtf(&aut);
+	std::cout << std::to_string(aut);
 }
