@@ -1,4 +1,4 @@
-// example03-complement.cc - complementing an automaton
+// example04-complement.cc - complementing an automaton
 
 #include <vata2/nfa.hh>
 #include <iostream>
