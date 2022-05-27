@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 2.8.2)
-
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
@@ -12,7 +10,6 @@ set(cxx_compiler_flags
   -Wall
   -Wfloat-equal
   -fdiagnostics-show-option
-  -march=native
   -std=c++11
   -Wctor-dtor-privacy
   -Weffc++

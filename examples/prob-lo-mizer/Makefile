@@ -13,7 +13,6 @@ CFLAGS=-std=c++11 \
   -Weffc++ \
   -Woverloaded-virtual \
   -fdiagnostics-show-option \
-  -march=native \
 	-O2 \
 	# -g
 
