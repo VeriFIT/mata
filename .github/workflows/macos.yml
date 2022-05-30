@@ -1,0 +1,20 @@
+name: MacOS (build-&-test)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  setup:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Building MacOS dependencies
+        run: brew install lcov gcovr
+      - uses: actions/checkout@v3
+      - name: Compile the static and shared libraries
+        run: make release
+      - name: Test the library
+        run: make test
