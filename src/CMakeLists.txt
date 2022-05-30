@@ -84,12 +84,6 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
 )
 
-# add_test(
-# 	NAME catch_tests
-# 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
-# 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-# )
-
 if(FALSE)
 
 # problems with valgrind under appleOS
