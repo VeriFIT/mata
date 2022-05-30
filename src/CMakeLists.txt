@@ -76,12 +76,19 @@ add_executable(tests
 )
 
 target_link_libraries(tests libvata2)
-
-add_test(
-	NAME catch_tests
-	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
-	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+include(Catch)
+catch_discover_tests(tests)
+add_custom_command(
+	TARGET tests POST_BUILD
+	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/unit-test-data
+	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
 )
+
+# add_test(
+# 	NAME catch_tests
+# 	COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tests
+# 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+# )
 
 if(FALSE)
 
