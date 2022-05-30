@@ -13,7 +13,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Building MacOS dependencies
         run: brew install lcov gcovr
-      - uses: actions/checkout@v3
       - name: Compile the static and shared libraries
         run: make release
       - name: Test the library
