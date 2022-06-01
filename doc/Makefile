@@ -8,6 +8,9 @@ SOURCEDIR     = .
 BUILDDIR      = _build
 ALLSPHINXOPTS = -d $(BUILDDIR)/doctrees $(SPHINXOPTS) .
 
+init:
+	pip3 install -r requirements.txt
+
 # Put it first so that "make" without argument is like "make help".
 help:
 	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
