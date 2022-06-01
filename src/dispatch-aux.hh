@@ -54,7 +54,7 @@ std::tuple<T> construct_args(
 	return res;
 }
 
-template <class T, class... Ts>
+template <class T, class... Ts, typename std::enable_if<(sizeof...(Ts) != 0)>::type = true>
 std::tuple<T, Ts...> construct_args(
 	const Vata2::metaprog::tuple_of<sizeof...(Ts) + 1, std::string>&         type_names,
 	const Vata2::metaprog::tuple_of<sizeof...(Ts) + 1, Vata2::VM::VMValue>&  vals)

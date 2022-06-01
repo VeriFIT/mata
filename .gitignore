@@ -1,3 +1,7 @@
+# Vim cached files
+*.swp
+*.swo
+
 # Compiled Object files
 *.slo
 *.lo
