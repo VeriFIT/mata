@@ -11,6 +11,8 @@ Welcome to automata-library's documentation!
    :caption: Contents:
 
    overview
+   nfa
+   afa
 
 
 Indices and tables

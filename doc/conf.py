@@ -18,8 +18,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'automata-library'
-copyright = '2022, Fiedor Tomas, Holik Lukas, Hruska Martin, Lengal Ondrej, and Sic Juraj'
-author = 'Fiedor Tomas, Holik Lukas, Hruska Martin, Lengal Ondrej, and Sic Juraj'
+copyright = '2022, VeriFIT Group, BUT, FIT'
+author = 'VeriFIT Group, BUT, FIT'
 
 # The full version, including alpha/beta/rc tags
 release = '0.0'
