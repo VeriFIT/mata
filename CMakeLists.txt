@@ -46,7 +46,7 @@ if (DOXYGEN_FOUND)
         COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
 else()
-    warning("Doxygen not found. Documentation will not be built")
+    message(WARNING "Doxygen not found. Documentation will not be built")
 endif()
 
 ##############################################################################
