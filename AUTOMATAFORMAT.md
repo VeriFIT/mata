@@ -1,337 +1,112 @@
+
 # The file format for automata
-* Based partially on Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372), partially on a format of Pavol Vargovik, partially on a confused disucssion.
-* This specification is a modification of the spec of the `vtf.' format.
+* Based partially on Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372), a format of Pavol Vargovcik, and a confused disucssion.
 
-An example of the general structure of a `.vtf` file follows:
+## Top-level file structure
+* The format is **line**-based. Lines can be connected by `/`.
+* Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive**.
+* A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
+* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, or **transition lines**. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the keyword `KEY` is defined. 
+* Besides white spaces and the end of line, the following are **reserved characters**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`/`,`\` `[`,`]`,`a`,`q`,`n`,`f`,`{`,`}`.
+  * `&`,`|`,`!`,`(`,`)` occurring as tokens in transition lines are logical operators.
+  * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
+  * `{`,`}` are enclosing attributes, if we use them this way. Remains to be decided. (?)
+  * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
+  * `%` opens a key-value line, possibly also key-value appendix od a transition. Remains to be decided. (?)
+  * `"` strings containing white spaces and reserved characters can be written in between `"`. The reserved characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`.
+  * `/` to concatenate lines.
+  * `\` for escaping characters (and `\u` starting utf symbol names?).
+  * something for attributes.
+  * `a`,`q`,`n`,`f` are token type specifiers (alphabet, state, node, formula). If you don't like these, propose other ones.
+* The parser should recognise the reserved symbols as standalone tookens only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols. (?)
+
+We categorise automata by **transition type**, that is, the structure of their transitions, and by **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
+
+## Automata by transition type: 
+We use general form of AFA, by Pavol V., and simple NFA.
+
+### AFA 
+* Each state has a transition, a booelan formula over symbol literals, states, and nodes.
+* Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
+* Since in the general formulae, the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types.
+  * By **enumeration**.
+  * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker is *not* a part of the thing's name! (Or should it be? It would perhaps be simpler that way?)
+  * **automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
+* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, `Nodes`, or `Formulas` (Formulas will be explained later), and `<Scheme>` may be `markerd`, `enum`, or `auto`.  The cheme z `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
+* Markers is the implicit option for all types of tokens, used if nothing is specified.
+* `()` means true and `!()` means false.
+
+### NFA 
+* The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula. 
+* Both symbol literals and states are determined positionally, corresponding to `auto` in AFA. Markers or enumeration can also be used.
+
+## Alphabet type
+Next, we categorise automtata by the **alphabet type**, representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), asci (?), numbers (?), intervals of numbers or unicode or asci.
+* **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, asci, utf.
+* **Bitvector**: Propositional variables, syntax is the same as explicit symbols.
+* **Interval**: Intervals of symbols are of the form [a-z]. We might also want complements, [^a-z], but I am not sure that we want to work with complements. We might also want to give abstract intervals of the form [min,a], [a,max], [min,max], or use inf and -inf instead of min and max. This would be particularly needed if we do not have complements and do not know the alphabet range.
+
+We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme).
+
+## AFA and NFA Examples
 ```
-@<SECTION-TYPE-1>
-<body line 1>
-# a comment
-<body line 2>
-%KeyA valueA_1
-<body line 3>   # the third line of body
-%KeyA valueA_2
-%KeyB valueB_1
-<body line 4>
-%KeyC
-
-@<SECTION-TYPE-2>
-...
+@AFA-bits
+q1 q2 & (a1 | q1 | n1)
+n1 q3 | q4
+q1 a2 & q5
 ```
-### Explanation:
-* The format is **line**-based. Lines can be connected by \\.
-* A file contains one or multiple **sections** each of them defining an automaton or operations over automaton, or basicaly anything. We will probably start by considering exactly one section in a file.
-* `@`-starting lines denotes beginning of **sections**, `<SECTION-TYPE-x>` denotes the type of the section.
-* `%`-starting lines denote **meta** information, provided in the form of a dictionary mapping keys (e.g. `KeyX`) to sets of values.  If one key is defined several times, the resulting set of values is the union of all the partial definitions.  This is used e.g. for defining alphabet or final states of an automaton.  For instance, the example above specifies:
-  * `KeyA` is mapped to { `valueA_1`, `valueA_2` },
-  * `KeyB` is mapped to { `valueB_1` },
-  * `KeyC` is mapped to { } (i.e., only the information that `KeyC` is defined is preserved),
-  * `KeyD` is undefined.
-* `%#` until the end of a line denotes a comment. We can change the second character to anything.
-* The rest of the lines (`<body line x>` in the example) define the **body** of the file, e.g., transitions of an automaton or code for an interpreter.
-
-### Categorizing automata by transition type and alphabet type:
-* We consider automata of several types of the **structure of transitions**. The most general Pavol automata which are dags of formulae, separated AFA, separated AFA with the transition formulae in the DNF form, simple NFA,m transducers might be another class, we will see.
-* Automata may use several representations of the alphabet symbols on transitions. This is called **alphabet type**. We will consider formulae over bit-vectors represented as boolean formulas, explicit symbols, unicode, asci, intervals of numbers or unicode or asci characters.
-* The name of the section will specify the transition type and alphabet type.
-
-## Transition type categories
-
-### AFA-DAG transition type
-* This is the most general transition type of AFA.
-* Each state has a transition, which is a booelan formula over symbol literals, states, and nodes.
-* Since in the general formulae, the type of the litereal cannot be determined by the position, we require one of the two mechanisms of distinguishing them:
-  * By enumeration. 
-  * Using type markers. The literal is preceeded by a single character that specifies the type.
-  * Fall-back option. If the other types are specified, the third type may be marked as fall-back, it will behave as the fall-back option.
-
-### AFA transition type
-* This is the same as AFA-DAG but without the nodes. A practical difference might be that it is enough to specify only states or only the alphabet and the other thing may be fall-back.
-* It is not clear whether to have AFA as well as AFA-DAG. 
-
-### AFA-SEPARATED
-* As the AFA, but the transitions formulae are of the form symbol_formula & state_formula, where the symbol formula only talks about symbols and the state formula only talks about states. Both symbols and states can be implicit as the type is determined positionally.
-
-### AFA-DNF
-* Separated AFA where the state formula is in DNF. 
-
-### NFA
-* The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol of a single interval is also a transition formula. Both symbol literals and states are determinied positionally and so can be left implicit.
-
-## Alphabet type categories
-Different alphabet types will use different alphabet literals. Their target data structures will also be different.
-
-### Explicit
-Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, asci, utf.
-
-### Bitvector
-Propositional variables, syntax is the same as explicit symbols.
-
-### Interval
-Intervals of symbols are of the form [a-z]. We might also want complements, [^a-z], but I am not sure that we want to work with complements. We might also want to give abstract intervals of the form [min,a], [a,max], [min,max], or use inf and -inf instead of min and max.
-
-### SMT
-A symbol literal can be an SMT-lib formula. One free variable.
-
-### Transducer
-Transducer has named tracks, with names specified by enumeration or implicitly by position.
-The syntax for intervals is x@[1-10], for explicit alphabet is x@a1, we could have an SMT-lib formula with a relation between x and y, maybe we could say x=y
-Not sure whether it makes sense to have a transducer with bit-vectors.
-
-
-# The .vtf format for automata
-This is a proposal for the `.vtf` (VATA Format) format for automata.
-
-An example of the general structure of a `.vtf` file follows:
 ```
-@<SECTION-TYPE-1>
-<body line 1>
-# a comment
-<body line 2>
-%KeyA valueA_1
-<body line 3>   # the third line of body
-%KeyA valueA_2
-%KeyB valueB_1
-<body line 4>
-%KeyC
-
-@<SECTION-TYPE-2>
-...
+@AFA-explicit
+%States-enum q r s t "(r,s)"
+%Alphabet-auto
+q symbol | other_symbol & ("(r,s)" | r | s)
 ```
-### Explanation:
-* The format is **line**-based, i.e., one line is the basic building block.
-* A file can contain zero, one, or more **sections**, each of them defining an automaton or operations over automaton, or basicaly anything.
-* `@`-starting lines denotes beginning of **sections**, `<SECTION-TYPE-x>` denotes the type of the section (e.g. the type of the automaton within).
-* `%`-starting lines denote **meta** information, provided in the form of a dictionary mapping keys (e.g. `KeyX`) to sets of values.  If one key is defined several times, the resulting set of values is the union of all the partial definitions.  This is used e.g. for defining alphabet or final states of an automaton.  For instance:
-  * `KeyA` is mapped to { `valueA_1`, `valueA_2` },
-  * `KeyB` is mapped to { `valueB_1` },
-  * `KeyC` is mapped to { } (i.e., only the information that `KeyC` is defined is preserved),
-  * `KeyD` is undefined.
-* `#` until the end of a line denotes a comment.
-* The rest of the lines (`<body line x>` in the example) define the **body** of the file, e.g., transitions of an automaton or code for an interpreter.
-
-
-## EBNF-like grammar
 ```
-print char   = ? see https://en.wikipedia.org/wiki/ASCII#Printable_characters ? ;
-line char    = print char | "\t" ;
-space tab    = " " | "\t" ;
-white space  = space tab , { space tab } ;
-eol          = [ "#" , { line char } ] , "\n" ;
-special char = '"' | "(" | ")" | "#" | "%" | "@" | "\\" ;
-string char  = print char - ( space tab | special char ) ;
-string       = string char , { string char } ;
-token        = string
-             | '"', { ( line char - '"' ) | ( "\\" , '"' ) } , '"'
-             | "(" | ")" ;
-token list   = [ white space ] , [ token , { white space , token } , [ white space ] ] ;
-meta line    = "%" , string , token list ;
-line meat    = token list | meta line ;
-line         = line meat ,  eol ;
-section      = "@" , string , eol , { line } ;
-file         = { section } ;
+@AFA-intervals
+%States-auto
+%Alphabet-utf
+q [`a`-`z`] | [\u{1c}-\u{5c}] & ("(r,s)" | r | s)
 ```
-
-## Examples
-
-Examples of files in the `.vtf` format follow:
-
-### Finite automata
-[link](nfa-example.vtf)
 ```
-# Example of the VATA format for storing or exchanging automata
-#
-# comments start with '#'
-
-@NFA       # denotes the type of the automaton that will follow
-           # (nondeterministic finite automaton); the @type preamble starts a
-           # section that will (in this case) define one automaton; the section
-           # ends either with an end-of-file, or with another @type preamble
-
-# now, we follow with the definition of components of an automaton
-%Name nfa1                        # name of the automaton (optional, can be used to refer to the automaton)
- %Alphabet a b c d                # alphabet (optional) (a whitespace before % is OK)
-%Initial q1 q2                    # initial states (required); a definition spans until the end of line
-%Initial q3                       # a key can be repeated, the result should be the same as if in a single line
-%Initial "a state"                # when in ", names can have whitespaces (and also " if escaped with backslash '\')
-
-%Initial "\"we're here,\" he said"# a state with the name |"we're here," he said| ('|' are not part of the name)
-                                  # names cannot span multiple lines
-%Final q2                         # final states (required)
-q1 a q1                           # transitions occur when there is no keyword
-q1 a q2                           # the format is <source> <symbol> <target> 
-"q1" b "a state"                  # note that "q1" and q1 are the same
-"\"we're here,\" he said" c q1
-q1 () q2                          # () is used for epsilon transitions
-
+@NFA-bits
+q (x &  y) | z r
+s x & !y t
 ```
-### Tree automata
-[link](nta-example.vtf)
 ```
-# Example of tree automata in the VATA format
-@NTA               # nondeterministic tree automaton
-%Root q2           # root states (required)
-q1 a (q1 q2)       # the format of transitions is <parent> <symbol> (<child_1> ... <child_n>)
-"q1" b "q1"        # is equivalent to q1 b (q1)
-q2 c               # is equivalent to q2 c ()
-
+@NFA-intervals
+%Alphabet-utf
+q [`a`-`z`]
 ```
-### Finite automata with transitions in BDDs
-[link](nfa-bdd-example.vtf)
+## Transducer
+Transducer has named tracks, and it has the key-value line starting with `%Tracks`. We use `x@<lit>` do say that the <lit> belongs to the track `x`. We may also specify their names by type-identifier or enumeration. Example:
 ```
-# Example of finite automata with transitions in a BDD in the VATA format
-@NFA-BDD          # NFAs with transitions in BDD
-%Symbol-Vars 8    # number of Boolean variables in the alphabet (required)
-%Initial q1 q2
-%Final q2
-
-q1 000x11x1 q2    # the format is <source> <symbol> <target> 
-q1 01101111 q3    # 'x' in the binary vector denote don't care values
-q3 xxxxxxxx q1    # the length needs to match the value in '%Symbol-Vars'
-
+@AFA-intervals
+%States-auto
+%Tracks-auto
+%Alphabet-utf
+q [`a`-`z`]@x | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
 ```
-### Finite automata with everything in BDDs
-[link](nfa-bdd-full-example.vtf)
+``` 
+@AFA-intervals
+%Tracks-auto
+%Alphabet-bits
+q a1@x | a2@z & ("(r,s)" | r | s)
 ```
-# Example of finite automata where both states and transitions are in a BDD in the VATA format
-@NFA-BDD-FULL     # NFAs with states and transitions in BDD
-%State-Vars 3     # number of Boolean variables in states (required)
-%Symbol-Vars 8    # number of Boolean variables in the alphabet (required)
-%Initial 111 1x1
-%Final 00x
+ 
+## Formulas over symbols and transducer track names.
+The format does not specify the syntax of the formulas, it may be SMT or whatever. We  deal with them in the same way as with all the other types of tokens (symbols, states, nodes). We choose a typing scheme, with the implicit marker `f`. The Thing in the typing scheme specification line is `Formulas`.
+For instance, for transducers, one will want to say things like `f"x=y"`--the symbols on track x and y are the same.
 
-111 000x11x1 0x0  # the format of transitions is <source> <symbol> <target> 
-xxx xx11xx00 11x  # 'x' in the binary vectors denote don't care values
-
+``` 
+@AFA-intervals
+%Tracks-enum x y z
+%Alphabet-enum a b c d e f h
+q (a@x | b@z) & f"z=x" ("(r,s)" | (r & s))
 ```
-### A sequence of operations
-[link](code.vtf)
-```
-# Example of how to define a sequence of operations in the VATA format
+## Aliases 
+It could be good to allow a akey-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
-@NFA
-%Name nfa1
-%Initial q1
-%Final q2
-q1 a q2
-
-@NFA
-%Name nfa2
-%Initial r1
-%Final r2
-r1 a r2
-
-@CODE                  # some code comes here
-NFA nfa3 = (minus (union nfa1 nfa2) (intersect nfa1 nfa2))
-bool empty = (isempty nfa3)
-(print "NFA3:\n")
-(print NFA3)
-(print "is empty:")
-(print empty)
-(return empty)
-
-```
-
-### Symbolic finite automata
-[link](sfa-example.vtf)
-```
-# Example of a symbolic finite automaton (in the sense of Margus & Loris) in the VATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
-@SFA               # symbolic finite automaton
-%Name sfa1         # identifier (optional)
-%Initial q1        # initial states (required)
-%Final q2          # final states (required)
-# TODO: maybe specify theories?
-
-q1 "(even x)" q1   # the format is <source> <formula> <target>
-"q1" "(odd x)" q1  # 'x' in the formula denotes the read symbol
-q2 "(= x 3)" q3    # (actually, any name can be used, as long as there is
-q1 "(forall ((x Int)) (= cur x))" q3 # at most one free variable in the formula)
-
-```
-
-### Finite transducers
-[link](nft-example.vtf)
-```
-# Example of a finite transducer in the VATA format
-@NFT               # nondeterministic finite transducer
-%Name  trans       # name (optional)
-%Initial q1        # initial states (required)
-%Final q2          # final states (required)
-%Alphabet a b c    # alphabet (optional)
-
-q1 (a) (b) q2      # the format is <source> (<input symbol 1> ... <input symbol n>) (<output symbol 1> ... <output symbol m>) <target>
-q1 () (a b c) "q1"
-q2 (a b) () q3
-
-```
-
-### Symbolic finite transducers
-[link](sft-example.vtf)
-```
-# Example of a symbolic finite transducer in the VATA format
-@SFT               # symbolic finite transducer
-%Name  trans       # name (optional)
-%Initial q1        # initial states (required)
-%Final q2          # final states (required)
-# TODO: restrict the theories?
-
-q1 ("(= x 3)") ("(+ x 3)" "0") q2       # the format is <source> (<input predicate 1> ... <input predicate n>)
-                                        # (<output function 1> ... <output function m>) <target>
-q1 ("(even x)" "(odd y)") ("y" "x") q2  # here, we use a transition over two
-                                        # symbols; note that the free variables
-                                        # used in the predicates are used in
-                                        # the output functions to refer to the
-                                        # position of the symbols
-q1 ("(= x x)") ("x") q3                 # this is how to specify the 'true'
-                                        # predicate and also bind the symbol to a variable
-q1 () ("1") q3                          # epsilon transitions allowed too
-q1 ("(in x (list 1 2 3)") ("x") q3      # the input symbol is one of {1,2,3}, the output is the same
-
-```
-
-### Probabilistic automata
-[link](dpa-example.vtf)
-```
-# Example of a deterministic probabilistic automaton in the VATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
-@DPA                     # deterministic probabilistic automaton
-%Name dpa1               # identifier (optional)
-%Initial q1:0.5 q2:0.5   # initial states + probabilities (required) 
-%Final q2:0.3 q3:0.7     # final states + probabilities (required)
-
-q1 a:0.4 q1   # the format is <source> <symbol>:<prob> <target>
-q1 b:0.6 q1   # the probabilities of outgoing transitions + acceptance should add up to 1
-q2 a:0.7 q3
-q3 b:0.3 q3
-
-```
-
-### Relations over states
-[link](state-rel-example.vtf)
-```
-# Example of a relation on automaton states in the VATA format
-@NFA
-%Name aut1
-%Initial q1 q2
-%Final q3
-
-q1 a q3
-q3 a q3
-q2 a q4
-
-
-@STATE-REL
-%Name "Simulation for aut1"      # identifier (optional)
-%For-Automaton aut1              # denotes on the states of which automaton the relation is
-%Type direct-sim                 # type of the relation (e.g. "direct-sim" for direct simulation)
-
-q1 q3             # denotes sim(q1, q3)
-q2 q1             # denotes sim(q2, q1)
-q2 q3
-q4 q3
-
-q1 q1
-q2 q2
-q3 q3
-q4 q4
-
-```
+## Attributes
+We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. Here are two options.
+1. An attribute is a string enclosed in between `{` and `}`. If the specification of the attributes inside the braces uses `{` and `}`, then they must apper escaped, that is, as `\{` and `\}`, as well as the `\`, i.e., `\\`. 
+2. To give an attribute to a transition, we would append `%<attribute>` at the line end.  We could give attributes to states symbols etc by writing key-value lines of the form `%<state> <attribute>`. It sounds easier than the previous version, although perhaps less readable.
