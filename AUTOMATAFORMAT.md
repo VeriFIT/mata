@@ -6,19 +6,18 @@
 * The format is **line**-based. Lines can be connected by `/`.
 * Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive**.
 * A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
-* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, or **transition lines**. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the keyword `KEY` is defined. 
+* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, or **transition lines**. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks the `KEY` as defined. 
 * Besides white spaces and the end of line, the following are **reserved characters**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`/`,`\` `[`,`]`,`a`,`q`,`n`,`f`,`{`,`}`.
   * `&`,`|`,`!`,`(`,`)` occurring as tokens in transition lines are logical operators.
   * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
   * `{`,`}` are enclosing attributes, if we use them this way. Remains to be decided. (?)
   * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
-  * `%` opens a key-value line, possibly also key-value appendix od a transition. Remains to be decided. (?)
+  * `%` opens a key-value line, possibly also key-value appendix of a transition. Remains to be decided. (?)
   * `"` strings containing white spaces and reserved characters can be written in between `"`. The reserved characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`.
   * `/` to concatenate lines.
-  * `\` for escaping characters (and `\u` starting utf symbol names?).
-  * something for attributes.
+  * `\` for escaping characters.
   * `a`,`q`,`n`,`f` are token type specifiers (alphabet, state, node, formula). If you don't like these, propose other ones.
-* The parser should recognise the reserved symbols as standalone tookens only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols. (?)
+* The parser should recognise the reserved symbols as standalone tookens only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols (is this reasonable ?).
 
 We categorise automata by **transition type**, that is, the structure of their transitions, and by **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
 
