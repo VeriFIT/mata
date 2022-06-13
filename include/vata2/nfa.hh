@@ -29,6 +29,9 @@
 // VATA2 headers
 #include <vata2/parser.hh>
 #include <vata2/util.hh>
+#include <vata2/ord_vector.hh>
+
+#define EFFICIENT
 
 namespace Vata2
 {
@@ -37,10 +40,15 @@ namespace Nfa
 extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
-
+#ifdef EFFICIENT
+using State = unsigned long;
+using StateSet = Vata2::Util::OrdVector<State>;
+using Symbol = unsigned long;
+#else
 using State = uintptr_t;
 using Symbol = uintptr_t;
 using StateSet = std::set<State>;                           /// set of states
+#endif
 using PostSymb = std::unordered_map<Symbol, StateSet>;      /// post over a symbol
 using StateToPostMap = std::unordered_map<State, PostSymb>; /// transitions
 
@@ -57,6 +65,13 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 using StringDict = std::unordered_map<std::string, std::string>;
 
 const PostSymb EMPTY_POST{};
+
+static const struct Limits {
+    State maxState = LONG_MAX;
+    State minState = 0;
+    Symbol maxSymbol = LONG_MAX;
+    Symbol minSymbol = 0;
+} limits;
 
 /// A transition
 struct Trans
@@ -220,6 +235,154 @@ Vata2::Parser::ParsedSection serialize(
 
 
 ///  An NFA
+#ifdef EFFICIENT
+struct TransSymbolStates {
+    Symbol symbol;
+    StateSet states_to;
+
+    TransSymbolStates() = delete;
+    TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition) {}
+    TransSymbolStates(Symbol symbolOnTransition, State states_to) :
+            symbol(symbolOnTransition), states_to{states_to} {}
+    TransSymbolStates(Symbol symbolOnTransition, StateSet states_to) :
+            symbol(symbolOnTransition), states_to(std::move(states_to)) {}
+
+    inline bool operator<(const TransSymbolStates& rhs) const { return symbol < rhs.symbol; }
+    inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
+    inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
+    inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
+};
+
+using TransitionList = Vata2::Util::OrdVector<TransSymbolStates>;
+using TransitionRelation = std::vector<TransitionList>;
+
+struct Nfa
+{
+    /**
+     * @brief For state q, transitionrelation[q] keeps the list of transitions ordered by symbols.
+     *
+     * The set of states of this automaton are the numbers from 0 to
+     *
+     * @todo maybe have this as its own class
+     */
+    TransitionRelation transitionrelation;
+    StateSet initialstates = {};
+    StateSet finalstates = {};
+
+    //TODO we probably need the number of states, int, as a member, for when we want to remove states
+    // alphabet?
+public:
+    Nfa () : transitionrelation(), initialstates(), finalstates() {}
+    /**
+     * @brief Construct a new Explicit NFA with num_of_states states
+     */
+    Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
+
+    //void addState(State stateToAdd);
+
+    auto get_num_of_states() const { return transitionrelation.size(); }
+
+    // TODO: exceptions if states do not exist
+    void add_initial(State state) { this->initialstates.insert(state); }
+    void add_initial(const std::vector<State> vec)
+    { // {{{
+        for (const State& st : vec) { this->add_initial(st); }
+    } // }}}
+    bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
+    void make_state_initial(State state_to_make_initial) { initialstates.insert(state_to_make_initial); }
+
+    void add_final(State state) { this->finalstates.insert(state); }
+    void add_final(const std::vector<State> vec)
+    { // {{{
+        for (const State& st : vec) { this->add_final(st); }
+    } // }}}
+    bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
+    void make_state_final(State state_to_make_final) { finalstates.insert(state_to_make_final); }
+
+    /**
+     * @brief Returns a newly created state.
+     */
+    State add_new_state();
+    bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
+
+    const TransitionList& get_transitions_from_state(State state_from) const { return transitionrelation[state_from]; }
+    /* Lukas: the above is nice. The good thing is that acces to [q] is constant,
+     * so one can iterate over all states for instance using this, and it is fast.
+     * But I don't know how to do a similar thing inside TransitionList.
+     * Returning a transition of q with the symbol a means to search for it in the list,
+     * so iteration over the entire list would be very inefficient.
+     * An efficient iteration would probably need an interface for an iterator, I don't know...
+     * */
+
+    /**
+     * @brief Adds a transition from stateFrom trough symbol to stateTo.
+     *
+     * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
+     */
+    void add_trans(State src, Symbol symb, State tgt);
+    void add_trans(const Trans& trans)
+    {
+        add_trans(trans.src, trans.symb, trans.tgt);
+    }
+
+    bool has_trans(Trans trans) const
+    {
+        const TransitionList& tl = get_transitions_from_state(trans.src);
+
+        if (tl.empty())
+            return false;
+        for (auto t : tl)
+        {
+            if (trans.symb > t.symbol)
+                return false;
+            if (trans.symb == t.symbol && t.states_to.count(trans.tgt))
+                return true;
+        }
+
+        return true;
+    }
+    bool has_trans(State src, Symbol symb, State tgt) const
+    { // {{{
+        return this->has_trans({src, symb, tgt});
+    } // }}}
+
+    bool trans_empty() const { return this->transitionrelation.empty();} /// no transitions
+    size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
+
+    void print_to_DOT(std::ostream &outputStream) const;
+    static Nfa read_from_our_format(std::istream &inputStream);
+
+    //class for iterating successors of a set of states represented as a StateSet
+    //the iteration will take the symbols in from the smallest
+    struct state_set_post_iterator {
+    private:
+        std::vector<State> state_vector;
+        const Nfa &automaton;//or just give it a transition relation, that would make it more universal
+        std::size_t size; // usable size of stateVector
+        Symbol min_symbol;//the smallest symbol, for the next post
+        std::vector<TransitionList::const_iterator> transition_iterators; //vector of iterators into TransitionLists (that are assumed sorted by symbol), for every state
+    public:
+        state_set_post_iterator(std::vector<State> states, const Nfa &aut);
+
+        bool has_next() const;
+
+        std::pair<Symbol, const StateSet> next();
+    };
+
+    auto begin() const { return transitionrelation.begin(); }
+    auto end() const { return transitionrelation.end(); }
+
+    const TransitionList& operator[](State state) const
+    { // {{{
+        if (state >= transitionrelation.size())
+        {
+            return TransitionList();
+        }
+
+        return transitionrelation[state];
+    } // operator[] }}}
+};
+#else
 struct Nfa
 { // {{{
 private:
@@ -338,7 +501,7 @@ public:
 	// 	return os;
 	// }
 }; // Nfa }}}
-
+#endif
 
 /// a wrapper encapsulating @p Nfa for higher-level use
 struct NfaWrapper
@@ -353,7 +516,212 @@ struct NfaWrapper
 	StringToStateMap state_dict;
 }; // NfaWrapper }}}
 
+#ifdef EFFICIENT
+/// Do the automata have disjoint sets of states?
+bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
+/// Is the language of the automaton empty?
+bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
+
+bool is_lang_empty_cex(const Nfa& aut, Word* cex);
+
+void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs);
+
+inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
+{ // {{
+    Nfa uni_aut;
+    uni(&uni_aut, lhs, rhs);
+    return uni_aut;
+} // uni }}}
+
+void intersection(
+        Nfa*         res,
+        const Nfa&   lhs,
+        const Nfa&   rhs,
+        ProductMap*  prod_map = nullptr);
+
+inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
+{
+    Nfa result;
+    uni(&result, lhs, rhs);
+    return result;
+}
+
+/// Compute union of a pair of automata
+/// Assumes that sets of states of lhs, rhs, and result are disjoint
+void union_norename(
+        Nfa*        result,
+        const Nfa&  lhs,
+        const Nfa&  rhs); // TODO
+
+/// Compute union of a pair of automata
+inline Nfa union_norename(
+        const Nfa&  lhs,
+        const Nfa&  rhs)
+{ // {{{
+    assert(false); // TODO
+}
+
+/// makes the transition relation complete
+void make_complete(
+        Nfa*             aut,
+        const Alphabet&  alphabet,
+        State            sink_state);
+
+// assumes deterministic automaton
+void complement_in_place(Nfa &aut);
+
+/// Co
+void complement(
+        Nfa*               result,
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        const StringDict&  params = {{"algo", "classical"}},
+        SubsetMap*         subset_map = nullptr);
+
+inline Nfa complement(
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        const StringDict&  params = {{"algo", "classical"}},
+        SubsetMap*         subset_map = nullptr)
+{ // {{{
+    Nfa result;
+    complement(&result, aut, alphabet, params, subset_map);
+    return result;
+} // complement }}}
+
+void minimize(Nfa* res, const Nfa &aut);
+
+inline Nfa minimize(const Nfa &aut)
+{
+    Nfa minimized;
+    minimize(&minimized, aut);
+    return aut;
+}
+
+/// Determinize an automaton
+void determinize(
+        Nfa*        result,
+        const Nfa&  aut,
+        SubsetMap*  subset_map = nullptr,
+        State*      last_state_num = nullptr);
+
+inline Nfa determinize(
+        const Nfa&  aut,
+        SubsetMap*  subset_map,
+        State*      last_state_num = nullptr)
+{ // {{{
+    Nfa result;
+    determinize(&result, aut, subset_map, last_state_num);
+    return result;
+} // determinize }}}
+
+void invert(Nfa* result, const Nfa &aut);
+
+inline Nfa invert(const Nfa &aut)
+{
+    Nfa inverted;
+    invert(&inverted, aut);
+    return inverted;
+}
+// TODO: VATA::Util::BinaryRelation computeSimulation() const;
+
+/// Is the language of the automaton universal?
+bool is_universal(
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        Word*              cex = nullptr,
+        const StringDict&  params = {{"algo", "antichains"}});
+
+inline bool is_universal(
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        const StringDict&  params)
+{ // {{{
+    return is_universal(aut, alphabet, nullptr, params);
+} // }}}
+
+/// Checks inclusion of languages of two automata (smaller <= bigger)?
+bool is_incl(
+        const Nfa&         smaller,
+        const Nfa&         bigger,
+        const Alphabet&    alphabet,
+        Word*              cex = nullptr,
+        const StringDict&  params = {{"algo", "antichains"}});
+
+inline bool is_incl(
+        const Nfa&         smaller,
+        const Nfa&         bigger,
+        const Alphabet&    alphabet,
+        const StringDict&  params)
+{ // {{{
+    return is_incl(smaller, bigger, alphabet, nullptr, params);
+} // }}}
+
+/// Reverting the automaton
+void revert(Nfa* result, const Nfa& aut);
+
+inline Nfa revert(const Nfa& aut)
+{ // {{{
+    Nfa result;
+    revert(&result, aut);
+    return result;
+} // revert }}}
+
+/// Removing epsilon transitions
+void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
+
+inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
+{ // {{{
+    Nfa result;
+    remove_epsilon(&result, aut, epsilon);
+    return result;
+} // }}}
+
+/// Test whether an automaton is deterministic, i.e., whether it has exactly
+/// one initial state and every state has at most one outgoing transition over
+/// every symbol.  Checks the whole automaton, not only the reachable part
+bool is_deterministic(const Nfa& aut);
+
+/// Test for automaton completeness wrt an alphabet.  An automaton is complete
+/// if every reachable state has at least one outgoing transition over every
+/// symbol.
+bool is_complete(const Nfa& aut, const Alphabet& alphabet);
+
+/** Loads an automaton from Parsed object */
+void construct(
+        Nfa*                                 aut,
+        const Vata2::Parser::ParsedSection&  parsec,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+void construct(
+        Nfa*                                 aut,
+        const Vata2::Parser::ParsedSection&  parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+inline Nfa construct(
+        const Vata2::Parser::ParsedSection&  parsec,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    Nfa result;
+    construct(&result, parsec, symbol_map, state_map);
+    return result;
+} // construct }}}
+
+std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
+
+/// Checks whether a string is in the language of an automaton
+bool is_in_lang(const Nfa& aut, const Word& word);
+
+/// Checks whether the prefix of a string is in the language of an automaton
+bool is_prfx_in_lang(const Nfa& aut, const Word& word);
+
+#else
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 /// Is the language of the automaton empty?
@@ -587,6 +955,8 @@ bool is_in_lang(const Nfa& aut, const Word& word);
 
 /// Checks whether the prefix of a string is in the language of an automaton
 bool is_prfx_in_lang(const Nfa& aut, const Word& word);
+
+#endif
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
