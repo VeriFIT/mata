@@ -231,7 +231,42 @@ void Vata2::Nfa::make_complete(
         Nfa*             aut,
         const Alphabet&  alphabet,
         State            sink_state)
-{assert(false);}
+{
+    assert(nullptr != aut);
+
+    std::list<State> worklist(aut->initialstates.begin(),
+                              aut->initialstates.end());
+    std::unordered_set<State> processed(aut->initialstates.begin(),
+                                        aut->initialstates.end());
+    worklist.push_back(sink_state);
+    processed.insert(sink_state);
+    while (!worklist.empty())
+    {
+        State state = *worklist.begin();
+        worklist.pop_front();
+
+        std::set<Symbol> used_symbols;
+        if (!aut->trans_empty())
+        {
+            for (const auto &symb_stateset: (*aut)[state]) {
+                used_symbols.insert(symb_stateset.symbol);
+
+                const StateSet &stateset = symb_stateset.states_to;
+                for (const auto &tgt_state: stateset) {
+                    bool inserted;
+                    tie(std::ignore, inserted) = processed.insert(tgt_state);
+                    if (inserted) { worklist.push_back(tgt_state); }
+                }
+            }
+        }
+
+        auto unused_symbols = alphabet.get_complement(used_symbols);
+        for (Symbol symb : unused_symbols)
+        {
+            aut->add_trans(state, symb, sink_state);
+        }
+    }
+}
 
 bool Vata2::Nfa::is_universal(
         const Nfa&         aut,
@@ -244,23 +279,144 @@ void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 {assert(false);} // TODO
 
 void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
-{assert(false);} // TODO
+{
+    assert(nullptr != result);
+
+    result->initialstates = aut.finalstates;
+    result->finalstates = aut.initialstates;
+
+    for (int i = 0; i < aut.trans_size(); ++i)
+    {
+        for (const auto& symStates : aut[i])
+            for (const State tgt : symStates.states_to)
+                result->add_trans(tgt, symStates.symbol, i);
+    }
+}
 
 bool Vata2::Nfa::is_deterministic(const Nfa& aut)
-{assert(false);} // TODO
+{
+    if (aut.initialstates.size() != 1) { return false; }
 
+    if (aut.trans_empty()) { return true; }
+
+    for (size_t i = 0; i < aut.trans_size(); ++i)
+    {
+        for (const auto& symStates : aut[i])
+        {
+            if (symStates.states_to.size() != 1) { return false; }
+        }
+    }
+
+    return true;
+}
 bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
-{assert(false);} //TODO
+{
+    std::list<Symbol> symbs_ls = alphabet.get_symbols();
+    std::unordered_set<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
+
+    // TODO: make a general function for traversal over reachable states that can
+    // be shared by other functions?
+    std::list<State> worklist(aut.initialstates.begin(),
+                              aut.initialstates.end());
+    std::unordered_set<State> processed(aut.initialstates.begin(),
+                                        aut.initialstates.end());
+
+    while (!worklist.empty())
+    {
+        State state = *worklist.begin();
+        worklist.pop_front();
+
+        size_t n = 0;      // counter of symbols
+        if (!aut.trans_empty()) {
+            for (const auto &symb_stateset: aut[state]) {
+                ++n;
+                if (!haskey(symbs, symb_stateset.symbol)) {
+                    throw std::runtime_error(std::to_string(__func__) +
+                                             ": encountered a symbol that is not in the provided alphabet");
+                }
+
+                const StateSet &stateset = symb_stateset.states_to;
+                for (const auto &tgt_state: stateset) {
+                    bool inserted;
+                    tie(std::ignore, inserted) = processed.insert(tgt_state);
+                    if (inserted) { worklist.push_back(tgt_state); }
+                }
+            }
+        }
+
+        if (symbs.size() != n) { return false; }
+    }
+
+    return true;
+}
 
 std::pair<Word, bool> Vata2::Nfa::get_word_for_path(const Nfa& aut, const Path& path)
-{assert(false);}
+{
+    if (path.empty())
+    {
+        return {{}, true};
+    }
+
+    Word word;
+    State cur = path[0];
+    for (size_t i = 1; i < path.size(); ++i)
+    {
+        State newSt = path[i];
+        bool found = false;
+
+        if (!aut.trans_empty())
+        {
+            for (const auto &symbolMap: aut.transitionrelation[cur]) {
+                for (State st: symbolMap.states_to) {
+                    if (st == newSt) {
+                        word.push_back(symbolMap.symbol);
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (found) { break; }
+            }
+        }
+
+        if (!found)
+        {
+            return {{}, false};
+        }
+
+        cur = newSt;    // update current state
+    }
+
+    return {word, true};
+}
 
 bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
-{assert(false);} // TODO
+{
+    StateSet cur = aut.initialstates;
+
+    for (Symbol sym : word)
+    {
+        cur = aut.post(cur, sym);
+        if (cur.empty()) { return false; }
+    }
+
+    return !are_disjoint(cur, aut.finalstates);
+}
 
 /// Checks whether the prefix of a string is in the language of an automaton
 bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
-{assert(false);} // TODO
+{
+    StateSet cur = aut.initialstates;
+
+    for (Symbol sym : word)
+    {
+        if (!are_disjoint(cur, aut.finalstates)) { return true; }
+        cur = aut.post(cur, sym);
+        if (cur.empty()) { return false; }
+    }
+
+    return !are_disjoint(cur, aut.finalstates);
+}
 
 /// serializes Nfa into a ParsedSection
 Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
@@ -269,9 +425,84 @@ Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
         const StateToStringMap*   state_map)
 {assert(false);}
 
-bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex) {assert(false);} // TODO
+bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
+{ // {{{
+    std::list<State> worklist(
+            aut.initialstates.begin(), aut.initialstates.end());
+    std::unordered_set<State> processed(
+            aut.initialstates.begin(), aut.initialstates.end());
 
-bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex) {assert(false);}
+    // 'paths[s] == t' denotes that state 's' was accessed from state 't',
+    // 'paths[s] == s' means that 's' is an initial state
+    std::map<State, State> paths;
+    for (State s : worklist)
+    {	// initialize
+        paths[s] = s;
+    }
+
+    while (!worklist.empty())
+    {
+        State state = worklist.front();
+        worklist.pop_front();
+
+        if (haskey(aut.finalstates, state))
+        {
+            // TODO process the CEX
+            if (nullptr != cex)
+            {
+                cex->clear();
+                cex->push_back(state);
+                while (paths[state] != state)
+                {
+                    state = paths[state];
+                    cex->push_back(state);
+                }
+
+                std::reverse(cex->begin(), cex->end());
+            }
+
+            return false;
+        }
+
+        if (aut.trans_empty())
+            continue;
+
+        for (const auto& symb_stateset : aut[state])
+        {
+            const StateSet& stateset = symb_stateset.states_to;
+            for (const auto& tgt_state : stateset)
+            {
+                bool inserted;
+                tie(std::ignore, inserted) = processed.insert(tgt_state);
+                if (inserted)
+                {
+                    worklist.push_back(tgt_state);
+                    // also set that tgt_state was accessed from state
+                    paths[tgt_state] = state;
+                }
+                else
+                {
+                    // the invariant
+                    assert(haskey(paths, tgt_state));
+                }
+            }
+        }
+    }
+
+    return true;
+} // is_lang_empty }}}
+
+bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
+{
+    assert(nullptr != cex);
+
+    Path path = { };
+    bool result = is_lang_empty(aut, &path);
+    if (result) { return true; }
+    bool consistent;
+    tie(*cex, consistent) = get_word_for_path(aut, path);
+    assert(consistent);
+}
 
 void Vata2::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
