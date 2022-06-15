@@ -280,7 +280,8 @@ public:
 
     //void addState(State stateToAdd);
 
-    auto get_num_of_states() const { return transitionrelation.size(); }
+    auto get_num_of_states() const { return std::max(
+            {transitionrelation.size(), initialstates.size(), finalstates.size()}); }
 
     // TODO: exceptions if states do not exist
     void add_initial(State state) { this->initialstates.insert(state); }
@@ -305,7 +306,11 @@ public:
     State add_new_state();
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
 
-    const TransitionList& get_transitions_from_state(State state_from) const { return transitionrelation[state_from]; }
+    const TransitionList& get_transitions_from_state(State state_from) const
+    {
+        assert(!transitionrelation.empty());
+        return transitionrelation[state_from];
+    }
     /* Lukas: the above is nice. The good thing is that acces to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
@@ -327,6 +332,8 @@ public:
 
     bool has_trans(Trans trans) const
     {
+        if (transitionrelation.empty())
+            return false;
         const TransitionList& tl = get_transitions_from_state(trans.src);
 
         if (tl.empty())
