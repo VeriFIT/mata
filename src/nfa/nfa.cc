@@ -502,6 +502,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
     auto hashStatePair = [lhs](const StatePair &sp) {
         return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
     };
+    // TODO probably remove this since we use prod_map as parameter
     std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
 
     std::vector<StatePair> pairsToProcess;
@@ -512,11 +513,17 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
             State newIntersectState = res->add_new_state();
 
             thisAndOtherStateToIntersectState[thisAndOtherInitialStatePair] = newIntersectState;
+            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
             pairsToProcess.push_back(thisAndOtherInitialStatePair);
 
             res->make_state_initial(newIntersectState);
+            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
+                res->make_state_final(newIntersectState);
         }
     }
+
+    if (lhs.trans_empty() || rhs.trans_empty())
+        return;
 
     while (!pairsToProcess.empty()) {
         StatePair pairToProcess = pairsToProcess.back();
@@ -563,6 +570,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
                         State intersectStateTo;
                         if (thisAndOtherStateToIntersectState.count(intersectStatePairTo) == 0) {
                             intersectStateTo = res->add_new_state();
+                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
                             thisAndOtherStateToIntersectState[intersectStatePairTo] = intersectStateTo;
                             pairsToProcess.push_back(intersectStatePairTo);
 
@@ -620,7 +628,7 @@ void Vata2::Nfa::determinize(
     std::vector<State> S0 = aut.initialstates.ToVector();
     State S0id = result->add_new_state();
     result->make_state_initial(S0id);
-    std::vector<bool> isFinal(aut.transitionrelation.size(), false);//for fast detection of a final state in a set
+    std::vector<bool> isFinal(aut.get_num_of_states(), false);//for fast detection of a final state in a set
     for (const auto &q: aut.finalstates) {
         isFinal[q] = true;
     }
@@ -629,6 +637,9 @@ void Vata2::Nfa::determinize(
     }
     worklist.push_back(std::make_pair(S0id, S0));
     subsetsToStates.insert(std::make_pair(S0, S0id));
+
+    if (aut.trans_empty())
+        return;
 
     while (!worklist.empty()) {
         auto Spair = worklist.back();
