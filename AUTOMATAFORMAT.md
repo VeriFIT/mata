@@ -6,7 +6,7 @@
 * The format is **line**-based. Lines can be connected by `\`.
 * Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive**.
 * A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
-* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, or **transition lines**. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks the `KEY` as defined. 
+* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, **transition lines**, or **comment lines** starting with `#`. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the `KEY` as defined. 
 * Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`,`{`,`}`.
   * `&`,`|`,`!`,`(`,`)` occurring as tokens in transition lines are logical operators.
   * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
@@ -16,6 +16,7 @@
   * `"` strings containing white spaces and special characters can be written in between `"`. The special characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`. 
   * `\` for escaping characters `\` is also used to concatenate lines.
   * `a`,`q`,`n`,`t` are token type specifiers (alphabet, state, node, attribute). 
+  * `#` starts a comment line.
 * There are two **words with special meaning**: `true`,`false`.
 * The parser may recognise the special symbols as standalone tookens (does not apply to `q`,`a`,`n`,`t`,`#`) only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols.
 
@@ -101,6 +102,8 @@ The user may parse symbol token strings in a specific way. They may be SMT formu
 %Alphabet-enum a b c d e f h
 q (a@x | b@z) & f"z=x" ("(r,s)" | (r & s))
 ```
+The example above does not work in the current version where the special formulae and symbols are the same thing.
+ 
 ## Aliases 
 It could be good to allow a akey-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
