@@ -3,21 +3,21 @@
 * Based partially on Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372), a format of Pavol Vargovcik, and a confused disucssion.
 
 ## Top-level file structure
-* The format is **line**-based. Lines can be connected by `/`.
+* The format is **line**-based. Lines can be connected by `\`.
 * Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive**.
 * A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
 * In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, or **transition lines**. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks the `KEY` as defined. 
-* Besides white spaces and the end of line, the following are **reserved characters**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`/`,`\` `[`,`]`,`a`,`q`,`n`,`f`,`{`,`}`.
+* Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`,`{`,`}`.
   * `&`,`|`,`!`,`(`,`)` occurring as tokens in transition lines are logical operators.
   * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
   * `{`,`}` are enclosing attributes, if we use them this way. Remains to be decided. (?)
   * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
   * `%` opens a key-value line, possibly also key-value appendix of a transition. Remains to be decided. (?)
-  * `"` strings containing white spaces and reserved characters can be written in between `"`. The reserved characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`.
-  * `/` to concatenate lines.
-  * `\` for escaping characters.
-  * `a`,`q`,`n`,`f` are token type specifiers (alphabet, state, node, formula). If you don't like these, propose other ones.
-* The parser should recognise the reserved symbols as standalone tookens only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols (is this reasonable ?).
+  * `"` strings containing white spaces and special characters can be written in between `"`. The special characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`. 
+  * `\` for escaping characters `\` is also used to concatenate lines.
+  * `a`,`q`,`n`,`t` are token type specifiers (alphabet, state, node, attribute). 
+* There are two **words with special meaning**: `true`,`false`.
+* The parser may recognise the special symbols as standalone tookens (does not apply to `q`,`a`,`n`,`t`,`#`) only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols.
 
 We categorise automata by **transition type**, that is, the structure of their transitions, and by **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
 
@@ -29,11 +29,11 @@ We use general form of AFA, by Pavol V., and simple NFA.
 * Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
 * Since in the general formulae, the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types.
   * By **enumeration**.
-  * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker is *not* a part of the thing's name! (Or should it be? It would perhaps be simpler that way?)
+  * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker *is* a part of the thing's name. 
   * **automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
-* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, `Nodes`, or `Formulas` (Formulas will be explained later), and `<Scheme>` may be `markerd`, `enum`, or `auto`.  The cheme z `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
+* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `markerd`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
 * Markers is the implicit option for all types of tokens, used if nothing is specified.
-* `()` means true and `!()` means false.
+* `true` means true and `false` means false.
 
 ### NFA 
 * The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula. 
@@ -92,9 +92,8 @@ q [`a`-`z`]@x | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
 q a1@x | a2@z & ("(r,s)" | r | s)
 ```
  
-## Formulas over symbols and transducer track names.
-The format does not specify the syntax of the formulas, it may be SMT or whatever. We  deal with them in the same way as with all the other types of tokens (symbols, states, nodes). We choose a typing scheme, with the implicit marker `f`. The Thing in the typing scheme specification line is `Formulas`.
-For instance, for transducers, one will want to say things like `f"x=y"`--the symbols on track x and y are the same.
+## Special formulas over symbols and transducer track names.
+The user may parse symbol token strings in a specific way. They may be SMT formulas or some special king of fomulas, such as `a"x=y"` specifying that the two transducer tracks read the same symbol... 
 
 ``` 
 @AFA-intervals
@@ -106,6 +105,5 @@ q (a@x | b@z) & f"z=x" ("(r,s)" | (r & s))
 It could be good to allow a akey-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
 ## Attributes
-We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. Here are two options.
-1. An attribute is a string enclosed in between `{` and `}`. If the specification of the attributes inside the braces uses `{` and `}`, then they must apper escaped, that is, as `\{` and `\}`, as well as the `\`, i.e., `\\`. 
-2. To give an attribute to a transition, we would append `%<attribute>` at the line end.  We could give attributes to states symbols etc by writing key-value lines of the form `%<state> <attribute>`. It sounds easier than the previous version, although perhaps less readable.
+We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. 
+1. An attribute inside a transition is a token such as state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%<state> <attribute>`. 
