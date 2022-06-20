@@ -268,15 +268,71 @@ void Vata2::Nfa::make_complete(
     }
 }
 
-bool Vata2::Nfa::is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        Word*              cex,
-        const StringDict&  params)
-{assert(false);}
-
 void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
-{assert(false);} // TODO
+{
+    assert(nullptr != result);
+
+    // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
+    std::unordered_map<State, StateSet> eps_closure;
+
+    // TODO: grossly inefficient
+    // first we compute the epsilon closure
+    for (size_t i=0; i < aut.trans_size(); ++i)
+    {
+        for (auto trans: aut[i])
+        { // initialize
+            auto it_ins_pair = eps_closure.insert({i, {i}});
+            if (trans.symbol == epsilon)
+            {
+                StateSet &closure = it_ins_pair.first->second;
+                closure.insert(trans.states_to);
+            }
+        }
+    }
+
+    bool changed = true;
+    while (changed) { // compute the fixpoint
+        changed = false;
+        for (size_t i=0; i < aut.trans_size(); ++i)
+        {
+            for (auto trans: aut[i])
+            {
+                if (trans.symbol == epsilon)
+                {
+                    StateSet &src_eps_cl = eps_closure[i];
+                    for (State tgt : trans.states_to)
+                    {
+                        const StateSet &tgt_eps_cl = eps_closure[tgt];
+
+                        for (State st: tgt_eps_cl)
+                        {
+                            if (src_eps_cl.count(st) == 0) changed = true;
+                            src_eps_cl.insert(st);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // now we construct the automaton without epsilon transitions
+    result->initialstates.insert(aut.initialstates);
+    result->finalstates.insert(aut.finalstates);
+    for (auto state_closure_pair : eps_closure) { // for every state
+        State src_state = state_closure_pair.first;
+        for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
+            if (aut.has_final(eps_cl_state)) result->add_final(src_state);
+            for (auto symb_set : aut[eps_cl_state]) {
+                if (symb_set.symbol == epsilon) continue;
+
+                // TODO: this could be done more efficiently if we had a better add_trans method
+                for (State tgt_state : symb_set.states_to) {
+                    result->add_trans(src_state, symb_set.symbol, tgt_state);
+                }
+            }
+        }
+    }
+}
 
 void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
 {
@@ -641,9 +697,9 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
                 // TODO if (stateName[0] != 's') { error }
                 State stateToAdd = getStateFromName(stateName.substr(1));
                 if (identificator == "kInitialFormula") {
-                    newNFA.make_state_initial(stateToAdd);
+                    newNFA.add_initial(stateToAdd);
                 } else if (identificator == "kFinalFormula") {
-                    newNFA.make_state_final(stateToAdd);
+                    newNFA.add_initial(stateToAdd);
                 } else {
                     // TODO: define own exception for parsing
                     throw std::runtime_error(std::string("Keywords are kInitialFormula and kFinalFormula but there is ") + identificator);
@@ -682,7 +738,35 @@ void Vata2::Nfa::union_norename(
         const Nfa&  lhs,
         const Nfa&  rhs)
 { // {{{
-    assert(false);
+    assert(nullptr != result);
+
+    result->initialstates.insert(lhs.initialstates);
+    result->initialstates.insert(rhs.initialstates);
+
+    result->finalstates.insert(lhs.finalstates);
+    result->finalstates.insert(rhs.finalstates);
+
+    for (size_t i = 0; i < lhs.trans_size(); ++i)
+    {
+        for (const TransSymbolStates& symStates : lhs[i])
+        {
+            for (State tgt: symStates.states_to)
+            {
+                result->add_trans(i, symStates.symbol, tgt);
+            }
+        }
+    }
+
+    for (size_t i = 0; i < rhs.trans_size(); ++i)
+    {
+        for (const TransSymbolStates& symStates : rhs[i])
+        {
+            for (State tgt: symStates.states_to)
+            {
+                result->add_trans(i, symStates.symbol, tgt);
+            }
+        }
+    }
 } // }}}
 
 void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
@@ -699,11 +783,11 @@ void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisInitialState : lhs.initialstates) {
-        unionAutomaton->make_state_initial(thisStateToUnionState[thisInitialState]);
+        unionAutomaton->add_initial(thisStateToUnionState[thisInitialState]);
     }
 
     for (State thisFinalState : lhs.finalstates) {
-        unionAutomaton->make_state_final(thisStateToUnionState[thisFinalState]);
+        unionAutomaton->add_initial(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
@@ -747,9 +831,9 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
             (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
             pairsToProcess.push_back(thisAndOtherInitialStatePair);
 
-            res->make_state_initial(newIntersectState);
+            res->add_initial(newIntersectState);
             if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
-                res->make_state_final(newIntersectState);
+                res->add_initial(newIntersectState);
         }
     }
 
@@ -806,7 +890,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
                             pairsToProcess.push_back(intersectStatePairTo);
 
                             if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->make_state_final(intersectStateTo);
+                                res->add_initial(intersectStateTo);
                             }
                         } else {
                             intersectStateTo = thisAndOtherStateToIntersectState[intersectStatePairTo];
@@ -858,13 +942,13 @@ void Vata2::Nfa::determinize(
     std::map<std::vector<State>, State> subsetsToStates;
     std::vector<State> S0 = aut.initialstates.ToVector();
     State S0id = result->add_new_state();
-    result->make_state_initial(S0id);
+    result->add_initial(S0id);
     std::vector<bool> isFinal(aut.get_num_of_states(), false);//for fast detection of a final state in a set
     for (const auto &q: aut.finalstates) {
         isFinal[q] = true;
     }
     if (contains_final(S0, isFinal)) {
-        result->make_state_final(S0id);
+        result->add_final(S0id);
     }
     worklist.push_back(std::make_pair(S0id, S0));
     subsetsToStates.insert(std::make_pair(S0, S0id));
@@ -901,7 +985,7 @@ void Vata2::Nfa::determinize(
                 subsetsToStates.insert(std::make_pair(T, Tid));
                 //if (contains_final(T,*this))
                 if (contains_final(T, isFinal)) {
-                    result->make_state_final(Tid);
+                    result->add_final(Tid);
                 }
                 worklist.push_back(std::make_pair(Tid, T));
             }

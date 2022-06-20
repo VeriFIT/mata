@@ -283,6 +283,12 @@ public:
     auto get_num_of_states() const { return std::max(
             {transitionrelation.size(), initialstates.size(), finalstates.size()}); }
 
+    void increase_size(size_t size)
+    {
+        assert(get_num_of_states() <= size);
+        transitionrelation.resize(size);
+    }
+
     // TODO: exceptions if states do not exist
     void add_initial(State state) { this->initialstates.insert(state); }
     void add_initial(const std::vector<State> vec)
@@ -290,7 +296,6 @@ public:
         for (const State& st : vec) { this->add_initial(st); }
     } // }}}
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
-    void make_state_initial(State state_to_make_initial) { initialstates.insert(state_to_make_initial); }
 
     void add_final(State state) { this->finalstates.insert(state); }
     void add_final(const std::vector<State> vec)
@@ -298,7 +303,6 @@ public:
         for (const State& st : vec) { this->add_final(st); }
     } // }}}
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
-    void make_state_final(State state_to_make_final) { finalstates.insert(state_to_make_final); }
 
     /**
      * @brief Returns a newly created state.
@@ -347,7 +351,7 @@ public:
                 return true;
         }
 
-        return true;
+        return false;
     }
     bool has_trans(State src, Symbol symb, State tgt) const
     { // {{{
