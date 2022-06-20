@@ -437,6 +437,15 @@ public:   // Public methods
 		return (vec_ == rhs.vec_);
 	}
 
+    bool operator!=(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        return (vec_ != rhs.vec_);
+    }
+
 	bool operator<(const OrdVector& rhs) const
 	{
 		// Assertions
