@@ -361,6 +361,15 @@ public:
 
     bool trans_empty() const { return this->transitionrelation.empty();} /// no transitions
     size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
+    bool nothing_in_trans() const
+    {
+        for (const auto& trans : this->transitionrelation) {
+            if (trans.size() > 0)
+                return false;
+        }
+
+        return true;
+    }
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
