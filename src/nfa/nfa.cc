@@ -834,6 +834,9 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
             res->add_initial(newIntersectState);
             if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
                 res->add_initial(newIntersectState);
+            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState)) {
+                res->add_final(newIntersectState);
+            }
         }
     }
 
@@ -890,7 +893,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
                             pairsToProcess.push_back(intersectStatePairTo);
 
                             if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->add_initial(intersectStateTo);
+                                res->add_final(intersectStateTo);
                             }
                         } else {
                             intersectStateTo = thisAndOtherStateToIntersectState[intersectStatePairTo];
