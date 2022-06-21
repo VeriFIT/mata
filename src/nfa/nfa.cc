@@ -955,6 +955,7 @@ void Vata2::Nfa::determinize(
     }
     worklist.push_back(std::make_pair(S0id, S0));
     subsetsToStates.insert(std::make_pair(S0, S0id));
+    if (subset_map != nullptr) { (*subset_map)[Vata2::Util::OrdVector<State>(S0)] = S0id; }
 
     if (aut.trans_empty())
         return;
@@ -986,6 +987,7 @@ void Vata2::Nfa::determinize(
             } else {
                 Tid = result->add_new_state();
                 subsetsToStates.insert(std::make_pair(T, Tid));
+                if (subset_map != nullptr) { (*subset_map)[Vata2::Util::OrdVector<State>(T)] = Tid; }
                 //if (contains_final(T,*this))
                 if (contains_final(T, isFinal)) {
                     result->add_final(Tid);
