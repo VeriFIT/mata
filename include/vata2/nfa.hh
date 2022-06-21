@@ -345,10 +345,11 @@ public:
             return false;
         for (auto t : tl)
         {
-            if (trans.symb > t.symbol)
+            if (t.symbol > trans.symb)
                 return false;
             if (trans.symb == t.symbol && t.states_to.count(trans.tgt))
                 return true;
+            assert(t.symbol <= trans.symb);
         }
 
         return false;
