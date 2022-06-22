@@ -338,6 +338,8 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
 {
     assert(nullptr != result);
 
+    if (aut.trans_size() > result->trans_size()) { result->increase_size(aut.trans_size()); }
+
     result->initialstates = aut.finalstates;
     result->finalstates = aut.initialstates;
 
