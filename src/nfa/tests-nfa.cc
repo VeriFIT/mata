@@ -1518,7 +1518,7 @@ TEST_CASE("Vata2::Nfa::revert()")
 
 TEST_CASE("Vata2::Nfa::is_deterministic()")
 { // {{{
-	Nfa aut;
+	Nfa aut('s'+1);
 
 	SECTION("(almost) empty automaton")
 	{
@@ -1576,7 +1576,7 @@ TEST_CASE("Vata2::Nfa::is_deterministic()")
 
 TEST_CASE("Vata2::Nfa::is_complete()")
 { // {{{
-	Nfa aut;
+	Nfa aut('q'+1);
 
 	SECTION("empty automaton")
 	{
@@ -1667,7 +1667,7 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 
 TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
 { // {{{
-	Nfa aut;
+	Nfa aut('q'+1);
 
 	SECTION("empty automaton")
 	{
