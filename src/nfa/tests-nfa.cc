@@ -1285,8 +1285,8 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 
 TEST_CASE("Vata2::Nfa::is_incl()")
 { // {{{
-	Nfa smaller;
-	Nfa bigger;
+	Nfa smaller(10);
+	Nfa bigger(16);
 	Word cex;
 	StringDict params;
 
@@ -1326,8 +1326,8 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 		EnumAlphabet alph = { };
 		smaller.initialstates = {1};
 		smaller.finalstates = {1};
-		bigger.initialstates = {101};
-		bigger.finalstates = {101};
+		bigger.initialstates = {11};
+		bigger.finalstates = {11};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1360,10 +1360,10 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(2, alph["b"], 2);
 
-		bigger.initialstates = {101};
-		bigger.finalstates = {101};
-		bigger.add_trans(101, alph["a"], 101);
-		bigger.add_trans(101, alph["b"], 101);
+		bigger.initialstates = {11};
+		bigger.finalstates = {11};
+		bigger.add_trans(11, alph["a"], 11);
+		bigger.add_trans(11, alph["b"], 11);
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1381,10 +1381,10 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(1, alph["b"], 1);
 
-		bigger.initialstates = {101, 102};
-		bigger.finalstates = {101, 102};
-		bigger.add_trans(101, alph["a"], 101);
-		bigger.add_trans(102, alph["b"], 102);
+		bigger.initialstates = {11, 12};
+		bigger.finalstates = {11, 12};
+		bigger.add_trans(11, alph["a"], 11);
+		bigger.add_trans(12, alph["b"], 12);
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1405,19 +1405,19 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(1, alph["b"], 1);
 
-		bigger.initialstates = {101};
-		bigger.finalstates = {101, 102, 103, 104, 105};
+		bigger.initialstates = {11};
+		bigger.finalstates = {11, 12, 13, 14, 15};
 
-		bigger.add_trans(101, alph["a"], 102);
-		bigger.add_trans(101, alph["b"], 102);
-		bigger.add_trans(102, alph["a"], 103);
-		bigger.add_trans(102, alph["b"], 103);
+		bigger.add_trans(11, alph["a"], 12);
+		bigger.add_trans(11, alph["b"], 12);
+		bigger.add_trans(12, alph["a"], 13);
+		bigger.add_trans(12, alph["b"], 13);
 
-		bigger.add_trans(103, alph["a"], 104);
-		bigger.add_trans(104, alph["a"], 104);
+		bigger.add_trans(13, alph["a"], 14);
+		bigger.add_trans(14, alph["a"], 14);
 
-		bigger.add_trans(103, alph["b"], 105);
-		bigger.add_trans(105, alph["b"], 105);
+		bigger.add_trans(13, alph["b"], 15);
+		bigger.add_trans(15, alph["b"], 15);
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
