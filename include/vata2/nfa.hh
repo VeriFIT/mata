@@ -579,7 +579,7 @@ void intersection(
 inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
 {
     Nfa result;
-    uni(&result, lhs, rhs);
+    intersection(&result, lhs, rhs);
     return result;
 }
 
