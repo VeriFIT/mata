@@ -631,8 +631,6 @@ TEST_CASE("Vata2::Nfa::determinize()")
 		determinize(&result, aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
-        for (const auto s : result.finalstates) std::cout << "FINAL " << s << '\n';
-        for (const auto &pair : subset_map) std::cout << "SUBSET MAP " << pair.first << " " << pair.second << '\n';
         REQUIRE(result.has_final(subset_map[{2}]));
 		REQUIRE(result.has_trans(subset_map[{1}], 'a', subset_map[{2}]));
 	}
@@ -993,7 +991,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 		State init_state = *cmpl.initialstates.begin();
 		State fin_state = *cmpl.finalstates.begin();
 		REQUIRE(init_state == fin_state);
-		REQUIRE(cmpl.trans_size() == 2);
+		REQUIRE(cmpl.get_transitions_from_state(init_state).size() == 2);
 		REQUIRE(cmpl.has_trans(init_state, alph["a"], init_state));
 		REQUIRE(cmpl.has_trans(init_state, alph["b"], init_state));
 	}
@@ -1027,7 +1025,13 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, { alph["a"], alph["b"], alph["b"], alph["a"] }));
 		REQUIRE(cmpl.initialstates.size() == 1);
 		REQUIRE(cmpl.finalstates.size() == 1);
-		REQUIRE(cmpl.nothing_in_trans() == 4);
+		size_t sum = 0;
+		for (const auto& x : cmpl) {
+		    for (const auto& tr : x) {
+		        sum += tr.states_to.size();
+		    }
+		}
+		REQUIRE(sum == 4);
 	}
 
 	SECTION("non-empty automaton accepting a*b*")
@@ -1052,13 +1056,20 @@ TEST_CASE("Vata2::Nfa::complement()")
 
 		REQUIRE(cmpl.initialstates.size() == 1);
 		REQUIRE(cmpl.finalstates.size() == 1);
-		REQUIRE(cmpl.trans_size() == 6);
+		size_t sum = 0;
+		for (const auto& x : cmpl) {
+		    for (const auto& tr : x) {
+		        sum += tr.states_to.size();
+		    }
+		}
+		REQUIRE(sum == 6);
 	}
+
 } // }}}
 
 TEST_CASE("Vata2::Nfa::is_universal()")
 { // {{{
-	Nfa aut;
+	Nfa aut(6);
 	Word cex;
 	StringDict params;
 

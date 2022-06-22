@@ -574,18 +574,6 @@ void Vata2::Nfa::complement_in_place(Nfa& aut) {
     aut.finalstates = newFinalStates;
 }
 
-/// Complement
-void Vata2::Nfa::complement(
-        Nfa*               result,
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringDict&  params,
-        SubsetMap*         subset_map)
-{
-    determinize(result, aut);
-    complement_in_place(*result);
-}
-
 void Vata2::Nfa::minimize(Nfa *res, const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     Nfa inverted;
