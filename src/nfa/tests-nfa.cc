@@ -1443,13 +1443,13 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 
 TEST_CASE("Vata2::Nfa::revert()")
 { // {{{
-	Nfa aut;
+	Nfa aut(9);
 
 	SECTION("empty automaton")
 	{
 		Nfa result = revert(aut);
 
-		REQUIRE(result.trans_size() == 0);
+		REQUIRE(result.nothing_in_trans());
 		REQUIRE(result.initialstates.size() == 0);
 		REQUIRE(result.finalstates.size() == 0);
 	}
@@ -1464,7 +1464,7 @@ TEST_CASE("Vata2::Nfa::revert()")
 
 		Nfa result = revert(aut);
 
-		REQUIRE(result.trans_size() == 0);
+		REQUIRE(result.nothing_in_trans());
 		REQUIRE(result.has_initial(2));
 		REQUIRE(result.has_initial(5));
 		REQUIRE(result.has_final(1));
