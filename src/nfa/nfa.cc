@@ -812,13 +812,15 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
 
     std::vector<StatePair> pairsToProcess;
 
+    std::cout << "INITIALS " << lhs.initialstates.size() << " " << rhs.initialstates.size() << '\n';
+
     for (State thisInitialState : lhs.initialstates) {
         for (State otherInitialState : rhs.initialstates) {
             StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
             State newIntersectState = res->add_new_state();
 
             thisAndOtherStateToIntersectState[thisAndOtherInitialStatePair] = newIntersectState;
-            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
+            if (prod_map != nullptr) { (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState; }
             pairsToProcess.push_back(thisAndOtherInitialStatePair);
 
             res->add_initial(newIntersectState);
@@ -878,7 +880,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
                         State intersectStateTo;
                         if (thisAndOtherStateToIntersectState.count(intersectStatePairTo) == 0) {
                             intersectStateTo = res->add_new_state();
-                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
+                            if (prod_map != nullptr) { (*prod_map)[intersectStatePairTo] = intersectStateTo; }
                             thisAndOtherStateToIntersectState[intersectStatePairTo] = intersectStateTo;
                             pairsToProcess.push_back(intersectStatePairTo);
 
@@ -989,18 +991,6 @@ void Vata2::Nfa::determinize(
         }
     }
 }
-
-/// naive language inclusion check (complementation + intersection + emptiness)
-bool Vata2::Nfa::is_incl(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        Word*              cex,
-        const StringDict&  /* params*/)
-{ // {{{
-    // TODO
-    return false;
-} // }}}
 
 void Vata2::Nfa::construct(
         Nfa*                                 aut,
