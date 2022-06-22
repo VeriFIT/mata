@@ -1,12 +1,37 @@
+import os
+
 from setuptools import setup, Extension
+from Cython.Build import cythonize
+
+project_dir = os.path.abspath(os.path.join("..", ".."))
+include_dir = os.path.join(project_dir, "include")
+source_dir = os.path.join(project_dir, "src")
+
+def get_cpp_sources(source_dir):
+    """
+    Finds all sources that ends either with .cc or .cpp
+    
+    :return: list of c++ sources
+    """
+    sources = []
+    for root, _, files in os.walk(source_dir):
+        for file in files:
+            ext = os.path.splitext(file)[1]
+            if not file.startswith(('.', "test")) and ext in ('.cpp', '.cc'):
+                sources.append(os.path.join(root, file))
+    return sorted(sources)
+
+extensions = [
+    Extension(
+        "pynfa", 
+        sources=["pynfa.pyx"] + get_cpp_sources(source_dir), 
+        include_dirs=[include_dir],
+        language="c++", 
+        extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
+    )
+]
 
 setup(
-    ext_modules = [
-        Extension(
-            "pynfa", 
-            sources=["pynfa.pyx", "nfa.cpp"], 
-            language="c++", 
-            extra_compile_args=["-std=c++11"],
-        )
-    ]
+    name="Collection of automata libraries",
+    ext_modules = cythonize(extensions)
 )

@@ -1,20 +1,20 @@
-cimport cpynfa
+cimport pynfa
 from libcpp cimport bool
 
 cdef class PyTrans():
-    cdef cpynfa.Trans *thisptr
+    cdef pynfa.Trans *thisptr
 
     def __cinit__(self, int a, int b, int c):
-        self.thisptr = new cpynfa.Trans(a, b, c)
+        self.thisptr = new pynfa.Trans(a, b, c)
 
     def __dealloc__(self):
         del self.thisptr
 
 cdef class PyNfa():
-    cdef cpynfa.Nfa *thisptr
+    cdef pynfa.Nfa *thisptr
 
     def __cinit__(self):
-        self.thisptr = new cpynfa.Nfa()
+        self.thisptr = new pynfa.Nfa()
 
     def __dealloc__(self):
         del self.thisptr

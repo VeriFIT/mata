@@ -1,6 +1,6 @@
 from libcpp cimport bool
 
-cdef extern from "nfa.hh":
+cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef cppclass Trans:
         int src
         int symb
