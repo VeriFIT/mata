@@ -34,14 +34,16 @@ const std::string Vata2::Nfa::TYPE_NFA = "NFA";
 
 namespace {
 //searches for every state in the set of final states
-    bool contains_final(const std::vector<State> &states, const Nfa &automaton) {
+    template<class T>
+    bool contains_final(const T &states, const Nfa &automaton) {
         auto finalState = find_if(states.begin(), states.end(),
                                   [&automaton](State s) { return automaton.has_final(s); });
         return (finalState != states.end());
     }
 
 //checks whether the set has someone with the isFinal flag on
-    bool contains_final(const std::vector<State> &states, const std::vector<bool> &isFinal) {
+    template<class T>
+    bool contains_final(const T &states, const std::vector<bool> &isFinal) {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
     }
 
@@ -812,8 +814,6 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
 
     std::vector<StatePair> pairsToProcess;
 
-    std::cout << "INITIALS " << lhs.initialstates.size() << " " << rhs.initialstates.size() << '\n';
-
     for (State thisInitialState : lhs.initialstates) {
         for (State otherInitialState : rhs.initialstates) {
             StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
@@ -933,9 +933,13 @@ void Vata2::Nfa::determinize(
         State*      last_state_num)
 {
     //assuming all sets states_to are non-empty
-    std::vector<std::pair<State, std::vector<State>>> worklist;
-    std::map<std::vector<State>, State> subsetsToStates;
-    std::vector<State> S0 = aut.initialstates.ToVector();
+    std::vector<std::pair<State, StateSet>> worklist;
+    bool deallocate_subset_map = false;
+    if (subset_map == nullptr) {
+        subset_map = new SubsetMap();
+        deallocate_subset_map = true;
+    }
+    StateSet S0 =  Vata2::Util::OrdVector<State>(aut.initialstates.ToVector());
     State S0id = result->add_new_state();
     result->add_initial(S0id);
     std::vector<bool> isFinal(aut.get_num_of_states(), false);//for fast detection of a final state in a set
@@ -946,8 +950,8 @@ void Vata2::Nfa::determinize(
         result->add_final(S0id);
     }
     worklist.push_back(std::make_pair(S0id, S0));
-    subsetsToStates.insert(std::make_pair(S0, S0id));
-    if (subset_map != nullptr) { (*subset_map)[Vata2::Util::OrdVector<State>(S0)] = S0id; }
+
+    (*subset_map)[Vata2::Util::OrdVector<State>(S0)] = S0id;
 
     if (aut.trans_empty())
         return;
@@ -955,7 +959,7 @@ void Vata2::Nfa::determinize(
     while (!worklist.empty()) {
         auto Spair = worklist.back();
         worklist.pop_back();
-        std::vector<State> S = Spair.second;
+        StateSet S = Spair.second;
         State Sid = Spair.first;
         // std::cout <<"id: " << Sid << std::endl << "states: ";
         // for (State s : S) {
@@ -965,21 +969,20 @@ void Vata2::Nfa::determinize(
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
-        Vata2::Nfa::Nfa::state_set_post_iterator iterator(S, aut);
+        Vata2::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
 
         while (iterator.has_next()) {
             auto symbolTargetPair = iterator.next();
             Symbol currentSymbol = symbolTargetPair.first;
             // std::cout << "symbol: " << currentSymbol << std::endl;
-            const std::vector<State> &T = symbolTargetPair.second.ToVector();
-            auto existingTitr = subsetsToStates.find(T);
+            const StateSet &T = symbolTargetPair.second;
+            auto existingTitr = subset_map->find(T);
             State Tid;
-            if (existingTitr != subsetsToStates.end()) {
+            if (existingTitr != subset_map->end()) {
                 Tid = existingTitr->second;
             } else {
                 Tid = result->add_new_state();
-                subsetsToStates.insert(std::make_pair(T, Tid));
-                if (subset_map != nullptr) { (*subset_map)[Vata2::Util::OrdVector<State>(T)] = Tid; }
+                (*subset_map)[Vata2::Util::OrdVector<State>(T)] = Tid;
                 //if (contains_final(T,*this))
                 if (contains_final(T, isFinal)) {
                     result->add_final(Tid);
@@ -990,6 +993,8 @@ void Vata2::Nfa::determinize(
             // std::cout << "Pushed transition " << Sid << '-' << currentSymbol << "->" << Tid << std::endl;
         }
     }
+
+    if (deallocate_subset_map) { delete subset_map; }
 }
 
 void Vata2::Nfa::construct(
