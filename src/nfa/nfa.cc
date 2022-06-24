@@ -810,7 +810,11 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
         return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
     };
     // TODO probably remove this since we use prod_map as parameter
-    std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
+    //std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
+
+    if (prod_map == nullptr) {
+        prod_map = new ProductMap();
+    }
 
     std::vector<StatePair> pairsToProcess;
 
@@ -819,8 +823,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
             StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
             State newIntersectState = res->add_new_state();
 
-            thisAndOtherStateToIntersectState[thisAndOtherInitialStatePair] = newIntersectState;
-            if (prod_map != nullptr) { (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState; }
+            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
             pairsToProcess.push_back(thisAndOtherInitialStatePair);
 
             res->add_initial(newIntersectState);
@@ -841,7 +844,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
 
         // TODO rewrite this
 
-        State intersectState = thisAndOtherStateToIntersectState[pairToProcess];
+        State intersectState = (*prod_map)[pairToProcess];
 
         auto thisStateTransitionsIter = lhs.transitionrelation[pairToProcess.first].begin();
         auto otherStateTransitionIter = rhs.transitionrelation[pairToProcess.second].begin();
@@ -878,17 +881,16 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
                     for (State otherStateTo : otherStateTransitionIter->states_to) {
                         StatePair intersectStatePairTo(thisStateTo, otherStateTo);
                         State intersectStateTo;
-                        if (thisAndOtherStateToIntersectState.count(intersectStatePairTo) == 0) {
+                        if (prod_map->count(intersectStatePairTo) == 0) {
                             intersectStateTo = res->add_new_state();
-                            if (prod_map != nullptr) { (*prod_map)[intersectStatePairTo] = intersectStateTo; }
-                            thisAndOtherStateToIntersectState[intersectStatePairTo] = intersectStateTo;
+                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
                             pairsToProcess.push_back(intersectStatePairTo);
 
                             if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
                                 res->add_final(intersectStateTo);
                             }
                         } else {
-                            intersectStateTo = thisAndOtherStateToIntersectState[intersectStatePairTo];
+                            intersectStateTo = (*prod_map)[intersectStatePairTo];
                         }
                         intersectTransition.states_to.insert(intersectStateTo);
                     }
