@@ -288,6 +288,11 @@ public:
         for (const State& st : vec) { this->add_initial(st); }
     } // }}}
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
+    void remove_initial(State state)
+    {
+        assert(has_initial(state));
+        this->initialstates.remove(state);
+    }
 
     void add_final(State state) { this->finalstates.insert(state); }
     void add_final(const std::vector<State> vec)
@@ -295,6 +300,11 @@ public:
         for (const State& st : vec) { this->add_final(st); }
     } // }}}
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
+    void remove_final(State state)
+    {
+        assert(has_final(state));
+        this->finalstates.remove(state);
+    }
 
     /**
      * @brief Returns a newly created state.
