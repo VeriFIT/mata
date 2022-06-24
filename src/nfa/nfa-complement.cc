@@ -64,11 +64,7 @@ void complement_classical(
 	make_final_if_not_in_old(*result->initialstates.begin());
 
 	for (const auto& trs : *result) {
-        for (const auto& tr : trs) {
-            for (const auto& state : tr.states_to) {
-                make_final_if_not_in_old(state);
-            }
-        }
+        make_final_if_not_in_old(trs.tgt);
 	}
 
 	if (delete_subset_map)

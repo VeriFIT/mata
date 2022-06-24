@@ -104,27 +104,27 @@ TEST_CASE("Vata2::Nfa::Nfa iteration")
 	{
 		aut.add_trans('q', 'a', 'r');
 		aut.add_trans('q', 'b', 'r');
-		auto it = aut.begin();
-		auto jt = aut.begin();
+		auto it = aut.transitionrelation.begin();
+		auto jt = aut.transitionrelation.begin();
 		REQUIRE(it == jt);
 		++it;
 		REQUIRE(it != jt);
-		REQUIRE((it != aut.begin() && it != aut.end()));
-		REQUIRE(jt == aut.begin());
+		REQUIRE((it != aut.transitionrelation.begin() && it != aut.transitionrelation.end()));
+		REQUIRE(jt == aut.transitionrelation.begin());
 
 		++jt;
 		REQUIRE(it == jt);
-		REQUIRE((jt != aut.begin() && jt != aut.end()));
+		REQUIRE((jt != aut.transitionrelation.begin() && jt != aut.transitionrelation.end()));
 
-        jt = aut.begin() + state_num - 1;
+        jt = aut.transitionrelation.begin() + state_num - 1;
 		++jt;
 		REQUIRE(it != jt);
-		REQUIRE((jt != aut.begin() && jt == aut.end()));
+		REQUIRE((jt != aut.transitionrelation.begin() && jt == aut.transitionrelation.end()));
 
-        it = aut.begin() + state_num - 1;
+        it = aut.transitionrelation.begin() + state_num - 1;
 		++it;
 		REQUIRE(it == jt);
-		REQUIRE((it != aut.begin() && it == aut.end()));
+		REQUIRE((it != aut.transitionrelation.begin() && it == aut.transitionrelation.end()));
 	}
 } // }}}
 
@@ -1032,9 +1032,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(cmpl.finalstates.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
-		    for (const auto& tr : x) {
-		        sum += tr.states_to.size();
-		    }
+            sum++;
 		}
 		REQUIRE(sum == 4);
 	}
@@ -1063,9 +1061,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(cmpl.finalstates.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
-		    for (const auto& tr : x) {
-		        sum += tr.states_to.size();
-		    }
+            sum++;
 		}
 		REQUIRE(sum == 6);
 	}

@@ -1144,6 +1144,88 @@ Nfa::state_set_post_iterator::state_set_post_iterator(std::vector<State> states,
     }
 }
 
+Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
+{ // {{{
+    assert(nullptr != nfa);
+
+    const_iterator result;
+    if (nfa->nothing_in_trans())
+    {
+        result.is_end = true;
+        return result;
+    }
+
+    result.nfa = nfa;
+    result.trIt = 0;
+    assert(!nfa->get_transitions_from_state(0).empty());
+    result.tlIt = nfa->get_transitions_from_state(0).begin();
+    assert(!nfa->get_transitions_from_state(0).begin()->states_to.empty());
+    result.ssIt = result.tlIt->states_to.begin();
+
+    result.refresh_trans();
+
+    return result;
+} // for_begin }}}
+
+Nfa::const_iterator Nfa::const_iterator::for_end(const Nfa* /* nfa*/)
+{ // {{{
+    const_iterator result;
+    result.is_end = true;
+    return result;
+} // for_end }}}
+
+Nfa::const_iterator& Nfa::const_iterator::operator++()
+{ // {{{
+    assert(nullptr != nfa);
+
+    ++(this->ssIt);
+    const StateSet& state_set = this->tlIt->states_to;
+    assert(!state_set.empty());
+    if (this->ssIt != state_set.end())
+    {
+        this->refresh_trans();
+        return *this;
+    }
+
+    // out of state set
+    ++(this->tlIt);
+    const TransitionList& tlist = this->nfa->get_transitions_from_state(this->trIt);
+    assert(!tlist.empty());
+    if (this->tlIt != tlist.end())
+    {
+        this->ssIt = this->tlIt->states_to.begin();
+
+        this->refresh_trans();
+        return *this;
+    }
+
+    // out of transition list
+    ++this->trIt;
+    assert(!this->nfa->nothing_in_trans());
+    while (this->trIt < this->nfa->transitionrelation.size() &&
+        this->nfa->get_transitions_from_state(this->trIt).empty())
+    {
+        ++this->trIt;
+    }
+
+    if (this->trIt < this->nfa->transitionrelation.size())
+    {
+        this->tlIt = this->nfa->get_transitions_from_state(this->trIt).begin();
+        assert(!this->nfa->get_transitions_from_state(this->trIt).empty());
+        const StateSet& new_state_set = this->tlIt->states_to;
+        assert(!new_state_set.empty());
+        this->ssIt = new_state_set.begin();
+
+        this->refresh_trans();
+        return *this;
+    }
+
+    // out of transitions
+    this->is_end = true;
+
+    return *this;
+} // operator++ }}}
+
 //Returns the min_symbol and its post (subset construction), advances the min_symbol to the next minimal symbol,
 //If it meets a state with no more transitions, it swaps it with the last state and decreases the size.
 //size == 0 means no more post.

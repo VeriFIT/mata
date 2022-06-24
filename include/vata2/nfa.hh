@@ -405,8 +405,39 @@ public:
         std::pair<Symbol, const StateSet> next();
     };
 
-    auto begin() const { return transitionrelation.begin(); }
-    auto end() const { return transitionrelation.end(); }
+
+    struct const_iterator
+    { // {{{
+        const Nfa* nfa;
+        size_t trIt;
+        TransitionList::const_iterator tlIt;
+        StateSet::const_iterator ssIt;
+        Trans trans;
+        bool is_end = { false };
+
+        const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
+        static const_iterator for_begin(const Nfa* nfa);
+        static const_iterator for_end(const Nfa* nfa);
+
+        void refresh_trans()
+        { // {{{
+            this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
+        } // }}}
+
+        const Trans& operator*() const { return this->trans; }
+
+        bool operator==(const const_iterator& rhs) const
+        { // {{{
+            if (this->is_end && rhs.is_end) { return true; }
+            if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
+            return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
+        } // }}}
+        bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
+        const_iterator& operator++();
+    }; // }}}
+
+    const_iterator begin() const { return const_iterator::for_begin(this); }
+    const_iterator end() const { return const_iterator::for_end(this); }
 
     const TransitionList& operator[](State state) const
     { // {{{
@@ -469,29 +500,29 @@ public:
 
 	struct const_iterator
 	{ // {{{
-		const Nfa* nfa;
-		StateToPostMap::const_iterator stpmIt;
-		PostSymb::const_iterator psIt;
-		StateSet::const_iterator ssIt;
-		Trans trans;
+		const nfa* nfa;
+		statetopostmap::const_iterator stpmit;
+		postsymb::const_iterator psit;
+		stateset::const_iterator ssit;
+		trans trans;
 		bool is_end = { false };
 
-		const_iterator() : nfa(), stpmIt(), psIt(), ssIt(), trans() { };
-		static const_iterator for_begin(const Nfa* nfa);
-		static const_iterator for_end(const Nfa* nfa);
+		const_iterator() : nfa(), stpmit(), psit(), ssit(), trans() { };
+		static const_iterator for_begin(const nfa* nfa);
+		static const_iterator for_end(const nfa* nfa);
 
 		void refresh_trans()
 		{ // {{{
-			this->trans = {this->stpmIt->first, this->psIt->first, *(this->ssIt)};
+			this->trans = {this->stpmit->first, this->psit->first, *(this->ssit)};
 		} // }}}
 
-		const Trans& operator*() const { return this->trans; }
+		const trans& operator*() const { return this->trans; }
 
 		bool operator==(const const_iterator& rhs) const
 		{ // {{{
 			if (this->is_end && rhs.is_end) { return true; }
 			if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
-			return ssIt == rhs.ssIt && psIt == rhs.psIt && stpmIt == rhs.stpmIt;
+			return ssit == rhs.ssit && psit == rhs.psit && stpmit == rhs.stpmit;
 		} // }}}
 		bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
 		const_iterator& operator++();
