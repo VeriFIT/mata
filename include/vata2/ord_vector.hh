@@ -343,6 +343,12 @@ public:   // Public methods
 		return end();
 	}
 
+    inline void remove(Key k)
+    {
+        assert(vectorIsSorted());
+        std::remove(this->vec_.begin(), this->vec_.end(),k);
+        assert(vectorIsSorted());
+    }
 
 	inline bool empty() const
 	{
