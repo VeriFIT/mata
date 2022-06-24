@@ -51,12 +51,14 @@ using namespace Vata2::Parser;
 
 // }}}
 
+/*
 TEST_CASE("Vata2::Nfa::Trans::operator<<")
 { // {{{
 	Trans trans(1, 2, 3);
 
 	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 } // }}}
+*/
 
 TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
@@ -126,6 +128,7 @@ TEST_CASE("Vata2::Nfa::Nfa iteration")
 	}
 } // }}}
 
+/*
 TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 { // {{{
 	Nfa a(50), b(50);
@@ -277,7 +280,7 @@ TEST_CASE("Vata2::Nfa::union_norename()")
 		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
 	}
 } // }}}
-
+*/
 
 TEST_CASE("Vata2::Nfa::intersection()")
 { // {{{
@@ -759,6 +762,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 	}
 } // }}}
 
+/*
 TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 { // {{{
 	Nfa aut;
@@ -852,6 +856,7 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 			Catch::Contains("cannot translate symbol"));
 	}
 } // }}}
+*/
 
 TEST_CASE("Vata2::Nfa::make_complete()")
 { // {{{

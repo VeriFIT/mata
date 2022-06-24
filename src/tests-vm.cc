@@ -30,7 +30,7 @@ public:
 
 } /* anonymous namespace */
 
-
+/*
 TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 {
 	// setting the environment
@@ -73,6 +73,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 	}
 
 }
+*/
 
 TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 {
@@ -143,6 +144,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 	}
 }
 
+/*
 TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
 {
 	VirtualMachine mach;
@@ -196,6 +198,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::load_from_storage() calls")
 			Catch::Contains("is not in the memory"));
 	}
 }
+ */
 
 TEST_CASE("Vata2::VM::VirtualMachine::default_dispatch() calls")
 {

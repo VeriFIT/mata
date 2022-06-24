@@ -23,6 +23,7 @@
 using namespace Vata2::VM;
 using namespace Vata2::Nfa;
 
+/*
 TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 {
 	SECTION("construct")
@@ -65,3 +66,4 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"NFA\")")
 		WARN_PRINT("Insufficient testing of Vata2::VM::find_dispatcher(\"NFA\")");
 	}
 }
+*/
