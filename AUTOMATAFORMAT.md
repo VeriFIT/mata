@@ -65,7 +65,7 @@ q symbol | other_symbol & ("(r,s)" | r | s)
 @AFA-intervals
 %States-auto
 %Alphabet-utf
-q [`a`-`z`] | [\u{1c}-\u{5c}] & ("(r,s)" | r | s)
+q [a-z] | [2-7] | [\u{1c}-\u{5c}] & ("(r,s)" | r | s)
 ```
 ```
 @NFA-bits
@@ -75,7 +75,7 @@ s x & !y t
 ```
 @NFA-intervals
 %Alphabet-utf
-q [`a`-`z`]
+q [a-z]
 ```
 ## Transducer
 Transducer has named tracks, and it has the key-value line starting with `%Tracks`. We use `x@<lit>` do say that the <lit> belongs to the track `x`. We may also specify their names by type-identifier or enumeration. Example:
@@ -84,7 +84,7 @@ Transducer has named tracks, and it has the key-value line starting with `%Track
 %States-auto
 %Tracks-auto
 %Alphabet-utf
-q [`a`-`z`]@x | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
+q [a-z]@x | [2-7]@y | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
 ```
 ``` 
 @AFA-intervals
