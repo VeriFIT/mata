@@ -51,6 +51,8 @@ using namespace Vata2::Parser;
 
 // }}}
 
+template<class T> void unused(const T &) {}
+
 /*
 TEST_CASE("Vata2::Nfa::Trans::operator<<")
 { // {{{
@@ -1032,6 +1034,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(cmpl.finalstates.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
+            unused(x);
             sum++;
 		}
 		REQUIRE(sum == 4);
@@ -1061,6 +1064,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 		REQUIRE(cmpl.finalstates.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
+            unused(x);
             sum++;
 		}
 		REQUIRE(sum == 6);
