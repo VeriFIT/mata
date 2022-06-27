@@ -115,6 +115,20 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
+    OrdVector(const OrdVector& rhs)
+    {
+        // Assertions
+        assert(rhs.vectorIsSorted());
+
+        if (&rhs != this)
+        {
+            vec_ = rhs.vec_;
+        }
+
+        // Assertions
+        assert(vectorIsSorted());
+    }
+
 	explicit OrdVector(const Key& key) :
 		vec_(1, key)
 	{
