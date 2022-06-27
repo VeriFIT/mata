@@ -492,21 +492,6 @@ inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
     return result;
 }
 
-/// Compute union of a pair of automata
-/// Assumes that sets of states of lhs, rhs, and result are disjoint
-void union_norename(
-        Nfa*        result,
-        const Nfa&  lhs,
-        const Nfa&  rhs); // TODO
-
-/// Compute union of a pair of automata
-inline Nfa union_norename(
-        const Nfa&  lhs,
-        const Nfa&  rhs)
-{ // {{{
-    assert(false); // TODO
-}
-
 /// makes the transition relation complete
 void make_complete(
         Nfa*             aut,

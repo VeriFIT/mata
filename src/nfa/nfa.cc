@@ -723,44 +723,6 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
-//////// Methods which may be specific to a particular data structures
-
-void Vata2::Nfa::union_norename(
-        Nfa*        result,
-        const Nfa&  lhs,
-        const Nfa&  rhs)
-{ // {{{
-    assert(nullptr != result);
-
-    result->initialstates.insert(lhs.initialstates);
-    result->initialstates.insert(rhs.initialstates);
-
-    result->finalstates.insert(lhs.finalstates);
-    result->finalstates.insert(rhs.finalstates);
-
-    for (size_t i = 0; i < lhs.trans_size(); ++i)
-    {
-        for (const TransSymbolStates& symStates : lhs[i])
-        {
-            for (State tgt: symStates.states_to)
-            {
-                result->add_trans(i, symStates.symbol, tgt);
-            }
-        }
-    }
-
-    for (size_t i = 0; i < rhs.trans_size(); ++i)
-    {
-        for (const TransSymbolStates& symStates : rhs[i])
-        {
-            for (State tgt: symStates.states_to)
-            {
-                result->add_trans(i, symStates.symbol, tgt);
-            }
-        }
-    }
-} // }}}
-
 void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
