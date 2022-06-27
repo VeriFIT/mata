@@ -443,10 +443,7 @@ public:
 
     const TransitionList& operator[](State state) const
     { // {{{
-        if (state >= transitionrelation.size())
-        {
-            return TransitionList();
-        }
+        assert(state < transitionrelation.size());
 
         return transitionrelation[state];
     } // operator[] }}}
