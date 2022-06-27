@@ -540,16 +540,14 @@ inline Nfa minimize(const Nfa &aut)
 void determinize(
         Nfa*        result,
         const Nfa&  aut,
-        SubsetMap*  subset_map = nullptr,
-        State*      last_state_num = nullptr);
+        SubsetMap*  subset_map = nullptr);
 
 inline Nfa determinize(
         const Nfa&  aut,
-        SubsetMap*  subset_map,
-        State*      last_state_num = nullptr)
+        SubsetMap*  subset_map)
 { // {{{
     Nfa result;
-    determinize(&result, aut, subset_map, last_state_num);
+    determinize(&result, aut, subset_map);
     return result;
 } // determinize }}}
 

@@ -345,7 +345,7 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
     result->initialstates = aut.finalstates;
     result->finalstates = aut.initialstates;
 
-    for (int i = 0; i < aut.trans_size(); ++i)
+    for (size_t i = 0; i < aut.trans_size(); ++i)
     {
         for (const auto& symStates : aut[i])
             for (const State tgt : symStates.states_to)
@@ -562,6 +562,8 @@ bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
     bool consistent;
     tie(*cex, consistent) = get_word_for_path(aut, path);
     assert(consistent);
+
+    return false;
 }
 
 void Vata2::Nfa::complement_in_place(Nfa& aut) {
@@ -893,8 +895,7 @@ Util::BinaryRelation Nfa::computeSimulation() const {
 void Vata2::Nfa::determinize(
         Nfa*        result,
         const Nfa&  aut,
-        SubsetMap*  subset_map,
-        State*      last_state_num)
+        SubsetMap*  subset_map)
 {
     //assuming all sets states_to are non-empty
     std::vector<std::pair<State, StateSet>> worklist;
@@ -1088,7 +1089,7 @@ Nfa::state_set_post_iterator::state_set_post_iterator(std::vector<State> states,
 {
     transition_iterators.reserve(size);
     min_symbol = limits.maxSymbol;
-    for (int i=0; i < size;) {
+    for (size_t i=0; i < size;) {
         State q = state_vector[i];
         if (automaton.transitionrelation[q].empty()) { // we keep in state_vector only states that have some transitions
             transition_iterators[i] = transition_iterators[size-1];
@@ -1196,7 +1197,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
     StateSet post;
     Symbol newMinSymbol = limits.maxSymbol;
-    for (int i=0; i < size;) {
+    for (size_t i=0; i < size;) {
         // std::cout << i << std::endl;
         Symbol transitionSymbol = transition_iterators[i]->symbol;
         if (transitionSymbol == min_symbol) {

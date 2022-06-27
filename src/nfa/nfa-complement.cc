@@ -38,8 +38,7 @@ void complement_classical(
 		delete_subset_map = true;
 	}
 
-	State last_state_num;
-	*result = determinize(aut, subset_map, &last_state_num);
+	*result = determinize(aut, subset_map);
 	State sink_state = result->get_num_of_states() + 1;
 	result->increase_size(sink_state+1);
 	assert(sink_state < result->get_num_of_states());
