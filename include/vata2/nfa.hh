@@ -283,7 +283,7 @@ public:
 
     // TODO: exceptions if states do not exist
     void add_initial(State state) { this->initialstates.insert(state); }
-    void add_initial(const std::vector<State> vec)
+    void add_initial(const std::vector<State>& vec)
     { // {{{
         for (const State& st : vec) { this->add_initial(st); }
     } // }}}
@@ -295,7 +295,7 @@ public:
     }
 
     void add_final(State state) { this->finalstates.insert(state); }
-    void add_final(const std::vector<State> vec)
+    void add_final(const std::vector<State>& vec)
     { // {{{
         for (const State& st : vec) { this->add_final(st); }
     } // }}}
@@ -345,7 +345,7 @@ public:
 
         if (tl.empty())
             return false;
-        for (auto t : tl)
+        for (auto& t : tl)
         {
             if (t.symbol > trans.symb)
                 return false;
@@ -365,12 +365,8 @@ public:
     size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
     bool nothing_in_trans() const
     {
-        for (const auto& trans : this->transitionrelation) {
-            if (trans.size() > 0)
-                return false;
-        }
-
-        return true;
+        return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),
+                    [](const auto& trans) {return trans.size() == 0;});
     }
 
     void print_to_DOT(std::ostream &outputStream) const;
@@ -379,7 +375,7 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const
     {
         if (trans_empty())
-            return StateSet();
+            return StateSet{};
 
         StateSet res;
         for (auto state : states)

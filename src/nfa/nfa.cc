@@ -22,7 +22,6 @@
 // VATA headers
 #include <vata2/nfa.hh>
 #include <vata2/util.hh>
-#include <vata2/vm-dispatch.hh>
 
 using std::tie;
 
@@ -281,7 +280,7 @@ void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     // first we compute the epsilon closure
     for (size_t i=0; i < aut.trans_size(); ++i)
     {
-        for (auto trans: aut[i])
+        for (const auto& trans: aut[i])
         { // initialize
             auto it_ins_pair = eps_closure.insert({i, {i}});
             if (trans.symbol == epsilon)
@@ -297,7 +296,7 @@ void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
         changed = false;
         for (size_t i=0; i < aut.trans_size(); ++i)
         {
-            for (auto trans: aut[i])
+            for (auto const &trans: aut[i])
             {
                 if (trans.symbol == epsilon)
                 {
@@ -633,7 +632,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
 
     // maps names of the states from the input to State
     std::unordered_map<std::string,State> nameToState;
-    auto getStateFromName = [&nameToState, &newNFA](std::string stateName)->State {
+    auto getStateFromName = [&nameToState, &newNFA](const std::string& stateName)->State {
         if (nameToState.count(stateName) > 0) { // if we already seen this name
             return nameToState[stateName];
         } else { // if we have not seen the name yet
@@ -648,7 +647,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
 
     // maps names of the symbols from the input to Symbol
     std::unordered_map<std::string,Symbol> nameToSymbol;
-    auto getSymbolFromName = [&nameToSymbol, &maxSymbol](std::string symbolName)->State {
+    auto getSymbolFromName = [&nameToSymbol, &maxSymbol](const std::string& symbolName)->State {
         if (nameToSymbol.count(symbolName) > 0) { // if we already seen this name
             return nameToSymbol[symbolName];
         } else { // if we have not seen the name yet
@@ -693,7 +692,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
                 if (identificator == "kInitialFormula") {
                     newNFA.add_initial(stateToAdd);
                 } else if (identificator == "kFinalFormula") {
-                    newNFA.add_initial(stateToAdd);
+                    newNFA.add_final(stateToAdd);
                 } else {
                     // TODO: define own exception for parsing
                     throw std::runtime_error(std::string("Keywords are kInitialFormula and kFinalFormula but there is ") + identificator);
@@ -914,7 +913,7 @@ void Vata2::Nfa::determinize(
     if (contains_final(S0, isFinal)) {
         result->add_final(S0id);
     }
-    worklist.push_back(std::make_pair(S0id, S0));
+    worklist.emplace_back(std::make_pair(S0id, S0));
 
     (*subset_map)[Vata2::Util::OrdVector<State>(S0)] = S0id;
 
@@ -952,7 +951,7 @@ void Vata2::Nfa::determinize(
                 if (contains_final(T, isFinal)) {
                     result->add_final(Tid);
                 }
-                worklist.push_back(std::make_pair(Tid, T));
+                worklist.emplace_back(std::make_pair(Tid, T));
             }
             result->transitionrelation[Sid].push_back(TransSymbolStates(currentSymbol, Tid));
             // std::cout << "Pushed transition " << Sid << '-' << currentSymbol << "->" << Tid << std::endl;
