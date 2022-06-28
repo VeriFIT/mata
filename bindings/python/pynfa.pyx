@@ -1,14 +1,21 @@
 cimport pynfa
 from libcpp cimport bool
+from cython.operator import dereference
 
 cdef class Trans():
     cdef pynfa.CTrans *thisptr
 
     def __cinit__(self, int a, int b, int c):
         self.thisptr = new pynfa.CTrans(a, b, c)
-
+        
     def __dealloc__(self):
         del self.thisptr
+
+    def __eq__(self, Trans other):
+        return dereference(self.thisptr) == dereference(other.thisptr)
+
+    def __neq__(self, Trans other):
+        return dereference(self.thisptr) != dereference(other.thisptr)
 
 cdef class Nfa():
     cdef pynfa.CNfa *thisptr

@@ -15,6 +15,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         State tgt
 
         # Constructor
+        CTrans() except +
         CTrans(State, Symbol, State) except +
 
         # Public Functions
