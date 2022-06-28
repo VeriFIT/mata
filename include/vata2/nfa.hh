@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <limits>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
