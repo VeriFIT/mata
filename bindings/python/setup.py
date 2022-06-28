@@ -32,6 +32,6 @@ extensions = [
 ]
 
 setup(
-    name="Collection of automata libraries",
+    name="pynfa",
     ext_modules = cythonize(extensions)
 )

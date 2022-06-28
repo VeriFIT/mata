@@ -3,3 +3,6 @@ build-ext:
 
 build-dist:
 	python setup.py sdist
+
+install:
+	python setup.py install
