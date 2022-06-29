@@ -7,5 +7,5 @@ build-dist:
 install:
 	python setup.py install
 
-test:
+test: 
 	python3 -m pytest --cov=./ --cov-report term-missing:skip-covered tests/

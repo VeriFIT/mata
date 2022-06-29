@@ -1,12 +1,17 @@
 cimport pynfa
 from libcpp cimport bool
+from libcpp.vector cimport vector
+from libc.stdint cimport uintptr_t
 from cython.operator import dereference
 
 cdef class Trans():
+    """
+    Wrapper over the transitions
+    """
     cdef pynfa.CTrans *thisptr
 
-    def __cinit__(self, int a, int b, int c):
-        self.thisptr = new pynfa.CTrans(a, b, c)
+    def __cinit__(self, State src, Symbol s, State tgt):
+        self.thisptr = new pynfa.CTrans(src, s, tgt)
         
     def __dealloc__(self):
         del self.thisptr
@@ -18,6 +23,9 @@ cdef class Trans():
         return dereference(self.thisptr) != dereference(other.thisptr)
 
 cdef class Nfa():
+    """
+    Wrapper over NFA
+    """
     cdef pynfa.CNfa *thisptr
 
     def __cinit__(self):
@@ -26,10 +34,31 @@ cdef class Nfa():
     def __dealloc__(self):
         del self.thisptr
 
-    def add_trans(self, int src, int symb, int tgt):
+    def add_initial_state(self, State st):
+        self.thisptr.add_initial(st)
+
+    def add_initial_states(self, vector[State] states):
+        self.thisptr.add_initial(states)
+
+    def has_initial_state(self, State st):
+        return self.thisptr.has_initial(st)
+
+    def add_final_state(self, State st):
+        self.thisptr.add_final(st)
+
+    def has_final_state(self, State st):
+        return self.thisptr.has_final(st)
+
+    def add_trans(self, Trans tr):
+        self.thisptr.add_trans(dereference(tr.thisptr))
+
+    def add_trans_raw(self, State src, Symbol symb, State tgt):
         self.thisptr.add_trans(src, symb, tgt)
 
-    def has_trans(self, int src, int symb, int tgt):
+    def has_trans(self, Trans tr):
+        return self.thisptr.has_trans(dereference(tr.thisptr))
+
+    def has_trans_raw(self, State src, Symbol symb, State tgt):
         return self.thisptr.has_trans(src, symb, tgt)
 
     def trans_empty(self):
