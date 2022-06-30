@@ -64,3 +64,13 @@ def test_transitions():
     assert lhs.trans_size() == 4
 
 
+def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
+    """
+    Tests determinisation
+    """
+    lhs = nfa_two_states_uni
+    assert not pynfa.Nfa.is_deterministic(lhs)
+    rhs = dfa_one_state_uni
+    assert pynfa.Nfa.is_deterministic(rhs)
+    chs = pynfa.Nfa.determinize(lhs)
+    assert pynfa.Nfa.is_deterministic(chs)

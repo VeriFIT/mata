@@ -1,5 +1,6 @@
 from libcpp cimport bool
 from libcpp.set cimport set
+from libcpp.map cimport map as cmap
 from libcpp.vector cimport vector
 from libc.stdint cimport uintptr_t
 
@@ -7,6 +8,8 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef uintptr_t Symbol
+    ctypedef set[State] StateSet
+    ctypedef cmap[StateSet, State] SubsetMap
 
     cdef cppclass CTrans "Vata2::Nfa::Trans":
         # Public Attributes
@@ -42,3 +45,6 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         bool has_trans(State, Symbol, State)
         bool trans_empty()
         size_t trans_size()
+
+    cdef bool is_deterministic(CNfa&)
+    cdef void determinize(CNfa*, CNfa&, SubsetMap*, State*)

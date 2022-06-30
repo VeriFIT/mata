@@ -67,3 +67,25 @@ cdef class Nfa():
     def trans_size(self):
         return self.thisptr.trans_size()
 
+
+    @classmethod
+    def is_deterministic(cls, Nfa lhs):
+        """Tests if the lhs is determinstic
+
+        :param Nfa lhs: non-determinstic finite automaton
+        :return: true if the lhs is deterministic
+        """
+        return pynfa.is_deterministic(dereference(lhs.thisptr))
+
+    @classmethod
+    def determinize(cls, Nfa lhs):
+        """Determinize the lhs automaton
+
+        TODO: Add support for SubsetMap and State (no idea what that is currently)?
+        
+        :param Nfa lhs: non-deterministic finite automaton
+        :return: deterministic finite automaton
+        """
+        result = Nfa()
+        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), NULL, NULL)
+        return result

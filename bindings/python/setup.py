@@ -7,10 +7,11 @@ project_dir = os.path.abspath(os.path.join("..", ".."))
 include_dir = os.path.join(project_dir, "include")
 source_dir = os.path.join(project_dir, "src")
 
+
 def get_cpp_sources(source_dir):
     """
     Finds all sources that ends either with .cc or .cpp
-    
+
     :return: list of c++ sources
     """
     sources = []
@@ -23,10 +24,10 @@ def get_cpp_sources(source_dir):
 
 extensions = [
     Extension(
-        "pynfa", 
-        sources=["pynfa.pyx"] + get_cpp_sources(source_dir), 
+        "pynfa",
+        sources=["pynfa.pyx"] + get_cpp_sources(source_dir),
         include_dirs=[include_dir],
-        language="c++", 
+        language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     )
 ]
