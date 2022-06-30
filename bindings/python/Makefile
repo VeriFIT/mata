@@ -5,7 +5,7 @@ build-dist:
 	python setup.py sdist
 
 install:
-	python setup.py install
+	python setup.py install --force
 
-test: 
+test:
 	python3 -m pytest --cov=./ --cov-report term-missing:skip-covered tests/

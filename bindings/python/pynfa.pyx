@@ -4,7 +4,7 @@ from libcpp.vector cimport vector
 from libc.stdint cimport uintptr_t
 from cython.operator import dereference
 
-cdef class Trans():
+cdef class Trans:
     """
     Wrapper over the transitions
     """
@@ -12,7 +12,7 @@ cdef class Trans():
 
     def __cinit__(self, State src, Symbol s, State tgt):
         self.thisptr = new pynfa.CTrans(src, s, tgt)
-        
+
     def __dealloc__(self):
         del self.thisptr
 
@@ -22,7 +22,7 @@ cdef class Trans():
     def __neq__(self, Trans other):
         return dereference(self.thisptr) != dereference(other.thisptr)
 
-cdef class Nfa():
+cdef class Nfa:
     """
     Wrapper over NFA
     """
@@ -82,10 +82,63 @@ cdef class Nfa():
         """Determinize the lhs automaton
 
         TODO: Add support for SubsetMap and State (no idea what that is currently)?
-        
+
         :param Nfa lhs: non-deterministic finite automaton
         :return: deterministic finite automaton
         """
         result = Nfa()
         pynfa.determinize(result.thisptr, dereference(lhs.thisptr), NULL, NULL)
         return result
+
+cdef class CharAlphabet:
+    cdef pynfa.CCharAlphabet *thisptr
+
+    def __cinit__(self):
+        self.thisptr = new pynfa.CCharAlphabet()
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+
+cdef class EnumAlphabet:
+    cdef pynfa.CEnumAlphabet *thisptr
+
+    def __cinit__(self, enums):
+        cdef vector[string] enums_as_strings = [e.encode('utf-8') for e in enums]
+        self.thisptr = new pynfa.CEnumAlphabet(enums_as_strings.begin(), enums_as_strings.end())
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+
+cdef class DirectAlphabet:
+    cdef pynfa.CDirectAlphabet *thisptr
+
+    def __cinit__(self):
+        self.thisptr = new pynfa.CDirectAlphabet()
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+
+cdef class OnTheFlyAlphabet:
+    cdef pynfa.COnTheFlyAlphabet *thisptr
+    cdef StringToSymbolMap string_to_symbol_map
+
+    def __cinit__(self, State initial_symbol = 0):
+        self.thisptr = new pynfa.COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))

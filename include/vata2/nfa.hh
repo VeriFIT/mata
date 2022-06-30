@@ -136,6 +136,7 @@ public:
 
 class DirectAlphabet : public Alphabet
 {
+public:
 	virtual Symbol translate_symb(const std::string& str) override
 	{
 		Symbol symb;
