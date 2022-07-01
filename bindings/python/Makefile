@@ -9,3 +9,6 @@ install:
 
 test:
 	python3 -m pytest --cov=./ --cov-report term-missing:skip-covered tests/
+
+build-install: build-ext install
+

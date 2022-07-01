@@ -1,7 +1,5 @@
 cimport pynfa
-from libcpp cimport bool
 from libcpp.vector cimport vector
-from libc.stdint cimport uintptr_t
 from cython.operator import dereference
 
 cdef class Trans:
