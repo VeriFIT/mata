@@ -66,6 +66,29 @@ def test_transitions():
     assert [t for t in lhs.iterate()] == [t4, t3, t2, t1]
 
 
+def test_post():
+    """Test various cases of getting post of the states
+    :return:
+    """
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0, 0, 1)
+    lhs.add_trans_raw(1, 1, 2)
+    lhs.add_trans_raw(0, 1, 2)
+    lhs.add_trans_raw(1, 0, 0)
+    lhs.add_trans_raw(2, 1, 2)
+    lhs.add_trans_raw(2, 0, 2)
+    lhs.add_final_state(2)
+
+    assert lhs.post_map_of(0) == {0: {1}, 1: {2}}
+    assert lhs.post_map_of(1) == {0: {0}, 1: {2}}
+    assert lhs.post_map_of(2) == {0: {2}, 1: {2}}
+
+    assert lhs.post_of({0}, 0) == {1}
+    assert lhs.post_of({0, 1}, 0) == {0, 1}
+    assert lhs.post_of({0, 1, 2}, 1) == {2}
+    assert lhs.post_of({0, 1, 2}, 0) == {0, 1, 2}
+
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     """
     Tests determinisation

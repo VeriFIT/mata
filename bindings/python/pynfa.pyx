@@ -90,6 +90,22 @@ cdef class Nfa:
             preinc(iterator)
             yield trans
 
+    def post_map_of(self, State st):
+        """Returns mapping of symbols to set of states.
+
+        :param State st: source state
+        :return: dictionary mapping symbols to set of reachable states from the symbol
+        """
+        return dereference(self.thisptr.post(st))
+
+    def post_of(self, StateSet& states, Symbol symbol):
+        """Returns sets of reachable states from set of states through a symbol
+
+        :param StateSet states: set of states
+        :param Symbol symbol: source symbol
+        :return: set of reachable states
+        """
+        return self.thisptr.post(states, symbol)
 
     @classmethod
     def is_deterministic(cls, Nfa lhs):
