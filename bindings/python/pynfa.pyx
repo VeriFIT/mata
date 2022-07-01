@@ -1,6 +1,6 @@
 cimport pynfa
 from libcpp.vector cimport vector
-from cython.operator import dereference
+from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 
 cdef class Trans:
     """
@@ -8,17 +8,33 @@ cdef class Trans:
     """
     cdef pynfa.CTrans *thisptr
 
-    def __cinit__(self, State src, Symbol s, State tgt):
+    def __cinit__(self, State src=0, Symbol s=0, State tgt=0):
         self.thisptr = new pynfa.CTrans(src, s, tgt)
 
     def __dealloc__(self):
-        del self.thisptr
+        if self.thisptr != NULL:
+            del self.thisptr
 
     def __eq__(self, Trans other):
         return dereference(self.thisptr) == dereference(other.thisptr)
 
     def __neq__(self, Trans other):
         return dereference(self.thisptr) != dereference(other.thisptr)
+
+    cdef copy_from(self, CTrans trans):
+        """Copies the internals of trans into the wrapped pointer
+
+        :param CTrans trans: copied transition
+        """
+        self.thisptr.src = trans.src
+        self.thisptr.symb = trans.symb
+        self.thisptr.tgt = trans.tgt
+
+    def __str__(self):
+        return f"{self.thisptr.src}-[{self.thisptr.symb}]\u2192{self.thisptr.tgt}"
+
+    def __repr__(self):
+        return str(self)
 
 cdef class Nfa:
     """
@@ -64,6 +80,15 @@ cdef class Nfa:
 
     def trans_size(self):
         return self.thisptr.trans_size()
+
+    def iterate(self):
+        iterator = self.thisptr.begin()
+        while iterator != self.thisptr.end():
+            trans = Trans()
+            lhs = dereference(iterator)
+            trans.copy_from(lhs)
+            preinc(iterator)
+            yield trans
 
 
     @classmethod

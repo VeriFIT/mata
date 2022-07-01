@@ -63,6 +63,8 @@ def test_transitions():
     lhs.add_trans_raw(1, 1, 1)
     assert lhs.trans_size() == 4
 
+    assert [t for t in lhs.iterate()] == [t4, t3, t2, t1]
+
 
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     """
