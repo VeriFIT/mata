@@ -54,7 +54,7 @@ def divisible_by(k: int):
     Constructs automaton accepting strings containing ones divisible by "k"
     """
     assert k > 1
-    lhs = pynfa.Nfa
+    lhs = pynfa.Nfa()
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):

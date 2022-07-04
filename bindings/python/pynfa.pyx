@@ -129,6 +129,49 @@ cdef class Nfa:
         pynfa.determinize(result.thisptr, dereference(lhs.thisptr), NULL, NULL)
         return result
 
+    # Helper functions
+    @classmethod
+    def get_forward_reachable_states(cls, Nfa lhs):
+        """Returns list of reachable states from initial states
+
+        >>> pynfa.Nfa.get_forward_reachable_states(lhs)
+        {0, 1, 2}
+
+        :param Nfa lhs: source automaton
+        :return: set of reachable states
+        """
+        return pynfa.get_fwd_reach_states(dereference(lhs.thisptr))
+
+
+    @classmethod
+    def get_word_for_path(cls, Nfa lhs, path):
+        """For a given path (set of states) returns a corresponding word
+
+        >>> pynfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
+        ([1, 1], True)
+
+        :param Nfa lhs: source automaton
+        :param list path: list of states
+        :return: pair of word (list of symbols) and true or false, whether the search was successful
+        """
+        return pynfa.get_word_for_path(dereference(lhs.thisptr), path)
+
+    @classmethod
+    def encode_word(cls, string_to_symbol, word):
+        """Encodes word based on a string to symbol map
+
+        >>> pynfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
+        [1, 2, 0, 1]
+
+        :param dict string_to_symbol: dictionary of strings to integers
+        :param word: list of strings representing a encoded word
+        :return:
+        """
+        return pynfa.encode_word(
+            {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
+            [s.encode('utf-8') for s in word]
+        )
+
 cdef class CharAlphabet:
     cdef pynfa.CCharAlphabet *thisptr
 

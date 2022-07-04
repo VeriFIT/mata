@@ -89,6 +89,7 @@ def test_post():
     assert lhs.post_of({0, 1, 2}, 1) == {2}
     assert lhs.post_of({0, 1, 2}, 0) == {0, 1, 2}
 
+
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     """
     Tests determinisation
@@ -99,3 +100,29 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     assert pynfa.Nfa.is_deterministic(rhs)
     chs = pynfa.Nfa.determinize(lhs)
     assert pynfa.Nfa.is_deterministic(chs)
+
+
+def test_forward_reach_states(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_two) == set(range(0, 3))
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_four) == set(range(0, 5))
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_eight) == set(range(0, 9))
+
+
+def test_get_word_for_path(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    assert pynfa.Nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2]) == ([1, 1], True)
+    assert pynfa.Nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 0]) == ([], False)
+    assert pynfa.Nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 2]) == ([1, 1, 0], True)
+    assert pynfa.Nfa.get_word_for_path(
+        fa_one_divisible_by_four, [0, 1, 2, 3, 4]
+    ) == ([1, 1, 1, 1], True)
+    assert pynfa.Nfa.get_word_for_path(
+        fa_one_divisible_by_eight, [0, 1, 2, 3, 4, 5, 6, 7, 8]
+    ) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
+
+
+def test_encode_word():
+    assert pynfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca") == [1, 2, 0, 1]
