@@ -88,7 +88,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
 
     # Automata operations
     cdef void determinize(CNfa*, CNfa&, SubsetMap*, State*)
-    cdef CNfa union_rename(CNfa&, CNfa&)
+    cdef void union_rename(CNfa*, CNfa&, CNfa&)
     cdef void union_no_rename(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&)

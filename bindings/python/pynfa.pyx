@@ -107,15 +107,7 @@ cdef class Nfa:
         """
         return self.thisptr.post(states, symbol)
 
-    @classmethod
-    def is_deterministic(cls, Nfa lhs):
-        """Tests if the lhs is determinstic
-
-        :param Nfa lhs: non-determinstic finite automaton
-        :return: true if the lhs is deterministic
-        """
-        return pynfa.is_deterministic(dereference(lhs.thisptr))
-
+    # Operations
     @classmethod
     def determinize(cls, Nfa lhs):
         """Determinize the lhs automaton
@@ -128,6 +120,142 @@ cdef class Nfa:
         result = Nfa()
         pynfa.determinize(result.thisptr, dereference(lhs.thisptr), NULL, NULL)
         return result
+
+    @classmethod
+    def union(cls, Nfa lhs, Nfa rhs):
+        result = Nfa()
+        pynfa.union_rename(
+            result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr)
+        )
+        return result
+
+    @classmethod
+    def intersection(cls, Nfa lhs, Nfa rhs):
+        result = Nfa()
+        pynfa.intersection(
+            result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), NULL
+        )
+        return result
+
+    @classmethod
+    def complement(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None, params = None):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        result = Nfa()
+        pynfa.complement(
+            result.thisptr,
+            dereference(lhs.thisptr),
+            <CAlphabet&>dereference(alphabet.thisptr),
+            params or {}
+        )
+        return result
+
+    @classmethod
+    def make_complete(cls, Nfa lhs, State state, OnTheFlyAlphabet alphabet = None):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), state)
+
+    @classmethod
+    def revert(cls, Nfa lhs):
+        result = Nfa()
+        pynfa.revert(result.thisptr, dereference(lhs.thisptr))
+        return result
+
+    @classmethod
+    def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
+        result = Nfa()
+        pynfa.remove_epsilon(
+            result.thisptr, dereference(lhs.thisptr), epsilon
+        )
+        return result
+
+    @classmethod
+    def minimize(cls, Nfa lhs, params = None):
+        result = Nfa()
+        pynfa.minimize(
+            result.thisptr, dereference(lhs.thisptr), params or {}
+        )
+        return result
+
+    # Tests
+    @classmethod
+    def is_deterministic(cls, Nfa lhs):
+        """Tests if the lhs is determinstic
+
+        :param Nfa lhs: non-determinstic finite automaton
+        :return: true if the lhs is deterministic
+        """
+        return pynfa.is_deterministic(dereference(lhs.thisptr))
+
+    @classmethod
+    def is_lang_empty_wrt_path(cls, Nfa lhs, vector[State] path):
+        return pynfa.is_lang_empty(dereference(lhs.thisptr), <Path*>&path)
+
+    @classmethod
+    def is_lang_empty(cls, Nfa lhs):
+        return pynfa.is_lang_empty(dereference(lhs.thisptr), NULL)
+
+
+    @classmethod
+    def is_lang_empty_within_context(cls, Nfa lhs, vector[Symbol] word):
+        return pynfa.is_lang_empty_cex(dereference(lhs.thisptr), <Word*>&word)
+
+    @classmethod
+    def is_universal(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None, params = None):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        return pynfa.is_universal(
+            dereference(lhs.thisptr),
+            <CAlphabet&>dereference(alphabet.thisptr),
+            params or {}
+        )
+
+    @classmethod
+    def is_included(cls, Nfa lhs, Nfa rhs, OnTheFlyAlphabet alphabet = None, params = None):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        return pynfa.is_incl(
+            dereference(lhs.thisptr),
+            dereference(rhs.thisptr),
+            <CAlphabet&>dereference(alphabet.thisptr),
+            params or {}
+        )
+
+    @classmethod
+    def is_included_wrt_word(
+            cls, Nfa lhs, Nfa rhs, vector[Symbol] word, OnTheFlyAlphabet alphabet = None, params = None
+    ):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        return pynfa.is_incl(
+            dereference(lhs.thisptr),
+            dereference(rhs.thisptr),
+            <CAlphabet&>dereference(alphabet.thisptr),
+            <Word*> &word,
+            params or {}
+        )
+
+    @classmethod
+    def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None):
+        if alphabet is None:
+            alphabet = OnTheFlyAlphabet()
+        return pynfa.is_complete(
+            dereference(lhs.thisptr),
+            <CAlphabet&>dereference(alphabet.thisptr)
+        )
+
+    @classmethod
+    def is_in_lang(cls, Nfa lhs, vector[Symbol] word):
+        return pynfa.is_in_lang(dereference(lhs.thisptr), <Word> word)
+
+    @classmethod
+    def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
+        return pynfa.is_prfx_in_lang(dereference(lhs.thisptr), <Word> word)
+
+    @classmethod
+    def accepts_epsilon(cls, Nfa lhs):
+        return pynfa.accepts_epsilon(dereference(lhs.thisptr))
 
     # Helper functions
     @classmethod
