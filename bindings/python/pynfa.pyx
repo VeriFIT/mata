@@ -194,7 +194,7 @@ cdef class Nfa:
         example.
 
         :param Nfa lhs:
-        :return: ture if the lhs is empty, counter example if lhs is not empty
+        :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Path path
         result = pynfa.is_lang_empty(dereference(lhs.thisptr), &path)
@@ -206,7 +206,7 @@ cdef class Nfa:
         """Checks if language of automaton lhs is empty, if not, returns word as counter example.
 
         :param Nfa lhs:
-        :return: ture if the lhs is empty, counter example if lhs is not empty
+        :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Word word
         result = pynfa.is_lang_empty_cex(dereference(lhs.thisptr), &word)
@@ -214,10 +214,22 @@ cdef class Nfa:
 
     @classmethod
     def is_universal(cls, Nfa lhs, OnTheFlyAlphabet alphabet, params = None):
+        """Tests if lhs is universal wrt given alphabet
+
+        :param Nfa lhs: automaton tested for universality
+        :param OnTheFlyAlphabet alphabet: on the fly alphabet
+        :param dict params: additional params to the function, currently supports key 'algo',
+            which determines used universality test
+        :return: true if lhs is universal
+        """
+        params = params or {'algo': 'antichains'}
         return pynfa.is_universal(
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.thisptr),
-            params or {}
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
         )
 
     @classmethod

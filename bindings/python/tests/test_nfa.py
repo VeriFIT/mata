@@ -140,3 +140,17 @@ def test_language_emptiness(fa_one_divisible_by_two):
     lhs.add_trans_raw(1, 0, 2)
     lhs.add_trans_raw(2, 0, 3)
     assert pynfa.Nfa.is_lang_empty_word_counterexample(lhs) == (True, [])
+
+def test_universality(fa_one_divisible_by_two):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+    assert pynfa.Nfa.is_universal(fa_one_divisible_by_two, alph) == False
+
+    l = pynfa.Nfa()
+    l.add_initial_state(0)
+    l.add_trans_raw(0,0,0)
+    l.add_trans_raw(0,1,0)
+    l.add_final_state(0)
+    assert pynfa.Nfa.is_universal(l, alph) == True
+
