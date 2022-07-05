@@ -260,7 +260,7 @@ cdef class Nfa:
 
     @classmethod
     def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet):
-        """Tets if automaton is complete
+        """Test if automaton is complete
 
         :param Nf lhs: tested automaton
         :param OnTheFlyAlphabet alphabet: alphabet of the automaton
@@ -273,14 +273,31 @@ cdef class Nfa:
 
     @classmethod
     def is_in_lang(cls, Nfa lhs, vector[Symbol] word):
+        """Tests if word is in language
+
+        :param Nfa lhs: tested automaton
+        :param vector[Symbol] word: tested word
+        :return: true if word is in language of automaton lhs
+        """
         return pynfa.is_in_lang(dereference(lhs.thisptr), <Word> word)
 
     @classmethod
     def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
+        """Test if any prefix of the word is in the language
+
+        :param Nfa lhs: tested automaton
+        :param vector[Symbol] word: tested word
+        :return: true if any prefix of word is in language of automaton lhs
+        """
         return pynfa.is_prfx_in_lang(dereference(lhs.thisptr), <Word> word)
 
     @classmethod
     def accepts_epsilon(cls, Nfa lhs):
+        """Tests if automaton accepts epsilon
+
+        :param Nfa lhs: tested automaton
+        :return: true if automaton accepts epsilon
+        """
         return pynfa.accepts_epsilon(dereference(lhs.thisptr))
 
     # Helper functions

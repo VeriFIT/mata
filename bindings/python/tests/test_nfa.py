@@ -190,3 +190,23 @@ def test_completeness(
     assert not pynfa.Nfa.is_complete(l, alph)
     l.add_trans_raw(0,1,0)
     assert pynfa.Nfa.is_complete(l, alph)
+
+def test_in_language(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    assert pynfa.Nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
+    assert not pynfa.Nfa.is_in_lang(fa_one_divisible_by_two, [1, 1, 1])
+
+    assert pynfa.Nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 1, 0])
+    assert not pynfa.Nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 0, 0])
+    assert not pynfa.Nfa.accepts_epsilon(fa_one_divisible_by_four)
+
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0,0,0)
+    lhs.add_trans_raw(0,1,1)
+    assert not pynfa.Nfa.accepts_epsilon(lhs)
+    lhs.add_final_state(1)
+    assert not pynfa.Nfa.accepts_epsilon(lhs)
+    lhs.add_final_state(0)
+    assert pynfa.Nfa.accepts_epsilon(lhs)
