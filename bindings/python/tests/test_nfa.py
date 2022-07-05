@@ -129,3 +129,14 @@ def test_get_word_for_path(
 
 def test_encode_word():
     assert pynfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca") == [1, 2, 0, 1]
+
+def test_language_emptiness(fa_one_divisible_by_two):
+    assert pynfa.Nfa.is_lang_empty_path_counterexample(fa_one_divisible_by_two) == (False, [0, 1, 2])
+    assert pynfa.Nfa.is_lang_empty_word_counterexample(fa_one_divisible_by_two) == (False, [1, 1])
+
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0, 0, 1)
+    lhs.add_trans_raw(1, 0, 2)
+    lhs.add_trans_raw(2, 0, 3)
+    assert pynfa.Nfa.is_lang_empty_word_counterexample(lhs) == (True, [])

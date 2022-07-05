@@ -189,22 +189,31 @@ cdef class Nfa:
         return pynfa.is_deterministic(dereference(lhs.thisptr))
 
     @classmethod
-    def is_lang_empty_wrt_path(cls, Nfa lhs, vector[State] path):
-        return pynfa.is_lang_empty(dereference(lhs.thisptr), <Path*>&path)
+    def is_lang_empty_path_counterexample(cls, Nfa lhs):
+        """Checks if language of automaton lhs is empty, if not, returns path of states as counter
+        example.
+
+        :param Nfa lhs:
+        :return: ture if the lhs is empty, counter example if lhs is not empty
+        """
+        cdef Path path
+        result = pynfa.is_lang_empty(dereference(lhs.thisptr), &path)
+        return result, path
+
 
     @classmethod
-    def is_lang_empty(cls, Nfa lhs):
-        return pynfa.is_lang_empty(dereference(lhs.thisptr), NULL)
+    def is_lang_empty_word_counterexample(cls, Nfa lhs):
+        """Checks if language of automaton lhs is empty, if not, returns word as counter example.
 
+        :param Nfa lhs:
+        :return: ture if the lhs is empty, counter example if lhs is not empty
+        """
+        cdef Word word
+        result = pynfa.is_lang_empty_cex(dereference(lhs.thisptr), &word)
+        return result, word
 
     @classmethod
-    def is_lang_empty_within_context(cls, Nfa lhs, vector[Symbol] word):
-        return pynfa.is_lang_empty_cex(dereference(lhs.thisptr), <Word*>&word)
-
-    @classmethod
-    def is_universal(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None, params = None):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
+    def is_universal(cls, Nfa lhs, OnTheFlyAlphabet alphabet, params = None):
         return pynfa.is_universal(
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.thisptr),
@@ -352,3 +361,20 @@ cdef class OnTheFlyAlphabet:
 
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+
+# Temporary for testing
+def divisible_by(k: int):
+    """
+    Constructs automaton accepting strings containing ones divisible by "k"
+    """
+    assert k > 1
+    lhs = Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0, 0, 0)
+    for i in range(1, k + 1):
+        lhs.add_trans_raw(i - 1, 1, i)
+        lhs.add_trans_raw(i, 0, i)
+    lhs.add_trans_raw(k, 1, 1)
+    lhs.add_final_state(k)
+    return lhs
