@@ -259,9 +259,13 @@ cdef class Nfa:
         return result, word
 
     @classmethod
-    def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
+    def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet):
+        """Tets if automaton is complete
+
+        :param Nf lhs: tested automaton
+        :param OnTheFlyAlphabet alphabet: alphabet of the automaton
+        :return: true if the automaton is complete
+        """
         return pynfa.is_complete(
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.thisptr)

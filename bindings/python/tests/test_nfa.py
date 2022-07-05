@@ -173,3 +173,20 @@ def test_inclusion(
     assert not pynfa.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight, alph)[0]
     assert not pynfa.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight, alph)[0]
 
+
+def test_completeness(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+    assert pynfa.Nfa.is_complete(fa_one_divisible_by_two, alph)
+    assert pynfa.Nfa.is_complete(fa_one_divisible_by_four, alph)
+    assert pynfa.Nfa.is_complete(fa_one_divisible_by_eight, alph)
+
+    l = pynfa.Nfa()
+    l.add_initial_state(0)
+    l.add_trans_raw(0,0,0)
+    assert not pynfa.Nfa.is_complete(l, alph)
+    l.add_trans_raw(0,1,0)
+    assert pynfa.Nfa.is_complete(l, alph)
