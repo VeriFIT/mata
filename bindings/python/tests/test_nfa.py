@@ -210,3 +210,48 @@ def test_in_language(
     assert not pynfa.Nfa.accepts_epsilon(lhs)
     lhs.add_final_state(0)
     assert pynfa.Nfa.accepts_epsilon(lhs)
+
+def test_union(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+
+    uni = pynfa.Nfa.union(fa_one_divisible_by_two, fa_one_divisible_by_four)
+    assert pynfa.Nfa.is_in_lang(uni, [1, 1])
+    assert pynfa.Nfa.is_in_lang(uni, [1, 1, 1, 1])
+    assert pynfa.Nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1])
+    assert pynfa.Nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1, 1, 1,])
+    assert pynfa.Nfa.is_included(fa_one_divisible_by_two, uni, alph)[0]
+    assert pynfa.Nfa.is_included(fa_one_divisible_by_four, uni, alph)[0]
+
+def test_intersection(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+
+    inter, map = pynfa.Nfa.intersection(fa_one_divisible_by_two, fa_one_divisible_by_four)
+
+    assert not pynfa.Nfa.is_in_lang(inter, [1, 1])
+    assert pynfa.Nfa.is_in_lang(inter, [1, 1, 1, 1])
+    assert not pynfa.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1])
+    assert pynfa.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1,])
+    assert pynfa.Nfa.is_included(inter, fa_one_divisible_by_two, alph)[0]
+    assert pynfa.Nfa.is_included(inter, fa_one_divisible_by_four, alph)[0]
+    assert map == {(0,0): 0, (1,1): 1, (1,3): 3, (2,2): 2, (2, 4): 4}
+
+def test_complement(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+
+    res, subset_map = pynfa.Nfa.complement(fa_one_divisible_by_two, alph)
+    assert not pynfa.Nfa.is_in_lang(res, [1,1])
+    assert pynfa.Nfa.is_in_lang(res, [1,1,1])
+    assert not pynfa.Nfa.is_in_lang(res, [1,1,1,1])
+    assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}

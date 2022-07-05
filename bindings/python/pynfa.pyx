@@ -123,6 +123,12 @@ cdef class Nfa:
 
     @classmethod
     def union(cls, Nfa lhs, Nfa rhs):
+        """Performs union of lhs and rhs
+
+        :param Nfa lhs: first automaton
+        :param Nfa rhs: second automaton
+        :return: union of lhs and rhs
+        """
         result = Nfa()
         pynfa.union_rename(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr)
@@ -131,30 +137,46 @@ cdef class Nfa:
 
     @classmethod
     def intersection(cls, Nfa lhs, Nfa rhs):
+        """Performs intersection of lhs and rhs
+
+        :param Nfa lhs: first automaton
+        :param Nfa rhs: second automaton
+        :return: intersection of lhs and rhs, product map of the results
+        """
         result = Nfa()
+        cdef ProductMap product_map
         pynfa.intersection(
-            result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), NULL
+            result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), &product_map
         )
-        return result
+        return result, {tuple(sorted(k)): v for k, v in product_map}
 
     @classmethod
-    def complement(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None, params = None):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
+    def complement(cls, Nfa lhs, OnTheFlyAlphabet alphabet, params = None):
+        """Performs complement of lhs
+
+        :param Nfa lhs: complemented automaton
+        :param OnTheFlyAlphabet alphabet: alphabet of the lhs
+        :param dict params: additional params
+        :return: complemented automaton, map of subsets to states
+        """
         result = Nfa()
+        params = params or {'algo': 'classical'}
+        cdef SubsetMap subset_map
         pynfa.complement(
             result.thisptr,
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.thisptr),
-            params or {}
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            },
+            &subset_map
         )
-        return result
+        return result, {tuple(sorted(k)): v for k, v in subset_map}
 
     @classmethod
-    def make_complete(cls, Nfa lhs, State state, OnTheFlyAlphabet alphabet = None):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
-        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), state)
+    def make_complete(cls, Nfa lhs, State sink_state, OnTheFlyAlphabet alphabet):
+        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), sink_state)
 
     @classmethod
     def revert(cls, Nfa lhs):
@@ -173,8 +195,14 @@ cdef class Nfa:
     @classmethod
     def minimize(cls, Nfa lhs, params = None):
         result = Nfa()
+        params = params or {}
         pynfa.minimize(
-            result.thisptr, dereference(lhs.thisptr), params or {}
+            result.thisptr,
+            dereference(lhs.thisptr),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
         )
         return result
 

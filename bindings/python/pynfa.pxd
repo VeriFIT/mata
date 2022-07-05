@@ -13,10 +13,9 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     ctypedef uintptr_t Symbol
     ctypedef set[State] StateSet
     ctypedef uset[State] UnorderedStateSet
-    ctypedef pair[State, State] StatePair
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
-    ctypedef umap[StatePair, State] ProductMap
+    ctypedef umap[pair[State, State], State] ProductMap
     ctypedef umap[StateSet, State] SubsetMap
     ctypedef umap[string, State] StringSubsetMap
     ctypedef vector[State] Path
@@ -92,7 +91,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef void union_rename(CNfa*, CNfa&, CNfa&)
     cdef void union_no_rename(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
-    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&)
+    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*)
     cdef void make_complete(CNfa*, CAlphabet&, State)
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol)
