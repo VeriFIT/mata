@@ -18,6 +18,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     ctypedef umap[State, PostSymb] StateToPostMap
     ctypedef umap[StatePair, State] ProductMap
     ctypedef umap[StateSet, State] SubsetMap
+    ctypedef umap[string, State] StringSubsetMap
     ctypedef vector[State] Path
     ctypedef vector[Symbol] Word
     ctypedef umap[string, State] StringToStateMap

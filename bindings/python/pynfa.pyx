@@ -112,14 +112,14 @@ cdef class Nfa:
     def determinize(cls, Nfa lhs):
         """Determinize the lhs automaton
 
-        TODO: Add support for SubsetMap and State (no idea what that is currently)?
-
         :param Nfa lhs: non-deterministic finite automaton
-        :return: deterministic finite automaton
+        :return: deterministic finite automaton, subset map
         """
         result = Nfa()
-        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), NULL, NULL)
-        return result
+        cdef SubsetMap subset_map
+        cdef State last_state
+        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map, &last_state)
+        return result, {tuple(sorted(k)): v for k, v in subset_map}, last_state
 
     @classmethod
     def union(cls, Nfa lhs, Nfa rhs):
