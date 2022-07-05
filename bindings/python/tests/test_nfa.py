@@ -154,3 +154,22 @@ def test_universality(fa_one_divisible_by_two):
     l.add_final_state(0)
     assert pynfa.Nfa.is_universal(l, alph) == True
 
+def test_inclusion(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("a")
+    alph.translate_symbol("b")
+    result, cex = pynfa.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_four, alph)
+    assert not result
+    assert cex == [1, 1]
+
+    result, cex = pynfa.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_two, alph)
+    assert result
+    assert cex == []
+
+    assert pynfa.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_two, alph)[0]
+    assert pynfa.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_four, alph)[0]
+    assert not pynfa.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight, alph)[0]
+    assert not pynfa.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight, alph)[0]
+

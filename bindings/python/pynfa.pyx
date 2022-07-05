@@ -233,29 +233,30 @@ cdef class Nfa:
         )
 
     @classmethod
-    def is_included(cls, Nfa lhs, Nfa rhs, OnTheFlyAlphabet alphabet = None, params = None):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
-        return pynfa.is_incl(
-            dereference(lhs.thisptr),
-            dereference(rhs.thisptr),
-            <CAlphabet&>dereference(alphabet.thisptr),
-            params or {}
-        )
-
-    @classmethod
-    def is_included_wrt_word(
-            cls, Nfa lhs, Nfa rhs, vector[Symbol] word, OnTheFlyAlphabet alphabet = None, params = None
+    def is_included(
+            cls, Nfa lhs, Nfa rhs, OnTheFlyAlphabet alphabet, params = None
     ):
-        if alphabet is None:
-            alphabet = OnTheFlyAlphabet()
-        return pynfa.is_incl(
+        """Test inclusion between two automata
+
+        :param Nfa lhs: smaller automaton
+        :param Nfa rhs: bigger automaton
+        :param Alphabet alphabet: alpabet shared by two automata
+        :param dict params: adtitional params
+        :return: true if lhs is included by rhs, counter example word if not
+        """
+        cdef Word word
+        params = params or {'algo': 'antichains'}
+        result = pynfa.is_incl(
             dereference(lhs.thisptr),
             dereference(rhs.thisptr),
             <CAlphabet&>dereference(alphabet.thisptr),
-            <Word*> &word,
-            params or {}
+            &word,
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
         )
+        return result, word
 
     @classmethod
     def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet = None):
