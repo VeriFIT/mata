@@ -6,7 +6,7 @@
 * The format is **line**-based. Lines can be connected by `\`.
 * Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive**.
 * A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
-* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, **transition lines**, or **comment lines** starting with `#`. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the `KEY` as defined. 
+* In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, **transition lines**, or **comment lines** starting with `#`. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the `KEY` is defined. 
 * Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`,`{`,`}`.
   * `&`,`|`,`!`,`(`,`)` occurring as tokens in transition lines are logical operators.
   * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
