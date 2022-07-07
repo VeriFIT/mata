@@ -41,9 +41,9 @@ We use the general form of AFA, by Pavol V., and simple NFA.
 * Both symbol literals and states are determined positionally, corresponding to `auto` in AFA. Markers or enumeration can also be used.
 
 ## Alphabet type
-Next, we categorise automtata by the **alphabet type**, representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), asci (?), numbers (?), intervals of numbers or unicode or asci.
-* **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, asci, utf.
-* **Bitvector**: Propositional variables, syntax is the same as explicit symbols.
+Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), ascii (?), numbers (?), intervals of numbers or unicode or ascii.
+* **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.
+* **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
 * **Interval**: Intervals of symbols are of the form [a-z]. We might also want complements, [^a-z], but I am not sure that we want to work with complements. We might also want to give abstract intervals of the form [min,a], [a,max], [min,max], or use inf and -inf instead of min and max. This would be particularly needed if we do not have complements and do not know the alphabet range.
 
 We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme).
