@@ -1,6 +1,6 @@
 
 # The file format for automata
-* Based partially on Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372), a format of Pavol Vargovcik, and a confused disucssion.
+* Based partially on Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372), a format of Pavol Vargovcik, and a confused discussion.
 
 ## Top-level file structure
 * The format is **line**-based. Lines can be connected by `\`.
