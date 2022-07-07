@@ -105,7 +105,7 @@ q (a@x | b@z) & f"z=x" ("(r,s)" | (r & s))
 The example above does not work in the current version where the special formulae and symbols are the same thing.
  
 ## Aliases 
-It could be good to allow a akey-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
+It could be good to allow a key-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
 ## Attributes
 We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. 
