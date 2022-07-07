@@ -271,8 +271,6 @@ public:
      */
     Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
 
-    //void addState(State stateToAdd);
-
     auto get_num_of_states() const { return std::max(
             {transitionrelation.size(), initialstates.size(), finalstates.size()}); }
 

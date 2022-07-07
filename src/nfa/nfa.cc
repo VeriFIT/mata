@@ -160,9 +160,6 @@ std::list<Symbol> EnumAlphabet::get_complement(
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
-    //addState(stateFrom);
-    //addState(stateTo);
-
     // TODO: define own exceptions
     if (!is_state(stateFrom) || !is_state(stateTo)) {
         throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
@@ -729,12 +726,7 @@ void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
 
     std::unordered_map<State,State> thisStateToUnionState;
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
-        // if (rhs.isState(stateInThisAutomaton)) {
         thisStateToUnionState[thisState] = unionAutomaton->add_new_state();
-        // } else {
-        //     unionAutomaton.addState(stateInThisAutomaton);
-        //     thisAutomatonStatesToUnionAutomatonStates[stateInThisAutomaton] = stateInThisAutomaton;
-        // }
     }
 
     for (State thisInitialState : lhs.initialstates) {
@@ -925,11 +917,6 @@ void Vata2::Nfa::determinize(
         worklist.pop_back();
         StateSet S = Spair.second;
         State Sid = Spair.first;
-        // std::cout <<"id: " << Sid << std::endl << "states: ";
-        // for (State s : S) {
-        //     std::cout << s << ' ';
-        // }
-        // std::cout << std::endl;
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
@@ -938,7 +925,6 @@ void Vata2::Nfa::determinize(
         while (iterator.has_next()) {
             auto symbolTargetPair = iterator.next();
             Symbol currentSymbol = symbolTargetPair.first;
-            // std::cout << "symbol: " << currentSymbol << std::endl;
             const StateSet &T = symbolTargetPair.second;
             auto existingTitr = subset_map->find(T);
             State Tid;
@@ -947,14 +933,12 @@ void Vata2::Nfa::determinize(
             } else {
                 Tid = result->add_new_state();
                 (*subset_map)[Vata2::Util::OrdVector<State>(T)] = Tid;
-                //if (contains_final(T,*this))
                 if (contains_final(T, isFinal)) {
                     result->add_final(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
             result->transitionrelation[Sid].push_back(TransSymbolStates(currentSymbol, Tid));
-            // std::cout << "Pushed transition " << Sid << '-' << currentSymbol << "->" << Tid << std::endl;
         }
     }
 
@@ -1197,7 +1181,6 @@ std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
     StateSet post;
     Symbol newMinSymbol = limits.maxSymbol;
     for (size_t i=0; i < size;) {
-        // std::cout << i << std::endl;
         Symbol transitionSymbol = transition_iterators[i]->symbol;
         if (transitionSymbol == min_symbol) {
             uniont_to_left(post, transition_iterators[i]->states_to);
