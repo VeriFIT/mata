@@ -109,4 +109,4 @@ It could be good to allow a key-value line `%Alias bla bli`, which specifies an 
 
 ## Attributes
 We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. 
-1. An attribute inside a transition is a token such as state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`. 
+1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`. 
