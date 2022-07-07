@@ -119,9 +119,9 @@ bool is_incl_antichains(
 
 		// process transitions leaving smaller_state
 		for (const auto& post_symb : smaller[smaller_state]) {
-			const Symbol& symb = post_symb.first;
+			const Symbol& symb = post_symb.symbol;
 
-			for (const State& smaller_succ : post_symb.second) {
+			for (const State& smaller_succ : post_symb.states_to) {
 				StateSet bigger_succ = bigger.post(bigger_set, symb);
 				ProdStateType succ = {smaller_succ, bigger_succ};
 

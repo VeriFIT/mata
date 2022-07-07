@@ -29,6 +29,7 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
+#include <vata2/ord_vector.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -73,6 +74,22 @@ bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 	}
 
 	return true;
+} // }}}
+
+
+template <class T>
+bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
+{ // {{{
+    auto itLhs = lhs.begin();
+    auto itRhs = rhs.begin();
+    while (itLhs != lhs.end() && itRhs != rhs.end())
+    {
+        if (*itLhs == *itRhs) { return false; }
+        else if (*itLhs < *itRhs) { ++itLhs; }
+        else {++itRhs; }
+    }
+
+    return true;
 } // }}}
 
 /** Is there an element in a container? */

@@ -38,9 +38,10 @@ void complement_classical(
 		delete_subset_map = true;
 	}
 
-	State last_state_num;
-	*result = determinize(aut, subset_map, &last_state_num);
-	State sink_state = last_state_num + 1;
+	*result = determinize(aut, subset_map);
+	State sink_state = result->get_num_of_states() + 1;
+	result->increase_size(sink_state+1);
+	assert(sink_state < result->get_num_of_states());
 	auto it_inserted_pair = subset_map->insert({{}, sink_state});
 	if (!it_inserted_pair.second)
 	{
@@ -48,7 +49,7 @@ void complement_classical(
 	}
 
 	make_complete(result, alphabet, sink_state);
-	std::set<State> old_fs = std::move(result->finalstates);
+	StateSet old_fs = std::move(result->finalstates);
 	result->finalstates = { };
 	assert(result->initialstates.size() == 1);
 
@@ -61,9 +62,8 @@ void complement_classical(
 
 	make_final_if_not_in_old(*result->initialstates.begin());
 
-	for (const auto& tr : *result)
-	{
-		make_final_if_not_in_old(tr.tgt);
+	for (const auto& trs : *result) {
+                make_final_if_not_in_old(trs.tgt);
 	}
 
 	if (delete_subset_map)
@@ -74,6 +74,17 @@ void complement_classical(
 
 } // namespace
 
+/// Complement
+void complement_naive(
+        Nfa*               result,
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        const StringDict&  params,
+        SubsetMap*         subset_map)
+{
+    determinize(result, aut);
+    complement_in_place(*result);
+}
 
 void Vata2::Nfa::complement(
 	Nfa*               result,
