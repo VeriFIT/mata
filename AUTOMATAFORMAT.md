@@ -17,22 +17,22 @@
   * `\` for escaping characters. `\` is also used to concatenate lines.
   * `a`,`q`,`n`,`t` are token type specifiers (alphabet, state, node, attribute). 
   * `#` starts a comment line.
-* There are two **words with special meaning**: `true`,`false`.
-* The parser may recognise the special symbols as standalone tookens (does not apply to `q`,`a`,`n`,`t`,`#`) only if they appear in the special context where their special meaning applies, otehrwise they should be treated as normal symbols.
+* There are two **words with a special meaning**: `true`,`false`.
+* The parser may recognise the special symbols as standalone tookens (does not apply to `q`,`a`,`n`,`t`,`#`) only if they appear in the special context where their special meaning applies, otherwise they should be treated as normal symbols.
 
-We categorise automata by **transition type**, that is, the structure of their transitions, and by **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
+We categorise automata according to their **transition type**, that is, the structure of their transitions, and by their **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
 
-## Automata by transition type: 
-We use general form of AFA, by Pavol V., and simple NFA.
+## Automata by their transition type: 
+We use the general form of AFA, by Pavol V., and simple NFA.
 
 ### AFA 
 * Each state has a transition, a booelan formula over symbol literals, states, and nodes.
 * Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
-* Since in the general formulae, the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types.
+* Since in the general formulae, the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types:
   * By **enumeration**.
   * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker *is* a part of the thing's name. 
-  * **automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
-* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `markerd`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
+  * **Automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
+* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
 * Markers is the implicit option for all types of tokens, used if nothing is specified.
 * `true` means true and `false` means false.
 
