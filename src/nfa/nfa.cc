@@ -1172,12 +1172,14 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     return *this;
 } // operator++ }}}
 
-//Returns the min_symbol and its post (subset construction), advances the min_symbol to the next minimal symbol,
-//If it meets a state with no more transitions, it swaps it with the last state and decreases the size.
-//size == 0 means no more post.
-//It would be nice to make this parameterized by a functor that defines what is to be done with the individual posts
-//Alternatively, one might return a vector of references to those individual posts, looks like a good idea actually, the cost of this vector should be small enough
-std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
+/**
+ * Returns the min_symbol and its post (subset construction), advances the min_symbol to the next minimal symbol,
+ * If it meets a state with no more transitions, it swaps it with the last state and decreases the size.
+ * size == 0 means no more post.
+ * It would be nice to make this parameterized by a functor that defines what is to be done with the individual posts
+ * Alternatively, one might return a vector of references to those individual posts, looks like a good idea actually, the cost of this vector should be small enough
+ */
+ std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
     StateSet post;
     Symbol newMinSymbol = limits.maxSymbol;
     for (size_t i=0; i < size;) {
