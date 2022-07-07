@@ -506,13 +506,6 @@ void complement(
         const StringDict&  params = {{"algo", "classical"}},
         SubsetMap*         subset_map = nullptr);
 
-void complement_naive(
-        Nfa*               result,
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringDict&  params = {{"algo", "classical"}},
-        SubsetMap*         subset_map = nullptr);
-
 inline Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,

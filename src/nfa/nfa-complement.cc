@@ -75,7 +75,7 @@ void complement_classical(
 } // namespace
 
 /// Complement
-void Vata2::Nfa::complement_naive(
+void complement_naive(
         Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
