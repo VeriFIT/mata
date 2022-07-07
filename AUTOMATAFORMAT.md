@@ -94,7 +94,7 @@ q a1@x | a2@z & ("(r,s)" | r | s)
 ```
  
 ## Special formulas over symbols and transducer track names.
-The user may parse symbol token strings in a specific way. They may be SMT formulas or some special king of fomulas, such as `a"x=y"` specifying that the two transducer tracks read the same symbol... 
+The user may parse symbol token strings in a specific way. They may be SMT formulas or some special kind of formulas, such as `a"x=y"` specifying that the two transducer tracks read the same symbol... 
 
 ``` 
 @AFA-intervals
