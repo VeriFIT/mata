@@ -582,7 +582,8 @@ void Vata2::Nfa::minimize(Nfa *res, const Nfa& aut) {
 }
 
 void Vata2::Nfa::invert(Nfa *invertedAutomaton, const Nfa& aut) {
-    for (State i = 0; i < aut.get_num_of_states(); i++)
+    const size_t states_num = aut.get_num_of_states();
+    for (State i = 0; i < states_num; ++i)
         invertedAutomaton->add_new_state();
 
     for (State sourceState = 0; sourceState < aut.transitionrelation.size(); ++sourceState)
