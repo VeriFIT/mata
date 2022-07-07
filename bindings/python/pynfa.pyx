@@ -176,16 +176,33 @@ cdef class Nfa:
 
     @classmethod
     def make_complete(cls, Nfa lhs, State sink_state, OnTheFlyAlphabet alphabet):
+        """Makes lhs complete
+
+        :param Nfa lhs: automaton that will be made complete
+        :param Symbol sink_state: sink state of the automaton
+        :param OnTheFlyAlphabet alphabet: alphabet of the
+        """
         pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), sink_state)
 
     @classmethod
     def revert(cls, Nfa lhs):
+        """Reverses transitions in the lhs
+
+        :param Nfa lhs: source automaton
+        :return: automaton with reversed transitions
+        """
         result = Nfa()
         pynfa.revert(result.thisptr, dereference(lhs.thisptr))
         return result
 
     @classmethod
     def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
+        """Removes transitions that contains epsilon symbol
+
+        :param Nfa lhs: automaton, where epsilon transitions will be removed
+        :param Symbol epsilon: symbol representing the epsilon
+        :return: automaton, with epsilon transitions removed
+        """
         result = Nfa()
         pynfa.remove_epsilon(
             result.thisptr, dereference(lhs.thisptr), epsilon
@@ -194,6 +211,12 @@ cdef class Nfa:
 
     @classmethod
     def minimize(cls, Nfa lhs, params = None):
+        """Minimies the automaton lhs
+
+        :param Nfa lhs: automaton to be minimized
+        :param dict params: params for the algorithm
+        :return: minimized automaton
+        """
         result = Nfa()
         params = params or {}
         pynfa.minimize(

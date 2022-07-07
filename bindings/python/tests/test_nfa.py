@@ -191,6 +191,14 @@ def test_completeness(
     l.add_trans_raw(0,1,0)
     assert pynfa.Nfa.is_complete(l, alph)
 
+    r = pynfa.Nfa()
+    r.add_initial_state(0)
+    r.add_trans_raw(0,0,0)
+    assert not pynfa.Nfa.is_complete(r, alph)
+    pynfa.Nfa.make_complete(r, 1, alph)
+    assert pynfa.Nfa.is_complete(r, alph)
+
+
 def test_in_language(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
@@ -255,3 +263,52 @@ def test_complement(
     assert pynfa.Nfa.is_in_lang(res, [1,1,1])
     assert not pynfa.Nfa.is_in_lang(res, [1,1,1,1])
     assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
+
+def test_revert():
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0, 0, 1)
+    lhs.add_trans_raw(1, 1, 2)
+    lhs.add_final_state(2)
+    assert pynfa.Nfa.is_in_lang(lhs, [0, 1])
+    assert not pynfa.Nfa.is_in_lang(lhs, [1, 0])
+
+    rhs = pynfa.Nfa.revert(lhs)
+    assert not pynfa.Nfa.is_in_lang(rhs, [0, 1])
+    assert pynfa.Nfa.is_in_lang(rhs, [1, 0])
+
+def test_removing_epsilon():
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    lhs.add_trans_raw(0, 0, 1)
+    lhs.add_trans_raw(1, 1, 2)
+    lhs.add_trans_raw(0, 2, 2)
+    lhs.add_final_state(2)
+
+    rhs = pynfa.Nfa.remove_epsilon(lhs, 2)
+    assert rhs.has_trans_raw(0, 0, 1)
+    assert rhs.has_trans_raw(1, 1, 2)
+    assert not rhs.has_trans_raw(0, 2, 2)
+
+
+def test_minimize(
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+):
+    minimized = pynfa.Nfa.minimize(fa_one_divisible_by_two)
+    assert minimized.trans_size() <= fa_one_divisible_by_two.trans_size()
+    minimized = pynfa.Nfa.minimize(fa_one_divisible_by_four)
+    assert minimized.trans_size() <= fa_one_divisible_by_four.trans_size()
+    minimized = pynfa.Nfa.minimize(fa_one_divisible_by_eight)
+    assert minimized.trans_size() <= fa_one_divisible_by_eight.trans_size()
+
+    lhs = pynfa.Nfa()
+    lhs.add_initial_state(0)
+    for i in range(0, 10):
+        lhs.add_trans_raw(i, 0, i+1)
+        lhs.add_final_state(i)
+    lhs.add_trans_raw(10, 0, 10)
+    lhs.add_final_state(10)
+    assert lhs.trans_size() == 11
+
+    minimized = pynfa.Nfa.minimize(lhs)
+    assert minimized.trans_size() == 1
