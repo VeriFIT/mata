@@ -78,7 +78,7 @@ s x & !y t
 q [a-z]
 ```
 ## Transducer
-Transducer has named tracks, and it has the key-value line starting with `%Tracks`. We use `x@<lit>` do say that the <lit> belongs to the track `x`. We may also specify their names by type-identifier or enumeration. Example:
+A transducer has named tracks, and it has the key-value line starting with `%Tracks`. We use `x@<lit>` to say that the <lit> belongs to the track `x`. We may also specify their names by a type-identifier or enumeration. An example:
 ```
 @AFA-intervals
 %States-auto
