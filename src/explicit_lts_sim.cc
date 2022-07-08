@@ -151,7 +151,7 @@ public:
 
 			for (auto& a : lts.bw_labels(states->index_))
 			{
-				parent.inset_.removeStrict(a);
+				parent.inset_.remove_strict(a);
 				this->inset_.add(a);
 			}
 
@@ -428,7 +428,7 @@ protected:
 			this->partition_.push_back(newBlock);
 			this->relation_.split(block->index_);
 			removeMask[newBlock->index_] = true;
-			newBlock->counter_.copyLabels(newBlock->inset_, block->counter_);
+			newBlock->counter_.copy_labels(newBlock->inset_, block->counter_);
 
 			for (auto& a : newBlock->inset_)
 			{
@@ -456,15 +456,15 @@ protected:
 
 		std::vector<Block*> preList;
 		std::vector<bool> removeMask(this->lts_.states());
-        this->build_pre(preList, block->states_, label);
+		this->build_pre(preList, block->states_, label);
 		this->split(removeMask, *remove);
 
-		remove->unsafeRelease(
-			[this](RemoveList* list){
-				this->vector_allocator_.reclaim(list->subList());
-				this->remove_allocator_.reclaim(list);
-			}
-		);
+		remove->unsafe_release(
+		[this](RemoveList *list) {
+					this->vector_allocator_.reclaim(list->sublist());
+					this->remove_allocator_.reclaim(list);
+				 }
+        );
 
 		for (auto& b1 : preList)
 		{
@@ -665,7 +665,7 @@ public:
 		}
 
 		BinaryRelation::IndexType index;
-		relation.buildIndex(index);
+		relation.build_index(index);
 		this->relation_.init(index);
 
 		// make initial refinement
@@ -764,7 +764,7 @@ public:
 					}
 				}
 
-				s.assignFlat(delta1[a]);
+				s.assign_flat(delta1[a]);
 
 				for (auto& col : row)
 				{
@@ -790,7 +790,7 @@ public:
 				b1->remove_[a] = new RemoveList(new std::vector<size_t>(s.begin(), s.end()));
 				this->queue_.push_back(std::make_pair(b1, a));
 
-				assert(s.size() == b1->remove_[a]->subList()->size());
+				assert(s.size() == b1->remove_[a]->sublist()->size());
 			}
 
 			b1->counter_.init();

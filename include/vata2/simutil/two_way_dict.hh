@@ -73,14 +73,14 @@ public:   // Public data types
 
 private:  // Private data members
 
-	MapFwdType fwdMap_;
-	MapBwdType bwdMap_;
+	MapFwdType fwdmap_;
+	MapBwdType bwdmap_;
 
 public:   // Public methods
 
 	TwoWayDict() :
-		fwdMap_(),
-		bwdMap_()
+		fwdmap_(),
+		bwdmap_()
 	{ }
 
 
@@ -92,12 +92,12 @@ public:   // Public methods
 	 * @param[in]  fwdMap  The forward mapping
 	 */
 	explicit TwoWayDict(const MapFwdType& fwdMap) :
-		fwdMap_(fwdMap),
-		bwdMap_()
+		fwdmap_(fwdMap),
+		bwdmap_()
 	{
-		for (auto mappingPair : fwdMap_)
+		for (auto mappingPair : fwdmap_)
 		{
-			if (!bwdMap_.insert(std::make_pair(mappingPair.second, mappingPair.first)).second)
+			if (!bwdmap_.insert(std::make_pair(mappingPair.second, mappingPair.first)).second)
 			{
 				throw std::runtime_error(std::string(__func__) +
 					": failed to construct reverse mapping");
@@ -110,10 +110,10 @@ public:   // Public methods
 	 */
 	TwoWayDict(const TwoWayDict&) = default;
 
-	const Type2& TranslateFwd(const Type1& t1) const
+	const Type2& translate_fwd(const Type1& t1) const
 	{
 		ConstIteratorFwd itFwd;
-		if ((itFwd = fwdMap_.find(t1)) == this->EndFwd())
+		if ((itFwd = fwdmap_.find(t1)) == this->end_fwd())
 		{	// in case the value that should be stored there is not
 			throw std::out_of_range(__func__);
 		}
@@ -121,10 +121,10 @@ public:   // Public methods
 		return itFwd->second;
 	}
 
-	const Type1& TranslateBwd(const Type2& t2) const
+	const Type1& translate_bwd(const Type2& t2) const
 	{
 		ConstIteratorBwd itBwd;
-		if ((itBwd = bwdMap_.find(t2)) == EndBwd())
+		if ((itBwd = bwdmap_.find(t2)) == end_bwd())
 		{	// in case the value that should be stored there is not
 			throw std::out_of_range(__func__);
 		}
@@ -134,17 +134,17 @@ public:   // Public methods
 
 	const_iterator find(const Type1& t1) const
 	{
-		return this->FindFwd(t1);
+		return this->find_fwd(t1);
 	}
 
-	ConstIteratorFwd FindFwd(const Type1& t1) const
+	ConstIteratorFwd find_fwd(const Type1& t1) const
 	{
-		return fwdMap_.find(t1);
+		return fwdmap_.find(t1);
 	}
 
-	ConstIteratorBwd FindBwd(const Type2& t2) const
+	ConstIteratorBwd find_bwd(const Type2& t2) const
 	{
-		return bwdMap_.find(t2);
+		return bwdmap_.find(t2);
 	}
 
 	const Type2& at(const Type1& t1) const
@@ -162,32 +162,32 @@ public:   // Public methods
 
 	const_iterator begin() const
 	{
-		return this->BeginFwd();
+		return this->begin_fwd();
 	}
 
 	const_iterator end() const
 	{
-		return this->EndFwd();
+		return this->end_fwd();
 	}
 
-	ConstIteratorFwd BeginFwd() const
+	ConstIteratorFwd begin_fwd() const
 	{
-		return fwdMap_.begin();
+		return fwdmap_.begin();
 	}
 
-	ConstIteratorBwd BeginBwd() const
+	ConstIteratorBwd begin_bwd() const
 	{
-		return bwdMap_.begin();
+		return bwdmap_.begin();
 	}
 
-	ConstIteratorFwd EndFwd() const
+	ConstIteratorFwd end_fwd() const
 	{
-		return fwdMap_.end();
+		return fwdmap_.end();
 	}
 
-	ConstIteratorBwd EndBwd() const
+	ConstIteratorBwd end_bwd() const
 	{
-		return bwdMap_.end();
+		return bwdmap_.end();
 	}
 
 	std::pair<ConstIteratorFwd, bool> insert(
@@ -199,18 +199,18 @@ public:   // Public methods
 	std::pair<ConstIteratorFwd, bool> Insert(
 		const std::pair<Type1, Type2>&    value)
 	{
-		auto resPair = fwdMap_.insert(value);
+		auto resPair = fwdmap_.insert(value);
 		if (!(resPair.second))
 		{	// in case there is already some forward mapping for given value
 			assert(false);      // fail gracefully
 		}
 
-		if (!(bwdMap_.insert(std::make_pair(value.second, value.first)).second))
+		if (!(bwdmap_.insert(std::make_pair(value.second, value.first)).second))
 		{	// in case there is already some backward mapping for given value
 			VATA_ERROR("backward mapping for "
 				<< Convert::ToString(value.second)
 				<< " already found: "
-				<< Convert::ToString(bwdMap_.find(value.second)->second));
+				<< Convert::ToString(bwdmap_.find(value.second)->second));
 
 			assert(false);      // fail gracefully
 		}
@@ -224,10 +224,10 @@ public:   // Public methods
 		TwoWayDict result = *this;
 
 		// copy all pairs
-		for (ConstIteratorFwd itRhs = rhs.BeginFwd(); itRhs != rhs.EndFwd(); ++itRhs)
+		for (ConstIteratorFwd itRhs = rhs.begin_fwd(); itRhs != rhs.end_fwd(); ++itRhs)
 		{
-			if ((result.fwdMap_.find(itRhs->first) != result.fwdMap_.end()) ||
-				(result.bwdMap_.find(itRhs->second) != result.bwdMap_.end()))
+			if ((result.fwdmap_.find(itRhs->first) != result.fwdmap_.end()) ||
+				(result.bwdmap_.find(itRhs->second) != result.bwdmap_.end()))
 			{	// in case the first or the second component is already in the dictionary
 				assert(false);    // fail gracefully
 			}
@@ -238,21 +238,21 @@ public:   // Public methods
 		return result;
 	}
 
-	const MapBwdType& GetReverseMap() const
+	const MapBwdType& get_reverse_map() const
 	{
-		return bwdMap_;
+		return bwdmap_;
 	}
 
 	size_t size() const
 	{
-		return fwdMap_.size();
+		return fwdmap_.size();
 	}
 
 	friend std::ostream& operator<<(
 		std::ostream&         os,
 		const TwoWayDict&     dict)
 	{
-		return (os << Convert::ToString(dict.fwdMap_));
+		return (os << Convert::ToString(dict.fwdmap_));
 	}
 };
 

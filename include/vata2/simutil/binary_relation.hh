@@ -212,7 +212,7 @@ public:
 	}
 
 	// build equivalence classes
-	void buildClasses(std::vector<size_t>& headIndex) const
+	void build_classes(std::vector<size_t>& headIndex) const
 	{
 		headIndex.resize(size_);
 		std::vector<size_t> head;
@@ -237,7 +237,7 @@ public:
 	}
 
 	// build equivalence classes
-	void buildClasses(
+	void build_classes(
 		std::vector<size_t>&       index,
 		std::vector<size_t>&       head) const
 	{
@@ -304,9 +304,9 @@ public:
 	 *
 	 * @param[out]  dst  The result mapping every element to its images
 	 *
-	 * @see  buildInvIndex
+	 * @see  build_inv_index
 	 */
-	void buildIndex(IndexType& dst) const
+	void build_index(IndexType& dst) const
 	{
 		dst.resize(size_);
 
@@ -338,9 +338,9 @@ public:
 	 *
 	 * @param[out]  dst  The result mapping every element to its co-images
 	 *
-	 * @see buildIndex
+	 * @see build_index
 	 */
-	void buildInvIndex(IndexType& dst) const
+	void build_inv_index(IndexType& dst) const
 	{
 		dst.resize(size_);
 
@@ -359,15 +359,15 @@ public:
 	/**
 	 * @brief  Creates a mapping from elements to their images and co-images
 	 *
-	 * This method the call to buildIndex and buildInvIndex, i.e. it maps
+	 * This method the call to build_index and build_inv_index, i.e. it maps
 	 * elements to their images (in @p ind) and their co-images (in @p inv).
 	 *
 	 * @param[out]  ind  The result mapping every element to its images
 	 * @param[out]  inv  The result mapping every element to its co-images
 	 *
-	 * @see buildIndex buildInvIndex
+	 * @see build_index build_inv_index
 	 */
-	void buildIndex(IndexType& ind, IndexType& inv) const
+	void build_index(IndexType& ind, IndexType& inv) const
 	{
 		ind.resize(size_);
 		inv.resize(size_);
@@ -414,7 +414,7 @@ public:
 	 *                        representatives in the quotient set, quotProj[i] is
 	 *                        the number that the i-th guy maps to
 	 */
-	void GetQuotientProjection(
+	void get_quotient_projection(
 		std::vector<size_t>&             quotProj)
 	{
 		const size_t UNDEF_PROJ = static_cast<size_t>(-1);
@@ -488,7 +488,7 @@ public:   // methods
 
 public:
 
-	using IndexType    = std::unordered_map<size_t, std::vector<size_t>>;
+	using IndexType = std::unordered_map<size_t, std::vector<size_t>>;
 
 	explicit Identity(size_t size) :
 		size_(size)
@@ -503,7 +503,7 @@ public:
 	}
 
 	// build equivalence classes
-	void buildClasses(std::vector<size_t>& headIndex) const
+	void build_classes(std::vector<size_t>& headIndex) const
 	{
 		headIndex.resize(size_);
 		std::vector<size_t> head;
@@ -529,7 +529,7 @@ public:
 	}
 
 	// build equivalence classes
-	void buildClasses(
+	void build_classes(
 		std::vector<size_t>& index,
 		std::vector<size_t>& head) const
 	{
@@ -556,7 +556,7 @@ public:
 	}
 
 	// relation index
-	void buildIndex(IndexType& dst) const
+	void build_index(IndexType& dst) const
 	{
 		assert(dst.empty());
 
@@ -568,19 +568,19 @@ public:
 	}
 
 	// inverted relation index
-	void buildInvIndex(IndexType& dst) const
+	void build_inv_index(IndexType& dst) const
 	{
 		assert(dst.empty());
-		this->buildIndex(dst);
+		this->build_index(dst);
 	}
 
 	// relation index
-	void buildIndex(IndexType& ind, IndexType& inv) const
+	void build_index(IndexType& ind, IndexType& inv) const
 	{
 		assert(ind.empty());
 		assert(inv.empty());
 
-		this->buildIndex(ind);
+        this->build_index(ind);
 		inv = ind;
 	}
 
@@ -620,7 +620,7 @@ private:  // data members
 	BinaryRelation rel_;
 
 	/// The counter of allocated indices
-	size_t indexCnt_;
+	size_t index_cnt_;
 
 	/// The mapping of inputs to the range 0..size-1
 	DictType dict_;
@@ -633,32 +633,32 @@ private:  // methods
 	/**
 	 * @brief  Translates index of internal relation to the discontinuous
 	 *
-	 * @param[in,out]  innerIndex  The index for the internal continuous relation
+	 * @param[in,out]  inner_index  The index for the internal continuous relation
 	 *
 	 * @returns  The index in the discontinuous relation
 	 *
-	 * @note  Destroys @p innerIndex
+	 * @note  Destroys @p inner_index
 	 *
 	 * @note  Is this optimal?
 	 */
-	IndexType translateIndexToDiscont(
-		BinaryRelation::IndexType&      innerIndex) const
+	IndexType translate_index_to_discont(
+		BinaryRelation::IndexType&      inner_index) const
 	{
 		IndexType result;
 
-		for (size_t x = 0; x < innerIndex.size(); ++x)
+		for (size_t x = 0; x < inner_index.size(); ++x)
 		{
-			std::vector<size_t>& images = innerIndex[x];
+			std::vector<size_t>& images = inner_index[x];
 
 			// 'std::transform' is C++ for 'map' in Haskell
 			std::transform(
 				/* where to start */ images.cbegin(),
 				/* where to finish */ images.cend(),
 				/* where to insert the results */ images.begin(),
-				/* what to compute */ [this](size_t img) { return dict_.TranslateBwd(img);});
+				/* what to compute */ [this](size_t img) { return dict_.translate_bwd(img);});
 
 			bool inserted = result.insert(
-				std::make_pair(dict_.TranslateBwd(x), std::move(images))).second;
+				std::make_pair(dict_.translate_bwd(x), std::move(images))).second;
 			if (!inserted)  assert(false);
 		}
 
@@ -674,10 +674,10 @@ public:   // methods
 		size_t         size = 0,
 		bool           defVal = false,
 		size_t         rowSize = 16) :
-		rel_(size, defVal, rowSize),
-		indexCnt_(0),
-		dict_(),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+			rel_(size, defVal, rowSize),
+			index_cnt_(0),
+			dict_(),
+			transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -691,10 +691,10 @@ public:   // methods
 	DiscontBinaryRelation(
 		const BinaryRelation&      rel,
 		const TDict&               dict) :
-		rel_(rel),
-		indexCnt_(0),
-		dict_(dict),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+			rel_(rel),
+			index_cnt_(0),
+			dict_(dict),
+			transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -704,10 +704,10 @@ public:   // methods
 	DiscontBinaryRelation(
 		const BinaryRelation&      rel,
 		const DictType&            dict) :
-		rel_(rel),
-		indexCnt_(0),
-		dict_(dict),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+			rel_(rel),
+			index_cnt_(0),
+			dict_(dict),
+			transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -722,9 +722,9 @@ public:   // methods
 		BinaryRelation&&      rel,
 		TDict&&               dict) :
 		rel_(rel),
-		indexCnt_(0),
+		index_cnt_(0),
 		dict_(dict),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+		transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 	/**
@@ -733,10 +733,10 @@ public:   // methods
 	DiscontBinaryRelation(
 		BinaryRelation&&      rel,
 		DictType&&            dict) :
-		rel_(rel),
-		indexCnt_(0),
-		dict_(dict),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+			rel_(rel),
+			index_cnt_(0),
+			dict_(dict),
+			transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -745,9 +745,9 @@ public:   // methods
 	 */
 	DiscontBinaryRelation(const DiscontBinaryRelation& rhs) :
 		rel_(rhs.rel_),
-		indexCnt_(rhs.indexCnt_),
+		index_cnt_(rhs.index_cnt_),
 		dict_(rhs.dict_),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+		transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -756,9 +756,9 @@ public:   // methods
 	 */
 	DiscontBinaryRelation(DiscontBinaryRelation&& rhs) :
 		rel_(rhs.rel_),
-		indexCnt_(rhs.indexCnt_),
+		index_cnt_(rhs.index_cnt_),
 		dict_(rhs.dict_),
-		transl_(dict_, [this](const size_t&){return indexCnt_++;})
+		transl_(dict_, [this](const size_t&){return index_cnt_++;})
 	{ }
 
 
@@ -771,12 +771,12 @@ public:   // methods
 		{
 			rel_ = rhs.rel_;
 			dict_ = rhs.dict_;
-			indexCnt_ = rhs.indexCnt_;
+			index_cnt_ = rhs.index_cnt_;
 
 			// the following (or a similar thing because this does not work) should
 			// not be necessary because dict_ is used as a reference
 			//
-			// transl_ = TranslType(dict_, [this](const size_t&){return indexCnt_++;});
+			// transl_ = TranslType(dict_, [this](const size_t&){return index_cnt_++;});
 		}
 
 		return *this;
@@ -792,17 +792,17 @@ public:   // methods
 
 		rel_ = std::move(rhs.rel_);
 		dict_ = std::move(rhs.dict_);
-		indexCnt_ = std::move(rhs.indexCnt_);
+		index_cnt_ = std::move(rhs.index_cnt_);
 
 		// the following (or a similar thing because this does not work) should
 		// not be necessary because dict_ is used as a reference
 		//
-		// transl_ = TranslType(dict_, [this](const size_t&){return indexCnt_++;});
+		// transl_ = TranslType(dict_, [this](const size_t&){return index_cnt_++;});
 
 		return *this;
 	}
 
-	std::string ToString() const
+	std::string to_string() const
 	{
 		std::ostringstream str;
 
@@ -833,7 +833,7 @@ public:   // methods
 		std::ostream&                     os,
 		const DiscontBinaryRelation&      rel)
 	{
-		os << rel.ToString();
+		os << rel.to_string();
 
 		return os;
 	}
@@ -847,18 +847,18 @@ public:   // methods
 	 *
 	 * @param[out]  dst  The result mapping every element to its images
 	 */
-	void buildIndex(IndexType& dst) const
+	void build_index(IndexType& dst) const
 	{
 		assert(dst.empty());
 
 		std::vector<std::vector<size_t>> innerIndex;
 
-		rel_.buildIndex(innerIndex);
-		dst = this->translateIndexToDiscont(innerIndex);
+		rel_.build_index(innerIndex);
+		dst = this->translate_index_to_discont(innerIndex);
 	}
 
 	// relation index
-	void buildIndex(
+	void build_index(
 		IndexType&           ind,
 		IndexType&           inv) const
 	{
@@ -868,10 +868,10 @@ public:   // methods
 		std::vector<std::vector<size_t>> innerInd;
 		std::vector<std::vector<size_t>> innerInv;
 
-		rel_.buildIndex(innerInd, innerInv);
+		rel_.build_index(innerInd, innerInv);
 		assert(innerInd.size() == innerInv.size());
-		ind = translateIndexToDiscont(innerInd);
-		inv = translateIndexToDiscont(innerInv);
+		ind = translate_index_to_discont(innerInd);
+		inv = translate_index_to_discont(innerInv);
 	}
 
 	bool get(size_t row, size_t column) const
@@ -908,25 +908,25 @@ public:   // methods
 	 * projection of elements to their representatives in the quotient set
 	 * induced by the equivalence relation represented by @p *this.
 	 *
-	 * @param[out]  quotProj  The projection of elements to their representatives
+	 * @param[out]  quot_proj  The projection of elements to their representatives
 	 *                        in the quotient set
 	 */
 	template <
 		class MapType>
-	void GetQuotientProjection(
-		MapType&       quotProj)
+	void get_quotient_projection(
+		MapType&       quot_proj)
 	{
-		assert(quotProj.empty());
+		assert(quot_proj.empty());
 
 		std::vector<size_t> innerProj;
 
 		// get the vector for continuous values
-		rel_.GetQuotientProjection(innerProj);
+		rel_.get_quotient_projection(innerProj);
 
 		for (size_t i = 0; i < innerProj.size(); ++i)
 		{	// go over all elements in the vector
-			bool inserted = quotProj.insert(
-				std::make_pair(dict_.TranslateBwd(i), dict_.TranslateBwd(innerProj[i]))).second;
+			bool inserted = quot_proj.insert(
+				std::make_pair(dict_.translate_bwd(i), dict_.translate_bwd(innerProj[i]))).second;
 			if (!inserted)  assert(false);
 		}
 	}

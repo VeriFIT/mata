@@ -52,27 +52,27 @@ private:  // data types
 private:  // data members
 
 	Container& container_;
-	ResultAllocFuncType resultAllocFunc_;
+	ResultAllocFuncType result_alloc_func_;
 
 public:   // methods
 
 	TranslatorWeak(
 		Container&               container,
 		ResultAllocFuncType      resultAllocFunc) :
-		container_(container),
-		resultAllocFunc_(resultAllocFunc)
+			container_(container),
+			result_alloc_func_(resultAllocFunc)
 	{ }
 
 	virtual ResultType operator()(const InputType& value) override
 	{
-		std::pair<bool, ResultType> res = this->FindIfKnown(value);
+		std::pair<bool, ResultType> res = this->find_if_known(value);
 		if (res.first)
 		{	// in case the value is known
 			return res.second;
 		}
 		else
 		{	// in case there is no translation for the value
-			ResultType result = resultAllocFunc_(value);
+			ResultType result = result_alloc_func_(value);
 			container_.insert(std::make_pair(value, result));
 
 			return result;
@@ -81,7 +81,7 @@ public:   // methods
 
 	virtual ResultType operator()(const InputType& value) const override
 	{
-		std::pair<bool, ResultType> res = this->FindIfKnown(value);
+		std::pair<bool, ResultType> res = this->find_if_known(value);
 		if (res.first)
 		{	// in case the value is known
 			return res.second;
@@ -95,7 +95,7 @@ public:   // methods
 	/**
 	 * @brief  Finds the value if it is known by the translator
 	 */
-	std::pair<bool, ResultType> FindIfKnown(const InputType& value) const
+	std::pair<bool, ResultType> find_if_known(const InputType& value) const
 	{
 		typename Container::const_iterator itCont;
 		if ((itCont = container_.find(value)) != container_.end())
@@ -131,15 +131,15 @@ private:  // data types
 private:  // data members
 
 	Container& container_;
-	ResultAllocFuncType resultAllocFunc_;
+	ResultAllocFuncType result_alloc_func_;
 
 public:   // methods
 
 	TranslatorWeak2(
 		Container&               container,
 		ResultAllocFuncType      resultAllocFunc) :
-		container_(container),
-		resultAllocFunc_(resultAllocFunc)
+			container_(container),
+			result_alloc_func_(resultAllocFunc)
 	{ }
 
 	virtual ResultType operator()(const InputType& value) override
@@ -148,7 +148,7 @@ public:   // methods
 
 		if (p.second)
 		{	// in case there is no translation for the value
-			p.first->second = resultAllocFunc_(p.first->first);
+			p.first->second = result_alloc_func_(p.first->first);
 		}
 
 		return p.first->second;
@@ -167,7 +167,7 @@ public:   // methods
 		}
 	}
 
-	const Container& GetContainer() const
+	const Container& get_container() const
 	{
 		return container_;
 	}

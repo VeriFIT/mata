@@ -216,7 +216,7 @@ public:
 	}
 
 	template <class T>
-	void copyLabels(const T& labels, SharedCounter& cnt) {
+	void copy_labels(const T& labels, SharedCounter& cnt) {
 
 		size_t sent = 0;
 

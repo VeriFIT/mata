@@ -38,22 +38,22 @@ private:
 		typename T::const_iterator iter_;
 
 		Iterator() : pos_(nullptr), iter_() {}
-		Iterator(const SharedList* pos) : pos_(pos), iter_(pos->subList_->begin()) {}
+		Iterator(const SharedList* pos) : pos_(pos), iter_(pos->sublist_->begin()) {}
 
 		Iterator& operator++()
 		{
 			// Assertions
 			assert(pos_);
-			assert(pos_->subList_);
+			assert(pos_->sublist_);
 
-			if (++iter_ != pos_->subList_->end())
+			if (++iter_ != pos_->sublist_->end())
 				return *this;
 
 			if ((pos_ = pos_->next_) != nullptr) {
 				// Assertions
-				assert(pos_->subList_);
+				assert(pos_->sublist_);
 
-				iter_ = pos_->subList_->begin();
+				iter_ = pos_->sublist_->begin();
 			} else {
 				iter_ = typename T::const_iterator();
 			}
@@ -77,13 +77,13 @@ public:
 private:
 
 	SharedList* next_;
-	T* subList_;
-	size_t refCount_;
+	T* sublist_;
+	size_t refcount_;
 
 public:
 
 	SharedList(T* subList = nullptr) :
-		next_(nullptr), subList_(subList), refCount_(1)
+		next_(nullptr), sublist_(subList), refcount_(1)
 	{ }
 
 	void init(T* subList)
@@ -91,17 +91,17 @@ public:
 		// Assertions
 		assert(subList);
 
-		subList_ = subList;
+        sublist_ = subList;
 	}
 
-	T* subList() {return subList_;}
+	T* sublist() {return sublist_;}
 
 	template <class Deleter>
 	void release(const Deleter& deleter)
 	{
 		SharedList* elem = this, * tmp;
 
-		while (elem && elem->refCount_ == 1) {
+		while (elem && elem->refcount_ == 1) {
 			tmp = elem;
 			elem = elem->next_;
 			deleter(tmp);
@@ -112,22 +112,22 @@ public:
 	}
 
 	template <class Deleter>
-	void unsafeRelease(const Deleter& deleter)
+	void unsafe_release(const Deleter& deleter)
 	{
 		SharedList* elem = this;
 
-		while (elem && elem->refCount_ == 1) {
+		while (elem && elem->refcount_ == 1) {
 			deleter(elem);
 			elem = elem->next_;
 		}
 
 		if (elem)
-			--elem->refCount_;
+			--elem->refcount_;
 	}
 
 	SharedList* copy()
 	{
-		++refCount_;
+		++refcount_;
 
 		return this;
 	}
@@ -139,18 +139,18 @@ public:
 		if (!list) {
 			list = allocator();
 			list->next_ = nullptr;
-			list->subList_->push_back(v);
+			list->sublist_->push_back(v);
 
 			return true;
 		}
 
-		if (list->refCount_ > 1) {
+		if (list->refcount_ > 1) {
 			SharedList* tmp = allocator();
 			tmp->next_ = list;
 			list = tmp;
 		}
 
-		list->subList_->push_back(v);
+		list->sublist_->push_back(v);
 
 		return false;
 	}

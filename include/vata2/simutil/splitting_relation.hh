@@ -48,31 +48,31 @@ class Vata2::Util::SplittingRelation {
 
 	CachingAllocator<Element> allocator_;
 
-	Element* colBegin(size_t col) {
+	Element* col_begin(size_t col) {
 		return reinterpret_cast<Element*>(
 			reinterpret_cast<char*>(&this->columns_[col].first) - offsetof(Element, down_)
 		);
 	}
 
-	Element* colEnd(size_t col) {
+	Element* col_end(size_t col) {
 		return reinterpret_cast<Element*>(
 			reinterpret_cast<char*>(&this->columns_[col].second) - offsetof(Element, up_)
 		);
 	}
 
-	Element* rowBegin(size_t row) {
+	Element* row_begin(size_t row) {
 		return reinterpret_cast<Element*>(
 			reinterpret_cast<char*>(&this->rows_[row].first) - offsetof(Element, right_)
 		);
 	}
 
-	Element* rowEnd(size_t row) {
+	Element* row_end(size_t row) {
 		return reinterpret_cast<Element*>(
 			reinterpret_cast<char*>(&this->rows_[row].second) - offsetof(Element, left_)
 		);
 	}
 
-	bool checkCol(size_t i) const {
+	bool check_col(size_t i) const {
 
 		assert(i < this->size_);
 
@@ -99,7 +99,7 @@ class Vata2::Util::SplittingRelation {
 
 	}
 
-	bool checkRow(size_t i) const {
+	bool check_row(size_t i) const {
 
 		assert(i < this->size_);
 
@@ -240,11 +240,11 @@ public:
 		std::vector<Element*> lastV(index.size());
 
 		for (size_t i = 0; i < index.size(); ++i)
-			lastV[i] = this->colBegin(i);
+			lastV[i] = this->col_begin(i);
 
 		for (size_t i = 0; i < index.size(); ++i) {
 
-			auto last = this->rowBegin(i);
+			auto last = this->row_begin(i);
 
 			Element* el;
 
@@ -266,7 +266,7 @@ public:
 
 			}
 
-			last->right_ = this->rowEnd(i);
+			last->right_ = this->row_end(i);
 			this->rows_[i].second = last; // last->right_->left_
 
 		}
@@ -275,11 +275,11 @@ public:
 
 		for (size_t i = 0; i < index.size(); ++i) {
 
-			lastV[i]->down_ = this->colEnd(i);
+			lastV[i]->down_ = this->col_end(i);
 			this->columns_[i].second = lastV[i]; // lastV[i]->down_->up_
 
-			assert(this->checkCol(i));
-			assert(this->checkRow(i));
+			assert(this->check_col(i));
+			assert(this->check_row(i));
 
 		}
 
@@ -297,9 +297,9 @@ public:
 
 		assert(el);
 
-		auto last = this->colBegin(newIndex);
+		auto last = this->col_begin(newIndex);
 
-		while (el != this->colEnd(index)) {
+		while (el != this->col_end(index)) {
 
 			auto tmp = this->allocator_();
 
@@ -310,7 +310,7 @@ public:
 
 			this->rows_[el->row_].second->right_ = tmp;
 			tmp->left_ = this->rows_[el->row_].second;
-			tmp->right_ = this->rowEnd(el->row_);
+			tmp->right_ = this->row_end(el->row_);
 			this->rows_[el->row_].second = tmp; // tmp->right_->left_
 
 			tmp->col_ = newIndex;
@@ -328,10 +328,10 @@ public:
 
 		last->down_ = el;
 		el->up_ = last;
-		el->down_ = this->colEnd(newIndex);
+		el->down_ = this->col_end(newIndex);
 		this->columns_[newIndex].second = el; // el->down_->up_
 
-		el->right_ = this->rowEnd(newIndex);
+		el->right_ = this->row_end(newIndex);
 		el->col_ = newIndex;
 		el->row_ = newIndex;
 
@@ -341,7 +341,7 @@ public:
 
 		assert(el);
 
-		last = this->rowBegin(newIndex);
+		last = this->row_begin(newIndex);
 
 		// we have to skip the last one here
 		while (el != this->rows_[index].second) {
@@ -355,7 +355,7 @@ public:
 
 			this->columns_[el->col_].second->down_ = tmp;
 			tmp->up_ = this->columns_[el->col_].second;
-			tmp->down_ = this->colEnd(el->col_);
+			tmp->down_ = this->col_end(el->col_);
 			this->columns_[el->col_].second = tmp; // tmp->down_->up_
 
 			tmp->col_ = el->col_;
@@ -376,8 +376,8 @@ public:
 
 		++this->size_;
 
-		assert(this->checkCol(newIndex));
-		assert(this->checkRow(newIndex));
+		assert(this->check_col(newIndex));
+		assert(this->check_row(newIndex));
 
 		return newIndex;
 
@@ -386,18 +386,18 @@ public:
 	Column column(size_t index) {
 
 		assert(index < this->columns_.size());
-		assert(this->checkCol(index));
+		assert(this->check_col(index));
 
-		return Column(this->columns_[index].first, this->colEnd(index));
+		return Column(this->columns_[index].first, this->col_end(index));
 
 	}
 
 	Row row(size_t index) {
 
 		assert(index < this->rows_.size());
-		assert(this->checkRow(index));
+		assert(this->check_row(index));
 
-		return Row(this->rows_[index].first, this->rowEnd(index));
+		return Row(this->rows_[index].first, this->row_end(index));
 
 	}
 
@@ -412,8 +412,8 @@ public:
 
 		this->allocator_.reclaim(el);
 
-		assert(this->checkCol(el->col_));
-		assert(this->checkRow(el->row_));
+		assert(this->check_col(el->col_));
+		assert(this->check_row(el->row_));
 
 	}
 

@@ -205,7 +205,7 @@ public:
 		this->clear();
 	}
 
-	void assignFlat(const SmartSet& s)
+	void assign_flat(const SmartSet& s)
 	{
 		this->clear();
 		assert(nullptr == head_.next);
@@ -313,7 +313,7 @@ public:
 		}
 	}
 
-	void removeStrict(const Key& key)
+	void remove_strict(const Key& key)
 	{
 		assert(key < index_.size());
 		Element*& prev = index_[key];
