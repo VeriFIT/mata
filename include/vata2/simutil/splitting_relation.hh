@@ -37,7 +37,7 @@ class Vata2::Util::SplittingRelation {
 		size_t col_;
 		size_t row_;
 
-		Element(size_t row = 0, size_t col = 0) : up_(), down_(), left_(), right_(), col_(col),
+		explicit Element(size_t row = 0, size_t col = 0) : up_(), down_(), left_(), right_(), col_(col),
 			row_(row) {}
 
 	};
@@ -134,11 +134,11 @@ public:
 
 		Element* el_;
 
-		IteratorBase(Element* el) : el_(el) {}
-		~IteratorBase() {}
+		explicit IteratorBase(Element* el) : el_(el) {}
+		~IteratorBase() = default;
 
-		bool operator==(const IteratorBase& rhs) { return this->el_ == rhs.el_; }
-		bool operator!=(const IteratorBase& rhs) { return this->el_ != rhs.el_; }
+		bool operator==(const IteratorBase& rhs) const { return this->el_ == rhs.el_; }
+		bool operator!=(const IteratorBase& rhs) const { return this->el_ != rhs.el_; }
 
 	};
 
@@ -146,7 +146,7 @@ public:
 	struct ColIterator : public IteratorBase {
 	GCC_DIAG_ON(effc++)
 
-		ColIterator(Element* el) : IteratorBase(el) {}
+		explicit ColIterator(Element* el) : IteratorBase(el) {}
 
 		ColIterator& operator++() {
 
@@ -169,7 +169,7 @@ public:
 	struct RowIterator : public IteratorBase {
 	GCC_DIAG_ON(effc++)
 
-		RowIterator(Element* el) : IteratorBase(el) {}
+		explicit RowIterator(Element* el) : IteratorBase(el) {}
 
 		RowIterator& operator++() {
 
@@ -214,7 +214,7 @@ public:
 
 public:
 
-	SplittingRelation(size_t maxSize) : columns_(maxSize), rows_(maxSize), size_(), allocator_() {}
+	explicit SplittingRelation(size_t maxSize) : columns_(maxSize), rows_(maxSize), size_(), allocator_() {}
 
 	~SplittingRelation() {
 
@@ -388,7 +388,7 @@ public:
 		assert(index < this->columns_.size());
 		assert(this->check_col(index));
 
-		return Column(this->columns_[index].first, this->col_end(index));
+		return Column{this->columns_[index].first, this->col_end(index)};
 
 	}
 
@@ -397,7 +397,7 @@ public:
 		assert(index < this->rows_.size());
 		assert(this->check_row(index));
 
-		return Row(this->rows_[index].first, this->row_end(index));
+		return Row{this->rows_[index].first, this->row_end(index)};
 
 	}
 

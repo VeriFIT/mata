@@ -42,7 +42,7 @@ public:
 
 	CachingAllocator() : store_(), initializer_([](T*){}) {}
 
-	CachingAllocator(Initializer initializer) : store_(), initializer_(initializer) {}
+	explicit CachingAllocator(Initializer initializer) : store_(), initializer_(initializer) {}
 
 	~CachingAllocator() {
 
@@ -96,10 +96,10 @@ private:
 
 public:
 
-	CachingArrayAllocator(size_t size) : store_(), size_(size), byteSize_(size*sizeof(T)),
+    __attribute__((unused)) explicit CachingArrayAllocator(size_t size) : store_(), size_(size), byteSize_(size*sizeof(T)),
 		initializer_([](T*){}) {}
 
-	CachingArrayAllocator(size_t size, Initializer initializer) : store_(), size_(size),
+    __attribute__((unused)) CachingArrayAllocator(size_t size, Initializer initializer) : store_(), size_(size),
 		byteSize_(size*sizeof(T)), initializer_(initializer) {}
 
 	~CachingArrayAllocator() {

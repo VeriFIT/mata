@@ -28,7 +28,7 @@ namespace Vata2
 
 		template <
 			class Cont>
-		class TranslatorWeak2;
+		class __attribute__((unused)) TranslatorWeak2;
 	}
 }
 
@@ -56,14 +56,14 @@ private:  // data members
 
 public:   // methods
 
-	TranslatorWeak(
+    __attribute__((unused)) TranslatorWeak(
 		Container&               container,
 		ResultAllocFuncType      resultAllocFunc) :
 			container_(container),
 			result_alloc_func_(resultAllocFunc)
 	{ }
 
-	virtual ResultType operator()(const InputType& value) override
+	ResultType operator()(const InputType& value) override
 	{
 		std::pair<bool, ResultType> res = this->find_if_known(value);
 		if (res.first)
@@ -79,7 +79,7 @@ public:   // methods
 		}
 	}
 
-	virtual ResultType operator()(const InputType& value) const override
+	ResultType operator()(const InputType& value) const override
 	{
 		std::pair<bool, ResultType> res = this->find_if_known(value);
 		if (res.first)
@@ -117,7 +117,7 @@ template
 <
 	class Cont
 >
-class Vata2::Util::TranslatorWeak2 :
+class __attribute__((unused)) Vata2::Util::TranslatorWeak2 :
 	public AbstractTranslator<typename Cont::key_type, typename Cont::mapped_type>
 {
 private:  // data types
@@ -135,14 +135,14 @@ private:  // data members
 
 public:   // methods
 
-	TranslatorWeak2(
+	__attribute__((unused)) TranslatorWeak2(
 		Container&               container,
 		ResultAllocFuncType      resultAllocFunc) :
 			container_(container),
 			result_alloc_func_(resultAllocFunc)
 	{ }
 
-	virtual ResultType operator()(const InputType& value) override
+	ResultType operator()(const InputType& value) override
 	{
 		auto p = container_.insert(std::make_pair(value, ResultType()));
 
@@ -154,7 +154,7 @@ public:   // methods
 		return p.first->second;
 	}
 
-	virtual ResultType operator()(const InputType& value) const override
+	ResultType operator()(const InputType& value) const override
 	{
 		typename Container::const_iterator itCont;
 		if ((itCont = container_.find(value)) != container_.end())
@@ -167,7 +167,7 @@ public:   // methods
 		}
 	}
 
-	const Container& get_container() const
+    __attribute__((unused)) const Container& get_container() const
 	{
 		return container_;
 	}

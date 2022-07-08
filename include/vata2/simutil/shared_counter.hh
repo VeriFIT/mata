@@ -47,10 +47,6 @@ private:
 
 	std::vector<Row> data_;
 
-protected:
-
-	SharedCounter& operator=(const SharedCounter& rhs);
-
 public:
 
 	SharedCounter(const Key& key, const size_t& states, const LabelMap& labelMap,

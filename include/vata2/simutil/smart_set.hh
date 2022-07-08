@@ -42,7 +42,7 @@ private:
 		Key key;
 		size_t count;
 
-		Element(
+		explicit Element(
 			const Key&         key,
 			size_t             count = 0) :
 			next(nullptr),
@@ -62,7 +62,7 @@ private:
 
 	public:
 
-		Iterator(const Element* element) :
+		explicit Iterator(const Element* element) :
 			element_(element)
 		{ }
 
@@ -156,7 +156,7 @@ protected:
 
 public:
 
-	SmartSet(
+	explicit SmartSet(
 		size_t         range = 0) :
 		head_(Key(), 0),
 		last_(&head_), size_(0),

@@ -39,8 +39,7 @@ namespace Vata2
 				return this->operator()(value);
 			}
 
-			virtual ~AbstractTranslator()
-			{ }
+			virtual ~AbstractTranslator() = default;
 		};
 	}
 }

@@ -38,7 +38,7 @@ private:
 		typename T::const_iterator iter_;
 
 		Iterator() : pos_(nullptr), iter_() {}
-		Iterator(const SharedList* pos) : pos_(pos), iter_(pos->sublist_->begin()) {}
+		explicit Iterator(const SharedList* pos) : pos_(pos), iter_(pos->sublist_->begin()) {}
 
 		Iterator& operator++()
 		{
@@ -82,7 +82,7 @@ private:
 
 public:
 
-	SharedList(T* subList = nullptr) :
+	explicit SharedList(T* subList = nullptr) :
 		next_(nullptr), sublist_(subList), refcount_(1)
 	{ }
 

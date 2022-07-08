@@ -58,8 +58,8 @@ public:   // Public data types
 	typedef T1 Type1;
 	typedef T2 Type2;
 
-	typedef Type1 key_type;
-	typedef Type2 mapped_type;
+    typedef Type1 key_type;
+    typedef Type2 mapped_type;
 
 	typedef Cont1 MapFwdType;
 	typedef Cont2 MapBwdType;
@@ -105,12 +105,7 @@ public:   // Public methods
 		}
 	}
 
-	/**
-	 * @brief  Copy constructor
-	 */
-	TwoWayDict(const TwoWayDict&) = default;
-
-	const Type2& translate_fwd(const Type1& t1) const
+    __attribute__((unused)) const Type2& translate_fwd(const Type1& t1) const
 	{
 		ConstIteratorFwd itFwd;
 		if ((itFwd = fwdmap_.find(t1)) == this->end_fwd())
@@ -142,7 +137,7 @@ public:   // Public methods
 		return fwdmap_.find(t1);
 	}
 
-	ConstIteratorBwd find_bwd(const Type2& t2) const
+    __attribute__((unused)) ConstIteratorBwd find_bwd(const Type2& t2) const
 	{
 		return bwdmap_.find(t2);
 	}
@@ -175,7 +170,7 @@ public:   // Public methods
 		return fwdmap_.begin();
 	}
 
-	ConstIteratorBwd begin_bwd() const
+    __attribute__((unused)) ConstIteratorBwd begin_bwd() const
 	{
 		return bwdmap_.begin();
 	}
@@ -218,7 +213,7 @@ public:   // Public methods
 		return resPair;
 	}
 
-	TwoWayDict Union(
+    __attribute__((unused)) TwoWayDict Union(
 		const TwoWayDict&         rhs) const
 	{
 		TwoWayDict result = *this;
@@ -238,7 +233,7 @@ public:   // Public methods
 		return result;
 	}
 
-	const MapBwdType& get_reverse_map() const
+    __attribute__((unused)) const MapBwdType& get_reverse_map() const
 	{
 		return bwdmap_;
 	}
