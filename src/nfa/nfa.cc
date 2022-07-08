@@ -860,12 +860,13 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
     }
 }
 
-/*
-Util::BinaryRelation Nfa::computeSimulation() const {
-    VATA::ExplicitLTS LTSforSimulation;
+Vata2::Util::BinaryRelation Vata2::Nfa::compute_simulation(const Nfa& aut) {
+    Vata2::ExplicitLTS LTSforSimulation;
     Symbol maxSymbol = 0;
-    for (State stateFrom = 0; stateFrom < transitionrelation.size(); ++stateFrom) {
-        for (const TransSymbolStates &t : getTransitionsFromState(stateFrom)) {
+    const size_t state_num = aut.get_num_of_states();
+
+    for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
+        for (const TransSymbolStates &t : aut.get_transitions_from_state(stateFrom)) {
             for (State stateTo : t.states_to) {
                 LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
             }
@@ -876,14 +877,14 @@ Util::BinaryRelation Nfa::computeSimulation() const {
     }
 
     // final states cannot be simulated by nonfinal -> we add new selfloops over final states with new symbol in LTS
-    for (State finalState : finalstates) {
+    for (State finalState : aut.finalstates) {
         LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
     }
 
     LTSforSimulation.init();
     return LTSforSimulation.computeSimulation();
 }
-*/
+
 void Vata2::Nfa::determinize(
         Nfa*        result,
         const Nfa&  aut,

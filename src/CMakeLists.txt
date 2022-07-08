@@ -41,6 +41,7 @@ add_library(libvata2 STATIC
 # add_library(libvata2 SHARED
 	afa/afa.cc
 	bool-dispatch.cc
+	explicit_lts_sim.cc
 	parser.cc
 	parser-dispatch.cc
 	str-dispatch.cc

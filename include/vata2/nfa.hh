@@ -31,6 +31,7 @@
 #include <vata2/parser.hh>
 #include <vata2/util.hh>
 #include <vata2/ord_vector.hh>
+#include <vata2/explicit_lts.hh>
 
 namespace Vata2
 {
@@ -547,7 +548,8 @@ inline Nfa invert(const Nfa &aut)
     invert(&inverted, aut);
     return inverted;
 }
-// TODO: VATA::Util::BinaryRelation computeSimulation() const;
+
+Vata2::Util::BinaryRelation compute_simulation(const Nfa& aut);
 
 /// Is the language of the automaton universal?
 bool is_universal(
