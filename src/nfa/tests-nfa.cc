@@ -1738,3 +1738,82 @@ TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
 		REQUIRE(!is_prfx_in_lang(aut, w));
 	}
 } // }}}
+
+TEST_CASE("Vata2::Nfa::simulation()")
+{ // {{{
+    Nfa aut;
+
+    SECTION("empty automaton")
+    {
+        Vata2::Util::BinaryRelation result = compute_simulation(aut);
+
+        REQUIRE(result.size() == 0);
+    }
+
+    aut.increase_size(9);
+    SECTION("no-transition automaton")
+    {
+        aut.add_initial(1);
+        aut.add_initial(3);
+
+        aut.add_final(2);
+        aut.add_final(5);
+
+        Vata2::Util::BinaryRelation result = compute_simulation(aut);
+        REQUIRE(result.get(1,3));
+        REQUIRE(result.get(2,5));
+        REQUIRE(!result.get(5,1));
+        REQUIRE(!result.get(2,3));
+    }
+
+    SECTION("small automaton")
+    {
+        aut.add_initial(1);
+        aut.add_final(2);
+        aut.add_trans(1, 'a', 4);
+        aut.add_trans(4, 'b', 5);
+        aut.add_trans(2, 'b', 5);
+        aut.add_trans(1, 'b', 4);
+
+        Vata2::Util::BinaryRelation result = compute_simulation(aut);
+        REQUIRE(result.get(4,1));
+        REQUIRE(!result.get(2,5));
+
+    }
+
+    Nfa aut_big(9);
+
+    SECTION("bigger automaton")
+    {
+        aut_big.initialstates = {1,2};
+        aut_big.add_trans(1, 'a', 2);
+        aut_big.add_trans(1, 'a', 3);
+        aut_big.add_trans(1, 'b', 4);
+        aut_big.add_trans(2, 'a', 2);
+        aut_big.add_trans(2, 'b', 2);
+        aut_big.add_trans(2, 'a', 3);
+        aut_big.add_trans(2, 'b', 4);
+        aut_big.add_trans(3, 'b', 4);
+        aut_big.add_trans(3, 'c', 7);
+        aut_big.add_trans(3, 'b', 2);
+        aut_big.add_trans(5, 'c', 3);
+        aut_big.add_trans(7, 'a', 8);
+        aut_big.finalstates = {3};
+
+        Vata2::Util::BinaryRelation result = compute_simulation(aut_big);
+        REQUIRE(result.get(1,2));
+        REQUIRE(!result.get(2,1));
+        REQUIRE(!result.get(3,1));
+        REQUIRE(!result.get(3,2));
+        REQUIRE(result.get(4,1));
+        REQUIRE(result.get(4,2));
+        REQUIRE(result.get(4,5));
+        REQUIRE(!result.get(5,2));
+        REQUIRE(!result.get(5,1));
+        REQUIRE(result.get(7,1));
+        REQUIRE(result.get(7,2));
+        REQUIRE(result.get(8,1));
+        REQUIRE(result.get(8,2));
+        REQUIRE(result.get(8,5));
+    }
+} // }}
