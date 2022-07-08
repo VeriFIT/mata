@@ -882,7 +882,7 @@ Vata2::Util::BinaryRelation Vata2::Nfa::compute_simulation(const Nfa& aut) {
     }
 
     LTSforSimulation.init();
-    return LTSforSimulation.computeSimulation();
+    return LTSforSimulation.compute_simulation();
 }
 
 void Vata2::Nfa::determinize(

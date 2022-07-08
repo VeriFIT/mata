@@ -121,7 +121,7 @@ public:
 		{
 			assert(nullptr != states);
 
-			for (auto& a : lts.bwLabels(states->index_))
+			for (auto& a : lts.bw_labels(states->index_))
 			{
 				this->inset_.add(a);
 			}
@@ -149,7 +149,7 @@ public:
 		{
 			assert(nullptr != states);
 
-			for (auto& a : lts.bwLabels(states->index_))
+			for (auto& a : lts.bw_labels(states->index_))
 			{
 				parent.inset_.removeStrict(a);
 				this->inset_.add(a);
@@ -160,12 +160,12 @@ public:
 		} while (states != this->states_);
 	}
 
-	void moveToTmp(StateListElem* elem)
+	void move_to_tmp(StateListElem* elem)
 	{
 		this->tmp_.push_back(elem);
 	}
 
-	static bool checkList(StateListElem* elem, size_t size)
+	static bool check_list(StateListElem* elem, size_t size)
 	{
 		auto first = elem;
 
@@ -179,7 +179,7 @@ public:
 		return elem == first;
 	}
 
-	std::pair<StateListElem*, size_t> trySplit()
+	std::pair<StateListElem*, size_t> try_split()
 	{
 		assert(this->tmp_.size());
 
@@ -187,7 +187,7 @@ public:
 		{
 			this->tmp_.clear();
 
-			assert(Block::checkList(this->states_, this->size_));
+			assert(Block::check_list(this->states_, this->size_));
 
 			return std::make_pair(nullptr, 0);
 		}
@@ -201,8 +201,8 @@ public:
 		{
 			StateListElem::link(last, last);
 
-			assert(Block::checkList(last, 1));
-			assert(Block::checkList(this->states_, this->size_ - 1));
+			assert(Block::check_list(last, 1));
+			assert(Block::check_list(this->states_, this->size_ - 1));
 
 			--this->size_;
 
@@ -230,8 +230,8 @@ public:
 
 		this->size_ -= size;
 
-		assert(Block::checkList(last, size));
-		assert(Block::checkList(this->states_, this->size_));
+		assert(Block::check_list(last, size));
+		assert(Block::check_list(this->states_, this->size_));
 
 		return std::make_pair(last, size);;
 	}
@@ -271,7 +271,7 @@ class SimulationEngine
 protected:
 
 	template <class T>
-	void makeBlock(
+	void make_block(
 		const T&   states,
 		size_t     blockIndex)
 	{
@@ -294,26 +294,26 @@ protected:
 				list,
 				states.size(),
 				this->key_,
-				this->labelMap_,
-				this->rowSize_,
-				this->counterAllocator_
+				this->label_map_,
+				this->row_size_,
+				this->counter_allocator_
 			)
 		);
 	}
 
-	void enqueueToRemove(
+	void enqueue_to_remove(
 		Block*   block,
 		size_t   label,
 		size_t   state)
 	{
-		if (RemoveList::append(block->remove_[label], state, this->removeAllocator_))
+		if (RemoveList::append(block->remove_[label], state, this->remove_allocator_))
 		{
 			this->queue_.push_back(std::make_pair(block, label));
 		}
 	}
 
 	template <class T>
-	void buildPre(
+	void build_pre(
 		T&               pre,
 		StateListElem*   states,
 		size_t           label) const
@@ -347,7 +347,7 @@ protected:
 	}
 
 	template <class T1, class T2>
-	void internalSplit(T1& modifiedBlocks, const T2& remove)
+	void internal_split(T1& modifiedBlocks, const T2& remove)
 	{
 		std::vector<bool> blockMask(this->partition_.size(), false);
 
@@ -360,7 +360,7 @@ protected:
 
 			assert(block);
 
-			block->moveToTmp(&elem);
+            block->move_to_tmp(&elem);
 
 			assert(block->index() < this->partition_.size());
 
@@ -375,16 +375,16 @@ protected:
 	}
 
 	template <class T>
-	void fastSplit(const T& remove)
+	void fast_split(const T& remove)
 	{
 		std::vector<Block*> modifiedBlocks;
-		this->internalSplit(modifiedBlocks, remove);
+        this->internal_split(modifiedBlocks, remove);
 
 		for (auto& block : modifiedBlocks)
 		{
 			assert(block);
 
-			auto p = block->trySplit();
+			auto p = block->try_split();
 
 			if (!p.first)
 			{
@@ -406,13 +406,13 @@ protected:
 		const T&             remove)
 	{
 		std::vector<Block*> modifiedBlocks;
-		this->internalSplit(modifiedBlocks, remove);
+        this->internal_split(modifiedBlocks, remove);
 
 		for (auto& block : modifiedBlocks)
 		{
 			assert(block);
 
-			auto p = block->trySplit();
+			auto p = block->try_split();
 
 			if (!p.first)
 			{
@@ -443,7 +443,7 @@ protected:
 		}
 	}
 
-	void processRemove(
+	void process_remove(
 		Block*   block,
 		size_t   label)
 	{
@@ -456,13 +456,13 @@ protected:
 
 		std::vector<Block*> preList;
 		std::vector<bool> removeMask(this->lts_.states());
-		this->buildPre(preList, block->states_, label);
+        this->build_pre(preList, block->states_, label);
 		this->split(removeMask, *remove);
 
 		remove->unsafeRelease(
 			[this](RemoveList* list){
-				this->vectorAllocator_.reclaim(list->subList());
-				this->removeAllocator_.reclaim(list);
+				this->vector_allocator_.reclaim(list->subList());
+				this->remove_allocator_.reclaim(list);
 			}
 		);
 
@@ -498,7 +498,7 @@ protected:
 						{
 							if (!b1->counter_.decr(a, pre))
 							{
-								this->enqueueToRemove(b1, a, pre);
+                                this->enqueue_to_remove(b1, a, pre);
 							}
 						}
 
@@ -509,7 +509,7 @@ protected:
 		}
 	}
 
-	static bool isPartition(
+	static bool is_partition(
 		const std::vector<std::vector<size_t>>&    part,
 		size_t                                     states)
 	{
@@ -543,7 +543,7 @@ protected:
 		return true;
 	}
 
-	static bool isConsistent(
+	static bool is_consistent(
 		const std::vector<std::vector<size_t>>&   part,
 		const BinaryRelation&                     rel)
 	{
@@ -571,11 +571,11 @@ private:
 
 	const Vata2::ExplicitLTS& lts_;
 
-	size_t rowSize_;
+	size_t row_size_;
 
-	VectorAllocator vectorAllocator_;
-	RemoveAllocator removeAllocator_;
-	SharedCounter::Allocator counterAllocator_;
+	VectorAllocator vector_allocator_;
+	RemoveAllocator remove_allocator_;
+	SharedCounter::Allocator counter_allocator_;
 
 	std::vector<Block*> partition_;
 	SplittingRelation relation_;
@@ -583,13 +583,13 @@ private:
 	std::vector<StateListElem> index_;
 	RemoveQueue queue_;
 	std::vector<size_t> key_;
-	std::vector<std::pair<size_t, size_t>> labelMap_;
+	std::vector<std::pair<size_t, size_t>> label_map_;
 
 	SimulationEngine(const SimulationEngine&);
 
 	SimulationEngine& operator=(const SimulationEngine&);
 
-	static size_t getRowSize(size_t states)
+	static size_t get_row_size(size_t states)
 	{
 		size_t treshold = static_cast<size_t>(std::sqrt(states)) >> 1;
 		size_t rowSize_ = 32;
@@ -607,17 +607,17 @@ public:
 
 	SimulationEngine(
 		const Vata2::ExplicitLTS& lts) :
-		lts_(lts),
-		rowSize_(SimulationEngine::getRowSize(lts.states())),
-		vectorAllocator_(),
-		removeAllocator_(SharedListInitF(vectorAllocator_)),
-		counterAllocator_(rowSize_ + 1),
-		partition_(),
-		relation_(lts.states()),
-		index_(lts.states()),
-		queue_(),
-		key_(),
-		labelMap_()
+            lts_(lts),
+            row_size_(SimulationEngine::get_row_size(lts.states())),
+            vector_allocator_(),
+            remove_allocator_(SharedListInitF(vector_allocator_)),
+            counter_allocator_(row_size_ + 1),
+            partition_(),
+            relation_(lts.states()),
+            index_(lts.states()),
+            queue_(),
+            key_(),
+            label_map_()
 	{
 		assert(this->index_.size());
 	}
@@ -634,23 +634,23 @@ public:
 		const std::vector<std::vector<size_t>>&   partition,
 		const BinaryRelation&                     relation)
 	{
-		assert(SimulationEngine::isPartition(partition, this->lts_.states()));
-		assert(SimulationEngine::isConsistent(partition, relation));
+		assert(SimulationEngine::is_partition(partition, this->lts_.states()));
+		assert(SimulationEngine::is_consistent(partition, relation));
 
 		// build counter maps
 		std::vector<SmartSet> delta1;
-		this->lts_.buildDelta1(delta1);
+        this->lts_.build_delta1(delta1);
 
 		this->key_.resize(this->lts_.labels()*this->lts_.states(), static_cast<size_t>(-1));
-		this->labelMap_.resize(this->lts_.labels());
+		this->label_map_.resize(this->lts_.labels());
 
 		size_t x = 0;
 
 		for (size_t a = 0; a < this->lts_.labels(); ++a)
 		{
-			this->labelMap_[a].first = x / this->rowSize_;
-			this->labelMap_[a].second =
-				(x + delta1[a].size() - 1) / this->rowSize_ + ((delta1[a].size())?(1):(0));
+			this->label_map_[a].first = x / this->row_size_;
+			this->label_map_[a].second =
+				(x + delta1[a].size() - 1) / this->row_size_ + ((delta1[a].size()) ? (1) : (0));
 
 			for (auto& q : delta1[a])
 			{
@@ -661,7 +661,7 @@ public:
 		// initilize patition-relation
 		for (size_t i = 0; i < partition.size(); ++i)
 		{
-			this->makeBlock(partition[i], i);
+            this->make_block(partition[i], i);
 		}
 
 		BinaryRelation::IndexType index;
@@ -671,7 +671,7 @@ public:
 		// make initial refinement
 		for (size_t a = 0; a < this->lts_.labels(); ++a)
 		{
-			this->fastSplit(delta1[a]);
+            this->fast_split(delta1[a]);
 		}
 
 		assert(this->relation_.size() == this->partition_.size());
@@ -739,7 +739,7 @@ public:
 
 			for (auto& a : b1->inset())
 			{
-				size = std::max(size, this->labelMap_[a].second);
+				size = std::max(size, this->label_map_[a].second);
 			}
 
 			b1->counter_.resize(size);
@@ -803,11 +803,11 @@ public:
 		{
 			std::pair<Block*, size_t> tmp(this->queue_.back());
 			this->queue_.pop_back();
-			this->processRemove(tmp.first, tmp.second);
+            this->process_remove(tmp.first, tmp.second);
 		}
 	}
 
-	void buildResult(
+	void build_result(
 		BinaryRelation&    result,
 		size_t             size) const
 	{
@@ -861,13 +861,13 @@ public:
 
 		BinaryRelation relation;
 
-		engine.buildResult(relation, engine.partition_.size());
+        engine.build_result(relation, engine.partition_.size());
 
 		return os << "relation:" << std::endl << relation;
 	}
 };
 
-BinaryRelation Vata2::ExplicitLTS::computeSimulation(
+BinaryRelation Vata2::ExplicitLTS::compute_simulation(
 	const std::vector<std::vector<size_t>>&   partition,
 	const BinaryRelation&                     relation,
 	size_t                                    outputSize)
@@ -884,13 +884,13 @@ BinaryRelation Vata2::ExplicitLTS::computeSimulation(
 
 	BinaryRelation result;
 
-	engine.buildResult(result, outputSize);
+    engine.build_result(result, outputSize);
 
 	return result;
 }
 
 
-BinaryRelation Vata2::ExplicitLTS::computeSimulation(
+BinaryRelation Vata2::ExplicitLTS::compute_simulation(
 	size_t   outputSize)
 {
 	std::vector<std::vector<size_t>> partition(1);
@@ -900,15 +900,15 @@ BinaryRelation Vata2::ExplicitLTS::computeSimulation(
 		partition[0].push_back(i);
 	}
 
-	return this->computeSimulation(
-		partition, Util::BinaryRelation(1, true), outputSize
-	);
+	return this->compute_simulation(
+            partition, Util::BinaryRelation(1, true), outputSize
+    );
 }
 
 
-BinaryRelation Vata2::ExplicitLTS::computeSimulation()
+BinaryRelation Vata2::ExplicitLTS::compute_simulation()
 {
-	return this->computeSimulation(this->states_);
+	return this->compute_simulation(this->states_);
 }
 
 

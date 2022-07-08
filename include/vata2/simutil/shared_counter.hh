@@ -142,7 +142,7 @@ public:
 		row.master_ = count;
 		row.data_ = this->allocator_();
 
-//		std::memset(row.data_, 0, this->rowSize_*sizeof(size_t));
+//		std::memset(row.data_, 0, this->row_size_*sizeof(size_t));
 
 //		assert(row.data_[colIndex] == 0);
 

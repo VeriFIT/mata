@@ -29,7 +29,7 @@ class Vata2::ExplicitLTS {
 			std::vector<std::vector<size_t>>
 		>
 	> data_;
-	std::vector<Util::SmartSet> bwLabels_;
+	std::vector<Util::SmartSet> bw_labels_;
 
 public:
 
@@ -39,17 +39,17 @@ public:
 	 * @param[in]  states  The least number of states to consider
 	 */
 	ExplicitLTS(size_t states = 0) :
-		states_(states),
-		transitions_(0),
-		data_(),
-		bwLabels_()
+            states_(states),
+            transitions_(0),
+            data_(),
+            bw_labels_()
 	{ }
 
 	void add_transition(size_t q, size_t a, size_t r);
 
 	void init()
 	{
-		this->bwLabels_.resize(this->states_, Util::SmartSet(this->data_.size()));
+		this->bw_labels_.resize(this->states_, Util::SmartSet(this->data_.size()));
 
 		for (size_t a = 0; a < this->data_.size(); ++a)
 		{
@@ -58,7 +58,7 @@ public:
 
 			for (size_t r = 0; r < this->states_; ++r)
 			{
-				this->bwLabels_[r].init(a, this->data_[a].second[r].size());
+				this->bw_labels_[r].init(a, this->data_[a].second[r].size());
 			}
 		}
 	}
@@ -66,7 +66,7 @@ public:
 	void clear()
 	{
 		this->data_.clear();
-		this->bwLabels_.clear();
+		this->bw_labels_.clear();
 		this->states_ = 0;
 		this->transitions_ = 0;
 	}
@@ -85,14 +85,14 @@ public:
 		return this->data_[a].second;
 	}
 
-	const Util::SmartSet& bwLabels(size_t q) const
+	const Util::SmartSet& bw_labels(size_t q) const
 	{
-		assert(q < this->bwLabels_.size());
+		assert(q < this->bw_labels_.size());
 
-		return this->bwLabels_[q];
+		return this->bw_labels_[q];
 	}
 
-	void buildDelta1(std::vector<Util::SmartSet>& delta1) const
+	void build_delta1(std::vector<Util::SmartSet>& delta1) const
 	{
 		delta1.resize(this->data_.size(), Util::SmartSet(this->states_));
 
@@ -127,16 +127,16 @@ public:
 
 public:
 
-	Util::BinaryRelation computeSimulation(
+	Util::BinaryRelation compute_simulation(
 		const std::vector<std::vector<size_t>>&   partition,
 		const Util::BinaryRelation&               relation,
 		size_t                                    outputSize
 	);
 
-	Util::BinaryRelation computeSimulation(
+	Util::BinaryRelation compute_simulation(
 		size_t   outputSize);
 
-	Util::BinaryRelation computeSimulation();
+	Util::BinaryRelation compute_simulation();
 };
 
 #endif

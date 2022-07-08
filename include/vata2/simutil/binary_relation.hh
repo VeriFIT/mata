@@ -77,8 +77,8 @@ protected:
 /*
 	void shrinkToFit() {
 
-		assert(this->rowSize_ > this->size_);
-		size_t newRowSize = this->rowSize_;
+		assert(this->row_size_ > this->size_);
+		size_t newRowSize = this->row_size_;
 		while (this->size_ < (newRowSize >> 1))
 			newRowSize >>= 1;
 		assert(this->size_ <= newRowSize);
@@ -185,7 +185,7 @@ public:
 
 /*
 	BinaryRelation(const BinaryRelation& rel)
-		: data_(rel.data_), rowSize_(rel.rowSize_), size_(rel.size_) {}
+		: data_(rel.data_), row_size_(rel.row_size_), size_(rel.size_) {}
 */
 
 	BinaryRelation(const std::vector<std::vector<bool> >& rel) :
