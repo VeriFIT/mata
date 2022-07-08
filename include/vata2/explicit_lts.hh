@@ -38,7 +38,7 @@ public:
 	 *
 	 * @param[in]  states  The least number of states to consider
 	 */
-	ExplicitLTS(size_t states = 0) :
+	explicit ExplicitLTS(size_t states = 0) :
             states_(states),
             transitions_(0),
             data_(),

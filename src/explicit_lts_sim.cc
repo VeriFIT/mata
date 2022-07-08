@@ -12,12 +12,8 @@
 #include <cmath>
 #include <ostream>
 #include <vector>
-#include <list>
-#include <cmath>
 #include <algorithm>
 #include <memory>
-#include <unordered_set>
-#include <cstddef>
 
 
 // VATA headers
@@ -47,7 +43,7 @@ struct SharedListInitF
 {
 	VectorAllocator& allocator_;
 
-	SharedListInitF(VectorAllocator& allocator) : allocator_(allocator) {}
+	explicit SharedListInitF(VectorAllocator& allocator) : allocator_(allocator) {}
 
 	void operator()(SharedList<std::vector<size_t>>* list)
 	{
@@ -92,12 +88,6 @@ struct Block
 	SharedCounter counter_;
 	SmartSet inset_;
 	std::vector<StateListElem*> tmp_;
-
-protected:
-
-	Block(const Block&);
-
-	Block& operator=(const Block&);
 
 public:
 
@@ -181,7 +171,7 @@ public:
 
 	std::pair<StateListElem*, size_t> try_split()
 	{
-		assert(this->tmp_.size());
+		assert(!this->tmp_.empty());
 
 		if (this->tmp_.size() == this->size_)
 		{
@@ -233,7 +223,7 @@ public:
 		assert(Block::check_list(last, size));
 		assert(Block::check_list(this->states_, this->size_));
 
-		return std::make_pair(last, size);;
+		return std::make_pair(last, size);
 	}
 
 	SmartSet& inset()
@@ -585,10 +575,6 @@ private:
 	std::vector<size_t> key_;
 	std::vector<std::pair<size_t, size_t>> label_map_;
 
-	SimulationEngine(const SimulationEngine&);
-
-	SimulationEngine& operator=(const SimulationEngine&);
-
 	static size_t get_row_size(size_t states)
 	{
 		size_t treshold = static_cast<size_t>(std::sqrt(states)) >> 1;
@@ -605,7 +591,7 @@ private:
 
 public:
 
-	SimulationEngine(
+	explicit SimulationEngine(
 		const Vata2::ExplicitLTS& lts) :
             lts_(lts),
             row_size_(SimulationEngine::get_row_size(lts.states())),
@@ -619,7 +605,7 @@ public:
             key_(),
             label_map_()
 	{
-		assert(this->index_.size());
+		assert(!this->index_.empty());
 	}
 
 	~SimulationEngine()
@@ -650,7 +636,7 @@ public:
 		{
 			this->label_map_[a].first = x / this->row_size_;
 			this->label_map_[a].second =
-				(x + delta1[a].size() - 1) / this->row_size_ + ((delta1[a].size()) ? (1) : (0));
+				(x + delta1[a].size() - 1) / this->row_size_ + ((!delta1[a].empty()) ? (1) : (0));
 
 			for (auto& q : delta1[a])
 			{
@@ -874,7 +860,7 @@ BinaryRelation Vata2::ExplicitLTS::compute_simulation(
 {
 	if (0 == outputSize)
 	{
-		return BinaryRelation();
+		return BinaryRelation{};
 	}
 
 	SimulationEngine engine(*this);
