@@ -551,7 +551,7 @@ inline Nfa invert(const Nfa &aut)
 
 Vata2::Util::BinaryRelation compute_relation(
         const Nfa& aut,
-        const StringDict&  params = {{"relation", "simulation"}});
+        const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
 /// Is the language of the automaton universal?
 bool is_universal(

@@ -1739,7 +1739,7 @@ TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::simulation()")
+TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
 { // {{{
     Nfa aut;
 

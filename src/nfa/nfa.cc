@@ -51,7 +51,7 @@ namespace {
         receivingSet.insert(addedSet);
     }
 
-    Vata2::Util::BinaryRelation compute_simulation(const Nfa& aut) {
+    Vata2::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Vata2::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
         const size_t state_num = aut.get_num_of_states();
@@ -892,10 +892,16 @@ Vata2::Util::BinaryRelation Vata2::Nfa::compute_relation(const Nfa& aut, const S
                                  " requires setting the \"relation\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
+    if (!haskey(params, "direction")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"direction\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
 
     const std::string& relation = params.at("relation");
-    if ("simulation" == relation) {
-        return compute_simulation(aut);
+    const std::string& direction = params.at("direction");
+    if ("simulation" == relation && direction == "forward") {
+        return compute_fw_direct_simulation(aut);
     }
     else {
         throw std::runtime_error(std::to_string(__func__) +
