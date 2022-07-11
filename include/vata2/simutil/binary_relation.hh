@@ -74,18 +74,7 @@ protected:
 		this->realloc(newRowSize, defVal);
 
 	}
-/*
-	void shrinkToFit() {
 
-		assert(this->row_size_ > this->size_);
-		size_t newRowSize = this->row_size_;
-		while (this->size_ < (newRowSize >> 1))
-			newRowSize >>= 1;
-		assert(this->size_ <= newRowSize);
-		this->realloc(newRowSize);
-
-	}
-*/
 public:
 
 	void reset(bool defVal)
@@ -182,11 +171,6 @@ public:
 	{
 		this->resize(size, defVal);
 	}
-
-/*
-	BinaryRelation(const BinaryRelation& rel)
-		: data_(rel.data_), row_size_(rel.row_size_), size_(rel.size_) {}
-*/
 
 	BinaryRelation(const std::vector<std::vector<bool> >& rel) :
 		data_(16*16, false),
