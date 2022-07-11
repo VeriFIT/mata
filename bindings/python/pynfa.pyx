@@ -1,6 +1,7 @@
 cimport pynfa
 from libcpp.vector cimport vector
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
+from libcpp.unordered_map cimport unordered_map as umap
 
 cdef class Trans:
     """
@@ -90,22 +91,24 @@ cdef class Nfa:
             preinc(iterator)
             yield trans
 
-    def post_map_of(self, State st):
+    def post_map_of(self, State st, OnTheFlyAlphabet alphabet):
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
-        return dereference(self.thisptr.post(st))
+        # TODO: iterate over all symbols and return the post
+        return {}
 
-    def post_of(self, StateSet& states, Symbol symbol):
+    def post_of(self, states, Symbol symbol):
         """Returns sets of reachable states from set of states through a symbol
 
         :param StateSet states: set of states
         :param Symbol symbol: source symbol
         :return: set of reachable states
         """
-        return self.thisptr.post(states, symbol)
+        # TODO: Return ord vector
+        return {}
 
     # Operations
     @classmethod
@@ -117,9 +120,10 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef SubsetMap subset_map
-        cdef State last_state
-        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map, &last_state)
-        return result, {tuple(sorted(k)): v for k, v in subset_map}, last_state
+        # TODO: Fix this, so it returns proper last state as previously
+        last_state = 0
+        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map)
+        return result, subset_map_to_dictionary(subset_map), last_state
 
     @classmethod
     def union(cls, Nfa lhs, Nfa rhs):
@@ -130,7 +134,7 @@ cdef class Nfa:
         :return: union of lhs and rhs
         """
         result = Nfa()
-        pynfa.union_rename(
+        pynfa.uni(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr)
         )
         return result
@@ -172,7 +176,7 @@ cdef class Nfa:
             },
             &subset_map
         )
-        return result, {tuple(sorted(k)): v for k, v in subset_map}
+        return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
     def make_complete(cls, Nfa lhs, State sink_state, OnTheFlyAlphabet alphabet):
@@ -210,23 +214,14 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def minimize(cls, Nfa lhs, params = None):
+    def minimize(cls, Nfa lhs):
         """Minimies the automaton lhs
 
         :param Nfa lhs: automaton to be minimized
-        :param dict params: params for the algorithm
         :return: minimized automaton
         """
         result = Nfa()
-        params = params or {}
-        pynfa.minimize(
-            result.thisptr,
-            dereference(lhs.thisptr),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
+        pynfa.minimize(result.thisptr, dereference(lhs.thisptr))
         return result
 
     # Tests
@@ -349,7 +344,8 @@ cdef class Nfa:
         :param Nfa lhs: tested automaton
         :return: true if automaton accepts epsilon
         """
-        return pynfa.accepts_epsilon(dereference(lhs.thisptr))
+        # TODO: Fix to comply with new version
+        return False
 
     # Helper functions
     @classmethod
@@ -362,7 +358,8 @@ cdef class Nfa:
         :param Nfa lhs: source automaton
         :return: set of reachable states
         """
-        return pynfa.get_fwd_reach_states(dereference(lhs.thisptr))
+        # TODO: Fix to comply with new version
+        return {}
 
 
     @classmethod
@@ -446,6 +443,15 @@ cdef class OnTheFlyAlphabet:
 
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+cdef subset_map_to_dictionary(SubsetMap subset_map):
+    result = {}
+    cdef umap[StateSet, State].iterator it = subset_map.begin()
+    while it != subset_map.end():
+        key = dereference(it).first.ToVector()
+        value = dereference(it).second
+        result[tuple(sorted(key))] = value
+    return result
 
 
 # Temporary for testing

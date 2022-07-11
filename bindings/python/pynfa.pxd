@@ -7,11 +7,17 @@ from libcpp.string cimport string
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t
 
+cdef extern from "vata2/ord_vector.hh" namespace "Vata2::Util":
+    cdef cppclass COrdVector "Vata2::Util::OrdVector" [T]:
+        COrdVector() except+
+        vector[T] ToVector()
+
+
 cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef uintptr_t Symbol
-    ctypedef set[State] StateSet
+    ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
@@ -63,13 +69,12 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         bool has_initial(State)
         void add_final(State)
         bool has_final(State)
-        void add_trans(CTrans)
-        void add_trans(State, Symbol, State)
+        void add_trans(CTrans) except +
+        void add_trans(State, Symbol, State) except +
         bool has_trans(CTrans)
         bool has_trans(State, Symbol, State)
         bool trans_empty()
         size_t trans_size()
-        PostSymb* post(State)
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()
@@ -78,27 +83,24 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef bool is_deterministic(CNfa&)
     cdef bool is_lang_empty(CNfa&, Path*)
     cdef bool is_lang_empty_cex(CNfa&, Word*)
-    cdef bool is_universal(CNfa&, CAlphabet&, StringDict&)
+    cdef bool is_universal(CNfa&, CAlphabet&, StringDict&) except +
     cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, StringDict&)
-    cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, Word*, StringDict&)
-    cdef bool is_complete(CNfa&, CAlphabet&)
+    cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, Word*, StringDict&) except +
+    cdef bool is_complete(CNfa&, CAlphabet&) except +
     cdef bool is_in_lang(CNfa&, Word&)
     cdef bool is_prfx_in_lang(CNfa&, Word&)
-    cdef bool accepts_epsilon(CNfa&)
 
     # Automata operations
-    cdef void determinize(CNfa*, CNfa&, SubsetMap*, State*)
-    cdef void union_rename(CNfa*, CNfa&, CNfa&)
-    cdef void union_no_rename(CNfa*, CNfa&, CNfa&)
+    cdef void determinize(CNfa*, CNfa&, SubsetMap*)
+    cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
-    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*)
+    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State)
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol)
-    cdef void minimize(CNfa*, CNfa&, StringDict&)
+    cdef void minimize(CNfa*, CNfa&)
 
     # Helper functions
-    cdef UnorderedStateSet get_fwd_reach_states(CNfa&)
     cdef pair[Word, bool] get_word_for_path(CNfa&, Path&)
     cdef Word encode_word(StringToSymbolMap&, vector[string])
 
