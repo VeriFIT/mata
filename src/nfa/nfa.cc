@@ -22,6 +22,7 @@
 // VATA headers
 #include <vata2/nfa.hh>
 #include <vata2/util.hh>
+#include <vata2/explicit_lts.hh>
 
 using std::tie;
 
@@ -48,6 +49,31 @@ namespace {
 
     void uniont_to_left(StateSet &receivingSet, const StateSet &addedSet) {
         receivingSet.insert(addedSet);
+    }
+
+    Vata2::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+        Vata2::ExplicitLTS LTSforSimulation;
+        Symbol maxSymbol = 0;
+        const size_t state_num = aut.get_num_of_states();
+
+        for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
+            for (const TransSymbolStates &t : aut.get_transitions_from_state(stateFrom)) {
+                for (State stateTo : t.states_to) {
+                    LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
+                }
+                if (t.symbol > maxSymbol) {
+                    maxSymbol = t.symbol;
+                }
+            }
+        }
+
+        // final states cannot be simulated by nonfinal -> we add new selfloops over final states with new symbol in LTS
+        for (State finalState : aut.finalstates) {
+            LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
+        }
+
+        LTSforSimulation.init();
+        return LTSforSimulation.compute_simulation();
     }
 }
 
@@ -860,30 +886,29 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
     }
 }
 
-/*
-Util::BinaryRelation Nfa::computeSimulation() const {
-    VATA::ExplicitLTS LTSforSimulation;
-    Symbol maxSymbol = 0;
-    for (State stateFrom = 0; stateFrom < transitionrelation.size(); ++stateFrom) {
-        for (const TransSymbolStates &t : getTransitionsFromState(stateFrom)) {
-            for (State stateTo : t.states_to) {
-                LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
-            }
-            if (t.symbol > maxSymbol) {
-                maxSymbol = t.symbol;
-            }
-        }
+Vata2::Util::BinaryRelation Vata2::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
+    if (!haskey(params, "relation")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"relation\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
+    if (!haskey(params, "direction")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"direction\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
     }
 
-    // final states cannot be simulated by nonfinal -> we add new selfloops over final states with new symbol in LTS
-    for (State finalState : finalstates) {
-        LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
+    const std::string& relation = params.at("relation");
+    const std::string& direction = params.at("direction");
+    if ("simulation" == relation && direction == "forward") {
+        return compute_fw_direct_simulation(aut);
     }
-
-    LTSforSimulation.init();
-    return LTSforSimulation.computeSimulation();
+    else {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"relation\" key: " + relation);
+    }
 }
-*/
+
 void Vata2::Nfa::determinize(
         Nfa*        result,
         const Nfa&  aut,

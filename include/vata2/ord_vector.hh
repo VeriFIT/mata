@@ -426,7 +426,7 @@ public:   // Public methods
 	 *
 	 * Overloaded << operator for output stream.
 	 *
-	 * @see  ToString()
+	 * @see  to_string()
 	 *
 	 * @param[in]  os    The output stream
 	 * @param[in]  vec   Assignment to the variables

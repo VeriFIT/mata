@@ -31,6 +31,7 @@
 #include <vata2/parser.hh>
 #include <vata2/util.hh>
 #include <vata2/ord_vector.hh>
+#include <vata2/simutil/binary_relation.hh>
 
 namespace Vata2
 {
@@ -547,7 +548,10 @@ inline Nfa invert(const Nfa &aut)
     invert(&inverted, aut);
     return inverted;
 }
-// TODO: VATA::Util::BinaryRelation computeSimulation() const;
+
+Vata2::Util::BinaryRelation compute_relation(
+        const Nfa& aut,
+        const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
 /// Is the language of the automaton universal?
 bool is_universal(
