@@ -31,7 +31,7 @@
 #include <vata2/parser.hh>
 #include <vata2/util.hh>
 #include <vata2/ord_vector.hh>
-#include <vata2/explicit_lts.hh>
+#include <vata2/simutil/binary_relation.hh>
 
 namespace Vata2
 {

@@ -22,6 +22,7 @@
 // VATA headers
 #include <vata2/nfa.hh>
 #include <vata2/util.hh>
+#include <vata2/explicit_lts.hh>
 
 using std::tie;
 
