@@ -196,7 +196,7 @@ public:
 	}
 
 	// build equivalence classes
-	void build_classes(std::vector<size_t>& headIndex) const
+	void build_equivalence_classes(std::vector<size_t>& headIndex) const
 	{
 		headIndex.resize(size_);
 		std::vector<size_t> head;
@@ -221,7 +221,7 @@ public:
 	}
 
 	// build equivalence classes
-	void build_classes(
+	void build_equivalence_classes(
 		std::vector<size_t>&       index,
 		std::vector<size_t>&       head) const
 	{
@@ -487,7 +487,7 @@ public:
 	}
 
 	// build equivalence classes
-	void build_classes(std::vector<size_t>& headIndex) const
+	void build_equivalence_classes(std::vector<size_t>& headIndex) const
 	{
 		headIndex.resize(size_);
 		std::vector<size_t> head;
@@ -513,7 +513,7 @@ public:
 	}
 
 	// build equivalence classes
-	void build_classes(
+	void build_equivalence_classes(
 		std::vector<size_t>& index,
 		std::vector<size_t>& head) const
 	{
