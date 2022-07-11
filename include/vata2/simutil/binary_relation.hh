@@ -372,7 +372,7 @@ public:
 	/**
 	 * @brief  Restricts the relation to its symmetric fragment
 	 */
-	void RestrictToSymmetric()
+	void restrict_to_symmetric()
 	{
 		for (size_t row = 0; row < this->size(); ++row)
 		{
@@ -878,9 +878,9 @@ public:   // methods
 	/**
 	 * @brief  Restricts the relation to its symmetric fragment
 	 */
-	void RestrictToSymmetric()
+	void restrict_to_symmetric()
 	{
-		rel_.RestrictToSymmetric();
+		rel_.restrict_to_symmetric();
 	}
 
 
