@@ -44,13 +44,14 @@ using State = unsigned long;
 using StateSet = Vata2::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
-using PostSymb = std::unordered_map<Symbol, StateSet>;      /// post over a symbol
-using StateToPostMap = std::unordered_map<State, PostSymb>; /// transitions
+using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
+using StateToPostMap = std::unordered_map<State, PostSymb>; ///< Transitions.
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
-using Path = std::vector<State>;        /// a finite-length path through automaton
-using Word = std::vector<Symbol>;       /// a finite-length word
+using Path = std::vector<State>;        ///< A finite-length path through automaton.
+using Word = std::vector<Symbol>;       ///< A finite-length word.
+using WordSet = std::set<Word>;         ///< A set of words.
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
@@ -386,6 +387,12 @@ public:
         return res;
     }
 
+    /**
+     * Get shortest words (regarding their length) of the automaton using BFS.
+     * @return Set of shortest words.
+     */
+    WordSet get_shortest_words() const;
+
     //class for iterating successors of a set of states represented as a StateSet
     //the iteration will take the symbols in from the smallest
     struct state_set_post_iterator {
@@ -665,6 +672,77 @@ std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 
 /// global constructor to be called at program startup (from vm-dispatch)
 void init();
+
+/**
+ * Class mapping states to the shortest words accepted by languages of the states.
+ */
+class ShortestWordsMap
+{
+public:
+    /**
+     * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+     */
+    explicit ShortestWordsMap(const Nfa& aut)
+        : reversed_automaton(revert(aut))
+    {
+        insert_initial_lengths();
+
+        compute();
+    }
+
+    /**
+     * Gets shortest words for the given @p states.
+     * @param[in] states States to map shortest words for.
+     * @return Set of shortest words.
+     */
+    WordSet get_shortest_words_for_states(const StateSet& states) const;
+
+private:
+    using WordLength = int; ///< A length of a word.
+    /// Pair binding the length of all words in the word set and word set with words of the given length.
+    using LengthWordsPair = std::pair<WordLength, WordSet>;
+    /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
+    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
+    std::set<State> processed{}; ///< Set of already processed states.
+    std::deque<State> lifo_queue{}; ///< LIFO queue for states to process.
+    const Nfa reversed_automaton{}; ///< Reversed input automaton.
+
+    /**
+     * @brief Inserts initial lengths into the shortest words map.
+     *
+     * Inserts initial length of length 0 for final state in the automaton (initial states in the reversed automaton).
+     */
+    void insert_initial_lengths();
+
+    /**
+     * Computes shortest words for all states in the automaton.
+     */
+    void compute();
+
+    /**
+     * Computes shortest words for the given @p state.
+     * @param[in] state State to compute shortest words for.
+     */
+    void compute_for_state(State state);
+
+    /**
+     * Creates default shortest words mapping for yet unprocessed @p state.
+     * @param[in] state State to map default shortest words.
+     * @return Created default shortest words map element for the given @p state.
+     */
+    LengthWordsPair map_default_shortest_words(const State state)
+    {
+        return shortest_words_map.emplace(state, std::make_pair(-1, WordSet{})).first->second;
+    }
+
+    /**
+     * Update words for the current state.
+     * @param[out] act Current state shortest words and length.
+     * @param[in] dst Transition target state shortest words and length.
+     * @param[in] symbol Symbol to update with.
+     */
+    static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
+}; // ShortestWordsMap
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
