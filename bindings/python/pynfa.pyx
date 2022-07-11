@@ -43,8 +43,8 @@ cdef class Nfa:
     """
     cdef pynfa.CNfa *thisptr
 
-    def __cinit__(self):
-        self.thisptr = new pynfa.CNfa()
+    def __cinit__(self, state_number = 0):
+        self.thisptr = new pynfa.CNfa(state_number)
 
     def __dealloc__(self):
         del self.thisptr
@@ -451,6 +451,7 @@ cdef subset_map_to_dictionary(SubsetMap subset_map):
         key = dereference(it).first.ToVector()
         value = dereference(it).second
         result[tuple(sorted(key))] = value
+        postinc(it)
     return result
 
 

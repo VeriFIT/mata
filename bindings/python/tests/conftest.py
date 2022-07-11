@@ -19,7 +19,7 @@ def cleandir():
 
 @pytest.fixture(scope="function")
 def dfa_one_state_uni():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(1)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
@@ -29,7 +29,7 @@ def dfa_one_state_uni():
 
 @pytest.fixture(scope="function")
 def dfa_one_state_empty():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(1)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
@@ -38,7 +38,7 @@ def dfa_one_state_empty():
 
 @pytest.fixture(scope="function")
 def nfa_two_states_uni():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(2)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
@@ -54,7 +54,7 @@ def divisible_by(k: int):
     Constructs automaton accepting strings containing ones divisible by "k"
     """
     assert k > 1
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(k+1)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):
@@ -82,7 +82,7 @@ def fa_one_divisible_by_eight():
 
 @pytest.fixture(scope="function")
 def fa_odd_ones():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(2)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 1)
@@ -92,8 +92,8 @@ def fa_odd_ones():
 
 
 @pytest.fixture(scope="function")
-def fa_odd_ones():
-    lhs = pynfa.Nfa()
+def fa_even_ones():
+    lhs = pynfa.Nfa(2)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 1)

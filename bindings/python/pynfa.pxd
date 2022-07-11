@@ -62,6 +62,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
 
         # Constructor
         CNfa() except +
+        CNfa(unsigned long) except +
 
         # Public Functions
         void add_initial(State)
@@ -95,9 +96,9 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
-    cdef void make_complete(CNfa*, CAlphabet&, State)
+    cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)
-    cdef void remove_epsilon(CNfa*, CNfa&, Symbol)
+    cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
 
     # Helper functions

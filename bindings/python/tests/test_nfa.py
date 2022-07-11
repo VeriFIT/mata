@@ -34,7 +34,7 @@ def test_adding_states():
 
 def test_transitions():
     """Test adding transitions to automaton"""
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(3)
     t1 = pynfa.Trans(0, 0, 0)
     t2 = pynfa.Trans(0, 1, 0)
     t3 = pynfa.Trans(1, 1, 1)
@@ -70,7 +70,7 @@ def test_post():
     """Test various cases of getting post of the states
     :return:
     """
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(3)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 1)
     lhs.add_trans_raw(1, 1, 2)
@@ -130,16 +130,18 @@ def test_get_word_for_path(
 def test_encode_word():
     assert pynfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca") == [1, 2, 0, 1]
 
+
 def test_language_emptiness(fa_one_divisible_by_two):
     assert pynfa.Nfa.is_lang_empty_path_counterexample(fa_one_divisible_by_two) == (False, [0, 1, 2])
     assert pynfa.Nfa.is_lang_empty_word_counterexample(fa_one_divisible_by_two) == (False, [1, 1])
 
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(4)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 1)
     lhs.add_trans_raw(1, 0, 2)
     lhs.add_trans_raw(2, 0, 3)
     assert pynfa.Nfa.is_lang_empty_word_counterexample(lhs) == (True, [])
+
 
 def test_universality(fa_one_divisible_by_two):
     alph = pynfa.OnTheFlyAlphabet()
@@ -147,10 +149,10 @@ def test_universality(fa_one_divisible_by_two):
     alph.translate_symbol("b")
     assert pynfa.Nfa.is_universal(fa_one_divisible_by_two, alph) == False
 
-    l = pynfa.Nfa()
+    l = pynfa.Nfa(1)
     l.add_initial_state(0)
-    l.add_trans_raw(0,0,0)
-    l.add_trans_raw(0,1,0)
+    l.add_trans_raw(0, 0, 0)
+    l.add_trans_raw(0, 1, 0)
     l.add_final_state(0)
     assert pynfa.Nfa.is_universal(l, alph) == True
 
@@ -184,14 +186,14 @@ def test_completeness(
     assert pynfa.Nfa.is_complete(fa_one_divisible_by_four, alph)
     assert pynfa.Nfa.is_complete(fa_one_divisible_by_eight, alph)
 
-    l = pynfa.Nfa()
+    l = pynfa.Nfa(1)
     l.add_initial_state(0)
     l.add_trans_raw(0,0,0)
     assert not pynfa.Nfa.is_complete(l, alph)
     l.add_trans_raw(0,1,0)
     assert pynfa.Nfa.is_complete(l, alph)
 
-    r = pynfa.Nfa()
+    r = pynfa.Nfa(1)
     r.add_initial_state(0)
     r.add_trans_raw(0,0,0)
     assert not pynfa.Nfa.is_complete(r, alph)
@@ -209,7 +211,7 @@ def test_in_language(
     assert not pynfa.Nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 0, 0])
     assert not pynfa.Nfa.accepts_epsilon(fa_one_divisible_by_four)
 
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(1)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0,0,0)
     lhs.add_trans_raw(0,1,1)
@@ -265,7 +267,7 @@ def test_complement(
     assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
 
 def test_revert():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(3)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 1)
     lhs.add_trans_raw(1, 1, 2)
@@ -278,7 +280,7 @@ def test_revert():
     assert pynfa.Nfa.is_in_lang(rhs, [1, 0])
 
 def test_removing_epsilon():
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(3)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 1)
     lhs.add_trans_raw(1, 1, 2)
@@ -301,7 +303,7 @@ def test_minimize(
     minimized = pynfa.Nfa.minimize(fa_one_divisible_by_eight)
     assert minimized.trans_size() <= fa_one_divisible_by_eight.trans_size()
 
-    lhs = pynfa.Nfa()
+    lhs = pynfa.Nfa(11)
     lhs.add_initial_state(0)
     for i in range(0, 10):
         lhs.add_trans_raw(i, 0, i+1)
