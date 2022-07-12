@@ -128,10 +128,8 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef SubsetMap subset_map
-        # TODO: Fix this, so it returns proper last state as previously
-        last_state = 0
         pynfa.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map)
-        return result, subset_map_to_dictionary(subset_map), last_state
+        return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
     def union(cls, Nfa lhs, Nfa rhs):

@@ -99,10 +99,9 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     rhs = dfa_one_state_uni
     assert pynfa.Nfa.is_deterministic(rhs)
 
-    chs, sm_map, last_state = pynfa.Nfa.determinize(lhs)
+    chs, sm_map = pynfa.Nfa.determinize(lhs)
     assert pynfa.Nfa.is_deterministic(chs)
     assert sm_map == {(0, ): 0, (0, 1): 1}
-    assert last_state == 1
 
 
 def test_forward_reach_states(
