@@ -354,7 +354,10 @@ cdef class Nfa:
         :param Nfa lhs: tested automaton
         :return: true if automaton accepts epsilon
         """
-        # TODO: Fix to comply with new version
+        cdef vector[State] initial_states = lhs.thisptr.initialstates.ToVector()
+        for state in initial_states:
+            if lhs.has_final_state(state):
+                return True
         return False
 
     # Helper functions
