@@ -7,6 +7,14 @@ from libcpp.string cimport string
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t
 
+cdef extern from "<iostream>" namespace "std":
+    cdef cppclass ostream:
+        ostream& write(const char*, int) except +
+
+cdef extern from "<fstream>" namespace "std":
+    cdef cppclass ofstream(ostream)
+    ofstream(const char*) except +
+
 cdef extern from "vata2/ord_vector.hh" namespace "Vata2::Util":
     cdef cppclass COrdVector "Vata2::Util::OrdVector" [T]:
         COrdVector() except+
@@ -68,17 +76,24 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         void add_initial(State)
         void add_initial(vector[State])
         bool has_initial(State)
+        void remove_initial(State)
         void add_final(State)
         bool has_final(State)
+        void remove_final(State)
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         bool has_trans(CTrans)
         bool has_trans(State, Symbol, State)
         bool trans_empty()
+        bool nothing_in_trans()
         size_t trans_size()
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()
+        size_t get_num_of_states()
+        void increase_size(size_t)
+        State add_new_state()
+        void print_to_DOT(ostream)
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)

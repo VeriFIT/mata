@@ -211,10 +211,10 @@ def test_in_language(
     assert not pynfa.Nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 0, 0])
     assert not pynfa.Nfa.accepts_epsilon(fa_one_divisible_by_four)
 
-    lhs = pynfa.Nfa(1)
+    lhs = pynfa.Nfa(2)
     lhs.add_initial_state(0)
-    lhs.add_trans_raw(0,0,0)
-    lhs.add_trans_raw(0,1,1)
+    lhs.add_trans_raw(0, 0, 0)
+    lhs.add_trans_raw(0, 1, 1)
     assert not pynfa.Nfa.accepts_epsilon(lhs)
     lhs.add_final_state(1)
     assert not pynfa.Nfa.accepts_epsilon(lhs)
@@ -264,7 +264,8 @@ def test_complement(
     assert not pynfa.Nfa.is_in_lang(res, [1,1])
     assert pynfa.Nfa.is_in_lang(res, [1,1,1])
     assert not pynfa.Nfa.is_in_lang(res, [1,1,1,1])
-    assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
+    assert subset_map == {(): 4, (0,): 0, (1,): 1, (2,): 2}
+
 
 def test_revert():
     lhs = pynfa.Nfa(3)

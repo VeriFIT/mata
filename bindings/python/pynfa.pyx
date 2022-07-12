@@ -64,6 +64,9 @@ cdef class Nfa:
     def has_final_state(self, State st):
         return self.thisptr.has_final(st)
 
+    def state_size(self):
+        return self.thisptr.get_num_of_states()
+
     def add_trans(self, Trans tr):
         self.thisptr.add_trans(dereference(tr.thisptr))
 
@@ -203,11 +206,13 @@ cdef class Nfa:
     def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
         """Removes transitions that contains epsilon symbol
 
+        TODO: Possibly there may be issue with setting the size of the automaton beforehand?
+
         :param Nfa lhs: automaton, where epsilon transitions will be removed
         :param Symbol epsilon: symbol representing the epsilon
         :return: automaton, with epsilon transitions removed
         """
-        result = Nfa()
+        result = Nfa(lhs.state_size())
         pynfa.remove_epsilon(
             result.thisptr, dereference(lhs.thisptr), epsilon
         )
