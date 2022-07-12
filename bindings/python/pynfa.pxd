@@ -4,6 +4,7 @@ from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.vector cimport vector
 from libcpp.string cimport string
+from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t
 
@@ -18,6 +19,7 @@ cdef extern from "<fstream>" namespace "std":
 cdef extern from "vata2/ord_vector.hh" namespace "Vata2::Util":
     cdef cppclass COrdVector "Vata2::Util::OrdVector" [T]:
         COrdVector() except+
+        COrdVector(vector[T]) except+
         vector[T] ToVector()
 
 
@@ -127,16 +129,20 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef cppclass CCharAlphabet "Vata2::Nfa::CharAlphabet":
         CCharAlphabet() except +
         Symbol translate_symb(string)
+        clist[Symbol] get_symbols()
 
     cdef cppclass CDirectAlphabet "Vata2::Nfa::DirectAlphabet":
         CDirectAlphabet() except +
         Symbol translate_symb(string)
+        clist[Symbol] get_symbols()
 
     cdef cppclass CEnumAlphabet "Vata2::Nfa::EnumAlphabet":
         CEnumAlphabet() except +
         CEnumAlphabet(vector[string].iterator, vector[string].iterator) except +
         Symbol translate_symb(string) except +
+        clist[Symbol] get_symbols()
 
     cdef cppclass COnTheFlyAlphabet "Vata2::Nfa::OnTheFlyAlphabet":
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
+        clist[Symbol] get_symbols()

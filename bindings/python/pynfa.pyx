@@ -1,5 +1,6 @@
 cimport pynfa
 from libcpp.vector cimport vector
+from libcpp.list cimport list as clist
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
@@ -100,18 +101,22 @@ cdef class Nfa:
         :param State st: source state
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
-        # TODO: iterate over all symbols and return the post
-        return {}
+        symbol_map = {}
+        for symbol in alphabet.get_symbols():
+            symbol_map[symbol] = self.post_of({st}, symbol)
+        return symbol_map
 
-    def post_of(self, states, Symbol symbol):
+    def post_of(self, vector[State] states, Symbol symbol):
         """Returns sets of reachable states from set of states through a symbol
 
         :param StateSet states: set of states
         :param Symbol symbol: source symbol
         :return: set of reachable states
         """
-        # TODO: Return ord vector
-        return {}
+        cdef vector[State] return_value
+        cdef StateSet input_states = StateSet(states)
+        return_value = self.thisptr.post(input_states, symbol).ToVector()
+        return {v for v in return_value}
 
     # Operations
     @classmethod
@@ -448,6 +453,10 @@ cdef class OnTheFlyAlphabet:
 
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    cdef get_symbols(self):
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
 
 cdef subset_map_to_dictionary(SubsetMap subset_map):
     result = {}

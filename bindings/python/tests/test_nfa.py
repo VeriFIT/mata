@@ -66,7 +66,7 @@ def test_transitions():
     assert [t for t in lhs.iterate()] == [t4, t3, t2, t1]
 
 
-def test_post():
+def test_post(binary_alphabet):
     """Test various cases of getting post of the states
     :return:
     """
@@ -80,14 +80,14 @@ def test_post():
     lhs.add_trans_raw(2, 0, 2)
     lhs.add_final_state(2)
 
-    assert lhs.post_map_of(0) == {0: {1}, 1: {2}}
-    assert lhs.post_map_of(1) == {0: {0}, 1: {2}}
-    assert lhs.post_map_of(2) == {0: {2}, 1: {2}}
-
     assert lhs.post_of({0}, 0) == {1}
     assert lhs.post_of({0, 1}, 0) == {0, 1}
     assert lhs.post_of({0, 1, 2}, 1) == {2}
     assert lhs.post_of({0, 1, 2}, 0) == {0, 1, 2}
+
+    assert lhs.post_map_of(0, binary_alphabet) == {0: {1}, 1: {2}}
+    assert lhs.post_map_of(1, binary_alphabet) == {0: {0}, 1: {2}}
+    assert lhs.post_map_of(2, binary_alphabet) == {0: {2}, 1: {2}}
 
 
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
@@ -228,6 +228,8 @@ def test_union(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
+    assert pynfa.Nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
+    assert not pynfa.Nfa.is_in_lang(fa_one_divisible_by_four, [1, 1])
     uni = pynfa.Nfa.union(fa_one_divisible_by_two, fa_one_divisible_by_four)
     assert pynfa.Nfa.is_in_lang(uni, [1, 1])
     assert pynfa.Nfa.is_in_lang(uni, [1, 1, 1, 1])

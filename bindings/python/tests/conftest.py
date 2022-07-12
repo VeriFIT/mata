@@ -100,3 +100,11 @@ def fa_even_ones():
     lhs.add_trans_raw(1, 1, 0)
     lhs.add_trans_raw(1, 0, 1)
     lhs.add_final_state(0)
+
+
+@pytest.fixture(scope="function")
+def binary_alphabet():
+    alph = pynfa.OnTheFlyAlphabet()
+    alph.translate_symbol("0")
+    alph.translate_symbol("1")
+    yield alph
