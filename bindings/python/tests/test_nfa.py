@@ -106,11 +106,11 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
 
 
 def test_forward_reach_states(
-        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight, binary_alphabet
 ):
-    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_two) == set(range(0, 3))
-    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_four) == set(range(0, 5))
-    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_eight) == set(range(0, 9))
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_two, binary_alphabet) == set(range(0, 3))
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_four, binary_alphabet) == set(range(0, 5))
+    assert pynfa.Nfa.get_forward_reachable_states(fa_one_divisible_by_eight, binary_alphabet) == set(range(0, 9))
 
 
 def test_get_word_for_path(

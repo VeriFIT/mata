@@ -359,8 +359,10 @@ cdef class Nfa:
 
     # Helper functions
     @classmethod
-    def get_forward_reachable_states(cls, Nfa lhs):
+    def get_forward_reachable_states(cls, Nfa lhs, OnTheFlyAlphabet alphabet):
         """Returns list of reachable states from initial states
+
+        WARNING: This is quite inefficient operation, that could be implemented better
 
         >>> pynfa.Nfa.get_forward_reachable_states(lhs)
         {0, 1, 2}
@@ -368,8 +370,15 @@ cdef class Nfa:
         :param Nfa lhs: source automaton
         :return: set of reachable states
         """
-        # TODO: Fix to comply with new version
-        return {}
+        cdef vector[State] initial_states = lhs.thisptr.initialstates.ToVector()
+        reachable = {state for state in initial_states}
+        worklist = reachable
+        while worklist:
+            state = worklist.pop()
+            for post in lhs.post_map_of(state, alphabet).values():
+                worklist.update({s for s in post if s not in reachable})
+            reachable = reachable.union(worklist)
+        return reachable
 
 
     @classmethod

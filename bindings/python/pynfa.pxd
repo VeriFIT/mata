@@ -67,8 +67,8 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
             void refresh_trans()
 
         # Public Attributes
-        set[State] initialstates
-        set[State] finalstates
+        StateSet initialstates
+        StateSet finalstates
 
         # Constructor
         CNfa() except +
