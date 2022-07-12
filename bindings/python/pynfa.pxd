@@ -88,6 +88,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         bool has_trans(State, Symbol, State)
         bool trans_empty()
         bool nothing_in_trans()
+        bool is_state(State)
         size_t trans_size()
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()

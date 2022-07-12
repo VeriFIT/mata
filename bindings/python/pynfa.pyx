@@ -194,6 +194,8 @@ cdef class Nfa:
         :param Symbol sink_state: sink state of the automaton
         :param OnTheFlyAlphabet alphabet: alphabet of the
         """
+        if not lhs.thisptr.is_state(sink_state):
+            lhs.thisptr.increase_size(lhs.state_size() + 1)
         pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), sink_state)
 
     @classmethod
