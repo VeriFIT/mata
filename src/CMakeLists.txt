@@ -38,7 +38,7 @@ endif()
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
 include_directories(../include)
-include_directories(../3rdparty/re2/)
+include_directories(../3rdparty/)
 
 add_library(libvata2 STATIC
 # add_library(libvata2 SHARED

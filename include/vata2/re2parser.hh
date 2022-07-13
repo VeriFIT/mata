@@ -20,7 +20,7 @@
 
 #include <string>
 #include <vata2/nfa.hh>
-#include <re2/re2.h>
+#include <re2/re2/re2.h>
 
 namespace Vata2 {
     class RegexParser {

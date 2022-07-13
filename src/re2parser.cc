@@ -21,9 +21,9 @@
 #include <vata2/re2parser.hh>
 
 // RE2 headers
-#include <re2/regexp.h>
-#include <re2/prog.h>
-#include <util/logging.h>
+#include <re2/re2/regexp.h>
+#include <re2/re2/prog.h>
+#include <re2/util/logging.h>
 
 namespace Vata2 {
     /**
