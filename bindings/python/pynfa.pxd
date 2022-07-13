@@ -13,8 +13,8 @@ cdef extern from "<iostream>" namespace "std":
         ostream& write(const char*, int) except +
 
 cdef extern from "<fstream>" namespace "std":
-    cdef cppclass ofstream(ostream)
-    ofstream(const char*) except +
+    cdef cppclass ofstream(ostream):
+        ofstream(const char*) except +
 
 cdef extern from "vata2/ord_vector.hh" namespace "Vata2::Util":
     cdef cppclass COrdVector "Vata2::Util::OrdVector" [T]:

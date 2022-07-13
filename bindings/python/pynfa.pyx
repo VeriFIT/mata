@@ -4,6 +4,9 @@ from libcpp.list cimport list as clist
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
+import shlex
+import subprocess
+
 cdef class Trans:
     """
     Wrapper over the transitions
@@ -94,6 +97,19 @@ cdef class Nfa:
             trans.copy_from(lhs)
             preinc(iterator)
             yield trans
+
+    def to_dot(self, output_file='aut.dot', output_format='pdf'):
+        cdef pynfa.ofstream* output
+        output = new pynfa.ofstream(output_file.encode('utf-8'))
+        try:
+            self.thisptr.print_to_DOT(dereference(output))
+        finally:
+            del output
+
+        graphviz_command = f"dot -O -T{output_format} {output_file}"
+        _, err = run_safely_external_command(graphviz_command)
+        if err:
+            print(f"error while dot file: {err}")
 
     def post_map_of(self, State st, OnTheFlyAlphabet alphabet):
         """Returns mapping of symbols to set of states.
@@ -487,7 +503,7 @@ def divisible_by(k: int):
     Constructs automaton accepting strings containing ones divisible by "k"
     """
     assert k > 1
-    lhs = Nfa()
+    lhs = Nfa(k+1)
     lhs.add_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):
@@ -496,3 +512,64 @@ def divisible_by(k: int):
     lhs.add_trans_raw(k, 1, 1)
     lhs.add_final_state(k)
     return lhs
+
+
+def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeout=None, **kwargs):
+    """Safely runs the piped command, without executing of the shell
+
+    Courtesy of: https://blog.avinetworks.com/tech/python-best-practices
+
+    :param str cmd: string with command that we are executing
+    :param bool check_results: check correct command exit code and raise exception in case of fail
+    :param bool quiet: if set to False, then it will print the output of the command
+    :param int timeout: timeout of the command
+    :param dict kwargs: additional args to subprocess call
+    :return: returned standard output and error
+    :raises subprocess.CalledProcessError: when any of the piped commands fails
+    """
+    # Split
+    unpiped_commands = list(map(str.strip, cmd.split(" | ")))
+    cmd_no = len(unpiped_commands)
+
+    # Run the command through pipes
+    objects: List[subprocess.Popen] = []
+    for i in range(cmd_no):
+        executed_command = shlex.split(unpiped_commands[i])
+
+        # set streams
+        stdin = None if i == 0 else objects[i-1].stdout
+        stderr = subprocess.STDOUT if i < (cmd_no - 1) else subprocess.PIPE
+
+        # run the piped command and close the previous one
+        piped_command = subprocess.Popen(
+            executed_command,
+            shell=False, stdin=stdin, stdout=subprocess.PIPE, stderr=stderr, **kwargs
+        )
+        if i != 0:
+            objects[i-1].stdout.close()  # type: ignore
+        objects.append(piped_command)
+
+    try:
+        # communicate with the last piped object
+        cmdout, cmderr = objects[-1].communicate(timeout=timeout)
+
+        for i in range(len(objects) - 1):
+            objects[i].wait(timeout=timeout)
+
+    except subprocess.TimeoutExpired:
+        for process in objects:
+            process.terminate()
+        raise
+
+    # collect the return codes
+    if check_results:
+        for i in range(cmd_no):
+            if objects[i].returncode:
+                if not quiet and (cmdout or cmderr):
+                    print(f"captured stdout: {cmdout.decode('utf-8')}", 'red')
+                    print(f"captured stderr: {cmderr.decode('utf-8')}", 'red')
+                raise subprocess.CalledProcessError(
+                    objects[i].returncode, unpiped_commands[i]
+                )
+
+    return cmdout, cmderr
