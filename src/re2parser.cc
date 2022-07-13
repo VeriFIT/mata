@@ -72,11 +72,11 @@ namespace Vata2 {
         const int startState = prog->start();
         const int progSize = prog->size();
         int emptyFlag;
-        std::vector<int> symbols;
+        std::vector<Vata2::Nfa::Symbol> symbols;
         Vata2::Nfa::Nfa explicitNfa(progSize);
 
         // We will be appending to nop and capture types of states
-        std::vector<long int> appendToStates;
+        std::vector<Vata2::Nfa::State> appendToStates;
         // It will hold information about outgoing edges -> (symbol, mappedTargetState) pairs. Indexes of the main
         // vector are source states of the edge
         std::vector<std::vector<std::pair<int, int>>> backStateOutgoingEdges(
