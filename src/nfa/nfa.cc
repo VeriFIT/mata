@@ -761,7 +761,7 @@ void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisFinalState : lhs.finalstates) {
-        unionAutomaton->add_initial(thisStateToUnionState[thisFinalState]);
+        unionAutomaton->add_final(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
