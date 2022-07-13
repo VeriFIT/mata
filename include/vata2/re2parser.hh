@@ -9,7 +9,7 @@
 #include <vata2/nfa.hh>
 #include <re2/re2.h>
 
-namespace automata_lib {
+namespace Vata2 {
     class RegexParser {
     private:
         /**

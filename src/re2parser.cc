@@ -10,7 +10,7 @@
 #include <re2/prog.h>
 #include <util/logging.h>
 
-namespace automata_lib {
+namespace Vata2 {
 
     /**
      * The main method, it creates NFA from regex
@@ -190,7 +190,7 @@ namespace automata_lib {
             }
         }
 
-        return automata_lib::RegexParser::renumberStates(progSize, explicitNfa);
+        return Vata2::RegexParser::renumberStates(progSize, explicitNfa);
     }
 
     /**
