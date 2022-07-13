@@ -12,6 +12,7 @@ set(cxx_compiler_flags
   -Wextra
   -Wall
   -Wfloat-equal
+  -fms-extensions
   -fdiagnostics-show-option
   -std=c++14
   -Wctor-dtor-privacy
