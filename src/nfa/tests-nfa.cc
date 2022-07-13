@@ -1817,3 +1817,29 @@ TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
         REQUIRE(result.get(8,5));
     }
 } // }}
+
+TEST_CASE("Vata2::Nfa::union_norename()") {
+    Word one{1};
+    Word zero{0};
+
+    Nfa lhs(2);
+    lhs.add_initial(0);
+    lhs.add_trans(0, 0, 1);
+    lhs.add_final(1);
+    REQUIRE(!is_in_lang(lhs, one));
+    REQUIRE(is_in_lang(lhs, zero));
+
+    Nfa rhs(2);
+    rhs.add_initial(0);
+    rhs.add_trans(0, 1, 1);
+    rhs.add_final(1);
+    REQUIRE(is_in_lang(rhs, one));
+    REQUIRE(!is_in_lang(rhs, zero));
+
+    SECTION("failing minimal scenario") {
+        Nfa result;
+        uni(&result, lhs, rhs);
+        REQUIRE(is_in_lang(result, one));
+        REQUIRE(is_in_lang(result, zero));
+    }
+}
