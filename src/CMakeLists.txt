@@ -20,6 +20,8 @@ set(cxx_compiler_flags
   -fno-strict-aliasing
   -Woverloaded-virtual
   -Wold-style-cast
+  -Wgnu-anonymous-struct
+  -Wnested-anon-types
 )
 
 foreach(flag ${cxx_compiler_flags})
@@ -36,6 +38,7 @@ endif()
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
 include_directories(../include)
+include_directories(../3rdparty/re2/)
 
 add_library(libvata2 STATIC
 # add_library(libvata2 SHARED
@@ -44,6 +47,7 @@ add_library(libvata2 STATIC
 	explicit_lts_sim.cc
 	parser.cc
 	parser-dispatch.cc
+	re2parser.cc
 	str-dispatch.cc
 	nfa/nfa.cc
 	nfa/nfa-dispatch.cc

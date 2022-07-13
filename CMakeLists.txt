@@ -83,4 +83,5 @@ enable_testing()
 # Process subdirectories
 add_subdirectory(src)
 add_subdirectory(cli)
+add_subdirectory(3rdparty/re2)
 #add_subdirectory(python_bind)
