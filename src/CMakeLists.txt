@@ -20,13 +20,17 @@ set(cxx_compiler_flags
   -fno-strict-aliasing
   -Woverloaded-virtual
   -Wold-style-cast
-  -Wgnu-anonymous-struct
-  -Wnested-anon-types
 )
 
 foreach(flag ${cxx_compiler_flags})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	# using regular Clang or AppleClang
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wgnu-anonymous-struct")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnested-anon-types")
+endif()
 
 # if DEBUG, also test coverage
 if(CMAKE_BUILD_TYPE MATCHES "Coverage")
