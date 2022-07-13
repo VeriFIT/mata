@@ -45,4 +45,8 @@ foreach(flag ${cxx_compiler_flags})
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lpthread")
+endif()
+
 target_include_directories(re2 PUBLIC ./)
