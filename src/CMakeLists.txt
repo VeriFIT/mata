@@ -31,8 +31,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wgnu-anonymous-struct")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnested-anon-types")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_link_libraries(libvata2 pthread)
 endif()
 
 # if DEBUG, also test coverage
@@ -85,6 +83,10 @@ add_executable(tests
 	nfa/tests-nfa-dispatch.cc
 	rra/tests-rrt.cc
 )
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_link_libraries(libvata2 pthread)
+endif()
 
 target_link_libraries(tests libvata2 re2)
 include(Catch)
