@@ -456,7 +456,7 @@ namespace Vata2 {
         }
 
         for (auto state: inputNFA.finalstates) {
-            if (renumberedStates[state] == -1) {
+            if (static_cast<int>(renumberedStates[state]) == -1) {
                 renumberedStates[state] = renumberedExplicitNfa.add_new_state();
             }
             renumberedExplicitNfa.add_final(renumberedStates[state]);
