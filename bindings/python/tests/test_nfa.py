@@ -42,28 +42,25 @@ def test_transitions():
 
     # Test adding transition
     assert lhs.trans_empty()
-    assert lhs.trans_size() == 0
+    assert lhs.trans_size() == 3
     lhs.add_trans(t1)
     assert not lhs.trans_empty()
-    assert lhs.trans_size() == 1
+    assert lhs.has_trans(t1)
 
     lhs.add_trans(t2)
-    assert lhs.trans_size() == 2
+    assert lhs.has_trans(t2)
 
     # Test adding add-hoc transition
     lhs.add_trans_raw(1, 1, 1)
-    assert lhs.trans_size() == 3
     assert lhs.has_trans(t3)
     assert not lhs.has_trans_raw(2, 2, 2)
     lhs.add_trans(t4)
     assert lhs.has_trans_raw(2, 2, 2)
-    assert lhs.trans_size() == 4
 
     # Test that transitions are not duplicated
     lhs.add_trans_raw(1, 1, 1)
-    assert lhs.trans_size() == 4
 
-    assert [t for t in lhs.iterate()] == [t4, t3, t2, t1]
+    assert [t for t in lhs.iterate()] == [t1, t2, t3, t4]
 
 
 def test_post(binary_alphabet):

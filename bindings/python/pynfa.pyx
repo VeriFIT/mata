@@ -84,7 +84,7 @@ cdef class Nfa:
         return self.thisptr.has_trans(src, symb, tgt)
 
     def trans_empty(self):
-        return self.thisptr.trans_empty()
+        return self.thisptr.nothing_in_trans()
 
     def trans_size(self):
         return self.thisptr.trans_size()
