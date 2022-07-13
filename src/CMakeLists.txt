@@ -8,7 +8,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Flags
 set(cxx_compiler_flags
-  -pedantic-errors
   -Wextra
   -Wall
   -Wfloat-equal
@@ -29,10 +28,9 @@ endforeach()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 	# using regular Clang or AppleClang
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wgnu-anonymous-struct")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnested-anon-types")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fplan9-extensions")
 endif()
 
 # if DEBUG, also test coverage
