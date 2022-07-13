@@ -35,7 +35,7 @@ namespace Vata2 {
          * has_state_outgoing_back_edge determines if there is any outgoing edge leading to a state with a lower number (true) or not (false)
          */
         struct StateCache {
-            std::vector<std::vector<int>> state_mapping;
+            std::vector<std::vector<Vata2::Nfa::State>> state_mapping;
             std::vector<bool> is_final_state;
             std::vector<bool> is_state_nop_or_cap;
             std::vector<bool> is_last;
@@ -49,7 +49,7 @@ namespace Vata2 {
         RE2::Options options;
         StateCache state_cache;
 
-        re2::Regexp* parse_regex_string(const std::string& regexString);
+        re2::Regexp* parse_regex_string(const std::string& regex_string);
 
         Vata2::Nfa::Nfa convert_pro_to_nfa(re2::Prog* prog);
 
@@ -59,12 +59,12 @@ namespace Vata2 {
 
         bool should_delete_last_pushed(
                 re2::Prog* prog,
-                int currentState,
-                std::vector<int>::size_type appendToStatesVectorSize);
+                int current_state,
+                std::vector<int>::size_type append_to_states_vector_size);
 
         void make_state_final(int state, Vata2::Nfa::Nfa &nfa);
 
-        static Vata2::Nfa::Nfa renumber_states(int progSize, Vata2::Nfa::Nfa &inputNFA);
+        static Vata2::Nfa::Nfa renumber_states(int prog_size, Vata2::Nfa::Nfa &input_nfa);
 
     public:
         RegexParser() = default;
