@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef AUTOMATA_LIBRARY_PARSER_HPP
-#define AUTOMATA_LIBRARY_PARSER_HPP
+#ifndef VATA2_RE2PARSER_HH
+#define VATA2_RE2PARSER_HH
 
 #include <string>
 #include <vata2/nfa.hh>
@@ -72,4 +72,4 @@ namespace Vata2 {
     };
 }
 
-#endif //AUTOMATA_LIBRARY_PARSER_HPP
+#endif // VATA2_RE2PARSER
