@@ -57,7 +57,10 @@ namespace Vata2 {
 
         int get_following_state_with_back_edge(re2::Prog* prog, int state);
 
-        bool should_delete_last_pushed(re2::Prog* prog, int currentState, std::vector<int>::size_type appendToStatesVectorSize);
+        bool should_delete_last_pushed(
+                re2::Prog* prog,
+                int currentState,
+                std::vector<int>::size_type appendToStatesVectorSize);
 
         void make_state_final(int state, Vata2::Nfa::Nfa &nfa);
 

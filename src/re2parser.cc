@@ -76,7 +76,8 @@ namespace Vata2 {
         std::vector<long int> appendToStates;
         // It will hold information about outgoing edges -> (symbol, mappedTargetState) pairs. Indexes of the main
         // vector are source states of the edge
-        std::vector<std::vector<std::pair<int, int>>> backStateOutgoingEdges(progSize, std::vector<std::pair<int, int>>());
+        std::vector<std::vector<std::pair<int, int>>> backStateOutgoingEdges(
+                progSize, std::vector<std::pair<int, int>>());
 
         // Vectors are saved in this->state_cache after this
         this->create_state_cache(prog);
@@ -173,7 +174,8 @@ namespace Vata2 {
                     }
                     // Some states are added to the appendToStates vector only to be processed in the current iteration,
                     // we do not want to append to them in the following iterations
-                    if (this->should_delete_last_pushed(prog, currentState, appendToStates.size())) {
+                    if (this->should_delete_last_pushed(
+                            prog, currentState, appendToStates.size())) {
                         appendToStates.pop_back();
                     }
                     // There is an epsilon transition to the currentState+1
@@ -186,9 +188,12 @@ namespace Vata2 {
                         if (stateWithBackEdge != -1) {
                             re2::Prog::Inst *stateWithBackEdgeInst = prog->inst(stateWithBackEdge);
                             for (auto appendToState: this->state_cache.state_mapping[currentState]) {
-                                for (auto targetState: this->state_cache.state_mapping[stateWithBackEdgeInst->out()]) {
-                                    for (auto targetStateOutgoingEdges: backStateOutgoingEdges[targetState]) {
-                                        explicitNfa.add_trans(appendToState, targetStateOutgoingEdges.first, targetStateOutgoingEdges.second);
+                                for (auto targetState:
+                                    this->state_cache.state_mapping[stateWithBackEdgeInst->out()]) {
+                                    for (auto targetStateOutgoingEdges:
+                                        backStateOutgoingEdges[targetState]) {
+                                        explicitNfa.add_trans(appendToState, targetStateOutgoingEdges.first,
+                                                              targetStateOutgoingEdges.second);
                                     }
                                 }
                             }
@@ -213,10 +218,14 @@ namespace Vata2 {
         this->state_cache = {
             {}, // state_mapping holds states that map to each state (index) due to epsilon transitions
             defaultFalseVec, // is_final_state holds true for states that are final, false for the rest
-            defaultFalseVec, // is_state_nop_or_cap holds true for states that have type nop or cap, false for the rest
+            // is_state_nop_or_cap holds true for states that have type nop or cap, false for the rest
+            defaultFalseVec,
             defaultFalseVec, // is_last holds true for states that are last, false for the rest
-            defaultFalseVec, // has_state_incoming_edge holds true for states with an incoming edge, false for the rest
-            defaultFalseVec, // has_state_outgoing_back_edge holds true for states with outgoing edge to lower number state, false for the rest
+            // has_state_incoming_edge holds true for states with an incoming edge, false for the rest
+            defaultFalseVec,
+            // has_state_outgoing_back_edge holds true for states with outgoing edge to lower number state,
+            // false for the rest
+            defaultFalseVec,
         };
         const int startState = prog->start();
         const int progSize = prog->size();
@@ -378,11 +387,15 @@ namespace Vata2 {
      * @param appendToStatesVectorSize Current size of the appendToStates vector
      * @return True if there is a chain of epsilon transitions starting from the currentState, false otherwise
      */
-    bool RegexParser::should_delete_last_pushed(re2::Prog* prog, int currentState, std::vector<int>::size_type appendToStatesVectorSize) {
+    bool RegexParser::should_delete_last_pushed(
+            re2::Prog* prog,
+            int currentState,
+            std::vector<int>::size_type appendToStatesVectorSize) {
         // If the state is not last (i.e., it has an epsilon edge to the state+1), it's not the final state and is
         // currently the only one that we would append to, then we must keep it. If there already was some state, we
         // would be appending to it and the current state would be skipped
-        if (!state_cache.is_last[currentState] && !this->state_cache.is_final_state[currentState] && appendToStatesVectorSize == 1) {
+        if (!state_cache.is_last[currentState] && !this->state_cache.is_final_state[currentState] &&
+        appendToStatesVectorSize == 1) {
             return false;
         }
         // There is an epsilon transition from the currentState to the currentState + 1 which is of type nop or capture
@@ -450,7 +463,8 @@ namespace Vata2 {
             const auto& transitionList = inputNFA.get_transitions_from_state(state);
             for (const auto& transition: transitionList) {
                 for (auto stateTo: transition.states_to) {
-                    renumberedExplicitNfa.add_trans(renumberedStates[state], transition.symbol, renumberedStates[stateTo]);
+                    renumberedExplicitNfa.add_trans(renumberedStates[state], transition.symbol,
+                                                    renumberedStates[stateTo]);
                 }
             }
         }
