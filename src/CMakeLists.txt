@@ -69,6 +69,7 @@ add_executable(tests
 	tests-main.cc
 	tests-parser.cc
 	tests-parser-dispatch.cc
+	tests-re2parser.cc
 	tests-vm.cc
 	tests-vm-dispatch.cc
 	afa/tests-afa.cc
@@ -77,7 +78,7 @@ add_executable(tests
 	rra/tests-rrt.cc
 )
 
-target_link_libraries(tests libvata2)
+target_link_libraries(tests libvata2 re2)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(
