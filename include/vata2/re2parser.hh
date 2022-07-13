@@ -27,45 +27,45 @@ namespace Vata2 {
     private:
         /**
          * Holds all state cache vectors needed throughout the computation. Vector index is the state number
-         * stateMapping for each state (vector index), it holds a vector of states that map to it (cause by epsilon transitions)
-         * isFinalState determines if the state is final (true) or not (false)
-         * isStateNopOrCap determines if the state is of type nop/cap (true) or not (false)
-         * isLast determines if the state is last (true), meaning it has epsilon transition to the next state, or not (false)
-         * hasStateIncomingEdge determines if there is an incoming edge to the state (true) or not (false)
-         * hasStateOutgoingBackEdge determines if there is any outgoing edge leading to a state with a lower number (true) or not (false)
+         * state_mapping for each state (vector index), it holds a vector of states that map to it (cause by epsilon transitions)
+         * is_final_state determines if the state is final (true) or not (false)
+         * is_state_nop_or_cap determines if the state is of type nop/cap (true) or not (false)
+         * is_last determines if the state is last (true), meaning it has epsilon transition to the next state, or not (false)
+         * has_state_incoming_edge determines if there is an incoming edge to the state (true) or not (false)
+         * has_state_outgoing_back_edge determines if there is any outgoing edge leading to a state with a lower number (true) or not (false)
          */
         struct StateCache {
-            std::vector<std::vector<int>> stateMapping;
-            std::vector<bool> isFinalState;
-            std::vector<bool> isStateNopOrCap;
-            std::vector<bool> isLast;
-            std::vector<bool> hasStateIncomingEdge;
-            std::vector<bool> hasStateOutgoingBackEdge;
+            std::vector<std::vector<int>> state_mapping;
+            std::vector<bool> is_final_state;
+            std::vector<bool> is_state_nop_or_cap;
+            std::vector<bool> is_last;
+            std::vector<bool> has_state_incoming_edge;
+            std::vector<bool> has_state_outgoing_back_edge;
         };
 
         /**
          * Default RE2 options
          */
         RE2::Options options;
-        StateCache stateCache;
+        StateCache state_cache;
 
-        re2::Regexp* parseRegexString(const std::string& regexString);
+        re2::Regexp* parse_regex_string(const std::string& regexString);
 
-        Vata2::Nfa::Nfa convertProgToNfa(re2::Prog* prog);
+        Vata2::Nfa::Nfa convert_pro_to_nfa(re2::Prog* prog);
 
-        void createStateCache(re2::Prog* prog);
+        void create_state_cache(re2::Prog* prog);
 
-        int getFollowingStateWithBackEdge(re2::Prog* prog, int state);
+        int get_following_state_with_back_edge(re2::Prog* prog, int state);
 
-        bool shouldDeleteLastPushed(re2::Prog* prog, int currentState, std::vector<int>::size_type appendToStatesVectorSize);
+        bool should_delete_last_pushed(re2::Prog* prog, int currentState, std::vector<int>::size_type appendToStatesVectorSize);
 
-        void makeStateFinal(int state, Vata2::Nfa::Nfa &nfa);
+        void make_state_final(int state, Vata2::Nfa::Nfa &nfa);
 
-        static Vata2::Nfa::Nfa renumberStates(int progSize, Vata2::Nfa::Nfa &inputNFA);
+        static Vata2::Nfa::Nfa renumber_states(int progSize, Vata2::Nfa::Nfa &inputNFA);
 
     public:
         RegexParser() = default;
-        Vata2::Nfa::Nfa createNFA(const std::string& pattern);
+        Vata2::Nfa::Nfa create_nfa(const std::string& pattern);
     };
 }
 

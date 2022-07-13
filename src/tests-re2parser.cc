@@ -10,7 +10,7 @@ TEST_CASE("Vata2::RE2Parser basic_parsing")
 
     SECTION("Empty expression")
     {
-        Vata2::Nfa::Nfa aut = parser.createNFA("");
+        Vata2::Nfa::Nfa aut = parser.create_nfa("");
         REQUIRE(aut.finalstates.size() == aut.initialstates.size());
         REQUIRE(!aut.trans_empty());
         REQUIRE(!is_lang_empty(aut));
@@ -19,7 +19,7 @@ TEST_CASE("Vata2::RE2Parser basic_parsing")
 
     SECTION("Iteration test")
     {
-        Vata2::Nfa::Nfa aut = parser.createNFA("abcd");
+        Vata2::Nfa::Nfa aut = parser.create_nfa("abcd");
         REQUIRE(!aut.trans_empty());
         REQUIRE(!is_lang_empty(aut));
         REQUIRE(!is_in_lang(aut, Word{'a','b','c'}));
@@ -30,7 +30,7 @@ TEST_CASE("Vata2::RE2Parser basic_parsing")
 
     SECTION("Iteration test")
     {
-        Vata2::Nfa::Nfa aut = parser.createNFA("ab*cd*");
+        Vata2::Nfa::Nfa aut = parser.create_nfa("ab*cd*");
         REQUIRE(!aut.trans_empty());
         REQUIRE(!is_lang_empty(aut));
         REQUIRE(is_in_lang(aut, Word{'a','b','c'}));
