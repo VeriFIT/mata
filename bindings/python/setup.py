@@ -8,16 +8,17 @@ include_dir = os.path.join(project_dir, "include")
 third_party_include_dir = os.path.join(project_dir, "3rdparty")
 re2_include_dir = os.path.join(project_dir, "3rdparty", "re2")
 source_dir = os.path.join(project_dir, "src")
+re2_source_dir = os.path.join(project_dir, "3rdparty", "re2")
 
 
-def get_cpp_sources(source_dir):
+def get_cpp_sources(src_dir):
     """
     Finds all sources that ends either with .cc or .cpp
 
     :return: list of c++ sources
     """
     sources = []
-    for root, _, files in os.walk(source_dir):
+    for root, _, files in os.walk(src_dir):
         for file in files:
             ext = os.path.splitext(file)[1]
             if not file.startswith(('.', "test")) and ext in ('.cpp', '.cc'):
@@ -27,7 +28,7 @@ def get_cpp_sources(source_dir):
 extensions = [
     Extension(
         "pynfa",
-        sources=["pynfa.pyx"] + get_cpp_sources(source_dir),
+        sources=["pynfa.pyx"] + get_cpp_sources(source_dir) + get_cpp_sources(re2_source_dir),
         include_dirs=[include_dir, third_party_include_dir, re2_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
