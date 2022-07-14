@@ -513,6 +513,10 @@ namespace {
  * @return vata2::Nfa::Nfa corresponding to pattern
  */
 void Vata2::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
+    if (nfa == NULL) {
+        throw std::runtime_error("create_nfa: nfa should not be NULL");
+    }
+
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
