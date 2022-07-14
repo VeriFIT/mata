@@ -82,7 +82,7 @@ namespace {
          * @param prog Prog* to create vata2::Nfa::Nfa from
          * @return vata2::Nfa::Nfa created from prog
          */
-        Vata2::Nfa::Nfa convert_pro_to_nfa(re2::Prog* prog) {
+        void convert_pro_to_nfa(Vata2::Nfa::Nfa* output_nfa, re2::Prog* prog) {
             const int start_state = prog->start();
             const int prog_size = prog->size();
             int empty_flag;
@@ -227,7 +227,7 @@ namespace {
                 }
             }
 
-            return RegexParser::renumber_states(prog_size, explicit_nfa);
+            RegexParser::renumber_states(output_nfa, prog_size, explicit_nfa);
         }
 
     private: // private methods
@@ -465,9 +465,11 @@ namespace {
          * @param input_nfa vata2::Nfa::Nfa which states should be renumbered
          * @return Same vata2::Nfa::Nfa as input_nfa but with states from interval <0, numberOfStates>
          */
-        static Vata2::Nfa::Nfa renumber_states(int program_size, Vata2::Nfa::Nfa &input_nfa) {
+        static Vata2::Nfa::Nfa renumber_states(Vata2::Nfa::Nfa* output_nfa,
+                                               int program_size,
+                                               Vata2::Nfa::Nfa &input_nfa) {
             std::vector<unsigned long> renumbered_states(program_size, -1);
-            Vata2::Nfa::Nfa renumbered_explicit_nfa(0);
+            Vata2::Nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
             for (int state = 0; state < program_size; state++) {
                 const auto& transition_list = input_nfa.get_transitions_from_state(state);
                 // If the transition list is empty, the state is not used
@@ -510,13 +512,12 @@ namespace {
  * @param pattern regex as string
  * @return vata2::Nfa::Nfa corresponding to pattern
  */
-Vata2::Nfa::Nfa Vata2::RE2Parser::create_nfa(const std::string& pattern) {
+void Vata2::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
-    Nfa::Nfa final_nfa = regexParser.convert_pro_to_nfa(program);
+    regexParser.convert_pro_to_nfa(nfa, program);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
-    return final_nfa;
 }

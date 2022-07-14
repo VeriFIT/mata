@@ -23,7 +23,7 @@
 
 namespace Vata2 {
     namespace RE2Parser {
-        Vata2::Nfa::Nfa create_nfa(const std::string &pattern);
+        void create_nfa(Nfa::Nfa* nfa, const std::string &pattern);
     }
 }
 
