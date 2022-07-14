@@ -8,10 +8,10 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Flags
 set(cxx_compiler_flags
-  -pedantic-errors
   -Wextra
   -Wall
   -Wfloat-equal
+  -fms-extensions
   -fdiagnostics-show-option
   -std=c++14
   -Wctor-dtor-privacy
@@ -26,6 +26,13 @@ foreach(flag ${cxx_compiler_flags})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
 
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	# using regular Clang or AppleClang
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wgnu-anonymous-struct")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnested-anon-types")
+endif()
+
 # if DEBUG, also test coverage
 if(CMAKE_BUILD_TYPE MATCHES "Coverage")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
@@ -36,6 +43,8 @@ endif()
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
 include_directories(../include)
+include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
+include_directories(../3rdparty/re2)
 
 add_library(libvata2 STATIC
 # add_library(libvata2 SHARED
@@ -44,6 +53,7 @@ add_library(libvata2 STATIC
 	explicit_lts_sim.cc
 	parser.cc
 	parser-dispatch.cc
+	re2parser.cc
 	str-dispatch.cc
 	nfa/nfa.cc
 	nfa/nfa-dispatch.cc
@@ -65,6 +75,7 @@ add_executable(tests
 	tests-main.cc
 	tests-parser.cc
 	tests-parser-dispatch.cc
+	tests-re2parser.cc
 	tests-vm.cc
 	tests-vm-dispatch.cc
 	afa/tests-afa.cc
@@ -73,7 +84,11 @@ add_executable(tests
 	rra/tests-rrt.cc
 )
 
-target_link_libraries(tests libvata2)
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+	target_link_libraries(libvata2 pthread)
+endif()
+
+target_link_libraries(tests libvata2 re2)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(
