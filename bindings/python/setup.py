@@ -5,6 +5,8 @@ from Cython.Build import cythonize
 
 project_dir = os.path.abspath(os.path.join("..", ".."))
 include_dir = os.path.join(project_dir, "include")
+third_party_include_dir = os.path.join(project_dir, "3rdparty")
+re2_include_dir = os.path.join(project_dir, "3rdparty", "re2")
 source_dir = os.path.join(project_dir, "src")
 
 
@@ -26,7 +28,7 @@ extensions = [
     Extension(
         "pynfa",
         sources=["pynfa.pyx"] + get_cpp_sources(source_dir),
-        include_dirs=[include_dir],
+        include_dirs=[include_dir, third_party_include_dir, re2_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     )
