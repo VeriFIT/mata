@@ -134,6 +134,20 @@ cdef class Nfa:
         return_value = self.thisptr.post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
+    # External Constructors
+    @classmethod
+    def from_regex(cls, regex):
+        """Creates automaton from the regular expression
+
+        The format of the regex conforms to google RE2 regular expression library.
+
+        :param str regex: regular expression
+        :return: Nfa automaton
+        """
+        result = Nfa()
+        pynfa.create_nfa(result.thisptr, regex.encode('utf-8'))
+        return result
+
     # Operations
     @classmethod
     def determinize(cls, Nfa lhs):

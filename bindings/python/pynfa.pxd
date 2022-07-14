@@ -147,3 +147,6 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
+
+cdef extern from "vata2/re2parser.hh" namespace "Vata2::RE2Parser":
+    cdef void create_nfa(CNfa*, string)
