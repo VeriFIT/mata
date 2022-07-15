@@ -232,7 +232,7 @@ cdef class Nfa:
         return result, {tuple(sorted(k)): v for k, v in product_map}
 
     @classmethod
-    def complement(cls, Nfa lhs, OnTheFlyAlphabet alphabet, params = None):
+    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -246,7 +246,7 @@ cdef class Nfa:
         pynfa.complement(
             result.thisptr,
             dereference(lhs.thisptr),
-            <CAlphabet&>dereference(alphabet.thisptr),
+            <CAlphabet&>dereference(alphabet.as_base()),
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                 for k, v in params.items()
@@ -256,7 +256,7 @@ cdef class Nfa:
         return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
-    def make_complete(cls, Nfa lhs, State sink_state, OnTheFlyAlphabet alphabet):
+    def make_complete(cls, Nfa lhs, State sink_state, Alphabet alphabet):
         """Makes lhs complete
 
         :param Nfa lhs: automaton that will be made complete
@@ -265,7 +265,7 @@ cdef class Nfa:
         """
         if not lhs.thisptr.is_state(sink_state):
             lhs.thisptr.increase_size(lhs.state_size() + 1)
-        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.thisptr), sink_state)
+        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
     def revert(cls, Nfa lhs):
@@ -340,7 +340,7 @@ cdef class Nfa:
         return result, word
 
     @classmethod
-    def is_universal(cls, Nfa lhs, OnTheFlyAlphabet alphabet, params = None):
+    def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Tests if lhs is universal wrt given alphabet
 
         :param Nfa lhs: automaton tested for universality
@@ -352,7 +352,7 @@ cdef class Nfa:
         params = params or {'algo': 'antichains'}
         return pynfa.is_universal(
             dereference(lhs.thisptr),
-            <CAlphabet&>dereference(alphabet.thisptr),
+            <CAlphabet&>dereference(alphabet.as_base()),
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                 for k, v in params.items()
@@ -361,7 +361,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included(
-            cls, Nfa lhs, Nfa rhs, OnTheFlyAlphabet alphabet, params = None
+            cls, Nfa lhs, Nfa rhs, Alphabet alphabet, params = None
     ):
         """Test inclusion between two automata
 
@@ -376,7 +376,7 @@ cdef class Nfa:
         result = pynfa.is_incl(
             dereference(lhs.thisptr),
             dereference(rhs.thisptr),
-            <CAlphabet&>dereference(alphabet.thisptr),
+            <CAlphabet&>dereference(alphabet.as_base()),
             &word,
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
@@ -386,7 +386,7 @@ cdef class Nfa:
         return result, word
 
     @classmethod
-    def is_complete(cls, Nfa lhs, OnTheFlyAlphabet alphabet):
+    def is_complete(cls, Nfa lhs, Alphabet alphabet):
         """Test if automaton is complete
 
         :param Nf lhs: tested automaton
@@ -395,7 +395,7 @@ cdef class Nfa:
         """
         return pynfa.is_complete(
             dereference(lhs.thisptr),
-            <CAlphabet&>dereference(alphabet.thisptr)
+            <CAlphabet&>dereference(alphabet.as_base())
         )
 
     @classmethod
@@ -433,7 +433,7 @@ cdef class Nfa:
 
     # Helper functions
     @classmethod
-    def get_forward_reachable_states(cls, Nfa lhs, OnTheFlyAlphabet alphabet):
+    def get_forward_reachable_states(cls, Nfa lhs, Alphabet alphabet):
         """Returns list of reachable states from initial states
 
         WARNING: This is quite inefficient operation, that could be implemented better
@@ -497,7 +497,7 @@ cdef class Alphabet:
     cdef get_symbols(self):
         pass
 
-    cdef CAlphabet* as_base(self):
+    cdef pynfa.CAlphabet* as_base(self):
         pass
 
 cdef class CharAlphabet(Alphabet):
@@ -516,7 +516,7 @@ cdef class CharAlphabet(Alphabet):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
-    cdef CAlphabet* as_base(self):
+    cdef pynfa.CAlphabet* as_base(self):
         return <pynfa.CAlphabet*> self.thisptr
 
 
@@ -537,7 +537,7 @@ cdef class EnumAlphabet(Alphabet):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
-    cdef CAlphabet* as_base(self):
+    cdef pynfa.CAlphabet* as_base(self):
         return <pynfa.CAlphabet*> self.thisptr
 
 
