@@ -149,6 +149,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         clist[Symbol] get_symbols()
 
     cdef cppclass COnTheFlyAlphabet "Vata2::Nfa::OnTheFlyAlphabet" (CAlphabet):
+        StringToSymbolMap* symbol_map
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()

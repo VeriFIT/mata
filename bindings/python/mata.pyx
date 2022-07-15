@@ -13,6 +13,18 @@ cdef class Trans:
     """
     cdef mata.CTrans *thisptr
 
+    @property
+    def src(self):
+        return self.thisptr.src
+
+    @property
+    def symb(self):
+        return self.thisptr.symb
+
+    @property
+    def tgt(self):
+        return self.thisptr.tgt
+
     def __cinit__(self, State src=0, Symbol s=0, State tgt=0):
         self.thisptr = new mata.CTrans(src, s, tgt)
 
@@ -46,9 +58,11 @@ cdef class Nfa:
     Wrapper over NFA
     """
     cdef mata.CNfa *thisptr
+    cdef alphabet
 
-    def __cinit__(self, state_number = 0):
+    def __cinit__(self, state_number = 0, alphabet=None):
         self.thisptr = new mata.CNfa(state_number)
+        self.alphabet = alphabet
 
     def __dealloc__(self):
         del self.thisptr
@@ -109,7 +123,9 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in final_states])
         result += "transitions:\n"
         for trans in self.iterate():
-            result += f"{trans}\n"
+            symbol = trans.symb if self.alphabet is None \
+                else self.alphabet.reverse_translate_symbol(trans.symb)
+            result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
         return result
 
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
@@ -494,6 +510,9 @@ cdef class Alphabet:
     def translate_symbol(self, str symbol):
         pass
 
+    def reverse_translate_symbol(self, Symbol symbol):
+        pass
+
     cdef get_symbols(self):
         pass
 
@@ -512,6 +531,9 @@ cdef class CharAlphabet(Alphabet):
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
+    def reverse_translate_symbol(self, Symbol symbol):
+        return chr(symbol)
+
     cpdef get_symbols(self):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
@@ -522,16 +544,24 @@ cdef class CharAlphabet(Alphabet):
 
 cdef class EnumAlphabet(Alphabet):
     cdef mata.CEnumAlphabet *thisptr
+    cdef vector[string] enums_as_strings
 
     def __cinit__(self, enums):
-        cdef vector[string] enums_as_strings = [e.encode('utf-8') for e in enums]
-        self.thisptr = new mata.CEnumAlphabet(enums_as_strings.begin(), enums_as_strings.end())
+        self.enums_as_strings = [e.encode('utf-8') for e in enums]
+        self.thisptr = new mata.CEnumAlphabet(
+            self.enums_as_strings.begin(), self.enums_as_strings.end()
+        )
 
     def __dealloc__(self):
         del self.thisptr
 
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        if symbol < len(self.enums_as_strings):
+            raise IndexError(f"{symbol} is out of range of enumeration")
+        return self.enums_as_strings[symbol]
 
     cpdef get_symbols(self):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
@@ -553,6 +583,18 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        cdef umap[string, Symbol].iterator it = self.string_to_symbol_map.begin()
+        cdef umap[string, Symbol].iterator end = self.string_to_symbol_map.end()
+        while it != end:
+            key = dereference(it).first
+            value = dereference(it).second
+            if value == symbol:
+                return key
+            postinc(it)
+        raise IndexError(f"{symbol} is out of range of enumeration")
+
 
     cpdef get_symbols(self):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
