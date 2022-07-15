@@ -1843,3 +1843,84 @@ TEST_CASE("Vata2::Nfa::union_norename()") {
         REQUIRE(is_in_lang(result, zero));
     }
 }
+
+TEST_CASE("Vata2::Nfa::get_shortest_words()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        Word word{};
+        word.push_back('b');
+        word.push_back('a');
+        std::set<Word> expected{word};
+        Word word2{};
+        word2.push_back('a');
+        word2.push_back('a');
+        expected.insert(expected.begin(), word2);
+        REQUIRE(aut.get_shortest_words() == expected);
+
+        SECTION("Additional initial state with longer words")
+        {
+            aut.initialstates.push_back(8);
+            REQUIRE(aut.get_shortest_words() == expected);
+        }
+
+        SECTION("Change initial state")
+        {
+			aut.initialstates.clear();
+            aut.initialstates.push_back(8);
+
+            word.clear();
+            word.push_back('b');
+            word.push_back('b');
+            word.push_back('a');
+            expected = std::set<Word>{word};
+            word2.clear();
+            word2.push_back('b');
+            word2.push_back('a');
+            word2.push_back('a');
+            expected.insert(expected.begin(), word2);
+
+            REQUIRE(aut.get_shortest_words() == expected);
+        }
+    }
+
+    SECTION("Empty automaton")
+    {
+        REQUIRE(aut.get_shortest_words().empty());
+    }
+
+    SECTION("Automaton A")
+    {
+        FILL_WITH_AUT_A(aut);
+        Word word{};
+        word.push_back('b');
+        word.push_back('a');
+        std::set<Word> expected{word};
+        Word word2{};
+        word2.push_back('a');
+        word2.push_back('a');
+        expected.insert(expected.begin(), word2);
+        REQUIRE(aut.get_shortest_words() == expected);
+    }
+
+    SECTION("Single transition automaton")
+    {
+        aut.initialstates = { 1 };
+        aut.finalstates = { 2 };
+        aut.add_trans(1, 'a', 2);
+
+        REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{'a'}});
+    }
+
+    SECTION("Single state automaton")
+    {
+        aut.initialstates = { 1 };
+        aut.finalstates = { 1 };
+        aut.add_trans(1, 'a', 1);
+
+        REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
+    }
+}

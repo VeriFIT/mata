@@ -21,7 +21,6 @@
 
 // VATA headers
 #include <vata2/nfa.hh>
-#include <vata2/util.hh>
 #include <vata2/explicit_lts.hh>
 
 using std::tie;
@@ -87,9 +86,9 @@ std::ostream &std::operator<<(std::ostream &os, const Vata2::Nfa::Trans &trans) 
 
 Symbol OnTheFlyAlphabet::translate_symb(const std::string& str)
 { // {{{
-	auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
-	if (it_insert_pair.second) { return cnt_symbol++; }
-	else { return it_insert_pair.first->second; }
+    auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
+    if (it_insert_pair.second) { return cnt_symbol++; }
+    else { return it_insert_pair.first->second; }
 } // OnTheFlyAlphabet::translate_symb }}}
 
 std::list<Symbol> OnTheFlyAlphabet::get_symbols() const
@@ -498,6 +497,15 @@ bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
     }
 
     return !are_disjoint(cur, aut.finalstates);
+}
+
+WordSet Vata2::Nfa::Nfa::get_shortest_words() const
+{
+    // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
+    ShortestWordsMap shortest_words_map{*this};
+
+    // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
+    return shortest_words_map.get_shortest_words_for_states(this->initialstates);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1249,3 +1257,100 @@ std::ostream& std::operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nf
 		"|state_dict: " << std::to_string(nfa_wrap.state_dict) << "}";
 	return os;
 } // operator<<(NfaWrapper) }}}
+
+WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) const
+{
+    std::set <Word> result{};
+    WordLength shortest_words_length{-1};
+
+    for (auto state: states)
+    {
+        const auto& state_shortest_words_map{shortest_words_map.find(state)->second};
+        if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
+        {
+            result = state_shortest_words_map.second;
+            shortest_words_length = state_shortest_words_map.first;
+        }
+        else if (state_shortest_words_map.first == shortest_words_length)
+        {
+            // Append the shortest words from other state of the same length to the already found set of the shortest words.
+            result.insert(state_shortest_words_map.second.begin(),
+                          state_shortest_words_map.second.end());
+        }
+    }
+
+    return result;
+}
+
+void Vata2::Nfa::ShortestWordsMap::insert_initial_lengths()
+{
+    for (State state: reversed_automaton.initialstates)
+    {
+        shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{Word{}})));
+    }
+
+    processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+    lifo_queue.insert(lifo_queue.end(), reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+}
+
+void ShortestWordsMap::compute()
+{
+    State state{};
+    while (!lifo_queue.empty())
+    {
+        state = lifo_queue.front();
+        lifo_queue.pop_front();
+
+        // Compute the shortest words for the current state.
+        compute_for_state(state);
+    }
+}
+
+void ShortestWordsMap::compute_for_state(const State state)
+{
+    const LengthWordsPair& dst{map_default_shortest_words(state)};
+    WordLength dst_length_plus_one{dst.first + 1};
+    LengthWordsPair act{};
+
+    for (const TransSymbolStates& transition: reversed_automaton.get_transitions_from_state(state))
+    {
+        for (State state_to: transition.states_to)
+        {
+            const LengthWordsPair& orig{map_default_shortest_words(state_to)};
+            act = orig;
+
+            if ((act.first == -1) || (dst_length_plus_one < act.first))
+            {
+                // Found new shortest words after appending transition symbols.
+                act.second.clear();
+                update_current_words(act, dst, transition.symbol);
+            }
+            else if (dst_length_plus_one == act.first)
+            {
+                // Append transition symbol to increase length of the shortest words.
+                update_current_words(act, dst, transition.symbol);
+            }
+
+            if (orig.second != act.second)
+            {
+                shortest_words_map[state_to] = act;
+            }
+
+            if (processed.find(state_to) == processed.end())
+            {
+                processed.insert(state_to);
+                lifo_queue.push_back(state_to);
+            }
+        }
+    }
+}
+
+void Vata2::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
+{
+    for (Word word: dst.second)
+    {
+        word.insert(word.begin(), symbol);
+        act.second.insert(word);
+    }
+    act.first = dst.first + 1;
+}
