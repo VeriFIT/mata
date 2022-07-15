@@ -150,10 +150,11 @@ cdef class Nfa:
             del output_stream
         return result.decode(encoding)
 
-    def post_map_of(self, State st, OnTheFlyAlphabet alphabet):
+    def post_map_of(self, State st, Alphabet alphabet):
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
+        :param Alphabet alphabet: alphabet of the post
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
         symbol_map = {}
@@ -483,7 +484,23 @@ cdef class Nfa:
             [s.encode('utf-8') for s in word]
         )
 
-cdef class CharAlphabet:
+cdef class Alphabet:
+    def __cinit__(self):
+        pass
+
+    def __dealloc__(self):
+        pass
+
+    def translate_symbol(self, str symbol):
+        pass
+
+    cdef get_symbols(self):
+        pass
+
+    cdef CAlphabet* as_base(self):
+        pass
+
+cdef class CharAlphabet(Alphabet):
     cdef pynfa.CCharAlphabet *thisptr
 
     def __cinit__(self):
@@ -495,8 +512,15 @@ cdef class CharAlphabet:
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
+    cpdef get_symbols(self):
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
 
-cdef class EnumAlphabet:
+    cdef CAlphabet* as_base(self):
+        return <pynfa.CAlphabet*> self.thisptr
+
+
+cdef class EnumAlphabet(Alphabet):
     cdef pynfa.CEnumAlphabet *thisptr
 
     def __cinit__(self, enums):
@@ -509,21 +533,15 @@ cdef class EnumAlphabet:
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
+    cpdef get_symbols(self):
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
 
-cdef class DirectAlphabet:
-    cdef pynfa.CDirectAlphabet *thisptr
-
-    def __cinit__(self):
-        self.thisptr = new pynfa.CDirectAlphabet()
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+    cdef CAlphabet* as_base(self):
+        return <pynfa.CAlphabet*> self.thisptr
 
 
-cdef class OnTheFlyAlphabet:
+cdef class OnTheFlyAlphabet(Alphabet):
     cdef pynfa.COnTheFlyAlphabet *thisptr
     cdef StringToSymbolMap string_to_symbol_map
 
@@ -536,9 +554,12 @@ cdef class OnTheFlyAlphabet:
     def translate_symbol(self, str symbol):
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
-    cdef get_symbols(self):
+    cpdef get_symbols(self):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
+
+    cdef pynfa.CAlphabet* as_base(self):
+        return <pynfa.CAlphabet*> self.thisptr
 
 cdef subset_map_to_dictionary(SubsetMap subset_map):
     result = {}

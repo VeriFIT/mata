@@ -21,21 +21,6 @@ def test_char_alphabet():
     assert alphabet.translate_symbol('"0"') == 48
 
 
-def test_direct_alphabet():
-    """Tests direct alphabet
-
-    DirectAlphabet translates integers as strings into integers.
-    Other strings are translated to 0.
-    """
-    alphabet = pynfa.DirectAlphabet()
-    assert alphabet.translate_symbol("1") == 1
-    assert alphabet.translate_symbol("10") == 10
-    assert alphabet.translate_symbol("10a") == 10
-    assert alphabet.translate_symbol("a") == 0
-    assert alphabet.translate_symbol("0") == 0
-    assert alphabet.translate_symbol("ahoj") == 0
-
-
 def test_enum_alphabet():
     """Tests enumerated alphabet
 

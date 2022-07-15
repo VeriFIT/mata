@@ -132,23 +132,23 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef cppclass CAlphabet "Vata2::Nfa::Alphabet":
         CAlphabet() except +
 
-    cdef cppclass CCharAlphabet "Vata2::Nfa::CharAlphabet":
+    cdef cppclass CCharAlphabet "Vata2::Nfa::CharAlphabet" (CAlphabet):
         CCharAlphabet() except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
-    cdef cppclass CDirectAlphabet "Vata2::Nfa::DirectAlphabet":
+    cdef cppclass CDirectAlphabet "Vata2::Nfa::DirectAlphabet" (CAlphabet):
         CDirectAlphabet() except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
-    cdef cppclass CEnumAlphabet "Vata2::Nfa::EnumAlphabet":
+    cdef cppclass CEnumAlphabet "Vata2::Nfa::EnumAlphabet" (CAlphabet):
         CEnumAlphabet() except +
         CEnumAlphabet(vector[string].iterator, vector[string].iterator) except +
         Symbol translate_symb(string) except +
         clist[Symbol] get_symbols()
 
-    cdef cppclass COnTheFlyAlphabet "Vata2::Nfa::OnTheFlyAlphabet":
+    cdef cppclass COnTheFlyAlphabet "Vata2::Nfa::OnTheFlyAlphabet" (CAlphabet):
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
