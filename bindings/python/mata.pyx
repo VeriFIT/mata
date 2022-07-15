@@ -9,34 +9,46 @@ import subprocess
 
 cdef class Trans:
     """
-    Wrapper over the transitions
+    Wrapper over the transitions in NFA
     """
     cdef mata.CTrans *thisptr
 
     @property
     def src(self):
+        """
+        :return: source state of the transition
+        """
         return self.thisptr.src
 
     @property
     def symb(self):
+        """
+        :return: symbol for the transition
+        """
         return self.thisptr.symb
 
     @property
     def tgt(self):
+        """
+        :return: target state of the transition
+        """
         return self.thisptr.tgt
 
     def __cinit__(self, State src=0, Symbol s=0, State tgt=0):
+        """Constructor of the transition
+
+        :param State src: source state
+        :param Symbol s: symbol
+        :param State tgt: target state
+        """
         self.thisptr = new mata.CTrans(src, s, tgt)
 
     def __dealloc__(self):
+        """
+        Destructor
+        """
         if self.thisptr != NULL:
             del self.thisptr
-
-    def __eq__(self, Trans other):
-        return dereference(self.thisptr) == dereference(other.thisptr)
-
-    def __neq__(self, Trans other):
-        return dereference(self.thisptr) != dereference(other.thisptr)
 
     cdef copy_from(self, CTrans trans):
         """Copies the internals of trans into the wrapped pointer
@@ -46,6 +58,12 @@ cdef class Trans:
         self.thisptr.src = trans.src
         self.thisptr.symb = trans.symb
         self.thisptr.tgt = trans.tgt
+
+    def __eq__(self, Trans other):
+        return dereference(self.thisptr) == dereference(other.thisptr)
+
+    def __neq__(self, Trans other):
+        return dereference(self.thisptr) != dereference(other.thisptr)
 
     def __str__(self):
         return f"{self.thisptr.src}-[{self.thisptr.symb}]\u2192{self.thisptr.tgt}"
@@ -61,6 +79,11 @@ cdef class Nfa:
     cdef alphabet
 
     def __cinit__(self, state_number = 0, alphabet=None):
+        """Constructor of the NFA
+
+        :param int state_number: number of states in automaton
+        :param Alpabet alphabet: alphabet corresponding to the automaton
+        """
         self.thisptr = new mata.CNfa(state_number)
         self.alphabet = alphabet
 
@@ -68,42 +91,102 @@ cdef class Nfa:
         del self.thisptr
 
     def add_initial_state(self, State st):
+        """Adds initial state to automaton
+
+        :param State st: added initial state
+        """
         self.thisptr.add_initial(st)
 
     def add_initial_states(self, vector[State] states):
+        """Adds list of initial state to automaton
+
+        :param list states: list of initial states
+        """
         self.thisptr.add_initial(states)
 
     def has_initial_state(self, State st):
+        """Tests if automaton contains given state
+
+        :param State st: tested state
+        :return: true if automaton contains given state
+        """
         return self.thisptr.has_initial(st)
 
     def add_final_state(self, State st):
+        """Adds final state to automaton
+
+        :param State st: added final state
+        """
         self.thisptr.add_final(st)
 
     def has_final_state(self, State st):
+        """Tests if automaton contains given state
+
+        :param State st: tested state
+        :return: true if automaton contains given state
+        """
         return self.thisptr.has_final(st)
 
     def state_size(self):
+        """Returns number of states in automaton
+
+        :return: number of states in automaton
+        """
         return self.thisptr.get_num_of_states()
 
     def add_trans(self, Trans tr):
+        """Adds transition to automaton
+
+        :param Trans tr: added transition
+        """
         self.thisptr.add_trans(dereference(tr.thisptr))
 
     def add_trans_raw(self, State src, Symbol symb, State tgt):
+        """Constructs transition and adds it to automaton
+
+        :param State src: source state
+        :param Symbol symb: symbol
+        :param State tgt: target state
+        """
         self.thisptr.add_trans(src, symb, tgt)
 
     def has_trans(self, Trans tr):
+        """Tests if automaton contains transition
+
+        :param Trans tr: tested transition
+        :return: true if automaton contains transition
+        """
         return self.thisptr.has_trans(dereference(tr.thisptr))
 
     def has_trans_raw(self, State src, Symbol symb, State tgt):
+        """Tests if automaton contains transition
+
+        :param State src: source state
+        :param Symbol symb: symbol
+        :param State tgt: target state
+        :return: true if automaton contains transition
+        """
         return self.thisptr.has_trans(src, symb, tgt)
 
     def trans_empty(self):
+        """Tests if there are no transitions
+
+        :return: true if there are no transitions in automaton
+        """
         return self.thisptr.nothing_in_trans()
 
     def trans_size(self):
+        """Returns number of transitions in automaton
+
+        :return: number of transitions in automaton
+        """
         return self.thisptr.trans_size()
 
     def iterate(self):
+        """Iterates over all transitions
+
+        :return: stream of transitions
+        """
         iterator = self.thisptr.begin()
         while iterator != self.thisptr.end():
             trans = Trans()
@@ -501,6 +584,9 @@ cdef class Nfa:
         )
 
 cdef class Alphabet:
+    """
+    Base class for alphabets
+    """
     def __cinit__(self):
         pass
 
@@ -520,6 +606,9 @@ cdef class Alphabet:
         pass
 
 cdef class CharAlphabet(Alphabet):
+    """
+    CharAlphabet translates characters in quotes, such as 'a' or "b" to their ordinal values.
+    """
     cdef mata.CCharAlphabet *thisptr
 
     def __cinit__(self):
@@ -529,20 +618,43 @@ cdef class CharAlphabet(Alphabet):
         del self.thisptr
 
     def translate_symbol(self, str symbol):
+        """Translates character to its ordinal value. If the character is not in quotes,
+        it is interpreted as 0 byte
+
+        :param str symbol: translated symbol
+        :return: ordinal value of the symbol
+        """
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
     def reverse_translate_symbol(self, Symbol symbol):
-        return chr(symbol)
+        """Translates the ordinal value back to the character
+
+        :param Symbol symbol: integer symbol
+        :return: symbol as a character
+        """
+        return "'" + chr(symbol) + "'"
 
     cpdef get_symbols(self):
+        """Returns list of supported symbols
+        
+        :return: list of symbols
+        """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
     cdef mata.CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+        
+        :return: alphabet as CAlphabet*
+        """
         return <mata.CAlphabet*> self.thisptr
 
 
 cdef class EnumAlphabet(Alphabet):
+    """
+    EnumAlphabet represents alphabet that has fixed number of possible values
+    """
+
     cdef mata.CEnumAlphabet *thisptr
     cdef vector[string] enums_as_strings
 
@@ -556,22 +668,43 @@ cdef class EnumAlphabet(Alphabet):
         del self.thisptr
 
     def translate_symbol(self, str symbol):
+        """Translates the symbol ot its position in the enumeration
+
+        :param str symbol: translated symbol
+        :return: symbol as an position in the enumeration
+        """
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
     def reverse_translate_symbol(self, Symbol symbol):
+        """Translates the symbol back to its string representation
+
+        :param Symbol symbol: integer symbol (position in enumeration)
+        :return: symbol as the original string
+        """
         if symbol < len(self.enums_as_strings):
             raise IndexError(f"{symbol} is out of range of enumeration")
         return self.enums_as_strings[symbol]
 
     cpdef get_symbols(self):
+        """Returns list of supported symbols
+        
+        :return: list of supported symbols
+        """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
     cdef mata.CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+        
+        :return: alphabet as CAlphabet*
+        """
         return <mata.CAlphabet*> self.thisptr
 
 
 cdef class OnTheFlyAlphabet(Alphabet):
+    """
+    OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly
+    """
     cdef mata.COnTheFlyAlphabet *thisptr
     cdef StringToSymbolMap string_to_symbol_map
 
@@ -582,9 +715,19 @@ cdef class OnTheFlyAlphabet(Alphabet):
         del self.thisptr
 
     def translate_symbol(self, str symbol):
+        """Translates symbol to the position of the seen values
+
+        :param str symbol: translated symbol
+        :return: order of the symbol as was seen during the construction
+        """
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
     def reverse_translate_symbol(self, Symbol symbol):
+        """Translates symbol back to its string representation
+
+        :param Symbol symbol: integer symbol
+        :return: original string
+        """
         cdef umap[string, Symbol].iterator it = self.string_to_symbol_map.begin()
         cdef umap[string, Symbol].iterator end = self.string_to_symbol_map.end()
         while it != end:
@@ -597,13 +740,26 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
 
     cpdef get_symbols(self):
+        """Returns list of supported symbols
+        
+        :return: list of supported symbols
+        """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
     cdef mata.CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+        
+        :return: alphabet as CAlphabet*
+        """
         return <mata.CAlphabet*> self.thisptr
 
 cdef subset_map_to_dictionary(SubsetMap subset_map):
+    """Helper function that translates the unordered map to dictionary
+    
+    :param SubsetMap subset_map: map of state sets to states
+    :return: subset_map as dictionary
+    """
     result = {}
     cdef umap[StateSet, State].iterator it = subset_map.begin()
     while it != subset_map.end():
