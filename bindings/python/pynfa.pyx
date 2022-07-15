@@ -98,6 +98,20 @@ cdef class Nfa:
             preinc(iterator)
             yield trans
 
+    def __str__(self):
+        """String representation of the automaton displays states, and transitions
+
+        :return: string representation of the automaton
+        """
+        cdef vector[State] initial_states = self.thisptr.initialstates.ToVector()
+        cdef vector[State] final_states = self.thisptr.finalstates.ToVector()
+        result = "initial_states: {}\n".format([s for s in initial_states])
+        result += "final_states: {}\n".format([s for s in final_states])
+        result += "transitions:\n"
+        for trans in self.iterate():
+            result += f"{trans}\n"
+        return result
+
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
 

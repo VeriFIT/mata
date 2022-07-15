@@ -326,3 +326,12 @@ def test_to_dot():
     with open('test.dot', 'r') as test_handle:
         lines = test_handle.read()
     assert lines == expected
+
+def test_to_str():
+    lhs = pynfa.Nfa(2)
+    lhs.add_initial_state(0)
+    lhs.add_final_state(1)
+    lhs.add_trans_raw(0, 0, 0)
+    lhs.add_trans_raw(0, 1, 1)
+    expected = "initial_states: [0]\nfinal_states: [1]\ntransitions:\n0-[0]→0\n0-[1]→1\n"
+    assert str(lhs) == expected
