@@ -33,7 +33,8 @@ jobs:
 
       - name: Install Unix dependencies
         run: |
-          sudo apt-get -qq update && apt-get -qq install -y graphviz graphviz-dev
+          sudo apt-get -qq update 
+          sudo apt-get -qq install -y graphviz graphviz-dev
 
       - name: Install The Binding
         run: |
