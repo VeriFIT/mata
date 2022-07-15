@@ -1,4 +1,4 @@
-cimport pynfa
+cimport mata
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
@@ -11,10 +11,10 @@ cdef class Trans:
     """
     Wrapper over the transitions
     """
-    cdef pynfa.CTrans *thisptr
+    cdef mata.CTrans *thisptr
 
     def __cinit__(self, State src=0, Symbol s=0, State tgt=0):
-        self.thisptr = new pynfa.CTrans(src, s, tgt)
+        self.thisptr = new mata.CTrans(src, s, tgt)
 
     def __dealloc__(self):
         if self.thisptr != NULL:
@@ -45,10 +45,10 @@ cdef class Nfa:
     """
     Wrapper over NFA
     """
-    cdef pynfa.CNfa *thisptr
+    cdef mata.CNfa *thisptr
 
     def __cinit__(self, state_number = 0):
-        self.thisptr = new pynfa.CNfa(state_number)
+        self.thisptr = new mata.CNfa(state_number)
 
     def __dealloc__(self):
         del self.thisptr
@@ -122,8 +122,8 @@ cdef class Nfa:
         :param str output_file: name of the output file where the automaton will be stored
         :param str output_format: format of the output file (pdf/png/etc)
         """
-        cdef pynfa.ofstream* output
-        output = new pynfa.ofstream(output_file.encode('utf-8'))
+        cdef mata.ofstream* output
+        output = new mata.ofstream(output_file.encode('utf-8'))
         try:
             self.thisptr.print_to_DOT(dereference(output))
         finally:
@@ -140,8 +140,8 @@ cdef class Nfa:
         :param str encoding: encoding of the dot string
         :return: string with dot representation of the automaton
         """
-        cdef pynfa.stringstream* output_stream
-        output_stream = new pynfa.stringstream("")
+        cdef mata.stringstream* output_stream
+        output_stream = new mata.stringstream("")
         cdef string result
         try:
             self.thisptr.print_to_DOT(dereference(output_stream))
@@ -186,7 +186,7 @@ cdef class Nfa:
         :return: Nfa automaton
         """
         result = Nfa()
-        pynfa.create_nfa(result.thisptr, regex.encode(encoding))
+        mata.create_nfa(result.thisptr, regex.encode(encoding))
         return result
 
     # Operations
@@ -199,7 +199,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef SubsetMap subset_map
-        pynfa.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map)
+        mata.determinize(result.thisptr, dereference(lhs.thisptr), &subset_map)
         return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
@@ -211,7 +211,7 @@ cdef class Nfa:
         :return: union of lhs and rhs
         """
         result = Nfa()
-        pynfa.uni(
+        mata.uni(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr)
         )
         return result
@@ -226,7 +226,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef ProductMap product_map
-        pynfa.intersection(
+        mata.intersection(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), &product_map
         )
         return result, {tuple(sorted(k)): v for k, v in product_map}
@@ -243,7 +243,7 @@ cdef class Nfa:
         result = Nfa()
         params = params or {'algo': 'classical'}
         cdef SubsetMap subset_map
-        pynfa.complement(
+        mata.complement(
             result.thisptr,
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.as_base()),
@@ -265,7 +265,7 @@ cdef class Nfa:
         """
         if not lhs.thisptr.is_state(sink_state):
             lhs.thisptr.increase_size(lhs.state_size() + 1)
-        pynfa.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.as_base()), sink_state)
+        mata.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
     def revert(cls, Nfa lhs):
@@ -275,7 +275,7 @@ cdef class Nfa:
         :return: automaton with reversed transitions
         """
         result = Nfa()
-        pynfa.revert(result.thisptr, dereference(lhs.thisptr))
+        mata.revert(result.thisptr, dereference(lhs.thisptr))
         return result
 
     @classmethod
@@ -289,7 +289,7 @@ cdef class Nfa:
         :return: automaton, with epsilon transitions removed
         """
         result = Nfa(lhs.state_size())
-        pynfa.remove_epsilon(
+        mata.remove_epsilon(
             result.thisptr, dereference(lhs.thisptr), epsilon
         )
         return result
@@ -302,7 +302,7 @@ cdef class Nfa:
         :return: minimized automaton
         """
         result = Nfa()
-        pynfa.minimize(result.thisptr, dereference(lhs.thisptr))
+        mata.minimize(result.thisptr, dereference(lhs.thisptr))
         return result
 
     # Tests
@@ -313,7 +313,7 @@ cdef class Nfa:
         :param Nfa lhs: non-determinstic finite automaton
         :return: true if the lhs is deterministic
         """
-        return pynfa.is_deterministic(dereference(lhs.thisptr))
+        return mata.is_deterministic(dereference(lhs.thisptr))
 
     @classmethod
     def is_lang_empty_path_counterexample(cls, Nfa lhs):
@@ -324,7 +324,7 @@ cdef class Nfa:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Path path
-        result = pynfa.is_lang_empty(dereference(lhs.thisptr), &path)
+        result = mata.is_lang_empty(dereference(lhs.thisptr), &path)
         return result, path
 
 
@@ -336,7 +336,7 @@ cdef class Nfa:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Word word
-        result = pynfa.is_lang_empty_cex(dereference(lhs.thisptr), &word)
+        result = mata.is_lang_empty_cex(dereference(lhs.thisptr), &word)
         return result, word
 
     @classmethod
@@ -350,7 +350,7 @@ cdef class Nfa:
         :return: true if lhs is universal
         """
         params = params or {'algo': 'antichains'}
-        return pynfa.is_universal(
+        return mata.is_universal(
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.as_base()),
             {
@@ -373,7 +373,7 @@ cdef class Nfa:
         """
         cdef Word word
         params = params or {'algo': 'antichains'}
-        result = pynfa.is_incl(
+        result = mata.is_incl(
             dereference(lhs.thisptr),
             dereference(rhs.thisptr),
             <CAlphabet&>dereference(alphabet.as_base()),
@@ -393,7 +393,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet of the automaton
         :return: true if the automaton is complete
         """
-        return pynfa.is_complete(
+        return mata.is_complete(
             dereference(lhs.thisptr),
             <CAlphabet&>dereference(alphabet.as_base())
         )
@@ -406,7 +406,7 @@ cdef class Nfa:
         :param vector[Symbol] word: tested word
         :return: true if word is in language of automaton lhs
         """
-        return pynfa.is_in_lang(dereference(lhs.thisptr), <Word> word)
+        return mata.is_in_lang(dereference(lhs.thisptr), <Word> word)
 
     @classmethod
     def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
@@ -416,7 +416,7 @@ cdef class Nfa:
         :param vector[Symbol] word: tested word
         :return: true if any prefix of word is in language of automaton lhs
         """
-        return pynfa.is_prfx_in_lang(dereference(lhs.thisptr), <Word> word)
+        return mata.is_prfx_in_lang(dereference(lhs.thisptr), <Word> word)
 
     @classmethod
     def accepts_epsilon(cls, Nfa lhs):
@@ -438,7 +438,7 @@ cdef class Nfa:
 
         WARNING: This is quite inefficient operation, that could be implemented better
 
-        >>> pynfa.Nfa.get_forward_reachable_states(lhs)
+        >>> mata.Nfa.get_forward_reachable_states(lhs)
         {0, 1, 2}
 
         :param Nfa lhs: source automaton
@@ -459,27 +459,27 @@ cdef class Nfa:
     def get_word_for_path(cls, Nfa lhs, path):
         """For a given path (set of states) returns a corresponding word
 
-        >>> pynfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
+        >>> mata.Nfa.get_word_for_path(lhs, [0, 1, 2])
         ([1, 1], True)
 
         :param Nfa lhs: source automaton
         :param list path: list of states
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
-        return pynfa.get_word_for_path(dereference(lhs.thisptr), path)
+        return mata.get_word_for_path(dereference(lhs.thisptr), path)
 
     @classmethod
     def encode_word(cls, string_to_symbol, word):
         """Encodes word based on a string to symbol map
 
-        >>> pynfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
+        >>> mata.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
         [1, 2, 0, 1]
 
         :param dict string_to_symbol: dictionary of strings to integers
         :param word: list of strings representing a encoded word
         :return:
         """
-        return pynfa.encode_word(
+        return mata.encode_word(
             {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
             [s.encode('utf-8') for s in word]
         )
@@ -497,14 +497,14 @@ cdef class Alphabet:
     cdef get_symbols(self):
         pass
 
-    cdef pynfa.CAlphabet* as_base(self):
+    cdef mata.CAlphabet* as_base(self):
         pass
 
 cdef class CharAlphabet(Alphabet):
-    cdef pynfa.CCharAlphabet *thisptr
+    cdef mata.CCharAlphabet *thisptr
 
     def __cinit__(self):
-        self.thisptr = new pynfa.CCharAlphabet()
+        self.thisptr = new mata.CCharAlphabet()
 
     def __dealloc__(self):
         del self.thisptr
@@ -516,16 +516,16 @@ cdef class CharAlphabet(Alphabet):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
-    cdef pynfa.CAlphabet* as_base(self):
-        return <pynfa.CAlphabet*> self.thisptr
+    cdef mata.CAlphabet* as_base(self):
+        return <mata.CAlphabet*> self.thisptr
 
 
 cdef class EnumAlphabet(Alphabet):
-    cdef pynfa.CEnumAlphabet *thisptr
+    cdef mata.CEnumAlphabet *thisptr
 
     def __cinit__(self, enums):
         cdef vector[string] enums_as_strings = [e.encode('utf-8') for e in enums]
-        self.thisptr = new pynfa.CEnumAlphabet(enums_as_strings.begin(), enums_as_strings.end())
+        self.thisptr = new mata.CEnumAlphabet(enums_as_strings.begin(), enums_as_strings.end())
 
     def __dealloc__(self):
         del self.thisptr
@@ -537,16 +537,16 @@ cdef class EnumAlphabet(Alphabet):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
-    cdef pynfa.CAlphabet* as_base(self):
-        return <pynfa.CAlphabet*> self.thisptr
+    cdef mata.CAlphabet* as_base(self):
+        return <mata.CAlphabet*> self.thisptr
 
 
 cdef class OnTheFlyAlphabet(Alphabet):
-    cdef pynfa.COnTheFlyAlphabet *thisptr
+    cdef mata.COnTheFlyAlphabet *thisptr
     cdef StringToSymbolMap string_to_symbol_map
 
     def __cinit__(self, State initial_symbol = 0):
-        self.thisptr = new pynfa.COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
+        self.thisptr = new mata.COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
 
     def __dealloc__(self):
         del self.thisptr
@@ -558,8 +558,8 @@ cdef class OnTheFlyAlphabet(Alphabet):
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
         return [s for s in symbols]
 
-    cdef pynfa.CAlphabet* as_base(self):
-        return <pynfa.CAlphabet*> self.thisptr
+    cdef mata.CAlphabet* as_base(self):
+        return <mata.CAlphabet*> self.thisptr
 
 cdef subset_map_to_dictionary(SubsetMap subset_map):
     result = {}

@@ -27,8 +27,8 @@ def get_cpp_sources(src_dir):
 
 extensions = [
     Extension(
-        "pynfa",
-        sources=["pynfa.pyx"] + get_cpp_sources(source_dir) + get_cpp_sources(re2_source_dir),
+        "mata",
+        sources=["mata.pyx"] + get_cpp_sources(source_dir) + get_cpp_sources(re2_source_dir),
         include_dirs=[include_dir, third_party_include_dir, re2_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
@@ -36,6 +36,7 @@ extensions = [
 ]
 
 setup(
-    name="pynfa",
-    ext_modules = cythonize(extensions)
+    name="mata",
+    ext_modules=cythonize(extensions),
+    version=0.1
 )
