@@ -34,11 +34,14 @@ We use the general form of AFA, by Pavol V., and simple NFA.
   * **Automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
 * The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
 * Markers is the implicit option for all types of tokens, used if nothing is specified.
+* Shared nodes are used to share same formula or part of formulat among more transitions.
+* Initial formula is defined by key-value line `%Initial <Formula>`.
 * `true` means true and `false` means false.
 
 ### NFA 
 * The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula. 
 * Both symbol literals and states are determined positionally, corresponding to `auto` in AFA. Markers or enumeration can also be used.
+* Initial states are defined by key-value line `%Initial <Formula>` and final states by key-value line `%Final <Formula>`.
 
 ## Alphabet type
 Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), ascii (?), numbers (?), intervals of numbers or unicode or ascii.
@@ -78,7 +81,7 @@ s x & !y t
 q [a-z]
 ```
 ## Transducer
-A transducer has named tracks, and it has a key-value line starting with `%Tracks`. We use `x@<lit>` to say that the `<lit>` belongs to the track `x`. We may also specify their names by a type-identifier or enumeration. An example:
+A transducer has named tracks, and it has a key-value line starting with `%Tracks`. We use `<lit>@x` to say that the `<lit>` belongs to the track `x`. We may also specify their names by a type-identifier or enumeration. An example:
 ```
 @AFA-intervals
 %States-auto
