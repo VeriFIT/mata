@@ -31,6 +31,10 @@ jobs:
           python -m pip install --upgrade pip
           make -C bindings/python init
 
+      - name: Install Unix dependencies
+        run: |
+          sudo apt-get -qq update && apt-get -qq install -y graphviz graphviz-dev
+
       - name: Install The Binding
         run: |
           make -C bindings/python install

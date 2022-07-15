@@ -2,6 +2,7 @@
 
 import pytest
 import pynfa
+import os
 
 __author__ = 'Tomas Fiedor'
 
@@ -313,3 +314,15 @@ def test_minimize(
 
     minimized = pynfa.Nfa.minimize(lhs)
     assert minimized.trans_size() == 1
+
+def test_to_dot():
+    lhs = pynfa.Nfa()
+    expected = "digraph finiteAutomaton {\nnode [shape=circle];\nnode [shape=none, label=\"\"];\n}\n"
+    assert lhs.to_dot_str() == expected
+
+    lhs.to_dot_file('test.dot')
+    assert 'test.dot.pdf' in os.listdir('.')
+    assert 'test.dot' in os.listdir('.')
+    with open('test.dot', 'r') as test_handle:
+        lines = test_handle.read()
+    assert lines == expected

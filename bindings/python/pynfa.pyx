@@ -98,7 +98,16 @@ cdef class Nfa:
             preinc(iterator)
             yield trans
 
-    def to_dot(self, output_file='aut.dot', output_format='pdf'):
+    def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
+        """Transforms the automaton to dot format.
+
+        By default the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
+
+        One can choose other format that is supported by graphviz format (e.g. pdf or png).
+
+        :param str output_file: name of the output file where the automaton will be stored
+        :param str output_format: format of the output file (pdf/png/etc)
+        """
         cdef pynfa.ofstream* output
         output = new pynfa.ofstream(output_file.encode('utf-8'))
         try:
@@ -110,6 +119,22 @@ cdef class Nfa:
         _, err = run_safely_external_command(graphviz_command)
         if err:
             print(f"error while dot file: {err}")
+
+    def to_dot_str(self, encoding='utf-8'):
+        """Transforms the automaton to dot format string
+
+        :param str encoding: encoding of the dot string
+        :return: string with dot representation of the automaton
+        """
+        cdef pynfa.stringstream* output_stream
+        output_stream = new pynfa.stringstream("")
+        cdef string result
+        try:
+            self.thisptr.print_to_DOT(dereference(output_stream))
+            result = output_stream.str()
+        finally:
+            del output_stream
+        return result.decode(encoding)
 
     def post_map_of(self, State st, OnTheFlyAlphabet alphabet):
         """Returns mapping of symbols to set of states.
@@ -136,16 +161,17 @@ cdef class Nfa:
 
     # External Constructors
     @classmethod
-    def from_regex(cls, regex):
+    def from_regex(cls, regex, encoding='utf-8'):
         """Creates automaton from the regular expression
 
         The format of the regex conforms to google RE2 regular expression library.
 
         :param str regex: regular expression
+        :param str encoding: encoding of the string
         :return: Nfa automaton
         """
         result = Nfa()
-        pynfa.create_nfa(result.thisptr, regex.encode('utf-8'))
+        pynfa.create_nfa(result.thisptr, regex.encode(encoding))
         return result
 
     # Operations
