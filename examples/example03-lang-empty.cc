@@ -1,9 +1,9 @@
 // example03 - testing language emptiness
 
-#include <vata2/nfa.hh>
+#include <mata/nfa.hh>
 #include <iostream>
 
-using namespace Vata2::Nfa;
+using namespace Mata::Nfa;
 
 int main()
 {

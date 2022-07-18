@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,21 +8,21 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_BINARY_RELATION_HH_
-#define _VATA2_BINARY_RELATION_HH_
+#ifndef _MATA_BINARY_RELATION_HH_
+#define _MATA_BINARY_RELATION_HH_
 
-// VATA headers
-#include <vata2/convert.hh>
-#include <vata2/simutil/vata.hh>
-#include <vata2/simutil/transl_weak.hh>
-#include <vata2/simutil/two_way_dict.hh>
+// MATA headers
+#include <mata/convert.hh>
+#include <mata/simutil/mata.hh>
+#include <mata/simutil/transl_weak.hh>
+#include <mata/simutil/two_way_dict.hh>
 
 // Standard library headers
 #include <vector>
 #include <algorithm>
 #include <unordered_map>
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -38,7 +38,7 @@ namespace Vata2
  *
  * A binary relation addressed from indices from 0 to @p size_ - 1
  */
-class Vata2::Util::BinaryRelation
+class Mata::Util::BinaryRelation
 {
 	std::vector<bool> data_;
 	size_t rowSize_;
@@ -449,7 +449,7 @@ public:
 	}
 };
 
-class Vata2::Util::Identity
+class Mata::Util::Identity
 {
 private:  // data members
 
@@ -588,15 +588,15 @@ public:
 /**
  * @brief  A binary relation with discontinuous indexing
  */
-class Vata2::Util::DiscontBinaryRelation
+class Mata::Util::DiscontBinaryRelation
 {
 public:   // data types
 
 	using IndexType    = std::unordered_map<size_t, std::vector<size_t>>;
 	// using DictType     = std::unordered_map<size_t, size_t>;
-	using DictType     = Vata2::Util::TwoWayDict<size_t, size_t,
+	using DictType     = Mata::Util::TwoWayDict<size_t, size_t,
 		std::unordered_map<size_t, size_t>, std::unordered_map<size_t, size_t>>;
-	using TranslType   = Vata2::Util::TranslatorWeak<DictType>;
+	using TranslType   = Mata::Util::TranslatorWeak<DictType>;
 
 private:  // data members
 

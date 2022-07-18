@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,18 +8,18 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_EXPLICIT_LTS_HH_
-#define _VATA2_EXPLICIT_LTS_HH_
+#ifndef _MATA_EXPLICIT_LTS_HH_
+#define _MATA_EXPLICIT_LTS_HH_
 
 #include <vector>
 
-#include <vata2/simutil/binary_relation.hh>
-#include <vata2/simutil/smart_set.hh>
+#include <mata/simutil/binary_relation.hh>
+#include <mata/simutil/smart_set.hh>
 
 
-namespace Vata2 { class ExplicitLTS; }
+namespace Mata { class ExplicitLTS; }
 
-class Vata2::ExplicitLTS {
+class Mata::ExplicitLTS {
 
 	size_t states_;
 	size_t transitions_;

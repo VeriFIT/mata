@@ -1,5 +1,5 @@
 # The .fa format for automata
-This is a draft for the `.fa` (finite automata) format for automata. It started as a modification of the [.vtf format](https://github.com/ondrik/automata-benchmarks/tree/master/vtf) of VATA2.
+This is a draft for the `.fa` (finite automata) format for automata. It started as a modification of the [.vtf format](https://github.com/ondrik/automata-benchmarks/tree/master/vtf) of MATA.
 The suffix a and name `.fa` is so far preliminary, as the entire content of this file, and serves to facilitate the discussion. 
 The .fa format deviates from the .vtf format is concerned with only a subset of what is considered in .vtf.
 
@@ -74,7 +74,7 @@ Examples of files in the `.vtf` format follow:
 ### Finite automata
 [link](nfa-example.vtf)
 ```
-# Example of the VATA format for storing or exchanging automata
+# Example of the MATA format for storing or exchanging automata
 #
 # comments start with '#'
 
@@ -103,7 +103,7 @@ q1 () q2                          # () is used for epsilon transitions
 ### Tree automata
 [link](nta-example.vtf)
 ```
-# Example of tree automata in the VATA format
+# Example of tree automata in the MATA format
 @NTA               # nondeterministic tree automaton
 %Root q2           # root states (required)
 q1 a (q1 q2)       # the format of transitions is <parent> <symbol> (<child_1> ... <child_n>)
@@ -114,7 +114,7 @@ q2 c               # is equivalent to q2 c ()
 ### Finite automata with transitions in BDDs
 [link](nfa-bdd-example.vtf)
 ```
-# Example of finite automata with transitions in a BDD in the VATA format
+# Example of finite automata with transitions in a BDD in the MATA format
 @NFA-BDD          # NFAs with transitions in BDD
 %Symbol-Vars 8    # number of Boolean variables in the alphabet (required)
 %Initial q1 q2
@@ -128,7 +128,7 @@ q3 xxxxxxxx q1    # the length needs to match the value in '%Symbol-Vars'
 ### Finite automata with everything in BDDs
 [link](nfa-bdd-full-example.vtf)
 ```
-# Example of finite automata where both states and transitions are in a BDD in the VATA format
+# Example of finite automata where both states and transitions are in a BDD in the MATA format
 @NFA-BDD-FULL     # NFAs with states and transitions in BDD
 %State-Vars 3     # number of Boolean variables in states (required)
 %Symbol-Vars 8    # number of Boolean variables in the alphabet (required)
@@ -142,7 +142,7 @@ xxx xx11xx00 11x  # 'x' in the binary vectors denote don't care values
 ### A sequence of operations
 [link](code.vtf)
 ```
-# Example of how to define a sequence of operations in the VATA format
+# Example of how to define a sequence of operations in the MATA format
 
 @NFA
 %Name nfa1
@@ -170,7 +170,7 @@ bool empty = (isempty nfa3)
 ### Symbolic finite automata
 [link](sfa-example.vtf)
 ```
-# Example of a symbolic finite automaton (in the sense of Margus & Loris) in the VATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
+# Example of a symbolic finite automaton (in the sense of Margus & Loris) in the MATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
 @SFA               # symbolic finite automaton
 %Name sfa1         # identifier (optional)
 %Initial q1        # initial states (required)
@@ -187,7 +187,7 @@ q1 "(forall ((x Int)) (= cur x))" q3 # at most one free variable in the formula)
 ### Finite transducers
 [link](nft-example.vtf)
 ```
-# Example of a finite transducer in the VATA format
+# Example of a finite transducer in the MATA format
 @NFT               # nondeterministic finite transducer
 %Name  trans       # name (optional)
 %Initial q1        # initial states (required)
@@ -203,7 +203,7 @@ q2 (a b) () q3
 ### Symbolic finite transducers
 [link](sft-example.vtf)
 ```
-# Example of a symbolic finite transducer in the VATA format
+# Example of a symbolic finite transducer in the MATA format
 @SFT               # symbolic finite transducer
 %Name  trans       # name (optional)
 %Initial q1        # initial states (required)
@@ -227,7 +227,7 @@ q1 ("(in x (list 1 2 3)") ("x") q3      # the input symbol is one of {1,2,3}, th
 ### Probabilistic automata
 [link](dpa-example.vtf)
 ```
-# Example of a deterministic probabilistic automaton in the VATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
+# Example of a deterministic probabilistic automaton in the MATA format [TENTATIVE PROPOSAL, NOT FIXED!!!]
 @DPA                     # deterministic probabilistic automaton
 %Name dpa1               # identifier (optional)
 %Initial q1:0.5 q2:0.5   # initial states + probabilities (required) 
@@ -243,7 +243,7 @@ q3 b:0.3 q3
 ### Relations over states
 [link](state-rel-example.vtf)
 ```
-# Example of a relation on automaton states in the VATA format
+# Example of a relation on automaton states in the MATA format
 @NFA
 %Name aut1
 %Initial q1 q2

@@ -1,10 +1,10 @@
 // example04-complement.cc - complementing an automaton
 
-#include <vata2/nfa.hh>
+#include <mata/nfa.hh>
 #include <iostream>
 #include <fstream>
 
-using namespace Vata2::Nfa;
+using namespace Mata::Nfa;
 
 int main(int argc, char *argv[])
 {
@@ -21,12 +21,12 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	Vata2::Parser::Parsed parsed;
+	Mata::Parser::Parsed parsed;
 	Nfa aut;
 	StringToSymbolMap stsm;
 	OnTheFlyAlphabet alph(&stsm);
 	try {
-		parsed = Vata2::Parser::parse_vtf(fs, true);
+		parsed = Mata::Parser::parse_vtf(fs, true);
 		fs.close();
 
 		if (parsed.size() != 1) {
@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	}
 	catch (const std::exception& ex) {
 		fs.close();
-		std::cerr << "libVATA2 error: " << ex.what() << "\n";
+		std::cerr << "libMATA error: " << ex.what() << "\n";
 		return EXIT_FAILURE;
 	}
 

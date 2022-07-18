@@ -2,7 +2,7 @@
  *
  * Copyright (c) TODO
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _VATA2_AFA_HH_
-#define _VATA2_AFA_HH_
+#ifndef _MATA_AFA_HH_
+#define _MATA_AFA_HH_
 
 #include <algorithm>
 #include <cassert>
@@ -26,12 +26,12 @@
 #include <unordered_set>
 #include <vector>
 
-// VATA2 headers
-#include <vata2/nfa.hh>
-#include <vata2/parser.hh>
-#include <vata2/util.hh>
+// MATA headers
+#include <mata/nfa.hh>
+#include <mata/parser.hh>
+#include <mata/util.hh>
 
-namespace Vata2
+namespace Mata
 {
 namespace Afa
 {
@@ -39,20 +39,20 @@ extern const std::string TYPE_AFA;
 
 // START OF THE DECLARATIONS
 
-using State = Vata2::Nfa::State;
-using Symbol = Vata2::Nfa::Symbol;
+using State = Mata::Nfa::State;
+using Symbol = Mata::Nfa::Symbol;
 
-using SymbolToStringMap = Vata2::Nfa::SymbolToStringMap;
-using StateToStringMap = Vata2::Nfa::StateToStringMap;
-using StringToStateMap = Vata2::Nfa::StringToStateMap;
-using StringToSymbolMap = Vata2::Nfa::StringToSymbolMap;
+using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
+using StateToStringMap = Mata::Nfa::StateToStringMap;
+using StringToStateMap = Mata::Nfa::StringToStateMap;
+using StringToSymbolMap = Mata::Nfa::StringToSymbolMap;
 
-using Path = Vata2::Nfa::Path;
-using Word = Vata2::Nfa::Word;
+using Path = Mata::Nfa::Path;
+using Word = Mata::Nfa::Word;
 
-using StringDict = Vata2::Nfa::StringDict;
+using StringDict = Mata::Nfa::StringDict;
 
-using Alphabet = Vata2::Nfa::Alphabet;
+using Alphabet = Mata::Nfa::Alphabet;
 
 /// A transition
 struct Trans
@@ -74,7 +74,7 @@ struct Trans
 struct Afa;
 
 /// serializes Afa into a ParsedSection
-Vata2::Parser::ParsedSection serialize(
+Mata::Parser::ParsedSection serialize(
 	const Afa&                aut,
 	const SymbolToStringMap*  symbol_map = nullptr,
 	const StateToStringMap*   state_map = nullptr);
@@ -101,7 +101,7 @@ public:
 	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
-		return Vata2::util::haskey(this->initialstates, state);
+		return Mata::util::haskey(this->initialstates, state);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
 	void add_final(const std::vector<State> vec)
@@ -110,7 +110,7 @@ public:
 	} // }}}
 	bool has_final(State state) const
 	{ // {{{
-		return Vata2::util::haskey(this->finalstates, state);
+		return Mata::util::haskey(this->finalstates, state);
 	} // }}}
 
 	void add_trans(const Trans& trans);
@@ -271,13 +271,13 @@ bool is_complete(const Afa& aut, const Alphabet& alphabet);
 /** Loads an automaton from Parsed object */
 void construct(
 	Afa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map = nullptr,
 	StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 inline Afa construct(
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map = nullptr,
 	StringToStateMap*                    state_map = nullptr)
 { // {{{
@@ -289,13 +289,13 @@ inline Afa construct(
 /** Loads an automaton from Parsed object */
 void construct(
 	Afa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 inline Afa construct(
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map = nullptr)
 { // {{{
@@ -348,24 +348,24 @@ void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Afa */
-} /* Vata2 */
+} /* Mata */
 
 namespace std
 { // {{{
 template <>
-struct hash<Vata2::Afa::Trans>
+struct hash<Mata::Afa::Trans>
 {
-	inline size_t operator()(const Vata2::Afa::Trans& trans) const
+	inline size_t operator()(const Mata::Afa::Trans& trans) const
 	{
-		size_t accum = std::hash<Vata2::Afa::State>{}(trans.src);
-		accum = Vata2::util::hash_combine(accum, trans.formula);
+		size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
+		accum = Mata::util::hash_combine(accum, trans.formula);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const Vata2::Afa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Vata2::Afa::AfaWrapper& afa_wrap);
+std::ostream& operator<<(std::ostream& os, const Mata::Afa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap);
 } // std }}}
 
 
-#endif /* _VATA2_AFA_HH_ */
+#endif /* _MATA_AFA_HH_ */

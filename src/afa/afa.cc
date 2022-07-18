@@ -2,7 +2,7 @@
  *
  * Copyright (c) TODO TODO
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,20 +19,20 @@
 #include <list>
 #include <unordered_set>
 
-// VATA headers
-#include <vata2/afa.hh>
-#include <vata2/util.hh>
-#include <vata2/vm-dispatch.hh>
+// MATA headers
+#include <mata/afa.hh>
+#include <mata/util.hh>
+#include <mata/vm-dispatch.hh>
 
 using std::tie;
 
-using namespace Vata2::util;
-using namespace Vata2::Afa;
-using Vata2::Afa::Symbol;
+using namespace Mata::util;
+using namespace Mata::Afa;
+using Mata::Afa::Symbol;
 
-const std::string Vata2::Afa::TYPE_AFA = "AFA";
+const std::string Mata::Afa::TYPE_AFA = "AFA";
 
-std::ostream& std::operator<<(std::ostream& os, const Vata2::Afa::Trans& trans)
+std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::Trans& trans)
 { // {{{
 	std::string result = "(" + std::to_string(trans.src) + ", " + trans.formula + ")";
 	return os << result;
@@ -58,13 +58,13 @@ size_t Afa::trans_size() const
 } // trans_size() }}}
 
 
-std::ostream& Vata2::Afa::operator<<(std::ostream& os, const Afa& afa)
+std::ostream& Mata::Afa::operator<<(std::ostream& os, const Afa& afa)
 { // {{{
 	return os << std::to_string(serialize(afa));
 } // Nfa::operator<<(ostream) }}}
 
 
-bool Vata2::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
+bool Mata::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
 { // {{{
   assert(&lhs);
   assert(&rhs);
@@ -74,7 +74,7 @@ bool Vata2::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
 } // are_disjoint }}}
 
 
-void Vata2::Afa::union_norename(
+void Mata::Afa::union_norename(
 	Afa*        result,
 	const Afa&  lhs,
 	const Afa&  rhs)
@@ -89,7 +89,7 @@ void Vata2::Afa::union_norename(
 } // union_norename }}}
 
 
-Afa Vata2::Afa::union_rename(
+Afa Mata::Afa::union_rename(
 	const Afa&  lhs,
 	const Afa&  rhs)
 { // {{{
@@ -101,7 +101,7 @@ Afa Vata2::Afa::union_rename(
 } // union_rename }}}
 
 
-bool Vata2::Afa::is_lang_empty(const Afa& aut, Path* cex)
+bool Mata::Afa::is_lang_empty(const Afa& aut, Path* cex)
 { // {{{
   assert(&aut);
   assert(&cex);
@@ -111,7 +111,7 @@ bool Vata2::Afa::is_lang_empty(const Afa& aut, Path* cex)
 } // is_lang_empty }}}
 
 
-bool Vata2::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
+bool Mata::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
 { // {{{
 	assert(nullptr != cex);
 
@@ -123,7 +123,7 @@ bool Vata2::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
 } // is_lang_empty_cex }}}
 
 
-void Vata2::Afa::make_complete(
+void Mata::Afa::make_complete(
 	Afa*             aut,
 	const Alphabet&  alphabet,
 	State            sink_state)
@@ -138,13 +138,13 @@ void Vata2::Afa::make_complete(
 } // make_complete }}}
 
 
-Vata2::Parser::ParsedSection Vata2::Afa::serialize(
+Mata::Parser::ParsedSection Mata::Afa::serialize(
 	const Afa&                aut,
 	const SymbolToStringMap*  symbol_map,
 	const StateToStringMap*   state_map)
 { // {{{
-	Vata2::Parser::ParsedSection parsec;
-	parsec.type = Vata2::Afa::TYPE_AFA;
+	Mata::Parser::ParsedSection parsec;
+	parsec.type = Mata::Afa::TYPE_AFA;
 
 	using bool_str_pair = std::pair<bool, std::string>;
 
@@ -206,7 +206,7 @@ Vata2::Parser::ParsedSection Vata2::Afa::serialize(
 } // serialize }}}
 
 
-void Vata2::Afa::revert(Afa* result, const Afa& aut)
+void Mata::Afa::revert(Afa* result, const Afa& aut)
 { // {{{
 	assert(nullptr != result);
 
@@ -217,7 +217,7 @@ void Vata2::Afa::revert(Afa* result, const Afa& aut)
 } // revert }}}
 
 
-void Vata2::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
+void Mata::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
 { // {{{
 	assert(nullptr != result);
 
@@ -229,7 +229,7 @@ void Vata2::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
 } // remove_epsilon }}}
 
 
-void Vata2::Afa::minimize(
+void Mata::Afa::minimize(
 	Afa*               result,
 	const Afa&         aut,
 	const StringDict&  params)
@@ -244,18 +244,18 @@ void Vata2::Afa::minimize(
 } // minimize }}}
 
 
-void Vata2::Afa::construct(
+void Mata::Afa::construct(
 	Afa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map)
 { // {{{
 	assert(nullptr != aut);
 	assert(nullptr != alphabet);
 
-	if (parsec.type != Vata2::Afa::TYPE_AFA) {
+	if (parsec.type != Mata::Afa::TYPE_AFA) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-			Vata2::Afa::TYPE_AFA + "\"");
+                                 Mata::Afa::TYPE_AFA + "\"");
 	}
 
 	bool remove_state_map = false;
@@ -319,9 +319,9 @@ void Vata2::Afa::construct(
 } // construct }}}
 
 
-void Vata2::Afa::construct(
+void Mata::Afa::construct(
 	Afa*                                 aut,
-	const Vata2::Parser::ParsedSection&  parsec,
+	const Mata::Parser::ParsedSection&  parsec,
 	StringToSymbolMap*                   symbol_map,
 	StringToStateMap*                    state_map)
 { // {{{
@@ -336,7 +336,7 @@ void Vata2::Afa::construct(
 
 	auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
 
-  Vata2::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
+  Mata::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
 
 	try
 	{
@@ -352,7 +352,7 @@ void Vata2::Afa::construct(
 } // construct(StringToSymbolMap) }}}
 
 
-bool Vata2::Afa::is_in_lang(const Afa& aut, const Word& word)
+bool Mata::Afa::is_in_lang(const Afa& aut, const Word& word)
 { // {{{
   assert(&aut);
   assert(&word);
@@ -362,7 +362,7 @@ bool Vata2::Afa::is_in_lang(const Afa& aut, const Word& word)
 } // is_in_lang }}}
 
 
-bool Vata2::Afa::is_prfx_in_lang(const Afa& aut, const Word& word)
+bool Mata::Afa::is_prfx_in_lang(const Afa& aut, const Word& word)
 { // {{{
   assert(&aut);
   assert(&word);
@@ -372,7 +372,7 @@ bool Vata2::Afa::is_prfx_in_lang(const Afa& aut, const Word& word)
 } // is_prfx_in_lang }}}
 
 
-bool Vata2::Afa::is_deterministic(const Afa& aut)
+bool Mata::Afa::is_deterministic(const Afa& aut)
 { // {{{
   assert(&aut);
 
@@ -381,7 +381,7 @@ bool Vata2::Afa::is_deterministic(const Afa& aut)
 } // is_deterministic }}}
 
 
-bool Vata2::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
+bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
 { // {{{
   assert(&aut);
   assert(&alphabet);
@@ -390,7 +390,7 @@ bool Vata2::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
   assert(false);
 } // is_complete }}}
 
-bool Vata2::Afa::accepts_epsilon(const Afa& aut)
+bool Mata::Afa::accepts_epsilon(const Afa& aut)
 { // {{{
 	for (State st : aut.initialstates) {
 		if (haskey(aut.finalstates, st)) return true;
@@ -399,7 +399,7 @@ bool Vata2::Afa::accepts_epsilon(const Afa& aut)
 	return false;
 } // accepts_epsilon }}}
 
-std::ostream& std::operator<<(std::ostream& os, const Vata2::Afa::AfaWrapper& afa_wrap)
+std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap)
 { // {{{
 	os << "{AFA wrapper|AFA: " << afa_wrap.afa << "|alphabet: " << afa_wrap.alphabet <<
 		"|state_dict: " << std::to_string(afa_wrap.state_dict) << "}";

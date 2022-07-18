@@ -1,9 +1,9 @@
 // TODO: add header
 
-#ifndef _VATA2_STR_HH_
-#define _VATA2_STR_HH_
+#ifndef _MATA_STR_HH_
+#define _MATA_STR_HH_
 
-namespace Vata2
+namespace Mata
 {
 namespace Str
 {
@@ -13,6 +13,6 @@ void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Str */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_STR_HH_ */
+#endif /* _MATA_STR_HH_ */

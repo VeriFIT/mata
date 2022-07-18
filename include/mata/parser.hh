@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * this program is free software; you can redistribute it and/or modify
  * it under the terms of the gnu general public license as published by
@@ -16,8 +16,8 @@
  */
 
 
-#ifndef _VATA2_PARSER_HH_
-#define _VATA2_PARSER_HH_
+#ifndef _MATA_PARSER_HH_
+#define _MATA_PARSER_HH_
 
 #include <cassert>
 #include <list>
@@ -26,10 +26,10 @@
 #include <string>
 #include <vector>
 
-// VATA headers
-#include <vata2/util.hh>
+// MATA headers
+#include <mata/util.hh>
 
-namespace Vata2
+namespace Mata
 {
 namespace Parser
 {
@@ -144,8 +144,8 @@ void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Parser */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_PARSER_HH_ */
+#endif /* _MATA_PARSER_HH_ */
 
 

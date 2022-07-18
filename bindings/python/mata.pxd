@@ -21,14 +21,14 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-cdef extern from "vata2/ord_vector.hh" namespace "Vata2::Util":
-    cdef cppclass COrdVector "Vata2::Util::OrdVector" [T]:
+cdef extern from "mata/ord_vector.hh" namespace "Mata::Util":
+    cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
         COrdVector() except+
         COrdVector(vector[T]) except+
         vector[T] ToVector()
 
 
-cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
+cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef uintptr_t Symbol
@@ -47,7 +47,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringDict
 
-    cdef cppclass CTrans "Vata2::Nfa::Trans":
+    cdef cppclass CTrans "Mata::Nfa::Trans":
         # Public Attributes
         State src
         Symbol symb
@@ -61,7 +61,7 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
-    cdef cppclass CNfa "Vata2::Nfa::Nfa":
+    cdef cppclass CNfa "Mata::Nfa::Nfa":
         # Nested iterator
         cppclass const_iterator:
             const_iterator()
@@ -129,30 +129,30 @@ cdef extern from "vata2/nfa.hh" namespace "Vata2::Nfa":
     cdef Word encode_word(StringToSymbolMap&, vector[string])
 
     # Alphabets
-    cdef cppclass CAlphabet "Vata2::Nfa::Alphabet":
+    cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
         CAlphabet() except +
 
-    cdef cppclass CCharAlphabet "Vata2::Nfa::CharAlphabet" (CAlphabet):
+    cdef cppclass CCharAlphabet "Mata::Nfa::CharAlphabet" (CAlphabet):
         CCharAlphabet() except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
-    cdef cppclass CDirectAlphabet "Vata2::Nfa::DirectAlphabet" (CAlphabet):
+    cdef cppclass CDirectAlphabet "Mata::Nfa::DirectAlphabet" (CAlphabet):
         CDirectAlphabet() except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
-    cdef cppclass CEnumAlphabet "Vata2::Nfa::EnumAlphabet" (CAlphabet):
+    cdef cppclass CEnumAlphabet "Mata::Nfa::EnumAlphabet" (CAlphabet):
         CEnumAlphabet() except +
         CEnumAlphabet(vector[string].iterator, vector[string].iterator) except +
         Symbol translate_symb(string) except +
         clist[Symbol] get_symbols()
 
-    cdef cppclass COnTheFlyAlphabet "Vata2::Nfa::OnTheFlyAlphabet" (CAlphabet):
+    cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
         StringToSymbolMap* symbol_map
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
-cdef extern from "vata2/re2parser.hh" namespace "Vata2::RE2Parser":
+cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string)

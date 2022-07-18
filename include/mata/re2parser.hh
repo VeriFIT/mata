@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2022 Michal Horky
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,16 +15,16 @@
  * GNU General Public License for more details.
  */
 
-#ifndef VATA2_RE2PARSER_HH
-#define VATA2_RE2PARSER_HH
+#ifndef MATA_RE2PARSER_HH
+#define MATA_RE2PARSER_HH
 
 #include <string>
-#include <vata2/nfa.hh>
+#include <mata/nfa.hh>
 
-namespace Vata2 {
+namespace Mata {
     namespace RE2Parser {
         void create_nfa(Nfa::Nfa* nfa, const std::string &pattern);
     }
 }
 
-#endif // VATA2_RE2PARSER
+#endif // MATA_RE2PARSER

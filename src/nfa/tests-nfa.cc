@@ -4,10 +4,10 @@
 
 #include <unordered_set>
 
-#include <vata2/nfa.hh>
-using namespace Vata2::Nfa;
-using namespace Vata2::util;
-using namespace Vata2::Parser;
+#include <mata/nfa.hh>
+using namespace Mata::Nfa;
+using namespace Mata::util;
+using namespace Mata::Parser;
 
 // Some common automata {{{
 
@@ -54,7 +54,7 @@ using namespace Vata2::Parser;
 template<class T> void unused(const T &) {}
 
 /*
-TEST_CASE("Vata2::Nfa::Trans::operator<<")
+TEST_CASE("Mata::Nfa::Trans::operator<<")
 { // {{{
 	Trans trans(1, 2, 3);
 
@@ -62,7 +62,7 @@ TEST_CASE("Vata2::Nfa::Trans::operator<<")
 } // }}}
 */
 
-TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
+TEST_CASE("Mata::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
 	Nfa a(3);
 
@@ -89,7 +89,7 @@ TEST_CASE("Vata2::Nfa::Nfa::add_trans()/has_trans()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::Nfa iteration")
+TEST_CASE("Mata::Nfa::Nfa iteration")
 { // {{{
 	Nfa aut;
 
@@ -131,7 +131,7 @@ TEST_CASE("Vata2::Nfa::Nfa iteration")
 } // }}}
 
 /*
-TEST_CASE("Vata2::Nfa::are_state_disjoint()")
+TEST_CASE("Mata::Nfa::are_state_disjoint()")
 { // {{{
 	Nfa a(50), b(50);
 
@@ -213,7 +213,7 @@ TEST_CASE("Vata2::Nfa::are_state_disjoint()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::union_norename()")
+TEST_CASE("Mata::Nfa::union_norename()")
 { // {{{
 	Nfa a(7), b(7), res;
 
@@ -279,12 +279,12 @@ TEST_CASE("Vata2::Nfa::union_norename()")
 		REQUIRE(is_incl(a, res, alph, params));
 		REQUIRE(is_incl(res, a, alph, params));
 
-		WARN_PRINT("Insufficient testing of Vata2::Nfa::union_norename()");
+		WARN_PRINT("Insufficient testing of Mata::Nfa::union_norename()");
 	}
 } // }}}
 */
 
-TEST_CASE("Vata2::Nfa::intersection()")
+TEST_CASE("Mata::Nfa::intersection()")
 { // {{{
 	Nfa a, b, res;
 	ProductMap prod_map;
@@ -402,7 +402,7 @@ TEST_CASE("Vata2::Nfa::intersection()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_lang_empty()")
+TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
 	Nfa aut(14);
 	Path cex;
@@ -497,7 +497,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::get_word_for_path()")
+TEST_CASE("Mata::Nfa::get_word_for_path()")
 { // {{{
 	Nfa aut(5);
 	Path path;
@@ -575,7 +575,7 @@ TEST_CASE("Vata2::Nfa::get_word_for_path()")
 }
 
 
-TEST_CASE("Vata2::Nfa::is_lang_empty_cex()")
+TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
 {
 	Nfa aut(10);
 	Word cex;
@@ -602,7 +602,7 @@ TEST_CASE("Vata2::Nfa::is_lang_empty_cex()")
 }
 
 
-TEST_CASE("Vata2::Nfa::determinize()")
+TEST_CASE("Mata::Nfa::determinize()")
 {
 	Nfa aut(3);
 	Nfa result;
@@ -641,15 +641,15 @@ TEST_CASE("Vata2::Nfa::determinize()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::construct() correct calls")
+TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
 	Nfa aut(10);
-	Vata2::Parser::ParsedSection parsec;
+	Mata::Parser::ParsedSection parsec;
 	StringToSymbolMap symbol_map;
 
 	SECTION("construct an empty automaton")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 
 		construct(&aut, parsec);
 
@@ -658,7 +658,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
@@ -669,7 +669,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct an automaton with more than one initial/final states")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
@@ -681,7 +681,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a", "q2"} };
@@ -699,7 +699,7 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 
 	SECTION("construct a more complicated non-empty automaton")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
 		parsec.body.push_back({"q1", "a", "q3"});
@@ -732,10 +732,10 @@ TEST_CASE("Vata2::Nfa::construct() correct calls")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::construct() invalid calls")
+TEST_CASE("Mata::Nfa::construct() invalid calls")
 { // {{{
 	Nfa aut;
-	Vata2::Parser::ParsedSection parsec;
+	Mata::Parser::ParsedSection parsec;
 
 	SECTION("construct() call with invalid ParsedSection object")
 	{
@@ -747,7 +747,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 
 	SECTION("construct() call with an epsilon transition")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "q2"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),
@@ -756,7 +756,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 
 	SECTION("construct() call with a nonsense transition")
 	{
-		parsec.type = Vata2::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "a", "q2", "q3"} };
 
 		CHECK_THROWS_WITH(construct(&aut, parsec),
@@ -765,7 +765,7 @@ TEST_CASE("Vata2::Nfa::construct() invalid calls")
 } // }}}
 
 /*
-TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
+TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 { // {{{
 	Nfa aut;
 
@@ -785,7 +785,7 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 			str = os.str();
 		}
 
-		Vata2::Parser::ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
+		Mata::Parser::ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
 		Nfa res = construct(parsec);
 
 		REQUIRE(res.initialstates.empty());
@@ -804,18 +804,18 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 		aut.add_trans('s', 'd', 'q');
 		aut.add_trans('q', 'a', 'q');
 
-		Vata2::Nfa::StateToStringMap state_dict =
+		Mata::Nfa::StateToStringMap state_dict =
 			{{'q', "q"}, {'r', "r"}, {'s', "s"}, {'t', "t"}};
-		Vata2::Nfa::SymbolToStringMap symb_dict =
+		Mata::Nfa::SymbolToStringMap symb_dict =
 			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
 		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
 
-		ParsedSection parsec = Vata2::Parser::parse_vtf_section(str);
+		ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
 
-		Vata2::Nfa::StringToStateMap inv_state_dict =
-			Vata2::util::invert_map(state_dict);
-		Vata2::Nfa::StringToSymbolMap inv_symb_dict =
-			Vata2::util::invert_map(symb_dict);
+		Mata::Nfa::StringToStateMap inv_state_dict =
+			Mata::util::invert_map(state_dict);
+		Mata::Nfa::StringToSymbolMap inv_symb_dict =
+			Mata::util::invert_map(symb_dict);
 		Nfa res = construct(parsec, &inv_symb_dict, &inv_state_dict);
 
 		REQUIRE(res.initialstates == aut.initialstates);
@@ -840,8 +840,8 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 
 	SECTION("incorrect state mapper")
 	{
-		Vata2::Nfa::StateToStringMap state_dict = {{'q', "q"}};
-		Vata2::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}};
+		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
 		aut.add_trans('q', 'a', 'r');
 
 		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
@@ -850,8 +850,8 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 
 	SECTION("incorrect symbol mapper")
 	{
-		Vata2::Nfa::StateToStringMap state_dict = {{'q', "q"}, {'r', "r"}};
-		Vata2::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}, {'r', "r"}};
+		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
 		aut.add_trans('q', 'b', 'r');
 
 		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
@@ -860,7 +860,7 @@ TEST_CASE("Vata2::Nfa::serialize() and operator<<()")
 } // }}}
 */
 
-TEST_CASE("Vata2::Nfa::make_complete()")
+TEST_CASE("Mata::Nfa::make_complete()")
 { // {{{
 	Nfa aut(11);
 
@@ -960,7 +960,7 @@ TEST_CASE("Vata2::Nfa::make_complete()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::complement()")
+TEST_CASE("Mata::Nfa::complement()")
 { // {{{
 	Nfa aut(3);
 	Nfa cmpl;
@@ -1072,7 +1072,7 @@ TEST_CASE("Vata2::Nfa::complement()")
 
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_universal()")
+TEST_CASE("Mata::Nfa::is_universal()")
 { // {{{
 	Nfa aut(6);
 	Word cex;
@@ -1288,7 +1288,7 @@ TEST_CASE("Vata2::Nfa::is_universal()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_incl()")
+TEST_CASE("Mata::Nfa::is_incl()")
 { // {{{
 	Nfa smaller(10);
 	Nfa bigger(16);
@@ -1457,7 +1457,7 @@ TEST_CASE("Vata2::Nfa::is_incl()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::revert()")
+TEST_CASE("Mata::Nfa::revert()")
 { // {{{
 	Nfa aut(9);
 
@@ -1532,7 +1532,7 @@ TEST_CASE("Vata2::Nfa::revert()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_deterministic()")
+TEST_CASE("Mata::Nfa::is_deterministic()")
 { // {{{
 	Nfa aut('s'+1);
 
@@ -1590,7 +1590,7 @@ TEST_CASE("Vata2::Nfa::is_deterministic()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_complete()")
+TEST_CASE("Mata::Nfa::is_complete()")
 { // {{{
 	Nfa aut('q'+1);
 
@@ -1681,7 +1681,7 @@ TEST_CASE("Vata2::Nfa::is_complete()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
+TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
 { // {{{
 	Nfa aut('q'+1);
 
@@ -1739,13 +1739,13 @@ TEST_CASE("Vata2::Nfa::is_prfx_in_lang()")
 	}
 } // }}}
 
-TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
+TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 { // {{{
     Nfa aut;
 
     SECTION("empty automaton")
     {
-        Vata2::Util::BinaryRelation result = compute_relation(aut);
+        Mata::Util::BinaryRelation result = compute_relation(aut);
 
         REQUIRE(result.size() == 0);
     }
@@ -1759,7 +1759,7 @@ TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
         aut.add_final(2);
         aut.add_final(5);
 
-        Vata2::Util::BinaryRelation result = compute_relation(aut);
+        Mata::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(1,3));
         REQUIRE(result.get(2,5));
         REQUIRE(!result.get(5,1));
@@ -1775,7 +1775,7 @@ TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
         aut.add_trans(2, 'b', 5);
         aut.add_trans(1, 'b', 4);
 
-        Vata2::Util::BinaryRelation result = compute_relation(aut);
+        Mata::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(4,1));
         REQUIRE(!result.get(2,5));
 
@@ -1800,7 +1800,7 @@ TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
         aut_big.add_trans(7, 'a', 8);
         aut_big.finalstates = {3};
 
-        Vata2::Util::BinaryRelation result = compute_relation(aut_big);
+        Mata::Util::BinaryRelation result = compute_relation(aut_big);
         REQUIRE(result.get(1,2));
         REQUIRE(!result.get(2,1));
         REQUIRE(!result.get(3,1));
@@ -1818,7 +1818,7 @@ TEST_CASE("Vata2::Nfa::fw-direct-simulation()")
     }
 } // }}
 
-TEST_CASE("Vata2::Nfa::union_norename()") {
+TEST_CASE("Mata::Nfa::union_norename()") {
     Word one{1};
     Word zero{0};
 
@@ -1844,7 +1844,7 @@ TEST_CASE("Vata2::Nfa::union_norename()") {
     }
 }
 
-TEST_CASE("Vata2::Nfa::get_shortest_words()")
+TEST_CASE("Mata::Nfa::get_shortest_words()")
 {
     Nfa aut('q' + 1);
 

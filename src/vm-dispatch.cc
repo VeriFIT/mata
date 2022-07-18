@@ -1,9 +1,9 @@
 // TODO: add header
 
-#include <vata2/vm-dispatch.hh>
+#include <mata/vm-dispatch.hh>
 
 // Headers of user data types
-#include <vata2/nfa.hh>
+#include <mata/nfa.hh>
 #include "bool.hh"
 #include "str.hh"
 #include "void.hh"
@@ -14,7 +14,7 @@ namespace
 {
 using std::tie;
 
-using Vata2::VM::VMDispatcherFunc;
+using Mata::VM::VMDispatcherFunc;
 
 /// the structure that contains information about a type
 struct VMDispatcherStruct
@@ -40,11 +40,11 @@ VMDispatcherDict dispatch_dict = { };
 /// list of init functions --- ADD HERE FUNCTIONS TO BE RUN AT STARTUP
 const VMInitFunc INIT_FUNCTIONS[] =
 {
-	Vata2::Bool::init,
-	Vata2::Nfa::init,
-	Vata2::Str::init,
-	Vata2::Parser::init,
-	Vata2::Void::init,
+        Mata::Bool::init,
+        Mata::Nfa::init,
+        Mata::Str::init,
+        Mata::Parser::init,
+        Mata::Void::init,
 };
 
 
@@ -73,7 +73,7 @@ bool is_dispatch_dict_init = init_dispatch_dict();
 } // anonymous
 
 
-void Vata2::VM::reg_dispatcher(
+void Mata::VM::reg_dispatcher(
 	const std::string&       type_name,
 	const VMDispatcherFunc&  func,
 	const std::string&       info)
@@ -90,7 +90,7 @@ void Vata2::VM::reg_dispatcher(
 } // reg_dispatcher }}}
 
 
-const VMDispatcherFunc& Vata2::VM::find_dispatcher(
+const VMDispatcherFunc& Mata::VM::find_dispatcher(
 	const std::string&       type_name)
 { // {{{
 	auto it = dispatch_dict.find(type_name);
@@ -104,7 +104,7 @@ const VMDispatcherFunc& Vata2::VM::find_dispatcher(
 } // find_dispatcher }}}
 
 
-Vata2::VM::VMTypeDesc Vata2::VM::get_types_description()
+Mata::VM::VMTypeDesc Mata::VM::get_types_description()
 { // {{{
 	VMTypeDesc desc;
 	for (auto type_disp_pair : dispatch_dict) {

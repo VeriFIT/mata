@@ -2,8 +2,8 @@
 // constructs a probabilistic automaton obtained by assigning transitions in 'A'
 // probabilities respecting choices of 'A' on the input from the PCAP file
 
-#include <vata2/util.hh>
-#include <vata2/nfa.hh>
+#include <mata/util.hh>
+#include <mata/nfa.hh>
 
 #include <chrono>
 #include <iostream>
@@ -31,8 +31,8 @@ struct vlan_ethhdr {
 	u_int16_t ether_type;
 } __attribute__ ((__packed__));
 
-using namespace Vata2::Nfa;
-using namespace Vata2::Parser;
+using namespace Mata::Nfa;
+using namespace Mata::Parser;
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
@@ -73,7 +73,7 @@ Nfa load_aut(const std::string& file_name)
 	if (input.is_open())
 	{
 		ParsedSection parsec = parse_vtf_section(input);
-		Vata2::Nfa::CharAlphabet alphabet;
+		Mata::Nfa::CharAlphabet alphabet;
 		return construct(parsec, &alphabet);
 	}
 	else
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
 	// for (const auto& st : aut.finalstates) { max_state = std::max({max_state, st}); }
 	// for (const auto& trans : aut) { max_state = std::max({max_state, trans.src, trans.tgt}); }
 
-	Vata2::Nfa::CharAlphabet alphabet;
+	Mata::Nfa::CharAlphabet alphabet;
 	if (!is_complete(aut, alphabet))
 	{
 		// ++max_state;

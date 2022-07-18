@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  Vata2 Tree Automata Library
+ *  Mata Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,17 +8,17 @@
  *
  *****************************************************************************/
 
-#ifndef _Vata22_ORD_VECTOR_HH_
-#define _Vata22_ORD_VECTOR_HH_
+#ifndef _Mata2_ORD_VECTOR_HH_
+#define _Mata2_ORD_VECTOR_HH_
 
-#include <vata2/convert.hh>
+#include <mata/convert.hh>
 
 // Standard library headers
 #include <vector>
 #include <algorithm>
 
 // insert the class into proper namespace
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -43,11 +43,11 @@ template
 <
 	class Key
 >
-class Vata2::Util::OrdVector
+class Mata::Util::OrdVector
 {
 private:  // Private data types
 
-	typedef Vata2::Util::Convert Convert;
+	typedef Mata::Util::Convert Convert;
 
 	typedef std::vector<Key> VectorType;
 
@@ -519,9 +519,9 @@ public:   // Public methods
 
 namespace std {
     template <class Key>
-    struct hash<Vata2::Util::OrdVector<Key>>
+    struct hash<Mata::Util::OrdVector<Key>>
     {
-        std::size_t operator()(const Vata2::Util::OrdVector<Key>& vec) const
+        std::size_t operator()(const Mata::Util::OrdVector<Key>& vec) const
         {
             return std::hash<std::vector<Key>>{}(vec.ToVector());
         }

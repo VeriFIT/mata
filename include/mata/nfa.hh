@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _VATA2_NFA_HH_
-#define _VATA2_NFA_HH_
+#ifndef _MATA_NFA_HH_
+#define _MATA_NFA_HH_
 
 #include <algorithm>
 #include <cassert>
@@ -27,13 +27,13 @@
 #include <unordered_set>
 #include <vector>
 
-// VATA2 headers
-#include <vata2/parser.hh>
-#include <vata2/util.hh>
-#include <vata2/ord_vector.hh>
-#include <vata2/simutil/binary_relation.hh>
+// MATA headers
+#include <mata/parser.hh>
+#include <mata/util.hh>
+#include <mata/ord_vector.hh>
+#include <mata/simutil/binary_relation.hh>
 
-namespace Vata2
+namespace Mata
 {
 namespace Nfa
 {
@@ -41,7 +41,7 @@ extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
 using State = unsigned long;
-using StateSet = Vata2::Util::OrdVector<State>;
+using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
@@ -225,7 +225,7 @@ public:
 struct Nfa;
 
 /// serializes Nfa into a ParsedSection
-Vata2::Parser::ParsedSection serialize(
+Mata::Parser::ParsedSection serialize(
 	const Nfa&                aut,
 	const SymbolToStringMap*  symbol_map = nullptr,
 	const StateToStringMap*   state_map = nullptr);
@@ -249,7 +249,7 @@ struct TransSymbolStates {
     inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
 };
 
-using TransitionList = Vata2::Util::OrdVector<TransSymbolStates>;
+using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 using TransitionRelation = std::vector<TransitionList>;
 
 struct Nfa
@@ -557,7 +557,7 @@ inline Nfa invert(const Nfa &aut)
     return inverted;
 }
 
-Vata2::Util::BinaryRelation compute_relation(
+Mata::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
@@ -626,20 +626,20 @@ bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 /** Loads an automaton from Parsed object */
 void construct(
         Nfa*                                 aut,
-        const Vata2::Parser::ParsedSection&  parsec,
+        const Mata::Parser::ParsedSection&  parsec,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 void construct(
         Nfa*                                 aut,
-        const Vata2::Parser::ParsedSection&  parsec,
+        const Mata::Parser::ParsedSection&  parsec,
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 inline Nfa construct(
-        const Vata2::Parser::ParsedSection&  parsec,
+        const Mata::Parser::ParsedSection&  parsec,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
@@ -747,25 +747,25 @@ private:
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
-} /* Vata2 */
+} /* Mata */
 
 namespace std
 { // {{{
 template <>
-struct hash<Vata2::Nfa::Trans>
+struct hash<Mata::Nfa::Trans>
 {
-	inline size_t operator()(const Vata2::Nfa::Trans& trans) const
+	inline size_t operator()(const Mata::Nfa::Trans& trans) const
 	{
-		size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
-		accum = Vata2::util::hash_combine(accum, trans.symb);
-		accum = Vata2::util::hash_combine(accum, trans.tgt);
+		size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
+		accum = Mata::util::hash_combine(accum, trans.symb);
+		accum = Mata::util::hash_combine(accum, trans.tgt);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const Vata2::Nfa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
 } // std }}}
 
 
-#endif /* _VATA2_NFA_HH_ */
+#endif /* _MATA_NFA_HH_ */

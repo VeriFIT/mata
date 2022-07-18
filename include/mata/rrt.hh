@@ -5,7 +5,7 @@
  *
  * Copyright (c) 2020 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,12 +18,12 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _VATA2_RRT_HH_
-#define _VATA2_RRT_HH_
+#ifndef _MATA_RRT_HH_
+#define _MATA_RRT_HH_
 
-#include <vata2/nfa.hh>
+#include <mata/nfa.hh>
 
-namespace Vata2
+namespace Mata
 {
 namespace Rrt
 {
@@ -176,7 +176,7 @@ public:
 	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
-		return Vata2::util::haskey(this->initialstates, state);
+		return Mata::util::haskey(this->initialstates, state);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
 	void add_final(const std::vector<State> vec)
@@ -185,7 +185,7 @@ public:
 	} // }}}
 	bool has_final(State state) const
 	{ // {{{
-		return Vata2::util::haskey(this->finalstates, state);
+		return Mata::util::haskey(this->finalstates, state);
 	} // }}}
 
 	void add_trans(
@@ -230,25 +230,25 @@ Nfa::Nfa post_of_nfa(const Rrt& rrt, const Nfa::Nfa& nfa);
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Rrt */
-} /* Vata2 */
+} /* Mata */
 
 namespace std
 { // {{{
 // FIXME: remove?
 //
 // template <>
-// struct hash<Vata2::Rrt::Trans>
+// struct hash<Mata::Rrt::Trans>
 // {
-	// inline size_t operator()(const Vata2::Rrt::Trans& trans) const
+	// inline size_t operator()(const Mata::Rrt::Trans& trans) const
 	// {
-		// size_t accum = std::hash<Vata2::Nfa::State>{}(trans.src);
+		// size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
 		// assert(false);
-		// accum = Vata2::util::hash_combine(accum, trans.tgt);
+		// accum = Mata::util::hash_combine(accum, trans.tgt);
 		// return accum;
 	// }
 // };
 
-std::ostream& operator<<(std::ostream& strm, const Vata2::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& strm, const Mata::Nfa::Trans& trans);
 } // std }}}
 
-#endif /* _VATA2_RRT_HH_ */
+#endif /* _MATA_RRT_HH_ */

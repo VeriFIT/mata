@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,16 +18,16 @@
 // The purpose of this code is to provide an interface through which classes
 // for automata types could register their 'dispatcher' functions for
 // operations called from within the virtual machine.  The code is deliberately
-// made separate from vata2/vm.hh in order to decrease the number of
+// made separate from mata/vm.hh in order to decrease the number of
 // dependencies.
 
 #ifndef _VM_DISPATCH_HH_
 #define _VM_DISPATCH_HH_
 
-// VATA headers
-#include <vata2/vm.hh>
+// MATA headers
+#include <mata/vm.hh>
 
-namespace Vata2
+namespace Mata
 {
 namespace VM
 {
@@ -39,7 +39,7 @@ using VMFuncArgs = std::vector<VMValue>;
 /// data type for dispatcher function pointer
 using VMDispatcherFunc = std::function<VMValue(const VMFuncName&, const VMFuncArgs&)>;
 
-/// registers a dispatcher function for a VATA data type
+/// registers a dispatcher function for a MATA data type
 void reg_dispatcher(
 	const std::string&       type_name,
 	const VMDispatcherFunc&  func,
@@ -75,6 +75,6 @@ VMTypeDesc get_types_description();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* VM */
-} /* Vata2 */
+} /* Mata */
 
 #endif /* _VM_DISPATCH_HH_ */

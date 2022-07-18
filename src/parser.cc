@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#include <vata2/parser.hh>
-#include <vata2/util.hh>
+#include <mata/parser.hh>
+#include <mata/util.hh>
 
 #include <algorithm>
 #include <cstring>
@@ -24,9 +24,9 @@
 
 using std::tie;
 
-using Vata2::Parser::Parsed;
-using Vata2::Parser::ParsedSection;
-using Vata2::util::haskey;
+using Mata::Parser::Parsed;
+using Mata::Parser::ParsedSection;
+using Mata::util::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
@@ -198,7 +198,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 } // anonymous namespace
 
 
-Parsed Vata2::Parser::parse_vtf(
+Parsed Mata::Parser::parse_vtf(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
@@ -207,7 +207,7 @@ Parsed Vata2::Parser::parse_vtf(
 } // parse_vtf(std::string) }}}
 
 
-Parsed Vata2::Parser::parse_vtf(
+Parsed Mata::Parser::parse_vtf(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -226,7 +226,7 @@ Parsed Vata2::Parser::parse_vtf(
 } // parse_vtf(std::istream) }}}
 
 
-ParsedSection Vata2::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_vtf_section(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -330,7 +330,7 @@ ParsedSection Vata2::Parser::parse_vtf_section(
 } // parse_vtf_section(std::istream) }}}
 
 
-ParsedSection Vata2::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_vtf_section(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{

@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,16 +15,16 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _VATA2_DISPATCH_AUX_HH_
-#define _VATA2_DISPATCH_AUX_HH_
+#ifndef _MATA_DISPATCH_AUX_HH_
+#define _MATA_DISPATCH_AUX_HH_
 
-#include <vata2/vm.hh>
-#include <vata2/vm-dispatch.hh>
+#include <mata/vm.hh>
+#include <mata/vm-dispatch.hh>
 
 #include "metaprog.hh"
 
 
-namespace Vata2
+namespace Mata
 {
 namespace dispatch
 {
@@ -32,12 +32,12 @@ namespace dispatch
 template <class T>
 const T& unpack_type(
 	const std::string&         expected_type_name,
-	const Vata2::VM::VMValue&  val)
+	const Mata::VM::VMValue&  val)
 { // {{{
 	if (expected_type_name != val.type)
 	{
-		throw Vata2::VM::VMException("unpack_type: invalid type: " +
-			std::to_string(val.type) + " (expected " + expected_type_name + ")");
+		throw Mata::VM::VMException("unpack_type: invalid type: " +
+                                    std::to_string(val.type) + " (expected " + expected_type_name + ")");
 	}
 
 	assert(nullptr != val.get_ptr());
@@ -46,8 +46,8 @@ const T& unpack_type(
 
 template <class T>
 std::tuple<T> construct_args(
-	const Vata2::metaprog::tuple_of<1, std::string>&         type_names,
-	const Vata2::metaprog::tuple_of<1, Vata2::VM::VMValue>&  vals)
+	const Mata::metaprog::tuple_of<1, std::string>&         type_names,
+	const Mata::metaprog::tuple_of<1, Mata::VM::VMValue>&  vals)
 {
 	const T& v = unpack_type<T>(std::get<0>(type_names), std::get<0>(vals));
 	std::tuple<T> res = { v };
@@ -56,11 +56,11 @@ std::tuple<T> construct_args(
 
 template <class T, class... Ts, typename std::enable_if<(sizeof...(Ts) != 0)>::type = true>
 std::tuple<T, Ts...> construct_args(
-	const Vata2::metaprog::tuple_of<sizeof...(Ts) + 1, std::string>&         type_names,
-	const Vata2::metaprog::tuple_of<sizeof...(Ts) + 1, Vata2::VM::VMValue>&  vals)
+	const Mata::metaprog::tuple_of<sizeof...(Ts) + 1, std::string>&         type_names,
+	const Mata::metaprog::tuple_of<sizeof...(Ts) + 1, Mata::VM::VMValue>&  vals)
 {
-	Vata2::metaprog::tuple_of<sizeof...(Ts), std::string> type_names_tail;
-	Vata2::metaprog::tuple_of<sizeof...(Ts), Vata2::VM::VMValue> vals_tail;
+	Mata::metaprog::tuple_of<sizeof...(Ts), std::string> type_names_tail;
+	Mata::metaprog::tuple_of<sizeof...(Ts), Mata::VM::VMValue> vals_tail;
 
 	tie(std::ignore, type_names_tail) = type_names;
 	tie(std::ignore, vals_tail) = vals;
@@ -76,12 +76,12 @@ std::tuple<T, Ts...> construct_args(
 
 template <class... Ts>
 void test_and_call(
-	const std::string&              name,
-	const Vata2::VM::VMFuncName&    func_name,
-	const std::vector<std::string>  args_types_names,
-	const Vata2::VM::VMFuncArgs&    args,
-	const std::string&              result_type_name,
-	Vata2::VM::VMPointer            (*f)(Ts...))
+        const std::string&              name,
+        const Mata::VM::VMFuncName&    func_name,
+        const std::vector<std::string>  args_types_names,
+        const Mata::VM::VMFuncArgs&    args,
+        const std::string&              result_type_name,
+        Mata::VM::VMPointer            (*f)(Ts...))
 {
 	assert(nullptr != f);
 
@@ -92,22 +92,22 @@ void test_and_call(
 
 	if (args_types_names.size() != arity)
 	{
-		throw Vata2::VM::VMException(
+		throw Mata::VM::VMException(
 			"test_and_call: args_types_names does not match arity of " +
 			std::to_string(func_name));
 	}
 
 	if (args.size() != arity)
 	{
-		throw Vata2::VM::VMException(
+		throw Mata::VM::VMException(
 			"test_and_call: args does not match arity of " +
 			std::to_string(func_name));
 	}
 
-	Vata2::metaprog::tuple_of<arity, std::string> tup_type_names =
-		Vata2::metaprog::vector_to_tuple<arity>(args_types_names);
-	Vata2::metaprog::tuple_of<arity, Vata2::VM::VMValue> tup_args =
-		Vata2::metaprog::vector_to_tuple<arity>(args);
+	Mata::metaprog::tuple_of<arity, std::string> tup_type_names =
+		Mata::metaprog::vector_to_tuple<arity>(args_types_names);
+	Mata::metaprog::tuple_of<arity, Mata::VM::VMValue> tup_args =
+		Mata::metaprog::vector_to_tuple<arity>(args);
 
 	// DEBUG_PRINT("type names = " + std::to_string(tup_type_names));
 	// DEBUG_PRINT("args = " + std::to_string(tup_args));
@@ -116,15 +116,15 @@ void test_and_call(
 		tup_type_names, tup_args);
 
 	// a local substitute for std::apply from C++17
-	Vata2::VM::VMPointer f_res = Vata2::metaprog::apply(f, f_args);
+	Mata::VM::VMPointer f_res = Mata::metaprog::apply(f, f_args);
 
-	Vata2::VM::VMValue result{result_type_name, f_res};
+	Mata::VM::VMValue result{result_type_name, f_res};
 	throw result;
 }
 
 
 
 } /* dispatch */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_DISPATCH_AUX_HH_ */
+#endif /* _MATA_DISPATCH_AUX_HH_ */
