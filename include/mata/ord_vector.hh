@@ -379,7 +379,7 @@ public:   // Public methods
     inline void remove(Key k)
     {
         assert(vectorIsSorted());
-        std::remove(this->vec_.begin(), this->vec_.end(),k);
+        vec_.erase(std::remove(vec_.begin(), vec_.end(), k), vec_.end());
         assert(vectorIsSorted());
     }
 

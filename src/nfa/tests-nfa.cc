@@ -1924,3 +1924,18 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
     }
 }
+
+TEST_CASE("Mata::Nfa::remove_final()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(aut.has_final(12));
+        aut.remove_final(12);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(!aut.has_final(12));
+    }
+}
