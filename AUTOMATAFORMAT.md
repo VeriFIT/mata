@@ -5,14 +5,14 @@
 * Lines are parsed into tokens. Tokens are delimited by white spaces, the format is **white space sensitive** with exception of formulas in transitions where expressions could be written without white spaces separating tokens.
 * A file contains **sections** starting with a line of the form `@<SECTION-TYPE>`, containing an automaton or, in theory, anything. We will start with one section per file, containing an automaton, but it is obviously extensible to more sections and more kinds of things.
 * In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, **transition lines**, or **comment lines** starting with `#`. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the `KEY` is defined. 
-* Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`.
+* Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`,`f`.
   * `&`,`|`,`!`,`(`,`)`,`^` occurring as tokens in transition lines are logical operators.
   * `[`,`]`,`-` enclose character classes, such as `[abcd-h]`, `[^abcd-h]`.
   * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
   * `%` opens a key-value line.
   * `"` strings containing white spaces and special characters can be written in between `"`. The special characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`. 
   * `\` for escaping characters. `\` is also used to concatenate lines.
-  * `a`,`q`,`n`,`t` are token type specifiers (alphabet, state, node, attribute). 
+  * `a`,`q`,`n`,`t`,`f` are token type specifiers (alphabet, state, node, attribute, formula). 
   * `#` starts a comment line.
 * There are **words with a special meaning**: `\true`,`\false`,`\min`, and `\max`. Every word with special meaning starts with `\`.
 * The parser may recognise the special symbols as standalone tookens (does not apply to `q`,`a`,`n`,`t`,`#`) only if they appear in the special context where their special meaning applies, otherwise they should be treated as normal symbols.
