@@ -1,8 +1,8 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
-
 #include <unordered_set>
+
+#include "../3rdparty/catch.hpp"
 
 #include <mata/nfa.hh>
 using namespace Mata::Nfa;
@@ -2020,3 +2020,88 @@ TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
     REQUIRE(aut.get_trans_as_sequence() == expected);
 }
 
+TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
+{
+    Nfa aut('q' + 1);
+    constexpr Symbol epsilon{'c'};
+
+    SECTION("Automaton A")
+    {
+        FILL_WITH_AUT_A(aut);
+        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
+        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Trans>{
+                {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
+       }});
+    }
+
+    SECTION("Small automaton with depths")
+    {
+        aut.make_initial(1);
+        aut.make_final(8);
+        aut.add_trans(1, epsilon, 2);
+        aut.add_trans(2, 'a', 3);
+        aut.add_trans(2, 'b', 4);
+        aut.add_trans(3, 'b', 6);
+        aut.add_trans(4, 'a', 6);
+        aut.add_trans(6, epsilon, 7);
+        aut.add_trans(7, epsilon, 8);
+
+        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
+
+        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
+                {0, TransSequence{{1, epsilon, 2}}},
+                {1, TransSequence{{6, epsilon, 7}}},
+                {2, TransSequence{{7, epsilon, 8}}},
+        });
+    }
+
+}
+
+TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()")
+{
+    Nfa aut(100);
+    aut.make_initial(1);
+    aut.make_final(11);
+    aut.add_trans(1, 'a', 2);
+    aut.add_trans(1, 'b', 3);
+    aut.add_trans(3, 'c', 4);
+    aut.add_trans(4, 'a', 7);
+    aut.add_trans(7, 'b', 8);
+    aut.add_trans(8, 'a', 7);
+    aut.add_trans(8, 'b', 4);
+    aut.add_trans(4, 'c', 5);
+    aut.add_trans(5, 'a', 6);
+    aut.add_trans(5, 'b', 6);
+    aut.add_trans(6, 'c', 10);
+    aut.add_trans(9, 'a', 11);
+    aut.add_trans(10, 'b', 11);
+
+    auto segmentation{SegNfa::Segmentation{aut, 'c'}};
+    auto segments{ segmentation.get_segments() };
+    REQUIRE(segments.size() == 4);
+
+    REQUIRE(segments[0].has_initial(0));
+    REQUIRE(segments[0].has_final(1));
+    REQUIRE(segments[0].has_trans(0, 'b', 1));
+    REQUIRE(!segments[0].has_trans(0, 'a', 2));
+
+    REQUIRE(segments[1].has_initial(0));
+    REQUIRE(segments[1].has_final(0));
+    REQUIRE(segments[1].has_trans(0, 'a', 1));
+    REQUIRE(!segments[1].has_trans(0, 'a', 2));
+    REQUIRE(!segments[1].has_trans(0, 'c', 3));
+    REQUIRE(segments[1].has_trans(1, 'b', 2));
+    REQUIRE(segments[1].has_trans(2, 'b', 0));
+    REQUIRE(segments[1].has_trans(2, 'a', 1));
+
+    REQUIRE(segments[2].has_initial(0));
+    REQUIRE(segments[2].has_final(1));
+    REQUIRE(segments[2].has_trans(0, 'a', 1));
+    REQUIRE(segments[2].has_trans(0, 'b', 1));
+
+    REQUIRE(segments[3].has_initial(0));
+    REQUIRE(segments[3].has_final(1));
+    REQUIRE(segments[3].has_trans(0, 'b', 1));
+}

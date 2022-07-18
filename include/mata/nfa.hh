@@ -25,6 +25,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 // MATA headers
@@ -45,7 +46,6 @@ using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
-using StateToPostMap = std::unordered_map<State, PostSymb>; ///< Transitions.
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
@@ -55,7 +55,13 @@ using WordSet = std::set<Word>;         ///< A set of words.
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
-using StateToStringMap = std::unordered_map<State, std::string>;
+
+template<typename Target>
+using StateMap = std::unordered_map<State, Target>;
+
+using StateToStringMap = StateMap<std::string>;
+using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
+
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
@@ -224,7 +230,9 @@ public:
 // }}}
 
 
-struct Nfa;
+struct Nfa; ///< A non-deterministic finite automaton.
+
+using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -249,6 +257,7 @@ struct TransSymbolStates {
     inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
     inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
     inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
+    inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
 };
 
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
@@ -809,6 +818,135 @@ std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 void init();
 
 /**
+ * Operations on segment automata.
+ */
+namespace SegNfa
+{
+/// Segment automaton.
+/// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
+/// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+using SegNfa = Nfa;
+
+/**
+ * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
+ */
+class Segmentation
+{
+public:
+    using EpsilonDepth = unsigned; ///< Depth of ε-transitions.
+    /// Dictionary of lists of ε-transitions grouped by their depth.
+    /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
+    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
+
+    /**
+     * Prepare automaton @p aut for segmentation.
+     * @param[in] aut Segment automaton to make segments for.
+     * @param[in] epsilon Symbol to execute segmentation for.
+     */
+    Segmentation(const SegNfa& aut, const Symbol epsilon) : epsilon(epsilon), automaton(aut)
+    {
+        compute_epsilon_depths(); // Map depths to epsilon transitions.
+    }
+
+    /**
+     * Get segmentation depths for ε-transitions.
+     * @return Map of depths to lists of ε-transitions.
+     */
+    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+
+    /**
+     * Get segment automata.
+     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
+     * to the right (final states of segment automaton).
+     */
+    const AutSequence& get_segments();
+
+private:
+    const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
+    /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
+    const SegNfa& automaton{};
+    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
+    AutSequence segments{}; ///< Segments for @p automaton.
+
+    /**
+     * Pair of state and its depth.
+     */
+    struct StateDepthPair
+    {
+        State state; ///< State with a depth.
+        EpsilonDepth depth; ///< Depth of a state.
+    };
+
+    /**
+     * Compute epsilon depths with their transitions.
+     */
+    void compute_epsilon_depths();
+
+    /**
+     * Split segment @c automaton into @c segments.
+     */
+    void split_aut_into_segments();
+
+    /**
+     * Propagate changes to the current segment automaton to the remaining segments with higher depths.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void propagate_to_other_segments(size_t current_depth, const Trans& transition);
+
+    /**
+     * Update current segment automaton.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void update_current_segment(size_t current_depth, const Trans& transition);
+
+    /**
+     * Trim created segments of redundant states and epsilon transitions.
+     */
+    void trim_segments();
+
+    /**
+     * Initialize map of visited states.
+     * @return Map of visited states.
+     */
+    StateMap<bool> initialize_visited_map() const;
+
+    /**
+     * Initialize worklist of states with depths to process.
+     * @return Queue of state and its depth pairs.
+     */
+    std::deque<StateDepthPair> initialize_worklist() const;
+
+    /**
+     * Process pair of state and its depth.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void process_state_depth_pair(StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Add states with non-epsilon transitions to the @p worklist.
+     * @param state_transitions[in] Transitions from current state.
+     * @param depth[in] Current depth.
+     * @param worklist[out] Worklist of state and depth pairs to process.
+     */
+    static void add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+                                            std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Process epsilon transitions for the current state.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[in] state_transitions Transitions from current state.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
+                                    std::deque<StateDepthPair>& worklist);
+}; // Segmentation
+
+} // SegNfa
+
+/**
  * Class mapping states to the shortest words accepted by languages of the states.
  */
 class ShortestWordsMap
@@ -816,6 +954,7 @@ class ShortestWordsMap
 public:
     /**
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+     * @param aut Automaton to compute shortest words for.
      */
     explicit ShortestWordsMap(const Nfa& aut)
         : reversed_automaton(revert(aut))
@@ -837,7 +976,7 @@ private:
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, WordSet>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
+    StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> lifo_queue{}; ///< LIFO queue for states to process.
     const Nfa reversed_automaton{}; ///< Reversed input automaton.

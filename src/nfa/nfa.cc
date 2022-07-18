@@ -213,7 +213,7 @@ void Nfa::remove_trans(State src, Symbol symb, State tgt)
     }
 
     auto transitionFromStateIter{ transitionrelation[src].begin() };
-    for (; transitionFromStateIter != transitionrelation[src].end(); ++transitionFromStateIter)
+    while (transitionFromStateIter != transitionrelation[src].end())
     {
         if (transitionFromStateIter->symbol == symb)
         {
@@ -323,7 +323,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     assert(nullptr != result);
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
+    StateMap<StateSet> eps_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
@@ -819,7 +819,7 @@ size_t Nfa::get_num_of_trans() const
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
-    std::unordered_map<State,State> thisStateToUnionState;
+    StateMap<State> thisStateToUnionState;
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton->add_new_state();
     }
@@ -1419,7 +1419,7 @@ void ShortestWordsMap::compute_for_state(const State state)
     }
 }
 
-void Mata::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
+void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
 {
     for (Word word: dst.second)
     {
@@ -1427,4 +1427,140 @@ void Mata::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, con
         act.second.insert(word);
     }
     act.first = dst.first + 1;
+}
+
+void SegNfa::Segmentation::process_state_depth_pair(StateDepthPair& state_depth_pair,
+                                            std::deque<StateDepthPair>& worklist)
+{
+    auto outgoing_transitions{ automaton.get_transitions_from_state(state_depth_pair.state) };
+    for (const auto& state_transitions: outgoing_transitions)
+    {
+        if (state_transitions.symbol == epsilon)
+        {
+            handle_epsilon_transitions(state_depth_pair, state_transitions, worklist);
+        }
+        else // Handle other transitions.
+        {
+            add_transitions_to_worklist(state_transitions, state_depth_pair.depth, worklist);
+        }
+    }
+}
+
+void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& state_depth_pair,
+                                              const TransSymbolStates& state_transitions,
+                                              std::deque<StateDepthPair>& worklist)
+{
+    epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
+    for (State target_state: state_transitions.states_to)
+    {
+        epsilon_depth_transitions[state_depth_pair.depth].push_back(
+                Trans{ state_depth_pair.state, state_transitions.symbol, target_state }
+        );
+        worklist.push_back(StateDepthPair{ target_state, state_depth_pair.depth + 1 });
+    }
+}
+
+void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+                                               std::deque<StateDepthPair>& worklist)
+{
+    for (State target_state: state_transitions.states_to)
+    {
+        worklist.push_back(StateDepthPair{ target_state, depth });
+    }
+}
+
+std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initialize_worklist() const
+{
+    std::deque<StateDepthPair> worklist{};
+    for (State state: automaton.initialstates)
+    {
+        worklist.push_back(StateDepthPair{ state, 0 });
+    }
+    return worklist;
+}
+
+StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
+{
+    StateMap<bool> visited{};
+    const size_t state_num = automaton.get_num_of_states();
+    for (State state{ 0 }; state < state_num; ++state)
+    {
+        visited[state] = false;
+    }
+    return visited;
+}
+
+void SegNfa::Segmentation::split_aut_into_segments()
+{
+    segments = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
+
+    // Construct segment automata.
+    std::unique_ptr<const TransSequence> depth_transitions{};
+    for (size_t depth{ 0 }; depth < epsilon_depth_transitions.size(); ++depth)
+    {
+        // Split the left segment from automaton into a new segment.
+        depth_transitions = std::make_unique<const TransSequence>(epsilon_depth_transitions[depth]);
+        for (const auto& transition: *depth_transitions)
+        {
+            update_current_segment(depth, transition);
+            propagate_to_other_segments(depth, transition);
+        }
+    }
+
+    trim_segments();
+}
+
+void SegNfa::Segmentation::trim_segments()
+{
+    for (auto& seg_aut: segments)
+    {
+        seg_aut.trim();
+        seg_aut.remove_epsilon(epsilon);
+    }
+}
+
+void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
+{
+    assert(transition.symb == epsilon);
+    assert(segments[current_depth].has_trans(transition));
+
+    segments[current_depth].set_final(transition.src);
+    segments[current_depth].remove_trans(transition);
+}
+
+void SegNfa::Segmentation::propagate_to_other_segments(const size_t current_depth, const Trans& transition)
+{
+    const size_t segments_size{ segments.size() };
+    for (size_t other_segment_depth{ current_depth + 1 };
+         other_segment_depth < segments_size;
+         ++other_segment_depth)
+    {
+        segments[other_segment_depth].remove_trans(transition);
+        segments[other_segment_depth].set_initial(transition.tgt);
+    }
+}
+
+const AutSequence& SegNfa::Segmentation::get_segments()
+{
+    if (segments.empty()) { split_aut_into_segments(); }
+
+    return segments;
+}
+
+void SegNfa::Segmentation::compute_epsilon_depths()
+{
+    StateMap<bool> visited{ initialize_visited_map() };
+    std::deque<StateDepthPair> worklist{ initialize_worklist() };
+
+    while (!worklist.empty())
+    {
+        StateDepthPair state_depth_pair{ worklist.front() };
+        worklist.pop_front();
+
+        if (!visited[state_depth_pair.state])
+        {
+            visited[state_depth_pair.state] = true;
+            process_state_depth_pair(state_depth_pair, worklist);
+        }
+    }
 }
