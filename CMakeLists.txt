@@ -37,10 +37,10 @@ option(USE_CLANG "build with clang" OFF)
 # Doxygen - voluntary
 find_package(Doxygen)
 if (DOXYGEN_FOUND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in 
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY
     )
-    add_custom_target(doc 
+    add_custom_target(doc
         ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         COMMENT "Generating API documentation with Doxygen" VERBATIM
@@ -84,4 +84,3 @@ enable_testing()
 add_subdirectory(src)
 add_subdirectory(cli)
 add_subdirectory(3rdparty/re2)
-#add_subdirectory(python_bind)

@@ -82,8 +82,10 @@ void Vata2::VM::reg_dispatcher(
 	tie(std::ignore, inserted) = dispatch_dict.insert({type_name, {func, info}});
 	if (!inserted)
 	{
+#ifndef NO_THROW_DISPATCHER
 		throw std::runtime_error("trying to register dispatcher for \"" +
 			type_name + "\", which is already registered");
+#endif
 	}
 } // reg_dispatcher }}}
 
