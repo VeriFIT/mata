@@ -28,6 +28,29 @@ TEST_CASE("Vata2::RE2Parser basic_parsing")
         REQUIRE(!is_in_lang(aut, Word{'a','d','c'}));
     }
 
+    SECTION("Hex symbol encoding")
+    {
+        Vata2::Nfa::Nfa aut;
+        Vata2::RE2Parser::create_nfa(&aut, "\\x7f");
+        REQUIRE(!aut.trans_empty());
+        REQUIRE(!is_lang_empty(aut));
+        REQUIRE(is_in_lang(aut, Word{127}));
+    }
+
+    SECTION("Wild card")
+    {
+        Vata2::Nfa::Nfa aut;
+        Vata2::RE2Parser::create_nfa(&aut, ".*");
+        REQUIRE(!aut.trans_empty());
+        REQUIRE(!is_lang_empty(aut));
+        REQUIRE(is_in_lang(aut, Word{'w','h','a','t','e','v','e','r'}));
+        REQUIRE(is_in_lang(aut, Word{127}));
+        REQUIRE(is_in_lang(aut, Word{0x7f}));
+        REQUIRE(is_in_lang(aut, Word{}));
+        EnumAlphabet alph = { };
+        REQUIRE(is_universal(aut,alph));
+    }
+
     SECTION("Iteration test")
     {
         Vata2::Nfa::Nfa aut;
