@@ -237,11 +237,11 @@ struct TransSymbolStates {
     StateSet states_to;
 
     TransSymbolStates() = delete;
-    TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition) {}
+    explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
     TransSymbolStates(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
-    TransSymbolStates(Symbol symbolOnTransition, StateSet states_to) :
-            symbol(symbolOnTransition), states_to(std::move(states_to)) {}
+    TransSymbolStates(Symbol symbolOnTransition, const StateSet& states_to) :
+            symbol(symbolOnTransition), states_to(states_to) {}
 
     inline bool operator<(const TransSymbolStates& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
@@ -280,6 +280,15 @@ public:
     {
         assert(get_num_of_states() <= size);
         transitionrelation.resize(size);
+    }
+
+    /**
+     * Increase size to include @p state.
+     * @param state[in] The new state to be included.
+     */
+    void increase_size_for_state(const State state)
+    {
+        increase_size(state + 1);
     }
 
     void make_initial(State state) {
@@ -347,6 +356,23 @@ public:
     void add_trans(const Trans& trans)
     {
         add_trans(trans.src, trans.symb, trans.tgt);
+    }
+
+    /**
+     * Remove transition.
+     * @param src Source state of the transition to be removed.
+     * @param symb Transition symbol of the transition to be removed.
+     * @param tgt Target state of the transition to be removed.
+     */
+    void remove_trans(State src, Symbol symb, State tgt);
+
+    /**
+     * Remove transition.
+     * @param trans Transition to be removed.
+     */
+    void remove_trans(const Trans& trans)
+    {
+        remove_trans(trans.src, trans.symb, trans.tgt);
     }
 
     bool has_trans(Trans trans) const

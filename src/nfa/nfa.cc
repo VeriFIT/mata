@@ -203,6 +203,33 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
     transitionrelation[stateFrom].insert(transitionFromStateIter, TransSymbolStates(symbolOnTransition, stateTo));
 }
 
+void Nfa::remove_trans(State src, Symbol symb, State tgt)
+{
+    if (!has_trans(src, symb, tgt))
+    {
+        throw std::invalid_argument(
+                "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
+                std::to_string(tgt) + "] does not exist.");
+    }
+
+    auto transitionFromStateIter{ transitionrelation[src].begin() };
+    for (; transitionFromStateIter != transitionrelation[src].end(); ++transitionFromStateIter)
+    {
+        if (transitionFromStateIter->symbol == symb)
+        {
+            transitionFromStateIter->states_to.remove(tgt);
+            if (transitionFromStateIter->states_to.empty())
+            {
+                transitionrelation[src].remove(*transitionFromStateIter);
+            }
+
+            return;
+        }
+
+        ++transitionFromStateIter;
+    }
+}
+
 State Nfa::add_new_state() {
     transitionrelation.emplace_back();
     return transitionrelation.size() - 1;

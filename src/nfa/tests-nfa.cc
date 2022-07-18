@@ -1854,7 +1854,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         Word word{};
         word.push_back('b');
         word.push_back('a');
-        std::set<Word> expected{word};
+        WordSet expected{word};
         Word word2{};
         word2.push_back('a');
         word2.push_back('a');
@@ -1876,7 +1876,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
             word.push_back('b');
             word.push_back('b');
             word.push_back('a');
-            expected = std::set<Word>{word};
+            expected = WordSet{word};
             word2.clear();
             word2.push_back('b');
             word2.push_back('a');
@@ -1937,5 +1937,59 @@ TEST_CASE("Mata::Nfa::remove_final()")
         aut.remove_final(12);
         REQUIRE(aut.has_final(2));
         REQUIRE(!aut.has_final(12));
+    }
+}
+
+TEST_CASE("Mata::Nfa::remove_trans()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        aut.add_trans(1, 3, 4);
+        aut.add_trans(1, 3, 5);
+
+        SECTION("Simple remove")
+        {
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(aut.has_trans(1, 3, 5));
+            aut.remove_trans(1, 3, 5);
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(!aut.has_trans(1, 3, 5));
+        }
+
+        SECTION("Remove missing transition")
+        {
+            REQUIRE_THROWS_AS(aut.remove_trans(1, 1, 5), std::invalid_argument);
+        }
+
+        SECTION("Remove the last state_to from states_to")
+        {
+            REQUIRE(aut.has_trans(6, 'a', 2));
+            aut.remove_trans(6, 'a', 2);
+            REQUIRE(!aut.has_trans(6, 'a', 2));
+            REQUIRE(aut.transitionrelation[6].empty());
+
+            REQUIRE(aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+            aut.remove_trans(4, 'a', 6);
+            REQUIRE(!aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+
+            aut.remove_trans(4, 'a', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 2);
+
+            aut.remove_trans(4, 'c', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(!aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 1);
+        }
     }
 }
