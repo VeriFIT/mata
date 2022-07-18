@@ -1,6 +1,4 @@
 # The file format for automata
-* Some features of this format are taken from Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372) and from a format by Pavol Vargovcik.
-
 
 ## Top-level file structure
 * The format is **line**-based. Lines can be connected by `\`.
@@ -112,3 +110,7 @@ It could be good to allow a key-value line `%Alias bla bli`, which specifies an 
 ## Attributes
 We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. The attributes are meant as something not relevant for the semantics of the automaton, for instance some attributes used when siplaying the automaton, such as colors. 
 1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`.
+
+## References
+Some features of this format are taken from Ondrej Lengal's [`.vtf' format](https://discord.com/channels/@me/864885374375821312/980792642927460372) and from an unpublished format by Pavol Vargovcik.
+
