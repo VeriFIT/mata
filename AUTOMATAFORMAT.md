@@ -9,8 +9,7 @@
 * In automata sections, non-empty lines are **key-value lines** of the form `%<KEY> [VALUE]`, **transition lines**, or **comment lines** starting with `#`. Several key-value lines with the same key mean that the key is mapped to the set of values, an occurence without a value marks that the `KEY` is defined. 
 * Besides white spaces and the end of line, the following are **characters with special meaning**: `&`,`|`,`!`,`@`,`(`,`)`,`%`,`"`,`\`,`#` `[`,`]`,`a`,`q`,`n`,`t`.
   * `&`,`|`,`!`,`(`,`)`,`^` occurring as tokens in transition lines are logical operators.
-  * `[`,`]`,`-` within intervals of symbols of the form `[bla-bli]`.
-  * `{`,`}` are enclosing attributes, if we use them this way. Remains to be decided. (?)
+  * `[`,`]`,`-` enclose character classes, such as `[abcd-h]`, `[^abcd-h]`.
   * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
   * `%` opens a key-value line.
   * `"` strings containing white spaces and special characters can be written in between `"`. The special characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`. 
@@ -47,9 +46,9 @@ We use the general form of AFA, by Pavol V., and simple NFA.
 Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), ascii (?), numbers (?), intervals of numbers or unicode or ascii.
 * **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.
 * **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
-* **Interval**: Intervals of symbols are of the form [a-z]. We might also want complements, [^a-z], but I am not sure that we want to work with complements. We might also want to give abstract intervals of the form [min,a], [a,max], [min,max], or use inf and -inf instead of min and max. This would be particularly needed if we do not have complements and do not know the alphabet range.
+* **Character class**: Character classes, i.e., sets of symbols as used in normal regular expressiosn, are of the form `[bla]` or `[^bla]` where bla is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` are denote the first repsective the last letter the alphabet.
 
-We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme).
+We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme). The formula may be just a single letter which is supposed to mean epsilon, it may be a disjunciton of letters, when we need several different epsilons, or a more complex formula describing boolean vectors that are supposed to mean epsilons.  Use cases for multiple epsilons appear for instance in string solving.
 
 ## AFA and NFA Examples
 ```
@@ -96,8 +95,8 @@ q [a-z]@x | [2-7]@y | [\u{1c}-\u{5c}]@z & ("(r,s)" | (r & s))
 q a1@x | a2@z & ("(r,s)" | r | s)
 ```
  
-## Special formulas over symbols and transducer track names.
-The user may parse symbol token strings in a specific way. They may be SMT formulas or some special kind of formulas, such as `a"x=y"` specifying that the two transducer tracks read the same symbol... 
+## Special formulas and relations over symbols and transducer track names.
+It may be useful to specify relation between symbol variables or transducer tracks. These may be SMT formulas or something special, such as `a"x=y"` specifying that the two transducer tracks read the same symbol. We reserve the type letter `f` for this. We this fuzzy for now, to be concretized when it is actually needed. 
 
 ``` 
 @AFA-intervals
@@ -111,5 +110,5 @@ The example above does not work in the current version where the special formula
 It could be good to allow a key-value line `%Alias bla bli`, which specifies an alias. The parser will replace occurrences of the token `bla` with the string `bli`.
 
 ## Attributes
-We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. 
-1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`. 
+We want to assign attributes to states, symbols, nodes, transducer tracks, transitions. The attributes are meant as something not relevant for the semantics of the automaton, for instance some attributes used when siplaying the automaton, such as colors. 
+1. An attribute inside a transition is a token such as a state, node, symbol. Its identifier is `t`. We can also give attributes to states, symbols, nodes by writing key-value lines of the form `%Attribute <state> <attribute>`.
