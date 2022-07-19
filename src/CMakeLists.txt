@@ -49,21 +49,15 @@ include_directories(../3rdparty/re2)
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	afa/afa.cc
-	bool-dispatch.cc
+	config.cc
 	explicit_lts_sim.cc
 	parser.cc
-	parser-dispatch.cc
 	re2parser.cc
-	str-dispatch.cc
 	nfa/nfa.cc
-	nfa/nfa-dispatch.cc
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
 	rra/rrt.cc
-	void-dispatch.cc
-	vm.cc
-	vm-dispatch.cc           # this should be the last one
 )
 
 set_target_properties(libmata PROPERTIES
@@ -74,13 +68,9 @@ set_target_properties(libmata PROPERTIES
 add_executable(tests
 	tests-main.cc
 	tests-parser.cc
-	tests-parser-dispatch.cc
 	tests-re2parser.cc
-	tests-vm.cc
-	tests-vm-dispatch.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
-	nfa/tests-nfa-dispatch.cc
 	rra/tests-rrt.cc
 )
 
