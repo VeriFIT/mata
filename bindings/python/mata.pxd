@@ -27,7 +27,6 @@ cdef extern from "mata/ord_vector.hh" namespace "Mata::Util":
         COrdVector(vector[T]) except+
         vector[T] ToVector()
 
-
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
@@ -158,5 +157,4 @@ cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string)
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    cdef cppclass BinaryRelation:
-        cdef BinaryRelation compute_fw_direct_simulation(const CNfa&)
+    cdef "Simlib::Util::BinaryRelation" compute_fw_direct_simulation(const CNfa&)
