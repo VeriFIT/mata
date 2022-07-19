@@ -9,6 +9,7 @@ third_party_include_dir = os.path.join(project_dir, "3rdparty")
 re2_include_dir = os.path.join(project_dir, "3rdparty", "re2")
 source_dir = os.path.join(project_dir, "src")
 re2_source_dir = os.path.join(project_dir, "3rdparty", "re2")
+simlib_include_dir = os.path.join(project_dir, "3rdparty", "simlib", "include")
 
 
 def get_cpp_sources(src_dir):
@@ -29,7 +30,7 @@ extensions = [
     Extension(
         "mata",
         sources=["mata.pyx"] + get_cpp_sources(source_dir) + get_cpp_sources(re2_source_dir),
-        include_dirs=[include_dir, third_party_include_dir, re2_include_dir],
+        include_dirs=[include_dir, third_party_include_dir, re2_include_dir, simlib_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     )
