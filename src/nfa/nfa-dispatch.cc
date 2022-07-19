@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,18 @@
 
 #include <tuple>
 
-// VATA headers
-#include <vata2/nfa.hh>
-#include <vata2/vm-dispatch.hh>
+// MATA headers
+#include <mata/nfa.hh>
+#include <mata/vm-dispatch.hh>
 
 // local headers
 #include "../dispatch-aux.hh"
 
-using namespace Vata2::Nfa;
-using namespace Vata2::VM;
+using namespace Mata::Nfa;
+using namespace Mata::VM;
 
-using Vata2::Parser::ParsedSection;
-using Vata2::dispatch::test_and_call;
+using Mata::Parser::ParsedSection;
+using Mata::dispatch::test_and_call;
 
 
 namespace
@@ -38,11 +38,11 @@ namespace
 		const VMFuncArgs&  func_args)
 	{
 		DEBUG_PRINT("calling function \"" + func_name + "\" for " +
-			Vata2::Nfa::TYPE_NFA + " with arguments " + std::to_string(func_args));
+                    Mata::Nfa::TYPE_NFA + " with arguments " + std::to_string(func_args));
 
 		if (func_args.size() == 0) {
 			throw VMException("calling function \"" + func_name + "\" for " +
-				Vata2::Nfa::TYPE_NFA + " with no arguments");
+                              Mata::Nfa::TYPE_NFA + " with no arguments");
 		}
 
 		const VMValue& arg0 = func_args[0];
@@ -55,9 +55,9 @@ namespace
 		// we use throw to return result from test_and_call
 		try {
 
-			test_and_call("construct", func_name, {Vata2::TYPE_PARSEC}, func_args,
-				Vata2::Nfa::TYPE_NFA,
-				*[](const ParsedSection& parsec) -> auto {
+			test_and_call("construct", func_name, {Mata::TYPE_PARSEC}, func_args,
+                          Mata::Nfa::TYPE_NFA,
+                          *[](const ParsedSection& parsec) -> auto {
 					NfaWrapper* nfa_wrap = new NfaWrapper;
 					DEBUG_PRINT("constructing NFA " + (parsec.haskey("Name")?
 							std::to_string(parsec["Name"]) :
@@ -88,15 +88,15 @@ namespace
 					return static_cast<VMPointer>(nfa_wrap);
 				});
 
-			test_and_call("print", func_name, {TYPE_NFA}, func_args, Vata2::TYPE_VOID,
-				*[](const NfaWrapper& nfa_wrap) -> auto {
+			test_and_call("print", func_name, {TYPE_NFA}, func_args, Mata::TYPE_VOID,
+                          *[](const NfaWrapper& nfa_wrap) -> auto {
 					std::cout << nfa_wrap;
 					return static_cast<VMPointer>(nullptr);
 				});
 
-			test_and_call("is_univ", func_name, {Vata2::Nfa::TYPE_NFA}, func_args,
-				Vata2::TYPE_BOOL,
-				*[](const NfaWrapper& nfa_wrap) -> auto {
+			test_and_call("is_univ", func_name, {Mata::Nfa::TYPE_NFA}, func_args,
+                          Mata::TYPE_BOOL,
+                          *[](const NfaWrapper& nfa_wrap) -> auto {
 					Word cex;
 					// TODO: FIX
 					StringDict params{{"algo", "naive"}};
@@ -109,13 +109,13 @@ namespace
 			return res;
 		}
 
-		return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
+		return VMValue(Mata::TYPE_NOT_A_VALUE, nullptr);
 	}
 }
 
 
-void Vata2::Nfa::init()
+void Mata::Nfa::init()
 {
-	reg_dispatcher(Vata2::Nfa::TYPE_NFA, nfa_dispatch,
-		"basic nondeterministic finite automaton");
+	reg_dispatcher(Mata::Nfa::TYPE_NFA, nfa_dispatch,
+                   "basic nondeterministic finite automaton");
 }

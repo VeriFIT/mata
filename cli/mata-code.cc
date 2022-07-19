@@ -5,15 +5,15 @@
 #include <fstream>
 #include <iomanip>
 
-#include <vata2/util.hh>
-#include <vata2/vm-dispatch.hh>
+#include <mata/util.hh>
+#include <mata/vm-dispatch.hh>
 
 #include "../3rdparty/args.hxx"
 
 /// declaration of external identifiers
-extern const char* VATA_VERSION;
-extern const char* VATA_GIT_SHA;
-extern const char* VATA_GIT_DESCRIBE;
+extern const char* MATA_VERSION;
+extern const char* MATA_GIT_SHA;
+extern const char* MATA_GIT_DESCRIBE;
 
 int interpret_input(std::istream& is);
 
@@ -24,9 +24,9 @@ const unsigned DEFAULT_VERBOSITY = 1;
 /// The entry point
 int main(int argc, const char* argv[])
 {
-	args::ArgumentParser arg_parser("A CLI interface to the libVATA2 automata library");
+	args::ArgumentParser arg_parser("A CLI interface to the libMATA automata library");
 	args::HelpFlag flag_help(arg_parser, "help", "Display this help menu", {'h', "help"});
-	args::Flag flag_version(arg_parser, "version", "Print the version of VATA",
+	args::Flag flag_version(arg_parser, "version", "Print the version of MATA",
 		{'v', "version"});
 	args::Flag flag_types(arg_parser, "types", "Print out info about types", {'t', "types"});
 	args::ValueFlag<unsigned> flag_debug(arg_parser, "level", "Debug level (from 0 to " +
@@ -50,19 +50,19 @@ int main(int argc, const char* argv[])
 	int ret_val;
 
 	if (flag_version) {
-		std::cout << "vata-code version " << VATA_VERSION;
-		std::cout << " (" << VATA_GIT_DESCRIBE << ")";
+		std::cout << "mata-code version " << MATA_VERSION;
+		std::cout << " (" << MATA_GIT_DESCRIBE << ")";
 
-		size_t git_sha_len = std::strlen(VATA_GIT_SHA);
+		size_t git_sha_len = std::strlen(MATA_GIT_SHA);
 		std::string git_sha_crop =
-			(git_sha_len < 8)? VATA_GIT_SHA : std::string(VATA_GIT_SHA, 8);
+			(git_sha_len < 8)? MATA_GIT_SHA : std::string(MATA_GIT_SHA, 8);
 
 		std::cout << " [git: " << git_sha_crop << "]";
 		std::cout << "\n";
 		return EXIT_SUCCESS;
 	} else if (flag_types) {
 		try {
-			Vata2::VM::VMTypeDesc desc = Vata2::VM::get_types_description();
+			Mata::VM::VMTypeDesc desc = Mata::VM::get_types_description();
 
 			std::vector<std::pair<std::string, std::string>> desc_vec(desc.begin(), desc.end());
 			size_t max_len = 1;
@@ -90,8 +90,8 @@ int main(int argc, const char* argv[])
 	if (verbosity > MAX_VERBOSITY) {
 		verbosity = MAX_VERBOSITY;
 	}
-	Vata2::LOG_VERBOSITY = verbosity;
-	DEBUG_PRINT("verbosity set to " + std::to_string(Vata2::LOG_VERBOSITY));
+    Mata::LOG_VERBOSITY = verbosity;
+	DEBUG_PRINT("verbosity set to " + std::to_string(Mata::LOG_VERBOSITY));
 
 	if (pos_inputfile) {
 		std::string filename = args::get(pos_inputfile);

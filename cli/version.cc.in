@@ -2,10 +2,10 @@
 
 
 /// The version number
-const char* VATA_VERSION = "2.0";
+const char* MATA_VERSION = "2.0";
 
 /// The git SHA of the commit
-const char* VATA_GIT_SHA = "@GIT_SHA1@";
+const char* MATA_GIT_SHA = "@GIT_SHA1@";
 
 /// The git --describe output
-const char* VATA_GIT_DESCRIBE = "@GIT_DESCRIBE@";
+const char* MATA_GIT_DESCRIBE = "@GIT_DESCRIBE@";

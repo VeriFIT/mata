@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
  */
 
 
-#ifndef _VATA2_UTIL_HH_
-#define _VATA2_UTIL_HH_
+#ifndef _MATA_UTIL_HH_
+#define _MATA_UTIL_HH_
 
 #include <algorithm>
 #include <functional>
@@ -29,11 +29,11 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
-#include <vata2/ord_vector.hh>
+#include <mata/ord_vector.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
-	if (Vata2::LOG_VERBOSITY >= lvl) {\
+	if (Mata::LOG_VERBOSITY >= lvl) {\
 		std::cerr << title << ": " << x << "\n";\
 	}\
 }
@@ -51,7 +51,7 @@
 #define DEBUG_VM_LOW_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(4, "debug VM", x); }
 #define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning", x); }
 
-namespace Vata2
+namespace Mata
 {
 
 /// log verbosity
@@ -166,7 +166,7 @@ struct TuplePrinter;
 
 // CLOSING NAMESPACES AND GUARDS
 } /* util */
-} /* Vata2 */
+} /* Mata */
 
 
 // Some things that need to go to std
@@ -182,7 +182,7 @@ struct hash<std::pair<A,B>>
 	inline size_t operator()(const std::pair<A,B>& k) const
 	{ // {{{
 		size_t accum = std::hash<A>{}(k.first);
-		return Vata2::util::hash_combine(accum, k.second);
+		return Mata::util::hash_combine(accum, k.second);
 	} // operator() }}}
 };
 
@@ -194,7 +194,7 @@ struct hash<std::set<A>>
 {
 	inline size_t operator()(const std::set<A>& cont) const
 	{ // {{{
-		return Vata2::util::hash_range(cont.begin(), cont.end());
+		return Mata::util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -206,7 +206,7 @@ struct hash<std::vector<A>>
 {
 	inline size_t operator()(const std::vector<A>& cont) const
 	{ // {{{
-		return Vata2::util::hash_range(cont.begin(), cont.end());
+		return Mata::util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -386,7 +386,7 @@ template <class... Ts>
 std::string to_string(const std::tuple<Ts...>& tup)
 { // {{{
 	std::string str = "<";
-  str += Vata2::util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
+  str += Mata::util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
 	str += ">";
 
 	return str;
@@ -411,7 +411,7 @@ std::string to_string(const A& value)
 
 } // namespace std }}}
 
-namespace Vata2
+namespace Mata
 {
 namespace util
 {
@@ -438,4 +438,4 @@ struct TuplePrinter<Tuple, 1> {
 
 }
 }
-#endif /* _VATA2_UTIL_HH_ */
+#endif /* _MATA_UTIL_HH_ */

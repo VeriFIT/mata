@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,17 +19,17 @@
 #include <list>
 #include <unordered_set>
 
-// VATA headers
-#include <vata2/nfa.hh>
-#include <vata2/explicit_lts.hh>
+// MATA headers
+#include <mata/nfa.hh>
+#include <mata/explicit_lts.hh>
 
 using std::tie;
 
-using namespace Vata2::util;
-using namespace Vata2::Nfa;
-using Vata2::Nfa::Symbol;
+using namespace Mata::util;
+using namespace Mata::Nfa;
+using Mata::Nfa::Symbol;
 
-const std::string Vata2::Nfa::TYPE_NFA = "NFA";
+const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
 //searches for every state in the set of final states
@@ -50,8 +50,8 @@ namespace {
         receivingSet.insert(addedSet);
     }
 
-    Vata2::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Vata2::ExplicitLTS LTSforSimulation;
+    Mata::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+        Mata::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
         const size_t state_num = aut.get_num_of_states();
 
@@ -76,7 +76,7 @@ namespace {
     }
 }
 
-std::ostream &std::operator<<(std::ostream &os, const Vata2::Nfa::Trans &trans) { // {{{
+std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) { // {{{
     std::string result = "(" + std::to_string(trans.src) + ", " +
                          std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
     return os << result;
@@ -210,7 +210,7 @@ State Nfa::add_new_state() {
 
 /// General methods for NFA
 
-bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
+bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
     // fill lhs_states with all states of lhs
     std::unordered_set<State> lhs_states;
@@ -250,7 +250,7 @@ bool Vata2::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     return true;
 } // are_disjoint }}}
 
-void Vata2::Nfa::make_complete(
+void Mata::Nfa::make_complete(
         Nfa*             aut,
         const Alphabet&  alphabet,
         State            sink_state)
@@ -291,7 +291,7 @@ void Vata2::Nfa::make_complete(
     }
 }
 
-void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
+void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 {
     assert(nullptr != result);
 
@@ -357,7 +357,7 @@ void Vata2::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     }
 }
 
-void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
+void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 {
     assert(nullptr != result);
 
@@ -374,7 +374,7 @@ void Vata2::Nfa::revert(Nfa* result, const Nfa& aut)
     }
 }
 
-bool Vata2::Nfa::is_deterministic(const Nfa& aut)
+bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initialstates.size() != 1) { return false; }
 
@@ -390,7 +390,7 @@ bool Vata2::Nfa::is_deterministic(const Nfa& aut)
 
     return true;
 }
-bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
+bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
     std::list<Symbol> symbs_ls = alphabet.get_symbols();
     std::unordered_set<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
@@ -431,7 +431,7 @@ bool Vata2::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
     return true;
 }
 
-std::pair<Word, bool> Vata2::Nfa::get_word_for_path(const Nfa& aut, const Path& path)
+std::pair<Word, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Path& path)
 {
     if (path.empty())
     {
@@ -471,7 +471,7 @@ std::pair<Word, bool> Vata2::Nfa::get_word_for_path(const Nfa& aut, const Path& 
     return {word, true};
 }
 
-bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
+bool Mata::Nfa::is_in_lang(const Nfa& aut, const Word& word)
 {
     StateSet cur = aut.initialstates;
 
@@ -485,7 +485,7 @@ bool Vata2::Nfa::is_in_lang(const Nfa& aut, const Word& word)
 }
 
 /// Checks whether the prefix of a string is in the language of an automaton
-bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
+bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 {
     StateSet cur = aut.initialstates;
 
@@ -499,7 +499,7 @@ bool Vata2::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
     return !are_disjoint(cur, aut.finalstates);
 }
 
-WordSet Vata2::Nfa::Nfa::get_shortest_words() const
+WordSet Mata::Nfa::Nfa::get_shortest_words() const
 {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     ShortestWordsMap shortest_words_map{*this};
@@ -509,13 +509,13 @@ WordSet Vata2::Nfa::Nfa::get_shortest_words() const
 }
 
 /// serializes Nfa into a ParsedSection
-Vata2::Parser::ParsedSection Vata2::Nfa::serialize(
+Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const Nfa&                aut,
         const SymbolToStringMap*  symbol_map,
         const StateToStringMap*   state_map)
 {assert(false);}
 
-bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
+bool Mata::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 { // {{{
     std::list<State> worklist(
             aut.initialstates.begin(), aut.initialstates.end());
@@ -582,7 +582,7 @@ bool Vata2::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
     return true;
 } // is_lang_empty }}}
 
-bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
+bool Mata::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
 {
     assert(nullptr != cex);
 
@@ -596,7 +596,7 @@ bool Vata2::Nfa::is_lang_empty_cex(const Nfa& aut, Word* cex)
     return false;
 }
 
-void Vata2::Nfa::complement_in_place(Nfa& aut) {
+void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 
     for (State q = 0; q < aut.transitionrelation.size(); ++q) {
@@ -608,14 +608,14 @@ void Vata2::Nfa::complement_in_place(Nfa& aut) {
     aut.finalstates = newFinalStates;
 }
 
-void Vata2::Nfa::minimize(Nfa *res, const Nfa& aut) {
+void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     Nfa inverted;
     invert(&inverted, aut);
     determinize(res, inverted);
 }
 
-void Vata2::Nfa::invert(Nfa *invertedAutomaton, const Nfa& aut) {
+void Mata::Nfa::invert(Nfa *invertedAutomaton, const Nfa& aut) {
     const size_t states_num = aut.get_num_of_states();
     for (State i = 0; i < states_num; ++i)
         invertedAutomaton->add_new_state();
@@ -756,7 +756,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
-void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
+void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
     std::unordered_map<State,State> thisStateToUnionState;
@@ -787,7 +787,7 @@ void Vata2::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     }
 }
 
-void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_map) {
+void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_map) {
     using StatePair = std::pair<State, State>;
 
     /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
@@ -894,7 +894,7 @@ void Vata2::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductM
     }
 }
 
-Vata2::Util::BinaryRelation Vata2::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
+Mata::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -917,7 +917,7 @@ Vata2::Util::BinaryRelation Vata2::Nfa::compute_relation(const Nfa& aut, const S
     }
 }
 
-void Vata2::Nfa::determinize(
+void Mata::Nfa::determinize(
         Nfa*        result,
         const Nfa&  aut,
         SubsetMap*  subset_map)
@@ -929,7 +929,7 @@ void Vata2::Nfa::determinize(
         subset_map = new SubsetMap();
         deallocate_subset_map = true;
     }
-    StateSet S0 =  Vata2::Util::OrdVector<State>(aut.initialstates.ToVector());
+    StateSet S0 =  Mata::Util::OrdVector<State>(aut.initialstates.ToVector());
     State S0id = result->add_new_state();
     result->add_initial(S0id);
     std::vector<bool> isFinal(aut.get_num_of_states(), false);//for fast detection of a final state in a set
@@ -941,7 +941,7 @@ void Vata2::Nfa::determinize(
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
-    (*subset_map)[Vata2::Util::OrdVector<State>(S0)] = S0id;
+    (*subset_map)[Mata::Util::OrdVector<State>(S0)] = S0id;
 
     if (aut.trans_empty())
         return;
@@ -954,7 +954,7 @@ void Vata2::Nfa::determinize(
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
-        Vata2::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
+        Mata::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
 
         while (iterator.has_next()) {
             auto symbolTargetPair = iterator.next();
@@ -966,7 +966,7 @@ void Vata2::Nfa::determinize(
                 Tid = existingTitr->second;
             } else {
                 Tid = result->add_new_state();
-                (*subset_map)[Vata2::Util::OrdVector<State>(T)] = Tid;
+                (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
                 if (contains_final(T, isFinal)) {
                     result->add_final(Tid);
                 }
@@ -979,18 +979,18 @@ void Vata2::Nfa::determinize(
     if (deallocate_subset_map) { delete subset_map; }
 }
 
-void Vata2::Nfa::construct(
+void Mata::Nfa::construct(
         Nfa*                                 aut,
-        const Vata2::Parser::ParsedSection&  parsec,
+        const Mata::Parser::ParsedSection&  parsec,
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map)
 { // {{{
     assert(nullptr != aut);
     assert(nullptr != alphabet);
 
-    if (parsec.type != Vata2::Nfa::TYPE_NFA) {
+    if (parsec.type != Mata::Nfa::TYPE_NFA) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 Vata2::Nfa::TYPE_NFA + "\"");
+                                 Mata::Nfa::TYPE_NFA + "\"");
     }
 
     bool remove_state_map = false;
@@ -1065,9 +1065,9 @@ void Vata2::Nfa::construct(
     clean_up();
 } // construct }}}
 
-void Vata2::Nfa::construct(
+void Mata::Nfa::construct(
         Nfa*                                 aut,
-        const Vata2::Parser::ParsedSection&  parsec,
+        const Mata::Parser::ParsedSection&  parsec,
         StringToSymbolMap*                   symbol_map,
         StringToStateMap*                    state_map)
 { // {{{
@@ -1246,12 +1246,12 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     return result;
 }
 
-std::ostream& Vata2::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
+std::ostream& Mata::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
 { // {{{
     return os << std::to_string(serialize(nfa));
 } // Nfa::operator<<(ostream) }}}
 
-std::ostream& std::operator<<(std::ostream& os, const Vata2::Nfa::NfaWrapper& nfa_wrap)
+std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap)
 { // {{{
 	os << "{NFA wrapper|NFA: " << nfa_wrap.nfa << "|alphabet: " << nfa_wrap.alphabet <<
 		"|state_dict: " << std::to_string(nfa_wrap.state_dict) << "}";
@@ -1282,7 +1282,7 @@ WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) 
     return result;
 }
 
-void Vata2::Nfa::ShortestWordsMap::insert_initial_lengths()
+void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
 {
     for (State state: reversed_automaton.initialstates)
     {
@@ -1345,7 +1345,7 @@ void ShortestWordsMap::compute_for_state(const State state)
     }
 }
 
-void Vata2::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
+void Mata::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
 {
     for (Word word: dst.second)
     {

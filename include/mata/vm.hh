@@ -1,8 +1,8 @@
-/* vm.hh -- the VATA virtual machine
+/* vm.hh -- the MATA virtual machine
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,15 +15,15 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _VATA2_VM_HH_
-#define _VATA2_VM_HH_
+#ifndef _MATA_VM_HH_
+#define _MATA_VM_HH_
 
 #include <stack>
 
-// VATA headers
-#include <vata2/parser.hh>
+// MATA headers
+#include <mata/parser.hh>
 
-namespace Vata2
+namespace Mata
 {
 
 /// the type of tokens
@@ -107,20 +107,20 @@ public:
 }; // VMValue }}}
 
 /**
- * @brief  The virtual machine executing VATA code
+ * @brief  The virtual machine executing MATA code
  *
- * The virtual machine executing VATA code.  It consists of a storage, which
+ * The virtual machine executing MATA code.  It consists of a storage, which
  * contains named objects, and an execution stack.  The virtual machine is a
- * stack machine that interprets input code written in the VATA@CODE syntax.
+ * stack machine that interprets input code written in the MATA@CODE syntax.
  *
  * FIXME: is the following correct?
- * A program in VATA@CODE is a sequence of statements, separated by ends of
+ * A program in MATA@CODE is a sequence of statements, separated by ends of
  * lines.  Programs are straight-line, i.e., no control flow or loops statements
  * are present (at least for now).  Statements are either **variable
  * assignments** or **procedure calls**.  **Variable assignments** are of the
  * form `lhs = expr`, e.g.,
  *
- * @code{.vata}
+ * @code{.mata}
  *   aut = (load_file "nfa1.vtf")
  * @endcode
  *
@@ -128,7 +128,7 @@ public:
  * the value of which is to be assigned to `aut`.  **Procedure calls** are of
  * the form `expr`, e.g.,
  *
- * @code{.vata}
+ * @code{.mata}
  *   (print (string "Hello World"))
  * @endcode
  *
@@ -139,7 +139,7 @@ public:
  * the same as defined in [.vtf syntax](README.md) and **function application**
  * is of the form
  *
- * @code{.vata}
+ * @code{.mata}
  *   (func-name arg1 arg2 ... argN)
  * @endcode
  *
@@ -154,13 +154,13 @@ public:
  *  ** **complex**: e.g. `NFA`, `NTA`, or `STATE-REL`
  *
  * ### A "Hello World" Example
- * @code{.vata}
+ * @code{.mata}
  *   @CODE
  *   (print (string "Hello World"))
  * @endcode
  *
  * ## Function selection
- * VATA Virtual Machine has a polymorphis extensible function mechanism.  This
+ * MATA Virtual Machine has a polymorphis extensible function mechanism.  This
  * means that with an exception of a few in-built functions, any data type can
  * define its own function handlers.  The resolution of a function to call is
  * based on the type of the first argument of the function --- the function call
@@ -187,9 +187,9 @@ public:
 	/// default constructor
 	VirtualMachine() : mem(), exec_stack() { }
 
-	void run(const Vata2::Parser::Parsed& parsed);
-	void run(const Vata2::Parser::ParsedSection& parsec);
-	void run_code(const Vata2::Parser::ParsedSection& parsec);
+	void run(const Mata::Parser::Parsed& parsed);
+	void run(const Mata::Parser::ParsedSection& parsec);
+	void run_code(const Mata::Parser::ParsedSection& parsec);
 
 	/// Executes one line of code
 	void execute_line(const Parser::BodyLine& line);
@@ -230,6 +230,6 @@ public:
 
 // CLOSING NAMESPACES AND GUARDS
 } /* VM */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_VM_HH_ */
+#endif /* _MATA_VM_HH_ */

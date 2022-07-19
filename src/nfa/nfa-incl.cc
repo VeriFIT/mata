@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +15,11 @@
  * GNU General Public License for more details.
  */
 
-// VATA headers
-#include <vata2/nfa.hh>
+// MATA headers
+#include <mata/nfa.hh>
 
-using namespace Vata2::Nfa;
-using namespace Vata2::util;
+using namespace Mata::Nfa;
+using namespace Mata::util;
 
 namespace {
 
@@ -185,7 +185,7 @@ bool is_incl_antichains(
 
 
 // The dispatching method that calls the correct one based on parameters
-bool Vata2::Nfa::is_incl(
+bool Mata::Nfa::is_incl(
 	const Nfa&         smaller,
 	const Nfa&         bigger,
 	const Alphabet&    alphabet,

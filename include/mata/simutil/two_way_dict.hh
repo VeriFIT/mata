@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,18 +8,18 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_TWO_WAY_DICT_
-#define _VATA2_TWO_WAY_DICT_
+#ifndef _MATA_TWO_WAY_DICT_
+#define _MATA_TWO_WAY_DICT_
 
-// VATA headers
-#include <vata2/convert.hh>
-#include <vata2/simutil/vata.hh>
+// MATA headers
+#include <mata/convert.hh>
+#include <mata/simutil/mata.hh>
 
 // Standard library headers
 #include <map>
 
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -51,7 +51,7 @@ template
 	class Cont1 = std::map<T1, T2>,
 	class Cont2 = std::map<T2, T1>
 >
-class Vata2::Util::TwoWayDict
+class Mata::Util::TwoWayDict
 {
 public:   // Public data types
 
@@ -202,7 +202,7 @@ public:   // Public methods
 
 		if (!(bwdmap_.insert(std::make_pair(value.second, value.first)).second))
 		{	// in case there is already some backward mapping for given value
-			VATA_ERROR("backward mapping for "
+			MATA_ERROR("backward mapping for "
 				<< Convert::ToString(value.second)
 				<< " already found: "
 				<< Convert::ToString(bwdmap_.find(value.second)->second));

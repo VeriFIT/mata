@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  Vata2 Tree Automata Library
+ *  Mata Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _Vata22_CONVERT_HH_
-#define _Vata22_CONVERT_HH_
+#ifndef _Mata2_CONVERT_HH_
+#define _Mata2_CONVERT_HH_
 
 // Standard library headers
 #include <cassert>
@@ -26,7 +26,7 @@
 
 
 // insert class to proper namespace
-namespace Vata2 { namespace Util {	class Convert; } }
+namespace Mata { namespace Util {	class Convert; } }
 
 
 /**
@@ -35,7 +35,7 @@ namespace Vata2 { namespace Util {	class Convert; } }
  *  This is a static class that constains useful methods for various
  *  conversions.
  */
-class Vata2::Util::Convert
+class Mata::Util::Convert
 {
 private:
 
@@ -536,7 +536,7 @@ public:
 };
 
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{

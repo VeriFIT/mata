@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,11 +8,11 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_SHARED_LIST_HH_
-#define _VATA2_SHARED_LIST_HH_
+#ifndef _MATA_SHARED_LIST_HH_
+#define _MATA_SHARED_LIST_HH_
 
 // insert class to proper namespace
-namespace Vata2 {
+namespace Mata {
 	namespace Util {
 		template <class T> class SharedList;
 	}
@@ -24,7 +24,7 @@ namespace Vata2 {
  * A shared list with a reference counter
  */
 template <class T>
-class Vata2::Util::SharedList {
+class Mata::Util::SharedList {
 
 private:
 

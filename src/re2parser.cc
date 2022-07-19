@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2022 Michal Horky
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,8 +17,8 @@
 
 #include <iostream>
 
-// VATA2 headers
-#include <vata2/re2parser.hh>
+// MATA headers
+#include <mata/re2parser.hh>
 
 // RE2 headers
 #include <re2/re2/regexp.h>
@@ -38,7 +38,7 @@ namespace {
          * has_state_outgoing_back_edge determines if there is any outgoing edge leading to a state with a lower number (true) or not (false)
          */
         struct StateCache {
-            std::vector<std::vector<Vata2::Nfa::State>> state_mapping;
+            std::vector<std::vector<Mata::Nfa::State>> state_mapping;
             std::vector<bool> is_final_state;
             std::vector<bool> is_state_nop_or_cap;
             std::vector<bool> is_last;
@@ -78,23 +78,23 @@ namespace {
         }
 
         /**
-         * Converts re2's prog to vata2::Nfa::Nfa
-         * @param prog Prog* to create vata2::Nfa::Nfa from
-         * @return vata2::Nfa::Nfa created from prog
+         * Converts re2's prog to mata::Nfa::Nfa
+         * @param prog Prog* to create mata::Nfa::Nfa from
+         * @return mata::Nfa::Nfa created from prog
          */
-        void convert_pro_to_nfa(Vata2::Nfa::Nfa* output_nfa, re2::Prog* prog) {
+        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog) {
             const int start_state = prog->start();
             const int prog_size = prog->size();
             int empty_flag;
-            std::vector<Vata2::Nfa::Symbol> symbols;
-            Vata2::Nfa::Nfa explicit_nfa(prog_size);
+            std::vector<Mata::Nfa::Symbol> symbols;
+            Mata::Nfa::Nfa explicit_nfa(prog_size);
 
             // We will be appending to nop and capture types of states
-            std::vector<Vata2::Nfa::State> append_to_states;
+            std::vector<Mata::Nfa::State> append_to_states;
             // It will hold information about outgoing edges -> (symbol, mappedTargetState) pairs. Indexes of the main
             // vector are source states of the edge
-            std::vector<std::vector<std::pair<Vata2::Nfa::Symbol, Vata2::Nfa::State>>> back_state_outgoing_edges(
-                    prog_size, std::vector<std::pair<Vata2::Nfa::Symbol, Vata2::Nfa::State>>());
+            std::vector<std::vector<std::pair<Mata::Nfa::Symbol, Mata::Nfa::State>>> back_state_outgoing_edges(
+                    prog_size, std::vector<std::pair<Mata::Nfa::Symbol, Mata::Nfa::State>>());
 
             // Vectors are saved in this->state_cache after this
             this->create_state_cache(prog);
@@ -102,7 +102,7 @@ namespace {
             explicit_nfa.add_initial(this->state_cache.state_mapping[start_state][0]);
             this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][0]] = true;
 
-            // We traverse all the states and create corresponding states and edges in vata2::Nfa::Nfa
+            // We traverse all the states and create corresponding states and edges in mata::Nfa::Nfa
             for (int current_state = start_state; current_state < prog_size; current_state++) {
                 re2::Prog::Inst *inst = prog->inst(current_state);
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
@@ -111,7 +111,7 @@ namespace {
                 }
                 switch (inst->opcode()) {
                     default:
-                        LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgTovata2::Nfa::Nfa";
+                        LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgTomata::Nfa::Nfa";
                         break;
 
                     case re2::kInstMatch:
@@ -257,7 +257,7 @@ namespace {
             const int prog_size = prog->size();
 
             // Used for the first loop through states
-            std::vector<Vata2::Nfa::State> tmp_state_mapping(prog_size);
+            std::vector<Mata::Nfa::State> tmp_state_mapping(prog_size);
             for (int state = 0; state < prog_size; state++) {
                 tmp_state_mapping[state] = state;
                 this->state_cache.state_mapping.push_back({tmp_state_mapping[state]});
@@ -265,7 +265,7 @@ namespace {
 
             // When there is nop or capture type of state, we will be appending to it
             int append_to_state = -1;
-            Vata2::Nfa::State mapped_parget_state;
+            Mata::Nfa::State mapped_parget_state;
 
             for (int state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(state);
@@ -279,7 +279,7 @@ namespace {
                 }
                 if (inst->opcode() == re2::kInstCapture || inst->opcode() == re2::kInstNop) {
                     this->state_cache.is_state_nop_or_cap[state] = true;
-                    mapped_parget_state = tmp_state_mapping[static_cast<Vata2::Nfa::State>(inst->out())];
+                    mapped_parget_state = tmp_state_mapping[static_cast<Mata::Nfa::State>(inst->out())];
                     tmp_state_mapping[state] = mapped_parget_state;
                     if (append_to_state != -1) {
                         // Nop or capture type of state may or may not have an incoming edge, the target state should have
@@ -314,10 +314,10 @@ namespace {
             }
 
             // A state can have two states mapped to it, we create those mappings in the second loop
-            std::vector<Vata2::Nfa::State> append_to_states = {};
+            std::vector<Mata::Nfa::State> append_to_states = {};
             // We will keep track of potential final states. When there is an epsilon transition from a state, it can lead
             // to a final state, which makes the source state final too
-            std::vector<Vata2::Nfa::State> states_to_make_final = {};
+            std::vector<Mata::Nfa::State> states_to_make_final = {};
             for (int state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(state);
                 if (inst->opcode() == re2::kInstCapture || inst->opcode() == re2::kInstNop) {
@@ -333,7 +333,7 @@ namespace {
                     mapped_parget_state = tmp_state_mapping[inst->out()];
                     this->state_cache.state_mapping[state] = {mapped_parget_state};
                     if (!append_to_states.empty()) {
-                        std::vector<Vata2::Nfa::State> target_states;
+                        std::vector<Mata::Nfa::State> target_states;
                         if (!inst->last()) {
                             target_states.push_back(mapped_parget_state);
                             target_states.push_back(tmp_state_mapping[state + 1]);
@@ -445,11 +445,11 @@ namespace {
         }
 
         /**
-         * Makes all states mapped to the state parameter final in the vata2::Nfa::Nfa
+         * Makes all states mapped to the state parameter final in the mata::Nfa::Nfa
          * @param state State which should be made final
-         * @param nfa vata2::Nfa::Nfa in which the states will be made final
+         * @param nfa mata::Nfa::Nfa in which the states will be made final
          */
-        void make_state_final(int state, Vata2::Nfa::Nfa &nfa) {
+        void make_state_final(int state, Mata::Nfa::Nfa &nfa) {
             for (auto target_state: this->state_cache.state_mapping[state]) {
                 // States without an incoming edge should not be in the automata
                 if (!this->state_cache.has_state_incoming_edge[target_state]) {
@@ -462,14 +462,14 @@ namespace {
         /**
          * Renumbers the states of the input_nfa to be from <0, numberOfStates>
          * @param program_size Size of the RE2 prog
-         * @param input_nfa vata2::Nfa::Nfa which states should be renumbered
-         * @return Same vata2::Nfa::Nfa as input_nfa but with states from interval <0, numberOfStates>
+         * @param input_nfa mata::Nfa::Nfa which states should be renumbered
+         * @return Same mata::Nfa::Nfa as input_nfa but with states from interval <0, numberOfStates>
          */
-        static Vata2::Nfa::Nfa renumber_states(Vata2::Nfa::Nfa* output_nfa,
-                                               int program_size,
-                                               Vata2::Nfa::Nfa &input_nfa) {
+        static Mata::Nfa::Nfa renumber_states(Mata::Nfa::Nfa* output_nfa,
+                                              int program_size,
+                                              Mata::Nfa::Nfa &input_nfa) {
             std::vector<unsigned long> renumbered_states(program_size, -1);
-            Vata2::Nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
+            Mata::Nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
             for (int state = 0; state < program_size; state++) {
                 const auto& transition_list = input_nfa.get_transitions_from_state(state);
                 // If the transition list is empty, the state is not used
@@ -510,9 +510,9 @@ namespace {
  /**
  * The main method, it creates NFA from regex
  * @param pattern regex as string
- * @return vata2::Nfa::Nfa corresponding to pattern
+ * @return mata::Nfa::Nfa corresponding to pattern
  */
-void Vata2::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
+void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
     if (nfa == NULL) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }

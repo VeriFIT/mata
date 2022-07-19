@@ -2,10 +2,10 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <vata2/vm.hh>
+#include <mata/vm.hh>
 
-using namespace Vata2::Parser;
-using namespace Vata2::VM;
+using namespace Mata::Parser;
+using namespace Mata::VM;
 
 namespace {
 
@@ -31,7 +31,7 @@ public:
 } /* anonymous namespace */
 
 /*
-TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
+TEST_CASE("Mata::VM::VirtualMachine::run_code() correct calls")
 {
 	// setting the environment
 	VirtualMachine mach;
@@ -69,13 +69,13 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() correct calls")
 
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+		WARN_PRINT("Insufficient testing of Mata::VM::VirtualMachine::run_code()");
 	}
 
 }
 */
 
-TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
+TEST_CASE("Mata::VM::VirtualMachine::run_code() invalid calls")
 {
 	// setting the environment
 	VirtualMachine mach;
@@ -140,12 +140,12 @@ TEST_CASE("Vata2::VM::VirtualMachine::run_code() invalid calls")
 
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+		WARN_PRINT("Insufficient testing of Mata::VM::VirtualMachine::run_code()");
 	}
 }
 
 /*
-TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
+TEST_CASE("Mata::VM::VirtualMachine::run() calls")
 {
 	VirtualMachine mach;
 	ParsedSection sec;
@@ -174,11 +174,11 @@ TEST_CASE("Vata2::VM::VirtualMachine::run() calls")
 
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run()");
+		WARN_PRINT("Insufficient testing of Mata::VM::VirtualMachine::run()");
 	}
 }
 
-TEST_CASE("Vata2::VM::VirtualMachine::load_from_storage() calls")
+TEST_CASE("Mata::VM::VirtualMachine::load_from_storage() calls")
 {
 	VirtualMachine mach;
 	SECTION("accessing a missing element 1")
@@ -200,7 +200,7 @@ TEST_CASE("Vata2::VM::VirtualMachine::load_from_storage() calls")
 }
  */
 
-TEST_CASE("Vata2::VM::VirtualMachine::default_dispatch() calls")
+TEST_CASE("Mata::VM::VirtualMachine::default_dispatch() calls")
 {
 	// setting the environment
 	VirtualMachine mach;
@@ -223,6 +223,6 @@ TEST_CASE("Vata2::VM::VirtualMachine::default_dispatch() calls")
 
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Vata2::VM::VirtualMachine::run_code()");
+		WARN_PRINT("Insufficient testing of Mata::VM::VirtualMachine::run_code()");
 	}
 }

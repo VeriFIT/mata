@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -10,8 +10,8 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_VATA_SIM_HH_
-#define _VATA2_VATA_SIM_HH_
+#ifndef _MATA_MATA_SIM_HH_
+#define _MATA_MATA_SIM_HH_
 
 // Standard library headers
 #include <cassert>
@@ -23,19 +23,19 @@
 	#define DEBUG 0
 #endif
 
-#define VATA_LOG_PREFIX (std::string(__FILE__ ":" + Vata2::Util::Convert::ToString(__LINE__) + ": "))
+#define MATA_LOG_PREFIX (std::string(__FILE__ ":" + Mata::Util::Convert::ToString(__LINE__) + ": "))
 
 /// @todo: maybe change logging to something like Boost::Log or Google's logging stuff?
-#define VATA_LOG_MESSAGE(severity, msg) (std::clog << #severity << ": " << (VATA_LOG_PREFIX) << msg << "\n")
+#define MATA_LOG_MESSAGE(severity, msg) (std::clog << #severity << ": " << (MATA_LOG_PREFIX) << msg << "\n")
 
-#define VATA_DEBUG(msg)    (VATA_LOG_MESSAGE(debug, msg))
-#define VATA_INFO(msg)     (VATA_LOG_MESSAGE(info, msg))
-#define VATA_NOTICE(msg)   (VATA_LOG_MESSAGE(notice, msg))
-#define VATA_WARN(msg)     (VATA_LOG_MESSAGE(warning, msg))
-#define VATA_ERROR(msg)    (VATA_LOG_MESSAGE(error, msg))
-#define VATA_CRIT(msg)     (VATA_LOG_MESSAGE(critical, msg))
-#define VATA_ALERT(msg)    (VATA_LOG_MESSAGE(alert, msg))
-#define VATA_FATAL(msg)    (VATA_LOG_MESSAGE(fatal, msg))
+#define MATA_DEBUG(msg)    (MATA_LOG_MESSAGE(debug, msg))
+#define MATA_INFO(msg)     (MATA_LOG_MESSAGE(info, msg))
+#define MATA_NOTICE(msg)   (MATA_LOG_MESSAGE(notice, msg))
+#define MATA_WARN(msg)     (MATA_LOG_MESSAGE(warning, msg))
+#define MATA_ERROR(msg)    (MATA_LOG_MESSAGE(error, msg))
+#define MATA_CRIT(msg)     (MATA_LOG_MESSAGE(critical, msg))
+#define MATA_ALERT(msg)    (MATA_LOG_MESSAGE(alert, msg))
+#define MATA_FATAL(msg)    (MATA_LOG_MESSAGE(fatal, msg))
 
 #if defined(__GNUC__) && !defined(__clang__)
 	#if ((__GNUC__ * 100) + __GNUC_MINOR__) >= 402

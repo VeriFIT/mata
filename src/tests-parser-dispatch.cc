@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,13 +17,13 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <vata2/parser.hh>
-#include <vata2/vm-dispatch.hh>
+#include <mata/parser.hh>
+#include <mata/vm-dispatch.hh>
 
-using namespace Vata2::Parser;
-using namespace Vata2::VM;
+using namespace Mata::Parser;
+using namespace Mata::VM;
 
-TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
+TEST_CASE("Mata::VM::find_dispatcher(\"Parsec\")")
 {
 	SECTION("copy 1")
 	{
@@ -40,8 +40,8 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 				{ },
 			};
 
-		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("copy", {{Vata2::TYPE_PARSEC, &parsec}});
-		REQUIRE(Vata2::TYPE_PARSEC == res.type);
+		VMValue res = find_dispatcher(Mata::TYPE_PARSEC)("copy", {{Mata::TYPE_PARSEC, &parsec}});
+		REQUIRE(Mata::TYPE_PARSEC == res.type);
 		const ParsedSection* parsec_copy =
 			static_cast<const ParsedSection*>(res.get_ptr());
 		REQUIRE((*parsec_copy == parsec));
@@ -63,9 +63,9 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 				{ },
 			};
 
-		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("copy", {{Vata2::TYPE_PARSEC, &parsec}});
+		VMValue res = find_dispatcher(Mata::TYPE_PARSEC)("copy", {{Mata::TYPE_PARSEC, &parsec}});
 		parsec.body.pop_back();   // remove an element from body
-		REQUIRE(Vata2::TYPE_PARSEC == res.type);
+		REQUIRE(Mata::TYPE_PARSEC == res.type);
 		const ParsedSection* parsec_copy =
 			static_cast<const ParsedSection*>(res.get_ptr());
 		REQUIRE((*parsec_copy != parsec));
@@ -74,7 +74,7 @@ TEST_CASE("Vata2::VM::find_dispatcher(\"Parsec\")")
 
 	SECTION("invalid function")
 	{
-		VMValue res = find_dispatcher(Vata2::TYPE_PARSEC)("barrel-roll", { });
-		REQUIRE(Vata2::TYPE_NOT_A_VALUE == res.type);
+		VMValue res = find_dispatcher(Mata::TYPE_PARSEC)("barrel-roll", { });
+		REQUIRE(Mata::TYPE_NOT_A_VALUE == res.type);
 	}
 }

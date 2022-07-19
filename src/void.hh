@@ -1,9 +1,9 @@
 // TODO: add header
 
-#ifndef _VATA2_VOID_HH_
-#define _VATA2_VOID_HH_
+#ifndef _MATA_VOID_HH_
+#define _MATA_VOID_HH_
 
-namespace Vata2
+namespace Mata
 {
 namespace Void
 {
@@ -13,7 +13,7 @@ void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Void */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_VOID_HH_ */
+#endif /* _MATA_VOID_HH_ */
 

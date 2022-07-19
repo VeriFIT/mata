@@ -1,5 +1,5 @@
-vata-antichain:
-  cmd: ../cli/vata univ $1
+mata-antichain:
+  cmd: ../cli/mata univ $1
 
-vata-naive:
-  cmd: ../cli/vata univ $1
+mata-naive:
+  cmd: ../cli/mata univ $1

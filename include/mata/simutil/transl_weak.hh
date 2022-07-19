@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,17 +8,17 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_TRANSL_WEAK_HH_
-#define _VATA2_TRANSL_WEAK_HH_
+#ifndef _MATA_TRANSL_WEAK_HH_
+#define _MATA_TRANSL_WEAK_HH_
 
 #include <functional>
 
-// VATA headers
-#include <vata2/simutil/vata.hh>
-#include <vata2/simutil/abstract_transl.hh>
+// MATA headers
+#include <mata/simutil/mata.hh>
+#include <mata/simutil/abstract_transl.hh>
 
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -38,7 +38,7 @@ namespace Vata2
  */
 template <
 	class Cont>
-class Vata2::Util::TranslatorWeak :
+class Mata::Util::TranslatorWeak :
 	public AbstractTranslator<typename Cont::key_type, typename Cont::mapped_type>
 {
 private:  // data types
@@ -117,7 +117,7 @@ template
 <
 	class Cont
 >
-class __attribute__((unused)) Vata2::Util::TranslatorWeak2 :
+class __attribute__((unused)) Mata::Util::TranslatorWeak2 :
 	public AbstractTranslator<typename Cont::key_type, typename Cont::mapped_type>
 {
 private:  // data types

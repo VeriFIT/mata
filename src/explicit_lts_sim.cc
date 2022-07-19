@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -16,26 +16,26 @@
 #include <memory>
 
 
-// VATA headers
-#include <vata2/explicit_lts.hh>
-#include <vata2/convert.hh>
-#include <vata2/simutil/binary_relation.hh>
-#include <vata2/simutil/smart_set.hh>
-#include <vata2/simutil/vata.hh>
+// MATA headers
+#include <mata/explicit_lts.hh>
+#include <mata/convert.hh>
+#include <mata/simutil/binary_relation.hh>
+#include <mata/simutil/smart_set.hh>
+#include <mata/simutil/mata.hh>
 
-#include <vata2/simutil/caching_allocator.hh>
-#include <vata2/simutil/shared_counter.hh>
-#include <vata2/simutil/shared_list.hh>
-#include <vata2/simutil/splitting_relation.hh>
+#include <mata/simutil/caching_allocator.hh>
+#include <mata/simutil/shared_counter.hh>
+#include <mata/simutil/shared_list.hh>
+#include <mata/simutil/splitting_relation.hh>
 
 
-using Vata2::Util::BinaryRelation;
-using Vata2::Util::SplittingRelation;
-using Vata2::Util::SmartSet;
-using Vata2::Util::CachingAllocator;
-using Vata2::Util::SharedList;
-using Vata2::Util::SharedCounter;
-using Vata2::Util::Convert;
+using Mata::Util::BinaryRelation;
+using Mata::Util::SplittingRelation;
+using Mata::Util::SmartSet;
+using Mata::Util::CachingAllocator;
+using Mata::Util::SharedList;
+using Mata::Util::SharedCounter;
+using Mata::Util::Convert;
 
 typedef CachingAllocator<std::vector<size_t>> VectorAllocator;
 
@@ -92,7 +92,7 @@ struct Block
 public:
 
 	Block(
-		const Vata2::ExplicitLTS&         lts,
+		const Mata::ExplicitLTS&         lts,
 		size_t                           index,
 		StateListElem*                   states,
 		size_t                           size,
@@ -122,7 +122,7 @@ public:
 	}
 
 	Block(
-		const Vata2::ExplicitLTS&   lts,
+		const Mata::ExplicitLTS&   lts,
 		Block&                     parent,
 		StateListElem*             states,
 		size_t                     size,
@@ -511,7 +511,7 @@ protected:
 			{
 				if (mask[q])
 				{
-					VATA_INFO("state " << q << " appears in more than one block");
+					MATA_INFO("state " << q << " appears in more than one block");
 
 					return false;
 				}
@@ -524,7 +524,7 @@ protected:
 		{
 			if (!mask[i])
 			{
-				VATA_INFO("state " << i << " does not appear anywhere");
+				MATA_INFO("state " << i << " does not appear anywhere");
 
 				return false;
 			}
@@ -539,7 +539,7 @@ protected:
 	{
 		if (part.size() != rel.size())
 		{
-			VATA_INFO("partition and relation sizes differ");
+			MATA_INFO("partition and relation sizes differ");
 
 			return false;
 		}
@@ -548,7 +548,7 @@ protected:
 		{
 			if (!rel.get(i, i))
 			{
-				VATA_INFO("relation is not reflexive");
+				MATA_INFO("relation is not reflexive");
 
 				return false;
 			}
@@ -559,7 +559,7 @@ protected:
 
 private:
 
-	const Vata2::ExplicitLTS& lts_;
+	const Mata::ExplicitLTS& lts_;
 
 	size_t row_size_;
 
@@ -592,7 +592,7 @@ private:
 public:
 
 	explicit SimulationEngine(
-		const Vata2::ExplicitLTS& lts) :
+		const Mata::ExplicitLTS& lts) :
             lts_(lts),
             row_size_(SimulationEngine::get_row_size(lts.states())),
             vector_allocator_(),
@@ -853,7 +853,7 @@ public:
 	}
 };
 
-BinaryRelation Vata2::ExplicitLTS::compute_simulation(
+BinaryRelation Mata::ExplicitLTS::compute_simulation(
 	const std::vector<std::vector<size_t>>&   partition,
 	const BinaryRelation&                     relation,
 	size_t                                    outputSize)
@@ -876,7 +876,7 @@ BinaryRelation Vata2::ExplicitLTS::compute_simulation(
 }
 
 
-BinaryRelation Vata2::ExplicitLTS::compute_simulation(
+BinaryRelation Mata::ExplicitLTS::compute_simulation(
 	size_t   outputSize)
 {
 	std::vector<std::vector<size_t>> partition(1);
@@ -892,13 +892,13 @@ BinaryRelation Vata2::ExplicitLTS::compute_simulation(
 }
 
 
-BinaryRelation Vata2::ExplicitLTS::compute_simulation()
+BinaryRelation Mata::ExplicitLTS::compute_simulation()
 {
 	return this->compute_simulation(this->states_);
 }
 
 
-void Vata2::ExplicitLTS::add_transition(
+void Mata::ExplicitLTS::add_transition(
 	size_t   q,
 	size_t   a,
 	size_t   r)

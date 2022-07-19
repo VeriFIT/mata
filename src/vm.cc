@@ -1,8 +1,8 @@
-/* vm.cc -- implementation of the VATA virtual machine
+/* vm.cc -- implementation of the MATA virtual machine
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,23 +15,23 @@
  * GNU General Public License for more details.
  */
 
-#include <vata2/vm.hh>
-#include <vata2/vm-dispatch.hh>
+#include <mata/vm.hh>
+#include <mata/vm-dispatch.hh>
 
 #include <fstream>
 
 
 /// definitions
-const std::string Vata2::TYPE_TOKEN = "token";
-const std::string Vata2::TYPE_BOOL = "bool";
-const std::string Vata2::TYPE_STR = "str";
-const std::string Vata2::TYPE_VOID = "void";
-const std::string Vata2::TYPE_NOT_A_VALUE = "nav";
-const std::string Vata2::TYPE_PARSEC = "parsec";
+const std::string Mata::TYPE_TOKEN = "token";
+const std::string Mata::TYPE_BOOL = "bool";
+const std::string Mata::TYPE_STR = "str";
+const std::string Mata::TYPE_VOID = "void";
+const std::string Mata::TYPE_NOT_A_VALUE = "nav";
+const std::string Mata::TYPE_PARSEC = "parsec";
 
-unsigned Vata2::LOG_VERBOSITY = 0;
+unsigned Mata::LOG_VERBOSITY = 0;
 
-void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
+void Mata::VM::VirtualMachine::run(const Mata::Parser::Parsed& parsed)
 { // {{{
 	for (const auto& parsec : parsed) {
 		this->run(parsec);
@@ -42,7 +42,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
 /**
  * @brief  Executes a parsed section
  *
- * This method is the workhorse of VATA.  It interprets an element of
+ * This method is the workhorse of MATA.  It interprets an element of
  * ParsedSection and accordingly modifies the state of the virtual machine.
  *
  * If @p parsec is not of the type CODE, an object of the corresponding type is
@@ -53,7 +53,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::Parsed& parsed)
  *
  * @param[in]  parsec  The parsed section to execute
  */
-void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
+void Mata::VM::VirtualMachine::run(const Mata::Parser::ParsedSection& parsec)
 { // {{{
 	if (parsec.type == "CODE") {
 		this->run_code(parsec);
@@ -62,7 +62,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 
 	DEBUG_VM_LOW_PRINT_LN(parsec.type << "\n");
 
-	VMDispatcherFunc dispatch = Vata2::VM::find_dispatcher(parsec.type);
+	VMDispatcherFunc dispatch = Mata::VM::find_dispatcher(parsec.type);
 	std::string name;
 	if (!util::haskey(parsec.dict, "Name")) {
 		WARN_PRINT("constructing an entity without a name; "
@@ -84,7 +84,7 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 
 	// TODO: is the dispatch OK? shouldn't weget the type of the parsec first?
 
-	VMValue arg(Vata2::TYPE_PARSEC, new Parser::ParsedSection(parsec));
+	VMValue arg(Mata::TYPE_PARSEC, new Parser::ParsedSection(parsec));
 	VMFuncArgs args = {arg};
 	VMValue val = dispatch("construct", args);
 	if (!name.empty()) {
@@ -94,10 +94,10 @@ void Vata2::VM::VirtualMachine::run(const Vata2::Parser::ParsedSection& parsec)
 } // run(ParsedSection) }}}
 
 
-void Vata2::VM::VirtualMachine::run_code(
-	const Vata2::Parser::ParsedSection& parsec)
+void Mata::VM::VirtualMachine::run_code(
+	const Mata::Parser::ParsedSection& parsec)
 { // {{{
-	DEBUG_VM_LOW_PRINT("VATA-CODE START");
+	DEBUG_VM_LOW_PRINT("MATA-CODE START");
 	for (const auto& line : parsec.body) {
 		assert(this->exec_stack.empty());
 
@@ -153,13 +153,13 @@ void Vata2::VM::VirtualMachine::run_code(
 
 	}
 
-	DEBUG_VM_LOW_PRINT("VATA-CODE END");
+	DEBUG_VM_LOW_PRINT("MATA-CODE END");
 	DEBUG_VM_LOW_PRINT("Stack: " + std::to_string(this->exec_stack));
 } // run_code(ParsedSection) }}}
 
 
-void Vata2::VM::VirtualMachine::execute_line(
-	const Vata2::Parser::BodyLine& line)
+void Mata::VM::VirtualMachine::execute_line(
+	const Mata::Parser::BodyLine& line)
 { // {{{
 	for (const std::string& tok : line) {
 		this->process_token(tok);
@@ -167,7 +167,7 @@ void Vata2::VM::VirtualMachine::execute_line(
 } // execute_line(BodyLine) }}}
 
 
-void Vata2::VM::VirtualMachine::process_token(
+void Mata::VM::VirtualMachine::process_token(
 	const std::string& tok)
 { // {{{
 	if (")" != tok) { // nothing special
@@ -245,7 +245,7 @@ void Vata2::VM::VirtualMachine::process_token(
 } // process_token(string) }}}
 
 
-void Vata2::VM::VirtualMachine::exec_cmd(
+void Mata::VM::VirtualMachine::exec_cmd(
 	const std::vector<VMValue>& exec_vec)
 { // {{{
 	DEBUG_VM_HIGH_PRINT("Executing " + std::to_string(exec_vec));
@@ -292,9 +292,9 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 	const std::string& arg1_type = arg1_val.type;
 
 	VMValue ret_val = find_dispatcher(arg1_type)(fnc_name, args);
-	if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
+	if (Mata::TYPE_NOT_A_VALUE == ret_val.type) {
 		ret_val = default_dispatch(fnc_name, args);
-		if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
+		if (Mata::TYPE_NOT_A_VALUE == ret_val.type) {
 			throw VMException(fnc_name + " is not a defined function");
 		}
 	}
@@ -303,7 +303,7 @@ void Vata2::VM::VirtualMachine::exec_cmd(
 } // exec_cmd(std::vector) }}}
 
 
-Vata2::VM::VMValue Vata2::VM::default_dispatch(
+Mata::VM::VMValue Mata::VM::default_dispatch(
 	const VMFuncName&  func_name,
 	const VMFuncArgs&  func_args)
 { // {{{
@@ -316,7 +316,7 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 		}
 
 		VMValue ret_val = call_dispatch_with_self(func_args[0], "copy");
-		if (Vata2::TYPE_NOT_A_VALUE == ret_val.type) {
+		if (Mata::TYPE_NOT_A_VALUE == ret_val.type) {
 			throw VMException("The type \"" + func_args[0].type +
 				"\" does not implement the \"copy\" operation");
 		}
@@ -357,23 +357,23 @@ Vata2::VM::VMValue Vata2::VM::default_dispatch(
 			"\" from file " + filename);
 		VMValue sec_val(TYPE_PARSEC, sec);
 		VMFuncArgs args = {sec_val};
-		VMDispatcherFunc dispatch = Vata2::VM::find_dispatcher(sec->type);
+		VMDispatcherFunc dispatch = Mata::VM::find_dispatcher(sec->type);
 		VMValue res = dispatch("construct", args);
 
 		return res;
 	}
 
-	return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
+	return VMValue(Mata::TYPE_NOT_A_VALUE, nullptr);
 } // default_dispatch() }}}
 
 
-void Vata2::VM::VirtualMachine::push_to_stack(VMValue val)
+void Mata::VM::VirtualMachine::push_to_stack(VMValue val)
 { // {{{
 	DEBUG_VM_LOW_PRINT("VM: pushing " + std::to_string(val) + " on the stack");
 	this->exec_stack.push(val);
 } // push_to_stack() }}}
 
-void Vata2::VM::VirtualMachine::save_to_storage(
+void Mata::VM::VirtualMachine::save_to_storage(
 	const std::string&  name,
 	VMValue             val)
 {
@@ -385,7 +385,7 @@ void Vata2::VM::VirtualMachine::save_to_storage(
 	this->mem[name] = val;
 } // save_to_storage()
 
-Vata2::VM::VMValue Vata2::VM::VirtualMachine::load_from_storage(
+Mata::VM::VMValue Mata::VM::VirtualMachine::load_from_storage(
 	const std::string& name) const
 { // {{{
 	DEBUG_VM_LOW_PRINT("retrieving object \"" + name + "\" from the memory");
@@ -398,7 +398,7 @@ Vata2::VM::VMValue Vata2::VM::VirtualMachine::load_from_storage(
 } // load_from_storage() }}}
 
 
-void Vata2::VM::VirtualMachine::clean_stack()
+void Mata::VM::VirtualMachine::clean_stack()
 { // {{{
 	while (!this->exec_stack.empty()) {
 		const auto& val = this->exec_stack.top();

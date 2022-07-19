@@ -2,14 +2,14 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <vata2/rrt.hh>
-using namespace Vata2::Rrt;
-using namespace Vata2::util;
-using namespace Vata2::Parser;
+#include <mata/rrt.hh>
+using namespace Mata::Rrt;
+using namespace Mata::util;
+using namespace Mata::Parser;
 
-using GuardType = Vata2::Rrt::Trans::Guard::GuardType;
-using UpdateType = Vata2::Rrt::Trans::Update::UpdateType;
-using OutputType = Vata2::Rrt::Trans::Output::OutputType;
+using GuardType = Mata::Rrt::Trans::Guard::GuardType;
+using UpdateType = Mata::Rrt::Trans::Update::UpdateType;
+using OutputType = Mata::Rrt::Trans::Output::OutputType;
 
 // Some common automata {{{
 
@@ -54,7 +54,7 @@ using OutputType = Vata2::Rrt::Trans::Output::OutputType;
 // }}}
 
 
-TEST_CASE("Vata2::Rrt::Rrt::add_trans()/has_trans()")
+TEST_CASE("Mata::Rrt::Rrt::add_trans()/has_trans()")
 { // {{{
 	Rrt rrt;
 
@@ -86,10 +86,10 @@ TEST_CASE("Vata2::Rrt::Rrt::add_trans()/has_trans()")
 
   REQUIRE(rrt.has_trans(trans2));
 
-  WARN_PRINT("Insufficient testing of Vata2::Rrt::Rrt::add_trans()");
+  WARN_PRINT("Insufficient testing of Mata::Rrt::Rrt::add_trans()");
 } // }}}
 
-TEST_CASE("Vata2::Rrt::Rrt::add_initial()/has_initial()")
+TEST_CASE("Mata::Rrt::Rrt::add_initial()/has_initial()")
 { // {{{
 	Rrt rrt;
 
@@ -99,7 +99,7 @@ TEST_CASE("Vata2::Rrt::Rrt::add_initial()/has_initial()")
   REQUIRE(!rrt.has_initial(4));
 } // }}}
 
-TEST_CASE("Vata2::Rrt::Rrt::add_final()/has_final()")
+TEST_CASE("Mata::Rrt::Rrt::add_final()/has_final()")
 { // {{{
 	Rrt rrt;
 
@@ -109,7 +109,7 @@ TEST_CASE("Vata2::Rrt::Rrt::add_final()/has_final()")
   REQUIRE(!rrt.has_final(4));
 } // }}}
 
-// TEST_CASE("Vata2::Rrt::serialize() and operator<<()")
+// TEST_CASE("Mata::Rrt::serialize() and operator<<()")
 // { // {{{
 	// Rrt rrt;
 //

@@ -2,8 +2,8 @@
 // in the pcap format, and tests how many packets from P lie in the symmetric
 // difference of the languages of A1 and A2
 
-#include <vata2/util.hh>
-#include <vata2/nfa.hh>
+#include <mata/util.hh>
+#include <mata/nfa.hh>
 
 #include <chrono>
 #include <iostream>
@@ -37,8 +37,8 @@ struct vlan_ethhdr {
 	u_int16_t ether_type;
 } __attribute__ ((__packed__));
 
-using namespace Vata2::Nfa;
-using namespace Vata2::Parser;
+using namespace Mata::Nfa;
+using namespace Mata::Parser;
 
 using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
 
@@ -89,7 +89,7 @@ Nfa load_aut(const std::string& file_name)
 	if (input.is_open())
 	{
 		ParsedSection parsec = parse_vtf_section(input);
-		Vata2::Nfa::DirectAlphabet alphabet;
+		Mata::Nfa::DirectAlphabet alphabet;
 		return construct(parsec, &alphabet);
 	}
 	else

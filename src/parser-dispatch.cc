@@ -1,13 +1,13 @@
 // TODO: add header
 
-#include <vata2/vm-dispatch.hh>
+#include <mata/vm-dispatch.hh>
 
 #include "dispatch-aux.hh"
-#include <vata2/parser.hh>
+#include <mata/parser.hh>
 
-using namespace Vata2::VM;
-using Vata2::Parser::ParsedSection;
-using Vata2::dispatch::test_and_call;
+using namespace Mata::VM;
+using Mata::Parser::ParsedSection;
+using Mata::dispatch::test_and_call;
 
 namespace
 {
@@ -15,13 +15,13 @@ namespace
 		const VMFuncName&  func_name,
 		const VMFuncArgs&  func_args)
 	{
-		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Vata2::TYPE_PARSEC);
+		DEBUG_PRINT("calling function \"" + func_name + "\" for " + Mata::TYPE_PARSEC);
 
 		// we use throw to return result from test_and_call
 		try {
 
-			test_and_call("copy", func_name, {Vata2::TYPE_PARSEC}, func_args, Vata2::TYPE_PARSEC,
-				*[](const ParsedSection& sec) -> auto {
+			test_and_call("copy", func_name, {Mata::TYPE_PARSEC}, func_args, Mata::TYPE_PARSEC,
+                          *[](const ParsedSection& sec) -> auto {
 					ParsedSection* new_parsec = new ParsedSection(sec);
 					return static_cast<VMPointer>(new_parsec);
 				});
@@ -32,13 +32,13 @@ namespace
 			return res;
 		}
 
-		return VMValue(Vata2::TYPE_NOT_A_VALUE, nullptr);
+		return VMValue(Mata::TYPE_NOT_A_VALUE, nullptr);
 	}
 }
 
 
-void Vata2::Parser::init()
+void Mata::Parser::init()
 {
-	reg_dispatcher(Vata2::TYPE_PARSEC, parsec_dispatch,
-		"parsed section (one section of .vtf format)");
+	reg_dispatcher(Mata::TYPE_PARSEC, parsec_dispatch,
+                   "parsed section (one section of .vtf format)");
 }

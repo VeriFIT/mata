@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,10 +8,10 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_ABSTRACT_TRANSL_HH_
-#define _VATA2_ABSTRACT_TRANSL_HH_
+#ifndef _MATA_ABSTRACT_TRANSL_HH_
+#define _MATA_ABSTRACT_TRANSL_HH_
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{

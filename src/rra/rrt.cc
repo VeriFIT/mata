@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2020 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,11 +15,11 @@
  * GNU General Public License for more details.
  */
 
-#include <vata2/rrt.hh>
+#include <mata/rrt.hh>
 
-using Vata2::Nfa::Nfa;
+using Mata::Nfa::Nfa;
 
-bool Vata2::Rrt::Trans::Guard::operator==(const Guard& rhs) const
+bool Mata::Rrt::Trans::Guard::operator==(const Guard& rhs) const
 { // {{{
   if (this->type != rhs.type) return false;
   switch (this->type)
@@ -42,7 +42,7 @@ bool Vata2::Rrt::Trans::Guard::operator==(const Guard& rhs) const
   }
 } // Guard::operator== }}}
 
-bool Vata2::Rrt::Trans::Output::operator==(const Output& rhs) const
+bool Mata::Rrt::Trans::Output::operator==(const Output& rhs) const
 { // {{{
   if (this->type != rhs.type) return false;
   switch (this->type) {
@@ -54,7 +54,7 @@ bool Vata2::Rrt::Trans::Output::operator==(const Output& rhs) const
   }
 } // Output::operator== }}}
 
-bool Vata2::Rrt::Trans::Update::operator==(const Update& rhs) const
+bool Mata::Rrt::Trans::Update::operator==(const Update& rhs) const
 { // {{{
   if (this->type != rhs.type) return false;
   switch (this->type) {
@@ -68,7 +68,7 @@ bool Vata2::Rrt::Trans::Update::operator==(const Update& rhs) const
   }
 } // Update::operator== }}}
 
-bool Vata2::Rrt::Trans::Label::operator==(const Label& rhs) const
+bool Mata::Rrt::Trans::Label::operator==(const Label& rhs) const
 { // {{{
   if ((this->out1 != rhs.out1) && (this->out2 != rhs.out2)) return false;
   // FIXME: this is probably not optimal
@@ -88,7 +88,7 @@ bool Vata2::Rrt::Trans::Label::operator==(const Label& rhs) const
   return true;
 } // Label::operator== }}}
 
-void Vata2::Rrt::Rrt::add_trans(
+void Mata::Rrt::Rrt::add_trans(
 		State                 src,
 		const Trans::Label&   lbl,
 		State                 tgt)
@@ -102,7 +102,7 @@ void Vata2::Rrt::Rrt::add_trans(
 } // add_trans }}}
 
 
-bool Vata2::Rrt::Rrt::has_trans(
+bool Mata::Rrt::Rrt::has_trans(
   State                 src,
   const Trans::Label&   lbl,
   State                 tgt)
@@ -117,7 +117,7 @@ bool Vata2::Rrt::Rrt::has_trans(
 } // has_trans }}}
 
 
-Vata2::Nfa::Nfa Vata2::Rrt::post_of_nfa(const Rrt& rrt, const Vata2::Nfa::Nfa& nfa)
+Mata::Nfa::Nfa Mata::Rrt::post_of_nfa(const Rrt& rrt, const Mata::Nfa::Nfa& nfa)
 { // {{{
   assert(false);
 } // post_of_nfa }}}

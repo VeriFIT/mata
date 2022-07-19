@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,19 +8,19 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_SMART_SET_HH_
-#define _VATA2_SMART_SET_HH_
+#ifndef _MATA_SMART_SET_HH_
+#define _MATA_SMART_SET_HH_
 
-// VATA headers
-#include <vata2/convert.hh>
-#include <vata2/simutil/vata.hh>
+// MATA headers
+#include <mata/convert.hh>
+#include <mata/simutil/mata.hh>
 
 // Standard library headers
 #include <algorithm>
 #include <ostream>
 #include <vector>
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -28,7 +28,7 @@ namespace Vata2
 	}
 }
 
-class Vata2::Util::SmartSet
+class Mata::Util::SmartSet
 {
 public:
 

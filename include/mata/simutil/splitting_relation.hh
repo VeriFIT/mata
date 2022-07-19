@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,17 +8,17 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_SPLITTING_RELATION_HH_
-#define _VATA2_SPLITTING_RELATION_HH_
+#ifndef _MATA_SPLITTING_RELATION_HH_
+#define _MATA_SPLITTING_RELATION_HH_
 
 // Standard library headers
 #include <vector>
 
-// VATA headers
-#include <vata2/simutil/vata.hh>
-#include <vata2/simutil/caching_allocator.hh>
+// MATA headers
+#include <mata/simutil/mata.hh>
+#include <mata/simutil/caching_allocator.hh>
 
-namespace Vata2
+namespace Mata
 {
 	namespace Util
 	{
@@ -26,7 +26,7 @@ namespace Vata2
 	}
 }
 
-class Vata2::Util::SplittingRelation {
+class Mata::Util::SplittingRelation {
 
 	struct Element {
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(libVATA2)
+project(libMATA)
 
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")

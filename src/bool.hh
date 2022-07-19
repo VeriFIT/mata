@@ -1,9 +1,9 @@
 // TODO: add header
 
-#ifndef _VATA2_BOOL_HH_
-#define _VATA2_BOOL_HH_
+#ifndef _MATA_BOOL_HH_
+#define _MATA_BOOL_HH_
 
-namespace Vata2
+namespace Mata
 {
 namespace Bool
 {
@@ -13,6 +13,6 @@ void init();
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Bool */
-} /* Vata2 */
+} /* Mata */
 
-#endif /* _VATA2_BOOL_HH_ */
+#endif /* _MATA_BOOL_HH_ */

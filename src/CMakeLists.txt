@@ -1,7 +1,7 @@
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-project(libvata2)
+project(libmata)
 
 # Export compile commands to be used with YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -46,8 +46,8 @@ include_directories(../include)
 include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
 include_directories(../3rdparty/re2)
 
-add_library(libvata2 STATIC
-# add_library(libvata2 SHARED
+add_library(libmata STATIC
+# add_library(libmata SHARED
 	afa/afa.cc
 	bool-dispatch.cc
 	explicit_lts_sim.cc
@@ -66,8 +66,8 @@ add_library(libvata2 STATIC
 	vm-dispatch.cc           # this should be the last one
 )
 
-set_target_properties(libvata2 PROPERTIES
-  OUTPUT_NAME vata2
+set_target_properties(libmata PROPERTIES
+  OUTPUT_NAME mata
   CLEAN_DIRECT_OUTPUT 1
 )
 
@@ -85,10 +85,10 @@ add_executable(tests
 )
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-	target_link_libraries(libvata2 pthread)
+	target_link_libraries(libmata pthread)
 endif()
 
-target_link_libraries(tests libvata2 re2)
+target_link_libraries(tests libmata re2)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(

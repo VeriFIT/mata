@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_CACHING_ALLOCATOR_HH_
-#define _VATA2_CACHING_ALLOCATOR_HH_
+#ifndef _MATA_CACHING_ALLOCATOR_HH_
+#define _MATA_CACHING_ALLOCATOR_HH_
 
 #include <cstdlib>
 
@@ -19,7 +19,7 @@
 #include <unordered_set>
 
 // insert class to proper namespace
-namespace Vata2 {
+namespace Mata {
 	namespace Util {
 		template <class T, class Initializer = std::function<void(T*)>> class CachingAllocator;
 		template <class T, class Initializer = std::function<void(T*)>> class CachingArrayAllocator;
@@ -27,7 +27,7 @@ namespace Vata2 {
 }
 
 template <class T, class Initializer>
-class Vata2::Util::CachingAllocator {
+class Mata::Util::CachingAllocator {
 
 public:
 
@@ -81,7 +81,7 @@ public:
 };
 
 template <class T, class Initializer>
-class Vata2::Util::CachingArrayAllocator {
+class Mata::Util::CachingArrayAllocator {
 
 public:
 

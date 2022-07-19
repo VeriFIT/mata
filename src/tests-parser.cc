@@ -2,7 +2,7 @@
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
- * This file is a part of libvata2.
+ * This file is a part of libmata.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,14 +17,14 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <vata2/parser.hh>
-#include <vata2/util.hh>
+#include <mata/parser.hh>
+#include <mata/util.hh>
 
-using namespace Vata2::Parser;
-using namespace Vata2::util;
+using namespace Mata::Parser;
+using namespace Mata::util;
 
 
-TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
+TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -364,7 +364,7 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf_section()")
 } // parse_vtf_section correct }}}
 
 
-TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
+TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -562,7 +562,7 @@ TEST_CASE("incorrect use of Vata2::Parser::parse_vtf_section()")
 } // parse_vtf_section incorrect }}}
 
 
-TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
+TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 { // {{{
 	Parsed parsed;
 
@@ -606,11 +606,11 @@ TEST_CASE("correct use of Vata2::Parser::parse_vtf()")
 } // parse_vtf }}}
 
 
-TEST_CASE("Vata2::Parser::ParsedSection::operator<<(ostream&)")
+TEST_CASE("Mata::Parser::ParsedSection::operator<<(ostream&)")
 { // {{{
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Vata2::Parser::ParsedSection::operator<<(ostream&)");
+		WARN_PRINT("Insufficient testing of Mata::Parser::ParsedSection::operator<<(ostream&)");
 	}
 
 } // }}}

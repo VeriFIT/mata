@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  VATA Tree Automata Library
+ *  MATA Tree Automata Library
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,19 +8,19 @@
  *
  *****************************************************************************/
 
-#ifndef _VATA2_SHARED_COUNTER_HH_
-#define _VATA2_SHARED_COUNTER_HH_
+#ifndef _MATA_SHARED_COUNTER_HH_
+#define _MATA_SHARED_COUNTER_HH_
 
 #include <cstring>
 #include <vector>
 
-#include <vata2/simutil/caching_allocator.hh>
+#include <mata/simutil/caching_allocator.hh>
 
-namespace Vata2 { namespace Util {
+namespace Mata { namespace Util {
 	class SharedCounter;
 }}
 
-class Vata2::Util::SharedCounter
+class Mata::Util::SharedCounter
 {
 public:
 

@@ -2,12 +2,12 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <vata2/vm-dispatch.hh>
-#include <vata2/vm.hh>
+#include <mata/vm-dispatch.hh>
+#include <mata/vm.hh>
 
-using namespace Vata2::VM;
+using namespace Mata::VM;
 
-TEST_CASE("Vata2::VM::find_dispatcher()")
+TEST_CASE("Mata::VM::find_dispatcher()")
 {
 	SECTION("invalid type")
 	{
@@ -30,7 +30,7 @@ TEST_CASE("Vata2::VM::find_dispatcher()")
 
 	SECTION("trying to re-register a dispatcher")
 	{
-		CHECK_THROWS_WITH(reg_dispatcher(Vata2::TYPE_STR, nullptr, "a string data type"),
+		CHECK_THROWS_WITH(reg_dispatcher(Mata::TYPE_STR, nullptr, "a string data type"),
 			Catch::Contains("already registered"));
 	}
 }
