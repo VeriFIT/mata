@@ -157,6 +157,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string)
 
-cdef extern from "mata/nfa.hh":
+cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass BinaryRelation:
         cdef BinaryRelation compute_fw_direct_simulation(const CNfa&)
