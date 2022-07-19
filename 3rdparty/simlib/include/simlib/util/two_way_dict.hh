@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,18 +8,17 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_TWO_WAY_DICT_
-#define _MATA_TWO_WAY_DICT_
+#ifndef _SIMLIB_TWO_WAY_DICT_
+#define _SIMLIB_TWO_WAY_DICT_
 
-// MATA headers
-#include <mata/convert.hh>
-#include <mata/simutil/mata.hh>
+#include <simlib/util/convert.hh>
+#include <simlib/util/simlib.hh>
 
 // Standard library headers
 #include <map>
 
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{
@@ -51,7 +50,7 @@ template
 	class Cont1 = std::map<T1, T2>,
 	class Cont2 = std::map<T2, T1>
 >
-class Mata::Util::TwoWayDict
+class Simlib::Util::TwoWayDict
 {
 public:   // Public data types
 
@@ -202,7 +201,7 @@ public:   // Public methods
 
 		if (!(bwdmap_.insert(std::make_pair(value.second, value.first)).second))
 		{	// in case there is already some backward mapping for given value
-			MATA_ERROR("backward mapping for "
+			SIMLIB_ERROR("backward mapping for "
 				<< Convert::ToString(value.second)
 				<< " already found: "
 				<< Convert::ToString(bwdmap_.find(value.second)->second));

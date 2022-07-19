@@ -21,7 +21,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
-#include <mata/explicit_lts.hh>
+#include <simlib/explicit_lts.hh>
 
 using std::tie;
 
@@ -50,8 +50,8 @@ namespace {
         receivingSet.insert(addedSet);
     }
 
-    Mata::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Mata::ExplicitLTS LTSforSimulation;
+    Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+        Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
         const size_t state_num = aut.get_num_of_states();
 
@@ -894,7 +894,7 @@ void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMa
     }
 }
 
-Mata::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "

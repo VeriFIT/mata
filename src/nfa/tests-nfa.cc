@@ -1745,7 +1745,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
     SECTION("empty automaton")
     {
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
 
         REQUIRE(result.size() == 0);
     }
@@ -1759,7 +1759,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut.add_final(2);
         aut.add_final(5);
 
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(1,3));
         REQUIRE(result.get(2,5));
         REQUIRE(!result.get(5,1));
@@ -1775,7 +1775,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut.add_trans(2, 'b', 5);
         aut.add_trans(1, 'b', 4);
 
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(4,1));
         REQUIRE(!result.get(2,5));
 
@@ -1800,7 +1800,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut_big.add_trans(7, 'a', 8);
         aut_big.finalstates = {3};
 
-        Mata::Util::BinaryRelation result = compute_relation(aut_big);
+        Simlib::Util::BinaryRelation result = compute_relation(aut_big);
         REQUIRE(result.get(1,2));
         REQUIRE(!result.get(2,1));
         REQUIRE(!result.get(3,1));

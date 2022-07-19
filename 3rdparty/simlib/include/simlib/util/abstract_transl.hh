@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,10 +8,10 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_ABSTRACT_TRANSL_HH_
-#define _MATA_ABSTRACT_TRANSL_HH_
+#ifndef _SIMLIB_ABSTRACT_TRANSL_HH_
+#define _SIMLIB_ABSTRACT_TRANSL_HH_
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{

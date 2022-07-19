@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -16,26 +16,26 @@
 #include <memory>
 
 
-// MATA headers
-#include <mata/explicit_lts.hh>
-#include <mata/convert.hh>
-#include <mata/simutil/binary_relation.hh>
-#include <mata/simutil/smart_set.hh>
-#include <mata/simutil/mata.hh>
+// simlib headers
+#include <simlib/explicit_lts.hh>
+#include <simlib/util/binary_relation.hh>
+#include <simlib/util/convert.hh>
+#include <simlib/util/smart_set.hh>
+#include <simlib/util/simlib.hh>
 
-#include <mata/simutil/caching_allocator.hh>
-#include <mata/simutil/shared_counter.hh>
-#include <mata/simutil/shared_list.hh>
-#include <mata/simutil/splitting_relation.hh>
+#include <simlib/util/caching_allocator.hh>
+#include <simlib/util/shared_counter.hh>
+#include <simlib/util/shared_list.hh>
+#include <simlib/util/splitting_relation.hh>
 
 
-using Mata::Util::BinaryRelation;
-using Mata::Util::SplittingRelation;
-using Mata::Util::SmartSet;
-using Mata::Util::CachingAllocator;
-using Mata::Util::SharedList;
-using Mata::Util::SharedCounter;
-using Mata::Util::Convert;
+using Simlib::Util::BinaryRelation;
+using Simlib::Util::SplittingRelation;
+using Simlib::Util::SmartSet;
+using Simlib::Util::CachingAllocator;
+using Simlib::Util::SharedList;
+using Simlib::Util::SharedCounter;
+using Simlib::Util::Convert;
 
 typedef CachingAllocator<std::vector<size_t>> VectorAllocator;
 
@@ -92,7 +92,7 @@ struct Block
 public:
 
 	Block(
-		const Mata::ExplicitLTS&         lts,
+		const Simlib::ExplicitLTS&         lts,
 		size_t                           index,
 		StateListElem*                   states,
 		size_t                           size,
@@ -122,7 +122,7 @@ public:
 	}
 
 	Block(
-		const Mata::ExplicitLTS&   lts,
+		const Simlib::ExplicitLTS&   lts,
 		Block&                     parent,
 		StateListElem*             states,
 		size_t                     size,
@@ -511,7 +511,7 @@ protected:
 			{
 				if (mask[q])
 				{
-					MATA_INFO("state " << q << " appears in more than one block");
+					SIMLIB_INFO("state " << q << " appears in more than one block");
 
 					return false;
 				}
@@ -524,7 +524,7 @@ protected:
 		{
 			if (!mask[i])
 			{
-				MATA_INFO("state " << i << " does not appear anywhere");
+				SIMLIB_INFO("state " << i << " does not appear anywhere");
 
 				return false;
 			}
@@ -539,7 +539,7 @@ protected:
 	{
 		if (part.size() != rel.size())
 		{
-			MATA_INFO("partition and relation sizes differ");
+			SIMLIB_INFO("partition and relation sizes differ");
 
 			return false;
 		}
@@ -548,7 +548,7 @@ protected:
 		{
 			if (!rel.get(i, i))
 			{
-				MATA_INFO("relation is not reflexive");
+				SIMLIB_INFO("relation is not reflexive");
 
 				return false;
 			}
@@ -559,7 +559,7 @@ protected:
 
 private:
 
-	const Mata::ExplicitLTS& lts_;
+	const Simlib::ExplicitLTS& lts_;
 
 	size_t row_size_;
 
@@ -592,7 +592,7 @@ private:
 public:
 
 	explicit SimulationEngine(
-		const Mata::ExplicitLTS& lts) :
+		const Simlib::ExplicitLTS& lts) :
             lts_(lts),
             row_size_(SimulationEngine::get_row_size(lts.states())),
             vector_allocator_(),
@@ -853,7 +853,7 @@ public:
 	}
 };
 
-BinaryRelation Mata::ExplicitLTS::compute_simulation(
+BinaryRelation Simlib::ExplicitLTS::compute_simulation(
 	const std::vector<std::vector<size_t>>&   partition,
 	const BinaryRelation&                     relation,
 	size_t                                    outputSize)
@@ -876,7 +876,7 @@ BinaryRelation Mata::ExplicitLTS::compute_simulation(
 }
 
 
-BinaryRelation Mata::ExplicitLTS::compute_simulation(
+BinaryRelation Simlib::ExplicitLTS::compute_simulation(
 	size_t   outputSize)
 {
 	std::vector<std::vector<size_t>> partition(1);
@@ -892,13 +892,13 @@ BinaryRelation Mata::ExplicitLTS::compute_simulation(
 }
 
 
-BinaryRelation Mata::ExplicitLTS::compute_simulation()
+BinaryRelation Simlib::ExplicitLTS::compute_simulation()
 {
 	return this->compute_simulation(this->states_);
 }
 
 
-void Mata::ExplicitLTS::add_transition(
+void Simlib::ExplicitLTS::add_transition(
 	size_t   q,
 	size_t   a,
 	size_t   r)
