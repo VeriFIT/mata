@@ -6,7 +6,6 @@
 #include <iomanip>
 
 #include <mata/util.hh>
-#include <mata/vm-dispatch.hh>
 
 #include "../3rdparty/args.hxx"
 
@@ -28,7 +27,6 @@ int main(int argc, const char* argv[])
 	args::HelpFlag flag_help(arg_parser, "help", "Display this help menu", {'h', "help"});
 	args::Flag flag_version(arg_parser, "version", "Print the version of MATA",
 		{'v', "version"});
-	args::Flag flag_types(arg_parser, "types", "Print out info about types", {'t', "types"});
 	args::ValueFlag<unsigned> flag_debug(arg_parser, "level", "Debug level (from 0 to " +
 		std::to_string(MAX_VERBOSITY) + ")", {'d', "debug"}, DEFAULT_VERBOSITY);
 	args::Positional<std::string> pos_inputfile(arg_parser,
@@ -60,30 +58,6 @@ int main(int argc, const char* argv[])
 		std::cout << " [git: " << git_sha_crop << "]";
 		std::cout << "\n";
 		return EXIT_SUCCESS;
-	} else if (flag_types) {
-		try {
-			Mata::VM::VMTypeDesc desc = Mata::VM::get_types_description();
-
-			std::vector<std::pair<std::string, std::string>> desc_vec(desc.begin(), desc.end());
-			size_t max_len = 1;
-			for (auto type_desc_pair : desc_vec) {
-				max_len = std::max(max_len, type_desc_pair.first.length());
-			}
-			size_t offset = max_len + 3;
-
-			std::sort(desc_vec.begin(), desc_vec.end());
-
-			for (auto type_desc_pair : desc_vec) {
-				std::cout << std::left << std::setw(offset) << type_desc_pair.first;
-				std::cout << type_desc_pair.second << "\n";
-			}
-
-			return EXIT_SUCCESS;
-		}
-		catch (const std::exception& ex) {
-			std::cerr << "error while getting type information: " << ex.what() << "\n";
-			return EXIT_FAILURE;
-		}
 	}
 
 	unsigned verbosity = flag_debug.Get();
