@@ -69,7 +69,7 @@ static const struct Limits {
     Symbol minSymbol = 0;
 } limits;
 
-/// A transition
+/// A transition.
 struct Trans
 {
 	State src;
@@ -85,6 +85,8 @@ struct Trans
 	} // operator== }}}
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
+
+using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 // ALPHABET {{{
 class Alphabet
@@ -257,7 +259,7 @@ struct Nfa
     /**
      * @brief For state q, transitionrelation[q] keeps the list of transitions ordered by symbols.
      *
-     * The set of states of this automaton are the numbers from 0 to
+     * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      * @todo maybe have this as its own class
      */
@@ -269,10 +271,11 @@ struct Nfa
     // alphabet?
 public:
     Nfa () : transitionrelation(), initialstates(), finalstates() {}
+
     /**
-     * @brief Construct a new Explicit NFA with num_of_states states
+     * @brief Construct a new explicit NFA with num_of_states states.
      */
-    Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
+    explicit Nfa(const unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -328,7 +331,8 @@ public:
     }
 
     /**
-     * @brief Returns a newly created state.
+     * Add a new state to the automaton.
+     * @return The newly created state.
      */
     State add_new_state();
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
@@ -339,7 +343,7 @@ public:
         return transitionrelation[state_from];
     }
 
-    /* Lukas: the above is nice. The good thing is that acces to [q] is constant,
+    /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
      * Returning a transition of q with the symbol a means to search for it in the list,
@@ -406,6 +410,12 @@ public:
         return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),
                     [](const auto& trans) {return trans.size() == 0;});
     }
+
+    /**
+     * Get transitions as a sequence of @c Trans.
+     * @return Sequence of transitions as @c Trans.
+     */
+    TransSequence get_trans_as_sequence();
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);

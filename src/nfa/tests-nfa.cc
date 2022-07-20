@@ -1993,3 +1993,20 @@ TEST_CASE("Mata::Nfa::remove_trans()")
         }
     }
 }
+
+TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
+{
+    Nfa aut('q' + 1);
+    TransSequence expected{};
+
+    aut.add_trans(1, 2, 3);
+    expected.push_back(Trans{1, 2, 3});
+    aut.add_trans(1, 3, 4);
+    expected.push_back(Trans{1, 3, 4});
+    aut.add_trans(2, 3, 4);
+    expected.push_back(Trans{2, 3, 4});
+
+
+    REQUIRE(aut.get_trans_as_sequence() == expected);
+}
+

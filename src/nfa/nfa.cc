@@ -783,6 +783,24 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
+TransSequence Nfa::get_trans_as_sequence()
+{
+    TransSequence trans_sequence{};
+
+    for (State state_from{ 0 }; state_from < transitionrelation.size(); ++state_from)
+    {
+        for (const auto& transition_from_state: transitionrelation[state_from])
+        {
+            for (State state_to: transition_from_state.states_to)
+            {
+                trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+            }
+        }
+    }
+
+    return trans_sequence;
+}
+
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
