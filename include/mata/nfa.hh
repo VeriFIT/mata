@@ -403,8 +403,8 @@ public:
         return this->has_trans({src, symb, tgt});
     } // }}}
 
-    bool trans_empty() const { return this->transitionrelation.empty();} /// no transitions
-    size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
+    bool trans_empty() const { return this->transitionrelation.empty();} ///< No transitions.
+    size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
     bool nothing_in_trans() const
     {
         return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),

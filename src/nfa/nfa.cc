@@ -327,7 +327,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    for (size_t i=0; i < aut.trans_size(); ++i)
+    for (size_t i=0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& trans: aut[i])
         { // initialize
@@ -343,7 +343,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     bool changed = true;
     while (changed) { // compute the fixpoint
         changed = false;
-        for (size_t i=0; i < aut.trans_size(); ++i)
+        for (size_t i=0; i < aut.get_num_of_states(); ++i)
         {
             for (auto const &trans: aut[i])
             {
@@ -388,12 +388,12 @@ void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 {
     assert(nullptr != result);
 
-    if (aut.trans_size() > result->trans_size()) { result->increase_size(aut.trans_size()); }
+    if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
 
     result->initialstates = aut.finalstates;
     result->finalstates = aut.initialstates;
 
-    for (size_t i = 0; i < aut.trans_size(); ++i)
+    for (size_t i = 0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& symStates : aut[i])
             for (const State tgt : symStates.states_to)
@@ -407,7 +407,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     if (aut.trans_empty()) { return true; }
 
-    for (size_t i = 0; i < aut.trans_size(); ++i)
+    for (size_t i = 0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& symStates : aut[i])
         {
@@ -799,6 +799,21 @@ TransSequence Nfa::get_trans_as_sequence()
     }
 
     return trans_sequence;
+}
+
+size_t Nfa::get_num_of_trans() const
+{
+    size_t num_of_transitions{};
+
+    for (const auto& state_transitions: transitionrelation)
+    {
+        for (const auto& symbol_transitions: state_transitions)
+        {
+            num_of_transitions += symbol_transitions.states_to.size();
+        }
+    }
+
+    return num_of_transitions;
 }
 
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {

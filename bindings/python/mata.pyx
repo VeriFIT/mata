@@ -251,12 +251,12 @@ cdef class Nfa:
         """
         return self.thisptr.nothing_in_trans()
 
-    def trans_size(self):
+    def get_num_of_trans(self):
         """Returns number of transitions in automaton
 
         :return: number of transitions in automaton
         """
-        return self.thisptr.trans_size()
+        return self.thisptr.get_num_of_trans()
 
     def resize(self, size):
         """Increases the size of the automaton to size
