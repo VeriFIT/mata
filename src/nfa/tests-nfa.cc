@@ -1472,11 +1472,11 @@ TEST_CASE("Mata::Nfa::revert()")
 
 	SECTION("no-transition automaton")
 	{
-		aut.add_initial(1);
-		aut.add_initial(3);
+		aut.make_initial(1);
+		aut.make_initial(3);
 
-		aut.add_final(2);
-		aut.add_final(5);
+		aut.make_final(2);
+		aut.make_final(5);
 
 		Nfa result = revert(aut);
 
@@ -1489,8 +1489,8 @@ TEST_CASE("Mata::Nfa::revert()")
 
 	SECTION("one-transition automaton")
 	{
-		aut.add_initial(1);
-		aut.add_final(2);
+		aut.make_initial(1);
+		aut.make_final(2);
 		aut.add_trans(1, 'a', 2);
 
 		Nfa result = revert(aut);
@@ -1542,25 +1542,25 @@ TEST_CASE("Mata::Nfa::is_deterministic()")
 		REQUIRE(!is_deterministic(aut));
 
 		// add an initial state
-		aut.add_initial('q');
+		aut.make_initial('q');
 		REQUIRE(is_deterministic(aut));
 
 		// add the same initial state
-		aut.add_initial('q');
+		aut.make_initial('q');
 		REQUIRE(is_deterministic(aut));
 
 		// add another initial state
-		aut.add_initial('r');
+		aut.make_initial('r');
 		REQUIRE(!is_deterministic(aut));
 
 		// add a final state
-		aut.add_final('q');
+		aut.make_final('q');
 		REQUIRE(!is_deterministic(aut));
 	}
 
 	SECTION("trivial automata")
 	{
-		aut.add_initial('q');
+		aut.make_initial('q');
 		aut.add_trans('q', 'a', 'r');
 		REQUIRE(is_deterministic(aut));
 
@@ -1618,7 +1618,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 		StringToSymbolMap ssmap;
 		OnTheFlyAlphabet alph(&ssmap);
 
-		aut.add_initial(4);
+		aut.make_initial(4);
 		aut.add_trans(4, alph["a"], 8);
 		aut.add_trans(4, alph["c"], 8);
 		aut.add_trans(4, alph["a"], 6);
@@ -1631,7 +1631,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 		aut.add_trans(0, alph["a"], 2);
 		aut.add_trans(12, alph["a"], 14);
 		aut.add_trans(14, alph["b"], 12);
-		aut.add_final({2, 12});
+		aut.make_final({2, 12});
 
 		REQUIRE(!is_complete(aut, alph));
 
@@ -1644,7 +1644,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 		StringToSymbolMap ssmap;
 		OnTheFlyAlphabet alph(&ssmap);
 
-		aut.add_initial(4);
+		aut.make_initial(4);
 		aut.add_trans(4, alph["a"], 8);
 		aut.add_trans(4, alph["c"], 8);
 		aut.add_trans(4, alph["a"], 6);
@@ -1659,7 +1659,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 	{
 		CharAlphabet alph;
 
-		aut.add_initial(4);
+        aut.make_initial(4);
 		aut.add_trans(4, 'a', 8);
 		aut.add_trans(4, 'c', 8);
 		aut.add_trans(4, 'a', 6);
@@ -1672,7 +1672,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 		aut.add_trans(0, 'a', 2);
 		aut.add_trans(12, 'a', 14);
 		aut.add_trans(14, 'b', 12);
-		aut.add_final({2, 12});
+		aut.make_final({2, 12});
 
 		REQUIRE(!is_complete(aut, alph));
 
@@ -1697,8 +1697,8 @@ TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
 
 	SECTION("automaton accepting only epsilon")
 	{
-		aut.add_initial('q');
-		aut.add_final('q');
+		aut.make_initial('q');
+		aut.make_final('q');
 
 		Word w;
 		w = { };
@@ -1753,11 +1753,11 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
     aut.increase_size(9);
     SECTION("no-transition automaton")
     {
-        aut.add_initial(1);
-        aut.add_initial(3);
+        aut.make_initial(1);
+        aut.make_initial(3);
 
-        aut.add_final(2);
-        aut.add_final(5);
+        aut.make_final(2);
+        aut.make_final(5);
 
         Mata::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(1,3));
@@ -1768,8 +1768,8 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
     SECTION("small automaton")
     {
-        aut.add_initial(1);
-        aut.add_final(2);
+        aut.make_initial(1);
+        aut.make_final(2);
         aut.add_trans(1, 'a', 4);
         aut.add_trans(4, 'b', 5);
         aut.add_trans(2, 'b', 5);
@@ -1823,16 +1823,16 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     Word zero{0};
 
     Nfa lhs(2);
-    lhs.add_initial(0);
+    lhs.make_initial(0);
     lhs.add_trans(0, 0, 1);
-    lhs.add_final(1);
+    lhs.make_final(1);
     REQUIRE(!is_in_lang(lhs, one));
     REQUIRE(is_in_lang(lhs, zero));
 
     Nfa rhs(2);
-    rhs.add_initial(0);
+    rhs.make_initial(0);
     rhs.add_trans(0, 1, 1);
-    rhs.add_final(1);
+    rhs.make_final(1);
     REQUIRE(is_in_lang(rhs, one));
     REQUIRE(!is_in_lang(rhs, zero));
 
