@@ -999,13 +999,15 @@ void Mata::Nfa::construct(
         remove_state_map = true;
     }
 
-    State cnt_state = 0;
-
     // a lambda for translating state names to identifiers
-    auto get_state_name = [state_map, &cnt_state](const std::string& str) {
-        auto it_insert_pair = state_map->insert({str, cnt_state});
-        if (it_insert_pair.second) { return cnt_state++; }
-        else { return it_insert_pair.first->second; }
+    auto get_state_name = [state_map, aut](const std::string& str) {
+        if (!state_map->count(str)) {
+            State state = aut->add_new_state();
+            state_map->insert({str, state});
+            return state;
+        } else {
+            return (*state_map)[str];
+        }
     };
 
     // a lambda for cleanup
