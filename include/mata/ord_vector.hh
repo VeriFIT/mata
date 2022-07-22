@@ -134,7 +134,8 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
-    OrdVector(const OrdVector& rhs)
+    OrdVector(const OrdVector& rhs) :
+        vec_()
     {
         // Assertions
         assert(rhs.vectorIsSorted());
@@ -293,6 +294,44 @@ public:   // Public methods
         }
 
         return 0;
+    }
+
+    OrdVector intersection(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        VectorType newVector{};
+
+        auto lhsIt = vec_.begin();
+        auto rhsIt = rhs.vec_.begin();
+
+        while ((lhsIt != vec_.end()) && (rhsIt != rhs.vec_.end()))
+        {	// until we get to the end of both vectors
+            if (*lhsIt == *rhsIt)
+            {
+                newVector.push_back(*lhsIt);
+
+                ++lhsIt;
+                ++rhsIt;
+            }
+            else if (*lhsIt < *rhsIt)
+            {
+                ++lhsIt;
+            }
+            else if (*rhsIt < *lhsIt)
+            {
+                ++rhsIt;
+            }
+        }
+
+        OrdVector result(newVector);
+
+        // Assertions
+        assert(result.vectorIsSorted());
+
+        return result;
     }
 
 	OrdVector Union(const OrdVector& rhs) const
@@ -515,7 +554,7 @@ public:   // Public methods
 		const_iterator itLhs = begin();
 		const_iterator itRhs = rhs.begin();
 
-		while ((itLhs != end()) || (itRhs != rhs.end()))
+		while ((itLhs != end()) && (itRhs != rhs.end()))
 		{	// until we drop out of the array (or find a common element)
 			if (*itLhs == *itRhs)
 			{	// in case there exists a common element
