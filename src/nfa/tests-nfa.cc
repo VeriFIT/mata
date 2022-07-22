@@ -2059,6 +2059,31 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
 }
 
+TEST_CASE("Mata::Nfa::remove_epsilon()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_epsilon('c');
+    REQUIRE(aut.has_trans(10, 'a', 7));
+    REQUIRE(aut.has_trans(10, 'b', 7));
+    REQUIRE(!aut.has_trans(10, 'c', 7));
+    REQUIRE(aut.has_trans(7, 'a', 5));
+    REQUIRE(aut.has_trans(7, 'a', 3));
+    REQUIRE(!aut.has_trans(7, 'c', 3));
+    REQUIRE(aut.has_trans(7, 'b', 9));
+    REQUIRE(aut.has_trans(7, 'a', 7));
+    REQUIRE(aut.has_trans(5, 'a', 5));
+    REQUIRE(!aut.has_trans(5, 'c', 9));
+    REQUIRE(aut.has_trans(5, 'a', 9));
+}
+
+TEST_CASE("Mata::Nfa::get_num_of_trans()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    REQUIRE(aut.get_num_of_trans() == 15);
+}
+
 TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()")
 {
     Nfa aut(100);

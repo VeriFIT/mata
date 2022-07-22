@@ -235,6 +235,11 @@ State Nfa::add_new_state() {
     return transitionrelation.size() - 1;
 }
 
+void Nfa::remove_epsilon(const Symbol epsilon)
+{
+    *this = Mata::Nfa::remove_epsilon(*this, epsilon);
+}
+
 /// General methods for NFA
 
 bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
@@ -368,15 +373,21 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     // now we construct the automaton without epsilon transitions
     result->initialstates.insert(aut.initialstates);
     result->finalstates.insert(aut.finalstates);
-    for (auto state_closure_pair : eps_closure) { // for every state
+    State max_state{};
+    for (const auto& state_closure_pair : eps_closure) { // for every state
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
             if (aut.has_final(eps_cl_state)) result->make_final(src_state);
-            for (auto symb_set : aut[eps_cl_state]) {
+            for (const auto& symb_set : aut[eps_cl_state]) {
                 if (symb_set.symbol == epsilon) continue;
 
                 // TODO: this could be done more efficiently if we had a better add_trans method
                 for (State tgt_state : symb_set.states_to) {
+                    max_state = std::max(src_state, tgt_state);
+                    if (result->get_num_of_states() < max_state)
+                    {
+                        result->increase_size_for_state(max_state);
+                    }
                     result->add_trans(src_state, symb_set.symbol, tgt_state);
                 }
             }

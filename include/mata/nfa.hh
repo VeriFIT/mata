@@ -435,7 +435,7 @@ public:
 
     const TransitionList& get_transitions_from_state(State state_from) const
     {
-        assert(!transitionrelation.empty());
+        assert(transitionrelation.size() >= state_from + 1);
         return transitionrelation[state_from];
     }
 
@@ -475,6 +475,11 @@ public:
     {
         remove_trans(trans.src, trans.symb, trans.tgt);
     }
+
+    /**
+     * Remove epsilon transitions from the automaton.
+     */
+    void remove_epsilon(Symbol epsilon);
 
     bool has_trans(Trans trans) const
     {
@@ -751,7 +756,7 @@ void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
 
 inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
 { // {{{
-    Nfa result;
+    Nfa result{};
     remove_epsilon(&result, aut, epsilon);
     return result;
 } // }}}
