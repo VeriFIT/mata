@@ -131,7 +131,7 @@ private:
 
 public:
 
-	OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+	explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
 		symbol_map(str_sym_map), cnt_symbol(init_symbol)
 	{
 		assert(nullptr != symbol_map);
@@ -165,7 +165,7 @@ public:
 			((str[0] == '\'' && str[2] == '\'') ||
 			(str[0] == '\"' && str[2] == '\"')
 			 ))
-		{ // direct occurence of a character
+		{ // direct occurrence of a character
 			return str[1];
 		}
 
@@ -440,6 +440,22 @@ public:
 
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
 
+    /**
+     * @brief Get set of reachable states.
+     *
+     * Reachable states are states accessible from any initial state.
+     * @return Set of reachable states.
+     */
+    StateSet get_reachable_states() const;
+
+    /**
+     * @brief Get set of terminating states.
+     *
+     * Terminating states are states leading to any final state.
+     * @return Set of terminating states.
+     */
+    StateSet get_terminating_states() const;
+
     const TransitionList& get_transitions_from_state(State state_from) const
     {
         assert(transitionrelation.size() >= state_from + 1);
@@ -612,7 +628,16 @@ public:
 
         return transitionrelation[state];
     } // operator[] }}}
-};
+
+private:
+    using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+
+    /**
+     * Compute reachability of states.
+     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+     */
+    StateBoolArray compute_reachability() const;
+}; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
 struct NfaWrapper
@@ -825,7 +850,7 @@ inline Word encode_word(
 	const std::vector<std::string>&  input)
 { // {{{
 	Word result;
-	for (auto str : input) { result.push_back(symbol_map.at(str)); }
+	for (const auto& str : input) { result.push_back(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
 

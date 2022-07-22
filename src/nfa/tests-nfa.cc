@@ -5,6 +5,7 @@
 #include "../3rdparty/catch.hpp"
 
 #include <mata/nfa.hh>
+
 using namespace Mata::Nfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
@@ -2023,6 +2024,52 @@ TEST_CASE("Mata::Nfa::remove_trans()")
     }
 }
 
+TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
+{
+    Nfa aut{};
+
+    SECTION("Add new states within the limit")
+    {
+        aut.increase_size(20);
+        aut.make_initial(0);
+        aut.make_initial(1);
+        aut.make_initial(2);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(2));
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        REQUIRE(aut.get_transitions_from_state(2).empty());
+    }
+
+    SECTION("Add new states over the limit")
+    {
+        aut.increase_size(2);
+        REQUIRE_NOTHROW(aut.make_initial(0));
+        REQUIRE_NOTHROW(aut.make_initial(1));
+        REQUIRE_THROWS_AS(aut.make_initial(2), std::runtime_error);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new states without specifying the number of states")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(0), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new initial without specifying the number of states with over +1 number")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(25), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+}
+
+
 TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
 {
     Nfa aut('q' + 1);
@@ -2165,5 +2212,27 @@ TEST_CASE("Mata::Nfa::get_digraph()")
     REQUIRE(!digraph.has_trans(10, 'a', 7));
     REQUIRE(!digraph.has_trans(10, 'b', 7));
     REQUIRE(!digraph.has_trans(10, 'c', 7));
+}
+
+TEST_CASE("Mata::Nfa::get_reachable_states()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(3, 'b', 9);
+    aut.remove_trans(5, 'c', 9);
+    aut.remove_trans(1, 'a', 10);
+
+    auto reachable{aut.get_reachable_states()};
+    CHECK(reachable.find(0) == reachable.end());
+    CHECK(reachable.find(1) != reachable.end());
+    CHECK(reachable.find(2) == reachable.end());
+    CHECK(reachable.find(3) != reachable.end());
+    CHECK(reachable.find(4) == reachable.end());
+    CHECK(reachable.find(5) != reachable.end());
+    CHECK(reachable.find(6) == reachable.end());
+    CHECK(reachable.find(7) != reachable.end());
+    CHECK(reachable.find(8) == reachable.end());
+    CHECK(reachable.find(9) == reachable.end());
+    CHECK(reachable.find(10) == reachable.end());
 }
 

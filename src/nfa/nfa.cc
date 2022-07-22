@@ -242,6 +242,28 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = Mata::Nfa::remove_epsilon(*this, epsilon);
 }
 
+StateSet Nfa::get_reachable_states() const
+{
+    StateBoolArray reachable_bool_array{ compute_reachability() };
+
+    StateSet reachable_states{};
+    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
+    {
+        if (reachable_bool_array[original_state])
+        {
+            reachable_states.push_back(original_state);
+        }
+    }
+
+    return reachable_states;
+}
+
+StateSet Nfa::get_terminating_states() const
+{
+    Nfa reversed{ revert(*this) };
+    return reversed.get_reachable_states();
+}
+
 /// General methods for NFA
 
 bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
@@ -827,6 +849,38 @@ size_t Nfa::get_num_of_trans() const
     }
 
     return num_of_transitions;
+}
+
+Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
+{
+    std::vector<State> worklist{ initialstates.ToVector() };
+
+    StateBoolArray reachable(get_num_of_states(), false);
+    for (State state: initialstates)
+    {
+        reachable.at(state) = true;
+    }
+
+    State state{};
+    while (!worklist.empty())
+    {
+        state = worklist.back();
+        worklist.pop_back();
+
+        for (const auto& state_transitions: transitionrelation[state])
+        {
+            for (State target_state: state_transitions.states_to)
+            {
+                if (!reachable.at(target_state))
+                {
+                    worklist.push_back(target_state);
+                    reachable.at(target_state) = true;
+                }
+            }
+        }
+    }
+
+    return reachable;
 }
 
 Nfa Nfa::get_digraph()
