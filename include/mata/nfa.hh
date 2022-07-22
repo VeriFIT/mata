@@ -294,36 +294,122 @@ public:
         increase_size(state + 1);
     }
 
-    void make_initial(State state) {
+    /**
+     * Clear initial states set.
+     */
+    void clear_initial() { initialstates.clear(); }
+
+    /**
+     * Make @p state initial.
+     * @param state State to be added to initial states.
+     */
+    void make_initial(State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
         }
 
         this->initialstates.insert(state);
     }
+
+    /**
+     * @brief Set initial states set with @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param state State to be set as the new initial state.
+     */
+    void set_initial(State state)
+    {
+        clear_initial();
+        make_initial(state);
+    }
+
+    /**
+     * Make @p vec of states initial states.
+     * @param vec Vector of states to be added to initial states.
+     */
     void make_initial(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_initial(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Set initial states set with @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param vec Vector of states to be set as new initial states.
+     */
+    void set_initial(const std::vector<State>& vec)
+    {
+        clear_initial();
+        for (const State& st: vec) { this->make_initial(st); }
+    }
+
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
+
     void remove_initial(State state)
     {
         assert(has_initial(state));
         this->initialstates.remove(state);
     }
 
-    void make_final(State state) {
+    /**
+     * Clear final states set.
+     */
+    void clear_final() { finalstates.clear(); }
+
+    /**
+     * Make @p state final.
+     * @param state[in] State to be added to final states.
+     */
+    void make_final(const State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state final because it is not in automaton");
         }
 
         this->finalstates.insert(state);
     }
+
+    /**
+     * @brief Set final states set with @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param state[in] State to be set as the new final state.
+     */
+    void set_final(const State state)
+    {
+        clear_final();
+        make_final(state);
+    }
+
+    /**
+     * Make @p vec of states final states.
+     * @param vec[in] Vector of states to be added to final states.
+     */
     void make_final(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_final(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Set final states set with @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param vec[in] Vector of states to be set as new final states.
+     */
+    void set_final(const std::vector<State>& vec)
+    {
+        clear_final();
+        for (const State& st: vec) { this->make_final(st); }
+    }
+
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
+
     void remove_final(State state)
     {
         assert(has_final(state));
@@ -335,6 +421,7 @@ public:
      * @return The newly created state.
      */
     State add_new_state();
+
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
 
     const TransitionList& get_transitions_from_state(State state_from) const
@@ -357,6 +444,7 @@ public:
      * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
      */
     void add_trans(State src, Symbol symb, State tgt);
+
     void add_trans(const Trans& trans)
     {
         add_trans(trans.src, trans.symb, trans.tgt);

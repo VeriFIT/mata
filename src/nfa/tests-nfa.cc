@@ -1892,6 +1892,16 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         REQUIRE(aut.get_shortest_words().empty());
     }
 
+    SECTION("One-state automaton accepting an empty language")
+    {
+        aut.make_initial(0);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(1);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(0);
+        REQUIRE(aut.get_shortest_words() == WordSet{Word{}});
+    }
+
     SECTION("Automaton A")
     {
         FILL_WITH_AUT_A(aut);

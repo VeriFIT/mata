@@ -529,7 +529,7 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 WordSet Mata::Nfa::Nfa::get_shortest_words() const
 {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
-    ShortestWordsMap shortest_words_map{*this};
+    ShortestWordsMap shortest_words_map{ *this };
 
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return shortest_words_map.get_shortest_words_for_states(this->initialstates);
@@ -1321,22 +1321,32 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa
 WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) const
 {
     std::set <Word> result{};
-    WordLength shortest_words_length{-1};
 
-    for (auto state: states)
+    if (!shortest_words_map.empty())
     {
-        const auto& state_shortest_words_map{shortest_words_map.find(state)->second};
-        if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
+        WordLength shortest_words_length{-1};
+
+        for (State state: states)
         {
-            result = state_shortest_words_map.second;
-            shortest_words_length = state_shortest_words_map.first;
+            const auto& current_shortest_words_map{shortest_words_map.find(state)};
+            if (current_shortest_words_map == shortest_words_map.end()) {
+                continue;
+            }
+
+            const auto& state_shortest_words_map{current_shortest_words_map->second};
+            if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
+            {
+                result = state_shortest_words_map.second;
+                shortest_words_length = state_shortest_words_map.first;
+            }
+            else if (state_shortest_words_map.first == shortest_words_length)
+            {
+                // Append the shortest words from other state of the same length to the already found set of the shortest words.
+                result.insert(state_shortest_words_map.second.begin(),
+                              state_shortest_words_map.second.end());
+            }
         }
-        else if (state_shortest_words_map.first == shortest_words_length)
-        {
-            // Append the shortest words from other state of the same length to the already found set of the shortest words.
-            result.insert(state_shortest_words_map.second.begin(),
-                          state_shortest_words_map.second.end());
-        }
+
     }
 
     return result;
@@ -1344,13 +1354,17 @@ WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) 
 
 void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
 {
-    for (State state: reversed_automaton.initialstates)
+    if (!reversed_automaton.initialstates.empty())
     {
-        shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{Word{}})));
-    }
+        for (State state: reversed_automaton.initialstates)
+        {
+            shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{ Word{} })));
+        }
 
-    processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
-    lifo_queue.insert(lifo_queue.end(), reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+        processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+        lifo_queue.insert(lifo_queue.end(), reversed_automaton.initialstates.begin(),
+                          reversed_automaton.initialstates.end());
+    }
 }
 
 void ShortestWordsMap::compute()
@@ -1368,15 +1382,15 @@ void ShortestWordsMap::compute()
 
 void ShortestWordsMap::compute_for_state(const State state)
 {
-    const LengthWordsPair& dst{map_default_shortest_words(state)};
-    WordLength dst_length_plus_one{dst.first + 1};
+    const LengthWordsPair& dst{ map_default_shortest_words(state) };
+    WordLength dst_length_plus_one{ dst.first + 1 };
     LengthWordsPair act{};
 
     for (const TransSymbolStates& transition: reversed_automaton.get_transitions_from_state(state))
     {
         for (State state_to: transition.states_to)
         {
-            const LengthWordsPair& orig{map_default_shortest_words(state_to)};
+            const LengthWordsPair& orig{ map_default_shortest_words(state_to) };
             act = orig;
 
             if ((act.first == -1) || (dst_length_plus_one < act.first))
