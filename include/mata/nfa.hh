@@ -456,6 +456,23 @@ public:
      */
     StateSet get_terminating_states() const;
 
+    /**
+     * @brief Get a set of useful states.
+     *
+     * Useful states are reachable and terminating states.
+     * @return Set of useful states.
+     */
+    StateSet get_useful_states();
+
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     */
+    void trim();
+
     const TransitionList& get_transitions_from_state(State state_from) const
     {
         assert(transitionrelation.size() >= state_from + 1);
@@ -637,6 +654,20 @@ private:
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
     StateBoolArray compute_reachability() const;
+
+    /**
+     * Add transitions to the trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param trimmed_aut The new trimmed automaton.
+     */
+    void add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut);
+
+    /**
+     * Get new trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @return Newly initialized trimmed automaton.
+     */
+    Nfa initialize_trimmed_aut(const StateMap<State>& original_to_new_states_map);
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use

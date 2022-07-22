@@ -2236,3 +2236,20 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
     CHECK(reachable.find(10) == reachable.end());
 }
 
+TEST_CASE("Mata::Nfa::trim()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    Nfa old_aut{aut};
+
+    aut.trim();
+    REQUIRE(aut.initialstates.size() == old_aut.initialstates.size());
+    REQUIRE(aut.finalstates.size() == old_aut.finalstates.size());
+    for (const Word& word: old_aut.get_shortest_words())
+    {
+        REQUIRE(is_in_lang(aut, word));
+    }
+}
+

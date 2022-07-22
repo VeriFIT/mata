@@ -32,7 +32,7 @@ using Mata::Nfa::Symbol;
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
-//searches for every state in the set of final states
+    //searches for every state in the set of final states
     template<class T>
     bool contains_final(const T &states, const Nfa &automaton) {
         auto finalState = find_if(states.begin(), states.end(),
@@ -40,7 +40,7 @@ namespace {
         return (finalState != states.end());
     }
 
-//checks whether the set has someone with the isFinal flag on
+    //checks whether the set has someone with the isFinal flag on
     template<class T>
     bool contains_final(const T &states, const std::vector<bool> &isFinal) {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
@@ -262,6 +262,84 @@ StateSet Nfa::get_terminating_states() const
 {
     Nfa reversed{ revert(*this) };
     return reversed.get_reachable_states();
+}
+
+void Nfa::trim()
+{
+    StateSet original_useful_states{ get_useful_states() };
+
+    StateMap<State> original_to_new_states_map{ original_useful_states.size() };
+    size_t new_state_num{ 0 };
+    for (const State original_state: original_useful_states)
+    {
+        original_to_new_states_map.insert(std::make_pair(original_state, new_state_num));
+        ++new_state_num;
+    }
+
+    Nfa trimmed_aut{ initialize_trimmed_aut(original_to_new_states_map) };
+
+    add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
+
+    *this = trimmed_aut;
+}
+
+StateSet Nfa::get_useful_states()
+{
+    Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
+
+    StateBoolArray reachable_states{ digraph.compute_reachability() };
+    StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
+
+    StateSet useful_states{};
+    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
+    {
+        if (reachable_states[original_state] && terminating_states[original_state])
+        {
+            useful_states.push_back(original_state);
+        }
+    }
+    return useful_states;
+}
+
+Nfa Nfa::initialize_trimmed_aut(const StateMap<State>& original_to_new_states_map)
+{
+    Nfa trimmed_aut{ original_to_new_states_map.size() };
+
+    for (State old_initial_state: initialstates)
+    {
+        if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
+        {
+            trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
+        }
+    }
+
+    for (State old_final_state: finalstates)
+    {
+        if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
+        {
+            trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
+        }
+    }
+    return trimmed_aut;
+}
+
+void Nfa::add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut)
+{
+    for (const auto& original_state_mapping: original_to_new_states_map)
+    {
+        for (const TransSymbolStates& state_transitions_with_symbol: transitionrelation[original_state_mapping.first])
+        {
+            for (State old_state_to: state_transitions_with_symbol.states_to)
+            {
+                if (original_to_new_states_map.find(old_state_to) != original_to_new_states_map.end())
+                {
+                    trimmed_aut.add_trans(original_to_new_states_map.at(original_state_mapping.first),
+                                          state_transitions_with_symbol.symbol,
+                                          original_to_new_states_map.at(old_state_to));
+                }
+            }
+        }
+    }
 }
 
 /// General methods for NFA
