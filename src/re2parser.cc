@@ -99,7 +99,7 @@ namespace {
             // Vectors are saved in this->state_cache after this
             this->create_state_cache(prog);
 
-            explicit_nfa.add_initial(this->state_cache.state_mapping[start_state][0]);
+            explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][0]);
             this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][0]] = true;
 
             // We traverse all the states and create corresponding states and edges in mata::Nfa::Nfa
@@ -455,7 +455,7 @@ namespace {
                 if (!this->state_cache.has_state_incoming_edge[target_state]) {
                     continue;
                 }
-                nfa.add_final(target_state);
+                nfa.make_final(target_state);
             }
         }
 
@@ -485,7 +485,7 @@ namespace {
                 if (static_cast<int>(renumbered_states[state]) == -1) {
                     renumbered_states[state] = renumbered_explicit_nfa.add_new_state();
                 }
-                renumbered_explicit_nfa.add_final(renumbered_states[state]);
+                renumbered_explicit_nfa.make_final(renumbered_states[state]);
             }
 
             for (int state = 0; state < program_size; state++) {
@@ -499,7 +499,7 @@ namespace {
             }
 
             for (auto state: input_nfa.initialstates) {
-                renumbered_explicit_nfa.add_initial(renumbered_states[state]);
+                renumbered_explicit_nfa.make_initial(renumbered_states[state]);
             }
 
             return renumbered_explicit_nfa;
