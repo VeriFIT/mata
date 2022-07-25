@@ -1,5 +1,5 @@
 from libcpp cimport bool
-from libcpp.set cimport set
+from libcpp.set cimport set as cset
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.vector cimport vector
@@ -21,6 +21,33 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
+cdef extern from "mata/simutil/binary_relation.hh" namespace "Mata::Util":
+    ctypedef vector[size_t] ivector
+    ctypedef vector[bool] bvector
+    ctypedef vector[ivector] IndexType
+
+    cdef cppclass CBinaryRelation "Mata::Util::BinaryRelation":
+        CBinaryRelation(size_t, boo, size_t)
+        CBinaryRelation(vector[bvector])
+
+        void reset(bool)
+        void resize(size_t, bool)
+        size_t alloc()
+        size_t split(size_t, bool)
+        bool get(size_t, size_t)
+        bool set(size_t, size_t, bool)
+        size_t size()
+        bool sym(size_t, size_t)
+        void build_equivalence_classes(ivector&)
+        void build_equivalence_classes(ivector&, ivector&)
+        CBinaryRelation transposed(CBinaryRelation&)
+        void build_index(IndexType&)
+        void build_inv_index(IndexType&)
+        void build_index(IndexType&, IndexType&)
+        void restrict_to_symmetric()
+        void get_quotient_projection(ivector&)
+
+
 cdef extern from "mata/ord_vector.hh" namespace "Mata::Util":
     cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
         COrdVector() except+
@@ -40,11 +67,14 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[string, State] StringSubsetMap
     ctypedef vector[State] Path
     ctypedef vector[Symbol] Word
+    ctypedef cset[Word] WordSet
     ctypedef umap[string, State] StringToStateMap
     ctypedef umap[string, Symbol] StringToSymbolMap
     ctypedef umap[State, string] StateToStringMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringDict
+    ctypedef COrdVector[CTransSymbolStates] TransitionList
+    ctypedef vector[TransitionList] TransitionRelation
 
     cdef cppclass CTrans "Mata::Nfa::Trans":
         # Public Attributes
@@ -59,6 +89,21 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Functions
         bool operator==(CTrans)
         bool operator!=(CTrans)
+
+    cdef cppclass CTransSymbolStates "Mata::Nfa::TransSymbolStates":
+        # Public Attributes
+        Symbol symbol
+        StateSet states_to
+
+        # Constructors
+        CTransSymbolStates(Symbol) except +
+        CTransSymbolStates(Symbol, State) except +
+        CTransSymbolStates(Symbol, State, StateSet) except +
+
+        bool operator<(CTransSymbolStates)
+        bool operator<=(CTransSymbolStates)
+        bool operator>(CTransSymbolStates)
+        bool operator>=(CTransSymbolStates)
 
     cdef cppclass CNfa "Mata::Nfa::Nfa":
         # Nested iterator
@@ -101,6 +146,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void increase_size(size_t)
         State add_new_state()
         void print_to_DOT(ostream)
+        WordSet get_shortest_word()
+        TransitionList get_transitions_from_state(State)
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
@@ -122,6 +169,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
+    cdef CBinaryRelation compute_relation(CNfa&, StringDict&)
 
     # Helper functions
     cdef pair[Word, bool] get_word_for_path(CNfa&, Path&)

@@ -15,3 +15,5 @@ init:
 
 build-install: build-ext install
 
+
+.PHONY: build-ext build-dist install init test
