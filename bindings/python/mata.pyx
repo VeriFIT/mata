@@ -90,6 +90,14 @@ cdef class Nfa:
     def __dealloc__(self):
         del self.thisptr
 
+    def is_state(self, state):
+        """Tests if state is in the automaton
+
+        :param int state: tested state
+        :return: true if state is in the automaton
+        """
+        return self.thisptr.is_state(state)
+
     def add_new_state(self):
         """Adds new state to automaton
 
@@ -188,6 +196,13 @@ cdef class Nfa:
         :return: number of transitions in automaton
         """
         return self.thisptr.trans_size()
+
+    def resize(self, size):
+        """Increases the size of the automaton to size
+
+        :param int size: new size of the
+        """
+        self.thisptr.increase_size(size)
 
     def iterate(self):
         """Iterates over all transitions

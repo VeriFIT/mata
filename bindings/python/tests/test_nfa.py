@@ -41,6 +41,19 @@ def test_adding_states():
     assert state == 1
     assert rhs.state_size() == 2
 
+    rhs.resize(10)
+    assert rhs.state_size() == 10
+    for i in range(0, 10):
+        assert rhs.is_state(i)
+
+    rhs.resize(1)
+    assert rhs.state_size() == 1
+    assert rhs.is_state(0)
+    assert not rhs.is_state(1)
+
+    with pytest.raises(OverflowError):
+        rhs.resize(-10)
+
 
 def test_transitions():
     """Test adding transitions to automaton"""
