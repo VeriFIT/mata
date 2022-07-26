@@ -32,6 +32,15 @@ def test_adding_states():
     lhs.add_final_state(0)
     assert lhs.has_final_state(0)
 
+    rhs = mata.Nfa()
+    assert rhs.state_size() == 0
+    state = rhs.add_new_state()
+    assert state == 0
+    assert rhs.state_size() == 1
+    state = rhs.add_new_state()
+    assert state == 1
+    assert rhs.state_size() == 2
+
 
 def test_transitions():
     """Test adding transitions to automaton"""

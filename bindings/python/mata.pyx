@@ -90,6 +90,13 @@ cdef class Nfa:
     def __dealloc__(self):
         del self.thisptr
 
+    def add_new_state(self):
+        """Adds new state to automaton
+
+        :return: number of the state
+        """
+        return self.thisptr.add_new_state()
+
     def add_initial_state(self, State st):
         """Adds initial state to automaton
 
