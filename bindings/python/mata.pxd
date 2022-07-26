@@ -98,7 +98,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Constructors
         CTransSymbolStates(Symbol) except +
         CTransSymbolStates(Symbol, State) except +
-        CTransSymbolStates(Symbol, State, StateSet) except +
+        CTransSymbolStates(Symbol, StateSet) except +
 
         bool operator<(CTransSymbolStates)
         bool operator<=(CTransSymbolStates)

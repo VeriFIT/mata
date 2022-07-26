@@ -72,6 +72,52 @@ cdef class Trans:
     def __repr__(self):
         return str(self)
 
+
+cdef class TransSymbolStates:
+    """
+    Wrapper over pair of symbol and states for transitions
+    """
+    cdef mata.CTransSymbolStates *thisptr
+
+    @property
+    def symbol(self):
+        return self.thisptr.symbol
+
+    @symbol.setter
+    def symbol(self, value):
+        self.thisptr.symbol = value
+
+    @property
+    def states_to(self):
+        states = []
+        cdef vector[State] states_as_vector = self.thisptr.states_to.ToVector()
+        return [s for s in states_as_vector]
+
+    @states_to.setter
+    def states_to(self, value):
+        cdef StateSet states_to = StateSet(value)
+        self.thisptr.states_to = states_to
+
+    def __cinit__(self, Symbol symbol, vector[State] states):
+        cdef StateSet states_to = StateSet(states)
+        self.thisptr = new mata.CTransSymbolStates(symbol, states_to)
+
+    def __dealloc__(self):
+        if self.thisptr != NULL:
+            del self.thisptr
+
+    def __lt__(self, TransSymbolStates other):
+        return dereference(self.thisptr) < dereference(other.thisptr)
+
+    def __gt__(self, TransSymbolStates other):
+        return dereference(self.thisptr) > dereference(other.thisptr)
+
+    def _le__(self, TransSymbolStates other):
+        return dereference(self.thisptr) <= dereference(other.thisptr)
+
+    def _ge__(self, TransSymbolStates other):
+        return dereference(self.thisptr) >= dereference(other.thisptr)
+
 cdef class Nfa:
     """
     Wrapper over NFA
