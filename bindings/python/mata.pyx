@@ -1,6 +1,7 @@
 cimport mata
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
+from libcpp.set cimport set as cset
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
@@ -294,6 +295,22 @@ cdef class Nfa:
         cdef StateSet input_states = StateSet(states)
         return_value = self.thisptr.post(input_states, symbol).ToVector()
         return {v for v in return_value}
+
+    def get_shortest_words(self):
+        """Returns set of shortest words accepted by automaton
+
+        :return: set of shortest words accepted by automaton
+        """
+        cdef WordSet shortest
+        shortest = self.thisptr.get_shortest_words()
+        result = []
+        cdef cset[vector[Symbol]].iterator it = shortest.begin()
+        cdef cset[vector[Symbol]].iterator end = shortest.end()
+        while it != end:
+            short = dereference(it)
+            result.append(short)
+            postinc(it)
+        return result
 
     # External Constructors
     @classmethod

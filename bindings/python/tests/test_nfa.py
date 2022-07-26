@@ -357,3 +357,8 @@ def test_to_str():
     lhs.add_trans_raw(0, 1, 1)
     expected = "initial_states: [0]\nfinal_states: [1]\ntransitions:\n0-[0]→0\n0-[1]→1\n"
     assert str(lhs) == expected
+
+def test_shortest(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    shortest = lhs.get_shortest_words()
+    assert shortest == [[1, 1]]
