@@ -432,3 +432,14 @@ def test_simulation_other_features(fa_one_divisible_by_two):
         for j in range(0, rel.size()):
             if rel.get(i, j) or rel.get(j, i):
                 assert rel.is_symmetric_at(i, j)
+
+
+def test_simulation_equivalence():
+    r = mata.BinaryRelation(3, True, 3)
+    classes, heads = r.build_equivalence_classes()
+    assert classes == [0, 0, 0]
+    assert heads == [0]
+    r.reset(False)
+    classes, heads = r.build_equivalence_classes()
+    assert classes == [0, 1, 2]
+    assert heads == [0, 1, 2]

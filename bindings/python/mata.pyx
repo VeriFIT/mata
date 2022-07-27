@@ -997,6 +997,17 @@ cdef class BinaryRelation:
         """Restricts the relation to its symmetric fragment"""
         self.thisptr.restrict_to_symmetric()
 
+    def build_equivalence_classes(self):
+        """Builds equivalence classes w.r.t relation
+
+        :return: mapping of state to its equivalence class,
+            first states corresponding to a equivalence class?
+        """
+        cdef vector[size_t] index
+        cdef vector[size_t] head
+        self.thisptr.build_equivalence_classes(index, head)
+        return index, head
+
     def __str__(self):
         return str(tabulate.tabulate(self.to_matrix()))
 
