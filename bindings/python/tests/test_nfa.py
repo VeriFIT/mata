@@ -362,3 +362,10 @@ def test_shortest(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     shortest = lhs.get_shortest_words()
     assert shortest == [[1, 1]]
+
+def test_get_trans(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    t = lhs.get_transitions_from_state(0)
+    assert sorted(t) == sorted([mata.TransSymbolStates(0, [0]), mata.TransSymbolStates(1, [1])])
+    tt = lhs.get_transitions_from_state(1)
+    assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])

@@ -112,11 +112,24 @@ cdef class TransSymbolStates:
     def __gt__(self, TransSymbolStates other):
         return dereference(self.thisptr) > dereference(other.thisptr)
 
-    def _le__(self, TransSymbolStates other):
+    def __le__(self, TransSymbolStates other):
         return dereference(self.thisptr) <= dereference(other.thisptr)
 
-    def _ge__(self, TransSymbolStates other):
+    def __ge__(self, TransSymbolStates other):
         return dereference(self.thisptr) >= dereference(other.thisptr)
+
+    def __eq__(self, TransSymbolStates other):
+        return self.symbol == other.symbol and self.states_to == other.states_to
+
+    def __neq__(self, TransSymbolStates other):
+        return self.symbol != other.symbol or self.states_to != other.states_to
+
+    def __str__(self):
+        trans = "{" + ",".join(map(str, self.states_to)) + "}"
+        return f"[{self.symbol}]\u2192{trans}"
+
+    def __repr__(self):
+        return str(self)
 
 cdef class Nfa:
     """
@@ -263,6 +276,29 @@ cdef class Nfa:
             trans.copy_from(lhs)
             preinc(iterator)
             yield trans
+
+    def get_transitions_from_state(self, State state):
+        """Returns list of TransSymbolStates for the given state
+
+        :param State state: state for which we are getting the transitions
+        :return: TransSymbolStates
+        """
+        cdef TransitionList transitions = self.thisptr.get_transitions_from_state(state)
+        cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
+
+        cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
+        cdef vector[mata.CTransSymbolStates].iterator end = transitions_list.end()
+        transsymbols = []
+        while it != end:
+            t = TransSymbolStates(
+                dereference(it).symbol,
+                dereference(it).states_to.ToVector()
+            )
+            postinc(it)
+            transsymbols.append(t)
+        return transsymbols
+
+
 
     def __str__(self):
         """String representation of the automaton displays states, and transitions
