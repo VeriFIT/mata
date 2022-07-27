@@ -525,6 +525,32 @@ cdef class Nfa:
         mata.minimize(result.thisptr, dereference(lhs.thisptr))
         return result
 
+
+    @classmethod
+    def compute_relation(cls, Nfa lhs, params = None):
+        """Computes the relation for the automaton
+
+        :param Nfa lhs: automaton
+        :param Dict params: parameters of the computed relation
+        :return: computd relation
+        """
+        params = params or {'relation': 'simulation', 'direction': 'forward'}
+        cdef mata.CBinaryRelation relation = mata.compute_relation(
+            dereference(lhs.thisptr),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
+        )
+        result = BinaryRelation()
+        cdef size_t relation_size = relation.size()
+        result.resize(relation_size)
+        for i in range(0, relation_size):
+            for j in range(0, relation_size):
+                val = relation.get(i, j)
+                result.set(i, j, val)
+        return result
+
     # Tests
     @classmethod
     def is_deterministic(cls, Nfa lhs):
@@ -875,9 +901,70 @@ cdef class OnTheFlyAlphabet(Alphabet):
         """
         return <mata.CAlphabet*> self.thisptr
 
+cdef class BinaryRelation:
+    """
+    Wrapper for binary relation
+    """
+    cdef mata.CBinaryRelation *thisptr
+
+    def __cinit__(self, size_t size=0, bool defVal=False, size_t rowSize=16):
+        self.thisptr = new mata.CBinaryRelation(size, defVal, rowSize)
+
+    def __dealloc__(self):
+        if self.thisptr != NULL:
+            del self.thisptr
+
+    def size(self):
+        """Returns the size of the relation
+
+        :return: size of the relation
+        """
+        return self.thisptr.size()
+
+    def resize(self, size_t size, bool defValue=False):
+        """Resizes the binary relation to size
+
+        :param size_t size: new size of the binary relation
+        :param bool defValue: default value that is set after resize
+        """
+        self.thisptr.resize(size, defValue)
+
+    def get(self, size_t row, size_t col):
+        """Gets the value of the relation at [row, col]
+
+        :param size_t row: row of the relation
+        :param size_t col: col of the relation
+        :return: value of the binary relation at [row, col]
+        """
+        return self.thisptr.get(row, col)
+
+    def set(self, size_t row, size_t col, bool value):
+        """Sets the value of the relation at [row, col]
+
+        :param size_t row: row of the relation
+        :param size_t col: col of the relation
+        :param bool value: value that is set
+        """
+        self.thisptr.set(row, col, value)
+
+    def to_matrix(self):
+        """Converts the relation to list of lists of booleans
+
+        :return: relation of list of lists to booleans
+        """
+        size = self.size()
+        result = []
+        for i in range(0, size):
+            sub_result = []
+            for j in range(0, size):
+                sub_result.append(self.get(i, j))
+            result.append(sub_result)
+        return result
+
+
 cdef subset_map_to_dictionary(SubsetMap subset_map):
     """Helper function that translates the unordered map to dictionary
-    
+
     :param SubsetMap subset_map: map of state sets to states
     :return: subset_map as dictionary
     """

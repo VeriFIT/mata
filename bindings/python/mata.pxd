@@ -27,7 +27,8 @@ cdef extern from "mata/simutil/binary_relation.hh" namespace "Mata::Util":
     ctypedef vector[ivector] IndexType
 
     cdef cppclass CBinaryRelation "Mata::Util::BinaryRelation":
-        CBinaryRelation(size_t, boo, size_t)
+        CBinaryRelation()
+        CBinaryRelation(size_t, bool, size_t)
         CBinaryRelation(vector[bvector])
 
         void reset(bool)
@@ -169,7 +170,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
-    cdef CBinaryRelation compute_relation(CNfa&, StringDict&)
+    cdef CBinaryRelation& compute_relation(CNfa&, StringDict&)
 
     # Helper functions
     cdef pair[Word, bool] get_word_for_path(CNfa&, Path&)

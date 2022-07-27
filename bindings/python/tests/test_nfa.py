@@ -369,3 +369,15 @@ def test_get_trans(fa_one_divisible_by_two):
     assert sorted(t) == sorted([mata.TransSymbolStates(0, [0]), mata.TransSymbolStates(1, [1])])
     tt = lhs.get_transitions_from_state(1)
     assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])
+
+def test_simulation(fa_one_divisible_by_four):
+    lhs = fa_one_divisible_by_four
+    rel = mata.Nfa.compute_relation(lhs)
+    assert rel.size() == 5
+    assert rel.to_matrix() == [
+        [True, False, False, False, True],
+        [False, True, False, False, False],
+        [False, False, True, False, False],
+        [False, False, False, True, False],
+        [False, False, False, False, True],
+    ]
