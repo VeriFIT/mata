@@ -349,8 +349,8 @@ TEST_CASE("Mata::Nfa::intersection()")
 		REQUIRE(res.has_initial(prod_map[{3, 4}]));
 		REQUIRE(res.has_final(prod_map[{5, 2}]));
 
-        for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
-        std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
+        //for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
+        //std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
