@@ -443,3 +443,14 @@ def test_simulation_equivalence():
     classes, heads = r.build_equivalence_classes()
     assert classes == [0, 1, 2]
     assert heads == [0, 1, 2]
+
+def test_simulation_indexes(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    rel = mata.Nfa.compute_relation(lhs)
+    index = rel.build_index()
+    assert sorted(index) == [[0, 2], [1], [2]]
+    inv_index = rel.build_inverse_index()
+    assert sorted(inv_index) == [[0], [0, 2], [1]]
+    index, inv_index = rel.build_indexes()
+    assert sorted(index) == [[0, 2], [1], [2]]
+    assert sorted(inv_index) == [[0], [0, 2], [1]]

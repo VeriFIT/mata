@@ -1008,6 +1008,34 @@ cdef class BinaryRelation:
         self.thisptr.build_equivalence_classes(index, head)
         return index, head
 
+    def build_index(self):
+        """Builds index mapping states to their images
+
+        :return: index mapping states to their images, i.e. x -> {y | xRy}
+        """
+        cdef vector[vector[size_t]] index
+        self.thisptr.build_index(index)
+        return [[v for v in i] for i in index]
+
+    def build_inverse_index(self):
+        """Builds index mapping states to their co-images
+
+        :return: index mapping states to their co-images, i.e. x -> {y | yRx}
+        """
+        cdef vector[vector[size_t]] index
+        self.thisptr.build_inv_index(index)
+        return [[v for v in i] for i in index]
+
+    def build_indexes(self):
+        """Builds index mapping states to their images/co-images
+
+        :return: index mapping states to their images/co-images, i.e. x -> {y | yRx}
+        """
+        cdef vector[vector[size_t]] index
+        cdef vector[vector[size_t]] inv_index
+        self.thisptr.build_index(index, inv_index)
+        return [[v for v in i] for i in index], [[v for v in i] for i in inv_index]
+
     def __str__(self):
         return str(tabulate.tabulate(self.to_matrix()))
 
