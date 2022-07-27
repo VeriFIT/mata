@@ -381,3 +381,54 @@ def test_simulation(fa_one_divisible_by_four):
         [False, False, False, True, False],
         [False, False, False, False, True],
     ]
+
+    # Test reseting the relation
+    rel.reset()
+    assert rel.to_matrix() == [
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+    ]
+
+    rel.reset(defValue=True)
+    assert rel.to_matrix() == [
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+    ]
+
+def test_simulation_other_features(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    rel = mata.Nfa.compute_relation(lhs)
+    assert rel.to_matrix() == [
+        [True, False, True],
+        [False, True, False],
+        [False, False, True]
+    ]
+    assert not rel.is_symmetric_at(0, 2)
+    assert not rel.is_symmetric_at(1, 2)
+    rel.split(0)
+    assert rel.to_matrix() == [
+        [True, False, True, True],
+        [False, True, False, False],
+        [False, False, True, False],
+        [True, False, True, True],
+    ]
+    size = rel.alloc()
+    assert rel.to_matrix() == [
+        [True, False, True, True, False],
+        [False, True, False, False, False],
+        [False, False, True, False, False],
+        [True, False, True, True, False],
+        [False, False, False, False, False],
+    ]
+
+    rel.restrict_to_symmetric()
+    for i in range(0, rel.size()):
+        for j in range(0, rel.size()):
+            if rel.get(i, j) or rel.get(j, i):
+                assert rel.is_symmetric_at(i, j)

@@ -7,6 +7,7 @@ from libcpp.unordered_map cimport unordered_map as umap
 
 import shlex
 import subprocess
+import tabulate
 
 cdef class Trans:
     """
@@ -960,6 +961,44 @@ cdef class BinaryRelation:
                 sub_result.append(self.get(i, j))
             result.append(sub_result)
         return result
+
+    def reset(self, bool defValue = False):
+        """Resets the relation to defValue
+
+        :param bool defValue: value to which the relation will be reset
+        """
+        self.thisptr.reset(defValue)
+
+    def split(self, size_t at, bool reflexive=True):
+        """Creates new row corresponding to the row/col at given index (i think)
+
+        :param size_t at: where the splitting will commence
+        :param bool reflexive: whether the relation should stay reflexive
+        """
+        self.thisptr.split(at, reflexive)
+
+    def alloc(self):
+        """Increases the size of the relation by one
+
+        :return: previsous size of the relation
+        """
+        return self.thisptr.alloc()
+
+    def is_symmetric_at(self, size_t row, size_t col):
+        """Checks if the relation is symmetric at [row, col] and [col, row]
+
+        :param size_t row: checked row
+        :param size_t col: checked col
+        :return: true if [row, col] and [col, row] are symmetric
+        """
+        return self.thisptr.sym(row, col)
+
+    def restrict_to_symmetric(self):
+        """Restricts the relation to its symmetric fragment"""
+        self.thisptr.restrict_to_symmetric()
+
+    def __str__(self):
+        return str(tabulate.tabulate(self.to_matrix()))
 
 
 cdef subset_map_to_dictionary(SubsetMap subset_map):
