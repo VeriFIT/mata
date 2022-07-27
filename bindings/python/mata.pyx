@@ -1036,6 +1036,24 @@ cdef class BinaryRelation:
         self.thisptr.build_index(index, inv_index)
         return [[v for v in i] for i in index], [[v for v in i] for i in inv_index]
 
+    def transpose(self):
+        """Transpose the relation
+
+        :return: transposed relation
+        """
+        result = BinaryRelation()
+        self.thisptr.transposed(dereference(result.thisptr))
+        return result
+
+    def get_quotient_projection(self):
+        """Gets quotient projection of the relation
+
+        :return: quotient projection
+        """
+        cdef vector[size_t] projection
+        self.thisptr.get_quotient_projection(projection)
+        return projection
+
     def __str__(self):
         return str(tabulate.tabulate(self.to_matrix()))
 

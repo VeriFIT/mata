@@ -409,6 +409,15 @@ def test_simulation_other_features(fa_one_divisible_by_two):
         [False, True, False],
         [False, False, True]
     ]
+
+    # Testing transposition
+    trans_rel = rel.transpose()
+    assert trans_rel.to_matrix() == [
+        [True, False, False],
+        [False, True, False],
+        [True, False, True]
+    ]
+
     assert not rel.is_symmetric_at(0, 2)
     assert not rel.is_symmetric_at(1, 2)
     rel.split(0)
@@ -426,6 +435,9 @@ def test_simulation_other_features(fa_one_divisible_by_two):
         [True, False, True, True, False],
         [False, False, False, False, False],
     ]
+
+    projection = rel.get_quotient_projection()
+    assert projection == [0, 1, 0, 0, 4]
 
     rel.restrict_to_symmetric()
     for i in range(0, rel.size()):
