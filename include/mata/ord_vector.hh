@@ -11,8 +11,6 @@
 #ifndef _Mata2_ORD_VECTOR_HH_
 #define _Mata2_ORD_VECTOR_HH_
 
-#include <mata/convert.hh>
-
 // Standard library headers
 #include <vector>
 #include <algorithm>
@@ -29,6 +27,29 @@ namespace Mata
 	}
 }
 
+namespace
+{
+    /**
+     * @brief  Converts an object to string
+     *
+     * Static method for conversion of an object of any class with the << output
+     * operator into a string
+     *
+     * @param[in]  n  The object for the conversion
+     *
+     * @returns  The string representation of the object
+     */
+    template <typename T>
+    static std::string ToString(const T& n)
+    {
+        // the output stream for the string
+        std::ostringstream oss;
+        // insert the object into the stream
+        oss << n;
+        // return the string
+        return oss.str();
+    }
+}
 
 /**
  * @brief  Implementation of a set using ordered vector
@@ -46,8 +67,6 @@ template
 class Mata::Util::OrdVector
 {
 private:  // Private data types
-
-	typedef Mata::Util::Convert Convert;
 
 	typedef std::vector<Key> VectorType;
 
@@ -442,7 +461,7 @@ public:   // Public methods
 
 		for (auto it = vec.cbegin(); it != vec.cend(); ++it)
 		{
-			result += ((it != vec.begin())? ", " : " ") + Convert::ToString(*it);
+			result += ((it != vec.begin())? ", " : " ") + ToString(*it);
 		}
 
 		return os << (result + "}");

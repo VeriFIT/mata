@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_CACHING_ALLOCATOR_HH_
-#define _MATA_CACHING_ALLOCATOR_HH_
+#ifndef _SIMLIB_CACHING_ALLOCATOR_HH_
+#define _SIMLIB_CACHING_ALLOCATOR_HH_
 
 #include <cstdlib>
 
@@ -19,7 +19,7 @@
 #include <unordered_set>
 
 // insert class to proper namespace
-namespace Mata {
+namespace Simlib {
 	namespace Util {
 		template <class T, class Initializer = std::function<void(T*)>> class CachingAllocator;
 		template <class T, class Initializer = std::function<void(T*)>> class CachingArrayAllocator;
@@ -27,7 +27,7 @@ namespace Mata {
 }
 
 template <class T, class Initializer>
-class Mata::Util::CachingAllocator {
+class Simlib::Util::CachingAllocator {
 
 public:
 
@@ -81,7 +81,7 @@ public:
 };
 
 template <class T, class Initializer>
-class Mata::Util::CachingArrayAllocator {
+class Simlib::Util::CachingArrayAllocator {
 
 public:
 

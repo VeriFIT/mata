@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  Mata Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _Mata2_CONVERT_HH_
-#define _Mata2_CONVERT_HH_
+#ifndef _SIMLIB_CONVERT_HH_
+#define _SIMLIB_CONVERT_HH_
 
 // Standard library headers
 #include <cassert>
@@ -26,7 +26,7 @@
 
 
 // insert class to proper namespace
-namespace Mata { namespace Util {	class Convert; } }
+namespace Simlib { namespace Util {	class Convert; } }
 
 
 /**
@@ -35,7 +35,7 @@ namespace Mata { namespace Util {	class Convert; } }
  *  This is a static class that constains useful methods for various
  *  conversions.
  */
-class Mata::Util::Convert
+class Simlib::Util::Convert
 {
 private:
 
@@ -536,7 +536,7 @@ public:
 };
 
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{

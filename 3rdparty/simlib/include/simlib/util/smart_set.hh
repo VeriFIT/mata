@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,19 +8,18 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_SMART_SET_HH_
-#define _MATA_SMART_SET_HH_
+#ifndef _SIMLIB_SMART_SET_HH_
+#define _SIMLIB_SMART_SET_HH_
 
-// MATA headers
-#include <mata/convert.hh>
-#include <mata/simutil/mata.hh>
+#include <simlib/util/convert.hh>
+#include <simlib/util/simlib.hh>
 
 // Standard library headers
 #include <algorithm>
 #include <ostream>
 #include <vector>
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{
@@ -28,7 +27,7 @@ namespace Mata
 	}
 }
 
-class Mata::Util::SmartSet
+class Simlib::Util::SmartSet
 {
 public:
 

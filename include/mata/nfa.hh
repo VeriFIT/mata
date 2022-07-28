@@ -31,7 +31,7 @@
 #include <mata/parser.hh>
 #include <mata/util.hh>
 #include <mata/ord_vector.hh>
-#include <mata/simutil/binary_relation.hh>
+#include <simlib/util/binary_relation.hh>
 
 namespace Mata
 {
@@ -567,7 +567,7 @@ inline Nfa invert(const Nfa &aut)
     return inverted;
 }
 
-Mata::Util::BinaryRelation compute_relation(
+Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
