@@ -21,12 +21,12 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-cdef extern from "mata/simutil/binary_relation.hh" namespace "Mata::Util":
+cdef extern from "simlib/util/binary_relation.hh" namespace "Simlib::Util":
     ctypedef vector[size_t] ivector
     ctypedef vector[bool] bvector
     ctypedef vector[ivector] IndexType
 
-    cdef cppclass CBinaryRelation "Mata::Util::BinaryRelation":
+    cdef cppclass CBinaryRelation "Simlib::Util::BinaryRelation":
         CBinaryRelation()
         CBinaryRelation(size_t, bool, size_t)
         CBinaryRelation(vector[bvector])
