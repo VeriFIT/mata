@@ -50,6 +50,7 @@ include_directories(../3rdparty/simlib/include)
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	afa/afa.cc
+	config.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
