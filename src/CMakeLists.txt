@@ -50,20 +50,13 @@ include_directories(../3rdparty/simlib/include)
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	afa/afa.cc
-	bool-dispatch.cc
 	parser.cc
-	parser-dispatch.cc
 	re2parser.cc
-	str-dispatch.cc
 	nfa/nfa.cc
-	nfa/nfa-dispatch.cc
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
 	rra/rrt.cc
-	void-dispatch.cc
-	vm.cc
-	vm-dispatch.cc           # this should be the last one
 )
 
 set_target_properties(libmata PROPERTIES
