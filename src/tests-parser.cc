@@ -141,6 +141,32 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		REQUIRE(body[1][5] == "b5");
 	}
 
+	SECTION("file with transitions and line break")
+	{
+		std::string file =
+		        "@Type\n"
+		        "%key1 value1\n"
+		        "%key2 value2.1 value2.2     \n"
+		        "a\\\n"
+		        "b";
+
+		parsec = parse_vtf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 1);
+		REQUIRE((*ref)[0] == "value1");
+		ref = &parsec.dict.at("key2");
+		REQUIRE(ref->size() == 2);
+		REQUIRE((*ref)[0] == "value2.1");
+		REQUIRE((*ref)[1] == "value2.2");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 2);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "b");
+	}
+
 	SECTION("file with comments and whitespaces")
 	{
 		std::string file =

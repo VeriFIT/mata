@@ -233,6 +233,8 @@ ParsedSection Mata::Parser::parse_vtf_section(
 	ParsedSection result;
 
 	bool reading_type = true;
+	std::vector<std::pair<std::string, bool>> token_line{};
+	bool append_line = false;
 
 	while (input.good()) {
 		eat_whites(input);
@@ -245,6 +247,11 @@ ParsedSection Mata::Parser::parse_vtf_section(
 
 		std::string line;
 		getline(input, line);
+
+		bool backslash_ending = (line[line.size()-1] == '\\');
+		if (backslash_ending) {
+		    line.pop_back();
+		}
 
 		PARSER_DEBUG_PRINT_LN(line);
 
@@ -289,9 +296,21 @@ ParsedSection Mata::Parser::parse_vtf_section(
 			continue;
 		}
 
-		std::vector<std::pair<std::string, bool>> token_line = tokenize_line(line);
-		if (token_line.empty()) {
+		std::vector<std::pair<std::string, bool>> temp_token_line = tokenize_line(line);
+		if (temp_token_line.empty()) {
 			continue;
+		}
+
+		if (append_line) {
+		    std::cout << "Adding " << line << "\n";
+		    token_line.insert(token_line.end(), temp_token_line.begin(), temp_token_line.end());
+		} else {
+		    token_line = temp_token_line;
+		}
+
+		append_line = backslash_ending;
+		if (append_line) {
+		    continue;
 		}
 
 		const std::string& maybe_key = token_line[0].first;
