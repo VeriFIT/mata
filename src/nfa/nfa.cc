@@ -193,6 +193,7 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
     auto transitionFromStateIter = transitionrelation[stateFrom].begin();
     for (; transitionFromStateIter != transitionrelation[stateFrom].end(); ++transitionFromStateIter) {
         if (transitionFromStateIter->symbol == symbolOnTransition) {
+            // Add transition with symbolOnTransition already used on transitions from stateFrom.
             transitionFromStateIter->states_to.insert(stateTo);
             return;
         } else if (transitionFromStateIter->symbol > symbolOnTransition) {
@@ -200,6 +201,7 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
         }
     }
 
+    // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
     transitionrelation[stateFrom].insert(transitionFromStateIter, TransSymbolStates(symbolOnTransition, stateTo));
 }
 
@@ -825,6 +827,28 @@ size_t Nfa::get_num_of_trans() const
     }
 
     return num_of_transitions;
+}
+
+Nfa Nfa::get_digraph()
+{
+    Nfa digraph{ get_num_of_states(), initialstates, finalstates};
+    Symbol abstract_symbol{ 'x' };
+
+    for (State src_state{ 0 }; src_state < get_num_of_states(); ++src_state)
+    {
+        for (const auto &symbol_transitions: this->transitionrelation[src_state])
+        {
+            for (State tgt_state: symbol_transitions.states_to)
+            {
+                if (!digraph.has_trans(src_state, abstract_symbol, tgt_state))
+                {
+                    digraph.add_trans(src_state, abstract_symbol, tgt_state);
+                }
+            }
+        }
+    }
+
+    return digraph;
 }
 
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {

@@ -2130,3 +2130,21 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()")
     REQUIRE(segments[3].has_final(1));
     REQUIRE(segments[3].has_trans(0, 'b', 1));
 }
+
+TEST_CASE("Mata::Nfa::get_digraph()")
+{
+    Nfa aut(100);
+    Symbol abstract_symbol{'x'};
+    FILL_WITH_AUT_A(aut);
+
+    Nfa digraph{ aut.get_digraph() };
+
+    REQUIRE(digraph.get_num_of_states() == aut.get_num_of_states());
+    REQUIRE(digraph.get_num_of_trans() == 12);
+    REQUIRE(digraph.has_trans(1, abstract_symbol, 10));
+    REQUIRE(digraph.has_trans(10, abstract_symbol, 7));
+    REQUIRE(!digraph.has_trans(10, 'a', 7));
+    REQUIRE(!digraph.has_trans(10, 'b', 7));
+    REQUIRE(!digraph.has_trans(10, 'c', 7));
+}
+

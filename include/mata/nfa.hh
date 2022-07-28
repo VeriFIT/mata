@@ -279,12 +279,19 @@ struct Nfa
     //TODO we probably need the number of states, int, as a member, for when we want to remove states
     // alphabet?
 public:
-    Nfa () : transitionrelation(), initialstates(), finalstates() {}
+    Nfa() : transitionrelation(), initialstates(), finalstates() {}
 
     /**
-     * @brief Construct a new explicit NFA with num_of_states states.
+     * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    explicit Nfa(const unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
+    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+
+    /**
+     * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
+     */
+    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -518,6 +525,12 @@ public:
      * @return Sequence of transitions as @c Trans.
      */
     TransSequence get_trans_as_sequence();
+
+    /**
+     * Unify transitions to create a directed graph with at most a single transition between two states.
+     * @return An automaton representing a directed graph.
+     */
+    Nfa get_digraph();
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
