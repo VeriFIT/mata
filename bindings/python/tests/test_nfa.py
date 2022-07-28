@@ -9,7 +9,7 @@ __author__ = 'Tomas Fiedor'
 
 def test_adding_states():
     """Test nfa"""
-    lhs = mata.Nfa()
+    lhs = mata.Nfa(5)
 
     # Test adding states
     assert not lhs.has_initial_state(0)

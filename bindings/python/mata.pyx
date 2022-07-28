@@ -95,14 +95,14 @@ cdef class Nfa:
 
         :param State st: added initial state
         """
-        self.thisptr.add_initial(st)
+        self.thisptr.make_initial(st)
 
     def add_initial_states(self, vector[State] states):
         """Adds list of initial state to automaton
 
         :param list states: list of initial states
         """
-        self.thisptr.add_initial(states)
+        self.thisptr.make_initial(states)
 
     def has_initial_state(self, State st):
         """Tests if automaton contains given state
@@ -117,7 +117,7 @@ cdef class Nfa:
 
         :param State st: added final state
         """
-        self.thisptr.add_final(st)
+        self.thisptr.make_final(st)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state

@@ -344,7 +344,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     for (auto state_closure_pair : eps_closure) { // for every state
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
-            if (aut.has_final(eps_cl_state)) result->add_final(src_state);
+            if (aut.has_final(eps_cl_state)) result->make_final(src_state);
             for (auto symb_set : aut[eps_cl_state]) {
                 if (symb_set.symbol == epsilon) continue;
 
@@ -722,9 +722,9 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
                 // TODO if (stateName[0] != 's') { error }
                 State stateToAdd = getStateFromName(stateName.substr(1));
                 if (identificator == "kInitialFormula") {
-                    newNFA.add_initial(stateToAdd);
+                    newNFA.make_initial(stateToAdd);
                 } else if (identificator == "kFinalFormula") {
-                    newNFA.add_final(stateToAdd);
+                    newNFA.make_final(stateToAdd);
                 } else {
                     // TODO: define own exception for parsing
                     throw std::runtime_error(std::string("Keywords are kInitialFormula and kFinalFormula but there is ") + identificator);
@@ -765,11 +765,11 @@ void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisInitialState : lhs.initialstates) {
-        unionAutomaton->add_initial(thisStateToUnionState[thisInitialState]);
+        unionAutomaton->make_initial(thisStateToUnionState[thisInitialState]);
     }
 
     for (State thisFinalState : lhs.finalstates) {
-        unionAutomaton->add_final(thisStateToUnionState[thisFinalState]);
+        unionAutomaton->make_final(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
@@ -816,11 +816,11 @@ void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMa
             (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
             pairsToProcess.push_back(thisAndOtherInitialStatePair);
 
-            res->add_initial(newIntersectState);
+            res->make_initial(newIntersectState);
             if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
-                res->add_initial(newIntersectState);
+                res->make_initial(newIntersectState);
             if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState)) {
-                res->add_final(newIntersectState);
+                res->make_final(newIntersectState);
             }
         }
     }
@@ -877,7 +877,7 @@ void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMa
                             pairsToProcess.push_back(intersectStatePairTo);
 
                             if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->add_final(intersectStateTo);
+                                res->make_final(intersectStateTo);
                             }
                         } else {
                             intersectStateTo = (*prod_map)[intersectStatePairTo];
@@ -931,13 +931,13 @@ void Mata::Nfa::determinize(
     }
     StateSet S0 =  Mata::Util::OrdVector<State>(aut.initialstates.ToVector());
     State S0id = result->add_new_state();
-    result->add_initial(S0id);
+    result->make_initial(S0id);
     std::vector<bool> isFinal(aut.get_num_of_states(), false);//for fast detection of a final state in a set
     for (const auto &q: aut.finalstates) {
         isFinal[q] = true;
     }
     if (contains_final(S0, isFinal)) {
-        result->add_final(S0id);
+        result->make_final(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
@@ -968,7 +968,7 @@ void Mata::Nfa::determinize(
                 Tid = result->add_new_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
                 if (contains_final(T, isFinal)) {
-                    result->add_final(Tid);
+                    result->make_final(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }

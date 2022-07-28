@@ -274,8 +274,7 @@ public:
      */
     Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
 
-    auto get_num_of_states() const { return std::max(
-            {transitionrelation.size(), initialstates.size(), finalstates.size()}); }
+    auto get_num_of_states() const { return transitionrelation.size(); }
 
     void increase_size(size_t size)
     {
@@ -283,11 +282,16 @@ public:
         transitionrelation.resize(size);
     }
 
-    // TODO: exceptions if states do not exist
-    void add_initial(State state) { this->initialstates.insert(state); }
-    void add_initial(const std::vector<State>& vec)
+    void make_initial(State state) {
+        if (this->get_num_of_states() <= state) {
+            throw std::runtime_error("Cannot make state initial because it is not in automaton");
+        }
+
+        this->initialstates.insert(state);
+    }
+    void make_initial(const std::vector<State>& vec)
     { // {{{
-        for (const State& st : vec) { this->add_initial(st); }
+        for (const State& st : vec) { this->make_initial(st); }
     } // }}}
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
     void remove_initial(State state)
@@ -296,10 +300,16 @@ public:
         this->initialstates.remove(state);
     }
 
-    void add_final(State state) { this->finalstates.insert(state); }
-    void add_final(const std::vector<State>& vec)
+    void make_final(State state) {
+        if (this->get_num_of_states() <= state) {
+            throw std::runtime_error("Cannot make state final because it is not in automaton");
+        }
+
+        this->finalstates.insert(state);
+    }
+    void make_final(const std::vector<State>& vec)
     { // {{{
-        for (const State& st : vec) { this->add_final(st); }
+        for (const State& st : vec) { this->make_final(st); }
     } // }}}
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
     void remove_final(State state)

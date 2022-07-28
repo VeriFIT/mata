@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 			throw std::runtime_error("The type of input automaton is not NFA\n");
 		}
 
-		aut = construct(parsed[0], &alph);
+		construct(&aut, parsed[0], &alph);
 	}
 	catch (const std::exception& ex) {
 		fs.close();

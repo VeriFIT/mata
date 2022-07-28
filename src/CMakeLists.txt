@@ -67,13 +67,9 @@ set_target_properties(libmata PROPERTIES
 add_executable(tests
 	tests-main.cc
 	tests-parser.cc
-	tests-parser-dispatch.cc
 	tests-re2parser.cc
-	tests-vm.cc
-	tests-vm-dispatch.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
-	nfa/tests-nfa-dispatch.cc
 	rra/tests-rrt.cc
 )
 

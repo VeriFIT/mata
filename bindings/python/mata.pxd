@@ -79,11 +79,11 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         CNfa(unsigned long) except +
 
         # Public Functions
-        void add_initial(State)
-        void add_initial(vector[State])
+        void make_initial(State)
+        void make_initial(vector[State])
         bool has_initial(State)
         void remove_initial(State)
-        void add_final(State)
+        void make_final(State)
         bool has_final(State)
         void remove_final(State)
         void add_trans(CTrans) except +

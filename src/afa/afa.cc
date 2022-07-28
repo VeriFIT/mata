@@ -22,7 +22,6 @@
 // MATA headers
 #include <mata/afa.hh>
 #include <mata/util.hh>
-#include <mata/vm-dispatch.hh>
 
 using std::tie;
 
