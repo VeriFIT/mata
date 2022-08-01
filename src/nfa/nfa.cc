@@ -1397,7 +1397,7 @@ void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
         }
 
         processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
-        lifo_queue.insert(lifo_queue.end(), reversed_automaton.initialstates.begin(),
+        fifo_queue.insert(fifo_queue.end(), reversed_automaton.initialstates.begin(),
                           reversed_automaton.initialstates.end());
     }
 }
@@ -1405,10 +1405,10 @@ void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
 void ShortestWordsMap::compute()
 {
     State state{};
-    while (!lifo_queue.empty())
+    while (!fifo_queue.empty())
     {
-        state = lifo_queue.front();
-        lifo_queue.pop_front();
+        state = fifo_queue.front();
+        fifo_queue.pop_front();
 
         // Compute the shortest words for the current state.
         compute_for_state(state);
@@ -1448,7 +1448,7 @@ void ShortestWordsMap::compute_for_state(const State state)
             if (processed.find(state_to) == processed.end())
             {
                 processed.insert(state_to);
-                lifo_queue.push_back(state_to);
+                fifo_queue.push_back(state_to);
             }
         }
     }

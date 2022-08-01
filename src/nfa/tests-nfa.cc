@@ -1933,6 +1933,25 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
     }
+
+    SECTION("Require FIFO queue")
+    {
+        aut.initialstates = { 1 };
+        aut.finalstates = { 4 };
+        aut.add_trans(1, 'a', 5);
+        aut.add_trans(5, 'c', 4);
+        aut.add_trans(1, 'a', 2);
+        aut.add_trans(2, 'b', 3);
+        aut.add_trans(3, 'b', 4);
+
+        Word word{};
+        word.push_back('a');
+        word.push_back('c');
+        std::set<Word> expected{word};
+
+        // LIFO queue would return as shortest words string "abb", which would be incorrect.
+        REQUIRE(aut.get_shortest_words() == expected);
+    }
 }
 
 TEST_CASE("Mata::Nfa::remove_final()")

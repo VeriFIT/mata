@@ -996,7 +996,7 @@ private:
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
     StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> lifo_queue{}; ///< LIFO queue for states to process.
+    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
     const Nfa reversed_automaton{}; ///< Reversed input automaton.
 
     /**
