@@ -1031,110 +1031,21 @@ void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
 }
 
 void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_map) {
-    using StatePair = std::pair<State, State>;
-
-    /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
-     * representing (q,p). The hash function computes for each pair (q,p) unique number (q + p*(num of states in this automaton))
-     * whose std hash is returned.
-     *
-     * see https://stackoverflow.com/questions/15719084/how-to-use-lambda-function-as-hash-function-in-unordered-map
-     */
-    auto hashStatePair = [lhs](const StatePair &sp) {
-        return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
-    };
-    // TODO probably remove this since we use prod_map as parameter
-    //std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
-
-    if (prod_map == nullptr) {
-        prod_map = new ProductMap();
+    auto intersection { Intersection(lhs, rhs) };
+    if (prod_map != nullptr)
+    {
+        *prod_map = intersection.get_product_map();
     }
+    *res = intersection.get_product();
+}
 
-    std::vector<StatePair> pairsToProcess;
-
-    for (State thisInitialState : lhs.initialstates) {
-        for (State otherInitialState : rhs.initialstates) {
-            StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
-            State newIntersectState = res->add_new_state();
-
-            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
-            pairsToProcess.push_back(thisAndOtherInitialStatePair);
-
-            res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
-                res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState)) {
-                res->make_final(newIntersectState);
-            }
-        }
+Nfa Mata::Nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMap*  prod_map) {
+    auto intersection { Intersection(lhs, rhs, epsilon) };
+    if (prod_map != nullptr)
+    {
+        *prod_map = intersection.get_product_map();
     }
-
-    if (lhs.trans_empty() || rhs.trans_empty())
-        return;
-
-    while (!pairsToProcess.empty()) {
-        StatePair pairToProcess = pairsToProcess.back();
-        pairsToProcess.pop_back();
-
-        // TODO rewrite this
-
-        State intersectState = (*prod_map)[pairToProcess];
-
-        auto thisStateTransitionsIter = lhs.transitionrelation[pairToProcess.first].begin();
-        auto otherStateTransitionIter = rhs.transitionrelation[pairToProcess.second].begin();
-        auto thisStateTransitionsIterEnd = lhs.transitionrelation[pairToProcess.first].end();
-        auto otherStateTransitionIterEnd = rhs.transitionrelation[pairToProcess.second].end();
-        // find all transitions that have same symbol for first and the second state in the pairToProcess
-        while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-               && otherStateTransitionIter != otherStateTransitionIterEnd) {
-            // first iterator points to transition with smaller symbol, move it until it is either same or further than second iterator
-            if (thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-                       && thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                    ++thisStateTransitionsIter;
-                }
-                if (thisStateTransitionsIter == thisStateTransitionsIterEnd) {
-                    break;
-                }
-            } else {
-                // second iterator points to transition with smaller symbol, move it until it is either same or further than first iterator
-                while (otherStateTransitionIter != otherStateTransitionIterEnd
-                       && thisStateTransitionsIter->symbol > otherStateTransitionIter->symbol) {
-                    ++otherStateTransitionIter;
-                }
-                if (otherStateTransitionIter == otherStateTransitionIterEnd) {
-                    break;
-                }
-            }
-
-            // check both iterators point to the transitions with same symbol
-            if (thisStateTransitionsIter->symbol == otherStateTransitionIter->symbol) {
-                // create transition from the pairToProcess to all pairs between states to which first transition goes and states to which second one goes
-                TransSymbolStates intersectTransition(thisStateTransitionsIter->symbol);
-                for (State thisStateTo : thisStateTransitionsIter->states_to) {
-                    for (State otherStateTo : otherStateTransitionIter->states_to) {
-                        StatePair intersectStatePairTo(thisStateTo, otherStateTo);
-                        State intersectStateTo;
-                        if (prod_map->count(intersectStatePairTo) == 0) {
-                            intersectStateTo = res->add_new_state();
-                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
-                            pairsToProcess.push_back(intersectStatePairTo);
-
-                            if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->make_final(intersectStateTo);
-                            }
-                        } else {
-                            intersectStateTo = (*prod_map)[intersectStatePairTo];
-                        }
-                        intersectTransition.states_to.insert(intersectStateTo);
-                    }
-                }
-                res->transitionrelation[intersectState].push_back(intersectTransition);
-
-                ++thisStateTransitionsIter;
-                ++otherStateTransitionIter;
-            }
-        }
-    }
+    return intersection.get_product();
 }
 
 Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
@@ -1745,5 +1656,218 @@ void SegNfa::Segmentation::compute_epsilon_depths()
             visited[state_depth_pair.state] = true;
             process_state_depth_pair(state_depth_pair, worklist);
         }
+    }
+}
+
+void Intersection::compute()
+{
+    // TODO probably remove this since we use prod_map as parameter
+    //std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
+
+    initialize_pairs_to_process();
+
+    if (lhs.trans_empty() || rhs.trans_empty()) { return; }
+
+    while (!pairs_to_process.empty())
+    {
+        pair_to_process = *pairs_to_process.begin();
+        pairs_to_process.erase(pair_to_process);
+
+        // TODO rewrite this (from previous Vata implementation -- rewrite the algorithm, or the format?)
+
+        compute_for_state_pair();
+    }
+}
+
+void Intersection::compute_for_state_pair()
+{
+    auto this_state_transitions_iter = lhs.transitionrelation[pair_to_process.first].begin();
+    auto other_state_transitions_iter = rhs.transitionrelation[pair_to_process.second].begin();
+    auto this_state_transitions_iter_end = lhs.transitionrelation[pair_to_process.first].end();
+    auto other_state_transitions_iter_end = rhs.transitionrelation[pair_to_process.second].end();
+    // find all transitions that have same symbol for first and the second state in the pair_to_process
+    while (this_state_transitions_iter != this_state_transitions_iter_end
+           && other_state_transitions_iter != other_state_transitions_iter_end)
+    {
+        // first iterator points to transition with smaller symbol, move it until it is either same or further than second iterator
+        if (this_state_transitions_iter->symbol < other_state_transitions_iter->symbol)
+        {
+            while (this_state_transitions_iter != this_state_transitions_iter_end
+                   && this_state_transitions_iter->symbol < other_state_transitions_iter->symbol)
+            {
+                ++this_state_transitions_iter;
+            }
+            if (this_state_transitions_iter == this_state_transitions_iter_end)
+            {
+                break;
+            }
+        }
+        else
+        {
+            // second iterator points to transition with smaller symbol, move it until it is either same or further than first iterator
+            while (other_state_transitions_iter != other_state_transitions_iter_end
+                   && this_state_transitions_iter->symbol > other_state_transitions_iter->symbol)
+            {
+                ++other_state_transitions_iter;
+            }
+            if (other_state_transitions_iter == other_state_transitions_iter_end) { break; }
+        }
+
+        // check both iterators point to the transitions with same symbol
+        if (this_state_transitions_iter->symbol == other_state_transitions_iter->symbol)
+        {
+            compute_for_same_symbols(*this_state_transitions_iter,
+                                     *other_state_transitions_iter);
+
+            ++this_state_transitions_iter;
+            ++other_state_transitions_iter;
+        }
+    }
+}
+
+void Intersection::compute_preserving_epsilon_transitions()
+{
+    initialize_pairs_to_process();
+
+    if (lhs.trans_empty() || rhs.trans_empty()) { return; }
+
+    while (!pairs_to_process.empty())
+    {
+        pair_to_process = *pairs_to_process.begin();
+        pairs_to_process.erase(pair_to_process);
+
+        // find all transitions that have same symbol for first and the second state in the pair_to_process
+        for (const auto& this_state_transitions: lhs.transitionrelation[pair_to_process.first] )
+        {
+            for (const auto& other_state_transitions: rhs.transitionrelation[pair_to_process.second])
+            {
+                compute_for_state_pair_preserving_eps_trans(this_state_transitions,
+                                                            other_state_transitions);
+            }
+        }
+    }
+}
+
+void Intersection::compute_for_state_pair_preserving_eps_trans(const TransSymbolStates& lhs_state_transitions,
+                                                               const TransSymbolStates& rhs_state_transitions)
+{
+    if (lhs_state_transitions.symbol == epsilon)
+    {
+        compute_for_lhs_state_epsilon_transition(lhs_state_transitions);
+    }
+
+    if (rhs_state_transitions.symbol == epsilon)
+    {
+        compute_for_rhs_epsilon_transition(rhs_state_transitions);
+    }
+
+    if (lhs_state_transitions.symbol == rhs_state_transitions.symbol)
+    {
+        compute_for_same_symbols(lhs_state_transitions, rhs_state_transitions);
+    }
+}
+
+void Intersection::compute_for_rhs_epsilon_transition(const TransSymbolStates& rhs_state_transitions)
+{
+    // create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes
+    TransSymbolStates intersection_transition(rhs_state_transitions.symbol);
+    for (State other_state_to: rhs_state_transitions.states_to)
+    {
+        create_product_state_and_trans(pair_to_process.first, other_state_to, intersection_transition);
+    }
+    add_product_transition(intersection_transition);
+}
+
+void Intersection::compute_for_lhs_state_epsilon_transition(const TransSymbolStates& lhs_state_transitions)
+{
+    // Create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes.
+    TransSymbolStates intersection_transition(lhs_state_transitions.symbol);
+    for (State this_state_to: lhs_state_transitions.states_to)
+    {
+        create_product_state_and_trans(this_state_to, pair_to_process.second, intersection_transition);
+    }
+    add_product_transition(intersection_transition);
+}
+
+void Intersection::create_product_state_and_trans(const State lhs_state_to, const State rhs_state_to,
+                                                  TransSymbolStates& intersect_transitions)
+{
+    StatePair intersect_state_pair_to(lhs_state_to, rhs_state_to);
+    State intersect_state_to;
+    if (product_map.find(intersect_state_pair_to) == product_map.end())
+    {
+        intersect_state_to = product.add_new_state();
+        product_map[intersect_state_pair_to] = intersect_state_to;
+        pairs_to_process.insert(intersect_state_pair_to);
+
+        if (lhs.has_final(lhs_state_to) && rhs.has_final(rhs_state_to))
+        {
+            product.make_final(intersect_state_to);
+        }
+    }
+    else
+    {
+        intersect_state_to = product_map[intersect_state_pair_to];
+    }
+    intersect_transitions.states_to.insert(intersect_state_to);
+}
+
+void Intersection::compute_for_same_symbols(const TransSymbolStates& lhs_state_transitions,
+                                            const TransSymbolStates& rhs_state_transitions)
+{
+    // Create transition from the pair_to_process to all pairs between states to which first transition goes and states
+    // to which second one goes.
+    TransSymbolStates intersection_transition(lhs_state_transitions.symbol);
+    for (State this_state_to: lhs_state_transitions.states_to)
+    {
+        for (State other_state_to: rhs_state_transitions.states_to)
+        {
+            create_product_state_and_trans(this_state_to, other_state_to, intersection_transition);
+        }
+    }
+
+    add_product_transition(intersection_transition);
+}
+
+void Mata::Nfa::Intersection::initialize_pairs_to_process()
+{
+    for (State this_initial_state : lhs.initialstates)
+    {
+        for (State other_initial_state : rhs.initialstates)
+        {
+            handle_initial_state_pairs(this_initial_state, other_initial_state);
+        }
+    }
+}
+
+void Mata::Nfa::Intersection::handle_initial_state_pairs(State lhs_initial_state, State rhs_initial_state)
+{
+    StatePair this_and_other_initial_state_pair(lhs_initial_state, rhs_initial_state);
+    State new_intersection_state = product.add_new_state();
+
+    product_map[this_and_other_initial_state_pair] = new_intersection_state;
+    pairs_to_process.insert(this_and_other_initial_state_pair);
+
+    product.make_initial(new_intersection_state);
+    if (lhs.has_final(lhs_initial_state) && rhs.has_final(rhs_initial_state))
+    {
+        product.make_final(new_intersection_state);
+    }
+}
+
+void Mata::Nfa::Intersection::add_product_transition(const TransSymbolStates& intersection_transition)
+{
+    auto& intersect_state_transitions{ product.transitionrelation[product_map[pair_to_process]] };
+    auto symbol_transitions{ intersect_state_transitions.find(intersection_transition) };
+    if (symbol_transitions == intersect_state_transitions.end())
+    {
+        intersect_state_transitions.push_back(intersection_transition);
+    }
+    else if (symbol_transitions->states_to != intersection_transition.states_to)
+    {
+        TransSymbolStates new_symbol_transitions{ intersection_transition.symbol,
+                                                  symbol_transitions->states_to.Union(intersection_transition.states_to) };
+        intersect_state_transitions.remove(*symbol_transitions);
+        intersect_state_transitions.push_back(new_symbol_transitions);
     }
 }

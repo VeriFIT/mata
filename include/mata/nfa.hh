@@ -42,12 +42,13 @@ extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
 using State = unsigned long;
+using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
 
-using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using ProductMap = std::unordered_map<StatePair, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
 using Path = std::vector<State>;        ///< A finite-length path through automaton.
 using Word = std::vector<Symbol>;       ///< A finite-length word.
@@ -708,18 +709,175 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
     return uni_aut;
 } // uni }}}
 
-void intersection(
-        Nfa*         res,
-        const Nfa&   lhs,
-        const Nfa&   rhs,
-        ProductMap*  prod_map = nullptr);
-
-inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
+/**
+ * Class handling intersection of automata.
+ *
+ * Implements a normal intersection and an intersection preserving epsilon transitions.
+ */
+class Intersection
 {
-    Nfa result;
-    intersection(&result, lhs, rhs);
-    return result;
-}
+public:
+    /**
+     * Compute classic intersection of NFAs @p lhs and @p rhs.
+     * @param lhs First NFA to compute intersection for.
+     * @param rhs Second NFA to compute intersecion for.
+     */
+    Intersection(const Nfa& lhs, const Nfa& rhs) : lhs(lhs), rhs(rhs)
+    {
+        compute();
+    }
+
+    /**
+     * Compute epsilon transitions preserving intersection of NFAs @p lhs and @p rhs.
+     * @param lhs First NFA to compute intersection for.
+     * @param rhs Second NFA to compute intersection for.
+     * @param epsilon Symbol to handle as an epsilon symbol.
+     */
+    Intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) : lhs(lhs), rhs(rhs), epsilon(epsilon)
+    {
+        compute_preserving_epsilon_transitions();
+    }
+
+    /**
+     * Get the final product NFA of the intersection.
+     * @return Product NFA of the intersection.
+     */
+    const Nfa& get_product() { return product; }
+
+    /**
+     * Get product map for the generated product NFA.
+     * @return Product map mapping original state pairs to new product states.
+     */
+    const ProductMap& get_product_map() { return product_map; }
+private:
+    Nfa product{}; ///< Product of the intersection.
+    /// Product map for the generated intersection mapping original state pairs to new product states.
+    ProductMap product_map{};
+    const Nfa& lhs{}; ///< First NFA to compute intersection for.
+    const Nfa& rhs{}; ///< Second NFA to compute intersection for.
+    const Symbol epsilon{}; ///< Symbol to handle as an epsilon symbol.
+
+    StatePair pair_to_process{}; ///< State pair of original states currently being processed.
+    std::set<StatePair> pairs_to_process{}; ///< Set of state pairs of original states to process.
+
+    /**
+     * Compute classic intersection.
+     */
+    void compute();
+
+    /**
+     * Compute intersection preserving epsilon transitions.
+     */
+    void compute_preserving_epsilon_transitions();
+
+    /**
+     * Initialize pairs to process with initial state pairs.
+     */
+    void initialize_pairs_to_process();
+
+    /**
+     * Add transition to the product.
+     * @param[in] intersection_transition State transitions to add to the product.
+     */
+    void add_product_transition(const TransSymbolStates& intersection_transition);
+
+    /**
+     * Update product with initial state pairs.
+     * @param[in] lhs_initial_state Initial state of NFA @c lhs.
+     * @param[in] rhs_initial_state Initial state of NFA @c rhs.
+     */
+    void handle_initial_state_pairs(State lhs_initial_state, State rhs_initial_state);
+
+    /**
+     * Compute product for state transitions with same symbols.
+     * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
+     * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
+     */
+    void compute_for_same_symbols(const TransSymbolStates& lhs_state_transitions,
+                                  const TransSymbolStates& rhs_state_transitions);
+
+    /**
+     * Compute product for state transitions with @c lhs state epsilon transition.
+     * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
+     */
+    void compute_for_lhs_state_epsilon_transition(const TransSymbolStates& lhs_state_transitions);
+
+    /**
+     * Compute product for state transitions with @c rhs state epsilon transition.
+     * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
+     */
+    void compute_for_rhs_epsilon_transition(const TransSymbolStates& rhs_state_transitions);
+
+    // TODO: Keep or finally remove?
+    /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
+     * representing (q,p). The hash function computes for each pair (q,p) unique number (q + p*(num of states in this automaton))
+     * whose std hash is returned.
+     *
+     * see https://stackoverflow.com/questions/15719084/how-to-use-lambda-function-as-hash-function-in-unordered-map
+     */
+    State hashStatePair(const StatePair &sp)
+    {
+        return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
+    }
+
+    /**
+     * Compute product for current state pair preserving epsilon transitions.
+     * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
+     * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
+     */
+    void compute_for_state_pair_preserving_eps_trans(const TransSymbolStates& lhs_state_transitions,
+                                                     const TransSymbolStates& rhs_state_transitions);
+
+    /**
+     * Compute classic product for current state pair.
+     */
+    void compute_for_state_pair();
+
+    /**
+     * Create product state and its transitions.
+     * @param[in] lhs_state_to Target state in NFA @c lhs.
+     * @param[in] rhs_state_to Target state in NFA @c rhs.
+     * @param[out] intersect_transitions Transitions of the product state.
+     */
+    void create_product_state_and_trans(State lhs_state_to, State rhs_state_to, TransSymbolStates& intersect_transitions);
+}; // Intersection
+
+/**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map = nullptr);
+
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+inline Nfa intersection(const Nfa &lhs, const Nfa &rhs) { return Intersection{ lhs, rhs }.get_product(); }
 
 /// makes the transition relation complete
 void make_complete(
@@ -1044,7 +1202,7 @@ public:
         insert_initial_lengths();
 
         compute();
-    }
+   }
 
     /**
      * Gets shortest words for the given @p states.
