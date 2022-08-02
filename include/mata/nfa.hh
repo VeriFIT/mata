@@ -560,6 +560,14 @@ public:
     TransSequence get_trans_as_sequence();
 
     /**
+     * Get transitions from @p state_from as a sequence of @c Trans.
+     * @param state_from[in] Source state_from of transitions to get.
+     * @return Sequence of transitions as @c Trans from @p state_from.
+     */
+    TransSequence get_trans_from_state_as_sequence(State state_from) const;
+
+
+    /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      * @return An automaton representing a directed graph.
      */

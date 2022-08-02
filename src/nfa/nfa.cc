@@ -914,6 +914,22 @@ TransSequence Nfa::get_trans_as_sequence()
     return trans_sequence;
 }
 
+TransSequence Nfa::get_trans_from_state_as_sequence(State state_from) const
+{
+    TransSequence trans_sequence{};
+
+    for (const auto& transition_from_state: transitionrelation[state_from])
+    {
+        for (State state_to: transition_from_state.states_to)
+        {
+            trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+        }
+    }
+
+    return trans_sequence;
+}
+
+
 size_t Nfa::get_num_of_trans() const
 {
     size_t num_of_transitions{};
