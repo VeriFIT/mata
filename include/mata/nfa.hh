@@ -103,7 +103,7 @@ public:
 	/// translates a string into a symbol
 	virtual Symbol translate_symb(const std::string& symb) = 0;
 	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) {return this->translate_symb(symb);}
+	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
 	/// gets a list of symbols in the alphabet
 	virtual std::list<Symbol> get_symbols() const
 	{ // {{{
@@ -138,16 +138,15 @@ public:
 		assert(nullptr != symbol_map);
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual Symbol translate_symb(const std::string& str) override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
+	std::list<Symbol> get_symbols() const override;
+	Symbol translate_symb(const std::string& str) override;
+	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
 {
 public:
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		Symbol symb;
 		std::istringstream stream(str);
@@ -160,7 +159,7 @@ class CharAlphabet : public Alphabet
 {
 public:
 
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		if (str.length() == 3 &&
 			((str[0] == '\'' && str[2] == '\'') ||
@@ -176,8 +175,8 @@ public:
 		return symb;
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
+	std::list<Symbol> get_symbols() const override;
+	std::list<Symbol> get_complement(
 		const std::set<Symbol>& syms) const override;
 };
 
@@ -213,7 +212,7 @@ public:
 		EnumAlphabet(l.begin(), l.end())
 	{ }
 
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		auto it = symbol_map.find(str);
 		if (symbol_map.end() == it)
@@ -224,9 +223,8 @@ public:
 		return it->second;
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
+	std::list<Symbol> get_symbols() const override;
+	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 };
 // }}}
 
@@ -975,6 +973,13 @@ inline bool is_incl(
 { // {{{
     return is_incl(smaller, bigger, alphabet, nullptr, params);
 } // }}}
+
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
+                       const StringDict& params = {{"algo", "antichains"}});
+
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
+
+//bool operator==(Nfa& lhs, Nfa& rhs) { return equivalence_check(lhs, rhs); }
 
 /// Reverting the automaton
 void revert(Nfa* result, const Nfa& aut);
