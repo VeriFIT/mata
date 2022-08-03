@@ -2539,3 +2539,52 @@ TEST_CASE("Mata::Nfa::trim()")
     }
 }
 
+TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
+{
+    Nfa aut{};
+
+    SECTION("Empty automaton")
+    {
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("No transitions automaton")
+    {
+        aut.increase_size(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with no transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        aut.add_trans(0, 'a', 0);
+        CHECK(!aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        aut.add_trans(0, 'a', 1);
+        CHECK(!aut.trans_empty());
+    }
+}

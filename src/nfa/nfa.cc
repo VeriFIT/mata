@@ -999,6 +999,25 @@ Nfa Nfa::get_digraph()
     return digraph;
 }
 
+bool Mata::Nfa::Nfa::trans_empty() const
+{
+    for (const auto &state_transitions: transitionrelation)
+    {
+        if (!state_transitions.empty())
+        {
+            for (const auto &symbol_state_transitions: state_transitions)
+            {
+                if (!symbol_state_transitions.states_to.empty())
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 

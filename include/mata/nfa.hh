@@ -544,7 +544,11 @@ public:
         return this->has_trans({src, symb, tgt});
     } // }}}
 
-    bool trans_empty() const { return this->transitionrelation.empty();} ///< No transitions.
+    /**
+     * Check whether automaton has no transitions.
+     * @return True if there are no transitions in the automaton, false otherwise.
+     */
+    bool trans_empty() const;
     size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
     bool nothing_in_trans() const
     {
