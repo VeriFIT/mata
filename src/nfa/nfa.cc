@@ -896,7 +896,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
-TransSequence Nfa::get_trans_as_sequence()
+TransSequence Nfa::get_trans_as_sequence() const
 {
     TransSequence trans_sequence{};
 
@@ -1016,6 +1016,27 @@ bool Mata::Nfa::Nfa::trans_empty() const
     }
 
     return true;
+}
+
+TransSequence Nfa::get_transitions_to_state(const State state_to) const
+{
+    TransSequence transitions_to_state{};
+
+    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from)
+    {
+        for (const auto& symbol_transitions: transitionrelation[state_from])
+        {
+            for (const auto target_state: symbol_transitions.states_to)
+            {
+                if (target_state == state_to)
+                {
+                    transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
+                }
+            }
+        }
+    }
+
+    return transitions_to_state;
 }
 
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
@@ -1888,5 +1909,154 @@ void Mata::Nfa::Intersection::add_product_transition(const TransSymbolStates& in
                                                   symbol_transitions->states_to.Union(intersection_transition.states_to) };
         intersect_state_transitions.remove(*symbol_transitions);
         intersect_state_transitions.push_back(new_symbol_transitions);
+    }
+}
+
+Nfa Mata::Nfa::concatenate(const Nfa& lhs, const Nfa& rhs)
+{
+     return Concatenate(lhs, rhs).get_result();
+}
+
+void Concatenate::compute_concatenation()
+{
+    map_states_to_result_states();
+
+    make_initial_states();
+
+    add_lhs_transitions();
+
+    make_final_states();
+
+    add_rhs_transitions();
+}
+
+void Concatenate::add_lhs_transitions()
+{
+    add_lhs_non_final_states_transitions();
+
+    add_lhs_transitions_to_final_states();
+
+    add_lhs_final_states_transitions();
+}
+
+void Concatenate::add_lhs_non_final_states_transitions()
+{
+    // Reindex all states in transitions in lhs, except for transitions concerning final states (both to and form final states).
+    for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state)
+    {
+        if (!lhs.has_final(lhs_state))
+        {
+            for (const auto& symbol_transitions: lhs.get_transitions_from_state(lhs_state))
+            {
+                for (State lhs_state_to: symbol_transitions.states_to)
+                {
+                    if (!lhs.has_final(lhs_state_to))
+                    {
+                        result.add_trans(lhs_result_states_map[lhs_state],
+                                         symbol_transitions.symbol,
+                                         lhs_result_states_map[lhs_state_to]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void
+Concatenate::add_lhs_transitions_to_final_states()
+{
+    // For all transitions to lhs final states, point them to rhs initial states.
+    for (const auto& lhs_final_state: lhs.finalstates)
+    {
+        for (const auto& lhs_trans_to_final_state: lhs.get_transitions_to_state(lhs_final_state))
+        {
+            for (const auto& rhs_initial_state: rhs.initialstates)
+            {
+                if (lhs_trans_to_final_state.src == lhs_trans_to_final_state.tgt)
+                {
+                    // Handle self-loops on final states as lhs final states will not be present in the result automaton.
+                    result.add_trans(rhs_result_states_map[rhs_initial_state], lhs_trans_to_final_state.symb,
+                                     rhs_result_states_map[rhs_initial_state]);
+                }
+                else // All other transitions can be copied with updated initial state number.
+                {
+                    result.add_trans(lhs_result_states_map[lhs_trans_to_final_state.src], lhs_trans_to_final_state.symb,
+                                     rhs_result_states_map[rhs_initial_state]);
+                }
+            }
+        }
+    }
+}
+
+void Concatenate::add_lhs_final_states_transitions()
+{
+    // For all lhs final states, copy all their transitions, except for self-loops on final states.
+    for (const auto& lhs_final_state: lhs.finalstates)
+    {
+        for (const auto& transitions_from_lhs_final_state: lhs.get_transitions_from_state(lhs_final_state))
+        {
+            for (const auto& lhs_state_to: transitions_from_lhs_final_state.states_to) {
+                if (lhs_state_to != lhs_final_state) // Self-loops on final states already handled.
+                {
+                    for (const auto& rhs_initial_state: rhs.initialstates) {
+                        result.add_trans(rhs_result_states_map[rhs_initial_state],
+                                         transitions_from_lhs_final_state.symbol,
+                                         lhs_result_states_map[lhs_state_to]);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Concatenate::add_rhs_transitions()
+{
+    for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
+    {
+        for (const auto& symbol_transitions: rhs.get_transitions_from_state(rhs_state))
+        {
+            for (const auto& rhs_state_to: symbol_transitions.states_to)
+            {
+                result.add_trans(rhs_result_states_map[rhs_state],
+                                 symbol_transitions.symbol,
+                                 rhs_result_states_map[rhs_state_to]);
+            }
+        }
+    }
+}
+
+void Concatenate::make_final_states()
+{
+    for (const auto& rhs_final_state: rhs.finalstates)
+    {
+        result.make_final(rhs_result_states_map[rhs_final_state]);
+    }
+}
+
+void Concatenate::make_initial_states()
+{
+    for (State lhs_initial_state: lhs.initialstates)
+    {
+        result.make_initial(lhs_result_states_map[lhs_initial_state]);
+    }
+}
+
+void Concatenate::map_states_to_result_states()
+{
+    State result_state_index{ 0 };
+
+    for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state)
+    {
+        if (!lhs.has_final(lhs_state))
+        {
+            lhs_result_states_map.insert(std::make_pair(lhs_state, result_state_index));
+            ++result_state_index;
+        }
+    }
+
+    for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
+    {
+        rhs_result_states_map.insert(std::make_pair(rhs_state, result_state_index));
+        ++result_state_index;
     }
 }

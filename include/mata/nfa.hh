@@ -472,12 +472,6 @@ public:
      */
     void trim();
 
-    const TransitionList& get_transitions_from_state(State state_from) const
-    {
-        assert(transitionrelation.size() >= state_from + 1);
-        return transitionrelation[state_from];
-    }
-
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
@@ -560,7 +554,7 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    TransSequence get_trans_as_sequence();
+    TransSequence get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
@@ -569,6 +563,23 @@ public:
      */
     TransSequence get_trans_from_state_as_sequence(State state_from) const;
 
+    /**
+     * Get transitions leading from @p state_from.
+     * @param state_from[in] Source state for transitions to get.
+     * @return List of transitions leading from @p state_from.
+     */
+    const TransitionList& get_transitions_from_state(const State state_from) const
+    {
+        assert(get_num_of_states() >= state_from + 1);
+        return transitionrelation[state_from];
+    }
+
+    /**
+     * Get transitions leading to @p state_to.
+     * @param state_to[in] Target state for transitions to get.
+     * @return Sequence of @c Trans transitions leading to @p state_to.
+     */
+    TransSequence get_transitions_to_state(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -880,6 +891,108 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 inline Nfa intersection(const Nfa &lhs, const Nfa &rhs) { return Intersection{ lhs, rhs }.get_product(); }
+
+/**
+ * Class executing a concatenation of two NFAs.
+ */
+class Concatenate
+{
+public:
+    /**
+     * Initialize and compute concatenation of two NFAs.
+     *
+     * Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
+     * @param[in] lhs First NFA to concatenate.
+     * @param[in] rhs Second NFA to concatenate.
+     */
+    Concatenate(const Nfa& lhs, const Nfa& rhs)
+        : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states())
+    {
+        result.increase_size(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
+
+        compute_concatenation();
+    }
+
+    /**
+     * Get result of concatenation.
+     * @return Concatenated automaton.
+     */
+    Nfa& get_result() { return result; }
+
+    /**
+     * Get @c lhs to @c result states map.
+     * @return @c lhs to @c result states map.
+     */
+    StateMap<State>& get_lhs_result_states_map() { return lhs_result_states_map; }
+
+    /**
+     * Get @c rhs to @c result states map.
+     * @return @c rhs to @c result states map.
+     */
+    StateMap<State>& get_rhs_result_states_map() { return rhs_result_states_map; }
+
+private:
+    const Nfa& lhs{}; ///< First automaton to concatenate.
+    const Nfa& rhs{}; ///< Second automaton to concatenate.
+    const unsigned long lhs_states_num{}; ///< Number of states in @c lhs.
+    const unsigned long rhs_states_num{}; ///< Number of states in @c rhs.
+    Nfa result{}; ///< Concatenated automaton.
+    StateMap<State> lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
+    StateMap<State> rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
+
+    /**
+     * Compute concatenation of given automata.
+     */
+    void compute_concatenation();
+
+    /**'
+     * Map @c lhs and @c rhs states to @c result states.
+     */
+    void map_states_to_result_states();
+
+    /**
+     * Make @c result initial states.
+     */
+    void make_initial_states();
+
+    /**
+     * Make @c result final states.
+     */
+    void make_final_states();
+
+    /**
+     * Add @c rhs transitions to the @c result.
+     */
+    void add_rhs_transitions();
+
+    /**
+     * Add @c lhs transitions from final states to the @c result.
+     */
+    void add_lhs_final_states_transitions();
+
+    /**
+     * Add @c lhs transitions to @c lhs final states to the @c result.
+     */
+    void add_lhs_transitions_to_final_states();
+
+    /**
+     * Add @c lhs transitions from @c lhs final states.
+     */
+    void add_lhs_non_final_states_transitions();
+
+    /**
+     * Add @c lhs transitions to the @c result.
+     */
+    void add_lhs_transitions();
+};
+
+/**
+ * Concatenate two NFAs.
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @return Concatenated automaton.
+ */
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
 
 /// makes the transition relation complete
 void make_complete(
