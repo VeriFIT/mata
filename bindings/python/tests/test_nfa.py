@@ -32,6 +32,28 @@ def test_adding_states():
     lhs.add_final_state(0)
     assert lhs.has_final_state(0)
 
+    rhs = mata.Nfa()
+    assert rhs.state_size() == 0
+    state = rhs.add_new_state()
+    assert state == 0
+    assert rhs.state_size() == 1
+    state = rhs.add_new_state()
+    assert state == 1
+    assert rhs.state_size() == 2
+
+    rhs.resize(10)
+    assert rhs.state_size() == 10
+    for i in range(0, 10):
+        assert rhs.is_state(i)
+
+    rhs.resize(1)
+    assert rhs.state_size() == 1
+    assert rhs.is_state(0)
+    assert not rhs.is_state(1)
+
+    with pytest.raises(OverflowError):
+        rhs.resize(-10)
+
 
 def test_transitions():
     """Test adding transitions to automaton"""
@@ -335,3 +357,112 @@ def test_to_str():
     lhs.add_trans_raw(0, 1, 1)
     expected = "initial_states: [0]\nfinal_states: [1]\ntransitions:\n0-[0]→0\n0-[1]→1\n"
     assert str(lhs) == expected
+
+def test_shortest(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    shortest = lhs.get_shortest_words()
+    assert shortest == [[1, 1]]
+
+def test_get_trans(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    t = lhs.get_transitions_from_state(0)
+    assert sorted(t) == sorted([mata.TransSymbolStates(0, [0]), mata.TransSymbolStates(1, [1])])
+    tt = lhs.get_transitions_from_state(1)
+    assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])
+
+def test_simulation(fa_one_divisible_by_four):
+    lhs = fa_one_divisible_by_four
+    rel = mata.Nfa.compute_relation(lhs)
+    assert rel.size() == 5
+    assert rel.to_matrix() == [
+        [True, False, False, False, True],
+        [False, True, False, False, False],
+        [False, False, True, False, False],
+        [False, False, False, True, False],
+        [False, False, False, False, True],
+    ]
+
+    # Test reseting the relation
+    rel.reset()
+    assert rel.to_matrix() == [
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+        [False for _ in range(0, 5)],
+    ]
+
+    rel.reset(defValue=True)
+    assert rel.to_matrix() == [
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+        [True for _ in range(0, 5)],
+    ]
+
+def test_simulation_other_features(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    rel = mata.Nfa.compute_relation(lhs)
+    assert rel.to_matrix() == [
+        [True, False, True],
+        [False, True, False],
+        [False, False, True]
+    ]
+
+    # Testing transposition
+    trans_rel = rel.transpose()
+    assert trans_rel.to_matrix() == [
+        [True, False, False],
+        [False, True, False],
+        [True, False, True]
+    ]
+
+    assert not rel.is_symmetric_at(0, 2)
+    assert not rel.is_symmetric_at(1, 2)
+    rel.split(0)
+    assert rel.to_matrix() == [
+        [True, False, True, True],
+        [False, True, False, False],
+        [False, False, True, False],
+        [True, False, True, True],
+    ]
+    size = rel.alloc()
+    assert rel.to_matrix() == [
+        [True, False, True, True, False],
+        [False, True, False, False, False],
+        [False, False, True, False, False],
+        [True, False, True, True, False],
+        [False, False, False, False, False],
+    ]
+
+    projection = rel.get_quotient_projection()
+    assert projection == [0, 1, 0, 0, 4]
+
+    rel.restrict_to_symmetric()
+    for i in range(0, rel.size()):
+        for j in range(0, rel.size()):
+            if rel.get(i, j) or rel.get(j, i):
+                assert rel.is_symmetric_at(i, j)
+
+
+def test_simulation_equivalence():
+    r = mata.BinaryRelation(3, True, 3)
+    classes, heads = r.build_equivalence_classes()
+    assert classes == [0, 0, 0]
+    assert heads == [0]
+    r.reset(False)
+    classes, heads = r.build_equivalence_classes()
+    assert classes == [0, 1, 2]
+    assert heads == [0, 1, 2]
+
+def test_simulation_indexes(fa_one_divisible_by_two):
+    lhs = fa_one_divisible_by_two
+    rel = mata.Nfa.compute_relation(lhs)
+    index = rel.build_index()
+    assert sorted(index) == [[0, 2], [1], [2]]
+    inv_index = rel.build_inverse_index()
+    assert sorted(inv_index) == [[0], [0, 2], [1]]
+    index, inv_index = rel.build_indexes()
+    assert sorted(index) == [[0, 2], [1], [2]]
+    assert sorted(inv_index) == [[0], [0, 2], [1]]
