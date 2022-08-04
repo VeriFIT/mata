@@ -28,7 +28,7 @@ dirhtml:
 latex:
 	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $(BUILDDIR)/latex
 	# Remove characters that seems to be problematic for latexmk...
-	sed -i.bak 's///g;s/┃/|/g;s/═/=/g;s/▣/*/g' $(BUILDDIR)/latex/automata-library.tex
+	sed -i.bak 's///g;s/┃/|/g;s/═/=/g;s/▣/*/g' $(BUILDDIR)/latex/mata.tex
 	make -C $(BUILDDIR)/latex all-pdf
 	@echo "Finished generating latex pdf documentation in $(BUILDDIR)/latex."
 

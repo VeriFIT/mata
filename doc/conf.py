@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'automata-library'
+project = 'mata'
 copyright = '2022, VeriFIT Group, BUT, FIT'
 author = 'VeriFIT Group, BUT, FIT'
 
@@ -37,8 +37,14 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.imgmath',
     'sphinx.ext.todo',
-    'breathe'
+    'breathe',
+    'myst_parser'
 ]
+
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.md': 'markdown'
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -10,6 +10,7 @@ Welcome to automata-library's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
    overview
    nfa
    afa
