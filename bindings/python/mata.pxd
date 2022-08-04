@@ -203,7 +203,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         clist[Symbol] get_symbols()
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
-    cdef void create_nfa(CNfa*, string)
+    cdef void create_nfa(CNfa*, string) except +
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void compute_fw_direct_simulation(const CNfa&)
