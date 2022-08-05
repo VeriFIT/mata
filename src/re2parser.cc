@@ -492,6 +492,11 @@ namespace {
                 const auto& transition_list = input_nfa.get_transitions_from_state(state);
                 for (const auto& transition: transition_list) {
                     for (auto stateTo: transition.states_to) {
+                        if (static_cast<int>(renumbered_states[stateTo]) == -1) {
+                            renumbered_states[stateTo] = renumbered_explicit_nfa.add_new_state();
+                        }
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.get_num_of_states());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.get_num_of_states());
                         renumbered_explicit_nfa.add_trans(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }
