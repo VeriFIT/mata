@@ -234,7 +234,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
     }
 
     return result;
-}
+} // split_tokens(std::vector) }}}
 } // anonymous namespace
 
 
