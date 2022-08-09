@@ -167,6 +167,40 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		REQUIRE(body[0][1] == "b");
 	}
 
+	SECTION("file with transitions and line break")
+	{
+		std::string file =
+		        "@Type\n"
+		        "%key1 value1\n"
+		        "a x & !b&c|(a& !b)";
+
+		parsec = parse_vtf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 1);
+		REQUIRE((*ref)[0] == "value1");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		for (auto b : body[0])
+		    std::cout << b << '\n';
+		REQUIRE(body[0].size() == 14);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "x");
+		REQUIRE(body[0][2] == "&");
+		REQUIRE(body[0][3] == "!");
+		REQUIRE(body[0][4] == "b");
+		REQUIRE(body[0][5] == "&");
+		REQUIRE(body[0][6] == "c");
+		REQUIRE(body[0][7] == "|");
+		REQUIRE(body[0][8] == "(");
+		REQUIRE(body[0][9] == "a");
+		REQUIRE(body[0][10] == "&");
+		REQUIRE(body[0][11] == "!");
+		REQUIRE(body[0][12] == "b");
+		REQUIRE(body[0][13] == ")");
+	}
+
 	SECTION("file with comments and whitespaces")
 	{
 		std::string file =
