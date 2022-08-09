@@ -182,8 +182,6 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		REQUIRE((*ref)[0] == "value1");
 		REQUIRE(parsec.body.size() == 1);
 		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
-		for (auto b : body[0])
-		    std::cout << b << '\n';
 		REQUIRE(body[0].size() == 14);
 		REQUIRE(body[0][0] == "a");
 		REQUIRE(body[0][1] == "x");
