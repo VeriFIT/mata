@@ -24,7 +24,7 @@ using namespace Mata::Parser;
 using namespace Mata::util;
 
 
-TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
+TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -33,7 +33,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 		REQUIRE(parsec.empty());
 	}
 
@@ -42,7 +42,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"@Type\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(parsec.dict.empty());
@@ -56,7 +56,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(haskey(parsec.dict, "key1"));
@@ -74,7 +74,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%key3 value3\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -95,7 +95,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1     value1.1  value1.2 value1.3			value1.4\n"
 			"%key2\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -118,7 +118,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"a\n"
 			"b0 b1 b2 b3		b4    b5";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -150,7 +150,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		        "a\\\n"
 		        "b";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -174,7 +174,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		        "%key1 value1\n"
 		        "a x & !b&c|(a& !b)";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -216,7 +216,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"a\n"
 			"   b0 b1 #b2";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Ty" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -253,7 +253,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"'\n"
 			"q a q'";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -314,7 +314,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%key3 \"value3\"";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -337,7 +337,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1     \"value@1\"  \"value@2\"#new\n"
 			"%key2     \"value%1\"  (\"value%2\")\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -359,7 +359,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"a b c\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(parsec.body.size() == 1);
@@ -377,7 +377,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1 (a b)\n"
 			"a (b   c  d)(e\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -409,7 +409,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 
 		std::istringstream stream(file);
 
-		parsec = parse_vtf_section(stream);
+		parsec = parse_mf_section(stream);
 
 		REQUIRE("Type1" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -419,10 +419,10 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string remains = stream.str().substr(stream.tellg());
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
-} // parse_vtf_section correct }}}
+} // parse_mf_section correct }}}
 
 
-TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
+TEST_CASE("incorrect use of Mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -434,8 +434,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
 
 	SECTION("trailing characters behind @TYPE")
@@ -443,8 +443,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"@Type another\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid trailing characters"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid trailing characters"));
 	}
 
 	SECTION("missing type")
@@ -453,8 +453,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
 
 	SECTION("unterminated quote")
@@ -463,8 +463,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("unterminated quote 2")
@@ -473,8 +473,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("newlines within names")
@@ -490,8 +490,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"\"value    # comment\n"
 			"3\"";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("quoted strings starting in the middle of strings")
@@ -500,8 +500,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 val\"ue\"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("quoted strings ending in the middle of strings")
@@ -510,8 +510,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"val\"ue\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("incorrect position of special characters")
@@ -520,7 +520,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 @here";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of @TYPE") &&
 			Catch::Contains("@here"));
 	}
@@ -531,7 +531,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"q1 @here q2";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of @TYPE") &&
 			Catch::Contains("@here"));
 	}
@@ -542,7 +542,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"q1 %here q2";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of %KEY") &&
 			Catch::Contains("%here"));
 	}
@@ -553,7 +553,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 %here";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of %KEY") &&
 			Catch::Contains("%here"));
 	}
@@ -565,8 +565,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("%KEY name missing"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("%KEY name missing"));
 	}
 
 	SECTION("special characters inside strings 1")
@@ -575,8 +575,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1     value@1\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced character \'@\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced character \'@\'"));
 	}
 
 	SECTION("special characters inside strings 2")
@@ -585,8 +585,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key2     value%1\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced character \'%\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced character \'%\'"));
 	}
 
 	SECTION("special characters inside strings 3")
@@ -595,8 +595,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1     @value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid position of @TYPE"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid position of @TYPE"));
 	}
 
 	SECTION("special characters inside strings 4")
@@ -605,8 +605,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key2     %value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid position of %KEY"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid position of %KEY"));
 	}
 
 	SECTION("invalid use of quotes")
@@ -614,13 +614,13 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"\"@Type\"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
-} // parse_vtf_section incorrect }}}
+} // parse_mf_section incorrect }}}
 
 
-TEST_CASE("correct use of Mata::Parser::parse_vtf()")
+TEST_CASE("correct use of Mata::Parser::parse_mf()")
 { // {{{
 	Parsed parsed;
 
@@ -629,7 +629,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 		std::string file =
 			"";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 
 		REQUIRE(parsed.empty());
 	}
@@ -640,7 +640,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 			"@Type1\n"
 			"%key1\n";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 1);
 		REQUIRE(parsed[0].type == "Type1");
 		REQUIRE(haskey(parsed[0].dict, "key1"));
@@ -654,14 +654,14 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 			"@Type2\n"
 			"%key2\n";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 2);
 		REQUIRE(parsed[0].type == "Type1");
 		REQUIRE(haskey(parsed[0].dict, "key1"));
 		REQUIRE(parsed[1].type == "Type2");
 		REQUIRE(haskey(parsed[1].dict, "key2"));
 	}
-} // parse_vtf }}}
+} // parse_mf }}}
 
 
 TEST_CASE("Mata::Parser::ParsedSection::operator<<(ostream&)")

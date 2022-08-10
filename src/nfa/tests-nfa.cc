@@ -810,7 +810,7 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
 		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
 
-		ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
+		ParsedSection parsec = Mata::Parser::parse_mf_section(str);
 
 		Mata::Nfa::StringToStateMap inv_state_dict =
 			Mata::util::invert_map(state_dict);

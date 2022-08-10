@@ -238,16 +238,16 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 } // anonymous namespace
 
 
-Parsed Mata::Parser::parse_vtf(
+Parsed Mata::Parser::parse_mf(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	return parse_vtf(stream, keepQuotes);
-} // parse_vtf(std::string) }}}
+	return parse_mf(stream, keepQuotes);
+} // parse_mf(std::string) }}}
 
 
-Parsed Mata::Parser::parse_vtf(
+Parsed Mata::Parser::parse_mf(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -255,7 +255,7 @@ Parsed Mata::Parser::parse_vtf(
 
 	while (input)
 	{
-		ParsedSection parsec = parse_vtf_section(input, keepQuotes);
+		ParsedSection parsec = parse_mf_section(input, keepQuotes);
 		if (!parsec.empty())
 		{
 			result.push_back(parsec);
@@ -263,10 +263,10 @@ Parsed Mata::Parser::parse_vtf(
 	}
 
 	return result;
-} // parse_vtf(std::istream) }}}
+} // parse_mf(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_mf_section(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -387,14 +387,14 @@ ParsedSection Mata::Parser::parse_vtf_section(
 	}
 
 	return result;
-} // parse_vtf_section(std::istream) }}}
+} // parse_mf_section(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_mf_section(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	ParsedSection result = parse_vtf_section(stream, keepQuotes);
+	ParsedSection result = parse_mf_section(stream, keepQuotes);
 	return result;
-} // parse_vtf_section(std::string) }}}
+} // parse_mf_section(std::string) }}}
