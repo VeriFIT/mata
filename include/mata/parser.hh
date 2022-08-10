@@ -120,22 +120,22 @@ struct ParsedSection
 using Parsed = std::vector<ParsedSection>;
 
 /** Parses a string into an intermediary structure */
-Parsed parse_vtf(
+Parsed parse_mf(
 	const std::string&  input,
 	bool                keepQuotes = false);
 
 /** Parses a stream into an intermediary structure */
-Parsed parse_vtf(
+Parsed parse_mf(
 	std::istream&  input,
 	bool           keepQuotes = false);
 
 /** Parses one section from a stream into an intermediary structure */
-ParsedSection parse_vtf_section(
+ParsedSection parse_mf_section(
 	std::istream&  input,
 	bool           keepQuotes = false);
 
 /** Parses one section from a string into an intermediary structure */
-ParsedSection parse_vtf_section(
+ParsedSection parse_mf_section(
 	const std::string&  input,
 	bool                keepQuotes = false);
 
