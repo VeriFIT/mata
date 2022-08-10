@@ -2503,23 +2503,71 @@ TEST_CASE("Mata::Nfa::get_digraph()")
 TEST_CASE("Mata::Nfa::get_reachable_states()")
 {
     Nfa aut{20};
-    FILL_WITH_AUT_A(aut);
-    aut.remove_trans(3, 'b', 9);
-    aut.remove_trans(5, 'c', 9);
-    aut.remove_trans(1, 'a', 10);
 
-    auto reachable{aut.get_reachable_states()};
-    CHECK(reachable.find(0) == reachable.end());
-    CHECK(reachable.find(1) != reachable.end());
-    CHECK(reachable.find(2) == reachable.end());
-    CHECK(reachable.find(3) != reachable.end());
-    CHECK(reachable.find(4) == reachable.end());
-    CHECK(reachable.find(5) != reachable.end());
-    CHECK(reachable.find(6) == reachable.end());
-    CHECK(reachable.find(7) != reachable.end());
-    CHECK(reachable.find(8) == reachable.end());
-    CHECK(reachable.find(9) == reachable.end());
-    CHECK(reachable.find(10) == reachable.end());
+    SECTION("Automaton A")
+    {
+        FILL_WITH_AUT_A(aut);
+        aut.remove_trans(3, 'b', 9);
+        aut.remove_trans(5, 'c', 9);
+        aut.remove_trans(1, 'a', 10);
+
+        auto reachable{aut.get_reachable_states()};
+        CHECK(reachable.find(0) == reachable.end());
+        CHECK(reachable.find(1) != reachable.end());
+        CHECK(reachable.find(2) == reachable.end());
+        CHECK(reachable.find(3) != reachable.end());
+        CHECK(reachable.find(4) == reachable.end());
+        CHECK(reachable.find(5) != reachable.end());
+        CHECK(reachable.find(6) == reachable.end());
+        CHECK(reachable.find(7) != reachable.end());
+        CHECK(reachable.find(8) == reachable.end());
+        CHECK(reachable.find(9) == reachable.end());
+        CHECK(reachable.find(10) == reachable.end());
+
+        aut.remove_initial(1);
+        aut.remove_initial(3);
+
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.empty());
+    }
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        aut.remove_trans(2, 'c', 12);
+        aut.remove_trans(4, 'c', 8);
+        aut.remove_trans(4, 'a', 8);
+
+        auto reachable{aut.get_reachable_states()};
+        CHECK(reachable.find(0) != reachable.end());
+        CHECK(reachable.find(1) == reachable.end());
+        CHECK(reachable.find(2) != reachable.end());
+        CHECK(reachable.find(3) == reachable.end());
+        CHECK(reachable.find(4) != reachable.end());
+        CHECK(reachable.find(5) == reachable.end());
+        CHECK(reachable.find(6) != reachable.end());
+        CHECK(reachable.find(7) == reachable.end());
+        CHECK(reachable.find(8) == reachable.end());
+        CHECK(reachable.find(9) == reachable.end());
+        CHECK(reachable.find(10) == reachable.end());
+        CHECK(reachable.find(11) == reachable.end());
+        CHECK(reachable.find(12) == reachable.end());
+        CHECK(reachable.find(13) == reachable.end());
+        CHECK(reachable.find(14) == reachable.end());
+
+        aut.remove_final(2);
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.size() == 4);
+        CHECK(reachable.find(0) != reachable.end());
+        CHECK(reachable.find(2) != reachable.end());
+        CHECK(reachable.find(4) != reachable.end());
+        CHECK(reachable.find(6) != reachable.end());
+        CHECK(aut.get_useful_states().empty());
+
+        aut.make_final(4);
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.find(4) != reachable.end());
+    }
 }
 
 TEST_CASE("Mata::Nfa::trim()")
@@ -2531,12 +2579,18 @@ TEST_CASE("Mata::Nfa::trim()")
     Nfa old_aut{aut};
 
     aut.trim();
-    REQUIRE(aut.initialstates.size() == old_aut.initialstates.size());
-    REQUIRE(aut.finalstates.size() == old_aut.finalstates.size());
+    CHECK(aut.initialstates.size() == old_aut.initialstates.size());
+    CHECK(aut.finalstates.size() == old_aut.finalstates.size());
+    CHECK(aut.get_num_of_states() == 4);
     for (const Word& word: old_aut.get_shortest_words())
     {
-        REQUIRE(is_in_lang(aut, word));
+        CHECK(is_in_lang(aut, word));
     }
+
+    aut.remove_final(2); // '2' is the new final state in the earlier trimmed automaton.
+    aut.trim();
+    CHECK(aut.trans_empty());
+    CHECK(aut.get_num_of_states() == 0);
 }
 
 TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
