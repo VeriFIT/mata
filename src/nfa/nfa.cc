@@ -185,7 +185,7 @@ std::list<Symbol> EnumAlphabet::get_complement(
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
-    // TODO: define own exceptions
+    // TODO: Define own exception.
     if (!is_state(stateFrom) || !is_state(stateTo)) {
         throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
     }

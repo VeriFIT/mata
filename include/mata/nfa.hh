@@ -275,8 +275,6 @@ struct Nfa
     StateSet initialstates = {};
     StateSet finalstates = {};
 
-    //TODO we probably need the number of states, int, as a member, for when we want to remove states
-    // alphabet?
 public:
     Nfa() : transitionrelation(), initialstates(), finalstates() {}
 
@@ -482,8 +480,6 @@ public:
 
     /**
      * @brief Adds a transition from stateFrom trough symbol to stateTo.
-     *
-     * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
      */
     void add_trans(State src, Symbol symb, State tgt);
 
@@ -626,7 +622,6 @@ public:
 
         std::pair<Symbol, const StateSet> next();
     };
-
 
     struct const_iterator
     { // {{{
