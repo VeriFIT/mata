@@ -51,14 +51,14 @@ add_library(libmata STATIC
 	afa/afa.cc
 	config.cc
 	explicit_lts_sim.cc
+	inter-aut.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
-	rra/rrt.cc
-)
+	rra/rrt.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
