@@ -645,7 +645,7 @@ WordSet Mata::Nfa::Nfa::get_shortest_words() const
     ShortestWordsMap shortest_words_map{ *this };
 
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return shortest_words_map.get_shortest_words_for_states(this->initialstates);
+    return shortest_words_map.get_shortest_words_for(this->initialstates);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1434,7 +1434,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa
 	return os;
 } // operator<<(NfaWrapper) }}}
 
-WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) const
+WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
     std::set <Word> result{};
 
@@ -1466,6 +1466,11 @@ WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) 
     }
 
     return result;
+}
+
+WordSet ShortestWordsMap::get_shortest_words_for(State state) const
+{
+     return get_shortest_words_for(StateSet{ state });
 }
 
 void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()

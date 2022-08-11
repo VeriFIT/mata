@@ -1119,14 +1119,21 @@ public:
         insert_initial_lengths();
 
         compute();
-   }
+    }
 
     /**
      * Gets shortest words for the given @p states.
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for_states(const StateSet& states) const;
+    WordSet get_shortest_words_for(const StateSet& states) const;
+
+    /**
+     * Gets shortest words for the given @p state.
+     * @param[in] state State to map shortest words for.
+     * @return Set of shortest words.
+     */
+    WordSet get_shortest_words_for(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.
