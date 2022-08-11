@@ -299,7 +299,7 @@ namespace {
 
             // Used for the first loop through states
             std::vector<Mata::Nfa::State> tmp_state_mapping(prog_size);
-            for (int state = 0; state < prog_size; state++) {
+            for (Mata::Nfa::State state = 0; state < prog_size; state++) {
                 tmp_state_mapping[state] = state;
                 this->state_cache.state_mapping.push_back({state});
             }
@@ -308,7 +308,7 @@ namespace {
             int append_to_state = -1;
             Mata::Nfa::State mapped_parget_state;
 
-            for (int state = start_state; state < prog_size; state++) {
+            for (Mata::Nfa::State state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(state);
                 if (inst->last()) {
                     this->state_cache.is_last[state] = true;
@@ -357,7 +357,7 @@ namespace {
             };
             const int progSize = prog->size();
 
-            for (int state = 0; state < progSize; state++) {
+            for (Mata::Nfa::State state = 0; state < progSize; state++) {
                 this->state_cache.state_mapping.push_back({state});
                 re2::Prog::Inst *inst = prog->inst(state);
                 if (inst->last()) {
