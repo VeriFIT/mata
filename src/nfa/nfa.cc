@@ -46,7 +46,7 @@ namespace {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
     }
 
-    void uniont_to_left(StateSet &receivingSet, const StateSet &addedSet) {
+    void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
         receivingSet.insert(addedSet);
     }
 
@@ -342,7 +342,7 @@ void Nfa::add_trimmed_transitions(const StateMap<State>& original_to_new_states_
     }
 }
 
-/// General methods for NFA
+// General methods for NFA.
 
 bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
@@ -1395,7 +1395,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     for (size_t i=0; i < size;) {
         Symbol transitionSymbol = transition_iterators[i]->symbol;
         if (transitionSymbol == min_symbol) {
-            uniont_to_left(post, transition_iterators[i]->states_to);
+            union_to_left(post, transition_iterators[i]->states_to);
             transition_iterators[i]++;
             if (transition_iterators[i] != automaton.transitionrelation[state_vector[i]].end()) {
                 Symbol nextTransitionSymbol = transition_iterators[i]->symbol;
