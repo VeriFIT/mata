@@ -207,6 +207,8 @@ namespace
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
     }
 
+
+
     Mata::InterAutomaton mf_to_aut(const Mata::Parser::ParsedSection &section)
     {
         Mata::InterAutomaton aut;

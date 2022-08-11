@@ -13,27 +13,23 @@
 namespace Mata
 {
 
-struct FormulaNode
-{
+struct FormulaNode {
 public:
-    enum OperandType
-    {
+    enum OperandType {
         SYM,
         STATE,
         NODE,
         NOT_OPERAND
     };
 
-    enum OperatorType
-    {
+    enum OperatorType {
         NEG,
         AND,
         OR,
         NOT_OPERATOR
     };
 
-    enum Type
-    {
+    enum Type {
         OPERAND,
         OPERATOR,
         LEFT_PARENTHESIS,
@@ -46,21 +42,24 @@ public:
     OperatorType operator_type;
     OperandType operand_type;
 
-    bool is_operand() { return type == Type::OPERAND;}
-    bool is_operator() { return type == Type::OPERATOR;}
-    bool is_righpar() { return type == Type::RIGHT_PARENTHESIS;}
-    bool is_leftpar() { return type == Type::LEFT_PARENTHESIS;}
+    bool is_operand() { return type == Type::OPERAND; }
+
+    bool is_operator() { return type == Type::OPERATOR; }
+
+    bool is_righpar() { return type == Type::RIGHT_PARENTHESIS; }
+
+    bool is_leftpar() { return type == Type::LEFT_PARENTHESIS; }
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperatorType oprtor) : type(t), raw(raw), name(name), operator_type(oprtor),
-                operand_type(NOT_OPERAND) {}
+                                       operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperandType operand) : type(t), raw(raw), name(name), operator_type(NOT_OPERATOR),
-                operand_type(operand) {};
+                                       operand_type(operand) {};
 
     FormulaNode(Type t, std::string raw) : type(t), raw(raw), name(raw), operator_type(NOT_OPERATOR),
-                                       operand_type(NOT_OPERAND) {};
+                                           operand_type(NOT_OPERAND) {};
 };
 
 struct FormulaGraph
