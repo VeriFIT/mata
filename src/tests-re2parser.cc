@@ -75,5 +75,6 @@ TEST_CASE("Mata::RE2Parser error")
         REQUIRE(!aut.trans_empty());
         REQUIRE(!is_lang_empty(aut));
         REQUIRE(is_in_lang(aut, Word{'a','a','b'}));
+        REQUIRE(!is_in_lang(aut, Word{'a','b'}));
     }
 } // }}}
