@@ -57,6 +57,8 @@ add_library(libmata STATIC
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
+	nfa/nfa-intersection.cc
+	nfa/nfa-concatenation.cc
 	rra/rrt.cc
 )
 
