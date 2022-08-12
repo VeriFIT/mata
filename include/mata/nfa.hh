@@ -864,9 +864,36 @@ inline bool is_incl(
     return is_incl(smaller, bigger, alphabet, nullptr, params);
 } // }}}
 
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
                        const StringDict& params = {{"algo", "antichains"}});
 
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
+ * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
+ * the alphabet has to be computed first.
+ *
+ * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
+ * That way, alphabet has to be compute only once, as opposed to the current ad-hoc construction of alphabet.
+ * The use of the alternative with defined alphabet should be preferred.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
 
 //bool operator==(Nfa& lhs, Nfa& rhs) { return equivalence_check(lhs, rhs); }
