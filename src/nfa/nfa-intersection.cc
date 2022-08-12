@@ -105,8 +105,6 @@ private:
 
         initialize_pairs_to_process();
 
-        if (lhs.trans_empty() || rhs.trans_empty()) { return; }
-
         while (!pairs_to_process.empty())
         {
             pair_to_process = *pairs_to_process.begin();
@@ -209,7 +207,7 @@ private:
     {
         // Create transition from the pair_to_process to all pairs between states to which first transition goes and states
         // to which second one goes.
-        TransSymbolStates intersection_transition(lhs_state_transitions.symbol);
+        TransSymbolStates intersection_transition{ lhs_state_transitions.symbol };
         for (State this_state_to: lhs_state_transitions.states_to)
         {
             for (State other_state_to: rhs_state_transitions.states_to)
@@ -217,7 +215,6 @@ private:
                 create_product_state_and_trans(this_state_to, other_state_to, intersection_transition);
             }
         }
-
         add_product_transition(intersection_transition);
     }
 
@@ -228,7 +225,7 @@ private:
     void compute_for_lhs_state_epsilon_transition(const TransSymbolStates& lhs_state_transitions)
     {
         // Create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes.
-        TransSymbolStates intersection_transition(lhs_state_transitions.symbol);
+        TransSymbolStates intersection_transition{ lhs_state_transitions.symbol };
         for (State this_state_to: lhs_state_transitions.states_to)
         {
             create_product_state_and_trans(this_state_to, pair_to_process.second, intersection_transition);
@@ -243,7 +240,7 @@ private:
     void compute_for_rhs_epsilon_transition(const TransSymbolStates& rhs_state_transitions)
     {
         // create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes
-        TransSymbolStates intersection_transition(rhs_state_transitions.symbol);
+        TransSymbolStates intersection_transition{ rhs_state_transitions.symbol };
         for (State other_state_to: rhs_state_transitions.states_to)
         {
             create_product_state_and_trans(pair_to_process.first, other_state_to, intersection_transition);
