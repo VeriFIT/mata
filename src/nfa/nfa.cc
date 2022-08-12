@@ -896,7 +896,7 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
-TransSequence Nfa::get_trans_as_sequence()
+TransSequence Nfa::get_trans_as_sequence() const
 {
     TransSequence trans_sequence{};
 
@@ -913,6 +913,22 @@ TransSequence Nfa::get_trans_as_sequence()
 
     return trans_sequence;
 }
+
+TransSequence Nfa::get_trans_from_state_as_sequence(State state_from) const
+{
+    TransSequence trans_sequence{};
+
+    for (const auto& transition_from_state: transitionrelation[state_from])
+    {
+        for (State state_to: transition_from_state.states_to)
+        {
+            trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+        }
+    }
+
+    return trans_sequence;
+}
+
 
 size_t Nfa::get_num_of_trans() const
 {
@@ -983,6 +999,46 @@ Nfa Nfa::get_digraph()
     return digraph;
 }
 
+bool Mata::Nfa::Nfa::trans_empty() const
+{
+    for (const auto &state_transitions: transitionrelation)
+    {
+        if (!state_transitions.empty())
+        {
+            for (const auto &symbol_state_transitions: state_transitions)
+            {
+                if (!symbol_state_transitions.states_to.empty())
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+TransSequence Nfa::get_transitions_to_state(const State state_to) const
+{
+    TransSequence transitions_to_state{};
+
+    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from)
+    {
+        for (const auto& symbol_transitions: transitionrelation[state_from])
+        {
+            for (const auto target_state: symbol_transitions.states_to)
+            {
+                if (target_state == state_to)
+                {
+                    transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
+                }
+            }
+        }
+    }
+
+    return transitions_to_state;
+}
+
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
@@ -1010,113 +1066,6 @@ void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
             }
 
             unionAutomaton->transitionrelation[unionState].push_back(transitionFromUnionState);
-        }
-    }
-}
-
-void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_map) {
-    using StatePair = std::pair<State, State>;
-
-    /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
-     * representing (q,p). The hash function computes for each pair (q,p) unique number (q + p*(num of states in this automaton))
-     * whose std hash is returned.
-     *
-     * see https://stackoverflow.com/questions/15719084/how-to-use-lambda-function-as-hash-function-in-unordered-map
-     */
-    auto hashStatePair = [lhs](const StatePair &sp) {
-        return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
-    };
-    // TODO probably remove this since we use prod_map as parameter
-    //std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
-
-    if (prod_map == nullptr) {
-        prod_map = new ProductMap();
-    }
-
-    std::vector<StatePair> pairsToProcess;
-
-    for (State thisInitialState : lhs.initialstates) {
-        for (State otherInitialState : rhs.initialstates) {
-            StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
-            State newIntersectState = res->add_new_state();
-
-            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
-            pairsToProcess.push_back(thisAndOtherInitialStatePair);
-
-            res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
-                res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState)) {
-                res->make_final(newIntersectState);
-            }
-        }
-    }
-
-    if (lhs.trans_empty() || rhs.trans_empty())
-        return;
-
-    while (!pairsToProcess.empty()) {
-        StatePair pairToProcess = pairsToProcess.back();
-        pairsToProcess.pop_back();
-
-        // TODO rewrite this
-
-        State intersectState = (*prod_map)[pairToProcess];
-
-        auto thisStateTransitionsIter = lhs.transitionrelation[pairToProcess.first].begin();
-        auto otherStateTransitionIter = rhs.transitionrelation[pairToProcess.second].begin();
-        auto thisStateTransitionsIterEnd = lhs.transitionrelation[pairToProcess.first].end();
-        auto otherStateTransitionIterEnd = rhs.transitionrelation[pairToProcess.second].end();
-        // find all transitions that have same symbol for first and the second state in the pairToProcess
-        while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-               && otherStateTransitionIter != otherStateTransitionIterEnd) {
-            // first iterator points to transition with smaller symbol, move it until it is either same or further than second iterator
-            if (thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-                       && thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                    ++thisStateTransitionsIter;
-                }
-                if (thisStateTransitionsIter == thisStateTransitionsIterEnd) {
-                    break;
-                }
-            } else {
-                // second iterator points to transition with smaller symbol, move it until it is either same or further than first iterator
-                while (otherStateTransitionIter != otherStateTransitionIterEnd
-                       && thisStateTransitionsIter->symbol > otherStateTransitionIter->symbol) {
-                    ++otherStateTransitionIter;
-                }
-                if (otherStateTransitionIter == otherStateTransitionIterEnd) {
-                    break;
-                }
-            }
-
-            // check both iterators point to the transitions with same symbol
-            if (thisStateTransitionsIter->symbol == otherStateTransitionIter->symbol) {
-                // create transition from the pairToProcess to all pairs between states to which first transition goes and states to which second one goes
-                TransSymbolStates intersectTransition(thisStateTransitionsIter->symbol);
-                for (State thisStateTo : thisStateTransitionsIter->states_to) {
-                    for (State otherStateTo : otherStateTransitionIter->states_to) {
-                        StatePair intersectStatePairTo(thisStateTo, otherStateTo);
-                        State intersectStateTo;
-                        if (prod_map->count(intersectStatePairTo) == 0) {
-                            intersectStateTo = res->add_new_state();
-                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
-                            pairsToProcess.push_back(intersectStatePairTo);
-
-                            if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->make_final(intersectStateTo);
-                            }
-                        } else {
-                            intersectStateTo = (*prod_map)[intersectStatePairTo];
-                        }
-                        intersectTransition.states_to.insert(intersectStateTo);
-                    }
-                }
-                res->transitionrelation[intersectState].push_back(intersectTransition);
-
-                ++thisStateTransitionsIter;
-                ++otherStateTransitionIter;
-            }
         }
     }
 }

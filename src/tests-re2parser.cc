@@ -11,7 +11,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         Mata::Nfa::Nfa aut;
         Mata::RE2Parser::create_nfa(&aut, "");
         REQUIRE(aut.finalstates.size() == aut.initialstates.size());
-        REQUIRE(!aut.trans_empty());
+        REQUIRE(aut.trans_empty());
         REQUIRE(!is_lang_empty(aut));
         REQUIRE(is_in_lang(aut, Word{}));
     }

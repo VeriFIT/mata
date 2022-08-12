@@ -42,12 +42,13 @@ extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
 using State = unsigned long;
+using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
 
-using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using ProductMap = std::unordered_map<StatePair, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
 using Path = std::vector<State>;        ///< A finite-length path through automaton.
 using Word = std::vector<Symbol>;       ///< A finite-length word.
@@ -102,7 +103,7 @@ public:
 	/// translates a string into a symbol
 	virtual Symbol translate_symb(const std::string& symb) = 0;
 	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) {return this->translate_symb(symb);}
+	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
 	/// gets a list of symbols in the alphabet
 	virtual std::list<Symbol> get_symbols() const
 	{ // {{{
@@ -137,16 +138,15 @@ public:
 		assert(nullptr != symbol_map);
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual Symbol translate_symb(const std::string& str) override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
+	std::list<Symbol> get_symbols() const override;
+	Symbol translate_symb(const std::string& str) override;
+	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
 {
 public:
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		Symbol symb;
 		std::istringstream stream(str);
@@ -159,7 +159,7 @@ class CharAlphabet : public Alphabet
 {
 public:
 
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		if (str.length() == 3 &&
 			((str[0] == '\'' && str[2] == '\'') ||
@@ -175,8 +175,8 @@ public:
 		return symb;
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
+	std::list<Symbol> get_symbols() const override;
+	std::list<Symbol> get_complement(
 		const std::set<Symbol>& syms) const override;
 };
 
@@ -212,7 +212,7 @@ public:
 		EnumAlphabet(l.begin(), l.end())
 	{ }
 
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		auto it = symbol_map.find(str);
 		if (symbol_map.end() == it)
@@ -223,9 +223,8 @@ public:
 		return it->second;
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
+	std::list<Symbol> get_symbols() const override;
+	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 };
 // }}}
 
@@ -473,12 +472,6 @@ public:
      */
     void trim();
 
-    const TransitionList& get_transitions_from_state(State state_from) const
-    {
-        assert(transitionrelation.size() >= state_from + 1);
-        return transitionrelation[state_from];
-    }
-
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
@@ -545,7 +538,11 @@ public:
         return this->has_trans({src, symb, tgt});
     } // }}}
 
-    bool trans_empty() const { return this->transitionrelation.empty();} ///< No transitions.
+    /**
+     * Check whether automaton has no transitions.
+     * @return True if there are no transitions in the automaton, false otherwise.
+     */
+    bool trans_empty() const;
     size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
     bool nothing_in_trans() const
     {
@@ -557,7 +554,32 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    TransSequence get_trans_as_sequence();
+    TransSequence get_trans_as_sequence() const;
+
+    /**
+     * Get transitions from @p state_from as a sequence of @c Trans.
+     * @param state_from[in] Source state_from of transitions to get.
+     * @return Sequence of transitions as @c Trans from @p state_from.
+     */
+    TransSequence get_trans_from_state_as_sequence(State state_from) const;
+
+    /**
+     * Get transitions leading from @p state_from.
+     * @param state_from[in] Source state for transitions to get.
+     * @return List of transitions leading from @p state_from.
+     */
+    const TransitionList& get_transitions_from_state(const State state_from) const
+    {
+        assert(get_num_of_states() >= state_from + 1);
+        return transitionrelation[state_from];
+    }
+
+    /**
+     * Get transitions leading to @p state_to.
+     * @param state_to[in] Target state for transitions to get.
+     * @return Sequence of @c Trans transitions leading to @p state_to.
+     */
+    TransSequence get_transitions_to_state(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -700,18 +722,50 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
     return uni_aut;
 } // uni }}}
 
-void intersection(
-        Nfa*         res,
-        const Nfa&   lhs,
-        const Nfa&   rhs,
-        ProductMap*  prod_map = nullptr);
+/**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
 
-inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
-{
-    Nfa result;
-    intersection(&result, lhs, rhs);
-    return result;
-}
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map = nullptr);
+
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+Nfa intersection(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * Concatenate two NFAs.
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @return Concatenated automaton.
+ */
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
 
 /// makes the transition relation complete
 void make_complete(
@@ -809,6 +863,40 @@ inline bool is_incl(
 { // {{{
     return is_incl(smaller, bigger, alphabet, nullptr, params);
 } // }}}
+
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
+                       const StringDict& params = {{"algo", "antichains"}});
+
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
+ * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
+ * the alphabet has to be computed first.
+ *
+ * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
+ * That way, alphabet has to be compute only once, as opposed to the current ad-hoc construction of alphabet.
+ * The use of the alternative with defined alphabet should be preferred.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
+
+//bool operator==(Nfa& lhs, Nfa& rhs) { return equivalence_check(lhs, rhs); }
 
 /// Reverting the automaton
 void revert(Nfa* result, const Nfa& aut);
@@ -1036,7 +1124,7 @@ public:
         insert_initial_lengths();
 
         compute();
-    }
+   }
 
     /**
      * Gets shortest words for the given @p states.

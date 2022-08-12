@@ -212,3 +212,30 @@ bool Mata::Nfa::is_incl(
 
 	return algo(smaller, bigger, alphabet, cex, params);
 } // is_incl }}}
+
+bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet, const StringDict& params)
+{
+    if (is_incl(lhs, rhs, alphabet, params))
+    {
+        if (is_incl(rhs, lhs, alphabet, params))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params)
+{
+    // Construct automata alphabet.
+    std::set<std::string> alphabet{};
+    for (const auto& state_transitions: lhs.transitionrelation)
+    {
+        for (const auto& symbol_state_transitions: state_transitions) {
+            alphabet.insert(std::to_string(symbol_state_transitions.symbol));
+        }
+    }
+
+    return equivalence_check(lhs, rhs, EnumAlphabet{ alphabet.begin(), alphabet.end() }, params);
+}

@@ -403,6 +403,108 @@ TEST_CASE("Mata::Nfa::intersection()")
 	}
 } // }}}
 
+TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+{
+    constexpr Symbol epsilon{'e'};
+    ProductMap prod_map;
+
+    Nfa a{6};
+    a.make_initial(0);
+    a.make_final({1, 4, 5});
+    a.add_trans(0, epsilon, 1);
+    a.add_trans(1, 'a', 1);
+    a.add_trans(1, 'b', 1);
+    a.add_trans(1, 'c', 2);
+    a.add_trans(2, 'b', 4);
+    a.add_trans(2, epsilon, 3);
+    a.add_trans(3, 'a', 5);
+
+    Nfa b{10};
+    b.make_initial(0);
+    b.make_final({2, 4, 8, 7});
+    b.add_trans(0, 'b', 1);
+    b.add_trans(0, 'a', 2);
+    b.add_trans(2, 'a', 4);
+    b.add_trans(2, epsilon, 3);
+    b.add_trans(3, 'b', 4);
+    b.add_trans(0, 'c', 5);
+    b.add_trans(5, 'a', 8);
+    b.add_trans(5, epsilon, 6);
+    b.add_trans(6, 'a', 9);
+    b.add_trans(6, 'b', 7);
+
+    Nfa result{ intersection(a, b, epsilon, &prod_map) };
+
+    // Check states.
+    CHECK(result.is_state(prod_map[{0, 0}]));
+    CHECK(result.is_state(prod_map[{1, 0}]));
+    CHECK(result.is_state(prod_map[{1, 1}]));
+    CHECK(result.is_state(prod_map[{1, 2}]));
+    CHECK(result.is_state(prod_map[{1, 3}]));
+    CHECK(result.is_state(prod_map[{1, 4}]));
+    CHECK(result.is_state(prod_map[{2, 5}]));
+    CHECK(result.is_state(prod_map[{3, 5}]));
+    CHECK(result.is_state(prod_map[{2, 6}]));
+    CHECK(result.is_state(prod_map[{3, 6}]));
+    CHECK(result.is_state(prod_map[{4, 7}]));
+    CHECK(result.is_state(prod_map[{5, 9}]));
+    CHECK(result.is_state(prod_map[{5, 8}]));
+    CHECK(result.get_num_of_states() == 13);
+
+    CHECK(result.has_initial(prod_map[{0, 0}]));
+    CHECK(result.initialstates.size() == 1);
+
+    CHECK(result.has_final(prod_map[{1, 2}]));
+    CHECK(result.has_final(prod_map[{1, 4}]));
+    CHECK(result.has_final(prod_map[{4, 7}]));
+    CHECK(result.has_final(prod_map[{5, 8}]));
+    CHECK(result.finalstates.size() == 4);
+
+    // Check transitions.
+    CHECK(result.get_num_of_trans() == 15);
+
+    CHECK(result.has_trans(prod_map[{0, 0}], epsilon, prod_map[{1, 0}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{0, 0}]).size() == 1);
+
+    CHECK(result.has_trans(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
+    CHECK(result.has_trans(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
+    CHECK(result.has_trans(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 0}]).size() == 3);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 1}]).empty());
+
+    CHECK(result.has_trans(prod_map[{1, 2}], epsilon, prod_map[{1, 3}]));
+    CHECK(result.has_trans(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 2}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 3}]).size() == 1);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 4}]).empty());
+
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 5}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{2, 6}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 5}]).size() == 3);
+
+    CHECK(result.has_trans(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
+    CHECK(result.has_trans(prod_map[{3, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 5}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
+    CHECK(result.has_trans(prod_map[{2, 6}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 6}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 6}]).size() == 1);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{4, 7}]).empty());
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 9}]).empty());
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 8}]).empty());
+}
+
 TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
 	Nfa aut(14);
@@ -1308,8 +1410,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 			bool is_included = is_incl(smaller, bigger, alph, params);
+			CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, alph, params);
+            CHECK(is_included);
 		}
 	}
 
@@ -1322,8 +1426,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+            CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            CHECK(!is_included);
 		}
 	}
 
@@ -1338,8 +1444,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+            CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            CHECK(is_included);
 		}
 	}
 
@@ -1355,6 +1463,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 			REQUIRE(!is_included);
 			REQUIRE(cex == Word{});
+
+            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            REQUIRE(cex == Word{});
+            REQUIRE(is_included);
 		}
 	}
 
@@ -1374,8 +1486,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 			bool is_included = is_incl(smaller, bigger, alph, params);
-
 			REQUIRE(is_included);
+
+            is_included = is_incl(bigger, smaller, alph, params);
+            REQUIRE(!is_included);
 		}
 	}
 
@@ -1394,12 +1508,19 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
+
 			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
 
 			REQUIRE(!is_included);
 			REQUIRE((
 				cex == Word{alph["a"], alph["b"]} ||
 				cex == Word{alph["b"], alph["a"]}));
+
+            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            REQUIRE(is_included);
+            REQUIRE((
+                cex == Word{alph["a"], alph["b"]} ||
+                cex == Word{alph["b"], alph["a"]}));
 		}
 	}
 
@@ -1428,7 +1549,6 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
-
 			REQUIRE(!is_included);
 
 			REQUIRE(cex.size() == 4);
@@ -1437,6 +1557,16 @@ TEST_CASE("Mata::Nfa::is_incl()")
 			REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
 			REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
 			REQUIRE(cex[2] != cex[3]);
+
+            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            REQUIRE(is_included);
+
+            REQUIRE(cex.size() == 4);
+            REQUIRE((cex[0] == alph["a"] || cex[0] == alph["b"]));
+            REQUIRE((cex[1] == alph["a"] || cex[1] == alph["b"]));
+            REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
+            REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
+            REQUIRE(cex[2] != cex[3]);
 		}
 	}
 
@@ -1446,6 +1576,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_NOTHROW(is_incl(smaller, bigger, alph));
 	}
 
 	SECTION("wrong parameters 2")
@@ -1455,8 +1586,163 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
 			Catch::Contains("received an unknown value"));
+        CHECK_NOTHROW(is_incl(smaller, bigger, alph));
 	}
 } // }}}
+
+TEST_CASE("Mata::Nfa::equivalence_check")
+{
+    Nfa smaller(10);
+    Nfa bigger(16);
+    Word cex;
+    StringDict params;
+
+    const std::unordered_set<std::string> ALGORITHMS = {
+            "naive",
+            "antichains",
+    };
+
+    SECTION("{} == {}, empty alphabet")
+    {
+        EnumAlphabet alph{};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(equivalence_check(smaller, bigger, alph, params));
+            CHECK(equivalence_check(smaller, bigger, params));
+            CHECK(equivalence_check(smaller, bigger));
+
+            CHECK(equivalence_check(bigger, smaller , alph, params));
+            CHECK(equivalence_check(bigger, smaller, params));
+            CHECK(equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("{} == {epsilon}, empty alphabet")
+    {
+        EnumAlphabet alph = { };
+        bigger.initialstates = {1};
+        bigger.finalstates = {1};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("{epsilon} == {epsilon}, empty alphabet")
+    {
+        EnumAlphabet alph = { };
+        smaller.initialstates = {1};
+        smaller.finalstates = {1};
+        bigger.initialstates = {11};
+        bigger.finalstates = {11};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(equivalence_check(smaller, bigger, alph, params));
+            CHECK(equivalence_check(smaller, bigger, params));
+            CHECK(equivalence_check(smaller, bigger));
+
+            CHECK(equivalence_check(bigger, smaller , alph, params));
+            CHECK(equivalence_check(bigger, smaller, params));
+            CHECK(equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("a* + b* == (a+b)*")
+    {
+        EnumAlphabet alph = {"a", "b"};
+        smaller.initialstates = {1,2};
+        smaller.finalstates = {1,2};
+        smaller.add_trans(1, alph["a"], 1);
+        smaller.add_trans(2, alph["b"], 2);
+
+        bigger.initialstates = {11};
+        bigger.finalstates = {11};
+        bigger.add_trans(11, alph["a"], 11);
+        bigger.add_trans(11, alph["b"], 11);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
+    {
+        EnumAlphabet alph = {"a", "b"};
+        smaller.initialstates = {1};
+        smaller.finalstates = {1};
+        smaller.add_trans(1, alph["a"], 1);
+        smaller.add_trans(1, alph["b"], 1);
+
+        bigger.initialstates = {11};
+        bigger.finalstates = {11, 12, 13, 14, 15};
+
+        bigger.add_trans(11, alph["a"], 12);
+        bigger.add_trans(11, alph["b"], 12);
+        bigger.add_trans(12, alph["a"], 13);
+        bigger.add_trans(12, alph["b"], 13);
+
+        bigger.add_trans(13, alph["a"], 14);
+        bigger.add_trans(14, alph["a"], 14);
+
+        bigger.add_trans(13, alph["b"], 15);
+        bigger.add_trans(15, alph["b"], 15);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("wrong parameters 1")
+    {
+        EnumAlphabet alph = { };
+
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, alph, params),
+                          Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
+                          Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_NOTHROW(equivalence_check(smaller, bigger));
+    }
+
+    SECTION("wrong parameters 2")
+    {
+        EnumAlphabet alph = { };
+        params["algo"] = "foo";
+
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, alph, params),
+                          Catch::Contains("received an unknown value"));
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
+                          Catch::Contains("received an unknown value"));
+        CHECK_NOTHROW(equivalence_check(smaller, bigger));
+    }
+}
 
 TEST_CASE("Mata::Nfa::revert()")
 { // {{{
@@ -2253,3 +2539,275 @@ TEST_CASE("Mata::Nfa::trim()")
     }
 }
 
+TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
+{
+    Nfa aut{};
+
+    SECTION("Empty automaton")
+    {
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("No transitions automaton")
+    {
+        aut.increase_size(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with no transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        aut.add_trans(0, 'a', 0);
+        CHECK(!aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        aut.add_trans(0, 'a', 1);
+        CHECK(!aut.trans_empty());
+    }
+}
+
+TEST_CASE("Mata::Nfa::concatenate()")
+{
+    Nfa lhs{};
+    Nfa rhs{};
+    Nfa result{};
+
+    SECTION("Empty automaton")
+    {
+        lhs.increase_size(1);
+        rhs.increase_size(1);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Empty language")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.finalstates.empty());
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.trans_empty());
+    }
+
+    SECTION("Empty language rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.finalstates.empty());
+        CHECK(result.get_num_of_states() == 1);
+        CHECK(result.trans_empty());
+    }
+
+    SECTION("Single state automata accepting an empty string")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        rhs.make_final(0);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(0));
+        CHECK(result.get_num_of_states() == 1);
+        CHECK(result.trans_empty());
+    }
+
+    SECTION("Empty language rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(1));
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.trans_empty());
+    }
+
+    SECTION("Simple two state rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(1));
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.has_trans(0, 'a', 1));
+    }
+
+    SECTION("Simple two state automata")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(2));
+        CHECK(result.get_num_of_states() == 3);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(1, 'a', 2));
+
+        auto shortest_words{result.get_shortest_words()};
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Simple two state automata with higher state num for non-final state")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(4);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+        rhs.add_trans(0, 'c', 3);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(2));
+        CHECK(result.get_num_of_states() == 5);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(1, 'a', 2));
+
+        auto shortest_words{result.get_shortest_words()};
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Simple two state lhs automaton")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        rhs.make_final(0);
+        rhs.add_trans(0, 'a', 0);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(1));
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(1, 'a', 1));
+
+        auto shortest_words{result.get_shortest_words()};
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
+    }
+
+    SECTION("Automaton A concatenate automaton B")
+    {
+        lhs.increase_size_for_state(10);
+        FILL_WITH_AUT_A(lhs);
+        rhs.increase_size_for_state(14);
+        FILL_WITH_AUT_B(rhs);
+
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.initialstates.size() == 2);
+        CHECK(result.has_initial(1));
+        CHECK(result.has_initial(3));
+
+        CHECK(result.get_num_of_states() == 25);
+
+        auto shortest_words{result.get_shortest_words()};
+        CHECK(shortest_words.size() == 4);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Automaton B concatenate automaton A")
+    {
+        lhs.increase_size_for_state(10);
+        FILL_WITH_AUT_A(lhs);
+        rhs.increase_size_for_state(14);
+        FILL_WITH_AUT_B(rhs);
+
+        result = concatenate(rhs, lhs);
+
+        CHECK(result.get_num_of_states() == 24);
+
+        CHECK(result.initialstates.size() == 1);
+        // Final state 2 in automaton B will not stay in the result automaton.
+        // Hence, initial state 4 in aut B will be initial state 3 in the result.
+        CHECK(result.has_initial(3));
+
+        auto shortest_words{result.get_shortest_words()};
+        CHECK(shortest_words.size() == 4);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+    }
+}
