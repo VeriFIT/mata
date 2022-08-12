@@ -1,10 +1,11 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
-
 #include <unordered_set>
 
+#include "../3rdparty/catch.hpp"
+
 #include <mata/nfa.hh>
+
 using namespace Mata::Nfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
@@ -349,8 +350,8 @@ TEST_CASE("Mata::Nfa::intersection()")
 		REQUIRE(res.has_initial(prod_map[{3, 4}]));
 		REQUIRE(res.has_final(prod_map[{5, 2}]));
 
-        for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
-        std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
+        //for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
+        //std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
@@ -1498,7 +1499,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.has_initial(2));
 		REQUIRE(result.has_final(1));
 		REQUIRE(result.has_trans(2, 'a', 1));
-		REQUIRE(result.trans_size() == aut.trans_size());
+		REQUIRE(result.get_num_of_states() == aut.get_num_of_states());
 	}
 
 	SECTION("bigger automaton")
@@ -1854,7 +1855,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         Word word{};
         word.push_back('b');
         word.push_back('a');
-        std::set<Word> expected{word};
+        WordSet expected{word};
         Word word2{};
         word2.push_back('a');
         word2.push_back('a');
@@ -1876,7 +1877,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
             word.push_back('b');
             word.push_back('b');
             word.push_back('a');
-            expected = std::set<Word>{word};
+            expected = WordSet{word};
             word2.clear();
             word2.push_back('b');
             word2.push_back('a');
@@ -1890,6 +1891,16 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     SECTION("Empty automaton")
     {
         REQUIRE(aut.get_shortest_words().empty());
+    }
+
+    SECTION("One-state automaton accepting an empty language")
+    {
+        aut.make_initial(0);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(1);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(0);
+        REQUIRE(aut.get_shortest_words() == WordSet{Word{}});
     }
 
     SECTION("Automaton A")
@@ -1923,4 +1934,322 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
     }
+
+    SECTION("Require FIFO queue")
+    {
+        aut.initialstates = { 1 };
+        aut.finalstates = { 4 };
+        aut.add_trans(1, 'a', 5);
+        aut.add_trans(5, 'c', 4);
+        aut.add_trans(1, 'a', 2);
+        aut.add_trans(2, 'b', 3);
+        aut.add_trans(3, 'b', 4);
+
+        Word word{};
+        word.push_back('a');
+        word.push_back('c');
+        std::set<Word> expected{word};
+
+        // LIFO queue would return as shortest words string "abb", which would be incorrect.
+        REQUIRE(aut.get_shortest_words() == expected);
+    }
 }
+
+TEST_CASE("Mata::Nfa::remove_final()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(aut.has_final(12));
+        aut.remove_final(12);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(!aut.has_final(12));
+    }
+}
+
+TEST_CASE("Mata::Nfa::remove_trans()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        aut.add_trans(1, 3, 4);
+        aut.add_trans(1, 3, 5);
+
+        SECTION("Simple remove")
+        {
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(aut.has_trans(1, 3, 5));
+            aut.remove_trans(1, 3, 5);
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(!aut.has_trans(1, 3, 5));
+        }
+
+        SECTION("Remove missing transition")
+        {
+            REQUIRE_THROWS_AS(aut.remove_trans(1, 1, 5), std::invalid_argument);
+        }
+
+        SECTION("Remove the last state_to from states_to")
+        {
+            REQUIRE(aut.has_trans(6, 'a', 2));
+            aut.remove_trans(6, 'a', 2);
+            REQUIRE(!aut.has_trans(6, 'a', 2));
+            REQUIRE(aut.transitionrelation[6].empty());
+
+            REQUIRE(aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+            aut.remove_trans(4, 'a', 6);
+            REQUIRE(!aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+
+            aut.remove_trans(4, 'a', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 2);
+
+            aut.remove_trans(4, 'c', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(!aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 1);
+        }
+    }
+}
+
+TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
+{
+    Nfa aut{};
+
+    SECTION("Add new states within the limit")
+    {
+        aut.increase_size(20);
+        aut.make_initial(0);
+        aut.make_initial(1);
+        aut.make_initial(2);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(2));
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        REQUIRE(aut.get_transitions_from_state(2).empty());
+    }
+
+    SECTION("Add new states over the limit")
+    {
+        aut.increase_size(2);
+        REQUIRE_NOTHROW(aut.make_initial(0));
+        REQUIRE_NOTHROW(aut.make_initial(1));
+        REQUIRE_THROWS_AS(aut.make_initial(2), std::runtime_error);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new states without specifying the number of states")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(0), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new initial without specifying the number of states with over +1 number")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(25), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+}
+
+
+TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
+{
+    Nfa aut('q' + 1);
+    TransSequence expected{};
+
+    aut.add_trans(1, 2, 3);
+    expected.push_back(Trans{1, 2, 3});
+    aut.add_trans(1, 3, 4);
+    expected.push_back(Trans{1, 3, 4});
+    aut.add_trans(2, 3, 4);
+    expected.push_back(Trans{2, 3, 4});
+
+
+    REQUIRE(aut.get_trans_as_sequence() == expected);
+}
+
+TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
+{
+    Nfa aut('q' + 1);
+    constexpr Symbol epsilon{'c'};
+
+    SECTION("Automaton A")
+    {
+        FILL_WITH_AUT_A(aut);
+        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
+        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Trans>{
+                {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
+       }});
+    }
+
+    SECTION("Small automaton with depths")
+    {
+        aut.make_initial(1);
+        aut.make_final(8);
+        aut.add_trans(1, epsilon, 2);
+        aut.add_trans(2, 'a', 3);
+        aut.add_trans(2, 'b', 4);
+        aut.add_trans(3, 'b', 6);
+        aut.add_trans(4, 'a', 6);
+        aut.add_trans(6, epsilon, 7);
+        aut.add_trans(7, epsilon, 8);
+
+        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
+
+        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
+                {0, TransSequence{{1, epsilon, 2}}},
+                {1, TransSequence{{6, epsilon, 7}}},
+                {2, TransSequence{{7, epsilon, 8}}},
+        });
+    }
+
+}
+
+TEST_CASE("Mata::Nfa::remove_epsilon()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_epsilon('c');
+    REQUIRE(aut.has_trans(10, 'a', 7));
+    REQUIRE(aut.has_trans(10, 'b', 7));
+    REQUIRE(!aut.has_trans(10, 'c', 7));
+    REQUIRE(aut.has_trans(7, 'a', 5));
+    REQUIRE(aut.has_trans(7, 'a', 3));
+    REQUIRE(!aut.has_trans(7, 'c', 3));
+    REQUIRE(aut.has_trans(7, 'b', 9));
+    REQUIRE(aut.has_trans(7, 'a', 7));
+    REQUIRE(aut.has_trans(5, 'a', 5));
+    REQUIRE(!aut.has_trans(5, 'c', 9));
+    REQUIRE(aut.has_trans(5, 'a', 9));
+}
+
+TEST_CASE("Mata::Nfa::get_num_of_trans()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    REQUIRE(aut.get_num_of_trans() == 15);
+}
+
+TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()")
+{
+    Nfa aut(100);
+    aut.make_initial(1);
+    aut.make_final(11);
+    aut.add_trans(1, 'a', 2);
+    aut.add_trans(1, 'b', 3);
+    aut.add_trans(3, 'c', 4);
+    aut.add_trans(4, 'a', 7);
+    aut.add_trans(7, 'b', 8);
+    aut.add_trans(8, 'a', 7);
+    aut.add_trans(8, 'b', 4);
+    aut.add_trans(4, 'c', 5);
+    aut.add_trans(5, 'a', 6);
+    aut.add_trans(5, 'b', 6);
+    aut.add_trans(6, 'c', 10);
+    aut.add_trans(9, 'a', 11);
+    aut.add_trans(10, 'b', 11);
+
+    auto segmentation{SegNfa::Segmentation{aut, 'c'}};
+    auto segments{ segmentation.get_segments() };
+    REQUIRE(segments.size() == 4);
+
+    REQUIRE(segments[0].has_initial(0));
+    REQUIRE(segments[0].has_final(1));
+    REQUIRE(segments[0].has_trans(0, 'b', 1));
+    REQUIRE(!segments[0].has_trans(0, 'a', 2));
+
+    REQUIRE(segments[1].has_initial(0));
+    REQUIRE(segments[1].has_final(0));
+    REQUIRE(segments[1].has_trans(0, 'a', 1));
+    REQUIRE(!segments[1].has_trans(0, 'a', 2));
+    REQUIRE(!segments[1].has_trans(0, 'c', 3));
+    REQUIRE(segments[1].has_trans(1, 'b', 2));
+    REQUIRE(segments[1].has_trans(2, 'b', 0));
+    REQUIRE(segments[1].has_trans(2, 'a', 1));
+
+    REQUIRE(segments[2].has_initial(0));
+    REQUIRE(segments[2].has_final(1));
+    REQUIRE(segments[2].has_trans(0, 'a', 1));
+    REQUIRE(segments[2].has_trans(0, 'b', 1));
+
+    REQUIRE(segments[3].has_initial(0));
+    REQUIRE(segments[3].has_final(1));
+    REQUIRE(segments[3].has_trans(0, 'b', 1));
+}
+
+TEST_CASE("Mata::Nfa::get_digraph()")
+{
+    Nfa aut(100);
+    Symbol abstract_symbol{'x'};
+    FILL_WITH_AUT_A(aut);
+
+    Nfa digraph{ aut.get_digraph() };
+
+    REQUIRE(digraph.get_num_of_states() == aut.get_num_of_states());
+    REQUIRE(digraph.get_num_of_trans() == 12);
+    REQUIRE(digraph.has_trans(1, abstract_symbol, 10));
+    REQUIRE(digraph.has_trans(10, abstract_symbol, 7));
+    REQUIRE(!digraph.has_trans(10, 'a', 7));
+    REQUIRE(!digraph.has_trans(10, 'b', 7));
+    REQUIRE(!digraph.has_trans(10, 'c', 7));
+}
+
+TEST_CASE("Mata::Nfa::get_reachable_states()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(3, 'b', 9);
+    aut.remove_trans(5, 'c', 9);
+    aut.remove_trans(1, 'a', 10);
+
+    auto reachable{aut.get_reachable_states()};
+    CHECK(reachable.find(0) == reachable.end());
+    CHECK(reachable.find(1) != reachable.end());
+    CHECK(reachable.find(2) == reachable.end());
+    CHECK(reachable.find(3) != reachable.end());
+    CHECK(reachable.find(4) == reachable.end());
+    CHECK(reachable.find(5) != reachable.end());
+    CHECK(reachable.find(6) == reachable.end());
+    CHECK(reachable.find(7) != reachable.end());
+    CHECK(reachable.find(8) == reachable.end());
+    CHECK(reachable.find(9) == reachable.end());
+    CHECK(reachable.find(10) == reachable.end());
+}
+
+TEST_CASE("Mata::Nfa::trim()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    Nfa old_aut{aut};
+
+    aut.trim();
+    REQUIRE(aut.initialstates.size() == old_aut.initialstates.size());
+    REQUIRE(aut.finalstates.size() == old_aut.finalstates.size());
+    for (const Word& word: old_aut.get_shortest_words())
+    {
+        REQUIRE(is_in_lang(aut, word));
+    }
+}
+

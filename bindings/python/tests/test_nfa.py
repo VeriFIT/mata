@@ -65,7 +65,7 @@ def test_transitions():
 
     # Test adding transition
     assert lhs.trans_empty()
-    assert lhs.trans_size() == 3
+    assert lhs.get_num_of_trans() == 0
     lhs.add_trans(t1)
     assert not lhs.trans_empty()
     assert lhs.has_trans(t1)
@@ -301,6 +301,7 @@ def test_revert():
     assert not mata.Nfa.is_in_lang(rhs, [0, 1])
     assert mata.Nfa.is_in_lang(rhs, [1, 0])
 
+
 def test_removing_epsilon():
     lhs = mata.Nfa(3)
     lhs.add_initial_state(0)
@@ -319,11 +320,11 @@ def test_minimize(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
     minimized = mata.Nfa.minimize(fa_one_divisible_by_two)
-    assert minimized.trans_size() <= fa_one_divisible_by_two.trans_size()
+    assert minimized.get_num_of_trans() <= fa_one_divisible_by_two.get_num_of_trans()
     minimized = mata.Nfa.minimize(fa_one_divisible_by_four)
-    assert minimized.trans_size() <= fa_one_divisible_by_four.trans_size()
+    assert minimized.get_num_of_trans() <= fa_one_divisible_by_four.get_num_of_trans()
     minimized = mata.Nfa.minimize(fa_one_divisible_by_eight)
-    assert minimized.trans_size() <= fa_one_divisible_by_eight.trans_size()
+    assert minimized.get_num_of_trans() <= fa_one_divisible_by_eight.get_num_of_trans()
 
     lhs = mata.Nfa(11)
     lhs.add_initial_state(0)
@@ -332,10 +333,11 @@ def test_minimize(
         lhs.add_final_state(i)
     lhs.add_trans_raw(10, 0, 10)
     lhs.add_final_state(10)
-    assert lhs.trans_size() == 11
+    assert lhs.get_num_of_trans() == 11
 
     minimized = mata.Nfa.minimize(lhs)
-    assert minimized.trans_size() == 1
+    assert minimized.get_num_of_trans() == 1
+
 
 def test_to_dot():
     lhs = mata.Nfa()

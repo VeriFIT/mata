@@ -25,6 +25,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 // MATA headers
@@ -45,7 +46,6 @@ using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
-using StateToPostMap = std::unordered_map<State, PostSymb>; ///< Transitions.
 
 using ProductMap = std::unordered_map<std::pair<State, State>, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
@@ -55,7 +55,13 @@ using WordSet = std::set<Word>;         ///< A set of words.
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
-using StateToStringMap = std::unordered_map<State, std::string>;
+
+template<typename Target>
+using StateMap = std::unordered_map<State, Target>;
+
+using StateToStringMap = StateMap<std::string>;
+using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
+
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
@@ -69,7 +75,7 @@ static const struct Limits {
     Symbol minSymbol = 0;
 } limits;
 
-/// A transition
+/// A transition.
 struct Trans
 {
 	State src;
@@ -85,6 +91,8 @@ struct Trans
 	} // operator== }}}
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
+
+using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 // ALPHABET {{{
 class Alphabet
@@ -123,7 +131,7 @@ private:
 
 public:
 
-	OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+	explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
 		symbol_map(str_sym_map), cnt_symbol(init_symbol)
 	{
 		assert(nullptr != symbol_map);
@@ -157,7 +165,7 @@ public:
 			((str[0] == '\'' && str[2] == '\'') ||
 			(str[0] == '\"' && str[2] == '\"')
 			 ))
-		{ // direct occurence of a character
+		{ // direct occurrence of a character
 			return str[1];
 		}
 
@@ -222,7 +230,9 @@ public:
 // }}}
 
 
-struct Nfa;
+struct Nfa; ///< A non-deterministic finite automaton.
+
+using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -237,16 +247,17 @@ struct TransSymbolStates {
     StateSet states_to;
 
     TransSymbolStates() = delete;
-    TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition) {}
+    explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
     TransSymbolStates(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
-    TransSymbolStates(Symbol symbolOnTransition, StateSet states_to) :
-            symbol(symbolOnTransition), states_to(std::move(states_to)) {}
+    TransSymbolStates(Symbol symbolOnTransition, const StateSet& states_to) :
+            symbol(symbolOnTransition), states_to(states_to) {}
 
     inline bool operator<(const TransSymbolStates& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
     inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
     inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
+    inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
 };
 
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
@@ -257,7 +268,7 @@ struct Nfa
     /**
      * @brief For state q, transitionrelation[q] keeps the list of transitions ordered by symbols.
      *
-     * The set of states of this automaton are the numbers from 0 to
+     * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      * @todo maybe have this as its own class
      */
@@ -268,11 +279,19 @@ struct Nfa
     //TODO we probably need the number of states, int, as a member, for when we want to remove states
     // alphabet?
 public:
-    Nfa () : transitionrelation(), initialstates(), finalstates() {}
+    Nfa() : transitionrelation(), initialstates(), finalstates() {}
+
     /**
-     * @brief Construct a new Explicit NFA with num_of_states states
+     * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
+    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+
+    /**
+     * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
+     */
+    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -282,36 +301,131 @@ public:
         transitionrelation.resize(size);
     }
 
-    void make_initial(State state) {
+    /**
+     * Increase size to include @p state.
+     * @param state[in] The new state to be included.
+     */
+    void increase_size_for_state(const State state)
+    {
+        increase_size(state + 1);
+    }
+
+    /**
+     * Clear initial states set.
+     */
+    void clear_initial() { initialstates.clear(); }
+
+    /**
+     * Make @p state initial.
+     * @param state State to be added to initial states.
+     */
+    void make_initial(State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
         }
 
         this->initialstates.insert(state);
     }
+
+    /**
+     * @brief Reset initial states set to contain only @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param state State to be set as the new initial state.
+     */
+    void reset_initial(State state)
+    {
+        clear_initial();
+        make_initial(state);
+    }
+
+    /**
+     * Make @p vec of states initial states.
+     * @param vec Vector of states to be added to initial states.
+     */
     void make_initial(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_initial(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Reset initial states set to contain only @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param vec Vector of states to be set as new initial states.
+     */
+    void reset_initial(const std::vector<State>& vec)
+    {
+        clear_initial();
+        for (const State& st: vec) { this->make_initial(st); }
+    }
+
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
+
     void remove_initial(State state)
     {
         assert(has_initial(state));
         this->initialstates.remove(state);
     }
 
-    void make_final(State state) {
+    /**
+     * Clear final states set.
+     */
+    void clear_final() { finalstates.clear(); }
+
+    /**
+     * Make @p state final.
+     * @param state[in] State to be added to final states.
+     */
+    void make_final(const State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state final because it is not in automaton");
         }
 
         this->finalstates.insert(state);
     }
+
+    /**
+     * @brief Reset final states set to contain only @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param state[in] State to be set as the new final state.
+     */
+    void reset_final(const State state)
+    {
+        clear_final();
+        make_final(state);
+    }
+
+    /**
+     * Make @p vec of states final states.
+     * @param vec[in] Vector of states to be added to final states.
+     */
     void make_final(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_final(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Reset final states set to contain only @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param vec[in] Vector of states to be set as new final states.
+     */
+    void reset_final(const std::vector<State>& vec)
+    {
+        clear_final();
+        for (const State& st: vec) { this->make_final(st); }
+    }
+
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
+
     void remove_final(State state)
     {
         assert(has_final(state));
@@ -319,18 +433,53 @@ public:
     }
 
     /**
-     * @brief Returns a newly created state.
+     * Add a new state to the automaton.
+     * @return The newly created state.
      */
     State add_new_state();
+
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
+
+    /**
+     * @brief Get set of reachable states.
+     *
+     * Reachable states are states accessible from any initial state.
+     * @return Set of reachable states.
+     */
+    StateSet get_reachable_states() const;
+
+    /**
+     * @brief Get set of terminating states.
+     *
+     * Terminating states are states leading to any final state.
+     * @return Set of terminating states.
+     */
+    StateSet get_terminating_states() const;
+
+    /**
+     * @brief Get a set of useful states.
+     *
+     * Useful states are reachable and terminating states.
+     * @return Set of useful states.
+     */
+    StateSet get_useful_states();
+
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     */
+    void trim();
 
     const TransitionList& get_transitions_from_state(State state_from) const
     {
-        assert(!transitionrelation.empty());
+        assert(transitionrelation.size() >= state_from + 1);
         return transitionrelation[state_from];
     }
 
-    /* Lukas: the above is nice. The good thing is that acces to [q] is constant,
+    /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
      * Returning a transition of q with the symbol a means to search for it in the list,
@@ -344,10 +493,33 @@ public:
      * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
      */
     void add_trans(State src, Symbol symb, State tgt);
+
     void add_trans(const Trans& trans)
     {
         add_trans(trans.src, trans.symb, trans.tgt);
     }
+
+    /**
+     * Remove transition.
+     * @param src Source state of the transition to be removed.
+     * @param symb Transition symbol of the transition to be removed.
+     * @param tgt Target state of the transition to be removed.
+     */
+    void remove_trans(State src, Symbol symb, State tgt);
+
+    /**
+     * Remove transition.
+     * @param trans Transition to be removed.
+     */
+    void remove_trans(const Trans& trans)
+    {
+        remove_trans(trans.src, trans.symb, trans.tgt);
+    }
+
+    /**
+     * Remove epsilon transitions from the automaton.
+     */
+    void remove_epsilon(Symbol epsilon);
 
     bool has_trans(Trans trans) const
     {
@@ -373,13 +545,25 @@ public:
         return this->has_trans({src, symb, tgt});
     } // }}}
 
-    bool trans_empty() const { return this->transitionrelation.empty();} /// no transitions
-    size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
+    bool trans_empty() const { return this->transitionrelation.empty();} ///< No transitions.
+    size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
     bool nothing_in_trans() const
     {
         return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),
                     [](const auto& trans) {return trans.size() == 0;});
     }
+
+    /**
+     * Get transitions as a sequence of @c Trans.
+     * @return Sequence of transitions as @c Trans.
+     */
+    TransSequence get_trans_as_sequence();
+
+    /**
+     * Unify transitions to create a directed graph with at most a single transition between two states.
+     * @return An automaton representing a directed graph.
+     */
+    Nfa get_digraph();
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
@@ -461,7 +645,30 @@ public:
 
         return transitionrelation[state];
     } // operator[] }}}
-};
+
+private:
+    using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+
+    /**
+     * Compute reachability of states.
+     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+     */
+    StateBoolArray compute_reachability() const;
+
+    /**
+     * Add transitions to the trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param trimmed_aut The new trimmed automaton.
+     */
+    void add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut);
+
+    /**
+     * Get a new trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @return Newly created trimmed automaton.
+     */
+    Nfa create_trimmed_aut(const StateMap<State>& original_to_new_states_map);
+}; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
 struct NfaWrapper
@@ -618,7 +825,7 @@ void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
 
 inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
 { // {{{
-    Nfa result;
+    Nfa result{};
     remove_epsilon(&result, aut, epsilon);
     return result;
 } // }}}
@@ -674,7 +881,7 @@ inline Word encode_word(
 	const std::vector<std::string>&  input)
 { // {{{
 	Word result;
-	for (auto str : input) { result.push_back(symbol_map.at(str)); }
+	for (const auto& str : input) { result.push_back(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
 
@@ -685,6 +892,135 @@ std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 void init();
 
 /**
+ * Operations on segment automata.
+ */
+namespace SegNfa
+{
+/// Segment automaton.
+/// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
+/// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+using SegNfa = Nfa;
+
+/**
+ * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
+ */
+class Segmentation
+{
+public:
+    using EpsilonDepth = unsigned; ///< Depth of ε-transitions.
+    /// Dictionary of lists of ε-transitions grouped by their depth.
+    /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
+    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
+
+    /**
+     * Prepare automaton @p aut for segmentation.
+     * @param[in] aut Segment automaton to make segments for.
+     * @param[in] epsilon Symbol to execute segmentation for.
+     */
+    Segmentation(const SegNfa& aut, const Symbol epsilon) : epsilon(epsilon), automaton(aut)
+    {
+        compute_epsilon_depths(); // Map depths to epsilon transitions.
+    }
+
+    /**
+     * Get segmentation depths for ε-transitions.
+     * @return Map of depths to lists of ε-transitions.
+     */
+    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+
+    /**
+     * Get segment automata.
+     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
+     * to the right (final states of segment automaton).
+     */
+    const AutSequence& get_segments();
+
+private:
+    const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
+    /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
+    const SegNfa& automaton{};
+    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
+    AutSequence segments{}; ///< Segments for @p automaton.
+
+    /**
+     * Pair of state and its depth.
+     */
+    struct StateDepthPair
+    {
+        State state; ///< State with a depth.
+        EpsilonDepth depth; ///< Depth of a state.
+    };
+
+    /**
+     * Compute epsilon depths with their transitions.
+     */
+    void compute_epsilon_depths();
+
+    /**
+     * Split segment @c automaton into @c segments.
+     */
+    void split_aut_into_segments();
+
+    /**
+     * Propagate changes to the current segment automaton to the remaining segments with higher depths.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void propagate_to_other_segments(size_t current_depth, const Trans& transition);
+
+    /**
+     * Update current segment automaton.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void update_current_segment(size_t current_depth, const Trans& transition);
+
+    /**
+     * Trim created segments of redundant states and epsilon transitions.
+     */
+    void trim_segments();
+
+    /**
+     * Initialize map of visited states.
+     * @return Map of visited states.
+     */
+    StateMap<bool> initialize_visited_map() const;
+
+    /**
+     * Initialize worklist of states with depths to process.
+     * @return Queue of state and its depth pairs.
+     */
+    std::deque<StateDepthPair> initialize_worklist() const;
+
+    /**
+     * Process pair of state and its depth.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void process_state_depth_pair(StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Add states with non-epsilon transitions to the @p worklist.
+     * @param state_transitions[in] Transitions from current state.
+     * @param depth[in] Current depth.
+     * @param worklist[out] Worklist of state and depth pairs to process.
+     */
+    static void add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+                                            std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Process epsilon transitions for the current state.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[in] state_transitions Transitions from current state.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
+                                    std::deque<StateDepthPair>& worklist);
+}; // Segmentation
+
+} // SegNfa
+
+/**
  * Class mapping states to the shortest words accepted by languages of the states.
  */
 class ShortestWordsMap
@@ -692,6 +1028,7 @@ class ShortestWordsMap
 public:
     /**
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+     * @param aut Automaton to compute shortest words for.
      */
     explicit ShortestWordsMap(const Nfa& aut)
         : reversed_automaton(revert(aut))
@@ -713,9 +1050,9 @@ private:
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, WordSet>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
+    StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> lifo_queue{}; ///< LIFO queue for states to process.
+    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
     const Nfa reversed_automaton{}; ///< Reversed input automaton.
 
     /**

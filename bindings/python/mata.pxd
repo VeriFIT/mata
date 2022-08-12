@@ -139,7 +139,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         bool trans_empty()
         bool nothing_in_trans()
         bool is_state(State)
-        size_t trans_size()
+        size_t get_num_of_trans()
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()

@@ -69,6 +69,7 @@ add_executable(tests
 	tests-main.cc
 	tests-parser.cc
 	tests-re2parser.cc
+	tests-ord-vector.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	rra/tests-rrt.cc
