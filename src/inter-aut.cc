@@ -35,7 +35,7 @@ namespace
         }
     }
 
-    Mata::FormulaGraph parse_transition(const std::vector<std::string> &tokens)
+    Mata::FormulaGraph parse_transition(Mata::InterAutomaton& aut, const std::vector<std::string> &tokens)
     {
     }
 
@@ -73,7 +73,7 @@ namespace
         }
 
         for (const auto& trans : section.body) {
-            aut.transitions.push_back(parse_transition(trans));
+            aut.transitions.push_back(parse_transition(aut,trans));
         }
 
         return aut;
