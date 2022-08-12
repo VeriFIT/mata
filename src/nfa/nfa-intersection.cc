@@ -53,6 +53,27 @@ public:
     }
 
     /**
+     * Compute classic intersection of NFAs @p lhs and @p rhs.
+     * @param lhs First NFA to compute intersection for.
+     * @param rhs Second NFA to compute intersecion for.
+     */
+    static Intersection compute(const Nfa& lhs, const Nfa& rhs)
+    {
+        return {lhs, rhs};
+    }
+
+    /**
+     * Compute epsilon transitions preserving intersection of NFAs @p lhs and @p rhs.
+     * @param lhs First NFA to compute intersection for.
+     * @param rhs Second NFA to compute intersection for.
+     * @param epsilon Symbol to handle as an epsilon symbol.
+     */
+    static Intersection compute(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon)
+    {
+        return {lhs, rhs, epsilon};
+    }
+
+    /**
      * Get the final product NFA of the intersection.
      * @return Product NFA of the intersection.
      */
