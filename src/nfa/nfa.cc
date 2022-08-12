@@ -276,7 +276,7 @@ void Nfa::trim()
         ++new_state_num;
     }
 
-    Nfa trimmed_aut{ initialize_trimmed_aut(original_to_new_states_map) };
+    Nfa trimmed_aut{ create_trimmed_aut(original_to_new_states_map) };
 
     add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
 
@@ -301,7 +301,7 @@ StateSet Nfa::get_useful_states()
     return useful_states;
 }
 
-Nfa Nfa::initialize_trimmed_aut(const StateMap<State>& original_to_new_states_map)
+Nfa Nfa::create_trimmed_aut(const StateMap<State>& original_to_new_states_map)
 {
     Nfa trimmed_aut{ original_to_new_states_map.size() };
 
@@ -1691,7 +1691,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     assert(transition.symb == epsilon);
     assert(segments[current_depth].has_trans(transition));
 
-    segments[current_depth].set_final(transition.src);
+    segments[current_depth].reset_final(transition.src);
     segments[current_depth].remove_trans(transition);
 }
 
@@ -1703,7 +1703,7 @@ void SegNfa::Segmentation::propagate_to_other_segments(const size_t current_dept
          ++other_segment_depth)
     {
         segments[other_segment_depth].remove_trans(transition);
-        segments[other_segment_depth].set_initial(transition.tgt);
+        segments[other_segment_depth].reset_initial(transition.tgt);
     }
 }
 

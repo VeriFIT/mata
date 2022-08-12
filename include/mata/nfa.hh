@@ -329,13 +329,13 @@ public:
     }
 
     /**
-     * @brief Set initial states set with @p state.
+     * @brief Reset initial states set to contain only @p state.
      *
      * Overwrite the previous initial states set.
      *
      * @param state State to be set as the new initial state.
      */
-    void set_initial(State state)
+    void reset_initial(State state)
     {
         clear_initial();
         make_initial(state);
@@ -351,13 +351,13 @@ public:
     }
 
     /**
-     * @brief Set initial states set with @p state.
+     * @brief Reset initial states set to contain only @p state.
      *
      * Overwrite the previous initial states set.
      *
      * @param vec Vector of states to be set as new initial states.
      */
-    void set_initial(const std::vector<State>& vec)
+    void reset_initial(const std::vector<State>& vec)
     {
         clear_initial();
         for (const State& st: vec) { this->make_initial(st); }
@@ -390,13 +390,13 @@ public:
     }
 
     /**
-     * @brief Set final states set with @p state.
+     * @brief Reset final states set to contain only @p state.
      *
      * Overwrite the previous final states set.
      *
      * @param state[in] State to be set as the new final state.
      */
-    void set_final(const State state)
+    void reset_final(const State state)
     {
         clear_final();
         make_final(state);
@@ -412,13 +412,13 @@ public:
     }
 
     /**
-     * @brief Set final states set with @p state.
+     * @brief Reset final states set to contain only @p state.
      *
      * Overwrite the previous final states set.
      *
      * @param vec[in] Vector of states to be set as new final states.
      */
-    void set_final(const std::vector<State>& vec)
+    void reset_final(const std::vector<State>& vec)
     {
         clear_final();
         for (const State& st: vec) { this->make_final(st); }
@@ -663,11 +663,11 @@ private:
     void add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut);
 
     /**
-     * Get new trimmed automaton.
+     * Get a new trimmed automaton.
      * @param original_to_new_states_map Map of old states to new trimmed automaton states.
-     * @return Newly initialized trimmed automaton.
+     * @return Newly created trimmed automaton.
      */
-    Nfa initialize_trimmed_aut(const StateMap<State>& original_to_new_states_map);
+    Nfa create_trimmed_aut(const StateMap<State>& original_to_new_states_map);
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
