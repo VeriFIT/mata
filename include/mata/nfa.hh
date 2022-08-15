@@ -275,8 +275,6 @@ struct Nfa
     StateSet initialstates = {};
     StateSet finalstates = {};
 
-    //TODO we probably need the number of states, int, as a member, for when we want to remove states
-    // alphabet?
 public:
     Nfa() : transitionrelation(), initialstates(), finalstates() {}
 
@@ -482,8 +480,6 @@ public:
 
     /**
      * @brief Adds a transition from stateFrom trough symbol to stateTo.
-     *
-     * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
      */
     void add_trans(State src, Symbol symb, State tgt);
 
@@ -626,7 +622,6 @@ public:
 
         std::pair<Symbol, const StateSet> next();
     };
-
 
     struct const_iterator
     { // {{{
@@ -1105,7 +1100,6 @@ private:
     void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
                                     std::deque<StateDepthPair>& worklist);
 }; // Segmentation
-
 } // SegNfa
 
 /**
@@ -1124,14 +1118,21 @@ public:
         insert_initial_lengths();
 
         compute();
-   }
+    }
 
     /**
      * Gets shortest words for the given @p states.
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for_states(const StateSet& states) const;
+    WordSet get_shortest_words_for(const StateSet& states) const;
+
+    /**
+     * Gets shortest words for the given @p state.
+     * @param[in] state State to map shortest words for.
+     * @return Set of shortest words.
+     */
+    WordSet get_shortest_words_for(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.

@@ -46,7 +46,7 @@ namespace {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
     }
 
-    void uniont_to_left(StateSet &receivingSet, const StateSet &addedSet) {
+    void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
         receivingSet.insert(addedSet);
     }
 
@@ -185,7 +185,7 @@ std::list<Symbol> EnumAlphabet::get_complement(
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
-    // TODO: define own exceptions
+    // TODO: Define own exception.
     if (!is_state(stateFrom) || !is_state(stateTo)) {
         throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
     }
@@ -342,7 +342,7 @@ void Nfa::add_trimmed_transitions(const StateMap<State>& original_to_new_states_
     }
 }
 
-/// General methods for NFA
+// General methods for NFA.
 
 bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
@@ -645,7 +645,7 @@ WordSet Mata::Nfa::Nfa::get_shortest_words() const
     ShortestWordsMap shortest_words_map{ *this };
 
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return shortest_words_map.get_shortest_words_for_states(this->initialstates);
+    return shortest_words_map.get_shortest_words_for(this->initialstates);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1395,7 +1395,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     for (size_t i=0; i < size;) {
         Symbol transitionSymbol = transition_iterators[i]->symbol;
         if (transitionSymbol == min_symbol) {
-            uniont_to_left(post, transition_iterators[i]->states_to);
+            union_to_left(post, transition_iterators[i]->states_to);
             transition_iterators[i]++;
             if (transition_iterators[i] != automaton.transitionrelation[state_vector[i]].end()) {
                 Symbol nextTransitionSymbol = transition_iterators[i]->symbol;
@@ -1434,7 +1434,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa
 	return os;
 } // operator<<(NfaWrapper) }}}
 
-WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) const
+WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
     std::set <Word> result{};
 
@@ -1466,6 +1466,11 @@ WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) 
     }
 
     return result;
+}
+
+WordSet ShortestWordsMap::get_shortest_words_for(State state) const
+{
+     return get_shortest_words_for(StateSet{ state });
 }
 
 void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
