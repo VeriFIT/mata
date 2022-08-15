@@ -74,6 +74,70 @@ namespace {
         LTSforSimulation.init();
         return LTSforSimulation.compute_simulation();
     }
+
+	void reduce_size_by_simulation(Nfa* result, const Nfa& aut, StateMap<State> &state_map) {
+        auto sim_relation = compute_relation(aut, StringDict{{"relation", "simulation"}, {"direction","forward"}});
+
+        auto sim_relation_symmetric = sim_relation;
+        sim_relation_symmetric.restrict_to_symmetric();
+
+        // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
+        std::vector<size_t> quot_proj;
+        sim_relation_symmetric.get_quotient_projection(quot_proj);
+
+		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
+		for (State q = 0; q < aut.get_num_of_states(); ++q) {
+			State qReprState = quot_proj[q];
+			if (state_map.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+				State qClass = result->add_new_state();
+				state_map[qReprState] = qClass;
+				state_map[q] = qClass;
+			} else {
+				state_map[q] = state_map[qReprState];
+			}
+		}
+
+        for (State q = 0; q < aut.get_num_of_states(); ++q) {
+            State q_class_state = state_map.at(q);
+
+            if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial 
+                result->make_initial(q_class_state);
+            }
+
+            if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
+                for (auto &q_trans : aut.get_transitions_from_state(q)) {
+                    // representatives_of_states_to = representatives of q_trans.states_to
+                    StateSet representatives_of_states_to;
+                    for (auto s : q_trans.states_to) {
+                        representatives_of_states_to.insert(quot_proj[s]);
+                    }
+
+                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
+                    StateSet representatives_class_states;
+                    for (State s : representatives_of_states_to) {
+                        bool is_state_important = true; // if true, we need to keep the transition from q to s
+                        for (State p : representatives_of_states_to) {
+                            if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
+                                is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
+                                break;
+                            }
+                        }
+                        if (is_state_important) {
+                            representatives_class_states.insert(state_map.at(s));
+                        }
+                    }
+
+                    // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
+                    // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
+                    result->transitionrelation[q_class_state].push_back(TransSymbolStates(q_trans.symbol, representatives_class_states));
+                }
+                
+                if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
+                    result->make_final(q_class_state);
+                }
+            }
+        }
+    }
 }
 
 std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) { // {{{
@@ -1090,6 +1154,27 @@ Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const S
     else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"relation\" key: " + relation);
+    }
+}
+
+void Mata::Nfa::reduce(Nfa* result, const Nfa &aut, StateMap<State> *state_map, const StringDict& params) {
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"algorithm\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
+
+    const std::string& algorithm = params.at("algorithm");
+    if ("simulation" == algorithm) {
+        if (state_map == nullptr) {
+            std::unordered_map<State,State> tmp_state_map;
+            reduce_size_by_simulation(result, aut, tmp_state_map);
+        } else {
+            reduce_size_by_simulation(result, aut, *state_map);
+        }
+    } else {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
 }
 

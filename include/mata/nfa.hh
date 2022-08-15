@@ -832,6 +832,23 @@ Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
+// Reduce the size of the automaton
+void reduce(
+        Nfa* result,
+        const Nfa &aut,
+        StateMap<State> *state_map = nullptr,
+        const StringDict&  params = {{"algorithm", "simulation"}});
+
+inline Nfa reduce(
+        const Nfa &aut,
+        StateMap<State> *state_map = nullptr,
+        const StringDict&  params = {{"algorithm", "simulation"}})
+{
+    Nfa reduced;
+    reduce(&reduced, aut, state_map, params);
+    return reduced;
+}
+
 /// Is the language of the automaton universal?
 bool is_universal(
         const Nfa&         aut,
