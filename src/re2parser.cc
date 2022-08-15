@@ -25,8 +25,6 @@
 #include <re2/re2/prog.h>
 #include <re2/util/logging.h>
 
-// Will be used as epsilon symbol on transitions
-#define EPSILON 306
 
 namespace {
     class RegexParser {
@@ -83,9 +81,11 @@ namespace {
         /**
          * Converts re2's prog to mata::Nfa::Nfa
          * @param prog Prog* to create mata::Nfa::Nfa from
+         * @param use_epsilon whether to create NFA with epsilon transitions or not
+         * @param epsilon_value value, that will represent epsilon on transitions
          * @return mata::Nfa::Nfa created from prog
          */
-        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog) {
+        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog, bool use_epsilon, int epsilon_value) {
             const int start_state = prog->start();
             const int prog_size = prog->size();
             int empty_flag;
@@ -93,7 +93,7 @@ namespace {
             Mata::Nfa::Nfa explicit_nfa(prog_size);
 
             // Vectors are saved in this->state_cache after this
-            this->create_state_cache(prog);
+            this->create_state_cache(prog, use_epsilon);
 
             explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][0]);
             this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][0]] = true;
@@ -133,11 +133,11 @@ namespace {
 
                     case re2::kInstNop:
                     case re2::kInstCapture:
-#ifdef USE_EPSILON
-                        symbols.push_back(EPSILON);
-                        this->createExplicitNFATransitions(currentState, inst, symbols, explicitNfa);
-                        symbols.clear();
-#endif
+                        if (use_epsilon) {
+                            symbols.push_back(epsilon_value);
+                            this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                            symbols.clear();
+                        }
                         break;
                     case re2::kInstEmptyWidth:
                         empty_flag = static_cast<int>(inst->empty());
@@ -180,49 +180,49 @@ namespace {
                                 symbols.push_back(symbol);
                             }
                         }
-                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa);
+                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
 
-#ifndef USE_EPSILON
-                        // There is an epsilon transition to the currentState+1 we will need to copy transitions of
-                        // the currentState+1 to the currentState.
-                        if (!this->state_cache.is_last[current_state]) {
-                            for (auto state: this->state_cache.state_mapping[current_state+1]) {
-                                copyEdgesFromTo.emplace_back(state, current_state);
+                        if (!use_epsilon) {
+                            // There is an epsilon transition to the currentState+1 we will need to copy transitions of
+                            // the currentState+1 to the currentState.
+                            if (!this->state_cache.is_last[current_state]) {
+                                for (auto state: this->state_cache.state_mapping[current_state + 1]) {
+                                    copyEdgesFromTo.emplace_back(state, current_state);
+                                }
                             }
                         }
-#endif
                         symbols.clear();
                         break;
                 }
             }
-#ifndef USE_EPSILON
-            // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
-            // 2 -(eps)-> 3 -(eps)-> 4 -(a)-> 5.... We first need to copy transitions of state 4 to state 3, and then
-            // we can copy transition of state 3 (which now have copied transitions of state 4) to state 2
-            for (auto copyEdgeFromTo = copyEdgesFromTo.rbegin(); copyEdgeFromTo != copyEdgesFromTo.rend(); copyEdgeFromTo++) {
-                re2::Prog::Inst *inst = prog->inst(copyEdgeFromTo->first);
-                // kInstMatch states in RE2 does not have outgoing edges. The other state will also be final
-                if (inst->opcode() == re2::kInstMatch) {
-                    this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
-                    this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
-                    continue;
-                }
-                // The state is final if there are epsilon transition(s) leading to a final state
-                if (this->state_cache.is_final_state[copyEdgeFromTo->first]) {
-                    this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
-                    this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
-                }
-                for (auto transition: this->outgoingEdges[copyEdgeFromTo->first]) {
-                    // We copy transitions only to states that has incoming edge
-                    if (this->state_cache.has_state_incoming_edge[copyEdgeFromTo->second]) {
-                        explicit_nfa.add_trans(copyEdgeFromTo->second, transition.first, transition.second);
+            if (!use_epsilon) {
+                // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
+                // 2 -(eps)-> 3 -(eps)-> 4 -(a)-> 5.... We first need to copy transitions of state 4 to state 3, and then
+                // we can copy transition of state 3 (which now have copied transitions of state 4) to state 2
+                for (auto copyEdgeFromTo = copyEdgesFromTo.rbegin(); copyEdgeFromTo != copyEdgesFromTo.rend(); copyEdgeFromTo++) {
+                    re2::Prog::Inst *inst = prog->inst(copyEdgeFromTo->first);
+                    // kInstMatch states in RE2 does not have outgoing edges. The other state will also be final
+                    if (inst->opcode() == re2::kInstMatch) {
+                        this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
+                        this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
+                        continue;
                     }
-                    // However, we still need to save the transitions (we could possibly copy them to another state in
-                    // the epsilon closure that has incoming edge)
-                    this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
+                    // The state is final if there are epsilon transition(s) leading to a final state
+                    if (this->state_cache.is_final_state[copyEdgeFromTo->first]) {
+                        this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
+                        this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
+                    }
+                    for (auto transition: this->outgoingEdges[copyEdgeFromTo->first]) {
+                        // We copy transitions only to states that has incoming edge
+                        if (this->state_cache.has_state_incoming_edge[copyEdgeFromTo->second]) {
+                            explicit_nfa.add_trans(copyEdgeFromTo->second, transition.first, transition.second);
+                        }
+                        // However, we still need to save the transitions (we could possibly copy them to another state in
+                        // the epsilon closure that has incoming edge)
+                        this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
+                    }
                 }
             }
-#endif
             RegexParser::renumber_states(output_nfa, prog_size, explicit_nfa);
         }
 
@@ -234,18 +234,20 @@ namespace {
          * @param inst RE2 instruction for the current state, it is used to determine the target state for each transition
          * @param symbols symbols that will be used on each transition
          * @param nfa ExplicitNFA in which the transitions should be created
+         * @param use_epsilon whether to create NFA with epsilon transitions or not
+         * @param epsilon_value value, that will represent epsilon on transitions
          */
         void create_explicit_nfa_transitions(int currentState, re2::Prog::Inst *inst,
                                                        const std::vector<Mata::Nfa::Symbol>& symbols,
-                                                       Mata::Nfa::Nfa &nfa) {
+                                                       Mata::Nfa::Nfa &nfa, bool use_epsilon, int epsilon_value) {
             for (auto mappedState: this->state_cache.state_mapping[currentState]) {
                 for (auto mappedTargetState: this->state_cache.state_mapping[inst->out()]) {
                     // There can be more symbols on the edge
                     for (auto symbol: symbols) {
-#ifndef USE_EPSILON
-                        // Save all outgoing edges. The vector will be used to get rid of epsilon transitions
-                        this->outgoingEdges[mappedState].push_back({symbol, mappedTargetState});
-#endif
+                        if (!use_epsilon) {
+                            // Save all outgoing edges. The vector will be used to get rid of epsilon transitions
+                            this->outgoingEdges[mappedState].push_back({symbol, mappedTargetState});
+                        }
                         if (this->state_cache.has_state_incoming_edge[mappedState]) {
                             this->state_cache.has_state_incoming_edge[mappedTargetState] = true;
                             nfa.add_trans(mappedState, symbol, mappedTargetState);
@@ -253,25 +255,26 @@ namespace {
                     }
                 }
             }
-#ifdef USE_EPSILON
-            // There is an epsilon transition to the currentState+1, so we must handle it
-            if (!this->stateCache.isLast[currentState]) {
-                nfa.addTransition(currentState, EPSILON, currentState+1);
+            if (use_epsilon) {
+                // There is an epsilon transition to the currentState+1, so we must handle it
+                if (!this->state_cache.is_last[currentState]) {
+                    nfa.add_trans(currentState, epsilon_value, currentState + 1);
+                }
             }
-#endif
         }
 
        /**
-        * Creates all state cache vectors needed throughout the computation and saves them to the private variable stateCache.
-        * It calls appropriate method based on USE_EPSILON macro
+        * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
+        * It calls appropriate method based on use_epsilon param
         * @param prog RE2 prog corresponding to the parsed regex
+        * @param use_epsilon whether to create NFA with epsilon transitions or not
         */
-       void create_state_cache(re2::Prog *prog) {
-#ifdef USE_EPSILON
-            this->create_state_cache_with_epsilon(prog);
-#else
-            this->create_state_cache_without_epsilon(prog);
-#endif
+       void create_state_cache(re2::Prog *prog, bool use_epsilon) {
+            if (use_epsilon) {
+                this->create_state_cache_with_epsilon(prog);
+            } else {
+                this->create_state_cache_without_epsilon(prog);
+            }
         }
 
         /**
@@ -341,7 +344,7 @@ namespace {
         }
 
         /**
-          * Creates all state cache vectors needed throughout the computation and saves them to the private variable stateCache.
+          * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
           * It creates state cache for creating ExplicitNFA with epsilon transitions
           * @param prog RE2 prog corresponding to the parsed regex
           */
@@ -350,10 +353,10 @@ namespace {
             std::vector<bool> defaultTrueVec(prog->size(), true);
             this->state_cache = {
                     {}, // stateMapping all states are mapped to itself when using epsilon transitions
-                    defaultFalseVec, // isFinalState holds true for states that are final, false for the rest
-                    defaultFalseVec, // isStateNopOrCap not used when using epsilon transition
-                    defaultFalseVec, // isLast holds true for states that are last, false for the rest
-                    defaultTrueVec, // hasStateIncomingEdge holds true all states
+                    defaultFalseVec, // is_final_state holds true for states that are final, false for the rest
+                    defaultFalseVec, // is_state_nop_or_cap not used when using epsilon transition
+                    defaultFalseVec, // is_last holds true for states that are last, false for the rest
+                    defaultTrueVec, // has_state_incoming_edge holds true all states
             };
             const int progSize = prog->size();
 
@@ -487,9 +490,11 @@ namespace {
  /**
  * The main method, it creates NFA from regex
  * @param pattern regex as string
+ * @param use_epsilon whether to create NFA with epsilon transitions or not
+ * @param epsilon_value value, that will represent epsilon on transitions
  * @return mata::Nfa::Nfa corresponding to pattern
  */
-void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
+void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value) {
     if (nfa == NULL) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
@@ -497,7 +502,7 @@ void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
-    regexParser.convert_pro_to_nfa(nfa, program);
+    regexParser.convert_pro_to_nfa(nfa, program, use_epsilon, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();

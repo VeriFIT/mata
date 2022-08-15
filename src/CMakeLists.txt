@@ -22,9 +22,6 @@ set(cxx_compiler_flags
   -Wold-style-cast
 )
 
-# For epsilon transitions in re2_parser
-#set(CMAKE_CXX_FLAGS "-pthread -DUSE_EPSILON")
-
 foreach(flag ${cxx_compiler_flags})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
 endforeach()
