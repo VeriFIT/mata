@@ -166,17 +166,19 @@ cdef class Nfa:
         """
         return self.thisptr.add_new_state()
 
-    def add_initial_state(self, State st):
-        """Adds initial state to automaton
-
-        :param State st: added initial state
+    def make_initial_state(self, State state):
         """
-        self.thisptr.make_initial(st)
+        Makes specified state from the automaton initial.
 
-    def add_initial_states(self, vector[State] states):
-        """Adds list of initial state to automaton
+        :param State state: State to be made initial.
+        """
+        self.thisptr.make_initial(state)
 
-        :param list states: list of initial states
+    def make_initial_states(self, vector[State] states):
+        """
+        Makes specified states from the automaton initial.
+
+        :param list states: List of states to be made initial.
         """
         self.thisptr.make_initial(states)
 
@@ -188,12 +190,21 @@ cdef class Nfa:
         """
         return self.thisptr.has_initial(st)
 
-    def add_final_state(self, State st):
-        """Adds final state to automaton
-
-        :param State st: added final state
+    def make_final_state(self, State state):
         """
-        self.thisptr.make_final(st)
+        Makes specified state from the automaton final.
+
+        :param State state: State to be made final.
+        """
+        self.thisptr.make_final(state)
+
+    def make_final_states(self, vector[State] states):
+        """
+        Makes specified states from the automaton final.
+
+        :param vector[State] states: List of states to be made final.
+        """
+        self.thisptr.make_final(states)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state
@@ -1107,13 +1118,13 @@ def divisible_by(k: int):
     """
     assert k > 1
     lhs = Nfa(k+1)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):
         lhs.add_trans_raw(i - 1, 1, i)
         lhs.add_trans_raw(i, 0, i)
     lhs.add_trans_raw(k, 1, 1)
-    lhs.add_final_state(k)
+    lhs.make_final_state(k)
     return lhs
 
 

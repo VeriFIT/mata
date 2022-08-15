@@ -20,17 +20,17 @@ def cleandir():
 @pytest.fixture(scope="function")
 def dfa_one_state_uni():
     lhs = mata.Nfa(1)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
-    lhs.add_final_state(0)
+    lhs.make_final_state(0)
     yield lhs
 
 
 @pytest.fixture(scope="function")
 def dfa_one_state_empty():
     lhs = mata.Nfa(1)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
     yield lhs
@@ -39,13 +39,13 @@ def dfa_one_state_empty():
 @pytest.fixture(scope="function")
 def nfa_two_states_uni():
     lhs = mata.Nfa(2)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 0)
     lhs.add_trans_raw(0, 0, 1)
     lhs.add_trans_raw(1, 0, 1)
     lhs.add_trans_raw(1, 1, 1)
-    lhs.add_final_state(1)
+    lhs.make_final_state(1)
     yield lhs
 
 
@@ -55,13 +55,13 @@ def divisible_by(k: int):
     """
     assert k > 1
     lhs = mata.Nfa(k+1)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):
         lhs.add_trans_raw(i - 1, 1, i)
         lhs.add_trans_raw(i, 0, i)
     lhs.add_trans_raw(k, 1, 1)
-    lhs.add_final_state(k)
+    lhs.make_final_state(k)
     return lhs
 
 
@@ -83,23 +83,23 @@ def fa_one_divisible_by_eight():
 @pytest.fixture(scope="function")
 def fa_odd_ones():
     lhs = mata.Nfa(2)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 1)
     lhs.add_trans_raw(1, 1, 0)
     lhs.add_trans_raw(1, 0, 1)
-    lhs.add_final_state(1)
+    lhs.make_final_state(1)
 
 
 @pytest.fixture(scope="function")
 def fa_even_ones():
     lhs = mata.Nfa(2)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     lhs.add_trans_raw(0, 1, 1)
     lhs.add_trans_raw(1, 1, 0)
     lhs.add_trans_raw(1, 0, 1)
-    lhs.add_final_state(0)
+    lhs.make_final_state(0)
 
 
 @pytest.fixture(scope="function")
