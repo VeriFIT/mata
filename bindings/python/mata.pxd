@@ -134,6 +134,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void remove_final(State)
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
+        void remove_trans(CTrans) except +
+        void remove_trans(State, Symbol, State) except +
         bool has_trans(CTrans)
         bool has_trans(State, Symbol, State)
         bool trans_empty()

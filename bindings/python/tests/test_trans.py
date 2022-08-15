@@ -39,3 +39,17 @@ def test_transsymbstates():
     assert not d < b
     assert not b < d
 
+
+def test_transition_operations():
+    nfa = mata.Nfa(10)
+    nfa.add_trans_raw(3, ord('c'), 4)
+    assert nfa.has_trans_raw(3, ord('c'), 4)
+    trans = mata.Trans(4, ord('c'), 5)
+    nfa.add_trans(trans)
+    assert nfa.has_trans(trans)
+
+    nfa.remove_trans_raw(3, ord('c'), 4)
+    assert not nfa.has_trans_raw(3, ord('c'), 4)
+    nfa.remove_trans(trans)
+    assert not nfa.has_trans(trans)
+

@@ -226,6 +226,24 @@ cdef class Nfa:
         """
         self.thisptr.add_trans(src, symb, tgt)
 
+    def remove_trans(self, Trans tr):
+        """
+        Removes transition from the automaton.
+
+        :param Trans tr: Transition to be removed.
+        """
+        self.thisptr.remove_trans(dereference(tr.thisptr))
+
+    def remove_trans_raw(self, State src, Symbol symb, State tgt):
+        """
+        Constructs transition and removes it from the automaton.
+
+        :param State src: Source state of the transition to be removed.
+        :param Symbol symb: Symbol of the transition to be removed.
+        :param State tgt: Target state of the transition to be removed.
+        """
+        self.thisptr.remove_trans(src, symb, tgt)
+
     def has_trans(self, Trans tr):
         """Tests if automaton contains transition
 
