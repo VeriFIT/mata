@@ -53,7 +53,7 @@ bool is_string_char(char ch)
 		!(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
 } // is_string_char }}}
 
-bool is_logic_operator(char ch)
+bool is_logical_operator(char ch)
 {
     return (haskey(std::set<char>{'&', '|', '!'}, ch));
 }
@@ -212,7 +212,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
         const std::string& token_string = token.first;
         size_t last_operator = 0;
         for (size_t i = 0; i < token_string.size(); ++i) {
-            if (is_logic_operator(token_string[i])) {
+            if (is_logical_operator(token_string[i])) {
                 const std::string token_candidate = token_string.substr(last_operator, i - last_operator);
 
                 // there is token before logical operator (this is case of binary operators, e.g., a&b)
