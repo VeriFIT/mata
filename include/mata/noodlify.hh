@@ -28,17 +28,17 @@ namespace SegNfa
 {
 
 /**
- * @brief Create noodles from segment @p automaton.
+ * @brief Create noodles from segment automaton @p aut.
  *
- * Segment automaton is a chain of finite automata connected via ε-transitions.
- * A noodle is a copy of the segment automaton with exactly 1 ε-transition between each two consecutive segments.
+ * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+ * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
  *
  * @param[in] automaton Segment automaton to noodlify.
  * @param[in] epsilon Epsilon symbol to noodlify for.
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-AutSequence noodlify(SegNfa& aut, Symbol epsilon, bool include_empty = false);
+AutSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
 } // SegNfa
 } // Nfa

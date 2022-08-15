@@ -1100,7 +1100,6 @@ private:
     void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
                                     std::deque<StateDepthPair>& worklist);
 }; // Segmentation
-
 } // SegNfa
 
 /**
