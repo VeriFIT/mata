@@ -129,10 +129,18 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void make_initial(vector[State])
         bool has_initial(State)
         void remove_initial(State)
+        void remove_initial(vector[State])
+        void reset_initial(State)
+        void reset_initial(vector[State])
+        void clear_initial()
         void make_final(State)
         void make_final(vector[State])
         bool has_final(State)
         void remove_final(State)
+        void remove_final(vector[State])
+        void reset_final(State)
+        void reset_final(vector[State])
+        void clear_final()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         void remove_trans(CTrans) except +

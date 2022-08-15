@@ -63,83 +63,116 @@ def test_adding_states():
         rhs.resize_for_state(-10)
 
 
-def making_initial_and_final_states():
+def test_making_initial_and_final_states():
     """Test making states in the automaton initial and final."""
     nfa = mata.Nfa(10)
-    assert len(nfa.initalstates) == 0
+    assert len(nfa.initialstates) == 0
     assert len(nfa.finalstates) == 0
 
     nfa.make_initial_state(0)
-    assert len(nfa.initalstates) == 1
-    assert nfa.has_initial(0)
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(0)
     assert len(nfa.finalstates) == 0
 
     nfa.make_final_state(0)
-    assert len(nfa.initalstates) == 1
-    assert nfa.has_initial(0)
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(0)
     assert len(nfa.finalstates) == 1
-    assert nfa.has_final(1)
+    assert nfa.has_final_state(0)
 
-    nfa.make_initial_states(1, 2, 3)
-    assert len(nfa.initalstates) == 4
-    assert nfa.has_initial(0)
-    assert nfa.has_initial(1)
-    assert nfa.has_initial(2)
-    assert nfa.has_initial(3)
+    nfa.make_initial_states([1, 2, 3])
+    assert len(nfa.initialstates) == 4
+    assert nfa.has_initial_state(0)
+    assert nfa.has_initial_state(1)
+    assert nfa.has_initial_state(2)
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 1
-    assert nfa.has_final(1)
+    assert nfa.has_final_state(0)
 
-    nfa.make_final_states(1, 2, 3)
-    assert len(nfa.initalstates) == 4
-    assert nfa.has_initial(0)
-    assert nfa.has_initial(1)
-    assert nfa.has_initial(2)
-    assert nfa.has_initial(3)
+    nfa.make_final_states([1, 2, 3])
+    assert len(nfa.initialstates) == 4
+    assert nfa.has_initial_state(0)
+    assert nfa.has_initial_state(1)
+    assert nfa.has_initial_state(2)
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 4
-    assert nfa.has_final(0)
-    assert nfa.has_final(1)
-    assert nfa.has_final(2)
-    assert nfa.has_final(3)
+    assert nfa.has_final_state(0)
+    assert nfa.has_final_state(1)
+    assert nfa.has_final_state(2)
+    assert nfa.has_final_state(3)
 
     nfa.remove_initial_state(0)
-    assert len(nfa.initalstates) == 3
-    assert not nfa.has_initial(0)
-    assert nfa.has_initial(1)
-    assert nfa.has_initial(2)
-    assert nfa.has_initial(3)
+    assert len(nfa.initialstates) == 3
+    assert not nfa.has_initial_state(0)
+    assert nfa.has_initial_state(1)
+    assert nfa.has_initial_state(2)
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 4
-    assert nfa.has_final(0)
-    assert nfa.has_final(1)
-    assert nfa.has_final(2)
-    assert nfa.has_final(3)
+    assert nfa.has_final_state(0)
+    assert nfa.has_final_state(1)
+    assert nfa.has_final_state(2)
+    assert nfa.has_final_state(3)
 
-    nfa.remove_final_states(0)
-    assert len(nfa.initalstates) == 3
-    assert not nfa.has_initial(0)
-    assert nfa.has_initial(1)
-    assert nfa.has_initial(2)
-    assert nfa.has_initial(3)
+    nfa.remove_final_state(0)
+    assert len(nfa.initialstates) == 3
+    assert not nfa.has_initial_state(0)
+    assert nfa.has_initial_state(1)
+    assert nfa.has_initial_state(2)
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 3
-    assert not nfa.has_final(0)
-    assert nfa.has_final(1)
-    assert nfa.has_final(2)
-    assert nfa.has_final(3)
+    assert not nfa.has_final_state(0)
+    assert nfa.has_final_state(1)
+    assert nfa.has_final_state(2)
+    assert nfa.has_final_state(3)
 
-    nfa.remove_initial_states(1, 2)
-    assert len(nfa.initalstates) == 1
-    assert nfa.has_initial(3)
+    nfa.remove_initial_states([1, 2])
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 3
-    assert not nfa.has_final(0)
-    assert nfa.has_final(1)
-    assert nfa.has_final(2)
-    assert nfa.has_final(3)
+    assert not nfa.has_final_state(0)
+    assert nfa.has_final_state(1)
+    assert nfa.has_final_state(2)
+    assert nfa.has_final_state(3)
 
-    nfa.remove_final_states(1, 2)
-    assert len(nfa.initalstates) == 1
-    assert nfa.has_initial(3)
+    nfa.remove_final_states([1, 2])
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(3)
     assert len(nfa.finalstates) == 1
-    assert nfa.has_final(3)
-    assert len(nfa.initalstates) == 0
+    assert nfa.has_final_state(3)
+
+    nfa.reset_initial_state(4)
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(4)
+    assert len(nfa.finalstates) == 1
+    assert nfa.has_final_state(3)
+
+    nfa.reset_final_state(4)
+    assert len(nfa.initialstates) == 1
+    assert nfa.has_initial_state(4)
+    assert len(nfa.finalstates) == 1
+    assert nfa.has_final_state(4)
+
+    nfa.reset_initial_states([5, 6])
+    assert len(nfa.initialstates) == 2
+    assert nfa.has_initial_state(5)
+    assert nfa.has_initial_state(6)
+    assert len(nfa.finalstates) == 1
+    assert nfa.has_final_state(4)
+
+    nfa.reset_initial_states([5, 6])
+    assert len(nfa.initialstates) == 2
+    assert nfa.has_initial_state(5)
+    assert nfa.has_initial_state(6)
+    assert len(nfa.finalstates) == 1
+    assert nfa.has_final_state(4)
+
+    nfa.clear_initial()
+    assert len(nfa.initialstates) == 0
+    assert len(nfa.finalstates) == 1
+    assert nfa.has_final_state(4)
+
+    nfa.clear_final()
+    assert len(nfa.initialstates) == 0
     assert len(nfa.finalstates) == 0
 
 

@@ -90,7 +90,6 @@ cdef class TransSymbolStates:
 
     @property
     def states_to(self):
-        states = []
         cdef vector[State] states_as_vector = self.thisptr.states_to.ToVector()
         return [s for s in states_as_vector]
 
@@ -151,6 +150,26 @@ cdef class Nfa:
     def __dealloc__(self):
         del self.thisptr
 
+    @property
+    def initialstates(self):
+        cdef vector[State] initial_states = self.thisptr.initialstates.ToVector()
+        return [initial_state for initial_state in initial_states]
+
+    @initialstates.setter
+    def initialstates(self, value):
+        cdef StateSet initial_states = StateSet(value)
+        self.thisptr.initialstates = initial_states
+
+    @property
+    def finalstates(self):
+        cdef vector[State] final_states = self.thisptr.finalstates.ToVector()
+        return [final_state for final_state in final_states]
+
+    @finalstates.setter
+    def finalstates(self, value):
+        cdef StateSet final_states = StateSet(value)
+        self.thisptr.finalstates = final_states
+
     def is_state(self, state):
         """Tests if state is in the automaton
 
@@ -190,6 +209,42 @@ cdef class Nfa:
         """
         return self.thisptr.has_initial(st)
 
+    def remove_initial_state(self, State state):
+        """
+        Removes state from initial state set of the automaton.
+
+        :param State state: State to be removed from initial states.
+        """
+        self.thisptr.remove_initial(state)
+
+    def remove_initial_states(self, vector[State] states):
+        """
+        Removes states from initial state set of the automaton.
+
+        :param list State states: States to be removed from initial states.
+        """
+        self.thisptr.remove_initial(states)
+
+    def reset_initial_state(self, State state):
+        """
+        Resets initial state set of the automaton to the specified state.
+
+        :param State state: State to be made initial.
+        """
+        self.thisptr.reset_initial(state)
+
+    def reset_initial_states(self, vector[State] states):
+        """
+        Resets initial state set of the automaton to the specified states.
+
+        :param list states: List of states to be made initial.
+        """
+        self.thisptr.reset_initial(states)
+
+    def clear_initial(self):
+        """Clears initial state set of the automaton."""
+        self.thisptr.clear_initial()
+
     def make_final_state(self, State state):
         """
         Makes specified state from the automaton final.
@@ -213,6 +268,42 @@ cdef class Nfa:
         :return: true if automaton contains given state
         """
         return self.thisptr.has_final(st)
+
+    def remove_final_state(self, State state):
+        """
+        Removes state from final state set of the automaton.
+
+        :param State state: State to be removed from final states.
+        """
+        self.thisptr.remove_final(state)
+
+    def remove_final_states(self, vector[State] states):
+        """
+        Removes states from final state set of the automaton.
+
+        :param list State states: States to be removed from final states.
+        """
+        self.thisptr.remove_final(states)
+
+    def reset_final_state(self, State state):
+        """
+        Resets final state set of the automaton to the specified state.
+
+        :param State state: State to be made final.
+        """
+        self.thisptr.reset_final(state)
+
+    def reset_final_states(self, vector[State] states):
+        """
+        Resets final state set of the automaton to the specified states.
+
+        :param list states: List of states to be made final.
+        """
+        self.thisptr.reset_final(states)
+
+    def clear_final(self):
+        """Clears final state set of the automaton."""
+        self.thisptr.clear_final()
 
     def state_size(self):
         """Returns number of states in automaton
