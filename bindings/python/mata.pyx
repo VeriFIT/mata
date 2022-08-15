@@ -428,6 +428,16 @@ cdef class Nfa:
         return transsymbols
 
 
+    def trim(self):
+        """
+        Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+
+        Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+         starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+         the starting point of a path ending in a final state).
+        """
+        self.thisptr.trim()
+
 
     def __str__(self):
         """String representation of the automaton displays states, and transitions

@@ -7,6 +7,30 @@ import os
 __author__ = 'Tomas Fiedor'
 
 
+def fill_with_automaton_a(nfa):
+    """
+    Fill nfa with automaton A.
+
+    :param: mata.Nfa nfa: Automaton to be filled with automaton A.
+    """
+    nfa.make_initial_states([1, 3])
+    nfa.make_final_state(5)
+    nfa.add_trans_raw(1, ord('a'), 3)
+    nfa.add_trans_raw(1, ord('a'), 10)
+    nfa.add_trans_raw(1, ord('b'), 7)
+    nfa.add_trans_raw(3, ord('a'), 7)
+    nfa.add_trans_raw(3, ord('b'), 9)
+    nfa.add_trans_raw(9, ord('a'), 9)
+    nfa.add_trans_raw(7, ord('b'), 1)
+    nfa.add_trans_raw(7, ord('a'), 3)
+    nfa.add_trans_raw(7, ord('c'), 3)
+    nfa.add_trans_raw(10, ord('a'), 7)
+    nfa.add_trans_raw(10, ord('b'), 7)
+    nfa.add_trans_raw(10, ord('c'), 7)
+    nfa.add_trans_raw(7, ord('a'), 5)
+    nfa.add_trans_raw(5, ord('a'), 5)
+    nfa.add_trans_raw(5, ord('c'), 9)
+
 def test_adding_states():
     """Test nfa"""
     lhs = mata.Nfa(5)
@@ -499,6 +523,25 @@ def test_get_trans(fa_one_divisible_by_two):
     assert sorted(t) == sorted([mata.TransSymbolStates(0, [0]), mata.TransSymbolStates(1, [1])])
     tt = lhs.get_transitions_from_state(1)
     assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])
+
+
+def test_trim():
+    """Test trimming the automaton."""
+    nfa = mata.Nfa(20)
+    fill_with_automaton_a(nfa)
+    nfa.remove_trans_raw(1, ord('a'), 10)
+
+    old_nfa = mata.Nfa(20)
+    fill_with_automaton_a(old_nfa)
+    old_nfa.remove_trans_raw(1, ord('a'), 10)
+
+    nfa.trim()
+
+    assert len(nfa.initialstates) == len(old_nfa.initialstates)
+    assert len(nfa.finalstates) == len(old_nfa.finalstates)
+
+    for word in old_nfa.get_shortest_words():
+        assert mata.Nfa.is_in_lang(nfa, word)
 
 
 def test_simulation(fa_one_divisible_by_four):

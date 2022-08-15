@@ -161,6 +161,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void print_to_DOT(ostream)
         WordSet get_shortest_words()
         TransitionList get_transitions_from_state(State)
+        void trim()
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
