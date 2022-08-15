@@ -57,21 +57,21 @@ def test_adding_states():
     assert lhs.has_final_state(0)
 
     rhs = mata.Nfa()
-    assert rhs.state_size() == 0
+    assert rhs.get_num_of_states() == 0
     state = rhs.add_new_state()
     assert state == 0
-    assert rhs.state_size() == 1
+    assert rhs.get_num_of_states() == 1
     state = rhs.add_new_state()
     assert state == 1
-    assert rhs.state_size() == 2
+    assert rhs.get_num_of_states() == 2
 
     rhs.resize(10)
-    assert rhs.state_size() == 10
+    assert rhs.get_num_of_states() == 10
     for i in range(0, 10):
         assert rhs.is_state(i)
 
     rhs.resize(1)
-    assert rhs.state_size() == 1
+    assert rhs.get_num_of_states() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
 
@@ -79,7 +79,7 @@ def test_adding_states():
         rhs.resize(-10)
 
     rhs.resize_for_state(11)
-    assert rhs.state_size() == 12
+    assert rhs.get_num_of_states() == 12
     assert rhs.is_state(11)
     assert not rhs.is_state(12)
 

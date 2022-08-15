@@ -138,11 +138,11 @@ cdef class Nfa:
     cdef mata.CNfa *thisptr
     cdef alphabet
 
-    def __cinit__(self, state_number = 0, alphabet=None):
+    def __cinit__(self, state_number = 0, alphabet = None):
         """Constructor of the NFA
 
         :param int state_number: number of states in automaton
-        :param Alpabet alphabet: alphabet corresponding to the automaton
+        :param Alphabet alphabet: alphabet corresponding to the automaton
         """
         self.thisptr = new mata.CNfa(state_number)
         self.alphabet = alphabet
@@ -305,7 +305,7 @@ cdef class Nfa:
         """Clears final state set of the automaton."""
         self.thisptr.clear_final()
 
-    def state_size(self):
+    def get_num_of_states(self):
         """Returns number of states in automaton
 
         :return: number of states in automaton
@@ -623,7 +623,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet of the
         """
         if not lhs.thisptr.is_state(sink_state):
-            lhs.thisptr.increase_size(lhs.state_size() + 1)
+            lhs.thisptr.increase_size(lhs.get_num_of_states() + 1)
         mata.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
@@ -647,7 +647,7 @@ cdef class Nfa:
         :param Symbol epsilon: symbol representing the epsilon
         :return: automaton, with epsilon transitions removed
         """
-        result = Nfa(lhs.state_size())
+        result = Nfa(lhs.get_num_of_states())
         mata.remove_epsilon(
             result.thisptr, dereference(lhs.thisptr), epsilon
         )
