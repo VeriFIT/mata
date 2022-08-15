@@ -362,10 +362,23 @@ public:
 
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
 
+    /**
+     * Remove @p state from initial states.
+     * @param state[in] State to be removed from initial states.
+     */
     void remove_initial(State state)
     {
         assert(has_initial(state));
         this->initialstates.remove(state);
+    }
+
+    /**
+     * Remove @p vec of states from initial states.
+     * @param vec[in] Vector of states to be removed from initial states.
+     */
+    void remove_initial(const std::vector<State>& vec)
+    {
+        for (const State& st : vec) { this->remove_initial(st); }
     }
 
     /**
@@ -423,10 +436,23 @@ public:
 
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
 
+    /**
+     * Remove @p state from final states.
+     * @param state[in] State to be removed from final states.
+     */
     void remove_final(State state)
     {
         assert(has_final(state));
         this->finalstates.remove(state);
+    }
+
+    /**
+     * Remove @p vec of states from final states.
+     * @param vec[in] Vector of states to be removed from final states.
+     */
+    void remove_final(const std::vector<State>& vec)
+    {
+        for (const State& st : vec) { this->remove_final(st); }
     }
 
     /**
