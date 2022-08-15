@@ -119,6 +119,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Attributes
         StateSet initialstates
         StateSet finalstates
+        TransitionRelation transitionrelation
 
         # Constructor
         CNfa() except +
@@ -162,6 +163,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         WordSet get_shortest_words()
         TransitionList get_transitions_from_state(State)
         void trim()
+        CNfa get_digraph()
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)

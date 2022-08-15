@@ -544,6 +544,26 @@ def test_trim():
         assert mata.Nfa.is_in_lang(nfa, word)
 
 
+def test_get_digraph():
+    """Test creating digraph from an automaton."""
+    nfa = mata.Nfa(100)
+    abstract_symbol = ord('x')
+    fill_with_automaton_a(nfa)
+
+    old_nfa = mata.Nfa(20)
+    fill_with_automaton_a(old_nfa)
+
+    digraph = nfa.get_digraph()
+
+    assert digraph.get_num_of_states() == nfa.get_num_of_states()
+    assert digraph.get_num_of_trans() == 12
+    assert digraph.has_trans_raw(1, abstract_symbol, 10)
+    assert digraph.has_trans_raw(10, abstract_symbol, 7)
+    assert not digraph.has_trans_raw(10, ord('a'), 7)
+    assert not digraph.has_trans_raw(10, ord('b'), 7)
+    assert not digraph.has_trans_raw(10, ord('c'), 7)
+
+
 def test_simulation(fa_one_divisible_by_four):
     lhs = fa_one_divisible_by_four
     rel = mata.Nfa.compute_relation(lhs)

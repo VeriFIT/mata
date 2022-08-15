@@ -438,6 +438,19 @@ cdef class Nfa:
         """
         self.thisptr.trim()
 
+    def get_digraph(self) -> Nfa:
+        """
+        Unify transitions to create a directed graph with at most a single transition between two states.
+
+        :return: mata.Nfa: An automaton representing a directed graph.
+        """
+        cdef mata.CNfa c_digraph = self.thisptr.get_digraph()
+
+        digraph  = Nfa(c_digraph.get_num_of_states())
+        digraph.thisptr.initialstates = c_digraph.initialstates
+        digraph.thisptr.finalstates = c_digraph.finalstates
+        digraph.thisptr.transitionrelation = c_digraph.transitionrelation
+        return digraph
 
     def __str__(self):
         """String representation of the automaton displays states, and transitions
