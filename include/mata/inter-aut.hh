@@ -15,7 +15,7 @@ namespace Mata
 
 struct FormulaNode
 {
-private:
+public:
     enum OperandType
     {
         SYM,
@@ -39,12 +39,19 @@ private:
     std::string raw;
     std::string name; // parsed name. When type marking is used, markers are removed.
     Type type;
-    OperandType operand_type;
     OperatorType operator_type;
+    OperandType operand_type;
 
-public:
     bool is_operand() { return type == Type::OPERAND;}
     bool is_operator() { return type == Type::OPERATOR;}
+
+    FormulaNode(Type t, std::string raw, std::string name,
+                OperatorType oprtor) : type(t), raw(raw), name(name), operator_type(oprtor),
+                operand_type(OperandType::NODE) {}
+
+    FormulaNode(Type t, std::string raw, std::string name,
+                OperandType operand) : type(t), raw(raw), name(name), operator_type(OperatorType::NEG),
+                operand_type(operand) {};
 };
 
 struct FormulaGraph
@@ -88,7 +95,7 @@ public:
     std::vector<std::string> symbols_names;
     std::vector<std::string> nodes_names;
 
-    struct std::vector<FormulaGraph> transitions;
+    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
     static std::vector<InterAutomaton> parse_from_mf(const Mata::Parser::Parsed& parsed);
 
