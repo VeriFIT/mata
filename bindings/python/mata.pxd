@@ -145,6 +145,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         CNfa.const_iterator end()
         size_t get_num_of_states()
         void increase_size(size_t)
+        void increase_size_for_state(State)
         State add_new_state()
         void print_to_DOT(ostream)
         WordSet get_shortest_words()

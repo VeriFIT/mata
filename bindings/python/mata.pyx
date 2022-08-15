@@ -265,6 +265,14 @@ cdef class Nfa:
         """
         self.thisptr.increase_size(size)
 
+    def resize_for_state(self, State state):
+        """
+        Increases the size of the automaton to include state.
+
+        :param State state: State to resize for.
+        """
+        self.thisptr.increase_size_for_state(state)
+
     def iterate(self):
         """Iterates over all transitions
 

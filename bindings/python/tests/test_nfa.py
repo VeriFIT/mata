@@ -54,6 +54,13 @@ def test_adding_states():
     with pytest.raises(OverflowError):
         rhs.resize(-10)
 
+    rhs.resize_for_state(11)
+    assert rhs.state_size() == 12
+    assert rhs.is_state(11)
+    assert not rhs.is_state(12)
+
+    with pytest.raises(OverflowError):
+        rhs.resize_for_state(-10)
 
 def test_transitions():
     """Test adding transitions to automaton"""
