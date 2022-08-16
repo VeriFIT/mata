@@ -4,7 +4,7 @@ import pytest
 import mata
 import os
 
-from conftest import fill_with_automaton_a
+from conftest import fill_with_automaton_a, fill_with_automaton_b
 
 __author__ = 'Tomas Fiedor'
 
@@ -521,6 +521,11 @@ def test_trim():
     for word in old_nfa.get_shortest_words():
         assert mata.Nfa.is_in_lang(nfa, word)
 
+    nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
+    nfa.trim()
+    assert nfa.trans_empty()
+    assert nfa.get_num_of_states() == 0
+
 
 def test_get_digraph():
     """Test creating digraph from an automaton."""
@@ -640,3 +645,72 @@ def test_simulation_indexes(fa_one_divisible_by_two):
     index, inv_index = rel.build_indexes()
     assert sorted(index) == [[0, 2], [1], [2]]
     assert sorted(inv_index) == [[0], [0, 2], [1]]
+
+
+def test_get_states():
+    nfa = mata.Nfa(20)
+    fill_with_automaton_a(nfa)
+
+    nfa.remove_trans_raw(3, ord('b'), 9)
+    nfa.remove_trans_raw(5, ord('c'), 9)
+    nfa.remove_trans_raw(1, ord('a'), 10)
+
+    reachable = nfa.get_reachable_states()
+
+    assert 0 not in reachable
+    assert 1 in reachable
+    assert 2 not in reachable
+    assert 3 in reachable
+    assert 4 not in reachable
+    assert 5 in reachable
+    assert 6 not in reachable
+    assert 7 in reachable
+    assert 8 not in reachable
+    assert 9 not in reachable
+    assert 10 not in reachable
+
+    nfa.remove_initial_state(1)
+    nfa.remove_initial_state(3)
+
+    reachable = nfa.get_reachable_states()
+    assert len(reachable) == 0
+
+    nfa = mata.Nfa(20)
+    fill_with_automaton_b(nfa)
+
+    nfa.remove_trans_raw(2, ord('c'), 12)
+    nfa.remove_trans_raw(4, ord('c'), 8)
+    nfa.remove_trans_raw(4, ord('a'), 8)
+
+    reachable = nfa.get_reachable_states()
+    assert 0 in reachable
+    assert 1 not in reachable
+    assert 2 in reachable
+    assert 3 not in reachable
+    assert 4 in reachable
+    assert 5 not in reachable
+    assert 6 in reachable
+    assert 7 not in reachable
+    assert 8 not in reachable
+    assert 9 not in reachable
+    assert 10 not in reachable
+    assert 11 not in reachable
+    assert 12 not in reachable
+    assert 13 not in reachable
+    assert 14 not in reachable
+
+    nfa.remove_final_state(2)
+    reachable = nfa.get_reachable_states()
+    assert len(reachable) == 4
+    assert 0 in reachable
+    assert 2 in reachable
+    assert 4 in reachable
+    assert 6 in reachable
+
+    useful = nfa.get_useful_states()
+    assert len(useful) == 0
+
+    nfa.make_final_state(4)
+    useful = nfa.get_useful_states()
+    assert len(useful) == 1
+    assert 4 in useful

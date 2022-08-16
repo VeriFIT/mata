@@ -133,3 +133,24 @@ def fill_with_automaton_a(nfa):
     nfa.add_trans_raw(7, ord('a'), 5)
     nfa.add_trans_raw(5, ord('a'), 5)
     nfa.add_trans_raw(5, ord('c'), 9)
+
+def fill_with_automaton_b(nfa):
+    """
+    Fill nfa with automaton B.
+
+    :param: mata.Nfa nfa: Automaton to be filled with automaton B.
+    """
+    nfa.make_initial_states([4])
+    nfa.make_final_states([2, 12])
+    nfa.add_trans_raw(4, ord('c'), 8)
+    nfa.add_trans_raw(4, ord('a'), 8)
+    nfa.add_trans_raw(8, ord('b'), 4)
+    nfa.add_trans_raw(4, ord('a'), 6)
+    nfa.add_trans_raw(4, ord('b'), 6)
+    nfa.add_trans_raw(6, ord('a'), 2)
+    nfa.add_trans_raw(2, ord('b'), 2)
+    nfa.add_trans_raw(2, ord('a'), 0)
+    nfa.add_trans_raw(0, ord('a'), 2)
+    nfa.add_trans_raw(2, ord('c'), 12)
+    nfa.add_trans_raw(12, ord('a'), 14)
+    nfa.add_trans_raw(14, ord('b'), 12)

@@ -461,6 +461,33 @@ cdef class Nfa:
             transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
         return transitions
 
+    def get_useful_states(self):
+        """
+        Get useful states (states which are reachable and terminating at the same time.)
+        :return: List of useful states.
+        """
+        cdef vector[State] return_value
+        return_value = self.thisptr.get_useful_states().ToVector()
+        return {state for state in return_value}
+
+    def get_reachable_states(self):
+        """
+        Get reachable states.
+        :return: List of reachable states.
+        """
+        cdef vector[State] return_value
+        return_value = self.thisptr.get_reachable_states().ToVector()
+        return {state for state in return_value}
+
+    def get_terminating_states(self):
+        """
+        Get terminating states.
+        :return: List of terminating states.
+        """
+        cdef vector[State] return_value
+        return_value = self.thisptr.get_terminating_states().ToVector()
+        return {state for state in return_value}
+
     def trim(self):
         """
         Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
