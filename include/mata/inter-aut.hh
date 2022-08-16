@@ -20,44 +20,55 @@ public:
     {
         SYM,
         STATE,
-        NODE
+        NODE,
+        NOT_OPERAND
     };
 
     enum OperatorType
     {
         NEG,
         AND,
-        OR
+        OR,
+        NOT_OPERATOR
     };
 
     enum Type
     {
         OPERAND,
-        OPERATOR
+        OPERATOR,
+        LEFT_PARENTHESIS,
+        RIGHT_PARENTHESIS,
     };
 
+    Type type;
     std::string raw;
     std::string name; // parsed name. When type marking is used, markers are removed.
-    Type type;
     OperatorType operator_type;
     OperandType operand_type;
 
     bool is_operand() { return type == Type::OPERAND;}
     bool is_operator() { return type == Type::OPERATOR;}
+    bool is_righpar() { return type == Type::RIGHT_PARENTHESIS;}
+    bool is_leftpar() { return type == Type::LEFT_PARENTHESIS;}
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperatorType oprtor) : type(t), raw(raw), name(name), operator_type(oprtor),
-                operand_type(OperandType::NODE) {}
+                operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
-                OperandType operand) : type(t), raw(raw), name(name), operator_type(OperatorType::NEG),
+                OperandType operand) : type(t), raw(raw), name(name), operator_type(NOT_OPERATOR),
                 operand_type(operand) {};
+
+    FormulaNode(Type t, std::string raw) : type(t), raw(raw), name(raw), operator_type(NOT_OPERATOR),
+                                       operand_type(NOT_OPERAND) {};
 };
 
 struct FormulaGraph
 {
     FormulaNode node;
-    std::vector<FormulaNode> children;
+    std::vector<FormulaGraph> children;
+
+    FormulaGraph(FormulaNode n) : node(n), children() {}
 };
 
 struct InterAutomaton
