@@ -63,5 +63,32 @@ def test_transition_operations():
     trans = nfa.get_transitions_to_state(9)
     assert trans == expected_trans
 
+    trans = nfa.get_trans_as_sequence()
+    expected_trans = [
+        mata.Trans(1, ord('a'), 3),
+        mata.Trans(1, ord('a'), 10),
+        mata.Trans(1, ord('b'), 7),
+        mata.Trans(3, ord('a'), 7),
+        mata.Trans(3, ord('b'), 9),
+        mata.Trans(5, ord('a'), 5),
+        mata.Trans(5, ord('c'), 9),
+        mata.Trans(7, ord('a'), 3),
+        mata.Trans(7, ord('a'), 5),
+        mata.Trans(7, ord('b'), 1),
+        mata.Trans(7, ord('c'), 3),
+        mata.Trans(9, ord('a'), 9),
+        mata.Trans(10, ord('a'), 7),
+        mata.Trans(10, ord('b'), 7),
+        mata.Trans(10, ord('c'), 7),
+    ]
+    assert trans == expected_trans
+
+    trans = nfa.get_trans_from_state_as_sequence(1)
+    expected_trans = [
+        mata.Trans(1, ord('a'), 3),
+        mata.Trans(1, ord('a'), 10),
+        mata.Trans(1, ord('b'), 7),
+    ]
+    assert trans == expected_trans
 
 

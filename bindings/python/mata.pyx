@@ -427,6 +427,39 @@ cdef class Nfa:
             transsymbols.append(t)
         return transsymbols
 
+    def get_transitions_to_state(self, State state_to):
+        """
+        Get transitions leading to state_to (state_to is their target state).
+
+        :return: List mata.CTrans: List of transitions leading to state_to.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to_state(state_to)
+        trans = []
+        for c_transition in c_transitions:
+            trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return trans
+
+    def get_trans_as_sequence(self):
+        """
+        Get automaton transitions as a sequence.
+        :return: List of automaton transitions.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_as_sequence()
+        transitions = []
+        for c_transition in c_transitions:
+            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return transitions
+
+    def get_trans_from_state_as_sequence(self, State state_from):
+        """
+        Get automaton transitions from state_from as a sequence.
+        :return: List of automaton transitions.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_from_state_as_sequence(state_from)
+        transitions = []
+        for c_transition in c_transitions:
+            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return transitions
 
     def trim(self):
         """
@@ -451,19 +484,6 @@ cdef class Nfa:
         digraph.thisptr.finalstates = c_digraph.finalstates
         digraph.thisptr.transitionrelation = c_digraph.transitionrelation
         return digraph
-
-    def get_transitions_to_state(self, State state_to):
-        """
-        Get transitions leading to state_to (state_to is their target state).
-
-        :return: List mata.CTrans: List of transitions leading to state_to.
-        """
-        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to_state(state_to)
-        trans = []
-        for c_transition in c_transitions:
-            trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
-
-        return trans
 
     def __str__(self):
         """String representation of the automaton displays states, and transitions
