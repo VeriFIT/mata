@@ -110,7 +110,7 @@ def binary_alphabet():
     yield alph
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def prepare_automaton_a():
     """
     Prepare Nfa as automaton A.
@@ -140,7 +140,7 @@ def prepare_automaton_a():
     return _prepare_automaton_a
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def prepare_automaton_b():
     """
     Prepare Nfa as automaton B.
