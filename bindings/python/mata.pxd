@@ -187,6 +187,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void determinize(CNfa*, CNfa&, SubsetMap*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
+    cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
+    cdef void concatenate(CNfa*, CNfa&, CNfa&)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)

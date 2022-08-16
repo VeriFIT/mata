@@ -661,7 +661,42 @@ cdef class Nfa:
         mata.intersection(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), &product_map
         )
-        return result, {tuple(sorted(k)): v for k, v in product_map}
+        return result, {tuple(k): v for k, v in product_map}
+
+    @classmethod
+    def intersection_epsilon_preserving(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+        """
+        Performs intersection of lhs and rhs preserving epsilon transitions
+
+        Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
+         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
+         a product state `(s,a)-ε->(p,b)` is created.
+
+        Automata must share alphabets.
+
+        :param: Nfa lhs: First automaton with possible epsilon symbols.
+        :param: Nfa rhs: Second automaton with possible epsilon symbols.
+        :param: Symbol epsilon: Symbol to handle as an epsilon symbol.
+        :return: Intersection of lhs and rhs with epsilon transitions preserved, product map of the results.
+        """
+        result = Nfa()
+        cdef ProductMap product_map
+        mata.intersection(result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), epsilon, &product_map)
+        return result, {tuple(k): v for k, v in product_map}
+
+    @classmethod
+    def concatenate(cls, Nfa lhs, Nfa rhs):
+        """
+        Concatenate two NFAs.
+
+        :param Nfa lhs: First automaton to concatenate.
+        :param Nfa rhs: Second automaton to concatenate.
+        :return: Nfa: Concatenated automaton.
+        """
+        result = Nfa()
+        mata.concatenate(result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr))
+        return result
 
     @classmethod
     def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
@@ -720,10 +755,8 @@ cdef class Nfa:
         :param Symbol epsilon: symbol representing the epsilon
         :return: automaton, with epsilon transitions removed
         """
-        result = Nfa(lhs.get_num_of_states())
-        mata.remove_epsilon(
-            result.thisptr, dereference(lhs.thisptr), epsilon
-        )
+        result = Nfa()
+        mata.remove_epsilon(result.thisptr, dereference(lhs.thisptr), epsilon)
         return result
 
     @classmethod

@@ -236,6 +236,11 @@ private:
     }
 }; // Concatenation
 
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs)
+{
+    *res = Concatenation(lhs, rhs).get_result();
+}
+
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs)
 {
     return Concatenation(lhs, rhs).get_result();

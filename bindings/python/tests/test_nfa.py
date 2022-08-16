@@ -318,6 +318,27 @@ def test_inclusion(
     assert not mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight, alph)[0]
     assert not mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight, alph)[0]
 
+    lhs = mata.Nfa(2)
+    lhs.make_initial_state(0)
+    lhs.make_final_state(1)
+    lhs.add_trans_raw(0, ord('b'), 1)
+
+    rhs = mata.Nfa(2)
+    rhs.make_initial_state(0)
+    rhs.make_final_state(1)
+    rhs.add_trans_raw(0, ord('a'), 1)
+
+    result = mata.Nfa.concatenate(lhs, rhs)
+
+    assert result.has_initial_state(0)
+    assert result.has_final_state(2)
+    assert result.get_num_of_states() == 3
+    assert result.has_trans_raw(0, ord('b'), 1)
+    assert result.has_trans_raw(1, ord('a'), 2)
+
+    shortest_words = result.get_shortest_words()
+    assert len(shortest_words) == 1
+    assert [ord('b'), ord('a')] in shortest_words
 
 def test_completeness(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
@@ -399,6 +420,107 @@ def test_intersection(
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_two, alph)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four, alph)[0]
     assert map == {(0,0): 0, (1,1): 1, (1,3): 3, (2,2): 2, (2, 4): 4}
+
+
+def test_intersection_epsilon_preserving():
+    epsilon = ord('e')
+    a = mata.Nfa(6)
+    a.make_initial_state(0)
+    a.make_final_states([1, 4, 5])
+    a.add_trans_raw(0, epsilon, 1)
+    a.add_trans_raw(1, ord('a'), 1)
+    a.add_trans_raw(1, ord('b'), 1)
+    a.add_trans_raw(1, ord('c'), 2)
+    a.add_trans_raw(2, ord('b'), 4)
+    a.add_trans_raw(2, epsilon, 3)
+    a.add_trans_raw(3, ord('a'), 5)
+
+    b = mata.Nfa(10)
+    b.make_initial_state(0)
+    b.make_final_states([2, 4, 8, 7])
+    b.add_trans_raw(0, ord('b'), 1)
+    b.add_trans_raw(0, ord('a'), 2)
+    b.add_trans_raw(2, ord('a'), 4)
+    b.add_trans_raw(2, epsilon, 3)
+    b.add_trans_raw(3, ord('b'), 4)
+    b.add_trans_raw(0, ord('c'), 5)
+    b.add_trans_raw(5, ord('a'), 8)
+    b.add_trans_raw(5, epsilon, 6)
+    b.add_trans_raw(6, ord('a'), 9)
+    b.add_trans_raw(6, ord('b'), 7)
+
+    result, prod_map = mata.Nfa.intersection_epsilon_preserving(a, b, epsilon)
+
+    # Check states.
+    for i, m in prod_map.items():
+        print(f"{i}: {m}")
+
+    assert result.get_num_of_states() == 13
+    assert result.is_state(prod_map[(0, 0)])
+    assert result.is_state(prod_map[(1, 0)])
+    assert result.is_state(prod_map[(1, 1)])
+    assert result.is_state(prod_map[(1, 2)])
+    assert result.is_state(prod_map[(1, 3)])
+    assert result.is_state(prod_map[(1, 4)])
+    assert result.is_state(prod_map[(2, 5)])
+    assert result.is_state(prod_map[(3, 5)])
+    assert result.is_state(prod_map[(2, 6)])
+    assert result.is_state(prod_map[(3, 6)])
+    assert result.is_state(prod_map[(4, 7)])
+    assert result.is_state(prod_map[(5, 9)])
+    assert result.is_state(prod_map[(5, 8)])
+
+    assert result.has_initial_state(prod_map[(0, 0)])
+    assert len(result.initialstates) == 1
+    assert result.has_final_state(prod_map[(1, 2)])
+    assert result.has_final_state(prod_map[(1, 4)])
+    assert result.has_final_state(prod_map[(4, 7)])
+    assert result.has_final_state(prod_map[(5, 8)])
+    assert len(result.finalstates) == 4
+
+    # Check transitions.
+    assert result.get_num_of_trans() == 15
+
+    assert result.has_trans_raw(prod_map[(0, 0)], epsilon, prod_map[(1, 0)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(0, 0)])) == 1
+
+    assert result.has_trans_raw(prod_map[(1, 0)], ord('b'), prod_map[(1, 1)])
+    assert result.has_trans_raw(prod_map[(1, 0)], ord('a'), prod_map[(1, 2)])
+    assert result.has_trans_raw(prod_map[(1, 0)], ord('c'), prod_map[(2, 5)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 0)])) == 3
+
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 1)])) == 0
+
+    assert result.has_trans_raw(prod_map[(1, 2)], epsilon, prod_map[(1, 3)])
+    assert result.has_trans_raw(prod_map[(1, 2)], ord('a'), prod_map[(1, 4)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 2)])) == 2
+
+    assert result.has_trans_raw(prod_map[(1, 3)], ord('b'), prod_map[(1, 4)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1,  3)])) == 1
+
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 4)])) == 0
+
+    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(3, 5)])
+    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(2, 6)])
+    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(2, 5)])) == 3
+
+    assert result.has_trans_raw(prod_map[(3, 5)], ord('a'), prod_map[(5, 8)])
+    assert result.has_trans_raw(prod_map[(3, 5)], epsilon, prod_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(3, 5)])) == 2
+
+    assert result.has_trans_raw(prod_map[(2, 6)], ord('b'), prod_map[(4, 7)])
+    assert result.has_trans_raw(prod_map[(2, 6)], epsilon, prod_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(2, 6)])) == 2
+
+    assert result.has_trans_raw(prod_map[(3, 6)], ord('a'), prod_map[(5, 9)])
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(3, 6)])) == 1
+
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(4, 7)])) == 0
+
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(5, 9)])) == 0
+
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(5, 8)])) == 0
 
 
 def test_complement(
@@ -714,3 +836,4 @@ def test_get_states():
     useful = nfa.get_useful_states()
     assert len(useful) == 1
     assert 4 in useful
+    

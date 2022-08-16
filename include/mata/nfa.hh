@@ -762,6 +762,24 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
 Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
 
 /**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs with ε-transitions preserved.
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+
+/**
  * @brief Compute intersection of two NFAs.
  *
  * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
@@ -782,8 +800,16 @@ Nfa intersection(const Nfa &lhs, const Nfa &rhs);
 
 /**
  * Concatenate two NFAs.
- * @param lhs[in] First automaton to concatenate.
- * @param rhs[in] Second automaton to concatenate.
+ * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ */
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
+
+/**
+ * Concatenate two NFAs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
  * @return Concatenated automaton.
  */
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs);

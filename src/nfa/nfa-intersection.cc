@@ -372,6 +372,16 @@ void intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_ma
     *res = intersection.get_product();
 }
 
+void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map)
+{
+    Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
+    if (prod_map != nullptr)
+    {
+        *prod_map = intersection.get_product_map();
+    }
+    *res = intersection.get_product();
+}
+
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMap*  prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
