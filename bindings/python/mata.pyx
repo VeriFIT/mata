@@ -2,6 +2,7 @@ cimport mata
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
+from libcpp.utility cimport pair
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
@@ -1463,3 +1464,55 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
                 )
 
     return cmdout, cmderr
+
+cdef class Segmentation:
+    """Wrapper over Segmentation."""
+    cdef mata.CSegmentation* thisptr
+
+    def __cinit__(self, Nfa aut, Symbol symbol):
+        """
+        Compute segmentation.
+
+        :param aut: Segment automaton to compute epsilon depths for.
+        :param symbol: Symbol to execute segmentation for.
+        """
+        self.thisptr = new mata.CSegmentation(dereference(aut.thisptr), symbol)
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def get_epsilon_depths(self):
+        """
+        Get segmentation depths for ε-transitions.
+
+        :return: Map of depths to lists of ε-transitions.
+        """
+        cdef umap[unsigned, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
+        result = {}
+        for epsilon_depth_pair in c_epsilon_transitions:
+            for trans in epsilon_depth_pair.second:
+                if epsilon_depth_pair.first not in result:
+                    result[epsilon_depth_pair.first] = []
+
+                result[epsilon_depth_pair.first].append(Trans(trans.src, trans.symb, trans.tgt))
+
+        return result
+
+    def get_segments(self):
+        """
+        Get segment automata.
+
+        :return: A vector of segments for the segment automaton in the order from the left (initial state in segment
+                 automaton) to the right (final states of segment automaton).
+        """
+        segments = []
+        cdef vector[CNfa] c_segments = self.thisptr.get_segments()
+        for c_segment in c_segments:
+            segment = Nfa(c_segment.get_num_of_states())
+            segment.thisptr.initialstates = c_segment.initialstates
+            segment.thisptr.finalstates = c_segment.finalstates
+            segment.thisptr.transitionrelation = c_segment.transitionrelation
+
+            segments.append(segment)
+
+        return segments

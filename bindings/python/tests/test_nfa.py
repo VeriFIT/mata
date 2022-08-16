@@ -881,3 +881,41 @@ def test_get_states():
     assert len(useful) == 1
     assert 4 in useful
     
+    
+def test_segmentation():
+    nfa = mata.Nfa(ord('q') + 1)
+    epsilon = ord('c')
+
+    fill_with_automaton_a(nfa)
+    segmentation = mata.Segmentation(nfa, epsilon)
+    epsilon_depths = segmentation.get_epsilon_depths()
+    assert len(epsilon_depths) == 1
+    assert 0 in epsilon_depths
+    assert len(epsilon_depths[0]) == 3
+    assert mata.Trans(10, epsilon, 7) in epsilon_depths[0]
+    assert mata.Trans(7, epsilon, 3) in epsilon_depths[0]
+    assert mata.Trans(5, epsilon, 9) in epsilon_depths[0]
+
+    nfa = mata.Nfa(ord('q') + 1)
+    nfa.make_initial_state(1)
+    nfa.make_final_state(8)
+    nfa.add_trans_raw(1, epsilon, 2)
+    nfa.add_trans_raw(2, ord('a'), 3)
+    nfa.add_trans_raw(2, ord('b'), 4)
+    nfa.add_trans_raw(3, ord('b'), 6)
+    nfa.add_trans_raw(4, ord('a'), 6)
+    nfa.add_trans_raw(6, epsilon, 7)
+    nfa.add_trans_raw(7, epsilon, 8)
+
+    segmentation = mata.Segmentation(nfa, epsilon)
+    epsilon_depths = segmentation.get_epsilon_depths()
+    assert len(epsilon_depths) == 3
+    assert 0 in epsilon_depths
+    assert 1 in epsilon_depths
+    assert 2 in epsilon_depths
+    assert len(epsilon_depths[0]) == 1
+    assert len(epsilon_depths[1]) == 1
+    assert len(epsilon_depths[2]) == 1
+    assert mata.Trans(1, epsilon, 2) in epsilon_depths[0]
+    assert mata.Trans(6, epsilon, 7) in epsilon_depths[1]
+    assert mata.Trans(7, epsilon, 8) in epsilon_depths[2]

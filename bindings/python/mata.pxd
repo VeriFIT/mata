@@ -91,6 +91,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
+    ctypedef vector[CTrans] TransitionSequence
+
     cdef cppclass CTransSymbolStates "Mata::Nfa::TransSymbolStates":
         # Public Attributes
         Symbol symbol
@@ -228,6 +230,15 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
+
+    cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
+        CSegmentation(CNfa&, Symbol) except +
+
+        ctypedef unsigned EpsilonDepth
+        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
+
+        EpsilonDepthTransitions get_epsilon_depths()
+        vector[CNfa] get_segments()
 
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
