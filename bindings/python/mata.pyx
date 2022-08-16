@@ -772,7 +772,7 @@ cdef class Nfa:
 
     @classmethod
     def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
-        """Removes transitions that contains epsilon symbol
+        """Removes transitions that contain epsilon symbol
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
 
@@ -783,6 +783,16 @@ cdef class Nfa:
         result = Nfa()
         mata.remove_epsilon(result.thisptr, dereference(lhs.thisptr), epsilon)
         return result
+
+    def remove_epsilon(self, Symbol epsilon):
+        """
+        Removes transitions which contain epsilon symbol.
+
+        TODO: Possibly there may be issue with setting the size of the automaton beforehand?
+
+        :param Symbol epsilon: Symbol representing the epsilon symbol.
+        """
+        self.thisptr.remove_epsilon(epsilon)
 
     @classmethod
     def minimize(cls, Nfa lhs):

@@ -170,6 +170,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
+        void remove_epsilon(Symbol) except +
 
 
     # Automata tests
