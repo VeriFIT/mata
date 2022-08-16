@@ -16,6 +16,7 @@
  */
 
 #include "../3rdparty/catch.hpp"
+#include "mata/inter-aut.hh"
 
 #include <mata/parser.hh>
 #include <mata/util.hh>
@@ -661,6 +662,38 @@ TEST_CASE("correct use of Mata::Parser::parse_mf()")
 		REQUIRE(parsed[1].type == "Type2");
 		REQUIRE(haskey(parsed[1].dict, "key2"));
 	}
+} // parse_mf }}}
+
+
+TEST_CASE("parsing automata to intermediate representation")
+{ // {{{
+    Parsed parsed;
+
+    SECTION("NFA")
+    {
+        std::string file =
+           "@NFA-explicit\n"
+           "%States-enum q r s t \"(r,s)\"\n"
+           "%Alphabet-auto\n"
+           "q symbol & r\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        REQUIRE(auts.size() == 1);
+        const Mata::InterAutomaton& aut = auts.back();
+        REQUIRE(aut.transitions.size() == 1);
+        REQUIRE(aut.transitions.front().first.name == "q");
+        REQUIRE(aut.transitions.front().first.is_operand());
+        REQUIRE(aut.transitions.front().second.node.is_operator());
+        REQUIRE(aut.transitions.front().second.node.name == "&");
+        REQUIRE(aut.transitions.front().second.children.size() == 2);
+        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+        REQUIRE(aut.transitions.front().second.children.front().children.empty());
+        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
+        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+        REQUIRE(aut.transitions.front().second.children[1].children.empty());
+    }
 } // parse_mf }}}
 
 
