@@ -145,11 +145,13 @@ namespace
                     break;
                 case Mata::FormulaNode::OPERATOR:
                     for (int j = opstack.size()-1; j >= 0; --j) {
+                        assert(!opstack[j].is_operand());
                         if (lower_precedens(node.operator_type, opstack[j].operator_type)) {
                             output.push_back(opstack[j]);
                             opstack.erase(opstack.begin()+j);
                         }
                     }
+                    opstack.push_back(node);
                     break;
                 default: assert(false);
             }
@@ -177,14 +179,14 @@ namespace
                     switch (node.operator_type) {
                         case Mata::FormulaNode::NEG:
                             gr.children.push_back(opstack.back());
-                            opstack.back();
+                            opstack.pop_back();
                             opstack.push_back(gr);
                             break;
                         default:
                             gr.children.push_back(opstack.back());
-                            opstack.back();
+                            opstack.pop_back();
                             gr.children.insert(gr.children.begin(), opstack.back());
-                            opstack.back();
+                            opstack.pop_back();
                             opstack.push_back(gr);
                     }
                     break;
