@@ -110,47 +110,58 @@ def binary_alphabet():
     yield alph
 
 
-def fill_with_automaton_a(nfa):
+@pytest.fixture(scope="function")
+def prepare_automaton_a():
     """
-    Fill nfa with automaton A.
+    Prepare Nfa as automaton A.
+    """
 
-    :param: mata.Nfa nfa: Automaton to be filled with automaton A.
-    """
-    nfa.make_initial_states([1, 3])
-    nfa.make_final_state(5)
-    nfa.add_trans_raw(1, ord('a'), 3)
-    nfa.add_trans_raw(1, ord('a'), 10)
-    nfa.add_trans_raw(1, ord('b'), 7)
-    nfa.add_trans_raw(3, ord('a'), 7)
-    nfa.add_trans_raw(3, ord('b'), 9)
-    nfa.add_trans_raw(9, ord('a'), 9)
-    nfa.add_trans_raw(7, ord('b'), 1)
-    nfa.add_trans_raw(7, ord('a'), 3)
-    nfa.add_trans_raw(7, ord('c'), 3)
-    nfa.add_trans_raw(10, ord('a'), 7)
-    nfa.add_trans_raw(10, ord('b'), 7)
-    nfa.add_trans_raw(10, ord('c'), 7)
-    nfa.add_trans_raw(7, ord('a'), 5)
-    nfa.add_trans_raw(5, ord('a'), 5)
-    nfa.add_trans_raw(5, ord('c'), 9)
+    def _prepare_automaton_a():
+        nfa = mata.Nfa(100)
+        nfa.make_initial_states([1, 3])
+        nfa.make_final_state(5)
+        nfa.add_trans_raw(1, ord('a'), 3)
+        nfa.add_trans_raw(1, ord('a'), 10)
+        nfa.add_trans_raw(1, ord('b'), 7)
+        nfa.add_trans_raw(3, ord('a'), 7)
+        nfa.add_trans_raw(3, ord('b'), 9)
+        nfa.add_trans_raw(9, ord('a'), 9)
+        nfa.add_trans_raw(7, ord('b'), 1)
+        nfa.add_trans_raw(7, ord('a'), 3)
+        nfa.add_trans_raw(7, ord('c'), 3)
+        nfa.add_trans_raw(10, ord('a'), 7)
+        nfa.add_trans_raw(10, ord('b'), 7)
+        nfa.add_trans_raw(10, ord('c'), 7)
+        nfa.add_trans_raw(7, ord('a'), 5)
+        nfa.add_trans_raw(5, ord('a'), 5)
+        nfa.add_trans_raw(5, ord('c'), 9)
+        return nfa
 
-def fill_with_automaton_b(nfa):
-    """
-    Fill nfa with automaton B.
+    return _prepare_automaton_a
 
-    :param: mata.Nfa nfa: Automaton to be filled with automaton B.
+
+@pytest.fixture(scope="function")
+def prepare_automaton_b():
     """
-    nfa.make_initial_states([4])
-    nfa.make_final_states([2, 12])
-    nfa.add_trans_raw(4, ord('c'), 8)
-    nfa.add_trans_raw(4, ord('a'), 8)
-    nfa.add_trans_raw(8, ord('b'), 4)
-    nfa.add_trans_raw(4, ord('a'), 6)
-    nfa.add_trans_raw(4, ord('b'), 6)
-    nfa.add_trans_raw(6, ord('a'), 2)
-    nfa.add_trans_raw(2, ord('b'), 2)
-    nfa.add_trans_raw(2, ord('a'), 0)
-    nfa.add_trans_raw(0, ord('a'), 2)
-    nfa.add_trans_raw(2, ord('c'), 12)
-    nfa.add_trans_raw(12, ord('a'), 14)
-    nfa.add_trans_raw(14, ord('b'), 12)
+    Prepare Nfa as automaton B.
+    """
+
+    def _prepare_automaton_b():
+        nfa = mata.Nfa(100)
+        nfa.make_initial_states([4])
+        nfa.make_final_states([2, 12])
+        nfa.add_trans_raw(4, ord('c'), 8)
+        nfa.add_trans_raw(4, ord('a'), 8)
+        nfa.add_trans_raw(8, ord('b'), 4)
+        nfa.add_trans_raw(4, ord('a'), 6)
+        nfa.add_trans_raw(4, ord('b'), 6)
+        nfa.add_trans_raw(6, ord('a'), 2)
+        nfa.add_trans_raw(2, ord('b'), 2)
+        nfa.add_trans_raw(2, ord('a'), 0)
+        nfa.add_trans_raw(0, ord('a'), 2)
+        nfa.add_trans_raw(2, ord('c'), 12)
+        nfa.add_trans_raw(12, ord('a'), 14)
+        nfa.add_trans_raw(14, ord('b'), 12)
+        return nfa
+
+    return _prepare_automaton_b

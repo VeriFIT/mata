@@ -152,22 +152,22 @@ cdef class Nfa:
         del self.thisptr
 
     @property
-    def initialstates(self):
+    def initial_states(self):
         cdef vector[State] initial_states = self.thisptr.initialstates.ToVector()
         return [initial_state for initial_state in initial_states]
 
-    @initialstates.setter
-    def initialstates(self, value):
+    @initial_states.setter
+    def initial_states(self, value):
         cdef StateSet initial_states = StateSet(value)
         self.thisptr.initialstates = initial_states
 
     @property
-    def finalstates(self):
+    def final_states(self):
         cdef vector[State] final_states = self.thisptr.finalstates.ToVector()
         return [final_state for final_state in final_states]
 
-    @finalstates.setter
-    def finalstates(self, value):
+    @final_states.setter
+    def final_states(self, value):
         cdef StateSet final_states = StateSet(value)
         self.thisptr.finalstates = final_states
 
@@ -464,29 +464,26 @@ cdef class Nfa:
 
     def get_useful_states(self):
         """
-        Get useful states (states which are reachable and terminating at the same time.)
-        :return: List of useful states.
+        Get useful states (states which are reachable and terminating at the same time).
+        :return: A set of useful states.
         """
-        cdef vector[State] return_value
-        return_value = self.thisptr.get_useful_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get_useful_states().ToVector()
         return {state for state in return_value}
 
     def get_reachable_states(self):
         """
         Get reachable states.
-        :return: List of reachable states.
+        :return: A set of reachable states.
         """
-        cdef vector[State] return_value
-        return_value = self.thisptr.get_reachable_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get_reachable_states().ToVector()
         return {state for state in return_value}
 
     def get_terminating_states(self):
         """
-        Get terminating states.
-        :return: List of terminating states.
+        Get terminating states (states with a path from them leading to any final state).
+        :return: A set of terminating states.
         """
-        cdef vector[State] return_value
-        return_value = self.thisptr.get_terminating_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get_terminating_states().ToVector()
         return {state for state in return_value}
 
     def trim(self):
@@ -665,9 +662,9 @@ cdef class Nfa:
         return result, {tuple(k): v for k, v in product_map}
 
     @classmethod
-    def intersection_epsilon_preserving(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
         """
-        Performs intersection of lhs and rhs preserving epsilon transitions
+        Performs intersection of lhs and rhs preserving epsilon transitions.
 
         Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
@@ -719,7 +716,6 @@ cdef class Nfa:
             noodle.thisptr.initialstates = c_noodle.initialstates
             noodle.thisptr.finalstates = c_noodle.finalstates
             noodle.thisptr.transitionrelation = c_noodle.transitionrelation
-
             noodles.append(noodle)
 
         return noodles

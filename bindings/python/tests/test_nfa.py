@@ -4,7 +4,6 @@ import pytest
 import mata
 import os
 
-from conftest import fill_with_automaton_a, fill_with_automaton_b
 
 __author__ = 'Tomas Fiedor'
 
@@ -68,114 +67,114 @@ def test_adding_states():
 def test_making_initial_and_final_states():
     """Test making states in the automaton initial and final."""
     nfa = mata.Nfa(10)
-    assert len(nfa.initialstates) == 0
-    assert len(nfa.finalstates) == 0
+    assert len(nfa.initial_states) == 0
+    assert len(nfa.final_states) == 0
 
     nfa.make_initial_state(0)
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(0)
-    assert len(nfa.finalstates) == 0
+    assert len(nfa.final_states) == 0
 
     nfa.make_final_state(0)
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(0)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(0)
 
     nfa.make_initial_states([1, 2, 3])
-    assert len(nfa.initialstates) == 4
+    assert len(nfa.initial_states) == 4
     assert nfa.has_initial_state(0)
     assert nfa.has_initial_state(1)
     assert nfa.has_initial_state(2)
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(0)
 
     nfa.make_final_states([1, 2, 3])
-    assert len(nfa.initialstates) == 4
+    assert len(nfa.initial_states) == 4
     assert nfa.has_initial_state(0)
     assert nfa.has_initial_state(1)
     assert nfa.has_initial_state(2)
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 4
+    assert len(nfa.final_states) == 4
     assert nfa.has_final_state(0)
     assert nfa.has_final_state(1)
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
     nfa.remove_initial_state(0)
-    assert len(nfa.initialstates) == 3
+    assert len(nfa.initial_states) == 3
     assert not nfa.has_initial_state(0)
     assert nfa.has_initial_state(1)
     assert nfa.has_initial_state(2)
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 4
+    assert len(nfa.final_states) == 4
     assert nfa.has_final_state(0)
     assert nfa.has_final_state(1)
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
     nfa.remove_final_state(0)
-    assert len(nfa.initialstates) == 3
+    assert len(nfa.initial_states) == 3
     assert not nfa.has_initial_state(0)
     assert nfa.has_initial_state(1)
     assert nfa.has_initial_state(2)
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 3
+    assert len(nfa.final_states) == 3
     assert not nfa.has_final_state(0)
     assert nfa.has_final_state(1)
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
     nfa.remove_initial_states([1, 2])
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 3
+    assert len(nfa.final_states) == 3
     assert not nfa.has_final_state(0)
     assert nfa.has_final_state(1)
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
     nfa.remove_final_states([1, 2])
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(3)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(3)
 
     nfa.reset_initial_state(4)
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(4)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(3)
 
     nfa.reset_final_state(4)
-    assert len(nfa.initialstates) == 1
+    assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(4)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(4)
 
     nfa.reset_initial_states([5, 6])
-    assert len(nfa.initialstates) == 2
+    assert len(nfa.initial_states) == 2
     assert nfa.has_initial_state(5)
     assert nfa.has_initial_state(6)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(4)
 
     nfa.reset_initial_states([5, 6])
-    assert len(nfa.initialstates) == 2
+    assert len(nfa.initial_states) == 2
     assert nfa.has_initial_state(5)
     assert nfa.has_initial_state(6)
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(4)
 
     nfa.clear_initial()
-    assert len(nfa.initialstates) == 0
-    assert len(nfa.finalstates) == 1
+    assert len(nfa.initial_states) == 0
+    assert len(nfa.final_states) == 1
     assert nfa.has_final_state(4)
 
     nfa.clear_final()
-    assert len(nfa.initialstates) == 0
-    assert len(nfa.finalstates) == 0
+    assert len(nfa.initial_states) == 0
+    assert len(nfa.final_states) == 0
 
 
 def test_transitions():
@@ -349,10 +348,10 @@ def test_inclusion(
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
     alph = []
-    smaller.initialstates = [1]
-    smaller.finalstates = [1]
-    bigger.initialstates = [11]
-    bigger.finalstates = [11]
+    smaller.initial_states = [1]
+    smaller.final_states = [1]
+    bigger.initial_states = [11]
+    bigger.final_states = [11]
 
     assert mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
     assert mata.Nfa.equivalence_check(smaller, bigger)
@@ -466,7 +465,7 @@ def test_intersection(
     assert map == {(0,0): 0, (1,1): 1, (1,3): 3, (2,2): 2, (2, 4): 4}
 
 
-def test_intersection_epsilon_preserving():
+def test_intersection_preserving_epsilon_transitions():
     epsilon = ord('e')
     a = mata.Nfa(6)
     a.make_initial_state(0)
@@ -493,12 +492,9 @@ def test_intersection_epsilon_preserving():
     b.add_trans_raw(6, ord('a'), 9)
     b.add_trans_raw(6, ord('b'), 7)
 
-    result, prod_map = mata.Nfa.intersection_epsilon_preserving(a, b, epsilon)
+    result, prod_map = mata.Nfa.intersection_preserving_epsilon_transitions(a, b, epsilon)
 
     # Check states.
-    for i, m in prod_map.items():
-        print(f"{i}: {m}")
-
     assert result.get_num_of_states() == 13
     assert result.is_state(prod_map[(0, 0)])
     assert result.is_state(prod_map[(1, 0)])
@@ -515,12 +511,12 @@ def test_intersection_epsilon_preserving():
     assert result.is_state(prod_map[(5, 8)])
 
     assert result.has_initial_state(prod_map[(0, 0)])
-    assert len(result.initialstates) == 1
+    assert len(result.initial_states) == 1
     assert result.has_final_state(prod_map[(1, 2)])
     assert result.has_final_state(prod_map[(1, 4)])
     assert result.has_final_state(prod_map[(4, 7)])
     assert result.has_final_state(prod_map[(5, 8)])
-    assert len(result.finalstates) == 4
+    assert len(result.final_states) == 4
 
     # Check transitions.
     assert result.get_num_of_trans() == 15
@@ -669,20 +665,18 @@ def test_get_trans(fa_one_divisible_by_two):
     assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])
 
 
-def test_trim():
+def test_trim(prepare_automaton_a):
     """Test trimming the automaton."""
-    nfa = mata.Nfa(20)
-    fill_with_automaton_a(nfa)
+    nfa = prepare_automaton_a()
     nfa.remove_trans_raw(1, ord('a'), 10)
 
-    old_nfa = mata.Nfa(20)
-    fill_with_automaton_a(old_nfa)
+    old_nfa = prepare_automaton_a()
     old_nfa.remove_trans_raw(1, ord('a'), 10)
 
     nfa.trim()
 
-    assert len(nfa.initialstates) == len(old_nfa.initialstates)
-    assert len(nfa.finalstates) == len(old_nfa.finalstates)
+    assert len(nfa.initial_states) == len(old_nfa.initial_states)
+    assert len(nfa.final_states) == len(old_nfa.final_states)
 
     for word in old_nfa.get_shortest_words():
         assert mata.Nfa.is_in_lang(nfa, word)
@@ -693,14 +687,11 @@ def test_trim():
     assert nfa.get_num_of_states() == 0
 
 
-def test_get_digraph():
+def test_get_digraph(prepare_automaton_a):
     """Test creating digraph from an automaton."""
-    nfa = mata.Nfa(100)
     abstract_symbol = ord('x')
-    fill_with_automaton_a(nfa)
-
-    old_nfa = mata.Nfa(20)
-    fill_with_automaton_a(old_nfa)
+    nfa = prepare_automaton_a()
+    old_nfa = prepare_automaton_a()
 
     digraph = nfa.get_digraph()
 
@@ -813,9 +804,8 @@ def test_simulation_indexes(fa_one_divisible_by_two):
     assert sorted(inv_index) == [[0], [0, 2], [1]]
 
 
-def test_get_states():
-    nfa = mata.Nfa(20)
-    fill_with_automaton_a(nfa)
+def test_get_states(prepare_automaton_a, prepare_automaton_b):
+    nfa = prepare_automaton_a()
 
     nfa.remove_trans_raw(3, ord('b'), 9)
     nfa.remove_trans_raw(5, ord('c'), 9)
@@ -841,8 +831,7 @@ def test_get_states():
     reachable = nfa.get_reachable_states()
     assert len(reachable) == 0
 
-    nfa = mata.Nfa(20)
-    fill_with_automaton_b(nfa)
+    nfa = prepare_automaton_b()
 
     nfa.remove_trans_raw(2, ord('c'), 12)
     nfa.remove_trans_raw(4, ord('c'), 8)
@@ -882,11 +871,10 @@ def test_get_states():
     assert 4 in useful
     
     
-def test_segmentation():
-    nfa = mata.Nfa(ord('q') + 1)
+def test_segmentation(prepare_automaton_a):
+    nfa = prepare_automaton_a()
     epsilon = ord('c')
 
-    fill_with_automaton_a(nfa)
     segmentation = mata.Segmentation(nfa, epsilon)
     epsilon_depths = segmentation.get_epsilon_depths()
     assert len(epsilon_depths) == 1
