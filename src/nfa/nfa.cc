@@ -85,8 +85,10 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
+		size_t num_of_states = aut.get_num_of_states(); 
+
 		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
-		for (State q = 0; q < aut.get_num_of_states(); ++q) {
+		for (State q = 0; q < num_of_states; ++q) {
 			State qReprState = quot_proj[q];
 			if (state_map.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
 				State qClass = result->add_new_state();
@@ -97,7 +99,7 @@ namespace {
 			}
 		}
 
-        for (State q = 0; q < aut.get_num_of_states(); ++q) {
+        for (State q = 0; q < num_of_states; ++q) {
             State q_class_state = state_map.at(q);
 
             if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial 
