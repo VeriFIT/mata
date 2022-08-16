@@ -452,6 +452,19 @@ cdef class Nfa:
         digraph.thisptr.transitionrelation = c_digraph.transitionrelation
         return digraph
 
+    def get_transitions_to_state(self, State state_to):
+        """
+        Get transitions leading to state_to (state_to is their target state).
+
+        :return: List mata.CTrans: List of transitions leading to state_to.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to_state(state_to)
+        trans = []
+        for c_transition in c_transitions:
+            trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+
+        return trans
+
     def __str__(self):
         """String representation of the automaton displays states, and transitions
 
@@ -471,7 +484,7 @@ cdef class Nfa:
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
 
-        By default the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
+        By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
 
         One can choose other format that is supported by graphviz format (e.g. pdf or png).
 

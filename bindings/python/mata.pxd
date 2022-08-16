@@ -164,6 +164,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         TransitionList get_transitions_from_state(State)
         void trim()
         CNfa get_digraph()
+        vector[CTrans] get_transitions_to_state(State)
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)

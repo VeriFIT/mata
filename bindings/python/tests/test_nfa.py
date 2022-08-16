@@ -4,32 +4,10 @@ import pytest
 import mata
 import os
 
+from conftest import fill_with_automaton_a
+
 __author__ = 'Tomas Fiedor'
 
-
-def fill_with_automaton_a(nfa):
-    """
-    Fill nfa with automaton A.
-
-    :param: mata.Nfa nfa: Automaton to be filled with automaton A.
-    """
-    nfa.make_initial_states([1, 3])
-    nfa.make_final_state(5)
-    nfa.add_trans_raw(1, ord('a'), 3)
-    nfa.add_trans_raw(1, ord('a'), 10)
-    nfa.add_trans_raw(1, ord('b'), 7)
-    nfa.add_trans_raw(3, ord('a'), 7)
-    nfa.add_trans_raw(3, ord('b'), 9)
-    nfa.add_trans_raw(9, ord('a'), 9)
-    nfa.add_trans_raw(7, ord('b'), 1)
-    nfa.add_trans_raw(7, ord('a'), 3)
-    nfa.add_trans_raw(7, ord('c'), 3)
-    nfa.add_trans_raw(10, ord('a'), 7)
-    nfa.add_trans_raw(10, ord('b'), 7)
-    nfa.add_trans_raw(10, ord('c'), 7)
-    nfa.add_trans_raw(7, ord('a'), 5)
-    nfa.add_trans_raw(5, ord('a'), 5)
-    nfa.add_trans_raw(5, ord('c'), 9)
 
 def test_adding_states():
     """Test nfa"""

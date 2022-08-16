@@ -3,6 +3,8 @@
 import pytest
 import mata
 
+from conftest import fill_with_automaton_a
+
 __author__ = 'Tomas Fiedor'
 
 
@@ -52,4 +54,14 @@ def test_transition_operations():
     assert not nfa.has_trans_raw(3, ord('c'), 4)
     nfa.remove_trans(trans)
     assert not nfa.has_trans(trans)
+
+    nfa = mata.Nfa(20)
+    fill_with_automaton_a(nfa)
+
+    expected_trans = [mata.Trans(3, ord('b'), 9), mata.Trans(5, ord('c'), 9), mata.Trans(9, ord('a'), 9)]
+
+    trans = nfa.get_transitions_to_state(9)
+    assert trans == expected_trans
+
+
 
