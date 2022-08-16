@@ -226,8 +226,14 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
+
+cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
+    cdef vector[CNfa] noodlify(CNfa&, Symbol, bool)
+
+
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string)
+
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void compute_fw_direct_simulation(const CNfa&)

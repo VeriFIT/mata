@@ -699,6 +699,31 @@ cdef class Nfa:
         return result
 
     @classmethod
+    def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
+        """
+        Create noodles from segment automaton.
+
+        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+
+        :param: Nfa aut: Segment automaton to noodlify.
+        :param: Symbol epsilon: Epsilon symbol to noodlify for.
+        :param: bool include_empty: Whether to also include empty noodles.
+        :return: List of automata: A list of all (non-empty) noodles.
+        """
+        noodles = []
+        cdef vector[CNfa] c_noodles = mata.noodlify(dereference(aut.thisptr), symbol, include_empty)
+        for c_noodle in c_noodles:
+            noodle = Nfa(c_noodle.get_num_of_states())
+            noodle.thisptr.initialstates = c_noodle.initialstates
+            noodle.thisptr.finalstates = c_noodle.finalstates
+            noodle.thisptr.transitionrelation = c_noodle.transitionrelation
+
+            noodles.append(noodle)
+
+        return noodles
+
+    @classmethod
     def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
