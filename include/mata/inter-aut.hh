@@ -46,10 +46,10 @@ public:
     OperatorType operator_type;
     OperandType operand_type;
 
-    bool is_operand() { return type == Type::OPERAND;}
-    bool is_operator() { return type == Type::OPERATOR;}
-    bool is_righpar() { return type == Type::RIGHT_PARENTHESIS;}
-    bool is_leftpar() { return type == Type::LEFT_PARENTHESIS;}
+    bool is_operand() const { return type == Type::OPERAND;}
+    bool is_operator() const { return type == Type::OPERATOR;}
+    bool is_rightpar() const { return type == Type::RIGHT_PARENTHESIS;}
+    bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS;}
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperatorType oprtor) : type(t), raw(raw), name(name), operator_type(oprtor),
