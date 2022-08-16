@@ -203,7 +203,14 @@ namespace
     {
         assert(tokens.size() > 1); // transition formula has at least two items
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
-        const std::vector<Mata::FormulaNode> postfix = infix2postfix(aut, tokens);
+        std::vector<Mata::FormulaNode> postfix = infix2postfix(aut, tokens);
+        // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
+        if (aut.automaton_type == Mata::InterAutomaton::NFA && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT
+            && postfix.size() == 2) {
+            postfix.push_back(Mata::FormulaNode(
+                    Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
+        }
+
         const Mata::FormulaGraph graph = postfix2graph(postfix);
 
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
@@ -213,9 +220,9 @@ namespace
     {
         Mata::InterAutomaton aut;
 
-        if (section.type.find("NFA")) {
+        if (section.type.find("NFA") != std::string::npos) {
             aut.automaton_type = Mata::InterAutomaton::AutomatonType::NFA;
-        } else if (section.type.find("AFA")) {
+        } else if (section.type.find("AFA") != std::string::npos) {
             aut.automaton_type = Mata::InterAutomaton::AutomatonType::AFA;
         }
         aut.alphabet_type = get_alphabet_type(section.type);
