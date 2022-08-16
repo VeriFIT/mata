@@ -912,6 +912,40 @@ cdef class Nfa:
         return result, word
 
     @classmethod
+    def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
+        """
+        Test equivalence of two automata.
+
+        :param Nfa lhs: Smaller automaton.
+        :param Nfa rhs: Bigger automaton.
+        :param Alphabet alphabet: Alphabet shared by two automata.
+        :param dict params: Additional params.
+        :return: True if lhs is equivalent to rhs, False otherwise.
+        """
+        params = params or {'algo': 'antichains'}
+        if alphabet:
+            return mata.equivalence_check(
+                dereference(lhs.thisptr),
+                dereference(rhs.thisptr),
+                <CAlphabet&>dereference(alphabet.as_base()),
+                {
+                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                    for k, v in params.items()
+                }
+            )
+        else:
+            return mata.equivalence_check(
+                dereference(lhs.thisptr),
+                dereference(rhs.thisptr),
+                {
+                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                    for k, v in params.items()
+                }
+            )
+
+
+
+    @classmethod
     def is_complete(cls, Nfa lhs, Alphabet alphabet):
         """Test if automaton is complete
 

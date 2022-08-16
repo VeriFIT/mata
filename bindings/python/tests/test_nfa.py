@@ -318,6 +318,49 @@ def test_inclusion(
     assert not mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight, alph)[0]
     assert not mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight, alph)[0]
 
+    # Test equivalence of two NFAs.
+    smaller = mata.Nfa(10)
+    bigger = mata.Nfa(16)
+    alph = ["a", "b"]
+    smaller.make_initial_state(1)
+    smaller.make_final_state(1)
+    smaller.add_trans_raw(1, ord('a'), 1)
+    smaller.add_trans_raw(1, ord('b'), 1)
+
+    bigger.make_initial_state(11)
+    bigger.make_final_states([11, 12, 13, 14, 15])
+
+    bigger.add_trans_raw(11, ord('a'), 12)
+    bigger.add_trans_raw(11, ord('b'), 12)
+    bigger.add_trans_raw(12, ord('a'), 13)
+    bigger.add_trans_raw(12, ord('b'), 13)
+
+    bigger.add_trans_raw(13, ord('a'), 14)
+    bigger.add_trans_raw(14, ord('a'), 14)
+
+    bigger.add_trans_raw(13, ord('b'), 15)
+    bigger.add_trans_raw(15, ord('b'), 15)
+
+    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(smaller, bigger)
+    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(bigger, smaller)
+
+    smaller = mata.Nfa(10)
+    bigger = mata.Nfa(16)
+    alph = []
+    smaller.initialstates = [1]
+    smaller.finalstates = [1]
+    bigger.initialstates = [11]
+    bigger.finalstates = [11]
+
+    assert mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(smaller, bigger)
+    assert mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(bigger, smaller)
+
+
+def test_concatenate():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
     lhs.make_final_state(1)
@@ -339,6 +382,7 @@ def test_inclusion(
     shortest_words = result.get_shortest_words()
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
+
 
 def test_completeness(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight

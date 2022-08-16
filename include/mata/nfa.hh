@@ -943,8 +943,6 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
  */
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
 
-//bool operator==(Nfa& lhs, Nfa& rhs) { return equivalence_check(lhs, rhs); }
-
 /// Reverting the automaton
 void revert(Nfa* result, const Nfa& aut);
 
