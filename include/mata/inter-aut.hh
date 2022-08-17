@@ -73,6 +73,8 @@ struct FormulaGraph
 
     FormulaGraph() : node(), children() {}
     FormulaGraph(FormulaNode n) : node(n), children() {}
+
+    std::unordered_set<std::string> collect_node_names() const;
 };
 
 struct InterAutomaton
@@ -116,9 +118,11 @@ public:
 
     static std::vector<InterAutomaton> parse_from_mf(const Mata::Parser::Parsed& parsed);
 
-    bool states_enumerated() {return state_naming == Naming::ENUM;}
-    bool symbols_enumerated() {return state_naming == Naming::ENUM;}
-    bool nodes_enumerated() {return state_naming == Naming::ENUM;}
+    bool states_enumerated() const {return state_naming == Naming::ENUM;}
+    bool symbols_enumerated() const {return state_naming == Naming::ENUM;}
+    bool nodes_enumerated() const {return state_naming == Naming::ENUM;}
+
+    bool is_nfa() const {return automaton_type == NFA;}
 };
 
 } /* Mata */

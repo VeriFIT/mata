@@ -281,6 +281,25 @@ namespace
     }
 } // anonymous
 
+std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
+{
+    std::unordered_set<std::string> res;
+    std::vector<Mata::FormulaGraph> stack;
+
+    stack.push_back(this->node);
+    while (!stack.empty()) {
+        FormulaGraph g = stack.back();
+        stack.pop_back();
+
+        res.insert(g.node.name);
+        for (const auto& child : g.children) {
+            stack.push_back(child);
+        }
+    }
+
+    return res;
+}
+
 std::vector<Mata::InterAutomaton> Mata::InterAutomaton::parse_from_mf(const Mata::Parser::Parsed &parsed)
 {
     std::vector<Mata::InterAutomaton> result;
