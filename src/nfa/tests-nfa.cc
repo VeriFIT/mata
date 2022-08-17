@@ -2105,6 +2105,76 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
     }
 } // }}
 
+TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
+{
+	Nfa aut;
+	StateMap<State> state_map;
+
+	SECTION("empty automaton")
+	{
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.nothing_in_trans());
+		REQUIRE(result.initialstates.size() == 0);
+		REQUIRE(result.finalstates.size() == 0);
+	}
+
+	SECTION("simple automaton")
+	{
+		aut.increase_size(3);
+		aut.make_initial(1);
+
+		aut.make_final(2);
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.nothing_in_trans());
+		REQUIRE(result.has_initial(state_map[1]));
+		REQUIRE(result.has_final(state_map[2]));
+		REQUIRE(result.get_num_of_states() == 2);
+		REQUIRE(state_map[1] == state_map[0]);
+		REQUIRE(state_map[2] != state_map[0]);
+	}
+
+	SECTION("big automaton")
+	{
+		aut.increase_size(10);
+		aut.initialstates = {1,2};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'a', 3);
+		aut.add_trans(1, 'b', 4);
+		aut.add_trans(2, 'a', 2);
+		aut.add_trans(2, 'b', 2);
+		aut.add_trans(2, 'a', 3);
+		aut.add_trans(2, 'b', 4);
+		aut.add_trans(3, 'b', 4);
+		aut.add_trans(3, 'c', 7);
+		aut.add_trans(3, 'b', 2);
+		aut.add_trans(5, 'c', 3);
+		aut.add_trans(7, 'a', 8);
+		aut.add_trans(9, 'b', 2);
+		aut.add_trans(9, 'c', 0);
+		aut.add_trans(0, 'a', 4);
+		aut.finalstates = {3, 9};
+
+
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.get_num_of_states() == 6);
+		REQUIRE(result.has_initial(state_map[1]));
+		REQUIRE(result.has_initial(state_map[2]));
+		REQUIRE(result.has_trans(state_map[9], 'c', state_map[0]));
+		REQUIRE(result.has_trans(state_map[9], 'c', state_map[7]));
+		REQUIRE(result.has_trans(state_map[3], 'c', state_map[0]));
+		REQUIRE(result.has_trans(state_map[0], 'a', state_map[8]));
+		REQUIRE(result.has_trans(state_map[7], 'a', state_map[4]));
+		REQUIRE(result.has_trans(state_map[1], 'a', state_map[3]));
+		REQUIRE(!result.has_trans(state_map[3], 'b', state_map[4]));
+		REQUIRE(result.has_trans(state_map[2], 'a', state_map[2]));
+		REQUIRE(result.has_final(state_map[9]));
+		REQUIRE(result.has_final(state_map[3]));
+	}
+}
+
 TEST_CASE("Mata::Nfa::union_norename()") {
     Word one{1};
     Word zero{0};
