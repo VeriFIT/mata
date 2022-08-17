@@ -73,12 +73,16 @@ namespace
                 case '|':
                     return Mata::FormulaNode{Mata::FormulaNode::Type::OPERATOR, token, token,
                                              Mata::FormulaNode::OperatorType::OR};
-                case '^':
+                case '!':
                     return Mata::FormulaNode{Mata::FormulaNode::Type::OPERATOR, token, token,
                                              Mata::FormulaNode::OperatorType::NEG};
                 default:
                     assert(false);
             }
+        } else if (token == "(") {
+            return Mata::FormulaNode{Mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
+        } else if (token == ")") {
+            return Mata::FormulaNode{Mata::FormulaNode::Type::RIGHT_PARENTHESIS, token};
         } else if (is_naming_enum(mata.state_naming) && contains(mata.states_names, token)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::STATE};
@@ -106,10 +110,6 @@ namespace
         } else if (is_naming_auto(mata.symbol_naming)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::SYM};
-        } else if (token == "(") {
-            return Mata::FormulaNode{Mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
-        } else if (token == ")") {
-            return Mata::FormulaNode{Mata::FormulaNode::Type::RIGHT_PARENTHESIS, token};
         }
 
         assert(false);
@@ -141,13 +141,16 @@ namespace
                 case Mata::FormulaNode::RIGHT_PARENTHESIS:
                     while (!opstack.back().is_leftpar()) {
                         output.push_back(opstack.back());
-                        output.pop_back();
+                        opstack.pop_back();
+                        break;
                     }
-                    output.pop_back();
+                    opstack.pop_back();
                     break;
                 case Mata::FormulaNode::OPERATOR:
                     for (int j = opstack.size()-1; j >= 0; --j) {
                         assert(!opstack[j].is_operand());
+                        if (opstack[j].is_leftpar())
+                            break;
                         if (lower_precedens(node.operator_type, opstack[j].operator_type)) {
                             output.push_back(opstack[j]);
                             opstack.erase(opstack.begin()+j);
