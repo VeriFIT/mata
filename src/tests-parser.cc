@@ -675,6 +675,8 @@ TEST_CASE("parsing automata to intermediate representation")
            "@NFA-explicit\n"
            "%States-enum q r s t \"(r,s)\"\n"
            "%Alphabet-auto\n"
+           "%Initial q & r\n"
+           "%Final q | r\n"
            "q symbol & r\n";
 
         parsed = parse_mf(file);
@@ -693,6 +695,14 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
         REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
         REQUIRE(aut.transitions.front().second.children[1].children.empty());
+        REQUIRE(aut.initial_formula.node.name == "&");
+        REQUIRE(aut.initial_formula.children.size() == 2);
+        REQUIRE(aut.initial_formula.children[0].node.name == "q");
+        REQUIRE(aut.initial_formula.children[1].node.name == "r");
+        REQUIRE(aut.final_formula.node.name == "|");
+        REQUIRE(aut.final_formula.children.size() == 2);
+        REQUIRE(aut.final_formula.children[0].node.name == "q");
+        REQUIRE(aut.final_formula.children[1].node.name == "r");
     }
 
     SECTION("NFA without &")

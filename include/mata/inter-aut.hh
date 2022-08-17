@@ -34,6 +34,7 @@ public:
         OPERATOR,
         LEFT_PARENTHESIS,
         RIGHT_PARENTHESIS,
+        UNKNOWN
     };
 
     Type type;
@@ -49,6 +50,8 @@ public:
     bool is_righpar() { return type == Type::RIGHT_PARENTHESIS; }
 
     bool is_leftpar() { return type == Type::LEFT_PARENTHESIS; }
+
+    FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperatorType oprtor) : type(t), raw(raw), name(name), operator_type(oprtor),
@@ -67,6 +70,7 @@ struct FormulaGraph
     FormulaNode node;
     std::vector<FormulaGraph> children;
 
+    FormulaGraph() : node(), children() {}
     FormulaGraph(FormulaNode n) : node(n), children() {}
 };
 
@@ -105,6 +109,8 @@ public:
     std::vector<std::string> symbols_names;
     std::vector<std::string> nodes_names;
 
+    FormulaGraph initial_formula;
+    FormulaGraph final_formula;
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
     static std::vector<InterAutomaton> parse_from_mf(const Mata::Parser::Parsed& parsed);
