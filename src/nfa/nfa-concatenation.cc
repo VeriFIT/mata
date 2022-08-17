@@ -54,13 +54,13 @@ public:
      * Get @c lhs to @c result states map.
      * @return @c lhs to @c result states map.
      */
-    StateMap<State>& get_lhs_result_states_map() { return lhs_result_states_map; }
+    StateToStateMap& get_lhs_result_states_map() { return lhs_result_states_map; }
 
     /**
      * Get @c rhs to @c result states map.
      * @return @c rhs to @c result states map.
      */
-    StateMap<State>& get_rhs_result_states_map() { return rhs_result_states_map; }
+    StateToStateMap& get_rhs_result_states_map() { return rhs_result_states_map; }
 
 private:
     const Nfa& lhs{}; ///< First automaton to concatenate.
@@ -68,8 +68,8 @@ private:
     const unsigned long lhs_states_num{}; ///< Number of states in @c lhs.
     const unsigned long rhs_states_num{}; ///< Number of states in @c rhs.
     Nfa result{}; ///< Concatenated automaton.
-    StateMap<State> lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
-    StateMap<State> rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
+    StateToStateMap lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
+    StateToStateMap rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
 
     /**
      * Compute concatenation of given automata.

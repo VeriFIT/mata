@@ -75,7 +75,7 @@ namespace {
         return LTSforSimulation.compute_simulation();
     }
 
-	void reduce_size_by_simulation(Nfa* result, const Nfa& aut, StateMap<State> &state_map) {
+	void reduce_size_by_simulation(Nfa* result, const Nfa& aut, StateToStateMap &state_map) {
         auto sim_relation = compute_relation(aut, StringDict{{"relation", "simulation"}, {"direction","forward"}});
 
         auto sim_relation_symmetric = sim_relation;
@@ -334,7 +334,7 @@ void Nfa::trim()
 {
     StateSet original_useful_states{ get_useful_states() };
 
-    StateMap<State> original_to_new_states_map{ original_useful_states.size() };
+    StateToStateMap original_to_new_states_map{ original_useful_states.size() };
     size_t new_state_num{ 0 };
     for (const State original_state: original_useful_states)
     {
@@ -367,7 +367,7 @@ StateSet Nfa::get_useful_states()
     return useful_states;
 }
 
-Nfa Nfa::create_trimmed_aut(const StateMap<State>& original_to_new_states_map)
+Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
 {
     Nfa trimmed_aut{ original_to_new_states_map.size() };
 
@@ -389,7 +389,7 @@ Nfa Nfa::create_trimmed_aut(const StateMap<State>& original_to_new_states_map)
     return trimmed_aut;
 }
 
-void Nfa::add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut)
+void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut)
 {
     for (const auto& original_state_mapping: original_to_new_states_map)
     {
@@ -1108,7 +1108,7 @@ TransSequence Nfa::get_transitions_to_state(const State state_to) const
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
-    StateMap<State> thisStateToUnionState;
+    StateToStateMap thisStateToUnionState;
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton->add_new_state();
     }
@@ -1159,7 +1159,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const S
     }
 }
 
-void Mata::Nfa::reduce(Nfa* result, const Nfa &aut, StateMap<State> *state_map, const StringDict& params) {
+void Mata::Nfa::reduce(Nfa* result, const Nfa &aut, StateToStateMap *state_map, const StringDict& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "

@@ -72,6 +72,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[string, State] StringToStateMap
     ctypedef umap[string, Symbol] StringToSymbolMap
     ctypedef umap[State, string] StateToStringMap
+    ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringDict
     ctypedef COrdVector[CTransSymbolStates] TransitionList
@@ -199,6 +200,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
+    cdef void reduce(CNfa*, CNfa&, StateToStateMap*, StringDict&)
     cdef CBinaryRelation& compute_relation(CNfa&, StringDict&)
 
     # Helper functions

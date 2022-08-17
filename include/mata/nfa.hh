@@ -62,6 +62,8 @@ using StateMap = std::unordered_map<State, Target>;
 
 using StateToStringMap = StateMap<std::string>;
 using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
+/// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
+using StateToStateMap = StateMap<State>;
 
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
@@ -703,14 +705,14 @@ private:
      * @param original_to_new_states_map Map of old states to new trimmed automaton states.
      * @param trimmed_aut The new trimmed automaton.
      */
-    void add_trimmed_transitions(const StateMap<State>& original_to_new_states_map, Nfa& trimmed_aut);
+    void add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut);
 
     /**
      * Get a new trimmed automaton.
      * @param original_to_new_states_map Map of old states to new trimmed automaton states.
      * @return Newly created trimmed automaton.
      */
-    Nfa create_trimmed_aut(const StateMap<State>& original_to_new_states_map);
+    Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
@@ -883,12 +885,12 @@ Simlib::Util::BinaryRelation compute_relation(
 void reduce(
         Nfa* result,
         const Nfa &aut,
-        StateMap<State> *state_map = nullptr,
+        StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}});
 
 inline Nfa reduce(
         const Nfa &aut,
-        StateMap<State> *state_map = nullptr,
+        StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}})
 {
     Nfa reduced;
