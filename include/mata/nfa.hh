@@ -97,6 +97,8 @@ struct Trans
 
 using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
+struct Nfa; ///< A non-deterministic finite automaton.
+
 // ALPHABET {{{
 class Alphabet
 {
@@ -187,13 +189,13 @@ class EnumAlphabet : public Alphabet
 private:
 	StringToSymbolMap symbol_map;
 
-private:
-	EnumAlphabet(const EnumAlphabet& rhs);
-	EnumAlphabet& operator=(const EnumAlphabet& rhs);
+    EnumAlphabet& operator=(const EnumAlphabet& rhs);
 
 public:
 
 	EnumAlphabet() : symbol_map() { }
+
+    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map) {}
 
 	template <class InputIt>
 	EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
@@ -227,11 +229,10 @@ public:
 
 	std::list<Symbol> get_symbols() const override;
 	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-};
-// }}}
 
+    explicit EnumAlphabet(const Nfa& aut);
 
-struct Nfa; ///< A non-deterministic finite automaton.
+}; // }}}
 
 using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
