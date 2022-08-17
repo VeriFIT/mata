@@ -918,17 +918,17 @@ inline bool is_universal(
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        Word*              cex = nullptr,
+        Word*              cex,
+        const Alphabet*    alphabet = nullptr,
         const StringDict&  params = {{"algo", "antichains"}});
 
 inline bool is_incl(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        const StringDict&  params)
+        const Nfa&             smaller,
+        const Nfa&             bigger,
+        const Alphabet* const  alphabet = nullptr,
+        const StringDict&      params = {{"algo", "antichains"}})
 { // {{{
-    return is_incl(smaller, bigger, alphabet, nullptr, params);
+    return is_incl(smaller, bigger, nullptr, alphabet, params);
 } // }}}
 
 /**
@@ -941,7 +941,7 @@ inline bool is_incl(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
                        const StringDict& params = {{"algo", "antichains"}});
 
 /**

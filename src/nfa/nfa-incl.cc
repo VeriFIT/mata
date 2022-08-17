@@ -25,13 +25,18 @@ namespace {
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool is_incl_naive(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+	const Alphabet* const  alphabet,
+	Word*                  cex,
 	const StringDict&  /* params*/)
 { // {{{
-	Nfa bigger_cmpl = complement(bigger, alphabet);
+    Nfa bigger_cmpl;
+    if (alphabet == nullptr) {
+        bigger_cmpl = complement(bigger, EnumAlphabet(smaller));
+    } else {
+        bigger_cmpl = complement(bigger, *alphabet);
+    }
 	Nfa nfa_isect = intersection(smaller, bigger_cmpl);
 
 	bool result;
@@ -47,11 +52,11 @@ bool is_incl_naive(
 
 /// language inclusion check using Antichains
 bool is_incl_antichains(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+	const Alphabet* const  alphabet,
+	Word*                  cex,
+	const StringDict&      params)
 { // {{{
 	(void)params;
 	(void)alphabet;
@@ -186,11 +191,11 @@ bool is_incl_antichains(
 
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_incl(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+    Word*                  cex,
+	const Alphabet* const  alphabet,
+	const StringDict&      params)
 { // {{{
 
 	// setting the default algorithm
@@ -213,7 +218,7 @@ bool Mata::Nfa::is_incl(
 	return algo(smaller, bigger, alphabet, cex, params);
 } // is_incl }}}
 
-bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet, const StringDict& params)
+bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const StringDict& params)
 {
     if (is_incl(lhs, rhs, alphabet, params))
     {
@@ -228,14 +233,12 @@ bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet
 
 bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params)
 {
-    // Construct automata alphabet.
-    std::set<std::string> alphabet{};
-    for (const auto& state_transitions: lhs.transitionrelation)
-    {
-        for (const auto& symbol_state_transitions: state_transitions) {
-            alphabet.insert(std::to_string(symbol_state_transitions.symbol));
+    if (haskey(params, "algo")) {
+        if (params.at("algo") == "naive") {
+            auto alphabet{ EnumAlphabet{ lhs } };
+            return equivalence_check(lhs, rhs, &alphabet, params);
         }
     }
 
-    return equivalence_check(lhs, rhs, EnumAlphabet{ alphabet.begin(), alphabet.end() }, params);
+    return equivalence_check(lhs, rhs, nullptr, params);
 }

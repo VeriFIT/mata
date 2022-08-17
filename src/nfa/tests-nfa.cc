@@ -261,8 +261,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringDict params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, alph, params));
-		REQUIRE(is_incl(b, res, alph, params));
+		REQUIRE(is_incl(a, res, &alph, params));
+		REQUIRE(is_incl(b, res, &alph, params));
 	}
 
 	SECTION("Union of automata with some transitions but without a final state")
@@ -277,8 +277,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringDict params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, alph, params));
-		REQUIRE(is_incl(res, a, alph, params));
+		REQUIRE(is_incl(a, res, &alph, params));
+		REQUIRE(is_incl(res, a, &alph, params));
 
 		WARN_PRINT("Insufficient testing of Mata::Nfa::union_norename()");
 	}
@@ -1409,10 +1409,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, params);
+			bool is_included = is_incl(smaller, bigger, &alph, params);
 			CHECK(is_included);
 
-            is_included = is_incl(bigger, smaller, alph, params);
+            is_included = is_incl(bigger, smaller, &alph, params);
             CHECK(is_included);
 		}
 	}
@@ -1425,10 +1425,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
             CHECK(is_included);
 
-            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
             CHECK(!is_included);
 		}
 	}
@@ -1443,10 +1443,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
             CHECK(is_included);
 
-            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
             CHECK(is_included);
 		}
 	}
@@ -1459,12 +1459,12 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_included);
 			REQUIRE(cex == Word{});
 
-            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
             REQUIRE(cex == Word{});
             REQUIRE(is_included);
 		}
@@ -1485,10 +1485,10 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, params);
+			bool is_included = is_incl(smaller, bigger, &alph, params);
 			REQUIRE(is_included);
 
-            is_included = is_incl(bigger, smaller, alph, params);
+            is_included = is_incl(bigger, smaller, &alph, params);
             REQUIRE(!is_included);
 		}
 	}
@@ -1509,14 +1509,14 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_included);
 			REQUIRE((
 				cex == Word{alph["a"], alph["b"]} ||
 				cex == Word{alph["b"], alph["a"]}));
 
-            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
             REQUIRE(is_included);
             REQUIRE((
                 cex == Word{alph["a"], alph["b"]} ||
@@ -1548,7 +1548,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 			REQUIRE(!is_included);
 
 			REQUIRE(cex.size() == 4);
@@ -1558,7 +1558,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 			REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
 			REQUIRE(cex[2] != cex[3]);
 
-            is_included = is_incl(bigger, smaller, alph, &cex, params);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
             REQUIRE(is_included);
 
             REQUIRE(cex.size() == 4);
@@ -1574,9 +1574,9 @@ TEST_CASE("Mata::Nfa::is_incl()")
 	{
 		EnumAlphabet alph = { };
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
-        CHECK_NOTHROW(is_incl(smaller, bigger, alph));
+        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
 	}
 
 	SECTION("wrong parameters 2")
@@ -1584,9 +1584,9 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		EnumAlphabet alph = { };
 		params["algo"] = "foo";
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
 			Catch::Contains("received an unknown value"));
-        CHECK_NOTHROW(is_incl(smaller, bigger, alph));
+        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
 	}
 } // }}}
 
@@ -1609,11 +1609,11 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
 
-            CHECK(equivalence_check(smaller, bigger, alph, params));
+            CHECK(equivalence_check(smaller, bigger, &alph, params));
             CHECK(equivalence_check(smaller, bigger, params));
             CHECK(equivalence_check(smaller, bigger));
 
-            CHECK(equivalence_check(bigger, smaller , alph, params));
+            CHECK(equivalence_check(bigger, smaller , &alph, params));
             CHECK(equivalence_check(bigger, smaller, params));
             CHECK(equivalence_check(bigger, smaller));
         }
@@ -1628,11 +1628,11 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
 
-            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
             CHECK(!equivalence_check(smaller, bigger, params));
             CHECK(!equivalence_check(smaller, bigger));
 
-            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
             CHECK(!equivalence_check(bigger, smaller, params));
             CHECK(!equivalence_check(bigger, smaller));
         }
@@ -1649,11 +1649,11 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
 
-            CHECK(equivalence_check(smaller, bigger, alph, params));
+            CHECK(equivalence_check(smaller, bigger, &alph, params));
             CHECK(equivalence_check(smaller, bigger, params));
             CHECK(equivalence_check(smaller, bigger));
 
-            CHECK(equivalence_check(bigger, smaller , alph, params));
+            CHECK(equivalence_check(bigger, smaller , &alph, params));
             CHECK(equivalence_check(bigger, smaller, params));
             CHECK(equivalence_check(bigger, smaller));
         }
@@ -1675,11 +1675,11 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
 
-            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
             CHECK(!equivalence_check(smaller, bigger, params));
             CHECK(!equivalence_check(smaller, bigger));
 
-            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
             CHECK(!equivalence_check(bigger, smaller, params));
             CHECK(!equivalence_check(bigger, smaller));
         }
@@ -1710,11 +1710,11 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
 
-            CHECK(!equivalence_check(smaller, bigger, alph, params));
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
             CHECK(!equivalence_check(smaller, bigger, params));
             CHECK(!equivalence_check(smaller, bigger));
 
-            CHECK(!equivalence_check(bigger, smaller , alph, params));
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
             CHECK(!equivalence_check(bigger, smaller, params));
             CHECK(!equivalence_check(bigger, smaller));
         }
@@ -1724,7 +1724,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
     {
         EnumAlphabet alph = { };
 
-        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, alph, params),
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
                           Catch::Contains("requires setting the \"algo\" key"));
         CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
                           Catch::Contains("requires setting the \"algo\" key"));
@@ -1736,7 +1736,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
         EnumAlphabet alph = { };
         params["algo"] = "foo";
 
-        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, alph, params),
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
                           Catch::Contains("received an unknown value"));
         CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
                           Catch::Contains("received an unknown value"));
