@@ -32,6 +32,7 @@
 #include <mata/util.hh>
 #include <mata/ord_vector.hh>
 #include <mata/simutil/binary_relation.hh>
+#include "inter-aut.hh"
 
 namespace Mata
 {
@@ -634,27 +635,86 @@ bool is_deterministic(const Nfa& aut);
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
+template <class ParsedObject>
 void construct(
         Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
+        const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr);
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    assert(nullptr != aut);
+
+    bool remove_symbol_map = false;
+    if (nullptr == symbol_map)
+    {
+        symbol_map = new StringToSymbolMap();
+        remove_symbol_map = true;
+    }
+
+    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
+    OnTheFlyAlphabet alphabet(symbol_map);
+
+    try
+    {
+        construct(aut, parsed, &alphabet, state_map);
+    }
+    catch (std::exception&)
+    {
+        release_res();
+        throw;
+    }
+
+    release_res();
+}
 
 /** Loads an automaton from Parsed object */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void construct(
         Nfa*                                 aut,
         const Mata::Parser::ParsedSection&  parsec,
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map = nullptr);
 
+ void construct(
+         Nfa*                                 aut,
+         const Mata::InterAutomaton&          inter_aut,
+         Alphabet*                            alphabet,
+         StringToStateMap*                    state_map = nullptr);
+
 /** Loads an automaton from Parsed object */
+template <class ParsedObject>
 inline Nfa construct(
-        const Mata::Parser::ParsedSection&  parsec,
+        const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
     Nfa result;
-    construct(&result, parsec, symbol_map, state_map);
+    construct(&result, parsed, symbol_map, state_map);
     return result;
 } // construct }}}
 
