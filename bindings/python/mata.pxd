@@ -91,6 +91,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
+    ctypedef vector[CTrans] TransitionSequence
+
     cdef cppclass CTransSymbolStates "Mata::Nfa::TransSymbolStates":
         # Public Attributes
         Symbol symbol
@@ -119,6 +121,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Attributes
         StateSet initialstates
         StateSet finalstates
+        TransitionRelation transitionrelation
 
         # Constructor
         CNfa() except +
@@ -129,11 +132,22 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void make_initial(vector[State])
         bool has_initial(State)
         void remove_initial(State)
+        void remove_initial(vector[State])
+        void reset_initial(State)
+        void reset_initial(vector[State])
+        void clear_initial()
         void make_final(State)
+        void make_final(vector[State])
         bool has_final(State)
         void remove_final(State)
+        void remove_final(vector[State])
+        void reset_final(State)
+        void reset_final(vector[State])
+        void clear_final()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
+        void remove_trans(CTrans) except +
+        void remove_trans(State, Symbol, State) except +
         bool has_trans(CTrans)
         bool has_trans(State, Symbol, State)
         bool trans_empty()
@@ -145,10 +159,21 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         CNfa.const_iterator end()
         size_t get_num_of_states()
         void increase_size(size_t)
+        void increase_size_for_state(State)
         State add_new_state()
         void print_to_DOT(ostream)
         WordSet get_shortest_words()
         TransitionList get_transitions_from_state(State)
+        vector[CTrans] get_transitions_to_state(State)
+        vector[CTrans] get_trans_as_sequence()
+        vector[CTrans] get_trans_from_state_as_sequence(State)
+        void trim()
+        CNfa get_digraph()
+        StateSet get_useful_states()
+        StateSet get_reachable_states()
+        StateSet get_terminating_states()
+        void remove_epsilon(Symbol) except +
+
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
@@ -157,6 +182,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef bool is_universal(CNfa&, CAlphabet&, StringDict&) except +
     cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, StringDict&)
     cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, Word*, StringDict&) except +
+    cdef bool equivalence_check(CNfa&, CNfa&, CAlphabet&, StringDict&)
+    cdef bool equivalence_check(CNfa&, CNfa&, StringDict&)
     cdef bool is_complete(CNfa&, CAlphabet&) except +
     cdef bool is_in_lang(CNfa&, Word&)
     cdef bool is_prfx_in_lang(CNfa&, Word&)
@@ -165,6 +192,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void determinize(CNfa*, CNfa&, SubsetMap*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
+    cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
+    cdef void concatenate(CNfa*, CNfa&, CNfa&)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)
@@ -202,8 +231,23 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
 
+    cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
+        CSegmentation(CNfa&, Symbol) except +
+
+        ctypedef unsigned EpsilonDepth
+        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
+
+        EpsilonDepthTransitions get_epsilon_depths()
+        vector[CNfa] get_segments()
+
+
+cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
+    cdef vector[CNfa] noodlify(CNfa&, Symbol, bool)
+
+
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string) except +
+
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void compute_fw_direct_simulation(const CNfa&)

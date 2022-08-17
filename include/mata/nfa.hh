@@ -362,10 +362,23 @@ public:
 
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
 
+    /**
+     * Remove @p state from initial states.
+     * @param state[in] State to be removed from initial states.
+     */
     void remove_initial(State state)
     {
         assert(has_initial(state));
         this->initialstates.remove(state);
+    }
+
+    /**
+     * Remove @p vec of states from initial states.
+     * @param vec[in] Vector of states to be removed from initial states.
+     */
+    void remove_initial(const std::vector<State>& vec)
+    {
+        for (const State& st : vec) { this->remove_initial(st); }
     }
 
     /**
@@ -423,10 +436,23 @@ public:
 
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
 
+    /**
+     * Remove @p state from final states.
+     * @param state[in] State to be removed from final states.
+     */
     void remove_final(State state)
     {
         assert(has_final(state));
         this->finalstates.remove(state);
+    }
+
+    /**
+     * Remove @p vec of states from final states.
+     * @param vec[in] Vector of states to be removed from final states.
+     */
+    void remove_final(const std::vector<State>& vec)
+    {
+        for (const State& st : vec) { this->remove_final(st); }
     }
 
     /**
@@ -736,6 +762,24 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
 Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
 
 /**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs with ε-transitions preserved.
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+
+/**
  * @brief Compute intersection of two NFAs.
  *
  * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
@@ -756,8 +800,16 @@ Nfa intersection(const Nfa &lhs, const Nfa &rhs);
 
 /**
  * Concatenate two NFAs.
- * @param lhs[in] First automaton to concatenate.
- * @param rhs[in] Second automaton to concatenate.
+ * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ */
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
+
+/**
+ * Concatenate two NFAs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
  * @return Concatenated automaton.
  */
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
@@ -907,8 +959,6 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
-
-//bool operator==(Nfa& lhs, Nfa& rhs) { return equivalence_check(lhs, rhs); }
 
 /// Reverting the automaton
 void revert(Nfa* result, const Nfa& aut);

@@ -2,6 +2,7 @@ cimport mata
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
+from libcpp.utility cimport pair
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
@@ -90,7 +91,6 @@ cdef class TransSymbolStates:
 
     @property
     def states_to(self):
-        states = []
         cdef vector[State] states_as_vector = self.thisptr.states_to.ToVector()
         return [s for s in states_as_vector]
 
@@ -139,17 +139,37 @@ cdef class Nfa:
     cdef mata.CNfa *thisptr
     cdef alphabet
 
-    def __cinit__(self, state_number = 0, alphabet=None):
+    def __cinit__(self, state_number = 0, alphabet = None):
         """Constructor of the NFA
 
         :param int state_number: number of states in automaton
-        :param Alpabet alphabet: alphabet corresponding to the automaton
+        :param Alphabet alphabet: alphabet corresponding to the automaton
         """
         self.thisptr = new mata.CNfa(state_number)
         self.alphabet = alphabet
 
     def __dealloc__(self):
         del self.thisptr
+
+    @property
+    def initial_states(self):
+        cdef vector[State] initial_states = self.thisptr.initialstates.ToVector()
+        return [initial_state for initial_state in initial_states]
+
+    @initial_states.setter
+    def initial_states(self, value):
+        cdef StateSet initial_states = StateSet(value)
+        self.thisptr.initialstates = initial_states
+
+    @property
+    def final_states(self):
+        cdef vector[State] final_states = self.thisptr.finalstates.ToVector()
+        return [final_state for final_state in final_states]
+
+    @final_states.setter
+    def final_states(self, value):
+        cdef StateSet final_states = StateSet(value)
+        self.thisptr.finalstates = final_states
 
     def is_state(self, state):
         """Tests if state is in the automaton
@@ -166,17 +186,19 @@ cdef class Nfa:
         """
         return self.thisptr.add_new_state()
 
-    def add_initial_state(self, State st):
-        """Adds initial state to automaton
-
-        :param State st: added initial state
+    def make_initial_state(self, State state):
         """
-        self.thisptr.make_initial(st)
+        Makes specified state from the automaton initial.
 
-    def add_initial_states(self, vector[State] states):
-        """Adds list of initial state to automaton
+        :param State state: State to be made initial.
+        """
+        self.thisptr.make_initial(state)
 
-        :param list states: list of initial states
+    def make_initial_states(self, vector[State] states):
+        """
+        Makes specified states from the automaton initial.
+
+        :param list states: List of states to be made initial.
         """
         self.thisptr.make_initial(states)
 
@@ -188,12 +210,57 @@ cdef class Nfa:
         """
         return self.thisptr.has_initial(st)
 
-    def add_final_state(self, State st):
-        """Adds final state to automaton
-
-        :param State st: added final state
+    def remove_initial_state(self, State state):
         """
-        self.thisptr.make_final(st)
+        Removes state from initial state set of the automaton.
+
+        :param State state: State to be removed from initial states.
+        """
+        self.thisptr.remove_initial(state)
+
+    def remove_initial_states(self, vector[State] states):
+        """
+        Removes states from initial state set of the automaton.
+
+        :param list State states: States to be removed from initial states.
+        """
+        self.thisptr.remove_initial(states)
+
+    def reset_initial_state(self, State state):
+        """
+        Resets initial state set of the automaton to the specified state.
+
+        :param State state: State to be made initial.
+        """
+        self.thisptr.reset_initial(state)
+
+    def reset_initial_states(self, vector[State] states):
+        """
+        Resets initial state set of the automaton to the specified states.
+
+        :param list states: List of states to be made initial.
+        """
+        self.thisptr.reset_initial(states)
+
+    def clear_initial(self):
+        """Clears initial state set of the automaton."""
+        self.thisptr.clear_initial()
+
+    def make_final_state(self, State state):
+        """
+        Makes specified state from the automaton final.
+
+        :param State state: State to be made final.
+        """
+        self.thisptr.make_final(state)
+
+    def make_final_states(self, vector[State] states):
+        """
+        Makes specified states from the automaton final.
+
+        :param vector[State] states: List of states to be made final.
+        """
+        self.thisptr.make_final(states)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state
@@ -203,7 +270,43 @@ cdef class Nfa:
         """
         return self.thisptr.has_final(st)
 
-    def state_size(self):
+    def remove_final_state(self, State state):
+        """
+        Removes state from final state set of the automaton.
+
+        :param State state: State to be removed from final states.
+        """
+        self.thisptr.remove_final(state)
+
+    def remove_final_states(self, vector[State] states):
+        """
+        Removes states from final state set of the automaton.
+
+        :param list State states: States to be removed from final states.
+        """
+        self.thisptr.remove_final(states)
+
+    def reset_final_state(self, State state):
+        """
+        Resets final state set of the automaton to the specified state.
+
+        :param State state: State to be made final.
+        """
+        self.thisptr.reset_final(state)
+
+    def reset_final_states(self, vector[State] states):
+        """
+        Resets final state set of the automaton to the specified states.
+
+        :param list states: List of states to be made final.
+        """
+        self.thisptr.reset_final(states)
+
+    def clear_final(self):
+        """Clears final state set of the automaton."""
+        self.thisptr.clear_final()
+
+    def get_num_of_states(self):
         """Returns number of states in automaton
 
         :return: number of states in automaton
@@ -225,6 +328,24 @@ cdef class Nfa:
         :param State tgt: target state
         """
         self.thisptr.add_trans(src, symb, tgt)
+
+    def remove_trans(self, Trans tr):
+        """
+        Removes transition from the automaton.
+
+        :param Trans tr: Transition to be removed.
+        """
+        self.thisptr.remove_trans(dereference(tr.thisptr))
+
+    def remove_trans_raw(self, State src, Symbol symb, State tgt):
+        """
+        Constructs transition and removes it from the automaton.
+
+        :param State src: Source state of the transition to be removed.
+        :param Symbol symb: Symbol of the transition to be removed.
+        :param State tgt: Target state of the transition to be removed.
+        """
+        self.thisptr.remove_trans(src, symb, tgt)
 
     def has_trans(self, Trans tr):
         """Tests if automaton contains transition
@@ -265,6 +386,14 @@ cdef class Nfa:
         """
         self.thisptr.increase_size(size)
 
+    def resize_for_state(self, State state):
+        """
+        Increases the size of the automaton to include state.
+
+        :param State state: State to resize for.
+        """
+        self.thisptr.increase_size_for_state(state)
+
     def iterate(self):
         """Iterates over all transitions
 
@@ -299,7 +428,87 @@ cdef class Nfa:
             transsymbols.append(t)
         return transsymbols
 
+    def get_transitions_to_state(self, State state_to):
+        """
+        Get transitions leading to state_to (state_to is their target state).
 
+        :return: List mata.CTrans: List of transitions leading to state_to.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to_state(state_to)
+        trans = []
+        for c_transition in c_transitions:
+            trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return trans
+
+    def get_trans_as_sequence(self):
+        """
+        Get automaton transitions as a sequence.
+        :return: List of automaton transitions.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_as_sequence()
+        transitions = []
+        for c_transition in c_transitions:
+            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return transitions
+
+    def get_trans_from_state_as_sequence(self, State state_from):
+        """
+        Get automaton transitions from state_from as a sequence.
+        :return: List of automaton transitions.
+        """
+        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_from_state_as_sequence(state_from)
+        transitions = []
+        for c_transition in c_transitions:
+            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+        return transitions
+
+    def get_useful_states(self):
+        """
+        Get useful states (states which are reachable and terminating at the same time).
+        :return: A set of useful states.
+        """
+        cdef vector[State] return_value = self.thisptr.get_useful_states().ToVector()
+        return {state for state in return_value}
+
+    def get_reachable_states(self):
+        """
+        Get reachable states.
+        :return: A set of reachable states.
+        """
+        cdef vector[State] return_value = self.thisptr.get_reachable_states().ToVector()
+        return {state for state in return_value}
+
+    def get_terminating_states(self):
+        """
+        Get terminating states (states with a path from them leading to any final state).
+        :return: A set of terminating states.
+        """
+        cdef vector[State] return_value = self.thisptr.get_terminating_states().ToVector()
+        return {state for state in return_value}
+
+    def trim(self):
+        """
+        Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+
+        Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+         starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+         the starting point of a path ending in a final state).
+        """
+        self.thisptr.trim()
+
+    def get_digraph(self) -> Nfa:
+        """
+        Unify transitions to create a directed graph with at most a single transition between two states.
+
+        :return: mata.Nfa: An automaton representing a directed graph.
+        """
+        cdef mata.CNfa c_digraph = self.thisptr.get_digraph()
+
+        digraph  = Nfa(c_digraph.get_num_of_states())
+        digraph.thisptr.initialstates = c_digraph.initialstates
+        digraph.thisptr.finalstates = c_digraph.finalstates
+        digraph.thisptr.transitionrelation = c_digraph.transitionrelation
+        return digraph
 
     def __str__(self):
         """String representation of the automaton displays states, and transitions
@@ -320,7 +529,7 @@ cdef class Nfa:
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
 
-        By default the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
+        By default, the result is saved to `aut.dot`, and further to `aut.dot.pdf`.
 
         One can choose other format that is supported by graphviz format (e.g. pdf or png).
 
@@ -450,7 +659,66 @@ cdef class Nfa:
         mata.intersection(
             result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), &product_map
         )
-        return result, {tuple(sorted(k)): v for k, v in product_map}
+        return result, {tuple(k): v for k, v in product_map}
+
+    @classmethod
+    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+        """
+        Performs intersection of lhs and rhs preserving epsilon transitions.
+
+        Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
+         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
+         a product state `(s,a)-ε->(p,b)` is created.
+
+        Automata must share alphabets.
+
+        :param: Nfa lhs: First automaton with possible epsilon symbols.
+        :param: Nfa rhs: Second automaton with possible epsilon symbols.
+        :param: Symbol epsilon: Symbol to handle as an epsilon symbol.
+        :return: Intersection of lhs and rhs with epsilon transitions preserved, product map of the results.
+        """
+        result = Nfa()
+        cdef ProductMap product_map
+        mata.intersection(result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr), epsilon, &product_map)
+        return result, {tuple(k): v for k, v in product_map}
+
+    @classmethod
+    def concatenate(cls, Nfa lhs, Nfa rhs):
+        """
+        Concatenate two NFAs.
+
+        :param Nfa lhs: First automaton to concatenate.
+        :param Nfa rhs: Second automaton to concatenate.
+        :return: Nfa: Concatenated automaton.
+        """
+        result = Nfa()
+        mata.concatenate(result.thisptr, dereference(lhs.thisptr), dereference(rhs.thisptr))
+        return result
+
+    @classmethod
+    def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
+        """
+        Create noodles from segment automaton.
+
+        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+
+        :param: Nfa aut: Segment automaton to noodlify.
+        :param: Symbol epsilon: Epsilon symbol to noodlify for.
+        :param: bool include_empty: Whether to also include empty noodles.
+        :return: List of automata: A list of all (non-empty) noodles.
+        """
+        noodles = []
+        cdef vector[CNfa] c_noodles = mata.noodlify(dereference(aut.thisptr), symbol, include_empty)
+        for c_noodle in c_noodles:
+            noodle = Nfa(c_noodle.get_num_of_states())
+            noodle.thisptr.initialstates = c_noodle.initialstates
+            noodle.thisptr.finalstates = c_noodle.finalstates
+            noodle.thisptr.transitionrelation = c_noodle.transitionrelation
+            noodles.append(noodle)
+
+        return noodles
 
     @classmethod
     def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
@@ -485,7 +753,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet of the
         """
         if not lhs.thisptr.is_state(sink_state):
-            lhs.thisptr.increase_size(lhs.state_size() + 1)
+            lhs.thisptr.increase_size(lhs.get_num_of_states() + 1)
         mata.make_complete(lhs.thisptr, <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
@@ -501,7 +769,7 @@ cdef class Nfa:
 
     @classmethod
     def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
-        """Removes transitions that contains epsilon symbol
+        """Removes transitions that contain epsilon symbol
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
 
@@ -509,11 +777,19 @@ cdef class Nfa:
         :param Symbol epsilon: symbol representing the epsilon
         :return: automaton, with epsilon transitions removed
         """
-        result = Nfa(lhs.state_size())
-        mata.remove_epsilon(
-            result.thisptr, dereference(lhs.thisptr), epsilon
-        )
+        result = Nfa()
+        mata.remove_epsilon(result.thisptr, dereference(lhs.thisptr), epsilon)
         return result
+
+    def remove_epsilon(self, Symbol epsilon):
+        """
+        Removes transitions which contain epsilon symbol.
+
+        TODO: Possibly there may be issue with setting the size of the automaton beforehand?
+
+        :param Symbol epsilon: Symbol representing the epsilon symbol.
+        """
+        self.thisptr.remove_epsilon(epsilon)
 
     @classmethod
     def minimize(cls, Nfa lhs):
@@ -631,6 +907,40 @@ cdef class Nfa:
             }
         )
         return result, word
+
+    @classmethod
+    def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
+        """
+        Test equivalence of two automata.
+
+        :param Nfa lhs: Smaller automaton.
+        :param Nfa rhs: Bigger automaton.
+        :param Alphabet alphabet: Alphabet shared by two automata.
+        :param dict params: Additional params.
+        :return: True if lhs is equivalent to rhs, False otherwise.
+        """
+        params = params or {'algo': 'antichains'}
+        if alphabet:
+            return mata.equivalence_check(
+                dereference(lhs.thisptr),
+                dereference(rhs.thisptr),
+                <CAlphabet&>dereference(alphabet.as_base()),
+                {
+                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                    for k, v in params.items()
+                }
+            )
+        else:
+            return mata.equivalence_check(
+                dereference(lhs.thisptr),
+                dereference(rhs.thisptr),
+                {
+                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                    for k, v in params.items()
+                }
+            )
+
+
 
     @classmethod
     def is_complete(cls, Nfa lhs, Alphabet alphabet):
@@ -1081,13 +1391,13 @@ def divisible_by(k: int):
     """
     assert k > 1
     lhs = Nfa(k+1)
-    lhs.add_initial_state(0)
+    lhs.make_initial_state(0)
     lhs.add_trans_raw(0, 0, 0)
     for i in range(1, k + 1):
         lhs.add_trans_raw(i - 1, 1, i)
         lhs.add_trans_raw(i, 0, i)
     lhs.add_trans_raw(k, 1, 1)
-    lhs.add_final_state(k)
+    lhs.make_final_state(k)
     return lhs
 
 
@@ -1150,3 +1460,55 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
                 )
 
     return cmdout, cmderr
+
+cdef class Segmentation:
+    """Wrapper over Segmentation."""
+    cdef mata.CSegmentation* thisptr
+
+    def __cinit__(self, Nfa aut, Symbol symbol):
+        """
+        Compute segmentation.
+
+        :param aut: Segment automaton to compute epsilon depths for.
+        :param symbol: Symbol to execute segmentation for.
+        """
+        self.thisptr = new mata.CSegmentation(dereference(aut.thisptr), symbol)
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def get_epsilon_depths(self):
+        """
+        Get segmentation depths for ε-transitions.
+
+        :return: Map of depths to lists of ε-transitions.
+        """
+        cdef umap[unsigned, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
+        result = {}
+        for epsilon_depth_pair in c_epsilon_transitions:
+            for trans in epsilon_depth_pair.second:
+                if epsilon_depth_pair.first not in result:
+                    result[epsilon_depth_pair.first] = []
+
+                result[epsilon_depth_pair.first].append(Trans(trans.src, trans.symb, trans.tgt))
+
+        return result
+
+    def get_segments(self):
+        """
+        Get segment automata.
+
+        :return: A vector of segments for the segment automaton in the order from the left (initial state in segment
+                 automaton) to the right (final states of segment automaton).
+        """
+        segments = []
+        cdef vector[CNfa] c_segments = self.thisptr.get_segments()
+        for c_segment in c_segments:
+            segment = Nfa(c_segment.get_num_of_states())
+            segment.thisptr.initialstates = c_segment.initialstates
+            segment.thisptr.finalstates = c_segment.finalstates
+            segment.thisptr.transitionrelation = c_segment.transitionrelation
+
+            segments.append(segment)
+
+        return segments
