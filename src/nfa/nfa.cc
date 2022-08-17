@@ -1069,35 +1069,79 @@ void Mata::Nfa::construct(
 
 void Mata::Nfa::construct(
         Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
-        StringToSymbolMap*                   symbol_map,
+        const Mata::InterAutomaton&          inter_aut,
+        Alphabet*                            alphabet,
         StringToStateMap*                    state_map)
 { // {{{
     assert(nullptr != aut);
+    assert(nullptr != alphabet);
 
-    bool remove_symbol_map = false;
-    if (nullptr == symbol_map)
-    {
-        symbol_map = new StringToSymbolMap();
-        remove_symbol_map = true;
+    if (inter_aut.is_nfa()) {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
+                                 Mata::Nfa::TYPE_NFA + "\"");
     }
 
-    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
-
-    OnTheFlyAlphabet alphabet(symbol_map);
-
-    try
-    {
-        construct(aut, parsec, &alphabet, state_map);
-    }
-    catch (std::exception&)
-    {
-        release_res();
-        throw;
+    bool remove_state_map = false;
+    if (nullptr == state_map) {
+        state_map = new StringToStateMap();
+        remove_state_map = true;
     }
 
-    release_res();
-} // construct(StringToSymbolMap) }}}
+    // a lambda for translating state names to identifiers
+    auto get_state_name = [state_map, aut](const std::string& str) {
+        if (!state_map->count(str)) {
+            State state = aut->add_new_state();
+            state_map->insert({str, state});
+            return state;
+        } else {
+            return (*state_map)[str];
+        }
+    };
+
+    // a lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) { delete state_map; }
+    };
+
+    for (const auto& str : inter_aut.initial_formula.collect_node_names())
+    {
+        State state = get_state_name(str);
+        aut->initialstates.insert(state);
+    }
+
+    for (const auto& str : inter_aut.final_formula.collect_node_names())
+    {
+        State state = get_state_name(str);
+        aut->finalstates.insert(state);
+    }
+
+    for (const auto& trans : inter_aut.transitions)
+    {
+        if (trans.second.children.size() != 2)
+        {
+            // clean up
+            clean_up();
+
+            if (trans.second.children.size() == 1)
+            {
+                throw std::runtime_error("Epsilon transitions not supported");
+            }
+            else
+            {
+                throw std::runtime_error("Invalid transition");
+            }
+        }
+
+        State src_state = get_state_name(trans.first.name);
+        Symbol symbol = alphabet->translate_symb(trans.second.children[0].node.name);
+        State tgt_state = get_state_name(trans.second.children[1].node.name);
+
+        aut->add_trans(src_state, symbol, tgt_state);
+    }
+
+    // do the dishes and take out garbage
+    clean_up();
+} // construct }}}
 
 bool Nfa::state_set_post_iterator::has_next() const
 {
