@@ -94,7 +94,7 @@ namespace
         } else if (is_naming_marker(mata.node_naming) && token[0] == 'n') {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token.substr(1),
                                      Mata::FormulaNode::OperandType::NODE};
-        } else if (is_naming_enum(mata.symbol_naming) && token[0] == 'a') {
+        } else if (is_naming_marker(mata.symbol_naming) && token[0] == 'a') {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token.substr(1),
                                      Mata::FormulaNode::OperandType::SYM};
         } else if (is_naming_auto(mata.state_naming)) {
@@ -103,6 +103,9 @@ namespace
         } else if (is_naming_auto(mata.node_naming)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::NODE};
+        } else if (is_naming_auto(mata.symbol_naming)) {
+            return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
+                                     Mata::FormulaNode::OperandType::SYM};
         } else if (token == "(") {
             return Mata::FormulaNode{Mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
         } else if (token == ")") {
@@ -126,8 +129,7 @@ namespace
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
 
-        // starting from 1 - skipping lhs of transition
-        for (size_t i = 1; i < tokens.size(); ++i) {
+        for (size_t i = 0; i < tokens.size(); ++i) {
             Mata::FormulaNode node = create_node(aut, tokens[i]);
             switch (node.type) {
                 case Mata::FormulaNode::OPERAND:
@@ -178,11 +180,13 @@ namespace
                 case Mata::FormulaNode::OPERATOR:
                     switch (node.operator_type) {
                         case Mata::FormulaNode::NEG:
+                            assert(!opstack.empty());
                             gr.children.push_back(opstack.back());
                             opstack.pop_back();
                             opstack.push_back(gr);
                             break;
                         default:
+                            assert(opstack.size() > 1);
                             gr.children.push_back(opstack.back());
                             opstack.pop_back();
                             gr.children.insert(gr.children.begin(), opstack.back());
@@ -203,7 +207,9 @@ namespace
     {
         assert(tokens.size() > 1); // transition formula has at least two items
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
-        std::vector<Mata::FormulaNode> postfix = infix2postfix(aut, tokens);
+        const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
+
+        std::vector<Mata::FormulaNode> postfix = infix2postfix(aut, rhs);
         // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
         if (aut.automaton_type == Mata::InterAutomaton::NFA && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT
             && postfix.size() == 2) {
@@ -245,9 +251,19 @@ namespace
                     aut.nodes_names.insert(
                             aut.nodes_names.end(), keypair.second.begin(), keypair.second.end());
             }
-            // TODO: parse initial formula
-            // TODO: parse final formula
         }
+
+        // Once we know what states and nodes are we can parser initial and final formula
+        for (const auto& keypair : section.dict) {
+            const std::string &key = keypair.first;
+
+            if (key.find("Initial") != std::string::npos) {
+                aut.initial_formula = postfix2graph(infix2postfix(aut, keypair.second));
+            } else if (key.find("Final") != std::string::npos) {
+                aut.final_formula = postfix2graph(infix2postfix(aut, keypair.second));
+            }
+        }
+        std::cout << "DONE\n";
 
         if (!(!(!(aut.node_naming == Mata::InterAutomaton::Naming::AUTO &&
             aut.symbol_naming == Mata::InterAutomaton::Naming::AUTO) &&
@@ -266,6 +282,7 @@ namespace
 std::vector<Mata::InterAutomaton> Mata::InterAutomaton::parse_from_mf(const Mata::Parser::Parsed &parsed)
 {
     std::vector<Mata::InterAutomaton> result;
+    result.reserve(parsed.size());
 
     for (const auto& parsed_section : parsed) {
         result.push_back(mf_to_aut(parsed_section));
