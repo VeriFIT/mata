@@ -2108,7 +2108,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 {
 	Nfa aut;
-	StateMap<State> state_map;
+	StateToStateMap state_map;
 
 	SECTION("empty automaton")
 	{

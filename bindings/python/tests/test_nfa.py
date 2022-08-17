@@ -907,3 +907,61 @@ def test_segmentation(prepare_automaton_a):
     assert mata.Trans(1, epsilon, 2) in epsilon_depths[0]
     assert mata.Trans(6, epsilon, 7) in epsilon_depths[1]
     assert mata.Trans(7, epsilon, 8) in epsilon_depths[2]
+
+
+def test_reduce():
+    """Test reducing the automaton."""
+    nfa = mata.Nfa()
+
+    # Test the reduction of an empty automaton.
+    result, state_map = mata.Nfa.reduce(nfa)
+    assert result.trans_empty()
+    assert len(result.initial_states) == 0
+    assert len(result.final_states) == 0
+
+    # Test the reduction of a simple automaton.
+    nfa.resize(3)
+    nfa.make_initial_state(1)
+    nfa.make_final_state(2)
+    result, state_map = mata.Nfa.reduce(nfa)
+    assert result.trans_empty()
+    assert result.get_num_of_states() == 2
+    assert result.has_initial_state(state_map[1])
+    assert result.has_final_state(state_map[2])
+    assert state_map[1] == state_map[0]
+    assert state_map[2] != state_map[0]
+
+    # Test the reduction of a bigger automaton.
+    nfa.resize(10)
+    nfa.initial_states = {1, 2}
+    nfa.final_states = {3, 9}
+    nfa.add_trans_raw(1, ord('a'), 2)
+    nfa.add_trans_raw(1, ord('a'), 3)
+    nfa.add_trans_raw(1, ord('b'), 4)
+    nfa.add_trans_raw(2, ord('a'), 2)
+    nfa.add_trans_raw(2, ord('b'), 2)
+    nfa.add_trans_raw(2, ord('a'), 3)
+    nfa.add_trans_raw(2, ord('b'), 4)
+    nfa.add_trans_raw(3, ord('b'), 4)
+    nfa.add_trans_raw(3, ord('c'), 7)
+    nfa.add_trans_raw(3, ord('b'), 2)
+    nfa.add_trans_raw(5, ord('c'), 3)
+    nfa.add_trans_raw(7, ord('a'), 8)
+    nfa.add_trans_raw(9, ord('b'), 2)
+    nfa.add_trans_raw(9, ord('c'), 0)
+    nfa.add_trans_raw(0, ord('a'), 4)
+
+    result, state_map = mata.Nfa.reduce(nfa)
+    assert result.get_num_of_states() == 6
+    assert result.has_initial_state(state_map[1])
+    assert result.has_initial_state(state_map[2])
+    assert result.has_final_state(state_map[9])
+    assert result.has_final_state(state_map[3])
+    assert result.has_trans_raw(state_map[9], ord('c'), state_map[0])
+    assert result.has_trans_raw(state_map[9], ord('c'), state_map[7])
+    assert result.has_trans_raw(state_map[3], ord('c'), state_map[0])
+    assert result.has_trans_raw(state_map[0], ord('a'), state_map[8])
+    assert result.has_trans_raw(state_map[7], ord('a'), state_map[4])
+    assert result.has_trans_raw(state_map[1], ord('a'), state_map[3])
+    assert not result.has_trans_raw(state_map[3], ord('b'), state_map[4])
+    assert result.has_trans_raw(state_map[2], ord('a'), state_map[2])

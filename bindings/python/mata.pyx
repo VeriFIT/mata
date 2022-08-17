@@ -802,6 +802,26 @@ cdef class Nfa:
         mata.minimize(result.thisptr, dereference(lhs.thisptr))
         return result
 
+    @classmethod
+    def reduce(cls, Nfa aut, params = None):
+        """
+        Reduce the automaton.
+
+        :param Nfa aut: Original automaton to reduce.
+        :param Dict params: Additional parameters for the reduction algorithm:
+            - "algorithm": "simulation"
+        :return: (Reduced automaton, state map of original to new states)
+        """
+        params = params or {"algorithm": "simulation"}
+        cdef StateToStateMap state_map
+        result = Nfa()
+        mata.reduce(result.thisptr, dereference(aut.thisptr), &state_map,
+                    {
+                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+                    }
+        )
+
+        return result, {k: v for k, v in state_map}
 
     @classmethod
     def compute_relation(cls, Nfa lhs, params = None):
@@ -891,7 +911,7 @@ cdef class Nfa:
         :param Nfa lhs: smaller automaton
         :param Nfa rhs: bigger automaton
         :param Alphabet alphabet: alpabet shared by two automata
-        :param dict params: adtitional params
+        :param dict params: additional params
         :return: true if lhs is included by rhs, counter example word if not
         """
         cdef Word word
@@ -916,7 +936,8 @@ cdef class Nfa:
         :param Nfa lhs: Smaller automaton.
         :param Nfa rhs: Bigger automaton.
         :param Alphabet alphabet: Alphabet shared by two automata.
-        :param dict params: Additional params.
+        :param dict params: Additional params:
+            - "algo": "antichains"
         :return: True if lhs is equivalent to rhs, False otherwise.
         """
         params = params or {'algo': 'antichains'}
