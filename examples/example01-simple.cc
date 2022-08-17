@@ -7,12 +7,12 @@ using namespace Mata::Nfa;
 
 int main()
 {
-	Nfa aut;
+	Nfa aut(4);
 
-	aut.initialstates = {1,2};
-	aut.finalstates = {3,4};
-	aut.add_trans(1, 'a', 3);
-	aut.add_trans(2, 'b', 4);
+	aut.initialstates = {0,1};
+	aut.finalstates = {2,3};
+	aut.add_trans(0, 0, 2);
+	aut.add_trans(1, 1, 3);
 
-	std::cout << std::to_string(aut);
+	aut.print_to_DOT(std::cout);
 }

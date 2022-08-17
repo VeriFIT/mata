@@ -16,11 +16,11 @@ CFLAGS=-std=c++14 \
 	-g
 
 
-INCLUDE=-I../include -I../3rdparty/simlib/include
+INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include
 
-LIBS_ADD=-L../build/src -L ../build/3rdparty/simlib
+LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib
 
-LIBS=-lmata -lsimlib
+LIBS=-lmata -lsimlib -lre2
 
 
 ###############################################################################

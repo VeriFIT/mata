@@ -7,27 +7,27 @@ using namespace Mata::Nfa;
 
 int main()
 {
-	Nfa aut;
+	Nfa aut(10);
 
 	std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
 
-	aut.initialstates = {1, 3};
-	aut.finalstates = {5};
-	aut.add_trans(1, 'a', 3);
-	aut.add_trans(1, 'a', 10);
-	aut.add_trans(1, 'b', 7);
-	aut.add_trans(3, 'a', 7);
-	aut.add_trans(3, 'b', 9);
-	aut.add_trans(9, 'a', 9);
-	aut.add_trans(7, 'b', 1);
-	aut.add_trans(7, 'a', 3);
-	aut.add_trans(7, 'c', 3);
-	aut.add_trans(10, 'a', 7);
-	aut.add_trans(10, 'b', 7);
-	aut.add_trans(10, 'c', 7);
-	aut.add_trans(7, 'a', 5);
-	aut.add_trans(5, 'a', 5);
-	aut.add_trans(5, 'c', 9);
+	aut.initialstates = {0, 2};
+	aut.finalstates = {4};
+	aut.add_trans(0, 0, 2);
+	aut.add_trans(0, 0, 9);
+	aut.add_trans(0, 1, 6);
+	aut.add_trans(2, 0, 6);
+	aut.add_trans(2, 1, 8);
+	aut.add_trans(8, 0, 8);
+	aut.add_trans(6, 1, 0);
+	aut.add_trans(6, 0, 2);
+	aut.add_trans(6, 2, 2);
+	aut.add_trans(9, 0, 6);
+	aut.add_trans(9, 1, 6);
+	aut.add_trans(9, 2, 6);
+	aut.add_trans(6, 0, 4);
+	aut.add_trans(4, 0, 4);
+	aut.add_trans(4, 2, 8);
 
 	std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
 }
