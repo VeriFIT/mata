@@ -307,8 +307,14 @@ def test_inclusion(
     result, cex = mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_four, alph)
     assert not result
     assert cex == [1, 1]
+    result, cex = mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_four)
+    assert not result
+    assert cex == [1, 1]
 
     result, cex = mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_two, alph)
+    assert result
+    assert cex == []
+    result, cex = mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_two)
     assert result
     assert cex == []
 
@@ -316,6 +322,10 @@ def test_inclusion(
     assert mata.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_four, alph)[0]
     assert not mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight, alph)[0]
     assert not mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight, alph)[0]
+    assert mata.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_two)[0]
+    assert mata.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_four)[0]
+    assert not mata.Nfa.is_included(fa_one_divisible_by_two, fa_one_divisible_by_eight)[0]
+    assert not mata.Nfa.is_included(fa_one_divisible_by_four, fa_one_divisible_by_eight)[0]
 
     # Test equivalence of two NFAs.
     smaller = mata.Nfa(10)
@@ -446,6 +456,9 @@ def test_union(
     assert mata.Nfa.is_included(fa_one_divisible_by_two, uni, alph)[0]
     assert mata.Nfa.is_included(fa_one_divisible_by_four, uni, alph)[0]
 
+    assert mata.Nfa.is_included(fa_one_divisible_by_two, uni)[0]
+    assert mata.Nfa.is_included(fa_one_divisible_by_four, uni)[0]
+
 
 def test_intersection(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
@@ -462,6 +475,8 @@ def test_intersection(
     assert mata.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1,])
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_two, alph)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four, alph)[0]
+    assert mata.Nfa.is_included(inter, fa_one_divisible_by_two)[0]
+    assert mata.Nfa.is_included(inter, fa_one_divisible_by_four)[0]
     assert map == {(0,0): 0, (1,1): 1, (1,3): 3, (2,2): 2, (2, 4): 4}
 
 
