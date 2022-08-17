@@ -265,7 +265,6 @@ namespace
                 aut.final_formula = postfix2graph(infix2postfix(aut, keypair.second));
             }
         }
-        std::cout << "DONE\n";
 
         if (!(!(!(aut.node_naming == Mata::InterAutomaton::Naming::AUTO &&
             aut.symbol_naming == Mata::InterAutomaton::Naming::AUTO) &&
