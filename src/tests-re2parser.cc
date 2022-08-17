@@ -65,3 +65,16 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(!is_in_lang(aut, Word{'a','d','c'}));
     }
 } // }}}
+
+TEST_CASE("Mata::RE2Parser error")
+{ // {{{
+    SECTION("Complex regex that fails")
+    {
+        Mata::Nfa::Nfa aut;
+        Mata::RE2Parser::create_nfa(&aut, "((aa)*)*(b)*");
+        REQUIRE(!aut.trans_empty());
+        REQUIRE(!is_lang_empty(aut));
+        REQUIRE(is_in_lang(aut, Word{'a','a','b'}));
+        REQUIRE(!is_in_lang(aut, Word{'a','b'}));
+    }
+} // }}}

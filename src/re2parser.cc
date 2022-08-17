@@ -25,6 +25,7 @@
 #include <re2/re2/prog.h>
 #include <re2/util/logging.h>
 
+
 namespace {
     class RegexParser {
     private:
@@ -35,7 +36,6 @@ namespace {
          * is_state_nop_or_cap determines if the state is of type nop/cap (true) or not (false)
          * is_last determines if the state is last (true), meaning it has epsilon transition to the next state, or not (false)
          * has_state_incoming_edge determines if there is an incoming edge to the state (true) or not (false)
-         * has_state_outgoing_back_edge determines if there is any outgoing edge leading to a state with a lower number (true) or not (false)
          */
         struct StateCache {
             std::vector<std::vector<Mata::Nfa::State>> state_mapping;
@@ -43,7 +43,6 @@ namespace {
             std::vector<bool> is_state_nop_or_cap;
             std::vector<bool> is_last;
             std::vector<bool> has_state_incoming_edge;
-            std::vector<bool> has_state_outgoing_back_edge;
         };
 
     public:
@@ -52,6 +51,8 @@ namespace {
          */
         RE2::Options options;
         StateCache state_cache;
+
+        std::vector<std::vector<std::pair<int, int>>> outgoingEdges;
 
         RegexParser() = default;
 
@@ -80,27 +81,38 @@ namespace {
         /**
          * Converts re2's prog to mata::Nfa::Nfa
          * @param prog Prog* to create mata::Nfa::Nfa from
+         * @param use_epsilon whether to create NFA with epsilon transitions or not
+         * @param epsilon_value value, that will represent epsilon on transitions
          * @return mata::Nfa::Nfa created from prog
          */
-        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog) {
+        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog, bool use_epsilon, int epsilon_value) {
             const int start_state = prog->start();
             const int prog_size = prog->size();
             int empty_flag;
             std::vector<Mata::Nfa::Symbol> symbols;
             Mata::Nfa::Nfa explicit_nfa(prog_size);
 
-            // We will be appending to nop and capture types of states
-            std::vector<Mata::Nfa::State> append_to_states;
-            // It will hold information about outgoing edges -> (symbol, mappedTargetState) pairs. Indexes of the main
-            // vector are source states of the edge
-            std::vector<std::vector<std::pair<Mata::Nfa::Symbol, Mata::Nfa::State>>> back_state_outgoing_edges(
-                    prog_size, std::vector<std::pair<Mata::Nfa::Symbol, Mata::Nfa::State>>());
-
             // Vectors are saved in this->state_cache after this
-            this->create_state_cache(prog);
+            this->create_state_cache(prog, use_epsilon);
 
             explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][0]);
             this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][0]] = true;
+
+            // Used for epsilon closure, it contains tuples (state_reachable_by_epsilon_transitions, source_state_of_epsilon_transitions)
+            std::vector<std::pair<int, int>> copyEdgesFromTo;
+
+            // If the start state is nop or cap, and it is not last, it means that it has a transition to more different
+            // states. We are creating a new start state as one of the states reachable by epsilon from the start state.
+            // We must also include transitions of the other epsilon reachable states to the new start state.
+            if (this->state_cache.is_state_nop_or_cap[start_state] && !this->state_cache.is_last[start_state]) {
+                for (int index = 1; index < this->state_cache.state_mapping[start_state].size(); index++) {
+                    for (auto state: this->state_cache.state_mapping[this->state_cache.state_mapping[start_state][index]]) {
+                        copyEdgesFromTo.emplace_back(state, this->state_cache.state_mapping[start_state][0]);
+                    }
+                }
+            }
+
+            this->outgoingEdges = std::vector<std::vector<std::pair<int, int>>> (prog_size);
 
             // We traverse all the states and create corresponding states and edges in mata::Nfa::Nfa
             for (int current_state = start_state; current_state < prog_size; current_state++) {
@@ -121,15 +133,14 @@ namespace {
 
                     case re2::kInstNop:
                     case re2::kInstCapture:
-                        // When there is a back edge from the current state and the current state is last,
-                        // we will not be using the current append_to_states anymore
-                        if (inst->out() < current_state && inst->last()) {
-                            append_to_states.clear();
+                        if (use_epsilon) {
+                            symbols.push_back(epsilon_value);
+                            this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+                            symbols.clear();
                         }
                         break;
                     case re2::kInstEmptyWidth:
                         empty_flag = static_cast<int>(inst->empty());
-                        symbols.clear();
                         // ^ - beginning of line
                         if (empty_flag & re2::kEmptyBeginLine) {
                             // TODO Symbol?
@@ -169,74 +180,110 @@ namespace {
                                 symbols.push_back(symbol);
                             }
                         }
-                        // We always add the current state to the appendToState vector.
-                        // Even if it will be the only state in the vector.
-                        // Like that, we don't have to check the vector for emptiness and work with the current
-                        // state and/or append_to_states vector separately
-                        append_to_states.push_back(current_state);
-                        for (auto stateToAppend: append_to_states) {
-                            for (auto mappedState: this->state_cache.state_mapping[stateToAppend]) {
-                                // Skip states that haven't any incoming edge, these states aren't reachable
-                                if (!this->state_cache.has_state_incoming_edge[mappedState]) {
-                                    continue;
-                                }
-                                for (auto mappedTargetState: this->state_cache.state_mapping[inst->out()]) {
-                                    // There can be more symbols on the edge
-                                    for (auto symbol: symbols) {
-                                        this->state_cache.has_state_incoming_edge[mappedTargetState] = true;
-                                        explicit_nfa.add_trans(mappedState, symbol, mappedTargetState);
-                                        back_state_outgoing_edges[mappedState].push_back(
-                                                {symbol, mappedTargetState});
-                                    }
+                        this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
+
+                        if (!use_epsilon) {
+                            // There is an epsilon transition to the currentState+1 we will need to copy transitions of
+                            // the currentState+1 to the currentState.
+                            if (!this->state_cache.is_last[current_state]) {
+                                for (auto state: this->state_cache.state_mapping[current_state + 1]) {
+                                    copyEdgesFromTo.emplace_back(state, current_state);
                                 }
                             }
-                        }
-                        // Some states are added to the append_to_states vector only to be processed in
-                        // the current iteration, we do not want to append to them in the following iterations
-                        if (this->should_delete_last_pushed(
-                                prog, current_state, append_to_states.size())) {
-                            append_to_states.pop_back();
-                        }
-                        // There is an epsilon transition to the current_state+1
-                        if (!this->state_cache.is_last[current_state]) {
-                            re2::Prog::Inst *next = prog->inst(current_state + 1);
-                            // The current_state+1 (or any following state accessible with epsilon transition from it)
-                            // can have a back edge (edge going to a state with a lower number than the current state).
-                            // In such a case, we must also "append" transitions of the back edge
-                            // target state to the current state
-                            int stateWithBackEdge = this->get_following_state_with_back_edge(prog, next->out());
-                            if (stateWithBackEdge != -1) {
-                                re2::Prog::Inst *stateWithBackEdgeInst = prog->inst(stateWithBackEdge);
-                                for (auto appendToState: this->state_cache.state_mapping[current_state]) {
-                                    for (auto targetState:
-                                        this->state_cache.state_mapping[stateWithBackEdgeInst->out()]) {
-                                        for (auto targetStateOutgoingEdges:
-                                            back_state_outgoing_edges[targetState]) {
-                                            explicit_nfa.add_trans(appendToState,
-                                                                   targetStateOutgoingEdges.first,
-                                                                   targetStateOutgoingEdges.second);
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            append_to_states.clear();
                         }
                         symbols.clear();
                         break;
                 }
             }
-
+            if (!use_epsilon) {
+                // We will traverse the vector in reversed order. Like that, we will also handle chains of epsilon transitions
+                // 2 -(eps)-> 3 -(eps)-> 4 -(a)-> 5.... We first need to copy transitions of state 4 to state 3, and then
+                // we can copy transition of state 3 (which now have copied transitions of state 4) to state 2
+                for (auto copyEdgeFromTo = copyEdgesFromTo.rbegin(); copyEdgeFromTo != copyEdgesFromTo.rend(); copyEdgeFromTo++) {
+                    re2::Prog::Inst *inst = prog->inst(copyEdgeFromTo->first);
+                    // kInstMatch states in RE2 does not have outgoing edges. The other state will also be final
+                    if (inst->opcode() == re2::kInstMatch) {
+                        this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
+                        this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
+                        continue;
+                    }
+                    // The state is final if there are epsilon transition(s) leading to a final state
+                    if (this->state_cache.is_final_state[copyEdgeFromTo->first]) {
+                        this->make_state_final(copyEdgeFromTo->second, explicit_nfa);
+                        this->state_cache.is_final_state[copyEdgeFromTo->second] = true;
+                    }
+                    for (auto transition: this->outgoingEdges[copyEdgeFromTo->first]) {
+                        // We copy transitions only to states that has incoming edge
+                        if (this->state_cache.has_state_incoming_edge[copyEdgeFromTo->second]) {
+                            explicit_nfa.add_trans(copyEdgeFromTo->second, transition.first, transition.second);
+                        }
+                        // However, we still need to save the transitions (we could possibly copy them to another state in
+                        // the epsilon closure that has incoming edge)
+                        this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
+                    }
+                }
+            }
             RegexParser::renumber_states(output_nfa, prog_size, explicit_nfa);
         }
 
     private: // private methods
         /**
+         * Creates transitions in the passed ExplicitNFA nfa. Transitions are created for each from statesFrom vector with
+         * an incoming edge. Transitions are created for each symbol from symbol vector.
+         * @param statesFrom states that will be used as source states
+         * @param inst RE2 instruction for the current state, it is used to determine the target state for each transition
+         * @param symbols symbols that will be used on each transition
+         * @param nfa ExplicitNFA in which the transitions should be created
+         * @param use_epsilon whether to create NFA with epsilon transitions or not
+         * @param epsilon_value value, that will represent epsilon on transitions
+         */
+        void create_explicit_nfa_transitions(int currentState, re2::Prog::Inst *inst,
+                                                       const std::vector<Mata::Nfa::Symbol>& symbols,
+                                                       Mata::Nfa::Nfa &nfa, bool use_epsilon, int epsilon_value) {
+            for (auto mappedState: this->state_cache.state_mapping[currentState]) {
+                for (auto mappedTargetState: this->state_cache.state_mapping[inst->out()]) {
+                    // There can be more symbols on the edge
+                    for (auto symbol: symbols) {
+                        if (!use_epsilon) {
+                            // Save all outgoing edges. The vector will be used to get rid of epsilon transitions
+                            this->outgoingEdges[mappedState].push_back({symbol, mappedTargetState});
+                        }
+                        if (this->state_cache.has_state_incoming_edge[mappedState]) {
+                            this->state_cache.has_state_incoming_edge[mappedTargetState] = true;
+                            nfa.add_trans(mappedState, symbol, mappedTargetState);
+                        }
+                    }
+                }
+            }
+            if (use_epsilon) {
+                // There is an epsilon transition to the currentState+1, so we must handle it
+                if (!this->state_cache.is_last[currentState]) {
+                    nfa.add_trans(currentState, epsilon_value, currentState + 1);
+                }
+            }
+        }
+
+       /**
+        * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
+        * It calls appropriate method based on use_epsilon param
+        * @param prog RE2 prog corresponding to the parsed regex
+        * @param use_epsilon whether to create NFA with epsilon transitions or not
+        */
+       void create_state_cache(re2::Prog *prog, bool use_epsilon) {
+            if (use_epsilon) {
+                this->create_state_cache_with_epsilon(prog);
+            } else {
+                this->create_state_cache_without_epsilon(prog);
+            }
+        }
+
+        /**
          * Creates all state cache vectors needed throughout the computation and saves them
          * to the private variable state_cache
+         * It creates state cache for creating ExplicitNFA without epsilon transitions
          * @param prog RE2 prog corresponding to the parsed regex
          */
-        void create_state_cache(re2::Prog *prog) {
+        void create_state_cache_without_epsilon(re2::Prog *prog) {
             std::vector<bool> default_false_vec(prog->size(), false);
             this->state_cache = {
                 // state_mapping holds states that map to each state (index) due to epsilon transitions
@@ -249,35 +296,29 @@ namespace {
                 default_false_vec,
                 // has_state_incoming_edge holds true for states with an incoming edge, false for the rest
                 default_false_vec,
-                // has_state_outgoing_back_edge holds true for states with outgoing edge to lower number state,
-                // false for the rest
-                default_false_vec,
             };
             const int start_state = prog->start();
             const int prog_size = prog->size();
 
             // Used for the first loop through states
             std::vector<Mata::Nfa::State> tmp_state_mapping(prog_size);
-            for (int state = 0; state < prog_size; state++) {
+            for (Mata::Nfa::State state = 0; state < prog_size; state++) {
                 tmp_state_mapping[state] = state;
-                this->state_cache.state_mapping.push_back({tmp_state_mapping[state]});
+                this->state_cache.state_mapping.push_back({state});
             }
 
             // When there is nop or capture type of state, we will be appending to it
             int append_to_state = -1;
             Mata::Nfa::State mapped_parget_state;
 
-            for (int state = start_state; state < prog_size; state++) {
+            for (Mata::Nfa::State state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(state);
                 if (inst->last()) {
                     this->state_cache.is_last[state] = true;
                 }
-                // kInstMatch has out() == 0, so the first part of the condition would be true, but it is not considered as
-                // back edge
-                if (inst->out() < state && inst->opcode() != re2::kInstMatch) {
-                    this->state_cache.has_state_outgoing_back_edge[state] = true;
-                }
+
                 if (inst->opcode() == re2::kInstCapture || inst->opcode() == re2::kInstNop) {
+                    this->state_cache.state_mapping[state] = this->get_mapped_states(prog, state, inst);
                     this->state_cache.is_state_nop_or_cap[state] = true;
                     mapped_parget_state = tmp_state_mapping[static_cast<Mata::Nfa::State>(inst->out())];
                     tmp_state_mapping[state] = mapped_parget_state;
@@ -300,148 +341,35 @@ namespace {
                     append_to_state = -1;
                 }
             }
+        }
 
-            // If the start state has type nop or capture it would be skipped in the NFA, so we map the out state to it to
-            // make it visible
-            re2::Prog::Inst *start_state_inst = prog->inst(start_state);
-            if (this->state_cache.is_state_nop_or_cap[start_state]) {
-                if (this->state_cache.is_last[start_state]) {
-                    tmp_state_mapping[start_state] = tmp_state_mapping[start_state_inst->out()];
-                } else {
-                    tmp_state_mapping[start_state_inst->out()] = tmp_state_mapping[start_state + 1];
-                    tmp_state_mapping[start_state] = tmp_state_mapping[start_state + 1];
-                }
-            }
+        /**
+          * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
+          * It creates state cache for creating ExplicitNFA with epsilon transitions
+          * @param prog RE2 prog corresponding to the parsed regex
+          */
+        void create_state_cache_with_epsilon(re2::Prog *prog) {
+            std::vector<bool> defaultFalseVec(prog->size(), false);
+            std::vector<bool> defaultTrueVec(prog->size(), true);
+            this->state_cache = {
+                    {}, // stateMapping all states are mapped to itself when using epsilon transitions
+                    defaultFalseVec, // is_final_state holds true for states that are final, false for the rest
+                    defaultFalseVec, // is_state_nop_or_cap not used when using epsilon transition
+                    defaultFalseVec, // is_last holds true for states that are last, false for the rest
+                    defaultTrueVec, // has_state_incoming_edge holds true all states
+            };
+            const int progSize = prog->size();
 
-            // A state can have two states mapped to it, we create those mappings in the second loop
-            std::vector<Mata::Nfa::State> append_to_states = {};
-            // We will keep track of potential final states. When there is an epsilon transition from a state, it can lead
-            // to a final state, which makes the source state final too
-            std::vector<Mata::Nfa::State> states_to_make_final = {};
-            for (int state = start_state; state < prog_size; state++) {
+            for (Mata::Nfa::State state = 0; state < progSize; state++) {
+                this->state_cache.state_mapping.push_back({state});
                 re2::Prog::Inst *inst = prog->inst(state);
-                if (inst->opcode() == re2::kInstCapture || inst->opcode() == re2::kInstNop) {
-                    // All states of type nop or capture have epsilon transition
-                    states_to_make_final.push_back(state);
-                    // If the epsilon transition leads to a final state all states within the current epsilon transition
-                    // chain will be final
-                    if (this->state_cache.is_final_state[inst->out()]) {
-                        for (auto finalState: states_to_make_final) {
-                            this->state_cache.is_final_state[finalState] = true;
-                        }
-                    }
-                    mapped_parget_state = tmp_state_mapping[inst->out()];
-                    this->state_cache.state_mapping[state] = {mapped_parget_state};
-                    if (!append_to_states.empty()) {
-                        std::vector<Mata::Nfa::State> target_states;
-                        if (!inst->last()) {
-                            target_states.push_back(mapped_parget_state);
-                            target_states.push_back(tmp_state_mapping[state + 1]);
-                        } else {
-                            target_states.push_back(mapped_parget_state);
-                        }
-                        for (auto appendTo: append_to_states) {
-                            this->state_cache.state_mapping[appendTo] = target_states;
-                        }
-                        // These states are processed now, we can delete them
-                        append_to_states.clear();
-                    }
-                    append_to_states.push_back(state);
-                } else if (inst->opcode() == re2::kInstMatch) {
-                    for (auto finalState: states_to_make_final) {
-                        this->state_cache.is_final_state[finalState] = true;
-                    }
-                    states_to_make_final.clear();
-                    append_to_states.clear();
-                } else {
-                    if (inst->last()) {
-                        // A state that is not of the type nop or capture and is last has no epsilon transition,
-                        // so it breaks the chain of epsilon transition possibly leading to the final state
-                        states_to_make_final.clear();
-                    } else {
-                        // State with last() == false has an epsilon transition to state + 1. Otherwise,
-                        // it's the same as above
-                        states_to_make_final.push_back(state);
-                        if (this->state_cache.is_final_state[inst->out()]) {
-                            for (auto finalState: states_to_make_final) {
-                                this->state_cache.is_final_state[finalState] = true;
-                            }
-                        }
-                    }
-                    append_to_states.clear();
+                if (inst->last()) {
+                    this->state_cache.is_last[state] = true;
+                }
+                if (inst->opcode() == re2::kInstMatch) {
+                    this->state_cache.is_final_state[state] = true;
                 }
             }
-
-            // If the start state type is capture or nop and is also not last
-            // (there is an epsilon transition to state + 1), we must update the start state mapping
-            if (this->state_cache.is_state_nop_or_cap[start_state] && !this->state_cache.is_last[start_state]) {
-                this->state_cache.state_mapping[start_state_inst->out()] =
-                        this->state_cache.state_mapping[start_state + 1];
-            }
-        }
-
-        /**
-         * Checks if the state parameter (or any state which could be accessed with epsilon transitions from it)
-         * has an outgoing back edge and returns the state
-         * @param prog RE2 prog corresponding to the parsed regex
-         * @param state State to check
-         * @return A state with a back edge if there is such or -1 otherwise
-         */
-        int get_following_state_with_back_edge(re2::Prog *prog, int state) {
-            if(this->state_cache.has_state_outgoing_back_edge[state]) {
-                return state;
-            }
-            re2::Prog::Inst *state_inst = prog->inst(state);
-            if (!this->state_cache.is_state_nop_or_cap[state]) {
-                return -1;
-            }
-            // Check all states, which are accessible with epsilon transition from the state,
-            // for a potential outgoing back edge
-            while (this->state_cache.is_state_nop_or_cap[state_inst->out()]) {
-                if (this->state_cache.has_state_outgoing_back_edge[state_inst->out()]) {
-                    return state_inst->out();
-                }
-                state_inst = prog->inst(state_inst->out());
-            }
-            return -1;
-        }
-
-        /**
-         * Check if the last pushed state should be deleted from the appendToStates vector when walking RE2 NFA
-         * @param prog RE2 prog corresponding to the parsed regex
-         * @param current_state State to check
-         * @param append_to_states_vector_size Current size of the appendToStates vector
-         * @return True if there is a chain of epsilon transitions starting from the current_state, false otherwise
-         */
-        bool should_delete_last_pushed(
-                re2::Prog* prog,
-                int current_state,
-                std::vector<int>::size_type append_to_states_vector_size) {
-            // If the state is not last (i.e., it has an epsilon edge to the state+1), it's not the final state and is
-            // currently the only one that we would append to, then we must keep it. If there already was some state, we
-            // would be appending to it and the current state would be skipped
-            if (!state_cache.is_last[current_state] && !this->state_cache.is_final_state[current_state] &&
-                append_to_states_vector_size == 1) {
-                return false;
-            }
-            // There is an epsilon transition from the current_state to the current_state + 1
-            // which is of type nop or capture
-            if (!this->state_cache.is_last[current_state] && this->state_cache.is_state_nop_or_cap[current_state + 1]) {
-                re2::Prog::Inst *next_state_inst = prog->inst(current_state + 1);
-                if (this->state_cache.is_last[next_state_inst->out()]) {
-                    // There can be a "chain" of nop/capture states, we must check them all
-                    while (state_cache.is_state_nop_or_cap[next_state_inst->out()]) {
-                        next_state_inst = prog->inst(next_state_inst->out());
-                        if (!this->state_cache.is_last[next_state_inst->out()]) {
-                            return false;
-                        }
-                    }
-                    // If there is no epsilon transition other than the current_state to current_state+1,
-                    // we should delete the last pushed state from the appendToStates vector
-                    return true;
-                }
-            }
-            return false;
         }
 
         /**
@@ -492,6 +420,11 @@ namespace {
                 const auto& transition_list = input_nfa.get_transitions_from_state(state);
                 for (const auto& transition: transition_list) {
                     for (auto stateTo: transition.states_to) {
+                        if (static_cast<int>(renumbered_states[stateTo]) == -1) {
+                            renumbered_states[stateTo] = renumbered_explicit_nfa.add_new_state();
+                        }
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.get_num_of_states());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.get_num_of_states());
                         renumbered_explicit_nfa.add_trans(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }
@@ -504,15 +437,64 @@ namespace {
 
             return renumbered_explicit_nfa;
         }
+
+        /**
+         * Gets all states that are mapped to the state (i.e., states that are within epsilon transitions chain)
+         * @param prog RE2 prog corresponding to the parsed regex
+         * @param state State for which the mapped states should be computed
+         * @param inst RE2 instruction for the state
+         * @return All states that are mapped to the state
+         */
+        std::vector<Mata::Nfa::State> get_mapped_states(
+                re2::Prog* prog, int state, re2::Prog::Inst *inst) {
+            std::vector<Mata::Nfa::State> mappedStates;
+            std::vector<Mata::Nfa::State> statesToCheck;
+            std::set<Mata::Nfa::State> checkedStates;
+
+            statesToCheck.push_back(state);
+            while (!statesToCheck.empty()) {
+                state = statesToCheck.back();
+                inst = prog->inst(state);
+                checkedStates.insert(state);
+                statesToCheck.pop_back();
+                // If the state is not last, it also has an epsilon transition which we must follow
+                if (!inst->last()) {
+                    re2::Prog::Inst *nextInst = prog->inst(state + 1);
+                    if (nextInst->last()) {
+                        this->state_cache.is_last[state + 1] = true;
+                    }
+                    if (checkedStates.count(state+1) == 0) {
+                        statesToCheck.push_back(state+1);
+                    }
+                } else if (inst->opcode() != re2::kInstCapture && inst->opcode() != re2::kInstNop) {
+                    // It is state with "normal" transition. It is the last state in the epsilon transitions chain
+                    mappedStates.push_back(state);
+                    continue;
+                }
+                re2::Prog::Inst *outInst = prog->inst(inst->out());
+                if (outInst->opcode() == re2::kInstCapture || outInst->opcode() == re2::kInstNop) {
+                    // The state has outgoing epsilon transition which we must follow
+                    if (checkedStates.count(inst->out()) == 0) {
+                        statesToCheck.push_back(inst->out());
+                    }
+                } else {
+                    // It is state with "normal" transition. It is the last state in the epsilon transitions chain
+                    mappedStates.push_back(inst->out());
+                }
+            }
+            return mappedStates;
+        }
         };
 }
 
  /**
  * The main method, it creates NFA from regex
  * @param pattern regex as string
+ * @param use_epsilon whether to create NFA with epsilon transitions or not
+ * @param epsilon_value value, that will represent epsilon on transitions
  * @return mata::Nfa::Nfa corresponding to pattern
  */
-void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
+void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value) {
     if (nfa == NULL) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
@@ -520,7 +502,7 @@ void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern) {
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
-    regexParser.convert_pro_to_nfa(nfa, program);
+    regexParser.convert_pro_to_nfa(nfa, program, use_epsilon, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
