@@ -34,7 +34,7 @@ public:
     /**
      * Compute classic intersection of NFAs @p lhs and @p rhs.
      * @param lhs First NFA to compute intersection for.
-     * @param rhs Second NFA to compute intersecion for.
+     * @param rhs Second NFA to compute intersection for.
      */
     Intersection(const Nfa& lhs, const Nfa& rhs) : lhs(lhs), rhs(rhs)
     {
