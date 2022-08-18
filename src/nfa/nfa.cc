@@ -248,15 +248,6 @@ std::list<Symbol> EnumAlphabet::get_complement(
     return result;
 } // EnumAlphabet::get_complement }}}
 
-EnumAlphabet::EnumAlphabet(const Nfa& aut) : symbol_map() {
-    const size_t aut_num_of_states{ aut.get_num_of_states() };
-    for (State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const auto& state_transitions: aut.transitionrelation[state]) {
-            symbol_map.insert({std::to_string(state_transitions.symbol), state_transitions.symbol});
-        }
-    }
-}
-
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {

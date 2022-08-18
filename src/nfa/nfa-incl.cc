@@ -33,7 +33,7 @@ bool is_incl_naive(
 { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
-        bigger_cmpl = complement(bigger, EnumAlphabet(smaller));
+        bigger_cmpl = complement(bigger, EnumAlphabet::from_nfas(smaller, bigger));
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
@@ -235,7 +235,7 @@ bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDi
 {
     if (haskey(params, "algo")) {
         if (params.at("algo") == "naive") {
-            auto alphabet{ EnumAlphabet{ lhs } };
+            auto alphabet{ EnumAlphabet::from_nfas(lhs, rhs) };
             return equivalence_check(lhs, rhs, &alphabet, params);
         }
     }

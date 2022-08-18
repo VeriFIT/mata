@@ -63,6 +63,26 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 } // }}}
 */
 
+TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()")
+{
+    Nfa a{1};
+    a.add_trans(0, 'a', 0);
+
+    Nfa b{1};
+    b.add_trans(0, 'b', 0);
+    b.add_trans(0, 'a', 0);
+    Nfa c{1};
+    b.add_trans(0, 'c', 0);
+
+    auto alphabet{ EnumAlphabet::from_nfas(a, b, c) };
+
+    auto symbols{ alphabet.get_symbols() };
+    CHECK(symbols == std::list<Symbol>{ 'c', 'b', 'a' });
+
+    //EnumAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+    //EnumAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
+}
+
 TEST_CASE("Mata::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
 	Nfa a(3);
