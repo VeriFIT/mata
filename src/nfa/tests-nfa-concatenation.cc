@@ -73,12 +73,94 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     Nfa rhs{};
     Nfa result{};
 
+    SECTION("Empty automaton without states") {
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("One empty automaton without states") {
+        rhs.increase_size(1);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Other empty automaton without states") {
+        lhs.increase_size(1);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("One empty automaton without states with other with initial states") {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Other empty automaton without states with other with initial states") {
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("One empty automaton without states with other non-empty automaton") {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Other empty automaton without states with other non-empty automaton") {
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        rhs.make_final(0);
+        result = concatenate(lhs, rhs);
+
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
     SECTION("Empty automaton") {
         lhs.increase_size(1);
         rhs.increase_size(1);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
         CHECK(result.finalstates.empty());
         CHECK(result.trans_empty());
@@ -93,9 +175,9 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
         CHECK(result.finalstates.empty());
-        CHECK(result.get_num_of_states() == 2);
         CHECK(result.trans_empty());
     }
 
@@ -290,7 +372,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         result = concatenate(lhs, rhs, epsilon);
 
-        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
         CHECK(result.finalstates.empty());
         CHECK(result.trans_empty());
@@ -305,9 +387,9 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         result = concatenate(lhs, rhs, epsilon);
 
-        CHECK(result.has_initial(0));
+        CHECK(result.get_num_of_states() == 0);
+        CHECK(result.initialstates.empty());
         CHECK(result.finalstates.empty());
-        CHECK(result.get_num_of_states() == 2);
         CHECK(result.trans_empty());
     }
 
