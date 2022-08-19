@@ -40,6 +40,34 @@ namespace SegNfa
  */
 AutSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
+/**
+ * @brief Create noodles for left and right side of equation.
+ *
+ * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+ * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+ *
+ * @param[in] left_automata Sequence of segment automata for left side of an equation to noodlify.
+ * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
+ * @param[in] include_empty Whether to also include empty noodles.
+ * @return A list of all (non-empty) noodles.
+ */
+AutSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+                                  bool include_empty = false);
+
+/**
+ * @brief Create noodles for left and right side of equation.
+ *
+ * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+ * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+ *
+ * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
+ * @param[in] include_empty Whether to also include empty noodles.
+ * @return A list of all (non-empty) noodles.
+ */
+AutSequence noodlify_for_equation(const std::vector<const Nfa*>& left_automata, const Nfa& right_automaton,
+                                  bool include_empty = false);
+
 } // SegNfa
 } // Nfa
 } // Mata

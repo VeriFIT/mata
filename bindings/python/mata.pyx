@@ -504,7 +504,7 @@ cdef class Nfa:
         """
         cdef mata.CNfa c_digraph = self.thisptr.get_digraph()
 
-        digraph  = Nfa(c_digraph.get_num_of_states())
+        digraph = Nfa(c_digraph.get_num_of_states())
         digraph.thisptr.initialstates = c_digraph.initialstates
         digraph.thisptr.finalstates = c_digraph.finalstates
         digraph.thisptr.transitionrelation = c_digraph.transitionrelation
@@ -711,6 +711,36 @@ cdef class Nfa:
         """
         noodles = []
         cdef vector[CNfa] c_noodles = mata.noodlify(dereference(aut.thisptr), symbol, include_empty)
+        for c_noodle in c_noodles:
+            noodle = Nfa(c_noodle.get_num_of_states())
+            noodle.thisptr.initialstates = c_noodle.initialstates
+            noodle.thisptr.finalstates = c_noodle.finalstates
+            noodle.thisptr.transitionrelation = c_noodle.transitionrelation
+            noodles.append(noodle)
+
+        return noodles
+
+    @classmethod
+    def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False):
+        """
+        Create noodles for equation.
+
+        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+
+        :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
+        :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
+        :param: bool include_empty: Whether to also include empty noodles.
+        :return: List of automata: A list of all (non-empty) noodles.
+        """
+        cdef vector[const mata.CNfa*] c_left_side_automata
+        for lhs_aut in left_side_automata:
+            c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr)
+        noodles = []
+        cdef vector[CNfa] c_noodles = mata.noodlify_for_equation(
+            c_left_side_automata,
+            dereference(right_side_automaton.thisptr), include_empty
+        )
         for c_noodle in c_noodles:
             noodle = Nfa(c_noodle.get_num_of_states())
             noodle.thisptr.initialstates = c_noodle.initialstates

@@ -245,6 +245,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
     cdef vector[CNfa] noodlify(CNfa&, Symbol, bool)
+    cdef vector[CNfa] noodlify_for_equation(const vector[const CNfa*]&, CNfa&, bool)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
