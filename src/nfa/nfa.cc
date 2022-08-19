@@ -188,6 +188,18 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(
     return result;
 } // OnTheFlyAlphabet::get_complement }}}
 
+void EnumAlphabet::add_symbols_from(const Nfa& nfa) {
+    size_t aut_num_of_states{ nfa.get_num_of_states() };
+    for (State state{ 0 }; state < aut_num_of_states; ++state) {
+        for (const auto& state_transitions: nfa.transitionrelation[state]) {
+            add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+            if (next_symbol_value < state_transitions.symbol) {
+                next_symbol_value = state_transitions.symbol + 1;
+            }
+        }
+    }
+}
+
 std::list<Symbol> CharAlphabet::get_symbols() const
 { // {{{
     std::list<Symbol> result;

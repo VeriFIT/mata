@@ -124,29 +124,6 @@ public:
 	virtual ~Alphabet() { }
 };
 
-class OnTheFlyAlphabet : public Alphabet
-{
-private:
-	StringToSymbolMap* symbol_map;
-	Symbol cnt_symbol;
-
-private:
-	OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
-	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-public:
-
-	explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
-		symbol_map(str_sym_map), cnt_symbol(init_symbol)
-	{
-		assert(nullptr != symbol_map);
-	}
-
-	std::list<Symbol> get_symbols() const override;
-	Symbol translate_symb(const std::string& str) override;
-	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-};
-
 class DirectAlphabet : public Alphabet
 {
 public:
@@ -1230,7 +1207,8 @@ private:
 class EnumAlphabet : public Alphabet
 {
 private:
-    StringToSymbolMap symbol_map;
+    StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
+    Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
 
     EnumAlphabet& operator=(const EnumAlphabet& rhs);
 
@@ -1252,15 +1230,14 @@ private:
 
 public:
 
-    EnumAlphabet() : symbol_map() { }
-
-    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map) {}
+    EnumAlphabet() = default;
+    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
 
     /**
      * Create alphabet from variable number of NFAs.
-     * @tparam Nfas Type Nfa.
-     * @param nfas NFAs to create alphabet from.
-     * @return Alphabet.
+     * @tparam[in] Nfas Type Nfa.
+     * @param[in] nfas NFAs to create alphabet from.
+     * @return Created alphabet.
      */
     template<typename... Nfas, typename = AreAllNfas<Nfas...>>
     static EnumAlphabet from_nfas(const Nfas&... nfas) {
@@ -1279,11 +1256,10 @@ public:
     template <class InputIt>
     EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
     { // {{{
-        size_t cnt = 0;
         for (; first != last; ++first)
         {
             bool inserted;
-            std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
+            std::tie(std::ignore, inserted) = symbol_map.insert({*first, next_symbol_value++});
             if (!inserted)
             {
                 throw std::runtime_error("multiple occurrence of the same symbol");
@@ -1311,11 +1287,70 @@ public:
 
     /**
      * Add new symbol to the alphabet.
-     * @param key User-space representation of the symbol.
-     * @param value Number of the symbol to be used on transitions.
+     * @param[in] key User-space representation of the symbol.
+     * @param[in] value Number of the symbol to be used on transitions.
      */
     void add_symbol(const std::string& key, Symbol value) { symbol_map.insert({key, value}); }
+
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const std::vector<Nfa>& nfas) {
+        EnumAlphabet alphabet{};
+        Symbol next_symbol_value{};
+        size_t nfa_num_of_states{};
+        for (const auto& nfa: nfas) {
+            nfa_num_of_states = nfa.get_num_of_states();
+            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+                for (const auto& state_transitions: nfa.transitionrelation[state]) {
+                    alphabet.add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                    if (next_symbol_value < state_transitions.symbol) {
+                        next_symbol_value = state_transitions.symbol + 1;
+                    }
+                }
+            }
+        }
+        return alphabet;
+    }
+
+    /**
+     * Expand alphabet by symbols from the passed @p nfa.
+     * @param[in] nfa Automaton with whose transition symbols to expand the current alphabet.
+     */
+    void add_symbols_from(const Nfa& nfa);
+
+    Symbol get_next_value() const { return next_symbol_value; }
 }; // class EnumAlphabet.
+
+class OnTheFlyAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap* symbol_map;
+    Symbol cnt_symbol;
+
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
+
+public:
+    /**
+     * Construct alphabet on the fly from already prepared str_sym_map.
+     * @param[in] str_sym_map Map of transition symbols as strings to symbol values.
+     * @param[in] init_symbol Initial symbol value to use as next added symbol value. One can reserve the values lower than
+     *     @p init_symbol for special symbols and when passing an non-empty @p str_sym_map, define value higher than any
+     *     value in @p str_sym_map to avoid collisions.
+     */
+    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+            symbol_map(str_sym_map), cnt_symbol(init_symbol)
+    {
+        assert(nullptr != symbol_map);
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    Symbol translate_symb(const std::string& str) override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+}; // class OnTheFlyAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
@@ -1338,6 +1373,5 @@ struct hash<Mata::Nfa::Trans>
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
 } // std }}}
-
 
 #endif /* _MATA_NFA_HH_ */
