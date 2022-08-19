@@ -25,13 +25,18 @@ namespace {
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool is_incl_naive(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+	const Alphabet* const  alphabet,
+	Word*                  cex,
 	const StringDict&  /* params*/)
 { // {{{
-	Nfa bigger_cmpl = complement(bigger, alphabet);
+    Nfa bigger_cmpl;
+    if (alphabet == nullptr) {
+        bigger_cmpl = complement(bigger, EnumAlphabet::from_nfas(smaller, bigger));
+    } else {
+        bigger_cmpl = complement(bigger, *alphabet);
+    }
 	Nfa nfa_isect = intersection(smaller, bigger_cmpl);
 
 	bool result;
@@ -47,11 +52,11 @@ bool is_incl_naive(
 
 /// language inclusion check using Antichains
 bool is_incl_antichains(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+	const Alphabet* const  alphabet,
+	Word*                  cex,
+	const StringDict&      params)
 { // {{{
 	(void)params;
 	(void)alphabet;
@@ -181,43 +186,13 @@ bool is_incl_antichains(
 	return true;
 } // }}}
 
-} // namespace
 
+using AlgoType = decltype(is_incl_naive)*;
 
-// The dispatching method that calls the correct one based on parameters
-bool Mata::Nfa::is_incl(
-	const Nfa&         smaller,
-	const Nfa&         bigger,
-	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
-{ // {{{
-
-	// setting the default algorithm
-	decltype(is_incl_naive)* algo = is_incl_naive;
-	if (!haskey(params, "algo")) {
-		throw std::runtime_error(std::to_string(__func__) +
-			" requires setting the \"algo\" key in the \"params\" argument; "
-			"received: " + std::to_string(params));
-	}
-
-	const std::string& str_algo = params.at("algo");
-	if ("naive" == str_algo) { }
-	else if ("antichains" == str_algo) {
-		algo = is_incl_antichains;
-	} else {
-		throw std::runtime_error(std::to_string(__func__) +
-			" received an unknown value of the \"algo\" key: " + str_algo);
-	}
-
-	return algo(smaller, bigger, alphabet, cex, params);
-} // is_incl }}}
-
-bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet, const StringDict& params)
-{
-    if (is_incl(lhs, rhs, alphabet, params))
+bool compute_equivalence(const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const StringDict& params, const AlgoType& algo) {
+    if (algo(lhs, rhs, alphabet, nullptr, params))
     {
-        if (is_incl(rhs, lhs, alphabet, params))
+        if (algo(rhs, lhs, alphabet, nullptr, params))
         {
             return true;
         }
@@ -226,16 +201,56 @@ bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet
     return false;
 }
 
-bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params)
+AlgoType set_algorithm(const std::string& function_name, const StringDict& params) {
+    if (!haskey(params, "algo")) {
+        throw std::runtime_error(function_name +
+                                 " requires setting the \"algo\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
+
+    decltype(is_incl_naive)* algo;
+    const std::string& str_algo = params.at("algo");
+    if ("naive" == str_algo) {
+        algo = is_incl_naive;
+    } else if ("antichains" == str_algo) {
+        algo = is_incl_antichains;
+    } else {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"algo\" key: " + str_algo);
+    }
+
+    return algo;
+}
+
+} // namespace
+
+
+// The dispatching method that calls the correct one based on parameters
+bool Mata::Nfa::is_incl(
+	const Nfa&             smaller,
+	const Nfa&             bigger,
+    Word*                  cex,
+	const Alphabet* const  alphabet,
+	const StringDict&      params)
+{ // {{{
+    AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
+	return algo(smaller, bigger, alphabet, cex, params);
+} // is_incl }}}
+
+bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const StringDict& params)
 {
-    // Construct automata alphabet.
-    std::set<std::string> alphabet{};
-    for (const auto& state_transitions: lhs.transitionrelation)
-    {
-        for (const auto& symbol_state_transitions: state_transitions) {
-            alphabet.insert(std::to_string(symbol_state_transitions.symbol));
+    AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
+
+    if (params.at("algo") == "naive") {
+        if (alphabet == nullptr) {
+            auto compute_alphabet{ EnumAlphabet::from_nfas(lhs, rhs) };
+            return compute_equivalence(lhs, rhs, alphabet, params, algo);
         }
     }
 
-    return equivalence_check(lhs, rhs, EnumAlphabet{ alphabet.begin(), alphabet.end() }, params);
+    return compute_equivalence(lhs, rhs, alphabet, params, algo);
+}
+
+bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params) {
+    return equivalence_check(lhs, rhs, nullptr, params);
 }

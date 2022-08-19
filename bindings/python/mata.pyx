@@ -904,7 +904,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included(
-            cls, Nfa lhs, Nfa rhs, Alphabet alphabet, params = None
+            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
@@ -915,12 +915,15 @@ cdef class Nfa:
         :return: true if lhs is included by rhs, counter example word if not
         """
         cdef Word word
+        cdef CAlphabet* c_alphabet = NULL
+        if alphabet:
+            c_alphabet = alphabet.as_base()
         params = params or {'algo': 'antichains'}
         result = mata.is_incl(
             dereference(lhs.thisptr),
             dereference(rhs.thisptr),
-            <CAlphabet&>dereference(alphabet.as_base()),
             &word,
+            c_alphabet,
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                 for k, v in params.items()
@@ -941,11 +944,13 @@ cdef class Nfa:
         :return: True if lhs is equivalent to rhs, False otherwise.
         """
         params = params or {'algo': 'antichains'}
+        cdef CAlphabet * c_alphabet = NULL
         if alphabet:
+            c_alphabet = alphabet.as_base()
             return mata.equivalence_check(
                 dereference(lhs.thisptr),
                 dereference(rhs.thisptr),
-                <CAlphabet&>dereference(alphabet.as_base()),
+                c_alphabet,
                 {
                     k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                     for k, v in params.items()

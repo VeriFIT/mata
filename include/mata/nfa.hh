@@ -97,6 +97,8 @@ struct Trans
 
 using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
+struct Nfa; ///< A non-deterministic finite automaton.
+
 // ALPHABET {{{
 class Alphabet
 {
@@ -182,56 +184,6 @@ public:
 		const std::set<Symbol>& syms) const override;
 };
 
-class EnumAlphabet : public Alphabet
-{
-private:
-	StringToSymbolMap symbol_map;
-
-private:
-	EnumAlphabet(const EnumAlphabet& rhs);
-	EnumAlphabet& operator=(const EnumAlphabet& rhs);
-
-public:
-
-	EnumAlphabet() : symbol_map() { }
-
-	template <class InputIt>
-	EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
-	{ // {{{
-		size_t cnt = 0;
-		for (; first != last; ++first)
-		{
-			bool inserted;
-			std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
-			if (!inserted)
-			{
-				throw std::runtime_error("multiple occurrence of the same symbol");
-			}
-		}
-	} // }}}
-
-	EnumAlphabet(std::initializer_list<std::string> l) :
-		EnumAlphabet(l.begin(), l.end())
-	{ }
-
-	Symbol translate_symb(const std::string& str) override
-	{
-		auto it = symbol_map.find(str);
-		if (symbol_map.end() == it)
-		{
-			throw std::runtime_error("unknown symbol \'" + str + "\'");
-		}
-
-		return it->second;
-	}
-
-	std::list<Symbol> get_symbols() const override;
-	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-};
-// }}}
-
-
-struct Nfa; ///< A non-deterministic finite automaton.
 
 using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
@@ -917,17 +869,17 @@ inline bool is_universal(
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        Word*              cex = nullptr,
+        Word*              cex,
+        const Alphabet*    alphabet = nullptr,
         const StringDict&  params = {{"algo", "antichains"}});
 
 inline bool is_incl(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        const StringDict&  params)
+        const Nfa&             smaller,
+        const Nfa&             bigger,
+        const Alphabet* const  alphabet = nullptr,
+        const StringDict&      params = {{"algo", "antichains"}})
 { // {{{
-    return is_incl(smaller, bigger, alphabet, nullptr, params);
+    return is_incl(smaller, bigger, nullptr, alphabet, params);
 } // }}}
 
 /**
@@ -940,7 +892,7 @@ inline bool is_incl(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet& alphabet,
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
                        const StringDict& params = {{"algo", "antichains"}});
 
 /**
@@ -1249,6 +1201,96 @@ private:
      */
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
 }; // ShortestWordsMap
+
+class EnumAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap symbol_map;
+
+    EnumAlphabet& operator=(const EnumAlphabet& rhs);
+
+    // Adapted from: https://stackoverflow.com/a/41623721.
+    template <typename TF, typename... Ts>
+    static void for_each_argument(TF&& f, Ts&&... xs)
+    {
+        std::initializer_list<const Nfa>{(f(std::forward<Ts>(xs)), Nfa{})... };
+    }
+
+    // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
+    template<bool...> struct bool_pack{};
+    /// Checks for all types in the pack.
+    template<typename... Ts>
+    using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
+    /// Checks whether all types are 'Nfa'.
+    template<typename... Ts>
+    using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
+
+public:
+
+    EnumAlphabet() : symbol_map() { }
+
+    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map) {}
+
+    /**
+     * Create alphabet from variable number of NFAs.
+     * @tparam Nfas Type Nfa.
+     * @param nfas NFAs to create alphabet from.
+     * @return Alphabet.
+     */
+    template<typename... Nfas, typename = AreAllNfas<Nfas...>>
+    static EnumAlphabet from_nfas(const Nfas&... nfas) {
+        EnumAlphabet alphabet{};
+        for_each_argument([&alphabet](const Nfa& aut) {
+            size_t aut_num_of_states{ aut.get_num_of_states() };
+            for (State state{ 0 }; state < aut_num_of_states; ++state) {
+                for (const auto& state_transitions: aut.transitionrelation[state]) {
+                    alphabet.add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
+            }
+        }, nfas...);
+        return alphabet;
+    }
+
+    template <class InputIt>
+    EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
+    { // {{{
+        size_t cnt = 0;
+        for (; first != last; ++first)
+        {
+            bool inserted;
+            std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
+            if (!inserted)
+            {
+                throw std::runtime_error("multiple occurrence of the same symbol");
+            }
+        }
+    } // }}}
+
+    EnumAlphabet(std::initializer_list<std::string> l) :
+            EnumAlphabet(l.begin(), l.end())
+    { }
+
+    Symbol translate_symb(const std::string& str) override
+    {
+        auto it = symbol_map.find(str);
+        if (symbol_map.end() == it)
+        {
+            throw std::runtime_error("unknown symbol \'" + str + "\'");
+        }
+
+        return it->second;
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+    /**
+     * Add new symbol to the alphabet.
+     * @param key User-space representation of the symbol.
+     * @param value Number of the symbol to be used on transitions.
+     */
+    void add_symbol(const std::string& key, Symbol value) { symbol_map.insert({key, value}); }
+}; // class EnumAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

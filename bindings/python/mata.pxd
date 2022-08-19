@@ -181,9 +181,9 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef bool is_lang_empty(CNfa&, Path*)
     cdef bool is_lang_empty_cex(CNfa&, Word*)
     cdef bool is_universal(CNfa&, CAlphabet&, StringDict&) except +
-    cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, StringDict&)
-    cdef bool is_incl(CNfa&, CNfa&, CAlphabet&, Word*, StringDict&) except +
-    cdef bool equivalence_check(CNfa&, CNfa&, CAlphabet&, StringDict&)
+    cdef bool is_incl(CNfa&, CNfa&, CAlphabet*, StringDict&)
+    cdef bool is_incl(CNfa&, CNfa&, Word*, CAlphabet*, StringDict&) except +
+    cdef bool equivalence_check(CNfa&, CNfa&, CAlphabet*, StringDict&)
     cdef bool equivalence_check(CNfa&, CNfa&, StringDict&)
     cdef bool is_complete(CNfa&, CAlphabet&) except +
     cdef bool is_in_lang(CNfa&, Word&)
