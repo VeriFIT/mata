@@ -87,8 +87,11 @@ private:
      */
     void compute_concatenation()
     {
+        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
+        const size_t result_num_of_states(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
+        if (result_num_of_states == 0) { return; }
+        result.increase_size(result_num_of_states);
         map_states_to_result_states();
-        result.increase_size(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
         make_initial_states();
         add_lhs_transitions();
         make_final_states();
@@ -99,9 +102,12 @@ private:
      * Compute concatenation of given automata concatenating over epsilon transitions.
      */
     void compute_epsilon_concatenation() {
+        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
+        const size_t result_num_of_states(lhs_states_num + rhs_states_num);
+        if (result_num_of_states == 0) { return; }
         map_rhs_states_to_result_states(lhs_states_num);
         result = lhs;
-        result.increase_size(lhs_states_num + rhs_states_num);
+        result.increase_size(result_num_of_states);
         result.clear_final();
         add_epsilon_transitions();
         make_final_states();
