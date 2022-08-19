@@ -1186,6 +1186,11 @@ private:
      */
     void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
                                     std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Clear initial states for all segment but the first one. Clear final states for all segments but the last one.
+     */
+    void clear_initial_final_states();
 }; // Segmentation
 } // SegNfa
 
