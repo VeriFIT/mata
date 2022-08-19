@@ -37,11 +37,21 @@ public:
      * @param[in] rhs Second NFA to concatenate.
      */
     Concatenation(const Nfa& lhs, const Nfa& rhs)
-            : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states())
-    {
-        result.increase_size(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
-
+            : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()) {
         compute_concatenation();
+    }
+
+    /**
+     * Initialize and compute concatenation of two NFAs concatenating over epsilon transitions.
+     *
+     * Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
+     * @param[in] lhs First NFA to concatenate.
+     * @param[in] rhs Second NFA to concatenate.
+     */
+    Concatenation(const Nfa& lhs, const Nfa& rhs, Symbol epsilon)
+            : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()),
+              epsilon(epsilon) {
+        compute_epsilon_concatenation();
     }
 
     /**
@@ -70,6 +80,7 @@ private:
     Nfa result{}; ///< Concatenated automaton.
     StateToStateMap lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
     StateToStateMap rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
+    Symbol epsilon{}; ///< Symbol to use as an epsilon symbol to concatenate with.
 
     /**
      * Compute concatenation of given automata.
@@ -77,30 +88,58 @@ private:
     void compute_concatenation()
     {
         map_states_to_result_states();
+        result.increase_size(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
         make_initial_states();
         add_lhs_transitions();
         make_final_states();
         add_rhs_transitions();
     }
 
-    /**'
+    /**
+     * Compute concatenation of given automata concatenating over epsilon transitions.
+     */
+    void compute_epsilon_concatenation() {
+        map_rhs_states_to_result_states(lhs_states_num);
+        result = lhs;
+        result.increase_size(lhs_states_num + rhs_states_num);
+        result.clear_final();
+        add_epsilon_transitions();
+        make_final_states();
+        add_rhs_transitions();
+    }
+
+    /**
+     * Add epsilon transitions connecting @c lhs and @c rhs automata.
+     *
+     * The epsilon transitions lead from @c lhs original final states to @c rhs original initial states.
+     */
+    void add_epsilon_transitions() {
+        for (const auto& lhs_final_state: lhs.finalstates) {
+            for (const auto& rhs_initial_state: rhs.initialstates) {
+                result.add_trans(lhs_final_state, epsilon, rhs_result_states_map[rhs_initial_state]);
+            }
+        }
+    }
+
+    /**
      * Map @c lhs and @c rhs states to @c result states.
      */
-    void map_states_to_result_states()
-    {
+    void map_states_to_result_states() {
         State result_state_index{ 0 };
-
-        for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state)
-        {
-            if (!lhs.has_final(lhs_state))
-            {
+        for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
+            if (!lhs.has_final(lhs_state)) {
                 lhs_result_states_map.insert(std::make_pair(lhs_state, result_state_index));
                 ++result_state_index;
             }
         }
+        map_rhs_states_to_result_states(result_state_index);
+    }
 
-        for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
-        {
+    /**
+     * Map @c lhs and @c rhs states to @c result states.
+     */
+    void map_rhs_states_to_result_states(State result_state_index) {
+        for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state) {
             rhs_result_states_map.insert(std::make_pair(rhs_state, result_state_index));
             ++result_state_index;
         }
@@ -244,6 +283,14 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs)
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs)
 {
     return Concatenation(lhs, rhs).get_result();
+}
+
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
+    *res = Concatenation(lhs, rhs, epsilon).get_result();
+}
+
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
+    return Concatenation(lhs, rhs, epsilon).get_result();
 }
 
 } // Nfa

@@ -278,3 +278,234 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
     }
 }
+
+TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+    Nfa lhs{};
+    Nfa rhs{};
+    Nfa result{};
+    Symbol epsilon{ 'x' };
+
+    SECTION("Empty automaton") {
+        lhs.increase_size(1);
+        rhs.increase_size(1);
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.initialstates.empty());
+        CHECK(result.finalstates.empty());
+        CHECK(result.trans_empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Empty language") {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.finalstates.empty());
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.trans_empty());
+    }
+
+    SECTION("Empty language rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.finalstates.empty());
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.has_trans(0, epsilon, 1));
+    }
+
+    SECTION("Single state automata accepting an empty string")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        rhs.make_final(0);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(1));
+        CHECK(result.get_num_of_states() == 2);
+        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.has_trans(0, epsilon, 1));
+    }
+
+    SECTION("Empty language rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(2));
+        CHECK(result.get_num_of_states() == 3);
+        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.has_trans(0, epsilon, 1));
+    }
+
+    SECTION("Simple two state rhs automaton")
+    {
+        lhs.increase_size(1);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(2));
+        CHECK(result.get_num_of_states() == 3);
+        CHECK(result.get_num_of_trans() == 2);
+        CHECK(result.has_trans(1, 'a', 2));
+        CHECK(result.has_trans(0, epsilon, 1));
+    }
+
+    SECTION("Simple two state automata")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(2);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(3));
+        CHECK(result.get_num_of_states() == 4);
+        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(2, 'a', 3));
+        CHECK(result.has_trans(1, epsilon, 2));
+
+        auto shortest_words{ result.get_shortest_words() };
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon, 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Simple two state automata with higher state num for non-final state")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(4);
+        rhs.make_initial(0);
+        rhs.make_final(1);
+        rhs.add_trans(0, 'a', 1);
+        rhs.add_trans(0, 'c', 3);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(3));
+        CHECK(result.get_num_of_states() == 6);
+        CHECK(result.get_num_of_trans() == 4);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(2, 'a', 3));
+        CHECK(result.has_trans(2, 'c', 5));
+        CHECK(result.has_trans(1, epsilon, 2));
+
+        auto shortest_words{ result.get_shortest_words() };
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon, 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Simple two state lhs automaton")
+    {
+        lhs.increase_size(2);
+        lhs.make_initial(0);
+        lhs.make_final(1);
+        lhs.add_trans(0, 'b', 1);
+        rhs.increase_size(1);
+        rhs.make_initial(0);
+        rhs.make_final(0);
+        rhs.add_trans(0, 'a', 0);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.has_initial(0));
+        CHECK(result.has_final(2));
+        CHECK(result.get_num_of_states() == 3);
+        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.has_trans(0, 'b', 1));
+        CHECK(result.has_trans(2, 'a', 2));
+        CHECK(result.has_trans(1, epsilon, 2));
+
+        auto shortest_words{ result.get_shortest_words() };
+        CHECK(shortest_words.size() == 1);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon }) != shortest_words.end());
+    }
+
+    SECTION("Automaton A concatenate automaton B")
+    {
+        lhs.increase_size_for_state(10);
+        FILL_WITH_AUT_A(lhs);
+        rhs.increase_size_for_state(14);
+        FILL_WITH_AUT_B(rhs);
+
+        result = concatenate(lhs, rhs, epsilon);
+
+        CHECK(result.initialstates.size() == 2);
+        CHECK(result.has_initial(1));
+        CHECK(result.has_initial(3));
+
+        CHECK(result.get_num_of_states() == 26);
+
+        auto shortest_words{ result.get_shortest_words() };
+        CHECK(shortest_words.size() == 4);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Automaton B concatenate automaton A")
+    {
+        lhs.increase_size_for_state(10);
+        FILL_WITH_AUT_A(lhs);
+        rhs.increase_size_for_state(14);
+        FILL_WITH_AUT_B(rhs);
+
+        result = concatenate(rhs, lhs, epsilon);
+
+        CHECK(result.get_num_of_states() == 26);
+
+        CHECK(result.initialstates.size() == 1);
+        CHECK(result.has_initial(4));
+
+        auto shortest_words{ result.get_shortest_words() };
+        CHECK(shortest_words.size() == 4);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+    }
+}
