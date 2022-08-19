@@ -77,4 +77,19 @@ TEST_CASE("Mata::RE2Parser error")
         REQUIRE(is_in_lang(aut, Word{'a','a','b'}));
         REQUIRE(!is_in_lang(aut, Word{'a','b'}));
     }
+
+    SECTION("Regexes from issue #48")
+    {
+        Mata::Nfa::Nfa aut1;
+        Mata::Nfa::Nfa aut2;
+        Mata::RE2Parser::create_nfa(&aut1, "[qQrR]*");
+        Mata::RE2Parser::create_nfa(&aut2, "[qr]*");
+        REQUIRE(!aut1.trans_empty());
+        REQUIRE(!is_lang_empty(aut1));
+        REQUIRE(!aut2.trans_empty());
+        REQUIRE(!is_lang_empty(aut2));
+        REQUIRE(is_in_lang(aut1, Word{'Q','R','q','r'}));
+        REQUIRE(is_in_lang(aut2, Word{'q','r','q','r'}));
+        REQUIRE(!is_in_lang(aut2, Word{'q','R','q'}));
+    }
 } // }}}
