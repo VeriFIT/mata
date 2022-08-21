@@ -193,7 +193,7 @@ void EnumAlphabet::add_symbols_from(const Nfa& nfa) {
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: nfa.transitionrelation[state]) {
             add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-            if (next_symbol_value < state_transitions.symbol) {
+            if (next_symbol_value <= state_transitions.symbol) {
                 next_symbol_value = state_transitions.symbol + 1;
             }
         }
@@ -318,6 +318,18 @@ State Nfa::add_new_state() {
 void Nfa::remove_epsilon(const Symbol epsilon)
 {
     *this = Mata::Nfa::remove_epsilon(*this, epsilon);
+}
+
+TransitionList::const_iterator Nfa::get_transitions_from_state_with(State state_from, Symbol symbol) const {
+    const auto state_transitions_iter_end{ transitionrelation[state_from].end() };
+    for (auto state_transitions_iter{ transitionrelation[state_from].begin() };
+         state_transitions_iter != state_transitions_iter_end; ++state_transitions_iter) {
+        if (state_transitions_iter->symbol == symbol) {
+            return state_transitions_iter;
+        }
+    }
+
+    return state_transitions_iter_end;
 }
 
 StateSet Nfa::get_reachable_states() const

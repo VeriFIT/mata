@@ -492,6 +492,15 @@ public:
     } // }}}
 
     /**
+     * Get transitions from @p state_from using transition @p symbol.
+     * @param state_from State from which to get transitions.
+     * @param symbol Transition symbol to look for in transitions.
+     * @return Iterator for @c TransitionList; Allows us to compare to TransitionsList::end() to see whether the specified
+     *  transitions exist. If they do, we can access the transitions with a dereference operator (*iter).
+     */
+    TransitionList::const_iterator get_transitions_from_state_with(State state_from, Symbol symbol) const;
+
+    /**
      * Check whether automaton has no transitions.
      * @return True if there are no transitions in the automaton, false otherwise.
      */
@@ -1242,6 +1251,7 @@ public:
     template<typename... Nfas, typename = AreAllNfas<Nfas...>>
     static EnumAlphabet from_nfas(const Nfas&... nfas) {
         EnumAlphabet alphabet{};
+        // TODO: When we are on C++17, we can use fold expression here instead of the manual for_each_argument reimplementation.
         for_each_argument([&alphabet](const Nfa& aut) {
             size_t aut_num_of_states{ aut.get_num_of_states() };
             for (State state{ 0 }; state < aut_num_of_states; ++state) {
@@ -1269,7 +1279,7 @@ public:
 
     EnumAlphabet(std::initializer_list<std::string> l) :
             EnumAlphabet(l.begin(), l.end())
-    { }
+    {}
 
     Symbol translate_symb(const std::string& str) override
     {
@@ -1306,12 +1316,13 @@ public:
             for (State state{ 0 }; state < nfa_num_of_states; ++state) {
                 for (const auto& state_transitions: nfa.transitionrelation[state]) {
                     alphabet.add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-                    if (next_symbol_value < state_transitions.symbol) {
+                    if (next_symbol_value <= state_transitions.symbol) {
                         next_symbol_value = state_transitions.symbol + 1;
                     }
                 }
             }
         }
+        alphabet.next_symbol_value = next_symbol_value;
         return alphabet;
     }
 
