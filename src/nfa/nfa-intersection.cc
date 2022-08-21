@@ -84,6 +84,7 @@ public:
      * @return Product map mapping original state pairs to new product states.
      */
     const ProductMap& get_product_map() { return product_map; }
+
 private:
     Nfa product{}; ///< Product of the intersection.
     /// Product map for the generated intersection mapping original state pairs to new product states.
@@ -110,7 +111,7 @@ private:
             pair_to_process = *pairs_to_process.begin();
             pairs_to_process.erase(pair_to_process);
 
-            // TODO rewrite this (from previous Vata implementation -- rewrite the algorithm, or the format?)
+            // TODO rewrite this (TODO from previous Vata implementation -- rewrite the algorithm, or the format?).
 
             compute_for_state_pair();
         }
@@ -119,25 +120,49 @@ private:
     /**
      * Compute intersection preserving epsilon transitions.
      */
-    void compute_preserving_epsilon_transitions()
-    {
+    void compute_preserving_epsilon_transitions() {
         initialize_pairs_to_process();
 
-        if (lhs.trans_empty() || rhs.trans_empty()) { return; }
-
-        while (!pairs_to_process.empty())
-        {
+        while (!pairs_to_process.empty()) {
             pair_to_process = *pairs_to_process.begin();
             pairs_to_process.erase(pair_to_process);
+            compute_transitions_for_eps_pres_prod_for_state_pair();
+        }
+    }
 
-            // find all transitions that have same symbol for first and the second state in the pair_to_process
-            for (const auto& this_state_transitions: lhs.transitionrelation[pair_to_process.first] )
-            {
-                for (const auto& other_state_transitions: rhs.transitionrelation[pair_to_process.second])
-                {
-                    compute_for_state_pair_preserving_eps_trans(this_state_transitions,
-                                                                other_state_transitions);
+    /**
+     * Compute transitions for epsilon preserving product for a current state pair.
+     */
+    void compute_transitions_for_eps_pres_prod_for_state_pair() {
+        for (const auto& lhs_state_transitions: lhs.transitionrelation[pair_to_process.first]) {
+            // Check for lhs epsilon transitions.
+            if (lhs_state_transitions.symbol == epsilon) {
+                compute_for_lhs_state_epsilon_transitions(lhs_state_transitions);
+            }
+
+            for (const auto& rhs_state_transitions: rhs.transitionrelation[pair_to_process.second]) {
+                // Check for rhs epsilon transitions.
+                if (rhs_state_transitions.symbol == epsilon) {
+                    compute_for_rhs_state_epsilon_transitions(rhs_state_transitions);
                 }
+
+                // Find all transitions that have the same symbol for first and the second state in the pair_to_process.
+                if (lhs_state_transitions.symbol == rhs_state_transitions.symbol) {
+                    compute_for_same_symbols(lhs_state_transitions, rhs_state_transitions);
+                }
+            }
+        }
+
+        compute_for_independent_rhs_epsilon_transitions();
+    }
+
+    /**
+     * Check for epsilon transitions in case only rhs has any transitions.
+     */
+    void compute_for_independent_rhs_epsilon_transitions() {
+        for (const auto& rhs_state_transitions: rhs.transitionrelation[pair_to_process.second]) {
+            if (rhs_state_transitions.symbol == epsilon) {
+                compute_for_rhs_state_epsilon_transitions(rhs_state_transitions);
             }
         }
     }
@@ -222,7 +247,7 @@ private:
      * Compute product for state transitions with @c lhs state epsilon transition.
      * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
      */
-    void compute_for_lhs_state_epsilon_transition(const TransSymbolStates& lhs_state_transitions)
+    void compute_for_lhs_state_epsilon_transitions(const TransSymbolStates& lhs_state_transitions)
     {
         // Create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes.
         TransSymbolStates intersection_transition{ lhs_state_transitions.symbol };
@@ -237,7 +262,7 @@ private:
      * Compute product for state transitions with @c rhs state epsilon transition.
      * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
      */
-    void compute_for_rhs_epsilon_transition(const TransSymbolStates& rhs_state_transitions)
+    void compute_for_rhs_state_epsilon_transitions(const TransSymbolStates& rhs_state_transitions)
     {
         // create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes
         TransSymbolStates intersection_transition{ rhs_state_transitions.symbol };
@@ -258,30 +283,6 @@ private:
     State hashStatePair(const StatePair &sp)
     {
         return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
-    }
-
-    /**
-     * Compute product for current state pair preserving epsilon transitions.
-     * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
-     * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
-     */
-    void compute_for_state_pair_preserving_eps_trans(const TransSymbolStates& lhs_state_transitions,
-                                                     const TransSymbolStates& rhs_state_transitions)
-    {
-        if (lhs_state_transitions.symbol == epsilon)
-        {
-            compute_for_lhs_state_epsilon_transition(lhs_state_transitions);
-        }
-
-        if (rhs_state_transitions.symbol == epsilon)
-        {
-            compute_for_rhs_epsilon_transition(rhs_state_transitions);
-        }
-
-        if (lhs_state_transitions.symbol == rhs_state_transitions.symbol)
-        {
-            compute_for_same_symbols(lhs_state_transitions, rhs_state_transitions);
-        }
     }
 
     /**
