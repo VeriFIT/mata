@@ -75,6 +75,8 @@ add_executable(tests
 	tests-ord-vector.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
+	nfa/tests-nfa-concatenation.cc
+	nfa/tests-nfa-segmentation.cc
 	nfa/tests-noodlify.cc
 	rra/tests-rrt.cc
 )

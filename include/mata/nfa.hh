@@ -768,6 +768,24 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
  */
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
 
+/**
+ * Concatenate two NFAs over epsilon transitions.
+ * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
+ */
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+
+/**
+ * Concatenate two NFAs over epsilon transitions.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
+ * @return Concatenated automaton.
+ */
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+
 /// makes the transition relation complete
 void make_complete(
         Nfa*             aut,
@@ -1120,6 +1138,13 @@ private:
      */
     void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
                                     std::deque<StateDepthPair>& worklist);
+
+    /**
+     * @brief Remove inner initial and final states.
+     *
+     * Remove all initial states for all segments but the first one and all final states for all segments but the last one.
+     */
+    void remove_inner_initial_and_final_states();
 }; // Segmentation
 } // SegNfa
 

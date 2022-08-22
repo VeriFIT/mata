@@ -495,6 +495,8 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 {
     assert(nullptr != result);
 
+    result->increase_size(aut.get_num_of_states());
+
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     StateMap<StateSet> eps_closure;
 
@@ -1701,6 +1703,7 @@ StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
 void SegNfa::Segmentation::split_aut_into_segments()
 {
     segments = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
+    remove_inner_initial_and_final_states();
 
     // Construct segment automata.
     std::unique_ptr<const TransSequence> depth_transitions{};
@@ -1718,13 +1721,22 @@ void SegNfa::Segmentation::split_aut_into_segments()
     trim_segments();
 }
 
+void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
+    const auto segments_begin{ segments.begin() };
+    const auto segments_end{ segments.end() };
+    for (auto iter{ segments_begin }; iter != segments_end; ++iter) {
+        if (iter != segments_begin) {
+            iter->clear_initial();
+        }
+        if (iter + 1 != segments_end) {
+            iter->clear_final();
+        }
+    }
+}
+
 void SegNfa::Segmentation::trim_segments()
 {
-    for (auto& seg_aut: segments)
-    {
-        seg_aut.trim();
-        seg_aut.remove_epsilon(epsilon);
-    }
+    for (auto& seg_aut: segments) { seg_aut.trim(); }
 }
 
 void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
@@ -1732,7 +1744,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     assert(transition.symb == epsilon);
     assert(segments[current_depth].has_trans(transition));
 
-    segments[current_depth].reset_final(transition.src);
+    segments[current_depth].make_final(transition.src);
     segments[current_depth].remove_trans(transition);
 }
 
@@ -1744,7 +1756,7 @@ void SegNfa::Segmentation::propagate_to_other_segments(const size_t current_dept
          ++other_segment_depth)
     {
         segments[other_segment_depth].remove_trans(transition);
-        segments[other_segment_depth].reset_initial(transition.tgt);
+        segments[other_segment_depth].make_initial(transition.tgt);
     }
 }
 
