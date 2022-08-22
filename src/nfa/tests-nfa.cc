@@ -811,6 +811,40 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
         REQUIRE(aut.finalstates.size() == 3);
     }
 
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q r\n"
+                "%Alphabet-auto\n"
+                "%Initial p q\n"
+                "%Final p q r\n";
+        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 3);
+    }
+
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q r m n\n"
+                "%Alphabet-auto\n"
+                "%Initial p q r\n"
+                "%Final p q m n\n";
+        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 3);
+        REQUIRE(aut.finalstates.size() == 4);
+    }
+
     SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton")
     {
         std::string file =
