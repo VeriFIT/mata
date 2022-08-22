@@ -777,7 +777,44 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
         REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
     }
-} // parse_mf }}}
+
+    SECTION("AFA explicit two automatic naming")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-auto\n"
+                "%Alphabet-auto\n"
+                "r !b & ! c & d\n";
+
+        bool exception = false;
+        try {
+            parsed = parse_mf(file);
+            std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        } catch (std::exception& e) {
+            exception = true;
+
+        }
+
+        REQUIRE(exception);
+    }
+
+
+    SECTION("AFA explicit correct automatic naming")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-marked\n"
+                "%Alphabet-enum a b\n"
+                "q1 a & !q2 & b\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        const Mata::InterAutomaton aut = auts[0];
+        REQUIRE(aut.transitions.front().first.name == "1");
+
+    }
+
+    } // parse_mf }}}
 
 
 TEST_CASE("Mata::Parser::ParsedSection::operator<<(ostream&)")
