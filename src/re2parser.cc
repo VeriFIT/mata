@@ -88,6 +88,8 @@ namespace {
         void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog, bool use_epsilon, int epsilon_value) {
             const int start_state = prog->start();
             const int prog_size = prog->size();
+            // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
+            const int ascii_shift_value = 32;
             int empty_flag;
             std::vector<Mata::Nfa::Symbol> symbols;
             Mata::Nfa::Nfa explicit_nfa(prog_size);
@@ -178,6 +180,11 @@ namespace {
                             // Save all symbols that can be used on the current transition
                             for (long int symbol = inst->lo(); symbol <= inst->hi(); symbol++) {
                                 symbols.push_back(symbol);
+                                // Foldcase causes RE2 to do a case-insensitive match, so transitions will be made for
+                                // both uppercase and lowercase symbols
+                                if (inst->foldcase()) {
+                                    symbols.push_back(symbol-ascii_shift_value);
+                                }
                             }
                         }
                         this->create_explicit_nfa_transitions(current_state, inst, symbols, explicit_nfa, use_epsilon, epsilon_value);
