@@ -89,7 +89,7 @@ namespace
         } else if (is_naming_enum(mata.node_naming) && contains(mata.nodes_names, token)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::NODE};
-        } else if (is_naming_enum(mata.symbol_naming) && contains(mata.nodes_names, token)) {
+        } else if (is_naming_enum(mata.symbol_naming) && contains(mata.symbols_names, token)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::SYM};
         } else if (is_naming_marker(mata.state_naming) && token[0] == 'q') {
@@ -115,7 +115,7 @@ namespace
         assert(false);
     }
 
-    bool lower_precedens(Mata::FormulaNode::OperatorType op1, Mata::FormulaNode::OperatorType op2) {
+    bool lower_precedence(Mata::FormulaNode::OperatorType op1, Mata::FormulaNode::OperatorType op2) {
         if (op1 == Mata::FormulaNode::NEG) {
             return false;
         } else if (op1 == Mata::FormulaNode::AND && op2 != Mata::FormulaNode::NEG) {
@@ -129,8 +129,8 @@ namespace
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
 
-        for (size_t i = 0; i < tokens.size(); ++i) {
-            Mata::FormulaNode node = create_node(aut, tokens[i]);
+        for (const auto& token : tokens) {
+            Mata::FormulaNode node = create_node(aut, token);
             switch (node.type) {
                 case Mata::FormulaNode::OPERAND:
                     output.push_back(node);
@@ -151,7 +151,7 @@ namespace
                         assert(!opstack[j].is_operand());
                         if (opstack[j].is_leftpar())
                             break;
-                        if (lower_precedens(node.operator_type, opstack[j].operator_type)) {
+                        if (lower_precedence(node.operator_type, opstack[j].operator_type)) {
                             output.push_back(opstack[j]);
                             opstack.erase(opstack.begin()+j);
                         }
@@ -326,6 +326,7 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     stack.push_back(reinterpret_cast<const FormulaGraph *const>(&(this->node)));
     while (!stack.empty()) {
         const FormulaGraph* g = stack.back();
+        assert(g != nullptr);
         stack.pop_back();
 
         if (g->node.type == FormulaNode::UNKNOWN)
