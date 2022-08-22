@@ -1703,7 +1703,7 @@ StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
 void SegNfa::Segmentation::split_aut_into_segments()
 {
     segments = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
-    clear_initial_final_states();
+    remove_inner_initial_and_final_states();
 
     // Construct segment automata.
     std::unique_ptr<const TransSequence> depth_transitions{};
@@ -1721,7 +1721,7 @@ void SegNfa::Segmentation::split_aut_into_segments()
     trim_segments();
 }
 
-void SegNfa::Segmentation::clear_initial_final_states() {
+void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
     const auto segments_begin{ segments.begin() };
     const auto segments_end{ segments.end() };
     for (auto iter{ segments_begin }; iter != segments_end; ++iter) {

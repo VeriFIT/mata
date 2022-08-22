@@ -1188,9 +1188,11 @@ private:
                                     std::deque<StateDepthPair>& worklist);
 
     /**
-     * Clear initial states for all segment but the first one. Clear final states for all segments but the last one.
+     * @brief Remove inner initial and final states.
+     *
+     * Remove all initial states for all segments but the first one and all final states for all segments but the last one.
      */
-    void clear_initial_final_states();
+    void remove_inner_initial_and_final_states();
 }; // Segmentation
 } // SegNfa
 

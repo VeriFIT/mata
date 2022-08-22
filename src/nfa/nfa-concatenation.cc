@@ -38,7 +38,7 @@ public:
      */
     Concatenation(const Nfa& lhs, const Nfa& rhs)
             : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()) {
-        compute_concatenation();
+        concatenate();
     }
 
     /**
@@ -51,7 +51,7 @@ public:
     Concatenation(const Nfa& lhs, const Nfa& rhs, Symbol epsilon)
             : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()),
               epsilon(epsilon) {
-        compute_epsilon_concatenation();
+        concatenate_over_epsilon();
     }
 
     /**
@@ -85,7 +85,7 @@ private:
     /**
      * Compute concatenation of given automata.
      */
-    void compute_concatenation()
+    void concatenate()
     {
         if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
         const size_t result_num_of_states(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
@@ -101,7 +101,7 @@ private:
     /**
      * Compute concatenation of given automata concatenating over epsilon transitions.
      */
-    void compute_epsilon_concatenation() {
+    void concatenate_over_epsilon() {
         if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
         const size_t result_num_of_states(lhs_states_num + rhs_states_num);
         if (result_num_of_states == 0) { return; }
