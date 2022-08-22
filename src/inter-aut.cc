@@ -206,6 +206,35 @@ namespace
         return opstack.back();
     }
 
+    std::vector<Mata::FormulaNode> add_operators_implicitly(const Mata::InterAutomaton& aut,
+                                                            const std::vector<Mata::FormulaNode>& postfix)
+    {
+        assert(aut.is_nfa());
+        if (postfix.size() == 1) // no need to add operators
+            return postfix;
+
+        for (const auto& op : postfix) {
+            if (op.is_operator()) // operators provided by user, return the original postfix
+                return postfix;
+        }
+
+        std::vector<Mata::FormulaNode> res;
+        if (postfix.size() >= 2) {
+            res.push_back(postfix[0]);
+            res.push_back(postfix[1]);
+            res.push_back(Mata::FormulaNode(
+                    Mata::FormulaNode::OPERATOR, "|", "|", Mata::FormulaNode::OR));
+        }
+
+        for (size_t i = 2; i < postfix.size(); ++i) {
+            res.push_back(postfix[i]);
+            res.push_back(Mata::FormulaNode(
+                    Mata::FormulaNode::OPERATOR, "|", "|", Mata::FormulaNode::OR));
+        }
+
+        return res;
+    }
+
     void parse_transition(Mata::InterAutomaton &aut, const std::vector<std::string> &tokens)
     {
         assert(tokens.size() > 1); // transition formula has at least two items
@@ -263,9 +292,15 @@ namespace
             const std::string &key = keypair.first;
 
             if (key.find("Initial") != std::string::npos) {
-                aut.initial_formula = postfix2graph(infix2postfix(aut, keypair.second));
+                auto postfix = infix2postfix(aut, keypair.second);
+                if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
+                    postfix = add_operators_implicitly(aut, postfix);
+                aut.initial_formula = postfix2graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
-                aut.final_formula = postfix2graph(infix2postfix(aut, keypair.second));
+                auto postfix = infix2postfix(aut, keypair.second);
+                if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
+                    postfix = add_operators_implicitly(aut, postfix);
+                aut.final_formula = postfix2graph(postfix);
             }
         }
 
