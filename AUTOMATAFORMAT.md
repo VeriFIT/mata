@@ -29,7 +29,7 @@ We use the general form of AFA, by Pavol V., and simple NFA.
   * By **enumeration**.
   * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker *is* a part of the thing's name. 
   * **Automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
-* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-markers`.
+* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-marked`.
 * Markers is the implicit option for all types of tokens, used if nothing is specified.
 * Shared nodes are used to share same formula or part of formulat among more transitions.
 * Initial formula is defined by key-value line `%Initial <Formula>`.
