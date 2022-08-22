@@ -1076,7 +1076,7 @@ void Mata::Nfa::construct(
     assert(nullptr != aut);
     assert(nullptr != alphabet);
 
-    if (inter_aut.is_nfa()) {
+    if (!inter_aut.is_nfa()) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
                                  Mata::Nfa::TYPE_NFA + "\"");
     }
