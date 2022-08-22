@@ -286,16 +286,21 @@ namespace
 std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
 {
     std::unordered_set<std::string> res;
-    std::vector<Mata::FormulaGraph> stack;
+    std::vector<const Mata::FormulaGraph *> stack;
 
-    stack.push_back(this->node);
+    stack.push_back(reinterpret_cast<const FormulaGraph *const>(&(this->node)));
     while (!stack.empty()) {
-        FormulaGraph g = stack.back();
+        const FormulaGraph* g = stack.back();
         stack.pop_back();
 
-        res.insert(g.node.name);
-        for (const auto& child : g.children) {
-            stack.push_back(child);
+        if (g->node.type == FormulaNode::UNKNOWN)
+           continue; // skip undefined nodes
+
+        if (g->node.is_operand())
+            res.insert(g->node.name);
+
+        for (const auto& child : g->children) {
+            stack.push_back(&child);
         }
     }
 
@@ -312,4 +317,35 @@ std::vector<Mata::InterAutomaton> Mata::InterAutomaton::parse_from_mf(const Mata
     }
 
     return result;
+}
+
+std::ostream& std::operator<<(std::ostream& os, const Mata::InterAutomaton& inter_aut)
+{
+    os << "Intermediate automaton type " << inter_aut.automaton_type << '\n';
+    os << "Naming - state: " << inter_aut.state_naming << " symbol: " << inter_aut.symbol_naming << " node: "
+        << inter_aut.node_naming << '\n';
+    os << "Alphabet " << inter_aut.alphabet_type << '\n';
+
+    os << "Initial states: ";
+    for (const auto& state : inter_aut.initial_formula.collect_node_names()) {
+        os << state << ' ';
+    }
+    os << '\n';
+
+    os << "Final states: ";
+    for (const auto& state : inter_aut.final_formula.collect_node_names()) {
+        os << state << ' ';
+    }
+    os << '\n';
+
+    os << "Transitions: \n";
+    for (const auto& trans : inter_aut.transitions) {
+        os << trans.first.name << " -> ";
+        for (const auto& rhs : trans.second.collect_node_names()) {
+            os << rhs << ' ';
+        }
+        os << '\n';
+    }
+
+    return os;
 }

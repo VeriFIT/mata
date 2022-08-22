@@ -125,4 +125,10 @@ public:
 };
 
 } /* Mata */
+
+namespace std
+{
+    std::ostream& operator<<(std::ostream& os, const Mata::InterAutomaton& inter_aut);
+}
+
 #endif //LIBMATA_INTER_AUT_HH
