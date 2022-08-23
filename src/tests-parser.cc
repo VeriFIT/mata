@@ -798,7 +798,6 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(exception);
     }
 
-
     SECTION("AFA explicit correct automatic naming")
     {
         std::string file =
@@ -811,9 +810,28 @@ TEST_CASE("parsing automata to intermediate representation")
         std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
         const Mata::InterAutomaton aut = auts[0];
         REQUIRE(aut.transitions.front().first.name == "1");
+        REQUIRE(aut.transitions.front().first.raw == "q1");
 
     }
 
+    SECTION("AFA explicit non existing symbol error")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-marked\n"
+                "%Alphabet-enum a b\n"
+                "q1 a & !q2 & c\n";
+
+        bool exception = false;
+        parsed = parse_mf(file);
+        try {
+            Mata::InterAutomaton::parse_from_mf(parsed);
+        } catch (std::runtime_error e) {
+            exception = true;
+        }
+
+        REQUIRE(exception);
+    }
     } // parse_mf }}}
 
 
