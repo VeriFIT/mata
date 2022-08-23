@@ -18,6 +18,8 @@
 #ifndef _MATA_NOODLIFY_HH
 #define _MATA_NOODLIFY_HH
 
+#include <memory>
+
 #include <mata/nfa.hh>
 
 namespace Mata
@@ -38,7 +40,7 @@ namespace SegNfa
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<std::vector<Nfa*>> noodlify(const SegNfa& aut, Symbol epsilon);
+std::vector<std::vector<std::shared_ptr<Nfa>>> noodlify(const SegNfa& aut, Symbol epsilon);
 
 /**
  * @brief Create noodles for left and right side of equation.

@@ -90,15 +90,14 @@ std::vector<std::vector<Nfa*>> create_noodles(const SegNfa::SegNfa& aut,
 
 } // namespace
 
-// TODO use shared_ptr
-std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon)
+std::vector<std::vector<std::shared_ptr<Nfa>>> SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon)
 {
     // For each depth, get a list of epsilon transitions.
     Segmentation segmentation{ aut, epsilon };
     const auto &segments{ segmentation.get_segments_raw() };
 
     if (segments.size() == 1) {
-        Nfa *segment = new Nfa(segments[0]);
+        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
         segment->trim();
         return {{segment}};
     }
@@ -112,12 +111,13 @@ std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol 
     // segment (where we always want all initial states, only final changes) and
     // segments_one_initial_final[init, unused_state] is similarly for the last segment
     // TODO: should we use unordered_map? then we need hash
-    std::map<std::pair<State,State>,Nfa*> segments_one_initial_final;
+    std::map<std::pair<State,State>,std::shared_ptr<Nfa>> segments_one_initial_final;
 
+    // TODO this could probably be written better
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) {
             for (const State final_state : iter->finalstates) {
-                Nfa *segment_one_final = new Nfa(*iter);
+                std::shared_ptr<Nfa> segment_one_final = std::make_shared<Nfa>(*iter);
                 segment_one_final->finalstates = {final_state};
                 segment_one_final->trim();
 
@@ -127,7 +127,7 @@ std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol 
             }
         } else if (iter + 1 == segments.end()) {
             for (const State init_state : iter->initialstates) {
-                Nfa *segment_one_init = new Nfa(*iter);
+                std::shared_ptr<Nfa> segment_one_init = std::make_shared<Nfa>(*iter);
                 segment_one_init->initialstates = {init_state};
                 segment_one_init->trim();
 
@@ -138,7 +138,7 @@ std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol 
         } else {
             for (const State init_state : iter->initialstates) {
                 for (const State final_state : iter->finalstates) {
-                    Nfa *segment_one_init_final = new Nfa(*iter);
+                    std::shared_ptr<Nfa> segment_one_init_final = std::make_shared<Nfa>(*iter);
                     segment_one_init_final->initialstates = {init_state};
                     segment_one_init_final->finalstates = {final_state};
                     segment_one_init_final->trim();
@@ -157,7 +157,7 @@ std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol 
     size_t num_of_permutations{ get_num_of_permutations(epsilon_depths) };
     size_t epsilon_depths_size{  epsilon_depths.size() };
 
-    std::vector<std::vector<Nfa*>> noodles{};
+    std::vector<std::vector<std::shared_ptr<Nfa>>> noodles{};
     // noodle of epsilon transitions (each from different depth)
     std::vector<Trans> epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
@@ -169,10 +169,10 @@ std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol 
             size_t num_of_trans_at_cur_depth = epsilon_depths.at(depth).size();
             size_t computed_index = temp % num_of_trans_at_cur_depth;
             temp /= num_of_trans_at_cur_depth;
-            epsilon_noodle[depth] = epsilon_depths.at(depth).at(computed_index);
+            epsilon_noodle[depth] = epsilon_depths.at(depth)[computed_index];
         }
 
-        std::vector<Nfa*> noodle;
+        std::vector<std::shared_ptr<Nfa>> noodle;
 
         // epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
         auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state,epsilon_noodle[0].src));
