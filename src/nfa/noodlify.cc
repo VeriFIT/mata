@@ -45,7 +45,7 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
  * @param[in] epsilon_depths Computed list of epsilon transitions for each depth.
  * @return A Sequence of noodles (noodle automata).
  */
-AutSequence create_noodles(const SegNfa::SegNfa& aut, bool include_empty,
+std::vector<std::vector<Nfa*>> create_noodles(const SegNfa::SegNfa& aut,
                            const SegNfa::Segmentation::EpsilonDepthTransitions& epsilon_depths)
 {
     // Compute number of all combinations of ε-transitions with one ε-transitions from each depth.
@@ -83,20 +83,21 @@ AutSequence create_noodles(const SegNfa::SegNfa& aut, bool include_empty,
             }
         }
         noodle.trim();
-        if (include_empty || noodle.get_num_of_states() > 0) { noodles.push_back(noodle); }
+        if (noodle.get_num_of_states() > 0) { noodles.push_back(noodle); }
     }
-    return noodles;
+    //return noodles;
+    return {};
 }
 
 } // namespace
 
-AutSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty)
+std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon)
 {
     // For each depth, get a list of epsilon transitions.
     Segmentation segmentation{ aut, epsilon };
     const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
 
     // Create noodles for computed epsilon depths.
-    return create_noodles(aut, include_empty, epsilon_depths);
+    return create_noodles(aut, epsilon_depths);
 }
 
