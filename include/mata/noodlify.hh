@@ -38,7 +38,7 @@ namespace SegNfa
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-AutSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+std::vector<std::vector<Nfa*>> noodlify(const SegNfa& aut, Symbol epsilon);
 
 /**
  * @brief Create noodles for left and right side of equation.

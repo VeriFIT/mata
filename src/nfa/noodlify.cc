@@ -90,14 +90,127 @@ std::vector<std::vector<Nfa*>> create_noodles(const SegNfa::SegNfa& aut,
 
 } // namespace
 
+// TODO use shared_ptr
 std::vector<std::vector<Nfa*>> SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon)
 {
     // For each depth, get a list of epsilon transitions.
     Segmentation segmentation{ aut, epsilon };
-    const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
+    const auto &segments{ segmentation.get_segments_raw() };
+
+    if (segments.size() == 1) {
+        Nfa *segment = new Nfa(segments[0]);
+        segment->trim();
+        return {{segment}};
+    }
+
+    State unused_state = aut.get_num_of_states();
+
+    // segments_one_initial_final[init, final] is the pointer to automaton created from one of
+    // the segments such that init and final are the initial and final states of the segment and
+    // the created automaton takes this segment, sets initialstates={init}, finalstates={final}
+    // and trims it; also segments_one_initial_final[unused_state, final] is used for the first
+    // segment (where we always want all initial states, only final changes) and
+    // segments_one_initial_final[init, unused_state] is similarly for the last segment
+    // TODO: should we use unordered_map? then we need hash
+    std::map<std::pair<State,State>,Nfa*> segments_one_initial_final;
+
+    for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
+        if (iter == segments.begin()) {
+            for (const State final_state : iter->finalstates) {
+                Nfa *segment_one_final = new Nfa(*iter);
+                segment_one_final->finalstates = {final_state};
+                segment_one_final->trim();
+
+                if (segment_one_final->get_num_of_states() > 0) {
+                    segments_one_initial_final[std::make_pair(unused_state,final_state)] = segment_one_final;
+                }
+            }
+        } else if (iter + 1 == segments.end()) {
+            for (const State init_state : iter->initialstates) {
+                Nfa *segment_one_init = new Nfa(*iter);
+                segment_one_init->initialstates = {init_state};
+                segment_one_init->trim();
+
+                if (segment_one_init->get_num_of_states() > 0) {
+                    segments_one_initial_final[std::make_pair(init_state,unused_state)] = segment_one_init;
+                }
+            }
+        } else {
+            for (const State init_state : iter->initialstates) {
+                for (const State final_state : iter->finalstates) {
+                    Nfa *segment_one_init_final = new Nfa(*iter);
+                    segment_one_init_final->initialstates = {init_state};
+                    segment_one_init_final->finalstates = {final_state};
+                    segment_one_init_final->trim();
+
+                    if (segment_one_init_final->get_num_of_states() > 0) {
+                        segments_one_initial_final[std::make_pair(init_state,final_state)] = segment_one_init_final;
+                    }
+                }
+            }
+        }
+    }
+
+    const auto &epsilon_depths{ segmentation.get_epsilon_depths() };
+
+    // Compute number of all combinations of ε-transitions with one ε-transitions from each depth.
+    size_t num_of_permutations{ get_num_of_permutations(epsilon_depths) };
+    size_t epsilon_depths_size{  epsilon_depths.size() };
+
+    std::vector<std::vector<Nfa*>> noodles{};
+    // noodle of epsilon transitions (each from different depth)
+    std::vector<Trans> epsilon_noodle(epsilon_depths_size);
+    // for each combination of ε-transitions, create the automaton.
+    // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
+    for (size_t index{ 0 }; index < num_of_permutations; ++index)
+    {
+        size_t temp{ index };
+        for (size_t depth{ 0 }; depth < epsilon_depths_size; ++depth) {
+            size_t num_of_trans_at_cur_depth = epsilon_depths.at(depth).size();
+            size_t computed_index = temp % num_of_trans_at_cur_depth;
+            temp /= num_of_trans_at_cur_depth;
+            epsilon_noodle[depth] = epsilon_depths.at(depth).at(computed_index);
+        }
+
+        std::vector<Nfa*> noodle;
+
+        // epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
+        auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state,epsilon_noodle[0].src));
+        if (first_segment_iter != segments_one_initial_final.end()) {
+            noodle.push_back(first_segment_iter->second);
+        } else {
+            continue;
+        }
+        
+        bool all_segments_exist = true;
+        for (auto iter = epsilon_noodle.begin(); iter + 1 != epsilon_noodle.end(); ++iter) {
+            auto next_iter = iter + 1;
+            auto segment_iter = segments_one_initial_final.find(std::make_pair(iter->tgt,next_iter->src));
+            if (segment_iter != segments_one_initial_final.end()) {
+                noodle.push_back(segment_iter->second);
+            } else {
+                all_segments_exist = false;
+                break;
+            }
+        }
+
+        if (!all_segments_exist) {
+            continue;
+        }
+
+        auto last_segment_iter = segments_one_initial_final.find(std::make_pair(epsilon_noodle.back().tgt, unused_state));
+        if (last_segment_iter != segments_one_initial_final.end()) {
+            noodle.push_back(last_segment_iter->second);
+        } else {
+            continue;
+        }
+
+        noodles.push_back(noodle);
+    }
+    return noodles;
 
     // Create noodles for computed epsilon depths.
-    return create_noodles(aut, epsilon_depths);
+    //return create_noodles(aut, epsilon_depths);
 }
 
 AutSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
