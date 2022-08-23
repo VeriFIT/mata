@@ -112,6 +112,7 @@ namespace
                                      Mata::FormulaNode::OperandType::SYM};
         }
 
+        throw std::runtime_error("Unknown token " + token);
         assert(false);
     }
 
