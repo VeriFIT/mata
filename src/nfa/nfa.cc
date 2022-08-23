@@ -376,7 +376,7 @@ Nfa Nfa::get_trimmed_automaton()
     return trimmed_aut;
 }
 
-StateSet Nfa::get_useful_states()
+StateSet Nfa::get_useful_states() const
 {
     Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
 
@@ -1066,26 +1066,32 @@ Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
     return reachable;
 }
 
-Nfa Nfa::get_digraph()
-{
+Nfa Nfa::get_digraph() const {
     Nfa digraph{ get_num_of_states(), initialstates, finalstates};
-    Symbol abstract_symbol{ 'x' };
+    get_directed_transitions(digraph);
+    return digraph;
+}
 
-    for (State src_state{ 0 }; src_state < get_num_of_states(); ++src_state)
-    {
-        for (const auto &symbol_transitions: this->transitionrelation[src_state])
-        {
-            for (State tgt_state: symbol_transitions.states_to)
-            {
-                if (!digraph.has_trans(src_state, abstract_symbol, tgt_state))
-                {
+void Nfa::get_digraph(Nfa& result) const {
+    const State num_of_states{ get_num_of_states() };
+    if (result.get_num_of_states() < num_of_states) { result.increase_size(num_of_states); }
+    result.initialstates = initialstates;
+    result.finalstates = finalstates;
+    get_directed_transitions(result);
+}
+
+void Nfa::get_directed_transitions(Nfa& digraph) const {
+    const Symbol abstract_symbol{ 'x' };
+    const State num_of_states{ get_num_of_states() };
+    for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
+        for (const auto& symbol_transitions: transitionrelation[src_state]) {
+            for (State tgt_state: symbol_transitions.states_to) {
+                if (!digraph.has_trans(src_state, abstract_symbol, tgt_state)) {
                     digraph.add_trans(src_state, abstract_symbol, tgt_state);
                 }
             }
         }
     }
-
-    return digraph;
 }
 
 bool Mata::Nfa::Nfa::trans_empty() const

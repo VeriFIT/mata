@@ -452,7 +452,7 @@ public:
      * Useful states are reachable and terminating states.
      * @return Set of useful states.
      */
-    StateSet get_useful_states();
+    StateSet get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -584,7 +584,14 @@ public:
      * Unify transitions to create a directed graph with at most a single transition between two states.
      * @return An automaton representing a directed graph.
      */
-    Nfa get_digraph();
+    Nfa get_digraph() const;
+
+    /**
+     * Unify transitions to create a directed graph with at most a single transition between two states.
+     *
+     * @param[out] result An automaton representing a directed graph.
+     */
+    void get_digraph(Nfa& result) const;
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
@@ -688,6 +695,12 @@ private:
      * @return Newly created trimmed automaton.
      */
     Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
+
+    /**
+     * Get directed transitions for digraph.
+     * @param[out] digraph Digraph to add computed transitions to.
+     */
+    void get_directed_transitions(Nfa& digraph) const;
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
@@ -1209,11 +1222,8 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const Nfa& aut)
-        : reversed_automaton(revert(aut))
-    {
+    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
         insert_initial_lengths();
-
         compute();
     }
 
@@ -1386,6 +1396,23 @@ public:
 
     std::list<Symbol> get_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+    /**
+     * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
+     *
+     * Throws an exception when the adding fails.
+     *
+     * @param[in] key User-space representation of the symbol.
+     * @return Result of the insertion as @c InsertionResult.
+     */
+    InsertionResult add_new_symbol(const std::string& key) {
+        const InsertionResult insertion_result{ try_add_new_symbol(key, next_symbol_value) };
+        if (!insertion_result.second) { // If the insertion of key-value pair failed.
+            throw std::runtime_error("multiple occurrence of the same symbol");
+        }
+        ++next_symbol_value;
+        return insertion_result;
+    }
 
     /**
      * @brief Add new symbol to the alphabet.

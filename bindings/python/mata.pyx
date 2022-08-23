@@ -502,12 +502,8 @@ cdef class Nfa:
 
         :return: mata.Nfa: An automaton representing a directed graph.
         """
-        cdef mata.CNfa c_digraph = self.thisptr.get_digraph()
-
-        digraph = Nfa(c_digraph.get_num_of_states())
-        digraph.thisptr.initialstates = c_digraph.initialstates
-        digraph.thisptr.finalstates = c_digraph.finalstates
-        digraph.thisptr.transitionrelation = c_digraph.transitionrelation
+        cdef Nfa digraph = mata.Nfa()
+        self.thisptr.get_digraph(dereference(digraph.thisptr))
         return digraph
 
     def __str__(self):
