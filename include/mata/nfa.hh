@@ -41,7 +41,6 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-// START OF THE DECLARATIONS
 using State = unsigned long;
 using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
@@ -207,7 +206,6 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-///  An NFA
 struct TransSymbolStates {
     Symbol symbol;
     StateSet states_to;
@@ -229,6 +227,9 @@ struct TransSymbolStates {
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 using TransitionRelation = std::vector<TransitionList>;
 
+/**
+ * A struct representing an NFA.
+ */
 struct Nfa
 {
     /**
@@ -248,14 +249,25 @@ public:
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{})
         : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
 
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
-    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
-            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{})
+        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+
+    /**
+     * Clear transitions but keep the automata states.
+     */
+    void clear_transitions() {
+        for (auto& state_transitions: transitionrelation) {
+            state_transitions.clear();
+        }
+    }
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -429,6 +441,34 @@ public:
     State add_new_state();
 
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
+
+    /**
+     * @brief Clear the underlying NFA to a blank NFA.
+     *
+     * The whole NFA is cleared, each member is set to its zero value.
+     */
+    void clear_nfa() {
+        transitionrelation.clear();
+        clear_initial();
+        clear_final();
+    }
+
+    /**
+     * @brief Reset the underlying NFA to the specified values.
+     *
+     * Clear the underlying NFA and set its members to the passed argument values.
+     *
+     * @param[in] num_of_states A number of states to reset to..
+     * @param[in] initial_states A set of initial states to reset to.
+     * @param[in] final_states A set of final states to reset to.
+     */
+    void reset_nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+                   const StateSet& final_states = StateSet{}) {
+        clear_nfa();
+        increase_size(num_of_states);
+        initialstates = initial_states;
+        finalstates = final_states;
+    }
 
     /**
      * @brief Get set of reachable states.
@@ -910,7 +950,17 @@ inline bool is_universal(
     return is_universal(aut, alphabet, nullptr, params);
 } // }}}
 
-/// Checks inclusion of languages of two automata (smaller <= bigger)?
+/**
+ * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
+ *
+ * @param smaller[in] First automaton to concatenate.
+ * @param bigger[in] Second automaton to concatenate.
+ * @param cex[out] Counterexample for the inclusion.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p smaller is included in @p bigger, false otherwise.
+ */
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
@@ -918,6 +968,16 @@ bool is_incl(
         const Alphabet*    alphabet = nullptr,
         const StringDict&  params = {{"algo", "antichains"}});
 
+/**
+ * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
+ *
+ * @param smaller[in] First automaton to concatenate.
+ * @param bigger[in] Second automaton to concatenate.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p smaller is included in @p bigger, false otherwise.
+ */
 inline bool is_incl(
         const Nfa&             smaller,
         const Nfa&             bigger,
@@ -948,7 +1008,7 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * the alphabet has to be computed first.
  *
  * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
- * That way, alphabet has to be compute only once, as opposed to the current ad-hoc construction of alphabet.
+ * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
  * @param lhs[in] First automaton to concatenate.
@@ -1082,6 +1142,7 @@ namespace SegNfa
 /// Segment automaton.
 /// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
 /// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+/// Segment automaton can have initial states only in the first segment and final states only in the last segment.
 using SegNfa = Nfa;
 
 /**
