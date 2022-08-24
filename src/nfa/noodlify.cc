@@ -163,3 +163,45 @@ std::vector<std::vector<std::shared_ptr<Nfa>>> SegNfa::noodlify(const SegNfa& au
     return noodles;
 }
 
+AutSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+                                          bool include_empty) {
+    if (left_automata.empty() || is_lang_empty(right_automaton)) { return AutSequence{}; }
+
+    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
+    alphabet.add_symbols_from(right_automaton);
+    const Symbol epsilon{ alphabet.get_next_value() };
+
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    // Automaton representing the left side concatenated over epsilon transitions.
+    Nfa concatenated_left_side{ *left_automata_begin };
+    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
+         ++next_left_automaton_it) {
+        concatenated_left_side = concatenate(concatenated_left_side, *next_left_automaton_it, epsilon);
+    }
+
+    auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    return noodlify(product_pres_eps_trans, epsilon, include_empty);
+}
+
+AutSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+                              bool include_empty) {
+    if (left_automata.empty() || is_lang_empty(right_automaton)) { return AutSequence{}; }
+
+    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
+    alphabet.add_symbols_from(right_automaton);
+    const Symbol epsilon{ alphabet.get_next_value() };
+
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    // Automaton representing the left side concatenated over epsilon transitions.
+    Nfa concatenated_left_side{ *(*left_automata_begin) };
+    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
+         ++next_left_automaton_it) {
+        concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), epsilon);
+    }
+
+    auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    return noodlify(product_pres_eps_trans, epsilon, include_empty);
+}
+
