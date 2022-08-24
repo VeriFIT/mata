@@ -13,6 +13,11 @@
 namespace Mata
 {
 
+/**
+ * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
+ * Each nodes has a name (in case of marking naming, an initial character definig type of node is removed and stored in
+ * name), raw (name including potential type marker), and information about its type.
+ */
 struct FormulaNode
 {
 public:
@@ -41,10 +46,15 @@ public:
         UNKNOWN
     };
 
+    /// Define whether a node is operand or operator
     Type type;
+    /// Raw name of node as it was specified in input text, i.e., including type marker.
     std::string raw;
+    /// Parsed name, i.e., a potential type marker (first character) is removed.
     std::string name; // parsed name. When type marking is used, markers are removed.
+    /// if a node is operator, it defines which one
     OperatorType operator_type;
+    /// if a node is operand, it defines which one
     OperandType operand_type;
 
     bool is_operand() const { return type == Type::OPERAND;}
@@ -66,6 +76,13 @@ public:
                                        operand_type(NOT_OPERAND) {};
 };
 
+/**
+ * Structure representing a transition formula using a graph.
+ * A node of graph consists of node itself and set of children nodes.
+ * Nodes are operators and operands of the formula.
+ * E.g., a formula q1 & s1 will be transformed to a tree with & as a root node
+ * and q1 and s2 being children nodes of the root.
+ */
 struct FormulaGraph
 {
     FormulaNode node;
@@ -77,14 +94,31 @@ struct FormulaGraph
     std::unordered_set<std::string> collect_node_names() const;
 };
 
+/**
+ * Structure for a general intermediate representation of parsed automaton.
+ * It contains information about type of automata, type of naming of nodes, symbols and states
+ * and type of alphabet. It contains also the transitions formula and formula for initial and final
+ * states. The formulas are represented as tree where nodes are either operands or operators.
+ */
 struct InterAutomaton
 {
+    /**
+     * Type of automaton. So far we support nondeterministic finite automata (NFA) and
+     * alternating finite automata (AFA)
+     */
     enum AutomatonType
     {
         NFA,
         AFA
     };
 
+    /**
+     * The possible kinds of naming of items in sets of states, nodes, or symbols.
+     * It implies how the given set is defined.
+     * Naming could be automatic (all things in formula not belonging to other sets will be assigned to a
+     * set with automatic naming), marker based (everything beginning with `q` is a state, with `s` is a symbol,
+     * with `n` is a node), or enumerated (the given set is defined by enumeration).
+     */
     enum Naming
     {
         AUTO,
@@ -92,6 +126,11 @@ struct InterAutomaton
         ENUM
     };
 
+    /**
+     * Type of alphabet. We can have explicit alphabet (containing explicit symbols), or bitvector, or class of symbols
+     * (e.g., alphabet is everything in utf), or intervals.
+     * So far, only explicit representation is supported.
+     */
     enum AlphabetType
     {
         EXPLICIT,
@@ -107,15 +146,31 @@ public:
     AlphabetType alphabet_type;
     AutomatonType automaton_type;
 
-    // For case of enumeration
+    // The vectors represent the given sets when enumeration is used.
     std::vector<std::string> states_names;
     std::vector<std::string> symbols_names;
     std::vector<std::string> nodes_names;
 
     FormulaGraph initial_formula;
     FormulaGraph final_formula;
+
+    /**
+     * Transitions are paris where the first member is left handed side of transition (i.e., a state)
+     * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
+     */
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
+    /**
+     * A method for building a vector of InterAutomaton for a parsed input.
+     * For each section in input is created one InterAutomaton.
+     * It parses basic information about type of automata, its naming conventions etc.
+     * Then it parses input and final formula of automaton.
+     * Finally, transition formulas are transformed to graph representation by
+     * turning an input stream of tokens to postfix notation and then
+     * a tree representing the formula is built from it.
+     * @param parsed Parsed input in MATA format.
+     * @return A vector of InterAutomata from each section in parsed input.
+     */
     static std::vector<InterAutomaton> parse_from_mf(const Mata::Parser::Parsed& parsed);
 
     bool states_enumerated() const {return state_naming == Naming::ENUM;}
