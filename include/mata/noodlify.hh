@@ -29,6 +29,8 @@ namespace Nfa
 namespace SegNfa
 {
 
+using NoodleSegments = std::vector<std::vector<std::shared_ptr<Nfa>>>;
+
 /**
  * @brief Create noodles from segment automaton @p aut.
  *
@@ -40,7 +42,7 @@ namespace SegNfa
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<std::vector<std::shared_ptr<Nfa>>> noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+NoodleSegments noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -59,7 +61,7 @@ std::vector<std::vector<std::shared_ptr<Nfa>>> noodlify(const SegNfa& aut, Symbo
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-AutSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+NoodleSegments noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
                                   bool include_empty = false);
 
 /**
@@ -79,9 +81,8 @@ AutSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, cons
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-AutSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+NoodleSegments noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
                                   bool include_empty = false);
-
 } // SegNfa
 } // Nfa
 } // Mata
