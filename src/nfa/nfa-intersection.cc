@@ -126,14 +126,14 @@ private:
         while (!pairs_to_process.empty()) {
             pair_to_process = *pairs_to_process.begin();
             pairs_to_process.erase(pair_to_process);
-            compute_transitions_for_eps_pres_prod_for_state_pair();
+            compute_transitions_for_state_pair_eps_pres();
         }
     }
 
     /**
-     * Compute transitions for epsilon preserving product for a current state pair.
+     * Add transitions of the current state pair for an epsilon preserving product.
      */
-    void compute_transitions_for_eps_pres_prod_for_state_pair() {
+    void compute_transitions_for_state_pair_eps_pres() {
         for (const auto& lhs_state_transitions: lhs.transitionrelation[pair_to_process.first]) {
             // Check for lhs epsilon transitions.
             if (lhs_state_transitions.symbol == epsilon) {
@@ -153,13 +153,13 @@ private:
             }
         }
 
-        compute_for_independent_rhs_epsilon_transitions();
+        add_rhs_epsilon_transitions();
     }
 
     /**
-     * Check for epsilon transitions in case only rhs has any transitions.
+     * Check for epsilon transitions in case only rhs has any transitions and add them.
      */
-    void compute_for_independent_rhs_epsilon_transitions() {
+    void add_rhs_epsilon_transitions() {
         for (const auto& rhs_state_transitions: rhs.transitionrelation[pair_to_process.second]) {
             if (rhs_state_transitions.symbol == epsilon) {
                 compute_for_rhs_state_epsilon_transitions(rhs_state_transitions);

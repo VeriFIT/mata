@@ -46,6 +46,12 @@ AutSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = fal
  * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
  * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
  *
+ * Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
+ *  the equation in a way that libMata understands. The left side automata represent the left side of the equation
+ *  and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
+ *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
+ *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
+ *
  * @param[in] left_automata Sequence of segment automata for left side of an equation to noodlify.
  * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
@@ -59,6 +65,12 @@ AutSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, cons
  *
  * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
  * A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+ *
+ * Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
+ *  the equation in a way that libMata understands. The left side automata represent the left side of the equation
+ *  and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
+ *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
+ *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
  * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
  * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.

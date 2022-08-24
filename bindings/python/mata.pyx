@@ -413,7 +413,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: TransSymbolStates
         """
-        cdef TransitionList transitions = self.thisptr.get_transitions_from_state(state)
+        cdef TransitionList transitions = self.thisptr.get_transitions_from(state)
         cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
 
         cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
@@ -434,7 +434,7 @@ cdef class Nfa:
 
         :return: List mata.CTrans: List of transitions leading to state_to.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to_state(state_to)
+        cdef vector[CTrans] c_transitions = self.thisptr.get_transitions_to(state_to)
         trans = []
         for c_transition in c_transitions:
             trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
@@ -456,7 +456,7 @@ cdef class Nfa:
         Get automaton transitions from state_from as a sequence.
         :return: List of automaton transitions.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_from_state_as_sequence(state_from)
+        cdef vector[CTrans] c_transitions = self.thisptr.get_trans_from_as_sequence(state_from)
         transitions = []
         for c_transition in c_transitions:
             transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
@@ -727,6 +727,12 @@ cdef class Nfa:
 
         Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
         A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+
+        Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
+         the equation in a way that libMata understands. The left side automata represent the left side of the equation
+         and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
+         representing the intersection. That can be achieved by computing a product of both sides. First, the left side
+         has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
 
         :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
         :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
