@@ -5,6 +5,9 @@
 #ifndef LIBMATA_INTER_AUT_HH
 #define LIBMATA_INTER_AUT_HH
 
+#include <unordered_map>
+#include <unordered_set>
+
 #include <mata/parser.hh>
 
 #include <string>
