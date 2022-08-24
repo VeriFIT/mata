@@ -730,9 +730,6 @@ cdef class Nfa:
          representing the intersection. That can be achieved by computing a product of both sides. First, the left side
          has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
 
-        TODO: For example, the left side automata can represent regular expression ..., and right side represents formula
-         phi = a || b. The result is then automaton representing all words a*.
-
         :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
         :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
         :param: bool include_empty: Whether to also include empty noodles.
