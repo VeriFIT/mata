@@ -478,6 +478,7 @@ public:
      * the starting point of a path ending in a final state).
      */
     void trim();
+    Nfa get_trimmed_automaton();
 
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
@@ -706,7 +707,7 @@ private:
 
     /**
      * Get a new trimmed automaton.
-     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
      * @return Newly created trimmed automaton.
      */
     Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
@@ -1129,12 +1130,20 @@ public:
      */
     const AutSequence& get_segments();
 
+    /**
+     * Get raw segment automata.
+     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
+     * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
+     */
+    const AutSequence& get_segments_raw();
+
 private:
     const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
     const SegNfa& automaton{};
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     AutSequence segments{}; ///< Segments for @p automaton.
+    AutSequence segments_raw{}; ///< Raw segments for @p automaton.
 
     /**
      * Pair of state and its depth.
@@ -1156,11 +1165,11 @@ private:
     void split_aut_into_segments();
 
     /**
-     * Propagate changes to the current segment automaton to the remaining segments with higher depths.
+     * Propagate changes to the current segment automaton to the next segment automaton.
      * @param[in] current_depth Current depth.
      * @param[in] transition Current epsilon transition.
      */
-    void propagate_to_other_segments(size_t current_depth, const Trans& transition);
+    void update_next_segment(size_t current_depth, const Trans& transition);
 
     /**
      * Update current segment automaton.
@@ -1168,11 +1177,6 @@ private:
      * @param[in] transition Current epsilon transition.
      */
     void update_current_segment(size_t current_depth, const Trans& transition);
-
-    /**
-     * Trim created segments of redundant states and epsilon transitions.
-     */
-    void trim_segments();
 
     /**
      * Initialize map of visited states.

@@ -354,6 +354,11 @@ StateSet Nfa::get_terminating_states() const
 
 void Nfa::trim()
 {
+    *this = get_trimmed_automaton();
+}
+
+Nfa Nfa::get_trimmed_automaton()
+{
     StateSet original_useful_states{ get_useful_states() };
 
     StateToStateMap original_to_new_states_map{ original_useful_states.size() };
@@ -368,7 +373,7 @@ void Nfa::trim()
 
     add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
 
-    *this = trimmed_aut;
+    return trimmed_aut;
 }
 
 StateSet Nfa::get_useful_states() const
@@ -383,6 +388,7 @@ StateSet Nfa::get_useful_states() const
     {
         if (reachable_states[original_state] && terminating_states[original_state])
         {
+            // we can use push_back here, because we are always increasing the value of original_state (so useful_states will always be ordered)
             useful_states.push_back(original_state);
         }
     }
@@ -397,6 +403,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
     {
         if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
         {
+            // we can use push_back here, because initialstates is ordered + new states follow the ordering of the old states 
             trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
         }
     }
@@ -405,6 +412,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
     {
         if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
         {
+            // we can use push_back here, because finalstates is ordered + new states follow the ordering of the old states 
             trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
         }
     }
@@ -413,18 +421,24 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
 
 void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut)
 {
+    // for each reachable original state s (which means it is mapped to the state of trimmed automaton)...
     for (const auto& original_state_mapping: original_to_new_states_map)
     {
+        // ...add all transitions from s to some reachable state to the trimmed automaton
         for (const TransSymbolStates& state_transitions_with_symbol: transitionrelation[original_state_mapping.first])
         {
+            TransSymbolStates new_state_transitions_with_symbol(state_transitions_with_symbol.symbol);
             for (State old_state_to: state_transitions_with_symbol.states_to)
             {
-                if (original_to_new_states_map.find(old_state_to) != original_to_new_states_map.end())
+                auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
+                if (iter_to_new_state_to != original_to_new_states_map.end())
                 {
-                    trimmed_aut.add_trans(original_to_new_states_map.at(original_state_mapping.first),
-                                          state_transitions_with_symbol.symbol,
-                                          original_to_new_states_map.at(old_state_to));
+                    // we can push here, because we assume that new states follow the ordering of orignial states
+                    new_state_transitions_with_symbol.states_to.push_back(iter_to_new_state_to->second);
                 }
+            }
+            if (new_state_transitions_with_symbol.states_to.size() != 0) {
+                trimmed_aut.transitionrelation[original_state_mapping.second].push_back(new_state_transitions_with_symbol);
             }
         }
     }
@@ -1730,7 +1744,7 @@ StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
 
 void SegNfa::Segmentation::split_aut_into_segments()
 {
-    segments = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
+    segments_raw = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
     remove_inner_initial_and_final_states();
 
     // Construct segment automata.
@@ -1742,16 +1756,14 @@ void SegNfa::Segmentation::split_aut_into_segments()
         for (const auto& transition: *depth_transitions)
         {
             update_current_segment(depth, transition);
-            propagate_to_other_segments(depth, transition);
+            update_next_segment(depth, transition);
         }
     }
-
-    trim_segments();
 }
 
 void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
-    const auto segments_begin{ segments.begin() };
-    const auto segments_end{ segments.end() };
+    const auto segments_begin{ segments_raw.begin() };
+    const auto segments_end{ segments_raw.end() };
     for (auto iter{ segments_begin }; iter != segments_end; ++iter) {
         if (iter != segments_begin) {
             iter->clear_initial();
@@ -1762,37 +1774,43 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
     }
 }
 
-void SegNfa::Segmentation::trim_segments()
-{
-    for (auto& seg_aut: segments) { seg_aut.trim(); }
-}
-
 void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
 {
     assert(transition.symb == epsilon);
-    assert(segments[current_depth].has_trans(transition));
+    assert(segments_raw[current_depth].has_trans(transition));
 
-    segments[current_depth].make_final(transition.src);
-    segments[current_depth].remove_trans(transition);
+    segments_raw[current_depth].make_final(transition.src);
+    // we need to remove this transition so that the language of the current segment does not accept too much
+    segments_raw[current_depth].remove_trans(transition);
 }
 
-void SegNfa::Segmentation::propagate_to_other_segments(const size_t current_depth, const Trans& transition)
+void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const Trans& transition)
 {
-    const size_t segments_size{ segments.size() };
-    for (size_t other_segment_depth{ current_depth + 1 };
-         other_segment_depth < segments_size;
-         ++other_segment_depth)
-    {
-        segments[other_segment_depth].remove_trans(transition);
-        segments[other_segment_depth].make_initial(transition.tgt);
-    }
+    const size_t next_depth = current_depth + 1;
+
+    assert(transition.symb == epsilon);
+    assert(segments_raw[next_depth].has_trans(transition));
+
+    // we do not need to remove epsilon transitions in current_depth from the next segment (or the
+    // segments after) as the initial states are after these transitions
+    segments_raw[next_depth].make_initial(transition.tgt);
 }
 
 const AutSequence& SegNfa::Segmentation::get_segments()
 {
-    if (segments.empty()) { split_aut_into_segments(); }
+    if (segments.empty()) {
+        get_segments_raw();
+        for (auto& seg_aut: segments_raw) { segments.push_back(seg_aut.get_trimmed_automaton()); }
+    }
 
     return segments;
+}
+
+const AutSequence& SegNfa::Segmentation::get_segments_raw()
+{
+    if (segments_raw.empty()) { split_aut_into_segments(); }
+
+    return segments_raw;
 }
 
 void SegNfa::Segmentation::compute_epsilon_depths()
