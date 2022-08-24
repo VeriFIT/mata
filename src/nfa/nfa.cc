@@ -411,7 +411,8 @@ void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_
                 auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
                 if (iter_to_new_state_to != original_to_new_states_map.end())
                 {
-                    new_state_transitions_with_symbol.states_to.insert(iter_to_new_state_to->second);
+                    // we can push here, because we assume that new states follow the ordering of orignial states
+                    new_state_transitions_with_symbol.states_to.push_back(iter_to_new_state_to->second);
                 }
             }
             if (new_state_transitions_with_symbol.states_to.size() != 0) {
