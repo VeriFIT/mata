@@ -77,6 +77,9 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[string, string] StringDict
     ctypedef COrdVector[CTransSymbolStates] TransitionList
     ctypedef vector[TransitionList] TransitionRelation
+    ctypedef vector[CNfa] AutSequence
+    ctypedef vector[CNfa*] AutPtrSequence
+    ctypedef vector[const CNfa*] ConstAutPtrSequence
 
     cdef cppclass CTrans "Mata::Nfa::Trans":
         # Public Attributes
@@ -164,10 +167,10 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         State add_new_state()
         void print_to_DOT(ostream)
         WordSet get_shortest_words()
-        TransitionList get_transitions_from_state(State)
-        vector[CTrans] get_transitions_to_state(State)
+        TransitionList get_transitions_from(State)
+        vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
-        vector[CTrans] get_trans_from_state_as_sequence(State)
+        vector[CTrans] get_trans_from_as_sequence(State)
         void trim()
         CNfa get_digraph()
         StateSet get_useful_states()
@@ -240,11 +243,12 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
 
         EpsilonDepthTransitions get_epsilon_depths()
-        vector[CNfa] get_segments()
+        AutSequence get_segments()
 
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
-    cdef vector[CNfa] noodlify(CNfa&, Symbol, bool)
+    cdef AutSequence noodlify(CNfa&, Symbol, bool)
+    cdef AutSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
