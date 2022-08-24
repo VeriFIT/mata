@@ -126,6 +126,12 @@ namespace
         return true;
     }
 
+    /**
+     * Transforms a series of tokes to postfix notation.
+     * @param aut Automaton for which transition formula is parsed
+     * @param tokens Series of tokens representing transition formula parsed from the input text
+     * @return A postfix notation for input
+     */
     std::vector<Mata::FormulaNode> infix2postfix(Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
@@ -171,6 +177,11 @@ namespace
         return output;
     }
 
+    /**
+     * Create a graph for a postfix representation of transition formula
+     * @param postfix A postfix representation of transition formula
+     * @return A parsed graph
+     */
     Mata::FormulaGraph postfix2graph(const std::vector<Mata::FormulaNode> &postfix)
     {
         std::vector<Mata::FormulaGraph> opstack;
@@ -236,6 +247,12 @@ namespace
         return res;
     }
 
+    /**
+     * Parses a transition by firstly transforming transition formulat to postfix form and then creating
+     * a tree representing the formulat from postfix.
+     * @param aut Automaton to which transition will be added.
+     * @param tokens Series of tokens representing transition formula
+     */
     void parse_transition(Mata::InterAutomaton &aut, const std::vector<std::string> &tokens)
     {
         assert(tokens.size() > 1); // transition formula has at least two items
@@ -255,8 +272,13 @@ namespace
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
     }
 
-
-
+    /**
+     * The wrapping function for parsing one section of input to InterAutomaton.
+     * It parses basic information about type of automaton and naming of its component.
+     * Then it parses initial and final formula and finally it creates graphs for transition formula.
+     * @param section A section of input MATA format
+     * @return Parsed InterAutomata representing an automaton from input.
+     */
     Mata::InterAutomaton mf_to_aut(const Mata::Parser::ParsedSection &section)
     {
         Mata::InterAutomaton aut;
