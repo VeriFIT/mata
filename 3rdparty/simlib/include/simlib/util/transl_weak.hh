@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
  *
@@ -8,17 +8,16 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_TRANSL_WEAK_HH_
-#define _MATA_TRANSL_WEAK_HH_
+#ifndef _SIMLIB_TRANSL_WEAK_HH_
+#define _SIMLIB_TRANSL_WEAK_HH_
 
 #include <functional>
 
-// MATA headers
-#include <mata/simutil/mata.hh>
-#include <mata/simutil/abstract_transl.hh>
+#include <simlib/util/simlib.hh>
+#include <simlib/util/abstract_transl.hh>
 
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{
@@ -38,7 +37,7 @@ namespace Mata
  */
 template <
 	class Cont>
-class Mata::Util::TranslatorWeak :
+class Simlib::Util::TranslatorWeak :
 	public AbstractTranslator<typename Cont::key_type, typename Cont::mapped_type>
 {
 private:  // data types
@@ -117,7 +116,7 @@ template
 <
 	class Cont
 >
-class __attribute__((unused)) Mata::Util::TranslatorWeak2 :
+class __attribute__((unused)) Simlib::Util::TranslatorWeak2 :
 	public AbstractTranslator<typename Cont::key_type, typename Cont::mapped_type>
 {
 private:  // data types

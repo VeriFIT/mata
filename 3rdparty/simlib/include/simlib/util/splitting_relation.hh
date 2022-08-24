@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,17 +8,16 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_SPLITTING_RELATION_HH_
-#define _MATA_SPLITTING_RELATION_HH_
+#ifndef _SIMLIB_SPLITTING_RELATION_HH_
+#define _SIMLIB_SPLITTING_RELATION_HH_
 
 // Standard library headers
 #include <vector>
 
-// MATA headers
-#include <mata/simutil/mata.hh>
-#include <mata/simutil/caching_allocator.hh>
+#include <simlib/util/simlib.hh>
+#include <simlib/util/caching_allocator.hh>
 
-namespace Mata
+namespace Simlib
 {
 	namespace Util
 	{
@@ -26,7 +25,7 @@ namespace Mata
 	}
 }
 
-class Mata::Util::SplittingRelation {
+class Simlib::Util::SplittingRelation {
 
 	struct Element {
 

@@ -21,7 +21,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
-#include <mata/explicit_lts.hh>
+#include <simlib/explicit_lts.hh>
 
 using std::tie;
 
@@ -32,7 +32,7 @@ using Mata::Nfa::Symbol;
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
-//searches for every state in the set of final states
+    //searches for every state in the set of final states
     template<class T>
     bool contains_final(const T &states, const Nfa &automaton) {
         auto finalState = find_if(states.begin(), states.end(),
@@ -40,18 +40,18 @@ namespace {
         return (finalState != states.end());
     }
 
-//checks whether the set has someone with the isFinal flag on
+    //checks whether the set has someone with the isFinal flag on
     template<class T>
     bool contains_final(const T &states, const std::vector<bool> &isFinal) {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
     }
 
-    void uniont_to_left(StateSet &receivingSet, const StateSet &addedSet) {
+    void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
         receivingSet.insert(addedSet);
     }
 
-    Mata::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Mata::ExplicitLTS LTSforSimulation;
+    Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+        Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
         const size_t state_num = aut.get_num_of_states();
 
@@ -73,6 +73,72 @@ namespace {
 
         LTSforSimulation.init();
         return LTSforSimulation.compute_simulation();
+    }
+
+	void reduce_size_by_simulation(Nfa* result, const Nfa& aut, StateToStateMap &state_map) {
+        auto sim_relation = compute_relation(aut, StringDict{{"relation", "simulation"}, {"direction","forward"}});
+
+        auto sim_relation_symmetric = sim_relation;
+        sim_relation_symmetric.restrict_to_symmetric();
+
+        // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
+        std::vector<size_t> quot_proj;
+        sim_relation_symmetric.get_quotient_projection(quot_proj);
+
+		size_t num_of_states = aut.get_num_of_states(); 
+
+		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
+		for (State q = 0; q < num_of_states; ++q) {
+			State qReprState = quot_proj[q];
+			if (state_map.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+				State qClass = result->add_new_state();
+				state_map[qReprState] = qClass;
+				state_map[q] = qClass;
+			} else {
+				state_map[q] = state_map[qReprState];
+			}
+		}
+
+        for (State q = 0; q < num_of_states; ++q) {
+            State q_class_state = state_map.at(q);
+
+            if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial 
+                result->make_initial(q_class_state);
+            }
+
+            if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
+                for (auto &q_trans : aut.get_transitions_from_state(q)) {
+                    // representatives_of_states_to = representatives of q_trans.states_to
+                    StateSet representatives_of_states_to;
+                    for (auto s : q_trans.states_to) {
+                        representatives_of_states_to.insert(quot_proj[s]);
+                    }
+
+                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
+                    StateSet representatives_class_states;
+                    for (State s : representatives_of_states_to) {
+                        bool is_state_important = true; // if true, we need to keep the transition from q to s
+                        for (State p : representatives_of_states_to) {
+                            if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
+                                is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
+                                break;
+                            }
+                        }
+                        if (is_state_important) {
+                            representatives_class_states.insert(state_map.at(s));
+                        }
+                    }
+
+                    // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
+                    // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
+                    result->transitionrelation[q_class_state].push_back(TransSymbolStates(q_trans.symbol, representatives_class_states));
+                }
+                
+                if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
+                    result->make_final(q_class_state);
+                }
+            }
+        }
     }
 }
 
@@ -185,7 +251,7 @@ std::list<Symbol> EnumAlphabet::get_complement(
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
-    // TODO: define own exceptions
+    // TODO: Define own exception.
     if (!is_state(stateFrom) || !is_state(stateTo)) {
         throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
     }
@@ -193,6 +259,7 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
     auto transitionFromStateIter = transitionrelation[stateFrom].begin();
     for (; transitionFromStateIter != transitionrelation[stateFrom].end(); ++transitionFromStateIter) {
         if (transitionFromStateIter->symbol == symbolOnTransition) {
+            // Add transition with symbolOnTransition already used on transitions from stateFrom.
             transitionFromStateIter->states_to.insert(stateTo);
             return;
         } else if (transitionFromStateIter->symbol > symbolOnTransition) {
@@ -200,7 +267,35 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
         }
     }
 
+    // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
     transitionrelation[stateFrom].insert(transitionFromStateIter, TransSymbolStates(symbolOnTransition, stateTo));
+}
+
+void Nfa::remove_trans(State src, Symbol symb, State tgt)
+{
+    if (!has_trans(src, symb, tgt))
+    {
+        throw std::invalid_argument(
+                "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
+                std::to_string(tgt) + "] does not exist.");
+    }
+
+    auto transitionFromStateIter{ transitionrelation[src].begin() };
+    while (transitionFromStateIter != transitionrelation[src].end())
+    {
+        if (transitionFromStateIter->symbol == symb)
+        {
+            transitionFromStateIter->states_to.remove(tgt);
+            if (transitionFromStateIter->states_to.empty())
+            {
+                transitionrelation[src].remove(*transitionFromStateIter);
+            }
+
+            return;
+        }
+
+        ++transitionFromStateIter;
+    }
 }
 
 State Nfa::add_new_state() {
@@ -208,7 +303,112 @@ State Nfa::add_new_state() {
     return transitionrelation.size() - 1;
 }
 
-/// General methods for NFA
+void Nfa::remove_epsilon(const Symbol epsilon)
+{
+    *this = Mata::Nfa::remove_epsilon(*this, epsilon);
+}
+
+StateSet Nfa::get_reachable_states() const
+{
+    StateBoolArray reachable_bool_array{ compute_reachability() };
+
+    StateSet reachable_states{};
+    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
+    {
+        if (reachable_bool_array[original_state])
+        {
+            reachable_states.push_back(original_state);
+        }
+    }
+
+    return reachable_states;
+}
+
+StateSet Nfa::get_terminating_states() const
+{
+    Nfa reversed{ revert(*this) };
+    return reversed.get_reachable_states();
+}
+
+void Nfa::trim()
+{
+    StateSet original_useful_states{ get_useful_states() };
+
+    StateToStateMap original_to_new_states_map{ original_useful_states.size() };
+    size_t new_state_num{ 0 };
+    for (const State original_state: original_useful_states)
+    {
+        original_to_new_states_map.insert(std::make_pair(original_state, new_state_num));
+        ++new_state_num;
+    }
+
+    Nfa trimmed_aut{ create_trimmed_aut(original_to_new_states_map) };
+
+    add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
+
+    *this = trimmed_aut;
+}
+
+StateSet Nfa::get_useful_states()
+{
+    Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
+
+    StateBoolArray reachable_states{ digraph.compute_reachability() };
+    StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
+
+    StateSet useful_states{};
+    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
+    {
+        if (reachable_states[original_state] && terminating_states[original_state])
+        {
+            useful_states.push_back(original_state);
+        }
+    }
+    return useful_states;
+}
+
+Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
+{
+    Nfa trimmed_aut{ original_to_new_states_map.size() };
+
+    for (State old_initial_state: initialstates)
+    {
+        if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
+        {
+            trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
+        }
+    }
+
+    for (State old_final_state: finalstates)
+    {
+        if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
+        {
+            trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
+        }
+    }
+    return trimmed_aut;
+}
+
+void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut)
+{
+    for (const auto& original_state_mapping: original_to_new_states_map)
+    {
+        for (const TransSymbolStates& state_transitions_with_symbol: transitionrelation[original_state_mapping.first])
+        {
+            for (State old_state_to: state_transitions_with_symbol.states_to)
+            {
+                if (original_to_new_states_map.find(old_state_to) != original_to_new_states_map.end())
+                {
+                    trimmed_aut.add_trans(original_to_new_states_map.at(original_state_mapping.first),
+                                          state_transitions_with_symbol.symbol,
+                                          original_to_new_states_map.at(old_state_to));
+                }
+            }
+        }
+    }
+}
+
+// General methods for NFA.
 
 bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
 { // {{{
@@ -295,12 +495,14 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 {
     assert(nullptr != result);
 
+    result->increase_size(aut.get_num_of_states());
+
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
+    StateMap<StateSet> eps_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    for (size_t i=0; i < aut.trans_size(); ++i)
+    for (size_t i=0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& trans: aut[i])
         { // initialize
@@ -316,7 +518,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     bool changed = true;
     while (changed) { // compute the fixpoint
         changed = false;
-        for (size_t i=0; i < aut.trans_size(); ++i)
+        for (size_t i=0; i < aut.get_num_of_states(); ++i)
         {
             for (auto const &trans: aut[i])
             {
@@ -341,15 +543,21 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     // now we construct the automaton without epsilon transitions
     result->initialstates.insert(aut.initialstates);
     result->finalstates.insert(aut.finalstates);
-    for (auto state_closure_pair : eps_closure) { // for every state
+    State max_state{};
+    for (const auto& state_closure_pair : eps_closure) { // for every state
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
             if (aut.has_final(eps_cl_state)) result->make_final(src_state);
-            for (auto symb_set : aut[eps_cl_state]) {
+            for (const auto& symb_set : aut[eps_cl_state]) {
                 if (symb_set.symbol == epsilon) continue;
 
                 // TODO: this could be done more efficiently if we had a better add_trans method
                 for (State tgt_state : symb_set.states_to) {
+                    max_state = std::max(src_state, tgt_state);
+                    if (result->get_num_of_states() < max_state)
+                    {
+                        result->increase_size_for_state(max_state);
+                    }
                     result->add_trans(src_state, symb_set.symbol, tgt_state);
                 }
             }
@@ -361,12 +569,12 @@ void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 {
     assert(nullptr != result);
 
-    if (aut.trans_size() > result->trans_size()) { result->increase_size(aut.trans_size()); }
+    if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
 
     result->initialstates = aut.finalstates;
     result->finalstates = aut.initialstates;
 
-    for (size_t i = 0; i < aut.trans_size(); ++i)
+    for (size_t i = 0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& symStates : aut[i])
             for (const State tgt : symStates.states_to)
@@ -380,7 +588,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     if (aut.trans_empty()) { return true; }
 
-    for (size_t i = 0; i < aut.trans_size(); ++i)
+    for (size_t i = 0; i < aut.get_num_of_states(); ++i)
     {
         for (const auto& symStates : aut[i])
         {
@@ -502,10 +710,10 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 WordSet Mata::Nfa::Nfa::get_shortest_words() const
 {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
-    ShortestWordsMap shortest_words_map{*this};
+    ShortestWordsMap shortest_words_map{ *this };
 
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return shortest_words_map.get_shortest_words_for_states(this->initialstates);
+    return shortest_words_map.get_shortest_words_for(this->initialstates);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -756,10 +964,153 @@ Nfa Nfa::read_from_our_format(std::istream &inputStream) {
     return newNFA;
 }
 
+TransSequence Nfa::get_trans_as_sequence() const
+{
+    TransSequence trans_sequence{};
+
+    for (State state_from{ 0 }; state_from < transitionrelation.size(); ++state_from)
+    {
+        for (const auto& transition_from_state: transitionrelation[state_from])
+        {
+            for (State state_to: transition_from_state.states_to)
+            {
+                trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+            }
+        }
+    }
+
+    return trans_sequence;
+}
+
+TransSequence Nfa::get_trans_from_state_as_sequence(State state_from) const
+{
+    TransSequence trans_sequence{};
+
+    for (const auto& transition_from_state: transitionrelation[state_from])
+    {
+        for (State state_to: transition_from_state.states_to)
+        {
+            trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+        }
+    }
+
+    return trans_sequence;
+}
+
+
+size_t Nfa::get_num_of_trans() const
+{
+    size_t num_of_transitions{};
+
+    for (const auto& state_transitions: transitionrelation)
+    {
+        for (const auto& symbol_transitions: state_transitions)
+        {
+            num_of_transitions += symbol_transitions.states_to.size();
+        }
+    }
+
+    return num_of_transitions;
+}
+
+Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
+{
+    std::vector<State> worklist{ initialstates.ToVector() };
+
+    StateBoolArray reachable(get_num_of_states(), false);
+    for (State state: initialstates)
+    {
+        reachable.at(state) = true;
+    }
+
+    State state{};
+    while (!worklist.empty())
+    {
+        state = worklist.back();
+        worklist.pop_back();
+
+        for (const auto& state_transitions: transitionrelation[state])
+        {
+            for (State target_state: state_transitions.states_to)
+            {
+                if (!reachable.at(target_state))
+                {
+                    worklist.push_back(target_state);
+                    reachable.at(target_state) = true;
+                }
+            }
+        }
+    }
+
+    return reachable;
+}
+
+Nfa Nfa::get_digraph()
+{
+    Nfa digraph{ get_num_of_states(), initialstates, finalstates};
+    Symbol abstract_symbol{ 'x' };
+
+    for (State src_state{ 0 }; src_state < get_num_of_states(); ++src_state)
+    {
+        for (const auto &symbol_transitions: this->transitionrelation[src_state])
+        {
+            for (State tgt_state: symbol_transitions.states_to)
+            {
+                if (!digraph.has_trans(src_state, abstract_symbol, tgt_state))
+                {
+                    digraph.add_trans(src_state, abstract_symbol, tgt_state);
+                }
+            }
+        }
+    }
+
+    return digraph;
+}
+
+bool Mata::Nfa::Nfa::trans_empty() const
+{
+    for (const auto &state_transitions: transitionrelation)
+    {
+        if (!state_transitions.empty())
+        {
+            for (const auto &symbol_state_transitions: state_transitions)
+            {
+                if (!symbol_state_transitions.states_to.empty())
+                {
+                    return false;
+                }
+            }
+        }
+    }
+
+    return true;
+}
+
+TransSequence Nfa::get_transitions_to_state(const State state_to) const
+{
+    TransSequence transitions_to_state{};
+
+    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from)
+    {
+        for (const auto& symbol_transitions: transitionrelation[state_from])
+        {
+            for (const auto target_state: symbol_transitions.states_to)
+            {
+                if (target_state == state_to)
+                {
+                    transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
+                }
+            }
+        }
+    }
+
+    return transitions_to_state;
+}
+
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
-    std::unordered_map<State,State> thisStateToUnionState;
+    StateToStateMap thisStateToUnionState;
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton->add_new_state();
     }
@@ -787,114 +1138,7 @@ void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     }
 }
 
-void Mata::Nfa::intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_map) {
-    using StatePair = std::pair<State, State>;
-
-    /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
-     * representing (q,p). The hash function computes for each pair (q,p) unique number (q + p*(num of states in this automaton))
-     * whose std hash is returned.
-     *
-     * see https://stackoverflow.com/questions/15719084/how-to-use-lambda-function-as-hash-function-in-unordered-map
-     */
-    auto hashStatePair = [lhs](const StatePair &sp) {
-        return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
-    };
-    // TODO probably remove this since we use prod_map as parameter
-    //std::unordered_map<StatePair, State, decltype(hashStatePair)> thisAndOtherStateToIntersectState(10, hashStatePair); // TODO default buckets?
-
-    if (prod_map == nullptr) {
-        prod_map = new ProductMap();
-    }
-
-    std::vector<StatePair> pairsToProcess;
-
-    for (State thisInitialState : lhs.initialstates) {
-        for (State otherInitialState : rhs.initialstates) {
-            StatePair thisAndOtherInitialStatePair(thisInitialState, otherInitialState);
-            State newIntersectState = res->add_new_state();
-
-            (*prod_map)[thisAndOtherInitialStatePair] = newIntersectState;
-            pairsToProcess.push_back(thisAndOtherInitialStatePair);
-
-            res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState))
-                res->make_initial(newIntersectState);
-            if (lhs.has_final(thisInitialState) && rhs.has_final(otherInitialState)) {
-                res->make_final(newIntersectState);
-            }
-        }
-    }
-
-    if (lhs.trans_empty() || rhs.trans_empty())
-        return;
-
-    while (!pairsToProcess.empty()) {
-        StatePair pairToProcess = pairsToProcess.back();
-        pairsToProcess.pop_back();
-
-        // TODO rewrite this
-
-        State intersectState = (*prod_map)[pairToProcess];
-
-        auto thisStateTransitionsIter = lhs.transitionrelation[pairToProcess.first].begin();
-        auto otherStateTransitionIter = rhs.transitionrelation[pairToProcess.second].begin();
-        auto thisStateTransitionsIterEnd = lhs.transitionrelation[pairToProcess.first].end();
-        auto otherStateTransitionIterEnd = rhs.transitionrelation[pairToProcess.second].end();
-        // find all transitions that have same symbol for first and the second state in the pairToProcess
-        while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-               && otherStateTransitionIter != otherStateTransitionIterEnd) {
-            // first iterator points to transition with smaller symbol, move it until it is either same or further than second iterator
-            if (thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                while (thisStateTransitionsIter != thisStateTransitionsIterEnd
-                       && thisStateTransitionsIter->symbol < otherStateTransitionIter->symbol) {
-                    ++thisStateTransitionsIter;
-                }
-                if (thisStateTransitionsIter == thisStateTransitionsIterEnd) {
-                    break;
-                }
-            } else {
-                // second iterator points to transition with smaller symbol, move it until it is either same or further than first iterator
-                while (otherStateTransitionIter != otherStateTransitionIterEnd
-                       && thisStateTransitionsIter->symbol > otherStateTransitionIter->symbol) {
-                    ++otherStateTransitionIter;
-                }
-                if (otherStateTransitionIter == otherStateTransitionIterEnd) {
-                    break;
-                }
-            }
-
-            // check both iterators point to the transitions with same symbol
-            if (thisStateTransitionsIter->symbol == otherStateTransitionIter->symbol) {
-                // create transition from the pairToProcess to all pairs between states to which first transition goes and states to which second one goes
-                TransSymbolStates intersectTransition(thisStateTransitionsIter->symbol);
-                for (State thisStateTo : thisStateTransitionsIter->states_to) {
-                    for (State otherStateTo : otherStateTransitionIter->states_to) {
-                        StatePair intersectStatePairTo(thisStateTo, otherStateTo);
-                        State intersectStateTo;
-                        if (prod_map->count(intersectStatePairTo) == 0) {
-                            intersectStateTo = res->add_new_state();
-                            (*prod_map)[intersectStatePairTo] = intersectStateTo;
-                            pairsToProcess.push_back(intersectStatePairTo);
-
-                            if (lhs.has_final(thisStateTo) && rhs.has_final(otherStateTo)) {
-                                res->make_final(intersectStateTo);
-                            }
-                        } else {
-                            intersectStateTo = (*prod_map)[intersectStatePairTo];
-                        }
-                        intersectTransition.states_to.insert(intersectStateTo);
-                    }
-                }
-                res->transitionrelation[intersectState].push_back(intersectTransition);
-
-                ++thisStateTransitionsIter;
-                ++otherStateTransitionIter;
-            }
-        }
-    }
-}
-
-Mata::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringDict& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -914,6 +1158,27 @@ Mata::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const Str
     else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"relation\" key: " + relation);
+    }
+}
+
+void Mata::Nfa::reduce(Nfa* result, const Nfa &aut, StateToStateMap *state_map, const StringDict& params) {
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"algorithm\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
+
+    const std::string& algorithm = params.at("algorithm");
+    if ("simulation" == algorithm) {
+        if (state_map == nullptr) {
+            std::unordered_map<State,State> tmp_state_map;
+            reduce_size_by_simulation(result, aut, tmp_state_map);
+        } else {
+            reduce_size_by_simulation(result, aut, *state_map);
+        }
+    } else {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
 }
 
@@ -1265,7 +1530,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     for (size_t i=0; i < size;) {
         Symbol transitionSymbol = transition_iterators[i]->symbol;
         if (transitionSymbol == min_symbol) {
-            uniont_to_left(post, transition_iterators[i]->states_to);
+            union_to_left(post, transition_iterators[i]->states_to);
             transition_iterators[i]++;
             if (transition_iterators[i] != automaton.transitionrelation[state_vector[i]].end()) {
                 Symbol nextTransitionSymbol = transition_iterators[i]->symbol;
@@ -1304,48 +1569,67 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa
 	return os;
 } // operator<<(NfaWrapper) }}}
 
-WordSet ShortestWordsMap::get_shortest_words_for_states(const StateSet& states) const
+WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
     std::set <Word> result{};
-    WordLength shortest_words_length{-1};
 
-    for (auto state: states)
+    if (!shortest_words_map.empty())
     {
-        const auto& state_shortest_words_map{shortest_words_map.find(state)->second};
-        if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
+        WordLength shortest_words_length{-1};
+
+        for (State state: states)
         {
-            result = state_shortest_words_map.second;
-            shortest_words_length = state_shortest_words_map.first;
+            const auto& current_shortest_words_map{shortest_words_map.find(state)};
+            if (current_shortest_words_map == shortest_words_map.end()) {
+                continue;
+            }
+
+            const auto& state_shortest_words_map{current_shortest_words_map->second};
+            if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
+            {
+                result = state_shortest_words_map.second;
+                shortest_words_length = state_shortest_words_map.first;
+            }
+            else if (state_shortest_words_map.first == shortest_words_length)
+            {
+                // Append the shortest words from other state of the same length to the already found set of the shortest words.
+                result.insert(state_shortest_words_map.second.begin(),
+                              state_shortest_words_map.second.end());
+            }
         }
-        else if (state_shortest_words_map.first == shortest_words_length)
-        {
-            // Append the shortest words from other state of the same length to the already found set of the shortest words.
-            result.insert(state_shortest_words_map.second.begin(),
-                          state_shortest_words_map.second.end());
-        }
+
     }
 
     return result;
 }
 
+WordSet ShortestWordsMap::get_shortest_words_for(State state) const
+{
+     return get_shortest_words_for(StateSet{ state });
+}
+
 void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
 {
-    for (State state: reversed_automaton.initialstates)
+    if (!reversed_automaton.initialstates.empty())
     {
-        shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{Word{}})));
-    }
+        for (State state: reversed_automaton.initialstates)
+        {
+            shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{ Word{} })));
+        }
 
-    processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
-    lifo_queue.insert(lifo_queue.end(), reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+        processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
+        fifo_queue.insert(fifo_queue.end(), reversed_automaton.initialstates.begin(),
+                          reversed_automaton.initialstates.end());
+    }
 }
 
 void ShortestWordsMap::compute()
 {
     State state{};
-    while (!lifo_queue.empty())
+    while (!fifo_queue.empty())
     {
-        state = lifo_queue.front();
-        lifo_queue.pop_front();
+        state = fifo_queue.front();
+        fifo_queue.pop_front();
 
         // Compute the shortest words for the current state.
         compute_for_state(state);
@@ -1354,15 +1638,15 @@ void ShortestWordsMap::compute()
 
 void ShortestWordsMap::compute_for_state(const State state)
 {
-    const LengthWordsPair& dst{map_default_shortest_words(state)};
-    WordLength dst_length_plus_one{dst.first + 1};
+    const LengthWordsPair& dst{ map_default_shortest_words(state) };
+    WordLength dst_length_plus_one{ dst.first + 1 };
     LengthWordsPair act{};
 
     for (const TransSymbolStates& transition: reversed_automaton.get_transitions_from_state(state))
     {
         for (State state_to: transition.states_to)
         {
-            const LengthWordsPair& orig{map_default_shortest_words(state_to)};
+            const LengthWordsPair& orig{ map_default_shortest_words(state_to) };
             act = orig;
 
             if ((act.first == -1) || (dst_length_plus_one < act.first))
@@ -1385,13 +1669,13 @@ void ShortestWordsMap::compute_for_state(const State state)
             if (processed.find(state_to) == processed.end())
             {
                 processed.insert(state_to);
-                lifo_queue.push_back(state_to);
+                fifo_queue.push_back(state_to);
             }
         }
     }
 }
 
-void Mata::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
+void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
 {
     for (Word word: dst.second)
     {
@@ -1399,4 +1683,150 @@ void Mata::Nfa::ShortestWordsMap::update_current_words(LengthWordsPair& act, con
         act.second.insert(word);
     }
     act.first = dst.first + 1;
+}
+
+void SegNfa::Segmentation::process_state_depth_pair(StateDepthPair& state_depth_pair,
+                                            std::deque<StateDepthPair>& worklist)
+{
+    auto outgoing_transitions{ automaton.get_transitions_from_state(state_depth_pair.state) };
+    for (const auto& state_transitions: outgoing_transitions)
+    {
+        if (state_transitions.symbol == epsilon)
+        {
+            handle_epsilon_transitions(state_depth_pair, state_transitions, worklist);
+        }
+        else // Handle other transitions.
+        {
+            add_transitions_to_worklist(state_transitions, state_depth_pair.depth, worklist);
+        }
+    }
+}
+
+void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& state_depth_pair,
+                                              const TransSymbolStates& state_transitions,
+                                              std::deque<StateDepthPair>& worklist)
+{
+    epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
+    for (State target_state: state_transitions.states_to)
+    {
+        epsilon_depth_transitions[state_depth_pair.depth].push_back(
+                Trans{ state_depth_pair.state, state_transitions.symbol, target_state }
+        );
+        worklist.push_back(StateDepthPair{ target_state, state_depth_pair.depth + 1 });
+    }
+}
+
+void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+                                               std::deque<StateDepthPair>& worklist)
+{
+    for (State target_state: state_transitions.states_to)
+    {
+        worklist.push_back(StateDepthPair{ target_state, depth });
+    }
+}
+
+std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initialize_worklist() const
+{
+    std::deque<StateDepthPair> worklist{};
+    for (State state: automaton.initialstates)
+    {
+        worklist.push_back(StateDepthPair{ state, 0 });
+    }
+    return worklist;
+}
+
+StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
+{
+    StateMap<bool> visited{};
+    const size_t state_num = automaton.get_num_of_states();
+    for (State state{ 0 }; state < state_num; ++state)
+    {
+        visited[state] = false;
+    }
+    return visited;
+}
+
+void SegNfa::Segmentation::split_aut_into_segments()
+{
+    segments = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
+    remove_inner_initial_and_final_states();
+
+    // Construct segment automata.
+    std::unique_ptr<const TransSequence> depth_transitions{};
+    for (size_t depth{ 0 }; depth < epsilon_depth_transitions.size(); ++depth)
+    {
+        // Split the left segment from automaton into a new segment.
+        depth_transitions = std::make_unique<const TransSequence>(epsilon_depth_transitions[depth]);
+        for (const auto& transition: *depth_transitions)
+        {
+            update_current_segment(depth, transition);
+            propagate_to_other_segments(depth, transition);
+        }
+    }
+
+    trim_segments();
+}
+
+void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
+    const auto segments_begin{ segments.begin() };
+    const auto segments_end{ segments.end() };
+    for (auto iter{ segments_begin }; iter != segments_end; ++iter) {
+        if (iter != segments_begin) {
+            iter->clear_initial();
+        }
+        if (iter + 1 != segments_end) {
+            iter->clear_final();
+        }
+    }
+}
+
+void SegNfa::Segmentation::trim_segments()
+{
+    for (auto& seg_aut: segments) { seg_aut.trim(); }
+}
+
+void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
+{
+    assert(transition.symb == epsilon);
+    assert(segments[current_depth].has_trans(transition));
+
+    segments[current_depth].make_final(transition.src);
+    segments[current_depth].remove_trans(transition);
+}
+
+void SegNfa::Segmentation::propagate_to_other_segments(const size_t current_depth, const Trans& transition)
+{
+    const size_t segments_size{ segments.size() };
+    for (size_t other_segment_depth{ current_depth + 1 };
+         other_segment_depth < segments_size;
+         ++other_segment_depth)
+    {
+        segments[other_segment_depth].remove_trans(transition);
+        segments[other_segment_depth].make_initial(transition.tgt);
+    }
+}
+
+const AutSequence& SegNfa::Segmentation::get_segments()
+{
+    if (segments.empty()) { split_aut_into_segments(); }
+
+    return segments;
+}
+
+void SegNfa::Segmentation::compute_epsilon_depths()
+{
+    StateMap<bool> visited{ initialize_visited_map() };
+    std::deque<StateDepthPair> worklist{ initialize_worklist() };
+
+    while (!worklist.empty())
+    {
+        StateDepthPair state_depth_pair{ worklist.front() };
+        worklist.pop_front();
+
+        if (!visited[state_depth_pair.state])
+        {
+            visited[state_depth_pair.state] = true;
+            process_state_depth_pair(state_depth_pair, worklist);
+        }
+    }
 }

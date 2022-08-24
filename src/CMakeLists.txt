@@ -45,12 +45,12 @@ endif()
 include_directories(../include)
 include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
 include_directories(../3rdparty/re2)
+include_directories(../3rdparty/simlib/include)
 
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	afa/afa.cc
 	config.cc
-	explicit_lts_sim.cc
 	inter-aut.cc
 	parser.cc
 	re2parser.cc
@@ -58,7 +58,11 @@ add_library(libmata STATIC
 	nfa/nfa-incl.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
-	rra/rrt.cc)
+	nfa/nfa-intersection.cc
+	nfa/nfa-concatenation.cc
+	nfa/noodlify.cc
+	rra/rrt.cc
+)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
@@ -69,8 +73,12 @@ add_executable(tests
 	tests-main.cc
 	tests-parser.cc
 	tests-re2parser.cc
+	tests-ord-vector.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
+	nfa/tests-nfa-concatenation.cc
+	nfa/tests-nfa-segmentation.cc
+	nfa/tests-noodlify.cc
 	rra/tests-rrt.cc
 )
 
@@ -78,7 +86,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-target_link_libraries(tests libmata re2)
+target_link_libraries(libmata simlib)
+target_link_libraries(tests libmata re2 simlib)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(

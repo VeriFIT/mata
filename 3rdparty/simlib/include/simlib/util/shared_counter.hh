@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,19 +8,19 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_SHARED_COUNTER_HH_
-#define _MATA_SHARED_COUNTER_HH_
+#ifndef _SIMLIB_SHARED_COUNTER_HH_
+#define _SIMLIB_SHARED_COUNTER_HH_
 
 #include <cstring>
 #include <vector>
 
-#include <mata/simutil/caching_allocator.hh>
+#include <simlib/util/caching_allocator.hh>
 
-namespace Mata { namespace Util {
+namespace Simlib { namespace Util {
 	class SharedCounter;
 }}
 
-class Mata::Util::SharedCounter
+class Simlib::Util::SharedCounter
 {
 public:
 

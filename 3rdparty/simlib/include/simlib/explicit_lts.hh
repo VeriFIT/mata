@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ * Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,18 +8,18 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_EXPLICIT_LTS_HH_
-#define _MATA_EXPLICIT_LTS_HH_
+#ifndef _SIMLIB_EXPLICIT_LTS_HH_
+#define _SIMLIB_EXPLICIT_LTS_HH_
 
 #include <vector>
 
-#include <mata/simutil/binary_relation.hh>
-#include <mata/simutil/smart_set.hh>
+#include <simlib/util/binary_relation.hh>
+#include <simlib/util/smart_set.hh>
 
 
-namespace Mata { class ExplicitLTS; }
+namespace Simlib { class ExplicitLTS; }
 
-class Mata::ExplicitLTS {
+class Simlib::ExplicitLTS {
 
 	size_t states_;
 	size_t transitions_;

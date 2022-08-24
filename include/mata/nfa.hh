@@ -25,14 +25,15 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 // MATA headers
 #include <mata/parser.hh>
 #include <mata/util.hh>
 #include <mata/ord_vector.hh>
-#include <mata/simutil/binary_relation.hh>
 #include "inter-aut.hh"
+#include <simlib/util/binary_relation.hh>
 
 namespace Mata
 {
@@ -42,13 +43,13 @@ extern const std::string TYPE_NFA;
 
 // START OF THE DECLARATIONS
 using State = unsigned long;
+using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
-using StateToPostMap = std::unordered_map<State, PostSymb>; ///< Transitions.
 
-using ProductMap = std::unordered_map<std::pair<State, State>, State>;
+using ProductMap = std::unordered_map<StatePair, State>;
 using SubsetMap = std::unordered_map<StateSet, State>;
 using Path = std::vector<State>;        ///< A finite-length path through automaton.
 using Word = std::vector<Symbol>;       ///< A finite-length word.
@@ -56,7 +57,15 @@ using WordSet = std::set<Word>;         ///< A set of words.
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
-using StateToStringMap = std::unordered_map<State, std::string>;
+
+template<typename Target>
+using StateMap = std::unordered_map<State, Target>;
+
+using StateToStringMap = StateMap<std::string>;
+using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
+/// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
+using StateToStateMap = StateMap<State>;
+
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
@@ -70,7 +79,7 @@ static const struct Limits {
     Symbol minSymbol = 0;
 } limits;
 
-/// A transition
+/// A transition.
 struct Trans
 {
 	State src;
@@ -87,6 +96,10 @@ struct Trans
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
 
+using TransSequence = std::vector<Trans>; ///< Set of transitions.
+
+struct Nfa; ///< A non-deterministic finite automaton.
+
 // ALPHABET {{{
 class Alphabet
 {
@@ -95,7 +108,7 @@ public:
 	/// translates a string into a symbol
 	virtual Symbol translate_symb(const std::string& symb) = 0;
 	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) {return this->translate_symb(symb);}
+	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
 	/// gets a list of symbols in the alphabet
 	virtual std::list<Symbol> get_symbols() const
 	{ // {{{
@@ -124,22 +137,21 @@ private:
 
 public:
 
-	OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+	explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
 		symbol_map(str_sym_map), cnt_symbol(init_symbol)
 	{
 		assert(nullptr != symbol_map);
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual Symbol translate_symb(const std::string& str) override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
+	std::list<Symbol> get_symbols() const override;
+	Symbol translate_symb(const std::string& str) override;
+	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 };
 
 class DirectAlphabet : public Alphabet
 {
 public:
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		Symbol symb;
 		std::istringstream stream(str);
@@ -152,13 +164,13 @@ class CharAlphabet : public Alphabet
 {
 public:
 
-	virtual Symbol translate_symb(const std::string& str) override
+	Symbol translate_symb(const std::string& str) override
 	{
 		if (str.length() == 3 &&
 			((str[0] == '\'' && str[2] == '\'') ||
 			(str[0] == '\"' && str[2] == '\"')
 			 ))
-		{ // direct occurence of a character
+		{ // direct occurrence of a character
 			return str[1];
 		}
 
@@ -168,62 +180,13 @@ public:
 		return symb;
 	}
 
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
+	std::list<Symbol> get_symbols() const override;
+	std::list<Symbol> get_complement(
 		const std::set<Symbol>& syms) const override;
 };
 
-class EnumAlphabet : public Alphabet
-{
-private:
-	StringToSymbolMap symbol_map;
 
-private:
-	EnumAlphabet(const EnumAlphabet& rhs);
-	EnumAlphabet& operator=(const EnumAlphabet& rhs);
-
-public:
-
-	EnumAlphabet() : symbol_map() { }
-
-	template <class InputIt>
-	EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
-	{ // {{{
-		size_t cnt = 0;
-		for (; first != last; ++first)
-		{
-			bool inserted;
-			std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
-			if (!inserted)
-			{
-				throw std::runtime_error("multiple occurrence of the same symbol");
-			}
-		}
-	} // }}}
-
-	EnumAlphabet(std::initializer_list<std::string> l) :
-		EnumAlphabet(l.begin(), l.end())
-	{ }
-
-	virtual Symbol translate_symb(const std::string& str) override
-	{
-		auto it = symbol_map.find(str);
-		if (symbol_map.end() == it)
-		{
-			throw std::runtime_error("unknown symbol \'" + str + "\'");
-		}
-
-		return it->second;
-	}
-
-	virtual std::list<Symbol> get_symbols() const override;
-	virtual std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
-};
-// }}}
-
-
-struct Nfa;
+using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -238,16 +201,17 @@ struct TransSymbolStates {
     StateSet states_to;
 
     TransSymbolStates() = delete;
-    TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition) {}
+    explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
     TransSymbolStates(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
-    TransSymbolStates(Symbol symbolOnTransition, StateSet states_to) :
-            symbol(symbolOnTransition), states_to(std::move(states_to)) {}
+    TransSymbolStates(Symbol symbolOnTransition, const StateSet& states_to) :
+            symbol(symbolOnTransition), states_to(states_to) {}
 
     inline bool operator<(const TransSymbolStates& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
     inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
     inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
+    inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
 };
 
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
@@ -258,7 +222,7 @@ struct Nfa
     /**
      * @brief For state q, transitionrelation[q] keeps the list of transitions ordered by symbols.
      *
-     * The set of states of this automaton are the numbers from 0 to
+     * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      * @todo maybe have this as its own class
      */
@@ -266,14 +230,20 @@ struct Nfa
     StateSet initialstates = {};
     StateSet finalstates = {};
 
-    //TODO we probably need the number of states, int, as a member, for when we want to remove states
-    // alphabet?
 public:
-    Nfa () : transitionrelation(), initialstates(), finalstates() {}
+    Nfa() : transitionrelation(), initialstates(), finalstates() {}
+
     /**
-     * @brief Construct a new Explicit NFA with num_of_states states
+     * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    Nfa(unsigned long num_of_states) : transitionrelation(num_of_states), initialstates(), finalstates() {}
+    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+
+    /**
+     * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
+     */
+    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -283,36 +253,148 @@ public:
         transitionrelation.resize(size);
     }
 
-    void make_initial(State state) {
+    /**
+     * Increase size to include @p state.
+     * @param state[in] The new state to be included.
+     */
+    void increase_size_for_state(const State state)
+    {
+        increase_size(state + 1);
+    }
+
+    /**
+     * Clear initial states set.
+     */
+    void clear_initial() { initialstates.clear(); }
+
+    /**
+     * Make @p state initial.
+     * @param state State to be added to initial states.
+     */
+    void make_initial(State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
         }
 
         this->initialstates.insert(state);
     }
+
+    /**
+     * @brief Reset initial states set to contain only @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param state State to be set as the new initial state.
+     */
+    void reset_initial(State state)
+    {
+        clear_initial();
+        make_initial(state);
+    }
+
+    /**
+     * Make @p vec of states initial states.
+     * @param vec Vector of states to be added to initial states.
+     */
     void make_initial(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_initial(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Reset initial states set to contain only @p state.
+     *
+     * Overwrite the previous initial states set.
+     *
+     * @param vec Vector of states to be set as new initial states.
+     */
+    void reset_initial(const std::vector<State>& vec)
+    {
+        clear_initial();
+        for (const State& st: vec) { this->make_initial(st); }
+    }
+
     bool has_initial(const State &state_to_check) const {return initialstates.count(state_to_check);}
+
+    /**
+     * Remove @p state from initial states.
+     * @param state[in] State to be removed from initial states.
+     */
     void remove_initial(State state)
     {
         assert(has_initial(state));
         this->initialstates.remove(state);
     }
 
-    void make_final(State state) {
+    /**
+     * Remove @p vec of states from initial states.
+     * @param vec[in] Vector of states to be removed from initial states.
+     */
+    void remove_initial(const std::vector<State>& vec)
+    {
+        for (const State& st : vec) { this->remove_initial(st); }
+    }
+
+    /**
+     * Clear final states set.
+     */
+    void clear_final() { finalstates.clear(); }
+
+    /**
+     * Make @p state final.
+     * @param state[in] State to be added to final states.
+     */
+    void make_final(const State state)
+    {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state final because it is not in automaton");
         }
 
         this->finalstates.insert(state);
     }
+
+    /**
+     * @brief Reset final states set to contain only @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param state[in] State to be set as the new final state.
+     */
+    void reset_final(const State state)
+    {
+        clear_final();
+        make_final(state);
+    }
+
+    /**
+     * Make @p vec of states final states.
+     * @param vec[in] Vector of states to be added to final states.
+     */
     void make_final(const std::vector<State>& vec)
-    { // {{{
+    {
         for (const State& st : vec) { this->make_final(st); }
-    } // }}}
+    }
+
+    /**
+     * @brief Reset final states set to contain only @p state.
+     *
+     * Overwrite the previous final states set.
+     *
+     * @param vec[in] Vector of states to be set as new final states.
+     */
+    void reset_final(const std::vector<State>& vec)
+    {
+        clear_final();
+        for (const State& st: vec) { this->make_final(st); }
+    }
+
     bool has_final(const State &state_to_check) const { return finalstates.count(state_to_check); }
+
+    /**
+     * Remove @p state from final states.
+     * @param state[in] State to be removed from final states.
+     */
     void remove_final(State state)
     {
         assert(has_final(state));
@@ -320,18 +402,56 @@ public:
     }
 
     /**
-     * @brief Returns a newly created state.
+     * Remove @p vec of states from final states.
+     * @param vec[in] Vector of states to be removed from final states.
      */
-    State add_new_state();
-    bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
-
-    const TransitionList& get_transitions_from_state(State state_from) const
+    void remove_final(const std::vector<State>& vec)
     {
-        assert(!transitionrelation.empty());
-        return transitionrelation[state_from];
+        for (const State& st : vec) { this->remove_final(st); }
     }
 
-    /* Lukas: the above is nice. The good thing is that acces to [q] is constant,
+    /**
+     * Add a new state to the automaton.
+     * @return The newly created state.
+     */
+    State add_new_state();
+
+    bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
+
+    /**
+     * @brief Get set of reachable states.
+     *
+     * Reachable states are states accessible from any initial state.
+     * @return Set of reachable states.
+     */
+    StateSet get_reachable_states() const;
+
+    /**
+     * @brief Get set of terminating states.
+     *
+     * Terminating states are states leading to any final state.
+     * @return Set of terminating states.
+     */
+    StateSet get_terminating_states() const;
+
+    /**
+     * @brief Get a set of useful states.
+     *
+     * Useful states are reachable and terminating states.
+     * @return Set of useful states.
+     */
+    StateSet get_useful_states();
+
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     */
+    void trim();
+
+    /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
      * Returning a transition of q with the symbol a means to search for it in the list,
@@ -341,14 +461,35 @@ public:
 
     /**
      * @brief Adds a transition from stateFrom trough symbol to stateTo.
-     *
-     * TODO: If stateFrom or stateTo are not in the set of states of this automaton, there should probably be exception.
      */
     void add_trans(State src, Symbol symb, State tgt);
+
     void add_trans(const Trans& trans)
     {
         add_trans(trans.src, trans.symb, trans.tgt);
     }
+
+    /**
+     * Remove transition.
+     * @param src Source state of the transition to be removed.
+     * @param symb Transition symbol of the transition to be removed.
+     * @param tgt Target state of the transition to be removed.
+     */
+    void remove_trans(State src, Symbol symb, State tgt);
+
+    /**
+     * Remove transition.
+     * @param trans Transition to be removed.
+     */
+    void remove_trans(const Trans& trans)
+    {
+        remove_trans(trans.src, trans.symb, trans.tgt);
+    }
+
+    /**
+     * Remove epsilon transitions from the automaton.
+     */
+    void remove_epsilon(Symbol epsilon);
 
     bool has_trans(Trans trans) const
     {
@@ -374,13 +515,54 @@ public:
         return this->has_trans({src, symb, tgt});
     } // }}}
 
-    bool trans_empty() const { return this->transitionrelation.empty();} /// no transitions
-    size_t trans_size() const {return transitionrelation.size();} /// number of transitions; has linear time complexity
+    /**
+     * Check whether automaton has no transitions.
+     * @return True if there are no transitions in the automaton, false otherwise.
+     */
+    bool trans_empty() const;
+    size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
     bool nothing_in_trans() const
     {
         return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),
                     [](const auto& trans) {return trans.size() == 0;});
     }
+
+    /**
+     * Get transitions as a sequence of @c Trans.
+     * @return Sequence of transitions as @c Trans.
+     */
+    TransSequence get_trans_as_sequence() const;
+
+    /**
+     * Get transitions from @p state_from as a sequence of @c Trans.
+     * @param state_from[in] Source state_from of transitions to get.
+     * @return Sequence of transitions as @c Trans from @p state_from.
+     */
+    TransSequence get_trans_from_state_as_sequence(State state_from) const;
+
+    /**
+     * Get transitions leading from @p state_from.
+     * @param state_from[in] Source state for transitions to get.
+     * @return List of transitions leading from @p state_from.
+     */
+    const TransitionList& get_transitions_from_state(const State state_from) const
+    {
+        assert(get_num_of_states() >= state_from + 1);
+        return transitionrelation[state_from];
+    }
+
+    /**
+     * Get transitions leading to @p state_to.
+     * @param state_to[in] Target state for transitions to get.
+     * @return Sequence of @c Trans transitions leading to @p state_to.
+     */
+    TransSequence get_transitions_to_state(State state_to) const;
+
+    /**
+     * Unify transitions to create a directed graph with at most a single transition between two states.
+     * @return An automaton representing a directed graph.
+     */
+    Nfa get_digraph();
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
@@ -422,7 +604,6 @@ public:
         std::pair<Symbol, const StateSet> next();
     };
 
-
     struct const_iterator
     { // {{{
         const Nfa* nfa;
@@ -462,7 +643,30 @@ public:
 
         return transitionrelation[state];
     } // operator[] }}}
-};
+
+private:
+    using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+
+    /**
+     * Compute reachability of states.
+     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+     */
+    StateBoolArray compute_reachability() const;
+
+    /**
+     * Add transitions to the trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param trimmed_aut The new trimmed automaton.
+     */
+    void add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut);
+
+    /**
+     * Get a new trimmed automaton.
+     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @return Newly created trimmed automaton.
+     */
+    Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
+}; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
 struct NfaWrapper
@@ -494,18 +698,94 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
     return uni_aut;
 } // uni }}}
 
-void intersection(
-        Nfa*         res,
-        const Nfa&   lhs,
-        const Nfa&   rhs,
-        ProductMap*  prod_map = nullptr);
+/**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
 
-inline Nfa intersection(const Nfa &lhs, const Nfa &rhs)
-{
-    Nfa result;
-    intersection(&result, lhs, rhs);
-    return result;
-}
+/**
+ * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ *
+ * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+ * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ * a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs with ε-transitions preserved.
+ * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
+ * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
+ * @param[in] epsilon Symbol to handle as an epsilon symbol.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ */
+void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map = nullptr);
+
+/**
+ * @brief Compute intersection of two NFAs.
+ *
+ * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] rhs Second NFA to compute intersection for.
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ */
+Nfa intersection(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * Concatenate two NFAs.
+ * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ */
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
+
+/**
+ * Concatenate two NFAs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @return Concatenated automaton.
+ */
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
+
+/**
+ * Concatenate two NFAs over epsilon transitions.
+ * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
+ */
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+
+/**
+ * Concatenate two NFAs over epsilon transitions.
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
+ * @return Concatenated automaton.
+ */
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
 
 /// makes the transition relation complete
 void make_complete(
@@ -568,9 +848,26 @@ inline Nfa invert(const Nfa &aut)
     return inverted;
 }
 
-Mata::Util::BinaryRelation compute_relation(
+Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
+
+// Reduce the size of the automaton
+void reduce(
+        Nfa* result,
+        const Nfa &aut,
+        StateToStateMap *state_map = nullptr,
+        const StringDict&  params = {{"algorithm", "simulation"}});
+
+inline Nfa reduce(
+        const Nfa &aut,
+        StateToStateMap *state_map = nullptr,
+        const StringDict&  params = {{"algorithm", "simulation"}})
+{
+    Nfa reduced;
+    reduce(&reduced, aut, state_map, params);
+    return reduced;
+}
 
 /// Is the language of the automaton universal?
 bool is_universal(
@@ -591,18 +888,50 @@ inline bool is_universal(
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        Word*              cex = nullptr,
+        Word*              cex,
+        const Alphabet*    alphabet = nullptr,
         const StringDict&  params = {{"algo", "antichains"}});
 
 inline bool is_incl(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        const Alphabet&    alphabet,
-        const StringDict&  params)
+        const Nfa&             smaller,
+        const Nfa&             bigger,
+        const Alphabet* const  alphabet = nullptr,
+        const StringDict&      params = {{"algo", "antichains"}})
 { // {{{
-    return is_incl(smaller, bigger, alphabet, nullptr, params);
+    return is_incl(smaller, bigger, nullptr, alphabet, params);
 } // }}}
+
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
+                       const StringDict& params = {{"algo", "antichains"}});
+
+/**
+ * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
+ *
+ * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
+ * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
+ * the alphabet has to be computed first.
+ *
+ * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
+ * That way, alphabet has to be compute only once, as opposed to the current ad-hoc construction of alphabet.
+ * The use of the alternative with defined alphabet should be preferred.
+ *
+ * @param lhs[in] First automaton to concatenate.
+ * @param rhs[in] Second automaton to concatenate.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p lhs and @p rhs are equivalent, false otherwise.
+ */
+bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
 
 /// Reverting the automaton
 void revert(Nfa* result, const Nfa& aut);
@@ -619,7 +948,7 @@ void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
 
 inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
 { // {{{
-    Nfa result;
+    Nfa result{};
     remove_epsilon(&result, aut, epsilon);
     return result;
 } // }}}
@@ -734,7 +1063,7 @@ inline Word encode_word(
 	const std::vector<std::string>&  input)
 { // {{{
 	Word result;
-	for (auto str : input) { result.push_back(symbol_map.at(str)); }
+	for (const auto& str : input) { result.push_back(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
 
@@ -745,6 +1074,141 @@ std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
 void init();
 
 /**
+ * Operations on segment automata.
+ */
+namespace SegNfa
+{
+/// Segment automaton.
+/// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
+/// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+using SegNfa = Nfa;
+
+/**
+ * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
+ */
+class Segmentation
+{
+public:
+    using EpsilonDepth = unsigned; ///< Depth of ε-transitions.
+    /// Dictionary of lists of ε-transitions grouped by their depth.
+    /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
+    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
+
+    /**
+     * Prepare automaton @p aut for segmentation.
+     * @param[in] aut Segment automaton to make segments for.
+     * @param[in] epsilon Symbol to execute segmentation for.
+     */
+    Segmentation(const SegNfa& aut, const Symbol epsilon) : epsilon(epsilon), automaton(aut)
+    {
+        compute_epsilon_depths(); // Map depths to epsilon transitions.
+    }
+
+    /**
+     * Get segmentation depths for ε-transitions.
+     * @return Map of depths to lists of ε-transitions.
+     */
+    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+
+    /**
+     * Get segment automata.
+     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
+     * to the right (final states of segment automaton).
+     */
+    const AutSequence& get_segments();
+
+private:
+    const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
+    /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
+    const SegNfa& automaton{};
+    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
+    AutSequence segments{}; ///< Segments for @p automaton.
+
+    /**
+     * Pair of state and its depth.
+     */
+    struct StateDepthPair
+    {
+        State state; ///< State with a depth.
+        EpsilonDepth depth; ///< Depth of a state.
+    };
+
+    /**
+     * Compute epsilon depths with their transitions.
+     */
+    void compute_epsilon_depths();
+
+    /**
+     * Split segment @c automaton into @c segments.
+     */
+    void split_aut_into_segments();
+
+    /**
+     * Propagate changes to the current segment automaton to the remaining segments with higher depths.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void propagate_to_other_segments(size_t current_depth, const Trans& transition);
+
+    /**
+     * Update current segment automaton.
+     * @param[in] current_depth Current depth.
+     * @param[in] transition Current epsilon transition.
+     */
+    void update_current_segment(size_t current_depth, const Trans& transition);
+
+    /**
+     * Trim created segments of redundant states and epsilon transitions.
+     */
+    void trim_segments();
+
+    /**
+     * Initialize map of visited states.
+     * @return Map of visited states.
+     */
+    StateMap<bool> initialize_visited_map() const;
+
+    /**
+     * Initialize worklist of states with depths to process.
+     * @return Queue of state and its depth pairs.
+     */
+    std::deque<StateDepthPair> initialize_worklist() const;
+
+    /**
+     * Process pair of state and its depth.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void process_state_depth_pair(StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Add states with non-epsilon transitions to the @p worklist.
+     * @param state_transitions[in] Transitions from current state.
+     * @param depth[in] Current depth.
+     * @param worklist[out] Worklist of state and depth pairs to process.
+     */
+    static void add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+                                            std::deque<StateDepthPair>& worklist);
+
+    /**
+     * Process epsilon transitions for the current state.
+     * @param[in] state_depth_pair Current state depth pair.
+     * @param[in] state_transitions Transitions from current state.
+     * @param[out] worklist Worklist of state and depth pairs to process.
+     */
+    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
+                                    std::deque<StateDepthPair>& worklist);
+
+    /**
+     * @brief Remove inner initial and final states.
+     *
+     * Remove all initial states for all segments but the first one and all final states for all segments but the last one.
+     */
+    void remove_inner_initial_and_final_states();
+}; // Segmentation
+} // SegNfa
+
+/**
  * Class mapping states to the shortest words accepted by languages of the states.
  */
 class ShortestWordsMap
@@ -752,6 +1216,7 @@ class ShortestWordsMap
 public:
     /**
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
+     * @param aut Automaton to compute shortest words for.
      */
     explicit ShortestWordsMap(const Nfa& aut)
         : reversed_automaton(revert(aut))
@@ -766,16 +1231,23 @@ public:
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for_states(const StateSet& states) const;
+    WordSet get_shortest_words_for(const StateSet& states) const;
+
+    /**
+     * Gets shortest words for the given @p state.
+     * @param[in] state State to map shortest words for.
+     * @return Set of shortest words.
+     */
+    WordSet get_shortest_words_for(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, WordSet>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
+    StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> lifo_queue{}; ///< LIFO queue for states to process.
+    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
     const Nfa reversed_automaton{}; ///< Reversed input automaton.
 
     /**
@@ -814,6 +1286,96 @@ private:
      */
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
 }; // ShortestWordsMap
+
+class EnumAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap symbol_map;
+
+    EnumAlphabet& operator=(const EnumAlphabet& rhs);
+
+    // Adapted from: https://stackoverflow.com/a/41623721.
+    template <typename TF, typename... Ts>
+    static void for_each_argument(TF&& f, Ts&&... xs)
+    {
+        std::initializer_list<const Nfa>{(f(std::forward<Ts>(xs)), Nfa{})... };
+    }
+
+    // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
+    template<bool...> struct bool_pack{};
+    /// Checks for all types in the pack.
+    template<typename... Ts>
+    using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
+    /// Checks whether all types are 'Nfa'.
+    template<typename... Ts>
+    using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
+
+public:
+
+    EnumAlphabet() : symbol_map() { }
+
+    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map) {}
+
+    /**
+     * Create alphabet from variable number of NFAs.
+     * @tparam Nfas Type Nfa.
+     * @param nfas NFAs to create alphabet from.
+     * @return Alphabet.
+     */
+    template<typename... Nfas, typename = AreAllNfas<Nfas...>>
+    static EnumAlphabet from_nfas(const Nfas&... nfas) {
+        EnumAlphabet alphabet{};
+        for_each_argument([&alphabet](const Nfa& aut) {
+            size_t aut_num_of_states{ aut.get_num_of_states() };
+            for (State state{ 0 }; state < aut_num_of_states; ++state) {
+                for (const auto& state_transitions: aut.transitionrelation[state]) {
+                    alphabet.add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
+            }
+        }, nfas...);
+        return alphabet;
+    }
+
+    template <class InputIt>
+    EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
+    { // {{{
+        size_t cnt = 0;
+        for (; first != last; ++first)
+        {
+            bool inserted;
+            std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
+            if (!inserted)
+            {
+                throw std::runtime_error("multiple occurrence of the same symbol");
+            }
+        }
+    } // }}}
+
+    EnumAlphabet(std::initializer_list<std::string> l) :
+            EnumAlphabet(l.begin(), l.end())
+    { }
+
+    Symbol translate_symb(const std::string& str) override
+    {
+        auto it = symbol_map.find(str);
+        if (symbol_map.end() == it)
+        {
+            throw std::runtime_error("unknown symbol \'" + str + "\'");
+        }
+
+        return it->second;
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+    /**
+     * Add new symbol to the alphabet.
+     * @param key User-space representation of the symbol.
+     * @param value Number of the symbol to be used on transitions.
+     */
+    void add_symbol(const std::string& key, Symbol value) { symbol_map.insert({key, value}); }
+}; // class EnumAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

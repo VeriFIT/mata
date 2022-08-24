@@ -11,8 +11,6 @@
 #ifndef _Mata2_ORD_VECTOR_HH_
 #define _Mata2_ORD_VECTOR_HH_
 
-#include <mata/convert.hh>
-
 // Standard library headers
 #include <vector>
 #include <algorithm>
@@ -29,6 +27,29 @@ namespace Mata
 	}
 }
 
+namespace
+{
+    /**
+     * @brief  Converts an object to string
+     *
+     * Static method for conversion of an object of any class with the << output
+     * operator into a string
+     *
+     * @param[in]  n  The object for the conversion
+     *
+     * @returns  The string representation of the object
+     */
+    template <typename T>
+    static std::string ToString(const T& n)
+    {
+        // the output stream for the string
+        std::ostringstream oss;
+        // insert the object into the stream
+        oss << n;
+        // return the string
+        return oss.str();
+    }
+}
 
 /**
  * @brief  Implementation of a set using ordered vector
@@ -46,8 +67,6 @@ template
 class Mata::Util::OrdVector
 {
 private:  // Private data types
-
-	typedef Mata::Util::Convert Convert;
 
 	typedef std::vector<Key> VectorType;
 
@@ -115,7 +134,8 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
-    OrdVector(const OrdVector& rhs)
+    OrdVector(const OrdVector& rhs) :
+        vec_()
     {
         // Assertions
         assert(rhs.vectorIsSorted());
@@ -237,7 +257,7 @@ public:   // Public methods
 
     void push_back(const Key& k)
     {
-        assert(vec_.size() == 0 || vec_.at(vec_.size()-1) < k);
+        assert(vec_.empty() || vec_.at(vec_.size()-1) < k);
 
         vec_.push_back(k);
     }
@@ -274,6 +294,44 @@ public:   // Public methods
         }
 
         return 0;
+    }
+
+    OrdVector intersection(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        VectorType newVector{};
+
+        auto lhsIt = vec_.begin();
+        auto rhsIt = rhs.vec_.begin();
+
+        while ((lhsIt != vec_.end()) && (rhsIt != rhs.vec_.end()))
+        {	// until we get to the end of both vectors
+            if (*lhsIt == *rhsIt)
+            {
+                newVector.push_back(*lhsIt);
+
+                ++lhsIt;
+                ++rhsIt;
+            }
+            else if (*lhsIt < *rhsIt)
+            {
+                ++lhsIt;
+            }
+            else if (*rhsIt < *lhsIt)
+            {
+                ++rhsIt;
+            }
+        }
+
+        OrdVector result(newVector);
+
+        // Assertions
+        assert(result.vectorIsSorted());
+
+        return result;
     }
 
 	OrdVector Union(const OrdVector& rhs) const
@@ -360,7 +418,7 @@ public:   // Public methods
     inline void remove(Key k)
     {
         assert(vectorIsSorted());
-        std::remove(this->vec_.begin(), this->vec_.end(),k);
+        vec_.erase(std::remove(vec_.begin(), vec_.end(), k), vec_.end());
         assert(vectorIsSorted());
     }
 
@@ -442,7 +500,7 @@ public:   // Public methods
 
 		for (auto it = vec.cbegin(); it != vec.cend(); ++it)
 		{
-			result += ((it != vec.begin())? ", " : " ") + Convert::ToString(*it);
+			result += ((it != vec.begin())? ", " : " ") + ToString(*it);
 		}
 
 		return os << (result + "}");
@@ -496,7 +554,7 @@ public:   // Public methods
 		const_iterator itLhs = begin();
 		const_iterator itRhs = rhs.begin();
 
-		while ((itLhs != end()) || (itRhs != rhs.end()))
+		while ((itLhs != end()) && (itRhs != rhs.end()))
 		{	// until we drop out of the array (or find a common element)
 			if (*itLhs == *itRhs)
 			{	// in case there exists a common element

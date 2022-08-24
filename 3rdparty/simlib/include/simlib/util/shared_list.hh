@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  MATA Tree Automata Library
+ *  Simlib
  *
  *  Copyright (c) 2011  Jiri Simacek <isimacek@fit.vutbr.cz>
  *
@@ -8,11 +8,11 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_SHARED_LIST_HH_
-#define _MATA_SHARED_LIST_HH_
+#ifndef _SIMLIB_SHARED_LIST_HH_
+#define _SIMLIB_SHARED_LIST_HH_
 
 // insert class to proper namespace
-namespace Mata {
+namespace Simlib {
 	namespace Util {
 		template <class T> class SharedList;
 	}
@@ -24,7 +24,7 @@ namespace Mata {
  * A shared list with a reference counter
  */
 template <class T>
-class Mata::Util::SharedList {
+class Simlib::Util::SharedList {
 
 private:
 

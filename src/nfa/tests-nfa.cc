@@ -1,10 +1,11 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
-
 #include <unordered_set>
 
+#include "../3rdparty/catch.hpp"
+
 #include <mata/nfa.hh>
+
 using namespace Mata::Nfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
@@ -61,6 +62,26 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 } // }}}
 */
+
+TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()")
+{
+    Nfa a{1};
+    a.add_trans(0, 'a', 0);
+
+    Nfa b{1};
+    b.add_trans(0, 'b', 0);
+    b.add_trans(0, 'a', 0);
+    Nfa c{1};
+    b.add_trans(0, 'c', 0);
+
+    auto alphabet{ EnumAlphabet::from_nfas(a, b, c) };
+
+    auto symbols{ alphabet.get_symbols() };
+    CHECK(symbols == std::list<Symbol>{ 'c', 'b', 'a' });
+
+    //EnumAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+    //EnumAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
+}
 
 TEST_CASE("Mata::Nfa::Nfa::add_trans()/has_trans()")
 { // {{{
@@ -260,8 +281,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringDict params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, alph, params));
-		REQUIRE(is_incl(b, res, alph, params));
+		REQUIRE(is_incl(a, res, &alph, params));
+		REQUIRE(is_incl(b, res, &alph, params));
 	}
 
 	SECTION("Union of automata with some transitions but without a final state")
@@ -276,8 +297,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringDict params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, alph, params));
-		REQUIRE(is_incl(res, a, alph, params));
+		REQUIRE(is_incl(a, res, &alph, params));
+		REQUIRE(is_incl(res, a, &alph, params));
 
 		WARN_PRINT("Insufficient testing of Mata::Nfa::union_norename()");
 	}
@@ -349,8 +370,8 @@ TEST_CASE("Mata::Nfa::intersection()")
 		REQUIRE(res.has_initial(prod_map[{3, 4}]));
 		REQUIRE(res.has_final(prod_map[{5, 2}]));
 
-        for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
-        std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
+        //for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
+        //std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
 		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
@@ -401,6 +422,108 @@ TEST_CASE("Mata::Nfa::intersection()")
 		REQUIRE(is_lang_empty(res));
 	}
 } // }}}
+
+TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+{
+    constexpr Symbol epsilon{'e'};
+    ProductMap prod_map;
+
+    Nfa a{6};
+    a.make_initial(0);
+    a.make_final({1, 4, 5});
+    a.add_trans(0, epsilon, 1);
+    a.add_trans(1, 'a', 1);
+    a.add_trans(1, 'b', 1);
+    a.add_trans(1, 'c', 2);
+    a.add_trans(2, 'b', 4);
+    a.add_trans(2, epsilon, 3);
+    a.add_trans(3, 'a', 5);
+
+    Nfa b{10};
+    b.make_initial(0);
+    b.make_final({2, 4, 8, 7});
+    b.add_trans(0, 'b', 1);
+    b.add_trans(0, 'a', 2);
+    b.add_trans(2, 'a', 4);
+    b.add_trans(2, epsilon, 3);
+    b.add_trans(3, 'b', 4);
+    b.add_trans(0, 'c', 5);
+    b.add_trans(5, 'a', 8);
+    b.add_trans(5, epsilon, 6);
+    b.add_trans(6, 'a', 9);
+    b.add_trans(6, 'b', 7);
+
+    Nfa result{ intersection(a, b, epsilon, &prod_map) };
+
+    // Check states.
+    CHECK(result.is_state(prod_map[{0, 0}]));
+    CHECK(result.is_state(prod_map[{1, 0}]));
+    CHECK(result.is_state(prod_map[{1, 1}]));
+    CHECK(result.is_state(prod_map[{1, 2}]));
+    CHECK(result.is_state(prod_map[{1, 3}]));
+    CHECK(result.is_state(prod_map[{1, 4}]));
+    CHECK(result.is_state(prod_map[{2, 5}]));
+    CHECK(result.is_state(prod_map[{3, 5}]));
+    CHECK(result.is_state(prod_map[{2, 6}]));
+    CHECK(result.is_state(prod_map[{3, 6}]));
+    CHECK(result.is_state(prod_map[{4, 7}]));
+    CHECK(result.is_state(prod_map[{5, 9}]));
+    CHECK(result.is_state(prod_map[{5, 8}]));
+    CHECK(result.get_num_of_states() == 13);
+
+    CHECK(result.has_initial(prod_map[{0, 0}]));
+    CHECK(result.initialstates.size() == 1);
+
+    CHECK(result.has_final(prod_map[{1, 2}]));
+    CHECK(result.has_final(prod_map[{1, 4}]));
+    CHECK(result.has_final(prod_map[{4, 7}]));
+    CHECK(result.has_final(prod_map[{5, 8}]));
+    CHECK(result.finalstates.size() == 4);
+
+    // Check transitions.
+    CHECK(result.get_num_of_trans() == 15);
+
+    CHECK(result.has_trans(prod_map[{0, 0}], epsilon, prod_map[{1, 0}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{0, 0}]).size() == 1);
+
+    CHECK(result.has_trans(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
+    CHECK(result.has_trans(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
+    CHECK(result.has_trans(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 0}]).size() == 3);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 1}]).empty());
+
+    CHECK(result.has_trans(prod_map[{1, 2}], epsilon, prod_map[{1, 3}]));
+    CHECK(result.has_trans(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 2}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 3}]).size() == 1);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 4}]).empty());
+
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 5}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{2, 6}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 5}]).size() == 3);
+
+    CHECK(result.has_trans(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
+    CHECK(result.has_trans(prod_map[{3, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 5}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
+    CHECK(result.has_trans(prod_map[{2, 6}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 6}]).size() == 2);
+
+    CHECK(result.has_trans(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 6}]).size() == 1);
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{4, 7}]).empty());
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 9}]).empty());
+
+    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 8}]).empty());
+}
 
 TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
@@ -1450,9 +1573,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, params);
+			bool is_included = is_incl(smaller, bigger, &alph, params);
+			CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, &alph, params);
+            CHECK(is_included);
 		}
 	}
 
@@ -1464,9 +1589,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
+            CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            CHECK(!is_included);
 		}
 	}
 
@@ -1480,9 +1607,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
+            CHECK(is_included);
 
-			REQUIRE(is_included);
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            CHECK(is_included);
 		}
 	}
 
@@ -1494,10 +1623,14 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_included);
 			REQUIRE(cex == Word{});
+
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            REQUIRE(cex == Word{});
+            REQUIRE(is_included);
 		}
 	}
 
@@ -1516,9 +1649,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, params);
-
+			bool is_included = is_incl(smaller, bigger, &alph, params);
 			REQUIRE(is_included);
+
+            is_included = is_incl(bigger, smaller, &alph, params);
+            REQUIRE(!is_included);
 		}
 	}
 
@@ -1537,12 +1672,19 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
+
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_included);
 			REQUIRE((
 				cex == Word{alph["a"], alph["b"]} ||
 				cex == Word{alph["b"], alph["a"]}));
+
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            REQUIRE(is_included);
+            REQUIRE((
+                cex == Word{alph["a"], alph["b"]} ||
+                cex == Word{alph["b"], alph["a"]}));
 		}
 	}
 
@@ -1570,8 +1712,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, alph, &cex, params);
-
+			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
 			REQUIRE(!is_included);
 
 			REQUIRE(cex.size() == 4);
@@ -1580,6 +1721,16 @@ TEST_CASE("Mata::Nfa::is_incl()")
 			REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
 			REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
 			REQUIRE(cex[2] != cex[3]);
+
+            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            REQUIRE(is_included);
+
+            REQUIRE(cex.size() == 4);
+            REQUIRE((cex[0] == alph["a"] || cex[0] == alph["b"]));
+            REQUIRE((cex[1] == alph["a"] || cex[1] == alph["b"]));
+            REQUIRE((cex[2] == alph["a"] || cex[2] == alph["b"]));
+            REQUIRE((cex[3] == alph["a"] || cex[3] == alph["b"]));
+            REQUIRE(cex[2] != cex[3]);
 		}
 	}
 
@@ -1587,8 +1738,9 @@ TEST_CASE("Mata::Nfa::is_incl()")
 	{
 		EnumAlphabet alph = { };
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
 	}
 
 	SECTION("wrong parameters 2")
@@ -1596,10 +1748,165 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		EnumAlphabet alph = { };
 		params["algo"] = "foo";
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, alph, params),
+		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
 			Catch::Contains("received an unknown value"));
+        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
 	}
 } // }}}
+
+TEST_CASE("Mata::Nfa::equivalence_check")
+{
+    Nfa smaller(10);
+    Nfa bigger(16);
+    Word cex;
+    StringDict params;
+
+    const std::unordered_set<std::string> ALGORITHMS = {
+            "naive",
+            "antichains",
+    };
+
+    SECTION("{} == {}, empty alphabet")
+    {
+        EnumAlphabet alph{};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(equivalence_check(smaller, bigger, &alph, params));
+            CHECK(equivalence_check(smaller, bigger, params));
+            CHECK(equivalence_check(smaller, bigger));
+
+            CHECK(equivalence_check(bigger, smaller , &alph, params));
+            CHECK(equivalence_check(bigger, smaller, params));
+            CHECK(equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("{} == {epsilon}, empty alphabet")
+    {
+        EnumAlphabet alph = { };
+        bigger.initialstates = {1};
+        bigger.finalstates = {1};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("{epsilon} == {epsilon}, empty alphabet")
+    {
+        EnumAlphabet alph = { };
+        smaller.initialstates = {1};
+        smaller.finalstates = {1};
+        bigger.initialstates = {11};
+        bigger.finalstates = {11};
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(equivalence_check(smaller, bigger, &alph, params));
+            CHECK(equivalence_check(smaller, bigger, params));
+            CHECK(equivalence_check(smaller, bigger));
+
+            CHECK(equivalence_check(bigger, smaller , &alph, params));
+            CHECK(equivalence_check(bigger, smaller, params));
+            CHECK(equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("a* + b* == (a+b)*")
+    {
+        EnumAlphabet alph = {"a", "b"};
+        smaller.initialstates = {1,2};
+        smaller.finalstates = {1,2};
+        smaller.add_trans(1, alph["a"], 1);
+        smaller.add_trans(2, alph["b"], 2);
+
+        bigger.initialstates = {11};
+        bigger.finalstates = {11};
+        bigger.add_trans(11, alph["a"], 11);
+        bigger.add_trans(11, alph["b"], 11);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
+    {
+        EnumAlphabet alph = {"a", "b"};
+        smaller.initialstates = {1};
+        smaller.finalstates = {1};
+        smaller.add_trans(1, alph["a"], 1);
+        smaller.add_trans(1, alph["b"], 1);
+
+        bigger.initialstates = {11};
+        bigger.finalstates = {11, 12, 13, 14, 15};
+
+        bigger.add_trans(11, alph["a"], 12);
+        bigger.add_trans(11, alph["b"], 12);
+        bigger.add_trans(12, alph["a"], 13);
+        bigger.add_trans(12, alph["b"], 13);
+
+        bigger.add_trans(13, alph["a"], 14);
+        bigger.add_trans(14, alph["a"], 14);
+
+        bigger.add_trans(13, alph["b"], 15);
+        bigger.add_trans(15, alph["b"], 15);
+
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            CHECK(!equivalence_check(smaller, bigger, &alph, params));
+            CHECK(!equivalence_check(smaller, bigger, params));
+            CHECK(!equivalence_check(smaller, bigger));
+
+            CHECK(!equivalence_check(bigger, smaller , &alph, params));
+            CHECK(!equivalence_check(bigger, smaller, params));
+            CHECK(!equivalence_check(bigger, smaller));
+        }
+    }
+
+    SECTION("wrong parameters 1")
+    {
+        EnumAlphabet alph = { };
+
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
+                          Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
+                          Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_NOTHROW(equivalence_check(smaller, bigger));
+    }
+
+    SECTION("wrong parameters 2")
+    {
+        EnumAlphabet alph = { };
+        params["algo"] = "foo";
+
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
+                          Catch::Contains("received an unknown value"));
+        CHECK_THROWS_WITH(equivalence_check(smaller, bigger, params),
+                          Catch::Contains("received an unknown value"));
+        CHECK_NOTHROW(equivalence_check(smaller, bigger));
+    }
+}
 
 TEST_CASE("Mata::Nfa::revert()")
 { // {{{
@@ -1642,7 +1949,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.has_initial(2));
 		REQUIRE(result.has_final(1));
 		REQUIRE(result.has_trans(2, 'a', 1));
-		REQUIRE(result.trans_size() == aut.trans_size());
+		REQUIRE(result.get_num_of_states() == aut.get_num_of_states());
 	}
 
 	SECTION("bigger automaton")
@@ -1889,7 +2196,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
     SECTION("empty automaton")
     {
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
 
         REQUIRE(result.size() == 0);
     }
@@ -1903,7 +2210,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut.make_final(2);
         aut.make_final(5);
 
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(1,3));
         REQUIRE(result.get(2,5));
         REQUIRE(!result.get(5,1));
@@ -1919,7 +2226,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut.add_trans(2, 'b', 5);
         aut.add_trans(1, 'b', 4);
 
-        Mata::Util::BinaryRelation result = compute_relation(aut);
+        Simlib::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(4,1));
         REQUIRE(!result.get(2,5));
 
@@ -1944,7 +2251,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut_big.add_trans(7, 'a', 8);
         aut_big.finalstates = {3};
 
-        Mata::Util::BinaryRelation result = compute_relation(aut_big);
+        Simlib::Util::BinaryRelation result = compute_relation(aut_big);
         REQUIRE(result.get(1,2));
         REQUIRE(!result.get(2,1));
         REQUIRE(!result.get(3,1));
@@ -1961,6 +2268,76 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         REQUIRE(result.get(8,5));
     }
 } // }}
+
+TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
+{
+	Nfa aut;
+	StateToStateMap state_map;
+
+	SECTION("empty automaton")
+	{
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.nothing_in_trans());
+		REQUIRE(result.initialstates.size() == 0);
+		REQUIRE(result.finalstates.size() == 0);
+	}
+
+	SECTION("simple automaton")
+	{
+		aut.increase_size(3);
+		aut.make_initial(1);
+
+		aut.make_final(2);
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.nothing_in_trans());
+		REQUIRE(result.has_initial(state_map[1]));
+		REQUIRE(result.has_final(state_map[2]));
+		REQUIRE(result.get_num_of_states() == 2);
+		REQUIRE(state_map[1] == state_map[0]);
+		REQUIRE(state_map[2] != state_map[0]);
+	}
+
+	SECTION("big automaton")
+	{
+		aut.increase_size(10);
+		aut.initialstates = {1,2};
+		aut.add_trans(1, 'a', 2);
+		aut.add_trans(1, 'a', 3);
+		aut.add_trans(1, 'b', 4);
+		aut.add_trans(2, 'a', 2);
+		aut.add_trans(2, 'b', 2);
+		aut.add_trans(2, 'a', 3);
+		aut.add_trans(2, 'b', 4);
+		aut.add_trans(3, 'b', 4);
+		aut.add_trans(3, 'c', 7);
+		aut.add_trans(3, 'b', 2);
+		aut.add_trans(5, 'c', 3);
+		aut.add_trans(7, 'a', 8);
+		aut.add_trans(9, 'b', 2);
+		aut.add_trans(9, 'c', 0);
+		aut.add_trans(0, 'a', 4);
+		aut.finalstates = {3, 9};
+
+
+		Nfa result = reduce(aut, &state_map);
+
+		REQUIRE(result.get_num_of_states() == 6);
+		REQUIRE(result.has_initial(state_map[1]));
+		REQUIRE(result.has_initial(state_map[2]));
+		REQUIRE(result.has_trans(state_map[9], 'c', state_map[0]));
+		REQUIRE(result.has_trans(state_map[9], 'c', state_map[7]));
+		REQUIRE(result.has_trans(state_map[3], 'c', state_map[0]));
+		REQUIRE(result.has_trans(state_map[0], 'a', state_map[8]));
+		REQUIRE(result.has_trans(state_map[7], 'a', state_map[4]));
+		REQUIRE(result.has_trans(state_map[1], 'a', state_map[3]));
+		REQUIRE(!result.has_trans(state_map[3], 'b', state_map[4]));
+		REQUIRE(result.has_trans(state_map[2], 'a', state_map[2]));
+		REQUIRE(result.has_final(state_map[9]));
+		REQUIRE(result.has_final(state_map[3]));
+	}
+}
 
 TEST_CASE("Mata::Nfa::union_norename()") {
     Word one{1};
@@ -1998,7 +2375,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         Word word{};
         word.push_back('b');
         word.push_back('a');
-        std::set<Word> expected{word};
+        WordSet expected{word};
         Word word2{};
         word2.push_back('a');
         word2.push_back('a');
@@ -2020,7 +2397,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
             word.push_back('b');
             word.push_back('b');
             word.push_back('a');
-            expected = std::set<Word>{word};
+            expected = WordSet{word};
             word2.clear();
             word2.push_back('b');
             word2.push_back('a');
@@ -2034,6 +2411,16 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     SECTION("Empty automaton")
     {
         REQUIRE(aut.get_shortest_words().empty());
+    }
+
+    SECTION("One-state automaton accepting an empty language")
+    {
+        aut.make_initial(0);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(1);
+        REQUIRE(aut.get_shortest_words().empty());
+        aut.make_final(0);
+        REQUIRE(aut.get_shortest_words() == WordSet{Word{}});
     }
 
     SECTION("Automaton A")
@@ -2066,5 +2453,340 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         aut.add_trans(1, 'a', 1);
 
         REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
+    }
+
+    SECTION("Require FIFO queue")
+    {
+        aut.initialstates = { 1 };
+        aut.finalstates = { 4 };
+        aut.add_trans(1, 'a', 5);
+        aut.add_trans(5, 'c', 4);
+        aut.add_trans(1, 'a', 2);
+        aut.add_trans(2, 'b', 3);
+        aut.add_trans(3, 'b', 4);
+
+        Word word{};
+        word.push_back('a');
+        word.push_back('c');
+        std::set<Word> expected{word};
+
+        // LIFO queue would return as shortest words string "abb", which would be incorrect.
+        REQUIRE(aut.get_shortest_words() == expected);
+    }
+}
+
+TEST_CASE("Mata::Nfa::remove_final()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(aut.has_final(12));
+        aut.remove_final(12);
+        REQUIRE(aut.has_final(2));
+        REQUIRE(!aut.has_final(12));
+    }
+}
+
+TEST_CASE("Mata::Nfa::remove_trans()")
+{
+    Nfa aut('q' + 1);
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        aut.add_trans(1, 3, 4);
+        aut.add_trans(1, 3, 5);
+
+        SECTION("Simple remove")
+        {
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(aut.has_trans(1, 3, 5));
+            aut.remove_trans(1, 3, 5);
+            REQUIRE(aut.has_trans(1, 3, 4));
+            REQUIRE(!aut.has_trans(1, 3, 5));
+        }
+
+        SECTION("Remove missing transition")
+        {
+            REQUIRE_THROWS_AS(aut.remove_trans(1, 1, 5), std::invalid_argument);
+        }
+
+        SECTION("Remove the last state_to from states_to")
+        {
+            REQUIRE(aut.has_trans(6, 'a', 2));
+            aut.remove_trans(6, 'a', 2);
+            REQUIRE(!aut.has_trans(6, 'a', 2));
+            REQUIRE(aut.transitionrelation[6].empty());
+
+            REQUIRE(aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+            aut.remove_trans(4, 'a', 6);
+            REQUIRE(!aut.has_trans(4, 'a', 6));
+            REQUIRE(aut.has_trans(4, 'b', 6));
+            REQUIRE(aut.transitionrelation[4].size() == 3);
+
+            aut.remove_trans(4, 'a', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 2);
+
+            aut.remove_trans(4, 'c', 8);
+            REQUIRE(!aut.has_trans(4, 'a', 8));
+            REQUIRE(!aut.has_trans(4, 'c', 8));
+            REQUIRE(aut.transitionrelation[4].size() == 1);
+        }
+    }
+}
+
+TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
+{
+    Nfa aut{};
+
+    SECTION("Add new states within the limit")
+    {
+        aut.increase_size(20);
+        aut.make_initial(0);
+        aut.make_initial(1);
+        aut.make_initial(2);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(2));
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        REQUIRE(aut.get_transitions_from_state(2).empty());
+    }
+
+    SECTION("Add new states over the limit")
+    {
+        aut.increase_size(2);
+        REQUIRE_NOTHROW(aut.make_initial(0));
+        REQUIRE_NOTHROW(aut.make_initial(1));
+        REQUIRE_THROWS_AS(aut.make_initial(2), std::runtime_error);
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE(aut.get_transitions_from_state(0).empty());
+        REQUIRE(aut.get_transitions_from_state(1).empty());
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new states without specifying the number of states")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(0), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+
+    SECTION("Add new initial without specifying the number of states with over +1 number")
+    {
+        REQUIRE_THROWS_AS(aut.make_initial(25), std::runtime_error);
+        //REQUIRE_THROWS(aut.get_transitions_from_state(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    }
+}
+
+
+TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
+{
+    Nfa aut('q' + 1);
+    TransSequence expected{};
+
+    aut.add_trans(1, 2, 3);
+    expected.push_back(Trans{1, 2, 3});
+    aut.add_trans(1, 3, 4);
+    expected.push_back(Trans{1, 3, 4});
+    aut.add_trans(2, 3, 4);
+    expected.push_back(Trans{2, 3, 4});
+
+
+    REQUIRE(aut.get_trans_as_sequence() == expected);
+}
+
+TEST_CASE("Mata::Nfa::remove_epsilon()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_epsilon('c');
+    REQUIRE(aut.has_trans(10, 'a', 7));
+    REQUIRE(aut.has_trans(10, 'b', 7));
+    REQUIRE(!aut.has_trans(10, 'c', 7));
+    REQUIRE(aut.has_trans(7, 'a', 5));
+    REQUIRE(aut.has_trans(7, 'a', 3));
+    REQUIRE(!aut.has_trans(7, 'c', 3));
+    REQUIRE(aut.has_trans(7, 'b', 9));
+    REQUIRE(aut.has_trans(7, 'a', 7));
+    REQUIRE(aut.has_trans(5, 'a', 5));
+    REQUIRE(!aut.has_trans(5, 'c', 9));
+    REQUIRE(aut.has_trans(5, 'a', 9));
+}
+
+TEST_CASE("Mata::Nfa::get_num_of_trans()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    REQUIRE(aut.get_num_of_trans() == 15);
+}
+
+TEST_CASE("Mata::Nfa::get_digraph()")
+{
+    Nfa aut(100);
+    Symbol abstract_symbol{'x'};
+    FILL_WITH_AUT_A(aut);
+
+    Nfa digraph{ aut.get_digraph() };
+
+    REQUIRE(digraph.get_num_of_states() == aut.get_num_of_states());
+    REQUIRE(digraph.get_num_of_trans() == 12);
+    REQUIRE(digraph.has_trans(1, abstract_symbol, 10));
+    REQUIRE(digraph.has_trans(10, abstract_symbol, 7));
+    REQUIRE(!digraph.has_trans(10, 'a', 7));
+    REQUIRE(!digraph.has_trans(10, 'b', 7));
+    REQUIRE(!digraph.has_trans(10, 'c', 7));
+}
+
+TEST_CASE("Mata::Nfa::get_reachable_states()")
+{
+    Nfa aut{20};
+
+    SECTION("Automaton A")
+    {
+        FILL_WITH_AUT_A(aut);
+        aut.remove_trans(3, 'b', 9);
+        aut.remove_trans(5, 'c', 9);
+        aut.remove_trans(1, 'a', 10);
+
+        auto reachable{aut.get_reachable_states()};
+        CHECK(reachable.find(0) == reachable.end());
+        CHECK(reachable.find(1) != reachable.end());
+        CHECK(reachable.find(2) == reachable.end());
+        CHECK(reachable.find(3) != reachable.end());
+        CHECK(reachable.find(4) == reachable.end());
+        CHECK(reachable.find(5) != reachable.end());
+        CHECK(reachable.find(6) == reachable.end());
+        CHECK(reachable.find(7) != reachable.end());
+        CHECK(reachable.find(8) == reachable.end());
+        CHECK(reachable.find(9) == reachable.end());
+        CHECK(reachable.find(10) == reachable.end());
+
+        aut.remove_initial(1);
+        aut.remove_initial(3);
+
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.empty());
+    }
+
+    SECTION("Automaton B")
+    {
+        FILL_WITH_AUT_B(aut);
+        aut.remove_trans(2, 'c', 12);
+        aut.remove_trans(4, 'c', 8);
+        aut.remove_trans(4, 'a', 8);
+
+        auto reachable{aut.get_reachable_states()};
+        CHECK(reachable.find(0) != reachable.end());
+        CHECK(reachable.find(1) == reachable.end());
+        CHECK(reachable.find(2) != reachable.end());
+        CHECK(reachable.find(3) == reachable.end());
+        CHECK(reachable.find(4) != reachable.end());
+        CHECK(reachable.find(5) == reachable.end());
+        CHECK(reachable.find(6) != reachable.end());
+        CHECK(reachable.find(7) == reachable.end());
+        CHECK(reachable.find(8) == reachable.end());
+        CHECK(reachable.find(9) == reachable.end());
+        CHECK(reachable.find(10) == reachable.end());
+        CHECK(reachable.find(11) == reachable.end());
+        CHECK(reachable.find(12) == reachable.end());
+        CHECK(reachable.find(13) == reachable.end());
+        CHECK(reachable.find(14) == reachable.end());
+
+        aut.remove_final(2);
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.size() == 4);
+        CHECK(reachable.find(0) != reachable.end());
+        CHECK(reachable.find(2) != reachable.end());
+        CHECK(reachable.find(4) != reachable.end());
+        CHECK(reachable.find(6) != reachable.end());
+        CHECK(aut.get_useful_states().empty());
+
+        aut.make_final(4);
+        reachable = aut.get_reachable_states();
+        CHECK(reachable.find(4) != reachable.end());
+    }
+}
+
+TEST_CASE("Mata::Nfa::trim()")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    Nfa old_aut{aut};
+
+    aut.trim();
+    CHECK(aut.initialstates.size() == old_aut.initialstates.size());
+    CHECK(aut.finalstates.size() == old_aut.finalstates.size());
+    CHECK(aut.get_num_of_states() == 4);
+    for (const Word& word: old_aut.get_shortest_words())
+    {
+        CHECK(is_in_lang(aut, word));
+    }
+
+    aut.remove_final(2); // '2' is the new final state in the earlier trimmed automaton.
+    aut.trim();
+    CHECK(aut.trans_empty());
+    CHECK(aut.get_num_of_states() == 0);
+}
+
+TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
+{
+    Nfa aut{};
+
+    SECTION("Empty automaton")
+    {
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("No transitions automaton")
+    {
+        aut.increase_size(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with no transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(1);
+        aut.make_initial(0);
+        aut.make_final(0);
+        aut.add_trans(0, 'a', 0);
+        CHECK(!aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        CHECK(aut.trans_empty());
+    }
+
+    SECTION("Single state automaton with transitions")
+    {
+        aut.increase_size(2);
+        aut.make_initial(0);
+        aut.make_final(1);
+        aut.add_trans(0, 'a', 1);
+        CHECK(!aut.trans_empty());
     }
 }
