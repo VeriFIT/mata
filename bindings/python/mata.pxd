@@ -3,6 +3,7 @@ from libcpp.set cimport set as cset
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.vector cimport vector
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
@@ -247,8 +248,10 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
-    cdef AutSequence noodlify(CNfa&, Symbol, bool)
-    cdef AutSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
+    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSegments
+    
+    cdef NoodleSegments noodlify(CNfa&, Symbol, bool)
+    cdef NoodleSegments noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":

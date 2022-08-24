@@ -999,25 +999,35 @@ def test_noodlify():
     left3.make_final_state(1)
     left3.add_trans_raw(0, ord('b'), 1)
 
-    noodle1 = mata.Nfa(6)
-    noodle1.make_initial_state(0)
-    noodle1.make_final_state(5)
-    noodle1.add_trans_raw(0, ord('a'), 1)
-    noodle1.add_trans_raw(1, ord('c'), 2)  # The automatically chosen epsilon symbol(one larger than ord('b')).
-    noodle1.add_trans_raw(2, ord('a'), 3)
-    noodle1.add_trans_raw(3, ord('c'), 4)
-    noodle1.add_trans_raw(4, ord('b'), 5)
+    noodle1_segment1 = mata.Nfa(2)
+    noodle1_segment1.make_initial_state(0)
+    noodle1_segment1.make_final_state(1)
+    noodle1_segment1.add_trans_raw(0, ord('a'), 1)
 
-    noodle2 = mata.Nfa(6)
-    noodle2.make_initial_state(0)
-    noodle2.make_final_state(5)
-    noodle2.add_trans_raw(0, ord('b'), 1)
-    noodle2.add_trans_raw(1, ord('c'), 2)
-    noodle2.add_trans_raw(2, ord('a'), 3)
-    noodle2.add_trans_raw(3, ord('c'), 4)
-    noodle2.add_trans_raw(4, ord('b'), 5)
+    noodle1_segment2 = mata.Nfa(2)
+    noodle1_segment2.make_initial_state(0)
+    noodle1_segment2.make_final_state(1)
+    noodle1_segment2.add_trans_raw(0, ord('a'), 1)
 
-    left_side: list[Nfa] = [left1, left2, left3]
+    noodle1_segment3 = mata.Nfa(2)
+    noodle1_segment3.make_initial_state(0)
+    noodle1_segment3.make_final_state(1)
+    noodle1_segment3.add_trans_raw(0, ord('b'), 1)
+
+    noodle2_segment1 = mata.Nfa(2)
+    noodle2_segment1.make_initial_state(0)
+    noodle2_segment1.make_final_state(1)
+    noodle2_segment1.add_trans_raw(0, ord('b'), 1)
+
+    noodle2_segment2 = mata.Nfa(2)
+    noodle2_segment2.make_initial_state(0)
+    noodle2_segment2.make_final_state(1)
+    noodle2_segment2.add_trans_raw(0, ord('a'), 1)
+
+    noodle2_segment3 = mata.Nfa(2)
+    noodle2_segment3.make_initial_state(0)
+    noodle2_segment3.make_final_state(1)
+    noodle2_segment3.add_trans_raw(0, ord('b'), 1)
 
     right_side = mata.Nfa(7)
     right_side.make_initial_state(0)
@@ -1029,7 +1039,13 @@ def test_noodlify():
     right_side.add_trans_raw(5, ord('b'), 6)
     right_side.make_final_states([3, 6])
 
+    left_side: list[Nfa] = [left1, left2, left3]
     result = mata.Nfa.noodlify_for_equation(left_side, right_side)
     assert len(result) == 2
-    assert mata.Nfa.equivalence_check(result[0], noodle1)
-    assert mata.Nfa.equivalence_check(result[1], noodle2)
+    assert mata.Nfa.equivalence_check(result[0][0], noodle1_segment1)
+    assert mata.Nfa.equivalence_check(result[0][1], noodle1_segment2)
+    assert mata.Nfa.equivalence_check(result[0][2], noodle1_segment3)
+
+    assert mata.Nfa.equivalence_check(result[1][0], noodle2_segment1)
+    assert mata.Nfa.equivalence_check(result[1][1], noodle2_segment2)
+    assert mata.Nfa.equivalence_check(result[1][2], noodle2_segment3)
