@@ -483,7 +483,7 @@ public:
     {
         if (transitionrelation.empty())
             return false;
-        const TransitionList& tl = get_transitions_from_state(trans.src);
+        const TransitionList& tl = get_transitions_from(trans.src);
 
         if (tl.empty())
             return false;
@@ -510,7 +510,7 @@ public:
      * @return Iterator for @c TransitionList; Allows us to compare to TransitionsList::end() to see whether the specified
      *  transitions exist. If they do, we can access the transitions with a dereference operator (*iter).
      */
-    TransitionList::const_iterator get_transitions_from_state_with(State state_from, Symbol symbol) const;
+    TransitionList::const_iterator get_transitions_from(State state_from, Symbol symbol) const;
 
     /**
      * Check whether automaton has no transitions.
@@ -535,14 +535,14 @@ public:
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    TransSequence get_trans_from_state_as_sequence(State state_from) const;
+    TransSequence get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading from @p state_from.
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const TransitionList& get_transitions_from_state(const State state_from) const
+    const TransitionList& get_transitions_from(const State state_from) const
     {
         assert(get_num_of_states() >= state_from + 1);
         return transitionrelation[state_from];
@@ -553,7 +553,7 @@ public:
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
      */
-    TransSequence get_transitions_to_state(State state_to) const;
+    TransSequence get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
