@@ -710,7 +710,7 @@ cdef class Nfa:
         :return: List of automata: A list of all (non-empty) noodles.
         """
         noodles = []
-        cdef vector[CNfa] c_noodles = mata.noodlify(dereference(aut.thisptr), symbol, include_empty)
+        cdef AutSequence c_noodles = mata.noodlify(dereference(aut.thisptr), symbol, include_empty)
         for c_noodle in c_noodles:
             noodle = Nfa(c_noodle.get_num_of_states())
             noodle.thisptr.initialstates = c_noodle.initialstates
@@ -733,11 +733,11 @@ cdef class Nfa:
         :param: bool include_empty: Whether to also include empty noodles.
         :return: List of automata: A list of all (non-empty) noodles.
         """
-        cdef vector[const mata.CNfa*] c_left_side_automata
+        cdef ConstAutPtrSequence c_left_side_automata
         for lhs_aut in left_side_automata:
             c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr)
         noodles = []
-        cdef vector[CNfa] c_noodles = mata.noodlify_for_equation(
+        cdef AutSequence c_noodles = mata.noodlify_for_equation(
             c_left_side_automata,
             dereference(right_side_automaton.thisptr), include_empty
         )
@@ -1558,7 +1558,7 @@ cdef class Segmentation:
                  automaton) to the right (final states of segment automaton).
         """
         segments = []
-        cdef vector[CNfa] c_segments = self.thisptr.get_segments()
+        cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
             segment = Nfa(c_segment.get_num_of_states())
             segment.thisptr.initialstates = c_segment.initialstates

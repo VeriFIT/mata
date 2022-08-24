@@ -65,7 +65,7 @@ AutSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, cons
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-AutSequence noodlify_for_equation(const std::vector<const Nfa*>& left_automata, const Nfa& right_automaton,
+AutSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
                                   bool include_empty = false);
 
 } // SegNfa

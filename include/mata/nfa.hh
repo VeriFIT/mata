@@ -163,9 +163,18 @@ public:
 
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
+
 template<typename T> using RefSequence = Sequence<std::reference_wrapper<T>>; ///< A sequence of references to elements.
 using AutRefSequence = RefSequence<Nfa>; ///< A sequence of references to non-deterministic finite automata.
 using ConstAutRefSequence = RefSequence<const Nfa>; ///< A sequence of const references to non-deterministic finite automata.
+
+template<typename T> using PtrSequence = Sequence<T*>; ///< A sequence of pointers to elements.
+using AutPtrSequence = PtrSequence<Nfa>; ///< A sequence of pointers to non-deterministic finite automata.
+using ConstAutPtrSequence = PtrSequence<const Nfa>; ///< A sequence of pointers to const non-deterministic finite automata.
+
+template<typename T> using ConstPtrSequence = Sequence<T* const>; ///< A sequence of const pointers to elements.
+using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const pointers to non-deterministic finite automata.
+using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -1281,7 +1290,7 @@ public:
      * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
      * @return Created alphabet.
      */
-    static EnumAlphabet from_nfas(const std::vector<const Nfa*>& nfas) {
+    static EnumAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
         EnumAlphabet alphabet{};
         size_t nfa_num_of_states{};
         for (const Nfa* const nfa: nfas) {

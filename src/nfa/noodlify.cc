@@ -121,7 +121,7 @@ AutSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automa
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
-AutSequence SegNfa::noodlify_for_equation(const std::vector<const Nfa*>& left_automata, const Nfa& right_automaton,
+AutSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
                               bool include_empty) {
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return AutSequence{}; }
 
