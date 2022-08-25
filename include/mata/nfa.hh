@@ -70,6 +70,8 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
+class OnTheFlyAlphabet;
+
 const PostSymb EMPTY_POST{};
 
 static const struct Limits {
