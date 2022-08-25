@@ -963,6 +963,18 @@ bool is_deterministic(const Nfa& aut);
 /// symbol.
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
+void construct(
+        Nfa*                                 aut,
+        const Mata::Parser::ParsedSection&  parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+void construct(
+        Nfa*                                 aut,
+        const Mata::InterAutomaton&          inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
 void construct(
@@ -1023,17 +1035,7 @@ void construct(
 
 
 
-void construct(
-        Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
 
- void construct(
-         Nfa*                                 aut,
-         const Mata::InterAutomaton&          inter_aut,
-         Alphabet*                            alphabet,
-         StringToStateMap*                    state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
