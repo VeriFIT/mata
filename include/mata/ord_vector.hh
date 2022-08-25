@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _Mata2_ORD_VECTOR_HH_
-#define _Mata2_ORD_VECTOR_HH_
+#ifndef _MATA_ORD_VECTOR_HH_
+#define _MATA_ORD_VECTOR_HH_
 
 // Standard library headers
 #include <vector>
