@@ -1,6 +1,7 @@
 // example5.cc - parsing a NFA from file
 
 #include <mata/nfa.hh>
+#include <mata/inter-aut.hh>
 #include <iostream>
 #include <fstream>
 
@@ -26,7 +27,7 @@ int main(int argc, char *argv[])
     StringToSymbolMap stsm;
     OnTheFlyAlphabet alph(&stsm);
     try {
-        parsed = Mata::Parser::parse_vtf(fs, true);
+        parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
 
         if (parsed.size() != 1) {
@@ -37,8 +38,12 @@ int main(int argc, char *argv[])
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
-        construct(&aut, parsed[0], &alph);
+        std::vector<Mata::InterAutomaton> inter_aut = Mata::InterAutomaton::parse_from_mf(parsed);
+
+        if (inter_aut[0].is_nfa())
+            construct(&aut, inter_aut[0]);
     }
+
     catch (const std::exception& ex) {
         fs.close();
         std::cerr << "libMATA error: " << ex.what() << "\n";
