@@ -552,8 +552,7 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    
-    get_trans_as_sequence() const;
+    TransSequence get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
@@ -1457,34 +1456,6 @@ private:
         }
     }
 }; // class EnumAlphabet.
-
-class OnTheFlyAlphabet : public Alphabet
-{
-private:
-    StringToSymbolMap* symbol_map;
-    Symbol cnt_symbol;
-
-    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-public:
-    /**
-     * Construct alphabet on the fly from already prepared str_sym_map.
-     * @param[in] str_sym_map Map of transition symbols as strings to symbol values.
-     * @param[in] init_symbol Initial symbol value to use as next added symbol value. One can reserve the values lower than
-     *     @p init_symbol for special symbols and when passing an non-empty @p str_sym_map, define value higher than any
-     *     value in @p str_sym_map to avoid collisions.
-     */
-    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
-            symbol_map(str_sym_map), cnt_symbol(init_symbol)
-    {
-        assert(nullptr != symbol_map);
-    }
-
-    std::list<Symbol> get_symbols() const override;
-    Symbol translate_symb(const std::string& str) override;
-    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-}; // class OnTheFlyAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
