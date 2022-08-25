@@ -49,7 +49,6 @@ include_directories(../3rdparty/simlib/include)
 
 add_library(libmata STATIC
 # add_library(libmata SHARED
-	afa/afa.cc
 	config.cc
 	inter-aut.cc
 	parser.cc
@@ -62,6 +61,7 @@ add_library(libmata STATIC
 	nfa/nfa-concatenation.cc
 	nfa/noodlify.cc
 	rra/rrt.cc
+	afa/afa.cc
 )
 
 set_target_properties(libmata PROPERTIES
