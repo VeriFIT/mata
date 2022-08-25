@@ -17,6 +17,7 @@
 
 #include <mata/nfa.hh>
 #include <mata/noodlify.hh>
+#include <mata/util.hh>
 
 using namespace Mata::Nfa;
 
@@ -163,7 +164,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 }
 
 SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
-                                                     bool include_empty) {
+                                                     bool include_empty, const StringDict& params) {
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
@@ -180,11 +181,22 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& 
     }
 
     auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    if (util::haskey(params, "reduce")) {
+        const std::string& reduce_value = params.at("reduce");
+        if (reduce_value == "forward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+        }
+        if (reduce_value == "backward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+            product_pres_eps_trans = invert(product_pres_eps_trans);
+        }
+    }
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
 SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
-                                                     bool include_empty) {
+                                                     bool include_empty, const StringDict& params) {
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
@@ -201,6 +213,12 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& 
     }
 
     auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    if (util::haskey(params, "reduce")) {
+        const std::string& reduce_value = params.at("reduce_value");
+        if (reduce_value == "true") {
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+        }
+    }
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
