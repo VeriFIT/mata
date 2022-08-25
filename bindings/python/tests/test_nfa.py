@@ -4,7 +4,6 @@ import pytest
 import mata
 import os
 
-
 __author__ = 'Tomas Fiedor'
 
 
@@ -243,7 +242,7 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
 
     chs, sm_map = mata.Nfa.determinize(lhs)
     assert mata.Nfa.is_deterministic(chs)
-    assert sm_map == {(0, ): 0, (0, 1): 1}
+    assert sm_map == {(0,): 0, (0, 1): 1}
 
 
 def test_forward_reach_states(
@@ -405,14 +404,14 @@ def test_completeness(
 
     l = mata.Nfa(1)
     l.make_initial_state(0)
-    l.add_trans_raw(0,0,0)
+    l.add_trans_raw(0, 0, 0)
     assert not mata.Nfa.is_complete(l, alph)
-    l.add_trans_raw(0,1,0)
+    l.add_trans_raw(0, 1, 0)
     assert mata.Nfa.is_complete(l, alph)
 
     r = mata.Nfa(1)
     r.make_initial_state(0)
-    r.add_trans_raw(0,0,0)
+    r.add_trans_raw(0, 0, 0)
     assert not mata.Nfa.is_complete(r, alph)
     mata.Nfa.make_complete(r, 1, alph)
     assert mata.Nfa.is_complete(r, alph)
@@ -452,7 +451,7 @@ def test_union(
     assert mata.Nfa.is_in_lang(uni, [1, 1])
     assert mata.Nfa.is_in_lang(uni, [1, 1, 1, 1])
     assert mata.Nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1])
-    assert mata.Nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1, 1, 1,])
+    assert mata.Nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata.Nfa.is_included(fa_one_divisible_by_two, uni, alph)[0]
     assert mata.Nfa.is_included(fa_one_divisible_by_four, uni, alph)[0]
 
@@ -472,12 +471,12 @@ def test_intersection(
     assert not mata.Nfa.is_in_lang(inter, [1, 1])
     assert mata.Nfa.is_in_lang(inter, [1, 1, 1, 1])
     assert not mata.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1])
-    assert mata.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1,])
+    assert mata.Nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_two, alph)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four, alph)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_two)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four)[0]
-    assert map == {(0,0): 0, (1,1): 1, (1,3): 3, (2,2): 2, (2, 4): 4}
+    assert map == {(0, 0): 0, (1, 1): 1, (1, 3): 3, (2, 2): 2, (2, 4): 4}
 
 
 def test_intersection_preserving_epsilon_transitions():
@@ -551,7 +550,7 @@ def test_intersection_preserving_epsilon_transitions():
     assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 2)])) == 2
 
     assert result.has_trans_raw(prod_map[(1, 3)], ord('b'), prod_map[(1, 4)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1,  3)])) == 1
+    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 3)])) == 1
 
     assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 4)])) == 0
 
@@ -586,9 +585,9 @@ def test_complement(
     alph.translate_symbol("b")
 
     res, subset_map = mata.Nfa.complement(fa_one_divisible_by_two, alph)
-    assert not mata.Nfa.is_in_lang(res, [1,1])
-    assert mata.Nfa.is_in_lang(res, [1,1,1])
-    assert not mata.Nfa.is_in_lang(res, [1,1,1,1])
+    assert not mata.Nfa.is_in_lang(res, [1, 1])
+    assert mata.Nfa.is_in_lang(res, [1, 1, 1])
+    assert not mata.Nfa.is_in_lang(res, [1, 1, 1, 1])
     assert subset_map == {(): 4, (0,): 0, (1,): 1, (2,): 2}
 
 
@@ -633,7 +632,7 @@ def test_minimize(
     lhs = mata.Nfa(11)
     lhs.make_initial_state(0)
     for i in range(0, 10):
-        lhs.add_trans_raw(i, 0, i+1)
+        lhs.add_trans_raw(i, 0, i + 1)
         lhs.make_final_state(i)
     lhs.add_trans_raw(10, 0, 10)
     lhs.make_final_state(10)
@@ -884,8 +883,8 @@ def test_get_states(prepare_automaton_a, prepare_automaton_b):
     useful = nfa.get_useful_states()
     assert len(useful) == 1
     assert 4 in useful
-    
-    
+
+
 def test_segmentation(prepare_automaton_a):
     nfa = prepare_automaton_a()
     epsilon = ord('c')
@@ -980,3 +979,57 @@ def test_reduce():
     assert result.has_trans_raw(state_map[1], ord('a'), state_map[3])
     assert not result.has_trans_raw(state_map[3], ord('b'), state_map[4])
     assert result.has_trans_raw(state_map[2], ord('a'), state_map[2])
+
+
+def test_noodlify():
+    """Test noodlification."""
+    left1 = mata.Nfa(3)
+    left1.make_initial_state(0)
+    left1.make_final_states([1, 2])
+    left1.add_trans_raw(0, ord('a'), 1)
+    left1.add_trans_raw(0, ord('b'), 2)
+
+    left2 = mata.Nfa(2)
+    left2.make_initial_state(0)
+    left2.make_final_state(1)
+    left2.add_trans_raw(0, ord('a'), 1)
+
+    left3 = mata.Nfa(2)
+    left3.make_initial_state(0)
+    left3.make_final_state(1)
+    left3.add_trans_raw(0, ord('b'), 1)
+
+    noodle1 = mata.Nfa(6)
+    noodle1.make_initial_state(0)
+    noodle1.make_final_state(5)
+    noodle1.add_trans_raw(0, ord('a'), 1)
+    noodle1.add_trans_raw(1, ord('c'), 2)  # The automatically chosen epsilon symbol(one larger than ord('b')).
+    noodle1.add_trans_raw(2, ord('a'), 3)
+    noodle1.add_trans_raw(3, ord('c'), 4)
+    noodle1.add_trans_raw(4, ord('b'), 5)
+
+    noodle2 = mata.Nfa(6)
+    noodle2.make_initial_state(0)
+    noodle2.make_final_state(5)
+    noodle2.add_trans_raw(0, ord('b'), 1)
+    noodle2.add_trans_raw(1, ord('c'), 2)
+    noodle2.add_trans_raw(2, ord('a'), 3)
+    noodle2.add_trans_raw(3, ord('c'), 4)
+    noodle2.add_trans_raw(4, ord('b'), 5)
+
+    left_side: list[Nfa] = [left1, left2, left3]
+
+    right_side = mata.Nfa(7)
+    right_side.make_initial_state(0)
+    right_side.add_trans_raw(0, ord('a'), 1)
+    right_side.add_trans_raw(1, ord('a'), 2)
+    right_side.add_trans_raw(2, ord('b'), 3)
+    right_side.add_trans_raw(0, ord('b'), 4)
+    right_side.add_trans_raw(4, ord('a'), 5)
+    right_side.add_trans_raw(5, ord('b'), 6)
+    right_side.make_final_states([3, 6])
+
+    result = mata.Nfa.noodlify_for_equation(left_side, right_side)
+    assert len(result) == 2
+    assert mata.Nfa.equivalence_check(result[0], noodle1)
+    assert mata.Nfa.equivalence_check(result[1], noodle2)
