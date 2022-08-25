@@ -32,7 +32,7 @@
 #include <mata/parser.hh>
 #include <mata/util.hh>
 #include <mata/ord_vector.hh>
-#include "inter-aut.hh"
+#include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
 
 namespace Mata
@@ -998,31 +998,6 @@ void construct(
 }
 
 /** Loads an automaton from Parsed object */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 void construct(
         Nfa*                                 aut,
         const Mata::Parser::ParsedSection&  parsec,
