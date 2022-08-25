@@ -199,6 +199,8 @@ template<typename T> using ConstPtrSequence = Sequence<T* const>; ///< A sequenc
 using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const pointers to non-deterministic finite automata.
 using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
+using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
+
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
 	const Nfa&                aut,

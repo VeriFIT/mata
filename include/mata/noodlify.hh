@@ -29,7 +29,10 @@ namespace Nfa
 namespace SegNfa
 {
 
-using NoodleSegments = std::vector<std::vector<std::shared_ptr<Nfa>>>;
+/// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
+///  one ε-transition between each two consecutive segments.
+using Noodle = std::vector<SharedPtrAut>;
+using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -42,7 +45,7 @@ using NoodleSegments = std::vector<std::vector<std::shared_ptr<Nfa>>>;
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSegments noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -61,8 +64,8 @@ NoodleSegments noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = 
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSegments noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
-                                  bool include_empty = false);
+NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+                                     bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -81,8 +84,8 @@ NoodleSegments noodlify_for_equation(const ConstAutRefSequence& left_automata, c
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSegments noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
-                                  bool include_empty = false);
+NoodleSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+                                     bool include_empty = false);
 } // SegNfa
 } // Nfa
 } // Mata

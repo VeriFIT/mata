@@ -261,7 +261,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             std::vector<std::shared_ptr<Nfa>> noodle2_segments{ std::make_shared<Nfa>(noodle2_segment1),
                     std::make_shared<Nfa>(noodle2_segment2), std::make_shared<Nfa>(noodle2_segment3) };
 
-            SegNfa::NoodleSegments expected{ noodle1_segments, noodle2_segments };
+            SegNfa::NoodleSequence expected{ noodle1_segments, noodle2_segments };
 
             auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 2);

@@ -40,7 +40,7 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 
 } // namespace
 
-SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
+SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
     Segmentation segmentation{ aut, epsilon };
     const auto& segments{ segmentation.get_segments_raw() };
 
@@ -69,7 +69,7 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
             for (const State final_state: iter->finalstates) {
-                std::shared_ptr<Nfa> segment_one_final = std::make_shared<Nfa>(*iter);
+                SharedPtrAut segment_one_final = std::make_shared<Nfa>(*iter);
                 segment_one_final->finalstates = { final_state };
                 segment_one_final->trim();
 
@@ -79,7 +79,7 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
             }
         } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
             for (const State init_state: iter->initialstates) {
-                std::shared_ptr<Nfa> segment_one_init = std::make_shared<Nfa>(*iter);
+                SharedPtrAut segment_one_init = std::make_shared<Nfa>(*iter);
                 segment_one_init->initialstates = { init_state };
                 segment_one_init->trim();
 
@@ -90,7 +90,7 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
         } else { // the segments in-between
             for (const State init_state: iter->initialstates) {
                 for (const State final_state: iter->finalstates) {
-                    std::shared_ptr<Nfa> segment_one_init_final = std::make_shared<Nfa>(*iter);
+                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa>(*iter);
                     segment_one_init_final->initialstates = { init_state };
                     segment_one_init_final->finalstates = { final_state };
                     segment_one_init_final->trim();
@@ -109,9 +109,9 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     size_t num_of_permutations{ get_num_of_permutations(epsilon_depths) };
     size_t epsilon_depths_size{ epsilon_depths.size() };
 
-    NoodleSegments noodles{};
+    NoodleSequence noodles{};
     // noodle of epsilon transitions (each from different depth)
-    std::vector<Trans> epsilon_noodle(epsilon_depths_size);
+    TransSequence epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
     // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
     for (size_t index{ 0 }; index < num_of_permutations; ++index) {
@@ -123,7 +123,7 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
             epsilon_noodle[depth] = epsilon_depths.at(depth)[computed_index];
         }
 
-        std::vector<std::shared_ptr<Nfa>> noodle;
+        Noodle noodle;
 
         // epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
         auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state, epsilon_noodle[0].src));
@@ -162,9 +162,9 @@ SegNfa::NoodleSegments SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     return noodles;
 }
 
-SegNfa::NoodleSegments SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
-                                          bool include_empty) {
-    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSegments{}; }
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+                                                     bool include_empty) {
+    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
@@ -183,9 +183,9 @@ SegNfa::NoodleSegments SegNfa::noodlify_for_equation(const ConstAutRefSequence& 
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
-SegNfa::NoodleSegments SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
-                              bool include_empty) {
-    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSegments{}; }
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+                                                     bool include_empty) {
+    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
