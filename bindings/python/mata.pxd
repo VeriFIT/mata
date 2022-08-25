@@ -248,10 +248,10 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
-    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSegments
+    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
     
-    cdef NoodleSegments noodlify(CNfa&, Symbol, bool)
-    cdef NoodleSegments noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
+    cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
+    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":

@@ -707,7 +707,7 @@ cdef class Nfa:
         :return: List of automata: A list of all (non-empty) noodles.
         """
         noodle_segments = []
-        cdef NoodleSegments c_noodle_segments = mata.noodlify(dereference(aut.thisptr.get()), symbol, include_empty)
+        cdef NoodleSequence c_noodle_segments = mata.noodlify(dereference(aut.thisptr.get()), symbol, include_empty)
         for c_noodle in c_noodle_segments:
             noodle = []
             for c_noodle_segment in c_noodle:
@@ -742,7 +742,7 @@ cdef class Nfa:
         for lhs_aut in left_side_automata:
             c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr.get())
         noodle_segments = []
-        cdef NoodleSegments c_noodle_segments = mata.noodlify_for_equation(
+        cdef NoodleSequence c_noodle_segments = mata.noodlify_for_equation(
             c_left_side_automata,
             dereference(right_side_automaton.thisptr.get()), include_empty
         )
