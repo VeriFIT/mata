@@ -185,7 +185,20 @@ using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
 
-using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
+template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
+using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
+
+template<typename T> using RefSequence = Sequence<std::reference_wrapper<T>>; ///< A sequence of references to elements.
+using AutRefSequence = RefSequence<Nfa>; ///< A sequence of references to non-deterministic finite automata.
+using ConstAutRefSequence = RefSequence<const Nfa>; ///< A sequence of const references to non-deterministic finite automata.
+
+template<typename T> using PtrSequence = Sequence<T*>; ///< A sequence of pointers to elements.
+using AutPtrSequence = PtrSequence<Nfa>; ///< A sequence of pointers to non-deterministic finite automata.
+using ConstAutPtrSequence = PtrSequence<const Nfa>; ///< A sequence of pointers to const non-deterministic finite automata.
+
+template<typename T> using ConstPtrSequence = Sequence<T* const>; ///< A sequence of const pointers to elements.
+using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const pointers to non-deterministic finite automata.
+using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -494,7 +507,7 @@ public:
     {
         if (transitionrelation.empty())
             return false;
-        const TransitionList& tl = get_transitions_from_state(trans.src);
+        const TransitionList& tl = get_transitions_from(trans.src);
 
         if (tl.empty())
             return false;
@@ -515,6 +528,15 @@ public:
     } // }}}
 
     /**
+     * Get transitions from @p state_from using transition @p symbol.
+     * @param state_from State from which to get transitions.
+     * @param symbol Transition symbol to look for in transitions.
+     * @return Iterator for @c TransitionList; Allows us to compare to TransitionsList::end() to see whether the specified
+     *  transitions exist. If they do, we can access the transitions with a dereference operator (*iter).
+     */
+    TransitionList::const_iterator get_transitions_from(State state_from, Symbol symbol) const;
+
+    /**
      * Check whether automaton has no transitions.
      * @return True if there are no transitions in the automaton, false otherwise.
      */
@@ -530,21 +552,22 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    TransSequence get_trans_as_sequence() const;
+    
+    get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    TransSequence get_trans_from_state_as_sequence(State state_from) const;
+    TransSequence get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading from @p state_from.
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const TransitionList& get_transitions_from_state(const State state_from) const
+    const TransitionList& get_transitions_from(const State state_from) const
     {
         assert(get_num_of_states() >= state_from + 1);
         return transitionrelation[state_from];
@@ -555,7 +578,7 @@ public:
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
      */
-    TransSequence get_transitions_to_state(State state_to) const;
+    TransSequence get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -1263,18 +1286,13 @@ private:
 
 class EnumAlphabet : public Alphabet
 {
+public:
+    using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
+
+    EnumAlphabet() = default;
+    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
+
 private:
-    StringToSymbolMap symbol_map;
-
-    EnumAlphabet& operator=(const EnumAlphabet& rhs);
-
-    // Adapted from: https://stackoverflow.com/a/41623721.
-    template <typename TF, typename... Ts>
-    static void for_each_argument(TF&& f, Ts&&... xs)
-    {
-        std::initializer_list<const Nfa>{(f(std::forward<Ts>(xs)), Nfa{})... };
-    }
-
     // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
     template<bool...> struct bool_pack{};
     /// Checks for all types in the pack.
@@ -1285,49 +1303,81 @@ private:
     using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
 
 public:
-
-    EnumAlphabet() : symbol_map() { }
-
-    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map) {}
-
     /**
      * Create alphabet from variable number of NFAs.
-     * @tparam Nfas Type Nfa.
-     * @param nfas NFAs to create alphabet from.
-     * @return Alphabet.
+     * @tparam[in] Nfas Type Nfa.
+     * @param[in] nfas NFAs to create alphabet from.
+     * @return Created alphabet.
      */
     template<typename... Nfas, typename = AreAllNfas<Nfas...>>
     static EnumAlphabet from_nfas(const Nfas&... nfas) {
         EnumAlphabet alphabet{};
+        // TODO: When we are on C++17, we can use fold expression here instead of the manual for_each_argument reimplementation.
         for_each_argument([&alphabet](const Nfa& aut) {
             size_t aut_num_of_states{ aut.get_num_of_states() };
             for (State state{ 0 }; state < aut_num_of_states; ++state) {
                 for (const auto& state_transitions: aut.transitionrelation[state]) {
-                    alphabet.add_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
                 }
             }
         }, nfas...);
         return alphabet;
     }
 
-    template <class InputIt>
-    EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet()
-    { // {{{
-        size_t cnt = 0;
-        for (; first != last; ++first)
-        {
-            bool inserted;
-            std::tie(std::ignore, inserted) = symbol_map.insert({*first, cnt++});
-            if (!inserted)
-            {
-                throw std::runtime_error("multiple occurrence of the same symbol");
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const ConstAutRefSequence& nfas) {
+        EnumAlphabet alphabet{};
+        size_t nfa_num_of_states{};
+        for (const auto& nfa: nfas) {
+            nfa_num_of_states = nfa.get().get_num_of_states();
+            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+                for (const auto& state_transitions: nfa.get().transitionrelation[state]) {
+                    alphabet.update_next_symbol_value(state_transitions.symbol);
+                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
             }
         }
-    } // }}}
+        return alphabet;
+    }
 
-    EnumAlphabet(std::initializer_list<std::string> l) :
-            EnumAlphabet(l.begin(), l.end())
-    { }
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
+        EnumAlphabet alphabet{};
+        size_t nfa_num_of_states{};
+        for (const Nfa* const nfa: nfas) {
+            nfa_num_of_states = nfa->get_num_of_states();
+            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+                for (const auto& state_transitions: nfa->transitionrelation[state]) {
+                    alphabet.update_next_symbol_value(state_transitions.symbol);
+                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
+            }
+        }
+        return alphabet;
+    }
+
+    /**
+     * Expand alphabet by symbols from the passed @p nfa.
+     * @param[in] nfa Automaton with whose transition symbols to expand the current alphabet.
+     */
+    void add_symbols_from(const Nfa& nfa);
+
+    template <class InputIt>
+    EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
+        for (; first != last; ++first) {
+            add_new_symbol(*first, next_symbol_value);
+        }
+    }
+
+    EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override
     {
@@ -1344,12 +1394,97 @@ public:
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 
     /**
-     * Add new symbol to the alphabet.
-     * @param key User-space representation of the symbol.
-     * @param value Number of the symbol to be used on transitions.
+     * @brief Add new symbol to the alphabet.
+     *
+     * Throws an exception when the adding fails.
+     *
+     * @param[in] key User-space representation of the symbol.
+     * @param[in] value Number of the symbol to be used on transitions.
+     * @return Result of the insertion as @c InsertionResult.
      */
-    void add_symbol(const std::string& key, Symbol value) { symbol_map.insert({key, value}); }
+     InsertionResult add_new_symbol(const std::string& key, Symbol value) {
+        const InsertionResult insertion_result{ try_add_new_symbol(key, value) };
+        if (!insertion_result.second) { // If the insertion of key-value pair failed.
+            throw std::runtime_error("multiple occurrence of the same symbol");
+        }
+        update_next_symbol_value(value);
+        return insertion_result;
+    }
+
+    /**
+     * @brief Try to add symbol to the alphabet map.
+     *
+     * Does not throw an exception when the adding fails.
+     *
+     * @param[in] key User-space representation of the symbol.
+     * @param[in] value Number of the symbol to be used on transitions.
+     * @return Result of the insertion as @c InsertionResult.
+     */
+    InsertionResult try_add_new_symbol(const std::string& key, Symbol value) {
+        const InsertionResult insertion_result{ symbol_map.insert({ key, value}) };
+        return insertion_result;
+    }
+
+    /**
+     * Get next value for a potential new symbol.
+     * @return Next Symbol value.
+     */
+    Symbol get_next_value() const { return next_symbol_value; }
+
+private:
+    StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
+    Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
+
+    EnumAlphabet& operator=(const EnumAlphabet& rhs);
+
+    // Adapted from: https://stackoverflow.com/a/41623721.
+    template <typename TF, typename... Ts>
+    static void for_each_argument(TF&& f, Ts&&... xs)
+    {
+        std::initializer_list<const Nfa>{(f(std::forward<Ts>(xs)), Nfa{})... };
+    }
+
+    /**
+     * @brief Update next symbol value when appropriate.
+     *
+     * When the newly inserted value is larger or equal to the current next symbol value, update he next symbol value to
+     * a value one larger than the new value.
+     * @param value The value of the newly added symbol.
+     */
+    void update_next_symbol_value(Symbol value) {
+        if (next_symbol_value <= value) {
+            next_symbol_value = value + 1;
+        }
+    }
 }; // class EnumAlphabet.
+
+class OnTheFlyAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap* symbol_map;
+    Symbol cnt_symbol;
+
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
+
+public:
+    /**
+     * Construct alphabet on the fly from already prepared str_sym_map.
+     * @param[in] str_sym_map Map of transition symbols as strings to symbol values.
+     * @param[in] init_symbol Initial symbol value to use as next added symbol value. One can reserve the values lower than
+     *     @p init_symbol for special symbols and when passing an non-empty @p str_sym_map, define value higher than any
+     *     value in @p str_sym_map to avoid collisions.
+     */
+    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+            symbol_map(str_sym_map), cnt_symbol(init_symbol)
+    {
+        assert(nullptr != symbol_map);
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    Symbol translate_symb(const std::string& str) override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+}; // class OnTheFlyAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
@@ -1372,6 +1507,5 @@ struct hash<Mata::Nfa::Trans>
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
 } // std }}}
-
 
 #endif /* _MATA_NFA_HH_ */

@@ -180,7 +180,7 @@ private:
     {
         for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
         {
-            for (const auto& symbol_transitions: rhs.get_transitions_from_state(rhs_state))
+            for (const auto& symbol_transitions: rhs.get_transitions_from(rhs_state))
             {
                 for (const auto& rhs_state_to: symbol_transitions.states_to)
                 {
@@ -200,7 +200,7 @@ private:
         // For all lhs final states, copy all their transitions, except for self-loops on final states.
         for (const auto& lhs_final_state: lhs.finalstates)
         {
-            for (const auto& transitions_from_lhs_final_state: lhs.get_transitions_from_state(lhs_final_state))
+            for (const auto& transitions_from_lhs_final_state: lhs.get_transitions_from(lhs_final_state))
             {
                 for (const auto& lhs_state_to: transitions_from_lhs_final_state.states_to) {
                     if (lhs_state_to != lhs_final_state) // Self-loops on final states already handled.
@@ -224,7 +224,7 @@ private:
         // For all transitions to lhs final states, point them to rhs initial states.
         for (const auto& lhs_final_state: lhs.finalstates)
         {
-            for (const auto& lhs_trans_to_final_state: lhs.get_transitions_to_state(lhs_final_state))
+            for (const auto& lhs_trans_to_final_state: lhs.get_transitions_to(lhs_final_state))
             {
                 for (const auto& rhs_initial_state: rhs.initialstates)
                 {
@@ -254,7 +254,7 @@ private:
         {
             if (!lhs.has_final(lhs_state))
             {
-                for (const auto& symbol_transitions: lhs.get_transitions_from_state(lhs_state))
+                for (const auto& symbol_transitions: lhs.get_transitions_from(lhs_state))
                 {
                     for (State lhs_state_to: symbol_transitions.states_to)
                     {

@@ -484,45 +484,45 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     CHECK(result.get_num_of_trans() == 15);
 
     CHECK(result.has_trans(prod_map[{0, 0}], epsilon, prod_map[{1, 0}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{0, 0}]).size() == 1);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 0, 0 }]).size() == 1);
 
     CHECK(result.has_trans(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
     CHECK(result.has_trans(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
     CHECK(result.has_trans(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 0}]).size() == 3);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 0 }]).size() == 3);
 
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 1}]).empty());
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 1 }]).empty());
 
     CHECK(result.has_trans(prod_map[{1, 2}], epsilon, prod_map[{1, 3}]));
     CHECK(result.has_trans(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 2}]).size() == 2);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 2 }]).size() == 2);
 
     CHECK(result.has_trans(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 3}]).size() == 1);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 3 }]).size() == 1);
 
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{1, 4}]).empty());
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 4 }]).empty());
 
     CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 5}]));
     CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{2, 6}]));
     CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 5}]).size() == 3);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 5 }]).size() == 3);
 
     CHECK(result.has_trans(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
     CHECK(result.has_trans(prod_map[{3, 5}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 5}]).size() == 2);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 5 }]).size() == 2);
 
     CHECK(result.has_trans(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
     CHECK(result.has_trans(prod_map[{2, 6}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{2, 6}]).size() == 2);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 6 }]).size() == 2);
 
     CHECK(result.has_trans(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{3, 6}]).size() == 1);
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 6 }]).size() == 1);
 
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{4, 7}]).empty());
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 4, 7 }]).empty());
 
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 9}]).empty());
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 9 }]).empty());
 
-    CHECK(result.get_trans_from_state_as_sequence(prod_map[{5, 8}]).empty());
+    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
 }
 
 TEST_CASE("Mata::Nfa::is_lang_empty()")
@@ -1265,7 +1265,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		State init_state = *cmpl.initialstates.begin();
 		State fin_state = *cmpl.finalstates.begin();
 		REQUIRE(init_state == fin_state);
-		REQUIRE(cmpl.get_transitions_from_state(init_state).size() == 2);
+		REQUIRE(cmpl.get_transitions_from(init_state).size() == 2);
 		REQUIRE(cmpl.has_trans(init_state, alph["a"], init_state));
 		REQUIRE(cmpl.has_trans(init_state, alph["b"], init_state));
 	}
@@ -2544,7 +2544,7 @@ TEST_CASE("Mata::Nfa::remove_trans()")
     }
 }
 
-TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
+TEST_CASE("Mafa::Nfa::get_transitions_from()")
 {
     Nfa aut{};
 
@@ -2554,12 +2554,12 @@ TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
         aut.make_initial(0);
         aut.make_initial(1);
         aut.make_initial(2);
-        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
-        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
-        REQUIRE_NOTHROW(aut.get_transitions_from_state(2));
-        REQUIRE(aut.get_transitions_from_state(0).empty());
-        REQUIRE(aut.get_transitions_from_state(1).empty());
-        REQUIRE(aut.get_transitions_from_state(2).empty());
+        REQUIRE_NOTHROW(aut.get_transitions_from(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from(1));
+        REQUIRE_NOTHROW(aut.get_transitions_from(2));
+        REQUIRE(aut.get_transitions_from(0).empty());
+        REQUIRE(aut.get_transitions_from(1).empty());
+        REQUIRE(aut.get_transitions_from(2).empty());
     }
 
     SECTION("Add new states over the limit")
@@ -2568,24 +2568,24 @@ TEST_CASE("Mafa::Nfa::get_transitions_from_state()")
         REQUIRE_NOTHROW(aut.make_initial(0));
         REQUIRE_NOTHROW(aut.make_initial(1));
         REQUIRE_THROWS_AS(aut.make_initial(2), std::runtime_error);
-        REQUIRE_NOTHROW(aut.get_transitions_from_state(0));
-        REQUIRE_NOTHROW(aut.get_transitions_from_state(1));
-        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
-        REQUIRE(aut.get_transitions_from_state(0).empty());
-        REQUIRE(aut.get_transitions_from_state(1).empty());
-        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE_NOTHROW(aut.get_transitions_from(0));
+        REQUIRE_NOTHROW(aut.get_transitions_from(1));
+        //REQUIRE_THROWS(aut.get_transitions_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE(aut.get_transitions_from(0).empty());
+        REQUIRE(aut.get_transitions_from(1).empty());
+        //REQUIRE_THROWS(aut.get_transitions_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
     }
 
     SECTION("Add new states without specifying the number of states")
     {
         REQUIRE_THROWS_AS(aut.make_initial(0), std::runtime_error);
-        //REQUIRE_THROWS(aut.get_transitions_from_state(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        //REQUIRE_THROWS(aut.get_transitions_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
     }
 
     SECTION("Add new initial without specifying the number of states with over +1 number")
     {
         REQUIRE_THROWS_AS(aut.make_initial(25), std::runtime_error);
-        //REQUIRE_THROWS(aut.get_transitions_from_state(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        //REQUIRE_THROWS(aut.get_transitions_from(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
     }
 }
 
@@ -2622,6 +2622,15 @@ TEST_CASE("Mata::Nfa::remove_epsilon()")
     REQUIRE(aut.has_trans(5, 'a', 5));
     REQUIRE(!aut.has_trans(5, 'c', 9));
     REQUIRE(aut.has_trans(5, 'a', 9));
+}
+
+TEST_CASE("Profile Mata::Nfa::remove_epsilon()", "[.profiling]")
+{
+    for (size_t n{}; n < 100000; ++n) {
+        Nfa aut{20};
+        FILL_WITH_AUT_A(aut);
+        aut.remove_epsilon('c');
+    }
 }
 
 TEST_CASE("Mata::Nfa::get_num_of_trans()")
