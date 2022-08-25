@@ -1037,7 +1037,7 @@ void construct(
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-inline Nfa construct(
+Nfa construct(
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
