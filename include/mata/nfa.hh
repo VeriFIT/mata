@@ -963,18 +963,6 @@ bool is_deterministic(const Nfa& aut);
 /// symbol.
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
-void construct(
-        Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-void construct(
-        Nfa*                                 aut,
-        const Mata::InterAutomaton&          inter_aut,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
 void construct(
@@ -1048,6 +1036,18 @@ Nfa construct(
     construct(&result, parsed, symbol_map, state_map);
     return result;
 } // construct }}}
+
+void construct(
+        Nfa*                                 aut,
+        const Mata::Parser::ParsedSection&  parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+void construct(
+        Nfa*                                 aut,
+        const Mata::InterAutomaton&          inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
 
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
 
