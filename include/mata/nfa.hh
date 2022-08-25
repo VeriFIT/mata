@@ -70,6 +70,91 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
+// ALPHABET {{{
+class Alphabet
+{
+public:
+
+    /// translates a string into a symbol
+    virtual Symbol translate_symb(const std::string& symb) = 0;
+    /// also translates strings to symbols
+    Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
+    /// gets a list of symbols in the alphabet
+    virtual std::list<Symbol> get_symbols() const
+    { // {{{
+        throw std::runtime_error("Unimplemented");
+    } // }}}
+
+    /// complement of a set of symbols wrt the alphabet
+    virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const
+    { // {{{
+        (void)syms;
+        throw std::runtime_error("Unimplemented");
+    } // }}}
+
+    virtual ~Alphabet() { }
+};
+
+class OnTheFlyAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap* symbol_map;
+    Symbol cnt_symbol;
+
+private:
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
+
+public:
+
+    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+            symbol_map(str_sym_map), cnt_symbol(init_symbol)
+    {
+        assert(nullptr != symbol_map);
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    Symbol translate_symb(const std::string& str) override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+};
+
+class DirectAlphabet : public Alphabet
+{
+public:
+    Symbol translate_symb(const std::string& str) override
+    {
+        Symbol symb;
+        std::istringstream stream(str);
+        stream >> symb;
+        return symb;
+    }
+};
+
+class CharAlphabet : public Alphabet
+{
+public:
+
+    Symbol translate_symb(const std::string& str) override
+    {
+        if (str.length() == 3 &&
+            ((str[0] == '\'' && str[2] == '\'') ||
+             (str[0] == '\"' && str[2] == '\"')
+            ))
+        { // direct occurrence of a character
+            return str[1];
+        }
+
+        Symbol symb;
+        std::istringstream stream(str);
+        stream >> symb;
+        return symb;
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    std::list<Symbol> get_complement(
+            const std::set<Symbol>& syms) const override;
+};
+
 const PostSymb EMPTY_POST{};
 
 static const struct Limits {
@@ -99,92 +184,6 @@ struct Trans
 using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
-
-// ALPHABET {{{
-class Alphabet
-{
-public:
-
-	/// translates a string into a symbol
-	virtual Symbol translate_symb(const std::string& symb) = 0;
-	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
-	/// gets a list of symbols in the alphabet
-	virtual std::list<Symbol> get_symbols() const
-	{ // {{{
-		throw std::runtime_error("Unimplemented");
-	} // }}}
-
-	/// complement of a set of symbols wrt the alphabet
-	virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const
-	{ // {{{
-		(void)syms;
-		throw std::runtime_error("Unimplemented");
-	} // }}}
-
-	virtual ~Alphabet() { }
-};
-
-class OnTheFlyAlphabet : public Alphabet
-{
-private:
-	StringToSymbolMap* symbol_map;
-	Symbol cnt_symbol;
-
-private:
-	OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
-	OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-public:
-
-	explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
-		symbol_map(str_sym_map), cnt_symbol(init_symbol)
-	{
-		assert(nullptr != symbol_map);
-	}
-
-	std::list<Symbol> get_symbols() const override;
-	Symbol translate_symb(const std::string& str) override;
-	std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-};
-
-class DirectAlphabet : public Alphabet
-{
-public:
-	Symbol translate_symb(const std::string& str) override
-	{
-		Symbol symb;
-		std::istringstream stream(str);
-		stream >> symb;
-		return symb;
-	}
-};
-
-class CharAlphabet : public Alphabet
-{
-public:
-
-	Symbol translate_symb(const std::string& str) override
-	{
-		if (str.length() == 3 &&
-			((str[0] == '\'' && str[2] == '\'') ||
-			(str[0] == '\"' && str[2] == '\"')
-			 ))
-		{ // direct occurrence of a character
-			return str[1];
-		}
-
-		Symbol symb;
-		std::istringstream stream(str);
-		stream >> symb;
-		return symb;
-	}
-
-	std::list<Symbol> get_symbols() const override;
-	std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
-};
-
 
 using AutSequence = std::vector<Nfa>; ///< A sequence of non-deterministic finite automata.
 
