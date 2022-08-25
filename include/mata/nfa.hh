@@ -982,7 +982,7 @@ void construct(
 
     auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
 
-    OnTheFlyAlphabet alphabet(symbol_map);
+    Mata::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
 
     try
     {
