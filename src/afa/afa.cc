@@ -339,7 +339,7 @@ void Mata::Afa::construct(
 
 	try
 	{
-		construct(aut, parsec, &alphabet, state_map);
+		Mata::Afa::construct(aut, parsec, &alphabet, state_map);
 	}
 	catch (std::exception&)
 	{
