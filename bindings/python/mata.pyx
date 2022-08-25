@@ -304,6 +304,14 @@ cdef class Nfa:
         """Clears final state set of the automaton."""
         self.thisptr.get().clear_final()
 
+    def unify_initial(self):
+        """Unify initial states into a single new initial state."""
+        self.thisptr.get().unify_initial()
+
+    def unify_final(self):
+        """Unify final states into a single new final state."""
+        self.thisptr.get().unify_final()
+
     def get_num_of_states(self):
         """Returns number of states in automaton
 
@@ -717,7 +725,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False):
+    def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False, params = None):
         """
         Create noodles for equation.
 
@@ -739,9 +747,13 @@ cdef class Nfa:
         for lhs_aut in left_side_automata:
             c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr.get())
         noodle_segments = []
+        params = params or {}
         cdef NoodleSequence c_noodle_segments = mata.noodlify_for_equation(
-            c_left_side_automata,
-            dereference(right_side_automaton.thisptr.get()), include_empty
+            c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            },
         )
         for c_noodle in c_noodle_segments:
             noodle = []

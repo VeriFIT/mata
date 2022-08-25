@@ -2799,3 +2799,89 @@ TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
         CHECK(!aut.trans_empty());
     }
 }
+
+TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
+    Nfa nfa{10};
+
+    SECTION("No initial") {
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.initialstates.empty());
+    }
+
+    SECTION("Single initial") {
+        nfa.make_initial(0);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(0));
+    }
+
+    SECTION("Multiple initial") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+    }
+
+    SECTION("With transitions") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.add_trans(0, 'a', 3);
+        nfa.add_trans(1, 'b', 0);
+        nfa.add_trans(1, 'c', 1);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+        CHECK(nfa.has_trans(10, 'a', 3));
+        CHECK(nfa.has_trans(10, 'b', 0));
+        CHECK(nfa.has_trans(10, 'c', 1));
+        CHECK(nfa.has_trans(0, 'a', 3));
+        CHECK(nfa.has_trans(1, 'b', 0));
+        CHECK(nfa.has_trans(1, 'c', 1));
+    }
+
+    SECTION("No final") {
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.finalstates.empty());
+    }
+
+    SECTION("Single final") {
+        nfa.make_final(0);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(0));
+    }
+
+    SECTION("Multiple final") {
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+    }
+
+    SECTION("With transitions") {
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.add_trans(3, 'a', 0);
+        nfa.add_trans(4, 'b', 1);
+        nfa.add_trans(1, 'c', 1);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+        CHECK(nfa.has_trans(3, 'a', 10));
+        CHECK(nfa.has_trans(4, 'b', 10));
+        CHECK(nfa.has_trans(1, 'c', 10));
+        CHECK(nfa.has_trans(3, 'a', 0));
+        CHECK(nfa.has_trans(4, 'b', 1));
+        CHECK(nfa.has_trans(1, 'c', 1));
+    }
+}
