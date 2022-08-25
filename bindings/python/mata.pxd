@@ -149,6 +149,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void reset_final(State)
         void reset_final(vector[State])
         void clear_final()
+        void unify_initial()
+        void unify_final()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         void remove_trans(CTrans) except +
@@ -251,7 +253,7 @@ cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
     
     cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
-    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
+    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringDict&)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":

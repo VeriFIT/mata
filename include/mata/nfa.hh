@@ -418,6 +418,36 @@ public:
      */
     State add_new_state();
 
+    /**
+     * Unify initial states into a single new initial state.
+     */
+    void unify_initial() {
+        if (initialstates.empty() || initialstates.size() == 1) { return; }
+        const State new_initial_state{ add_new_state() };
+        for (const auto& orig_initial_state: initialstates) {
+            for (const auto& transitions: get_transitions_from(orig_initial_state)) {
+                for (const State state_to: transitions.states_to) {
+                    add_trans(new_initial_state, transitions.symbol, state_to);
+                }
+            }
+        }
+        reset_initial(new_initial_state);
+    }
+
+    /**
+     * Unify final states into a single new final state.
+     */
+    void unify_final() {
+        if (finalstates.empty() || finalstates.size() == 1) { return; }
+        const State new_final_state{ add_new_state() };
+        for (const auto& orig_final_state: finalstates) {
+            for (const auto& transitions: get_transitions_to(orig_final_state)) {
+                add_trans(transitions.src, transitions.symb, new_final_state);
+            }
+        }
+        reset_final(new_final_state);
+    }
+
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
 
     /**

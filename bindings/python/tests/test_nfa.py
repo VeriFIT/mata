@@ -1049,3 +1049,13 @@ def test_noodlify():
     assert mata.Nfa.equivalence_check(result[1][0], noodle2_segment1)
     assert mata.Nfa.equivalence_check(result[1][1], noodle2_segment2)
     assert mata.Nfa.equivalence_check(result[1][2], noodle2_segment3)
+
+
+def test_unify():
+    nfa = mata.Nfa(10)
+    nfa.make_initial_state(0)
+    nfa.make_initial_state(1)
+    nfa.add_trans_raw(0, 1, 2)
+    nfa.unify_initial()
+    assert nfa.has_initial_state(10)
+    assert nfa.has_trans_raw(10, 1, 2)
