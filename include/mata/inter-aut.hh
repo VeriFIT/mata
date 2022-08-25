@@ -2,8 +2,8 @@
 // Created by Martin Hruska on 09.08.2022.
 //
 
-#ifndef LIBMATA_INTER_AUT_HH
-#define LIBMATA_INTER_AUT_HH
+#ifndef _MATA_INTER_AUT_HH
+#define _MATA_INTER_AUT_HH
 
 #include <unordered_map>
 #include <unordered_set>
@@ -190,4 +190,4 @@ namespace std
     std::ostream& operator<<(std::ostream& os, const Mata::InterAutomaton& inter_aut);
 }
 
-#endif //LIBMATA_INTER_AUT_HH
+#endif //_MATA_INTER_AUT_HH
