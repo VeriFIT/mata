@@ -741,6 +741,9 @@ cdef class Nfa:
         :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
         :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
         :param: bool include_empty: Whether to also include empty noodles.
+        :param: dict params: Additional parameters for the noodlification:
+            - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
+                        minimization before noodlification.
         :return: List of automata: A list of all (non-empty) noodles.
         """
         cdef ConstAutPtrSequence c_left_side_automata

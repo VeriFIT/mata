@@ -62,10 +62,13 @@ NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = 
  * @param[in] left_automata Sequence of segment automata for left side of an equation to noodlify.
  * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
+ * @param[in] params Additional parameters for the noodlification:
+ *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
+ *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
 NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
-                                     bool include_empty = false);
+                                     bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -82,10 +85,13 @@ NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, c
  * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
  * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
+ * @param[in] params Additional parameters for the noodlification:
+ *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
+ *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
 NoodleSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
-                                     bool include_empty = false);
+                                     bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
 } // SegNfa
 } // Nfa
 } // Mata
