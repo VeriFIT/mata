@@ -273,18 +273,6 @@ private:
         add_product_transition(intersection_transition);
     }
 
-    // TODO: Keep or finally remove?
-    /* If q is the state of this automaton and p of other, then thisAndOtherStateToIntersectState[q][p] = state in intersect
-     * representing (q,p). The hash function computes for each pair (q,p) unique number (q + p*(num of states in this automaton))
-     * whose std hash is returned.
-     *
-     * see https://stackoverflow.com/questions/15719084/how-to-use-lambda-function-as-hash-function-in-unordered-map
-     */
-    State hashStatePair(const StatePair &sp)
-    {
-        return std::hash<unsigned long>()(sp.first + sp.second*lhs.transitionrelation.size());
-    }
-
     /**
      * Compute classic product for current state pair.
      */
