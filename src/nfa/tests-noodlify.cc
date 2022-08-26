@@ -130,14 +130,14 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
 
 TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
     SECTION("Empty input") {
-        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<const Nfa>>{}, Nfa{}).empty());
+        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, Nfa{}).empty());
     }
 
     SECTION("Empty left side") {
         Nfa right{1};
         right.make_initial(0);
         right.make_final(0);
-        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<const Nfa>>{}, right).empty());
+        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, right).empty());
     }
 
     SECTION("Empty right side") {

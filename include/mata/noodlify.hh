@@ -67,7 +67,7 @@ NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = 
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const Nfa& right_automaton,
                                      bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
 
 /**
@@ -90,7 +90,7 @@ NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, c
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa& right_automaton,
                                      bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
 
 std::pair<Mata::Nfa::Nfa, Symbol> noodlify_for_equation_test(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,

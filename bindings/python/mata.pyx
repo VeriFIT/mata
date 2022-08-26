@@ -749,7 +749,7 @@ cdef class Nfa:
                         minimization before noodlification.
         :return: List of automata: A list of all (non-empty) noodles.
         """
-        cdef ConstAutPtrSequence c_left_side_automata
+        cdef AutPtrSequence c_left_side_automata
         for lhs_aut in left_side_automata:
             c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr.get())
         noodle_segments = []
