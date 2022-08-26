@@ -92,6 +92,9 @@ NoodleSequence noodlify_for_equation(const ConstAutRefSequence& left_automata, c
  */
 NoodleSequence noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
                                      bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
+
+std::pair<Mata::Nfa::Nfa, Symbol> noodlify_for_equation_test(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+                                                          bool include_empty, const StringDict& params);
 } // SegNfa
 } // Nfa
 } // Mata

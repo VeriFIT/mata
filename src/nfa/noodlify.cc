@@ -227,3 +227,23 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& 
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
+std::pair<Mata::Nfa::Nfa, Symbol> SegNfa::noodlify_for_equation_test(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+                                                     bool include_empty, const StringDict& params) {
+    if (left_automata.empty() || is_lang_empty(right_automaton)) { return std::make_pair(Nfa{}, 0); }
+
+    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
+    alphabet.add_symbols_from(right_automaton);
+    const Symbol epsilon{ alphabet.get_next_value() };
+
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    // Automaton representing the left side concatenated over epsilon transitions.
+    Nfa concatenated_left_side{ *(*left_automata_begin) };
+    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
+         ++next_left_automaton_it) {
+        concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), epsilon);
+    }
+
+    return std::make_pair(concatenated_left_side, epsilon);
+}
+

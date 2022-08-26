@@ -773,6 +773,48 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
+    def noodlify_for_equation_test(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False, params = None):
+        """
+        Create noodles for equation.
+
+        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
+
+        Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
+         the equation in a way that libMata understands. The left side automata represent the left side of the equation
+         and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
+         representing the intersection. That can be achieved by computing a product of both sides. First, the left side
+         has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
+
+        :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
+        :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
+        :param: bool include_empty: Whether to also include empty noodles.
+        :param: dict params: Additional parameters for the noodlification:
+            - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
+                        minimization before noodlification.
+        :return: List of automata: A list of all (non-empty) noodles.
+        """
+        cdef ConstAutPtrSequence c_left_side_automata
+        for lhs_aut in left_side_automata:
+            c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr.get())
+        noodle_segments = []
+        params = params or {}
+        cdef pair[CNfa, Symbol] c_noodle_segments = mata.noodlify_for_equation_test(
+            c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            },
+        )
+
+        cdef Symbol epsilon = c_noodle_segments.second
+
+        cdef Nfa concatenated = Nfa()
+        concatenated.thisptr = make_shared[CNfa](c_noodle_segments.first)
+
+        return concatenated, epsilon
+
+    @classmethod
     def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 

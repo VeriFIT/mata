@@ -254,6 +254,7 @@ cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
     
     cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
     cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringDict&)
+    cdef pair[CNfa, Symbol] noodlify_for_equation_test(const AutPtrSequence&, CNfa&, bool, StringDict&)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
