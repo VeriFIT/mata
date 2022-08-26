@@ -226,7 +226,9 @@ struct TransSymbolStates {
     inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
 };
 
+/// List of transitions from a certain state. Each element holds transitions with a certain symbol.
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
+/// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
 /**

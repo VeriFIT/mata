@@ -214,9 +214,14 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& 
 
     auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
     if (util::haskey(params, "reduce")) {
-        const std::string& reduce_value = params.at("reduce_value");
-        if (reduce_value == "true") {
+        const std::string& reduce_value = params.at("reduce");
+        if (reduce_value == "forward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = reduce(product_pres_eps_trans);
+        }
+        if (reduce_value == "backward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+            product_pres_eps_trans = invert(product_pres_eps_trans);
         }
     }
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
