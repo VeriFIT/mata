@@ -181,6 +181,10 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& 
     }
 
     auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    product_pres_eps_trans.trim();
+    if (is_lang_empty(product_pres_eps_trans)) {
+        return NoodleSequence{};
+    }
     if (util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
@@ -213,6 +217,10 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& 
     }
 
     auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    product_pres_eps_trans.trim();
+    if (is_lang_empty(product_pres_eps_trans)) {
+        return NoodleSequence{};
+    }
     if (util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
