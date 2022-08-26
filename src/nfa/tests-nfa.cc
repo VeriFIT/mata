@@ -2809,6 +2809,28 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         CHECK(nfa.initialstates.empty());
     }
 
+    SECTION("initial==final unify final") {
+        nfa.make_initial(0);
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.unify_final();
+        REQUIRE(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+        CHECK(nfa.has_initial(10));
+    }
+
+    SECTION("initial==final unify initial") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.make_final(0);
+        nfa.unify_initial();
+        REQUIRE(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+        CHECK(nfa.has_final(10));
+    }
+
     SECTION("Single initial") {
         nfa.make_initial(0);
         nfa.unify_initial();

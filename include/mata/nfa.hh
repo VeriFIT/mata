@@ -456,6 +456,7 @@ public:
                     add_trans(new_initial_state, transitions.symbol, state_to);
                 }
             }
+            if (has_final(orig_initial_state)) { make_final(new_initial_state); }
         }
         reset_initial(new_initial_state);
     }
@@ -470,6 +471,7 @@ public:
             for (const auto& transitions: get_transitions_to(orig_final_state)) {
                 add_trans(transitions.src, transitions.symb, new_final_state);
             }
+            if (has_initial(orig_final_state)) { make_initial(new_final_state); }
         }
         reset_final(new_final_state);
     }
@@ -555,6 +557,10 @@ public:
     {
         add_trans(trans.src, trans.symb, trans.tgt);
     }
+
+    void add_trans(State src, Symbol symb, const StateSet& states_to);
+
+    void add_trans(State src, const TransitionList& state_transitions);
 
     /**
      * Remove transition.
