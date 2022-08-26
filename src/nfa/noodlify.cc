@@ -163,16 +163,22 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& left_automata, const Nfa& right_automaton,
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const Nfa& right_automaton,
                                                      bool include_empty, const StringDict& params) {
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
+         ++left_aut_iter) {
+        (*left_aut_iter).get().unify_initial();
+        (*left_aut_iter).get().unify_final();
+    }
+
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
     const Symbol epsilon{ alphabet.get_next_value() };
 
-    const auto left_automata_begin{ left_automata.begin() };
-    const auto left_automata_end{ left_automata.end() };
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_left_side{ *left_automata_begin };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
@@ -199,16 +205,22 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutRefSequence& 
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const ConstAutPtrSequence& left_automata, const Nfa& right_automaton,
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa& right_automaton,
                                                      bool include_empty, const StringDict& params) {
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
+         ++left_aut_iter) {
+        (*left_aut_iter)->unify_initial();
+        (*left_aut_iter)->unify_final();
+    }
+
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
     auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
     const Symbol epsilon{ alphabet.get_next_value() };
 
-    const auto left_automata_begin{ left_automata.begin() };
-    const auto left_automata_end{ left_automata.end() };
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_left_side{ *(*left_automata_begin) };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;

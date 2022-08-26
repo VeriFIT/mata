@@ -1445,10 +1445,50 @@ public:
 
     /**
      * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const AutRefSequence& nfas) {
+        EnumAlphabet alphabet{};
+        size_t nfa_num_of_states{};
+        for (const auto& nfa: nfas) {
+            nfa_num_of_states = nfa.get().get_num_of_states();
+            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+                for (const auto& state_transitions: nfa.get().transitionrelation[state]) {
+                    alphabet.update_next_symbol_value(state_transitions.symbol);
+                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
+            }
+        }
+        return alphabet;
+    }
+
+    /**
+     * Create alphabet from vector of of NFAs.
      * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
      * @return Created alphabet.
      */
     static EnumAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
+        EnumAlphabet alphabet{};
+        size_t nfa_num_of_states{};
+        for (const Nfa* const nfa: nfas) {
+            nfa_num_of_states = nfa->get_num_of_states();
+            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+                for (const auto& state_transitions: nfa->transitionrelation[state]) {
+                    alphabet.update_next_symbol_value(state_transitions.symbol);
+                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                }
+            }
+        }
+        return alphabet;
+    }
+
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const AutPtrSequence& nfas) {
         EnumAlphabet alphabet{};
         size_t nfa_num_of_states{};
         for (const Nfa* const nfa: nfas) {
