@@ -209,10 +209,20 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
                                                      bool include_empty, const StringDict& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
-    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
-         ++left_aut_iter) {
-        (*left_aut_iter)->unify_initial();
-        (*left_aut_iter)->unify_final();
+
+    std::string reduce_value{};
+    if (util::haskey(params, "reduce")) {
+        reduce_value = params.at("reduce");
+    }
+
+    if (!reduce_value.empty()) {
+        if (reduce_value == "forward" || reduce_value == "backward" || reduce_value == "bidirectional") {
+            for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
+                 ++left_aut_iter) {
+                (*left_aut_iter)->unify_initial();
+                (*left_aut_iter)->unify_final();
+            }
+        }
     }
 
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
@@ -233,8 +243,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
     }
-    if (util::haskey(params, "reduce")) {
-        const std::string& reduce_value = params.at("reduce");
+    if (!reduce_value.empty()) {
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
