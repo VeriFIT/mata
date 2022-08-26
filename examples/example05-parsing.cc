@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
             throw std::runtime_error(
                     "The number of sections in the input file is not 1\n");
         }
-        if (parsed[0].type != "NFA") {
+        if (parsed[0].type.find("NFA") == std::string::npos) {
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
