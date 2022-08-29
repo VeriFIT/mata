@@ -532,6 +532,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 {
     assert(nullptr != result);
 
+    result->clear_nfa();
     result->increase_size(aut.get_num_of_states());
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
@@ -605,6 +606,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 {
     assert(nullptr != result);
+    result->clear_nfa();
 
     if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
 
@@ -1222,6 +1224,7 @@ void Mata::Nfa::reduce(Nfa* result, const Nfa &aut, StateToStateMap *state_map, 
                                  "received: " + std::to_string(params));
     }
 
+    result->clear_nfa();
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
         if (state_map == nullptr) {
