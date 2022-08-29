@@ -89,10 +89,10 @@ public:
 
     FormulaNode(Type t, std::string raw, std::string name,
                 OperandType operand) : type(t), raw(raw), name(name), operator_type(NOT_OPERATOR),
-                                       operand_type(operand) {};
+                                       operand_type(operand) {}
 
     FormulaNode(Type t, std::string raw) : type(t), raw(raw), name(raw), operator_type(NOT_OPERATOR),
-                                           operand_type(NOT_OPERAND) {};
+                                           operand_type(NOT_OPERAND) {}
 };
 
 /**
