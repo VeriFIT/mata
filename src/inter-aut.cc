@@ -148,7 +148,8 @@ namespace
      * @param tokens Series of tokens representing transition formula parsed from the input text
      * @return A postfix notation for input
      */
-    std::vector<Mata::FormulaNode> infix2postfix(const Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
+    std::vector<Mata::FormulaNode> infix_to_postfix(
+            const Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
 
@@ -198,7 +199,7 @@ namespace
      * @param postfix A postfix representation of transition formula
      * @return A parsed graph
      */
-    Mata::FormulaGraph postfix2graph(const std::vector<Mata::FormulaNode> &postfix)
+    Mata::FormulaGraph postfix_to_graph(const std::vector<Mata::FormulaNode> &postfix)
     {
         std::vector<Mata::FormulaGraph> opstack;
 
@@ -275,7 +276,7 @@ namespace
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
         const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
-        std::vector<Mata::FormulaNode> postfix = infix2postfix(aut, rhs);
+        std::vector<Mata::FormulaNode> postfix = infix_to_postfix(aut, rhs);
         // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
         if (aut.automaton_type == Mata::InterAutomaton::NFA && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT
             && postfix.size() == 2) {
@@ -283,7 +284,7 @@ namespace
                     Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
         }
 
-        const Mata::FormulaGraph graph = postfix2graph(postfix);
+        const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
     }
@@ -331,15 +332,15 @@ namespace
             const std::string &key = keypair.first;
 
             if (key.find("Initial") != std::string::npos) {
-                auto postfix = infix2postfix(aut, keypair.second);
+                auto postfix = infix_to_postfix(aut, keypair.second);
                 if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
                     postfix = add_operators_implicitly(aut, postfix);
-                aut.initial_formula = postfix2graph(postfix);
+                aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
-                auto postfix = infix2postfix(aut, keypair.second);
+                auto postfix = infix_to_postfix(aut, keypair.second);
                 if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
                     postfix = add_operators_implicitly(aut, postfix);
-                aut.final_formula = postfix2graph(postfix);
+                aut.final_formula = postfix_to_graph(postfix);
             }
         }
 
