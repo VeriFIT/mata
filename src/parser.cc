@@ -290,7 +290,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 		std::string line;
 		getline(input, line);
 
-		bool backslash_ending = (line[line.size()-1] == '\\');
+		bool backslash_ending = (line.back() == '\\');
 		if (backslash_ending) {
 		    line.pop_back();
 		}
