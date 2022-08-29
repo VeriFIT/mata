@@ -148,7 +148,7 @@ namespace
      * @param tokens Series of tokens representing transition formula parsed from the input text
      * @return A postfix notation for input
      */
-    std::vector<Mata::FormulaNode> infix2postfix(Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
+    std::vector<Mata::FormulaNode> infix2postfix(const Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
 
