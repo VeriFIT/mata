@@ -29,8 +29,9 @@ namespace
 
     Mata::InterAutomaton::Naming get_naming_type(const std::string &key)
     {
-        assert(key.find('-') != std::string::npos);
-        const std::string& type = key.substr(key.find('-')+1, std::string::npos);
+        const size_t found = key.find('-');
+        assert(found != std::string::npos);
+        const std::string& type = key.substr(found+1, std::string::npos);
 
         if (type == "auto")
             return Mata::InterAutomaton::Naming::AUTO;
