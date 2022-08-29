@@ -40,7 +40,8 @@ namespace
         else if (type == "marked")
             return Mata::InterAutomaton::Naming::MARKED;
 
-        assert(false && "Unknown naming type");
+        assert(false && "Unknown naming type - a naming type should be always defined correctly otherwise it is"
+                        "impossible to parse automaton correctly");
     }
 
     Mata::InterAutomaton::AlphabetType get_alphabet_type(const std::string &type)
