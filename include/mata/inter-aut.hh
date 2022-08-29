@@ -34,7 +34,7 @@ namespace Mata
 
 /**
  * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
- * Each nodes has a name (in case of marking naming, an initial character definig type of node is removed and stored in
+ * Each node has a name (in case of marking naming, an initial character defining type of node is removed and stored in
  * name), raw (name including potential type marker), and information about its type.
  */
 struct FormulaNode
