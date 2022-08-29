@@ -218,10 +218,8 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 
                 // there is token before logical operator (this is case of binary operators, e.g., a&b)
                 if (!token_candidate.empty())
-                    result.push_back(std::pair<std::string, bool>(
-                            token_candidate, false));
-                result.push_back(std::pair<std::string, bool>(
-                        std::string(1,token_string[i]), false));
+                    result.push_back(std::make_pair(token_candidate, false));
+                result.push_back(std::make_pair(std::string(1,token_string[i]), false));
                 last_operator = i+1;
             }
         }
@@ -230,7 +228,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
         if (last_operator == 0) {
             result.push_back(token);
         } else if (last_operator != length){ // operator was not last, we need parse rest of token
-            result.push_back(std::pair<std::string, bool>(
+            result.push_back(std::make_pair(
                     token_string.substr(last_operator, length-last_operator), false));
         }
     }
