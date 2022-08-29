@@ -1,0 +1,83 @@
+name: Build and Deploy Doc
+
+on:
+  pull_request:
+    branches:
+      - devel
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - id: Set release version
+        run: echo ::set-output name=release::minor
+
+      - id: Checkout latest version
+        uses: actions/checkout@v2
+        with:
+          ref: devel
+
+      - id: Set up git config
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - id: Infer the new version (without tagging)
+        uses: phish108/autotag-action@1.1.51
+        env:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch: devel
+          bump: ${{ steps.contributor.outputs.release || steps.bot.outputs.release }}
+          dry-run: 'true'
+
+      - id: Set the new version to file
+        run: |
+          echo "${{ steps.tagger.output.new-tag }}" > VERSION
+          git commit -m "version: bump to ${{ steps.tagger.outputs.new-tag }}" -a
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: Tag the new version
+        uses: phish108/autotag-action@1.1.51
+        env:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          branch: devel
+          bump: ${{ steps.contributor.outputs.release || steps.bot.outputs.release }}
+
+  build-and-deploy-doc:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          make -C doc init
+
+      - name: Compile the documentation
+        run: |
+          python -m pip install --upgrade pip
+          make -C doc html
+
+      - name: Deploy to gh pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: doc/_build/html
