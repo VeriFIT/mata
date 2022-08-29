@@ -196,7 +196,7 @@ public:
     bool symbols_enumerated() const {return symbol_naming == Naming::ENUM;}
     bool nodes_enumerated() const {return node_naming == Naming::ENUM;}
 
-    bool is_nfa() const {return automaton_type == NFA;}
+    bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
 };
 
 } /* Mata */
