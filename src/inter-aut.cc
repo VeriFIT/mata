@@ -244,10 +244,15 @@ namespace
         return opstack.back();
     }
 
-    std::vector<Mata::FormulaNode> add_operators_implicitly(const Mata::InterAutomaton& aut,
-                                                            const std::vector<Mata::FormulaNode>& postfix)
+    /**
+     * Function adds disjunction operators to a postfix form when there are no operators at all.
+     * This is currently case of initial and final states of NFA where a user usually doesn't want to write
+     * initial or final states as a formula
+     * @param postfix Postfix to which operators are eventually added
+     * @return A postfix with eventually added operators
+     */
+    std::vector<Mata::FormulaNode> add_disjunction_implicitly(const std::vector<Mata::FormulaNode> &postfix)
     {
-        assert(aut.is_nfa());
         if (postfix.size() == 1) // no need to add operators
             return postfix;
 
@@ -343,12 +348,12 @@ namespace
             if (key.find("Initial") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
-                    postfix = add_operators_implicitly(aut, postfix);
+                    postfix = add_disjunction_implicitly(postfix);
                 aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
-                    postfix = add_operators_implicitly(aut, postfix);
+                    postfix = add_disjunction_implicitly(postfix);
                 aut.final_formula = postfix_to_graph(postfix);
             }
         }
