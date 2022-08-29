@@ -211,7 +211,8 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 
         const std::string& token_string = token.first;
         size_t last_operator = 0;
-        for (size_t i = 0; i < token_string.size(); ++i) {
+        const size_t size = token_string.size();
+        for (size_t i = 0; i < size; ++i) {
             if (is_logical_operator(token_string[i])) {
                 const std::string token_candidate = token_string.substr(last_operator, i - last_operator);
 
