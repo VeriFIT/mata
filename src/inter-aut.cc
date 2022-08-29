@@ -57,7 +57,8 @@ namespace
             return Mata::InterAutomaton::AlphabetType::INTERVALS;
         }
 
-        assert(false);
+        assert(false && "Unknown alphabet type - an alphabet type should be always defined correctly otherwise it is"
+                        "impossible to parse automaton correctly");
     }
 
     bool is_naming_marker(const Mata::InterAutomaton::Naming naming)
