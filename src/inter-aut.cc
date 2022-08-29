@@ -311,17 +311,17 @@ namespace
             const std::string& key = keypair.first;
             if (key.find("Alphabet") != std::string::npos) {
                 aut.symbol_naming = get_naming_type(key);
-                if (aut.symbols_enumerated())
+                if (aut.are_symbols_enum_type())
                     aut.symbols_names.insert(
                             aut.symbols_names.end(), keypair.second.begin(), keypair.second.end());
             } else if (key.find("States") != std::string::npos) {
                 aut.state_naming = get_naming_type(key);
-                if (aut.states_enumerated())
+                if (aut.are_states_enum_type())
                     aut.states_names.insert(
                             aut.states_names.end(), keypair.second.begin(), keypair.second.end());
             } else if (key.find("Nodes") != std::string::npos) {
                 aut.node_naming = get_naming_type(key);
-                if (aut.nodes_enumerated())
+                if (aut.are_nodes_enum_type())
                     aut.nodes_names.insert(
                             aut.nodes_names.end(), keypair.second.begin(), keypair.second.end());
             }
