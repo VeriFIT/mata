@@ -197,9 +197,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = revert(product_pres_eps_trans);
             product_pres_eps_trans = reduce(product_pres_eps_trans);
-            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
     return noodlify(product_pres_eps_trans, epsilon, include_empty);
@@ -248,9 +248,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = revert(product_pres_eps_trans);
             product_pres_eps_trans = reduce(product_pres_eps_trans);
-            product_pres_eps_trans = invert(product_pres_eps_trans);
+            product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
     return noodlify(product_pres_eps_trans, epsilon, include_empty);

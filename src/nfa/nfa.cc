@@ -601,19 +601,17 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     }
 }
 
-void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
-{
+void Mata::Nfa::revert(Nfa* result, const Nfa& aut) {
     assert(nullptr != result);
+    result->clear_nfa();
+    const size_t num_of_states{ aut.get_num_of_states() };
+    result->increase_size(num_of_states);
 
-    if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
-
-    const size_t num_of_states{ aut.transitionrelation.size() };
-    for (State sourceState = 0; sourceState < num_of_states; ++sourceState)
-    {
-        for (const TransSymbolStates &transition: aut.transitionrelation[sourceState])
-        {
-            for(State targetState: transition.states_to)
+    for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
+        for (const TransSymbolStates &transition: aut.transitionrelation[sourceState]) {
+            for (const State targetState: transition.states_to) {
                 result->add_trans(targetState, transition.symbol, sourceState);
+            }
         }
     }
 
@@ -860,10 +858,10 @@ void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     Nfa inverted;
     Nfa inverted2;
     Nfa tmp;
-    invert(&inverted, aut);
+    revert(&inverted, aut);
     determinize(&tmp, inverted);
-    invert(&inverted2, tmp);
-    determinize(res, inverted);
+    revert(&trimmed_inverted, tmp);
+    determinize(res, trimmed_inverted);
 }
 
 void Nfa::print_to_DOT(std::ostream &outputStream) const {
