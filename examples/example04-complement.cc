@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	StringToSymbolMap stsm;
 	OnTheFlyAlphabet alph(&stsm);
 	try {
-		parsed = Mata::Parser::parse_vtf(fs, true);
+		parsed = Mata::Parser::parse_mf(fs, true);
 		fs.close();
 
 		if (parsed.size() != 1) {

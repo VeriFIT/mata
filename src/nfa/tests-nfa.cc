@@ -887,6 +887,150 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 	}
 } // }}}
 
+TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
+{ // {{{
+    Nfa aut;
+    Mata::IntermediateAut inter_aut;
+    StringToSymbolMap symbol_map;
+
+    SECTION("construct an empty automaton")
+    {
+        inter_aut.automaton_type = Mata::IntermediateAut::NFA;
+        REQUIRE(is_lang_empty(aut));
+        construct(&aut, inter_aut);
+        REQUIRE(is_lang_empty(aut));
+    }
+
+    SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q r\n"
+                "%Alphabet-auto\n"
+                "%Initial p | q\n"
+                "%Final p | q\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(!is_lang_empty(aut));
+    }
+
+    SECTION("construct an automaton with more than one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial p | q\n"
+                "%Final p | q | r\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 3);
+    }
+
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q r\n"
+                "%Alphabet-auto\n"
+                "%Initial p q\n"
+                "%Final p q r\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 3);
+    }
+
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q r m n\n"
+                "%Alphabet-auto\n"
+                "%Initial p q r\n"
+                "%Final p q m n\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 3);
+        REQUIRE(aut.finalstates.size() == 4);
+    }
+
+    SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial q1\n"
+                "%Final q2\n"
+                "q1 a q2\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+        construct(&aut, inter_aut, &symbol_map);
+
+        Path cex;
+        REQUIRE(!is_lang_empty(aut, &cex));
+        auto word_bool_pair = get_word_for_path(aut, cex);
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(word_bool_pair.first == encode_word(symbol_map, {"a"}));
+
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
+    }
+
+    SECTION("construct a more complicated non-empty automaton from intermediate automaton")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial q1 | q3\n"
+                "%Final q5\n"
+                "q1 a q3\n"
+                "q1 a q10\n"
+                "q1 b q7\n"
+                "q3 a q7\n"
+                "q3 b q9\n"
+                "q9 a q9\n"
+                "q7 b q1\n"
+                "q7 a q3\n"
+                "q7 c q3\n"
+                "q10 a q7\n"
+                "q10 b q7\n"
+                "q10 c q7\n"
+                "q7 a q5\n"
+                "q5 c q9\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut, &symbol_map);
+
+        // some samples
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map,
+                                            {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+        // some wrong samples
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
+    }
+} // }}}
+
 /*
 TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 { // {{{
@@ -933,7 +1077,7 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
 		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
 
-		ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
+		ParsedSection parsec = Mata::Parser::parse_mf_section(str);
 
 		Mata::Nfa::StringToStateMap inv_state_dict =
 			Mata::util::invert_map(state_dict);

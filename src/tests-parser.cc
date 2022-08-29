@@ -16,6 +16,7 @@
  */
 
 #include "../3rdparty/catch.hpp"
+#include "mata/inter-aut.hh"
 
 #include <mata/parser.hh>
 #include <mata/util.hh>
@@ -24,7 +25,7 @@ using namespace Mata::Parser;
 using namespace Mata::util;
 
 
-TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
+TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -33,7 +34,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 		REQUIRE(parsec.empty());
 	}
 
@@ -42,7 +43,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"@Type\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(parsec.dict.empty());
@@ -56,7 +57,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(haskey(parsec.dict, "key1"));
@@ -74,7 +75,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%key3 value3\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -95,7 +96,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1     value1.1  value1.2 value1.3			value1.4\n"
 			"%key2\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -118,7 +119,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"a\n"
 			"b0 b1 b2 b3		b4    b5";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -141,6 +142,64 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		REQUIRE(body[1][5] == "b5");
 	}
 
+	SECTION("file with transitions and line break")
+	{
+		std::string file =
+		        "@Type\n"
+		        "%key1 value1\n"
+		        "%key2 value2.1 value2.2     \n"
+		        "a\\\n"
+		        "b";
+
+		parsec = parse_mf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 1);
+		REQUIRE((*ref)[0] == "value1");
+		ref = &parsec.dict.at("key2");
+		REQUIRE(ref->size() == 2);
+		REQUIRE((*ref)[0] == "value2.1");
+		REQUIRE((*ref)[1] == "value2.2");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 2);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "b");
+	}
+
+	SECTION("file with transitions and line break")
+	{
+		std::string file =
+		        "@Type\n"
+		        "%key1 value1\n"
+		        "a x & !b&c|(a& !b)";
+
+		parsec = parse_mf_section(file);
+
+		REQUIRE("Type" == parsec.type);
+		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
+		REQUIRE(ref->size() == 1);
+		REQUIRE((*ref)[0] == "value1");
+		REQUIRE(parsec.body.size() == 1);
+		std::vector<BodyLine> body(parsec.body.begin(), parsec.body.end());
+		REQUIRE(body[0].size() == 14);
+		REQUIRE(body[0][0] == "a");
+		REQUIRE(body[0][1] == "x");
+		REQUIRE(body[0][2] == "&");
+		REQUIRE(body[0][3] == "!");
+		REQUIRE(body[0][4] == "b");
+		REQUIRE(body[0][5] == "&");
+		REQUIRE(body[0][6] == "c");
+		REQUIRE(body[0][7] == "|");
+		REQUIRE(body[0][8] == "(");
+		REQUIRE(body[0][9] == "a");
+		REQUIRE(body[0][10] == "&");
+		REQUIRE(body[0][11] == "!");
+		REQUIRE(body[0][12] == "b");
+		REQUIRE(body[0][13] == ")");
+	}
+
 	SECTION("file with comments and whitespaces")
 	{
 		std::string file =
@@ -158,7 +217,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"a\n"
 			"   b0 b1 #b2";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Ty" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -195,7 +254,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"'\n"
 			"q a q'";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -256,7 +315,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key2\n"
 			"%key3 \"value3\"";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -279,7 +338,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1     \"value@1\"  \"value@2\"#new\n"
 			"%key2     \"value%1\"  (\"value%2\")\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -301,7 +360,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"a b c\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		REQUIRE(parsec.body.size() == 1);
@@ -319,7 +378,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 			"%key1 (a b)\n"
 			"a (b   c  d)(e\n";
 
-		parsec = parse_vtf_section(file);
+		parsec = parse_mf_section(file);
 
 		REQUIRE("Type" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -351,7 +410,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 
 		std::istringstream stream(file);
 
-		parsec = parse_vtf_section(stream);
+		parsec = parse_mf_section(stream);
 
 		REQUIRE("Type1" == parsec.type);
 		const KeyListStore::mapped_type* ref = &parsec.dict.at("key1");
@@ -361,10 +420,10 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf_section()")
 		std::string remains = stream.str().substr(stream.tellg());
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
-} // parse_vtf_section correct }}}
+} // parse_mf_section correct }}}
 
 
-TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
+TEST_CASE("incorrect use of Mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -376,8 +435,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
 
 	SECTION("trailing characters behind @TYPE")
@@ -385,8 +444,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"@Type another\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid trailing characters"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid trailing characters"));
 	}
 
 	SECTION("missing type")
@@ -395,8 +454,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%key1\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
 
 	SECTION("unterminated quote")
@@ -405,8 +464,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("unterminated quote 2")
@@ -415,8 +474,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("newlines within names")
@@ -432,8 +491,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"\"value    # comment\n"
 			"3\"";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("missing ending quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("missing ending quotes"));
 	}
 
 	SECTION("quoted strings starting in the middle of strings")
@@ -442,8 +501,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 val\"ue\"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("quoted strings ending in the middle of strings")
@@ -452,8 +511,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 \"val\"ue\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced quotes"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced quotes"));
 	}
 
 	SECTION("incorrect position of special characters")
@@ -462,7 +521,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 @here";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of @TYPE") &&
 			Catch::Contains("@here"));
 	}
@@ -473,7 +532,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"q1 @here q2";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of @TYPE") &&
 			Catch::Contains("@here"));
 	}
@@ -484,7 +543,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"q1 %here q2";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of %KEY") &&
 			Catch::Contains("%here"));
 	}
@@ -495,7 +554,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1 %here";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
+		CHECK_THROWS_WITH(parse_mf_section(file),
 			Catch::Contains("invalid position of %KEY") &&
 			Catch::Contains("%here"));
 	}
@@ -507,8 +566,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"%\n"
 			"%key2\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("%KEY name missing"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("%KEY name missing"));
 	}
 
 	SECTION("special characters inside strings 1")
@@ -517,8 +576,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1     value@1\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced character \'@\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced character \'@\'"));
 	}
 
 	SECTION("special characters inside strings 2")
@@ -527,8 +586,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key2     value%1\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("misplaced character \'%\'"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("misplaced character \'%\'"));
 	}
 
 	SECTION("special characters inside strings 3")
@@ -537,8 +596,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key1     @value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid position of @TYPE"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid position of @TYPE"));
 	}
 
 	SECTION("special characters inside strings 4")
@@ -547,8 +606,8 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 			"@Type\n"
 			"%key2     %value\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("invalid position of %KEY"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("invalid position of %KEY"));
 	}
 
 	SECTION("invalid use of quotes")
@@ -556,13 +615,13 @@ TEST_CASE("incorrect use of Mata::Parser::parse_vtf_section()")
 		std::string file =
 			"\"@Type\"\n";
 
-		CHECK_THROWS_WITH(parse_vtf_section(file),
-			Catch::Contains("expecting automaton type"));
+		CHECK_THROWS_WITH(parse_mf_section(file),
+                          Catch::Contains("expecting automaton type"));
 	}
-} // parse_vtf_section incorrect }}}
+} // parse_mf_section incorrect }}}
 
 
-TEST_CASE("correct use of Mata::Parser::parse_vtf()")
+TEST_CASE("correct use of Mata::Parser::parse_mf()")
 { // {{{
 	Parsed parsed;
 
@@ -571,7 +630,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 		std::string file =
 			"";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 
 		REQUIRE(parsed.empty());
 	}
@@ -582,7 +641,7 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 			"@Type1\n"
 			"%key1\n";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 1);
 		REQUIRE(parsed[0].type == "Type1");
 		REQUIRE(haskey(parsed[0].dict, "key1"));
@@ -596,14 +655,184 @@ TEST_CASE("correct use of Mata::Parser::parse_vtf()")
 			"@Type2\n"
 			"%key2\n";
 
-		parsed = parse_vtf(file);
+		parsed = parse_mf(file);
 		REQUIRE(parsed.size() == 2);
 		REQUIRE(parsed[0].type == "Type1");
 		REQUIRE(haskey(parsed[0].dict, "key1"));
 		REQUIRE(parsed[1].type == "Type2");
 		REQUIRE(haskey(parsed[1].dict, "key2"));
 	}
-} // parse_vtf }}}
+} // parse_mf }}}
+
+
+TEST_CASE("parsing automata to intermediate representation")
+{ // {{{
+    Parsed parsed;
+
+    SECTION("NFA")
+    {
+        std::string file =
+           "@NFA-explicit\n"
+           "%States-enum q r s t \"(r,s)\"\n"
+           "%Alphabet-auto\n"
+           "%Initial q & r\n"
+           "%Final q | r\n"
+           "q symbol & r\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        REQUIRE(auts.size() == 1);
+        const Mata::IntermediateAut& aut = auts.back();
+        REQUIRE(aut.transitions.size() == 1);
+        REQUIRE(aut.transitions.front().first.name == "q");
+        REQUIRE(aut.transitions.front().first.is_operand());
+        REQUIRE(aut.transitions.front().second.node.is_operator());
+        REQUIRE(aut.transitions.front().second.node.name == "&");
+        REQUIRE(aut.transitions.front().second.children.size() == 2);
+        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+        REQUIRE(aut.transitions.front().second.children.front().children.empty());
+        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
+        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+        REQUIRE(aut.transitions.front().second.children[1].children.empty());
+        REQUIRE(aut.initial_formula.node.name == "&");
+        REQUIRE(aut.initial_formula.children.size() == 2);
+        REQUIRE(aut.initial_formula.children[0].node.name == "q");
+        REQUIRE(aut.initial_formula.children[1].node.name == "r");
+        REQUIRE(aut.final_formula.node.name == "|");
+        REQUIRE(aut.final_formula.children.size() == 2);
+        REQUIRE(aut.final_formula.children[0].node.name == "q");
+        REQUIRE(aut.final_formula.children[1].node.name == "r");
+    }
+
+    SECTION("NFA without &")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum q r s t \"(r,s)\"\n"
+                "%Alphabet-auto\n"
+                "q symbol r\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        REQUIRE(auts.size() == 1);
+        const Mata::IntermediateAut& aut = auts.back();
+        REQUIRE(aut.transitions.size() == 1);
+        REQUIRE(aut.transitions.front().first.name == "q");
+        REQUIRE(aut.transitions.front().first.is_operand());
+        REQUIRE(aut.transitions.front().second.node.is_operator());
+        REQUIRE(aut.transitions.front().second.node.name == "&");
+        REQUIRE(aut.transitions.front().second.children.size() == 2);
+        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+        REQUIRE(aut.transitions.front().second.children.front().children.empty());
+        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
+        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
+        REQUIRE(aut.transitions.front().second.children[1].children.empty());
+    }
+
+    SECTION("AFA explicit")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum q r s t \"(r,s)\"\n"
+                "%Alphabet-auto\n"
+                "q symbol | other_symbol & (\"(r,s)\" | r | s)\n"
+                "r !b & ! c & (\"(r,s)\")\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        REQUIRE(auts.size() == 1);
+        const Mata::IntermediateAut& aut = auts.back();
+        REQUIRE(aut.transitions.size() == 2);
+        REQUIRE(aut.transitions.front().first.name == "q");
+        REQUIRE(aut.transitions.front().first.is_operand());
+        REQUIRE(aut.transitions.front().second.node.is_operator());
+        REQUIRE(aut.transitions.front().second.node.name == "|");
+        REQUIRE(aut.transitions.front().second.children.size() == 2);
+        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
+        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
+        REQUIRE(aut.transitions.front().second.children.front().children.empty());
+        REQUIRE(aut.transitions.front().second.children[1].node.is_operator());
+        REQUIRE(aut.transitions.front().second.children[1].node.name == "&");
+        REQUIRE(aut.transitions.front().second.children[1].children.size() == 2);
+        REQUIRE(aut.transitions.front().second.children[1].children.front().node.is_operand());
+        REQUIRE(aut.transitions.front().second.children[1].children.front().node.name == "other_symbol");
+        REQUIRE(aut.transitions.front().second.children[1].children[1].node.is_operator());
+        REQUIRE(aut.transitions.front().second.children[1].children[1].node.name == "|");
+        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name == "|");
+        REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name == "s");
+        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name == "(r,s)");
+        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name == "r");
+
+        REQUIRE(aut.transitions[1].first.name == "r");
+        REQUIRE(aut.transitions[1].first.is_operand());
+        REQUIRE(aut.transitions[1].second.node.is_operator());
+        REQUIRE(aut.transitions[1].second.node.name == "&");
+        REQUIRE(aut.transitions[1].second.children.size() == 2);
+        REQUIRE(aut.transitions[1].second.children.front().node.is_operator());
+        REQUIRE(aut.transitions[1].second.children.front().node.name == "!");
+        REQUIRE(aut.transitions[1].second.children.front().children.front().node.name == "b");
+        REQUIRE(aut.transitions[1].second.children[1].node.is_operator());
+        REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
+        REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
+    }
+
+    SECTION("AFA explicit two automatic naming")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-auto\n"
+                "%Alphabet-auto\n"
+                "r !b & ! c & d\n";
+
+        bool exception = false;
+        try {
+            parsed = parse_mf(file);
+            std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        } catch (std::exception& e) {
+            exception = true;
+
+        }
+
+        REQUIRE(exception);
+    }
+
+    SECTION("AFA explicit correct automatic naming")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-marked\n"
+                "%Alphabet-enum a b\n"
+                "q1 a & !q2 & b\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const Mata::IntermediateAut aut = auts[0];
+        REQUIRE(aut.transitions.front().first.name == "1");
+        REQUIRE(aut.transitions.front().first.raw == "q1");
+
+    }
+
+    SECTION("AFA explicit non existing symbol error")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-marked\n"
+                "%Alphabet-enum a b\n"
+                "q1 a & !q2 & c\n";
+
+        bool exception = false;
+        parsed = parse_mf(file);
+        try {
+            Mata::IntermediateAut::parse_from_mf(parsed);
+        } catch (std::runtime_error e) {
+            exception = true;
+        }
+
+        REQUIRE(exception);
+    }
+    } // parse_mf }}}
 
 
 TEST_CASE("Mata::Parser::ParsedSection::operator<<(ostream&)")

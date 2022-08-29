@@ -32,6 +32,7 @@
 #include <mata/parser.hh>
 #include <mata/util.hh>
 #include <mata/ord_vector.hh>
+#include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
 
 namespace Mata
@@ -69,6 +70,91 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
+// ALPHABET {{{
+class Alphabet
+{
+public:
+
+    /// translates a string into a symbol
+    virtual Symbol translate_symb(const std::string& symb) = 0;
+    /// also translates strings to symbols
+    Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
+    /// gets a list of symbols in the alphabet
+    virtual std::list<Symbol> get_symbols() const
+    { // {{{
+        throw std::runtime_error("Unimplemented");
+    } // }}}
+
+    /// complement of a set of symbols wrt the alphabet
+    virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const
+    { // {{{
+        (void)syms;
+        throw std::runtime_error("Unimplemented");
+    } // }}}
+
+    virtual ~Alphabet() { }
+};
+
+class OnTheFlyAlphabet : public Alphabet
+{
+private:
+    StringToSymbolMap* symbol_map;
+    Symbol cnt_symbol;
+
+private:
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
+
+public:
+
+    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
+            symbol_map(str_sym_map), cnt_symbol(init_symbol)
+    {
+        assert(nullptr != symbol_map);
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    Symbol translate_symb(const std::string& str) override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+};
+
+class DirectAlphabet : public Alphabet
+{
+public:
+    Symbol translate_symb(const std::string& str) override
+    {
+        Symbol symb;
+        std::istringstream stream(str);
+        stream >> symb;
+        return symb;
+    }
+};
+
+class CharAlphabet : public Alphabet
+{
+public:
+
+    Symbol translate_symb(const std::string& str) override
+    {
+        if (str.length() == 3 &&
+            ((str[0] == '\'' && str[2] == '\'') ||
+             (str[0] == '\"' && str[2] == '\"')
+            ))
+        { // direct occurrence of a character
+            return str[1];
+        }
+
+        Symbol symb;
+        std::istringstream stream(str);
+        stream >> symb;
+        return symb;
+    }
+
+    std::list<Symbol> get_symbols() const override;
+    std::list<Symbol> get_complement(
+            const std::set<Symbol>& syms) const override;
+};
+
 const PostSymb EMPTY_POST{};
 
 static const struct Limits {
@@ -98,68 +184,6 @@ struct Trans
 using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
-
-// ALPHABET {{{
-class Alphabet
-{
-public:
-
-	/// translates a string into a symbol
-	virtual Symbol translate_symb(const std::string& symb) = 0;
-	/// also translates strings to symbols
-	Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
-	/// gets a list of symbols in the alphabet
-	virtual std::list<Symbol> get_symbols() const
-	{ // {{{
-		throw std::runtime_error("Unimplemented");
-	} // }}}
-
-	/// complement of a set of symbols wrt the alphabet
-	virtual std::list<Symbol> get_complement(const std::set<Symbol>& syms) const
-	{ // {{{
-		(void)syms;
-		throw std::runtime_error("Unimplemented");
-	} // }}}
-
-	virtual ~Alphabet() { }
-};
-
-class DirectAlphabet : public Alphabet
-{
-public:
-	Symbol translate_symb(const std::string& str) override
-	{
-		Symbol symb;
-		std::istringstream stream(str);
-		stream >> symb;
-		return symb;
-	}
-};
-
-class CharAlphabet : public Alphabet
-{
-public:
-
-	Symbol translate_symb(const std::string& str) override
-	{
-		if (str.length() == 3 &&
-			((str[0] == '\'' && str[2] == '\'') ||
-			(str[0] == '\"' && str[2] == '\"')
-			 ))
-		{ // direct occurrence of a character
-			return str[1];
-		}
-
-		Symbol symb;
-		std::istringstream stream(str);
-		stream >> symb;
-		return symb;
-	}
-
-	std::list<Symbol> get_symbols() const override;
-	std::list<Symbol> get_complement(
-		const std::set<Symbol>& syms) const override;
-};
 
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
@@ -961,11 +985,38 @@ bool is_deterministic(const Nfa& aut);
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
+template <class ParsedObject>
 void construct(
         Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
+        const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr);
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    assert(nullptr != aut);
+
+    bool remove_symbol_map = false;
+    if (nullptr == symbol_map)
+    {
+        symbol_map = new StringToSymbolMap();
+        remove_symbol_map = true;
+    }
+
+    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
+    Mata::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
+
+    try
+    {
+        construct(aut, parsed, &alphabet, state_map);
+    }
+    catch (std::exception&)
+    {
+        release_res();
+        throw;
+    }
+
+    release_res();
+}
 
 /** Loads an automaton from Parsed object */
 void construct(
@@ -974,14 +1025,21 @@ void construct(
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map = nullptr);
 
+ void construct(
+         Nfa*                                 aut,
+         const Mata::IntermediateAut&          inter_aut,
+         Alphabet*                            alphabet,
+         StringToStateMap*                    state_map = nullptr);
+
 /** Loads an automaton from Parsed object */
+template <class ParsedObject>
 inline Nfa construct(
-        const Mata::Parser::ParsedSection&  parsec,
+        const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
     Nfa result;
-    construct(&result, parsec, symbol_map, state_map);
+    construct(&result, parsed, symbol_map, state_map);
     return result;
 } // construct }}}
 
@@ -1398,34 +1456,6 @@ private:
         }
     }
 }; // class EnumAlphabet.
-
-class OnTheFlyAlphabet : public Alphabet
-{
-private:
-    StringToSymbolMap* symbol_map;
-    Symbol cnt_symbol;
-
-    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-public:
-    /**
-     * Construct alphabet on the fly from already prepared str_sym_map.
-     * @param[in] str_sym_map Map of transition symbols as strings to symbol values.
-     * @param[in] init_symbol Initial symbol value to use as next added symbol value. One can reserve the values lower than
-     *     @p init_symbol for special symbols and when passing an non-empty @p str_sym_map, define value higher than any
-     *     value in @p str_sym_map to avoid collisions.
-     */
-    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
-            symbol_map(str_sym_map), cnt_symbol(init_symbol)
-    {
-        assert(nullptr != symbol_map);
-    }
-
-    std::list<Symbol> get_symbols() const override;
-    Symbol translate_symb(const std::string& str) override;
-    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-}; // class OnTheFlyAlphabet.
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */

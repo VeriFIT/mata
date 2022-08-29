@@ -1,0 +1,12 @@
+@NFA-explicit
+%States-marked
+%Alphabet-auto
+%Initial q1 q2
+%Final q4 q5
+q1\
+a\
+q3
+q2 b q4
+q3 a q4
+q3 b q5
+q4 a q5

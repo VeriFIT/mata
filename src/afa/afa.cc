@@ -21,6 +21,7 @@
 
 // MATA headers
 #include <mata/afa.hh>
+#include <mata/nfa.hh>
 #include <mata/util.hh>
 
 using std::tie;

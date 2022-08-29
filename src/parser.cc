@@ -53,6 +53,10 @@ bool is_string_char(char ch)
 		!(haskey(std::set<char>{'"', '(', ')', '#', '%', '@', '\\'}, ch));
 } // is_string_char }}}
 
+bool is_logical_operator(char ch)
+{
+    return (haskey(std::set<char>{'&', '|', '!'}, ch));
+}
 
 /**
  * @brief  Gets a token from the input stream
@@ -194,20 +198,56 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 	}
 
 	return result;
-} // tokenize_lin(string) }}}
+} // tokenize_line(string) }}}
+
+std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens)
+{ // {{{
+    std::vector<std::pair<std::string, bool>> result;
+    for (const auto& token : tokens) {
+        if (token.second) { // is quoted?
+            result.push_back(token);
+            continue;
+        }
+
+        const std::string& token_string = token.first;
+        size_t last_operator = 0;
+        const size_t size = token_string.size();
+        for (size_t i = 0; i < size; ++i) {
+            if (is_logical_operator(token_string[i])) {
+                const std::string token_candidate = token_string.substr(last_operator, i - last_operator);
+
+                // there is token before logical operator (this is case of binary operators, e.g., a&b)
+                if (!token_candidate.empty())
+                    result.push_back(std::make_pair(token_candidate, false));
+                result.push_back(std::make_pair(std::string(1,token_string[i]), false));
+                last_operator = i+1;
+            }
+        }
+
+        const size_t length = token_string.length();
+        if (last_operator == 0) {
+            result.push_back(token);
+        } else if (last_operator != length){ // operator was not last, we need parse rest of token
+            result.push_back(std::make_pair(
+                    token_string.substr(last_operator, length-last_operator), false));
+        }
+    }
+
+    return result;
+} // split_tokens(std::vector) }}}
 } // anonymous namespace
 
 
-Parsed Mata::Parser::parse_vtf(
+Parsed Mata::Parser::parse_mf(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	return parse_vtf(stream, keepQuotes);
-} // parse_vtf(std::string) }}}
+	return parse_mf(stream, keepQuotes);
+} // parse_mf(std::string) }}}
 
 
-Parsed Mata::Parser::parse_vtf(
+Parsed Mata::Parser::parse_mf(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -215,7 +255,7 @@ Parsed Mata::Parser::parse_vtf(
 
 	while (input)
 	{
-		ParsedSection parsec = parse_vtf_section(input, keepQuotes);
+		ParsedSection parsec = parse_mf_section(input, keepQuotes);
 		if (!parsec.empty())
 		{
 			result.push_back(parsec);
@@ -223,16 +263,18 @@ Parsed Mata::Parser::parse_vtf(
 	}
 
 	return result;
-} // parse_vtf(std::istream) }}}
+} // parse_mf(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_mf_section(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
 	ParsedSection result;
 
 	bool reading_type = true;
+	std::vector<std::pair<std::string, bool>> token_line{};
+	bool append_line = false;
 
 	while (input.good()) {
 		eat_whites(input);
@@ -245,6 +287,11 @@ ParsedSection Mata::Parser::parse_vtf_section(
 
 		std::string line;
 		getline(input, line);
+
+		bool backslash_ending = (line.back() == '\\');
+		if (backslash_ending) {
+		    line.pop_back();
+		}
 
 		PARSER_DEBUG_PRINT_LN(line);
 
@@ -289,10 +336,23 @@ ParsedSection Mata::Parser::parse_vtf_section(
 			continue;
 		}
 
-		std::vector<std::pair<std::string, bool>> token_line = tokenize_line(line);
-		if (token_line.empty()) {
+		std::vector<std::pair<std::string, bool>> temp_token_line = tokenize_line(line);
+		if (temp_token_line.empty()) {
 			continue;
 		}
+
+		if (append_line) {
+		    token_line.insert(token_line.end(), temp_token_line.begin(), temp_token_line.end());
+		} else {
+		    token_line = temp_token_line;
+		}
+
+		append_line = backslash_ending;
+		if (append_line) {
+		    continue;
+		}
+
+		token_line = split_tokens(token_line);
 
 		const std::string& maybe_key = token_line[0].first;
 		const bool& quoted = token_line[0].second;
@@ -327,14 +387,14 @@ ParsedSection Mata::Parser::parse_vtf_section(
 	}
 
 	return result;
-} // parse_vtf_section(std::istream) }}}
+} // parse_mf_section(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_vtf_section(
+ParsedSection Mata::Parser::parse_mf_section(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
 	std::istringstream stream(input);
-	ParsedSection result = parse_vtf_section(stream, keepQuotes);
+	ParsedSection result = parse_mf_section(stream, keepQuotes);
 	return result;
-} // parse_vtf_section(std::string) }}}
+} // parse_mf_section(std::string) }}}

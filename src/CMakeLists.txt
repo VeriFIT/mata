@@ -51,6 +51,7 @@ add_library(libmata STATIC
 # add_library(libmata SHARED
 	afa/afa.cc
 	config.cc
+	inter-aut.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
