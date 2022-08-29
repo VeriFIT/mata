@@ -198,7 +198,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 	}
 
 	return result;
-} // tokenize_lin(string) }}}
+} // tokenize_line(string) }}}
 
 std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens)
 { // {{{
