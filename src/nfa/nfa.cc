@@ -1579,15 +1579,10 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     return result;
 }
 
-std::ostream& Mata::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
+std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa)
 { // {{{
-    return os << std::to_string(serialize(nfa));
-} // Nfa::operator<<(ostream) }}}
-
-std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap)
-{ // {{{
-	os << "{NFA wrapper|NFA: " << nfa_wrap.nfa << "|alphabet: " << nfa_wrap.alphabet <<
-		"|state_dict: " << std::to_string(nfa_wrap.state_dict) << "}";
+	os << "{NFA wrapper|NFA: " << std::to_string(serialize(nfa)) << "|alphabet: " << nfa.alphabet <<
+       "|statedict: " << std::to_string(nfa.statedict) << "}";
 	return os;
 } // operator<<(NfaWrapper) }}}
 

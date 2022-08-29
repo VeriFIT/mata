@@ -231,6 +231,12 @@ using TransitionRelation = std::vector<TransitionList>;
 
 struct Nfa
 {
+    /// the alphabet
+    Alphabet* alphabet;
+
+    /// mapping of state names (as strings) to their numerical values
+    StringToStateMap statedict;
+
     /**
      * @brief For state q, transitionrelation[q] keeps the list of transitions ordered by symbols.
      *
@@ -248,14 +254,24 @@ public:
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
-        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+    explicit Nfa(const unsigned long num_of_states,
+                 const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{},
+                 Alphabet* alphabet_p = nullptr,
+                 const StringToSymbolMap st = StringToStateMap{})
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
+          alphabet(alphabet_p), statedict(st) {}
 
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
-    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
-            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+    explicit Nfa(const TransitionRelation& transition_relation,
+                 const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{},
+                 Alphabet* alphabet_p = nullptr,
+                 StringToStateMap st = StringToSymbolMap{})
+            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states),
+              alphabet(alphabet_p), statedict(st) {}
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -688,19 +704,6 @@ private:
      */
     Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
 }; // Nfa
-
-/// a wrapper encapsulating @p Nfa for higher-level use
-struct NfaWrapper
-{ // {{{
-	/// the NFA
-	Nfa nfa;
-
-	/// the alphabet
-	Alphabet* alphabet;
-
-	/// mapping of state names (as strings) to their numerical values
-	StringToStateMap state_dict;
-}; // NfaWrapper }}}
 
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
@@ -1476,7 +1479,7 @@ struct hash<Mata::Nfa::Trans>
 };
 
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
 } // std }}}
 
 #endif /* _MATA_NFA_HH_ */
