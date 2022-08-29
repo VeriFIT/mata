@@ -680,9 +680,9 @@ TEST_CASE("parsing automata to intermediate representation")
            "q symbol & r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::InterAutomaton& aut = auts.back();
+        const Mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -714,9 +714,9 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q symbol r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::InterAutomaton& aut = auts.back();
+        const Mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -741,9 +741,9 @@ TEST_CASE("parsing automata to intermediate representation")
                 "r !b & ! c & (\"(r,s)\")\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::InterAutomaton& aut = auts.back();
+        const Mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 2);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -789,7 +789,7 @@ TEST_CASE("parsing automata to intermediate representation")
         bool exception = false;
         try {
             parsed = parse_mf(file);
-            std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
+            std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
         } catch (std::exception& e) {
             exception = true;
 
@@ -807,8 +807,8 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q1 a & !q2 & b\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::InterAutomaton> auts = Mata::InterAutomaton::parse_from_mf(parsed);
-        const Mata::InterAutomaton aut = auts[0];
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const Mata::IntermediateAut aut = auts[0];
         REQUIRE(aut.transitions.front().first.name == "1");
         REQUIRE(aut.transitions.front().first.raw == "q1");
 
@@ -825,7 +825,7 @@ TEST_CASE("parsing automata to intermediate representation")
         bool exception = false;
         parsed = parse_mf(file);
         try {
-            Mata::InterAutomaton::parse_from_mf(parsed);
+            Mata::IntermediateAut::parse_from_mf(parsed);
         } catch (std::runtime_error e) {
             exception = true;
         }

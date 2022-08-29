@@ -887,15 +887,15 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 	}
 } // }}}
 
-TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
+TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 { // {{{
     Nfa aut;
-    Mata::InterAutomaton inter_aut;
+    Mata::IntermediateAut inter_aut;
     StringToSymbolMap symbol_map;
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = Mata::InterAutomaton::NFA;
+        inter_aut.automaton_type = Mata::IntermediateAut::NFA;
         REQUIRE(is_lang_empty(aut));
         construct(&aut, inter_aut);
         REQUIRE(is_lang_empty(aut));
@@ -909,7 +909,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p | q\n";
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -925,7 +925,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p | q | r\n";
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -942,7 +942,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q\n"
                 "%Final p q r\n";
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -959,7 +959,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q r\n"
                 "%Final p q m n\n";
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -978,7 +978,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "%Final q2\n"
                 "q1 a q2\n";
 
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
         construct(&aut, inter_aut, &symbol_map);
 
@@ -1014,7 +1014,7 @@ TEST_CASE("Mata::Nfa::construct() from InterAutomaton correct calls")
                 "q7 a q5\n"
                 "q5 c q9\n";
 
-        const auto auts = Mata::InterAutomaton::parse_from_mf(parse_mf(file));
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut, &symbol_map);

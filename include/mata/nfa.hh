@@ -1027,7 +1027,7 @@ void construct(
 
  void construct(
          Nfa*                                 aut,
-         const Mata::InterAutomaton&          inter_aut,
+         const Mata::IntermediateAut&          inter_aut,
          Alphabet*                            alphabet,
          StringToStateMap*                    state_map = nullptr);
 

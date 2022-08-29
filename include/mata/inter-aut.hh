@@ -119,7 +119,7 @@ struct FormulaGraph
  * and type of alphabet. It contains also the transitions formula and formula for initial and final
  * states. The formulas are represented as tree where nodes are either operands or operators.
  */
-struct InterAutomaton
+struct IntermediateAut
 {
     /**
      * Type of automaton. So far we support nondeterministic finite automata (NFA) and
@@ -180,8 +180,8 @@ public:
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
     /**
-     * A method for building a vector of InterAutomaton for a parsed input.
-     * For each section in input is created one InterAutomaton.
+     * A method for building a vector of IntermediateAut for a parsed input.
+     * For each section in input is created one IntermediateAut.
      * It parses basic information about type of automata, its naming conventions etc.
      * Then it parses input and final formula of automaton.
      * Finally, transition formulas are transformed to graph representation by
@@ -190,7 +190,7 @@ public:
      * @param parsed Parsed input in MATA format.
      * @return A vector of InterAutomata from each section in parsed input.
      */
-    static std::vector<InterAutomaton> parse_from_mf(const Mata::Parser::Parsed& parsed);
+    static std::vector<IntermediateAut> parse_from_mf(const Mata::Parser::Parsed& parsed);
 
     bool are_states_enum_type() const {return state_naming == Naming::ENUM;}
     bool are_symbols_enum_type() const {return symbol_naming == Naming::ENUM;}
@@ -203,7 +203,7 @@ public:
 
 namespace std
 {
-    std::ostream& operator<<(std::ostream& os, const Mata::InterAutomaton& inter_aut);
+    std::ostream& operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut);
 }
 
 #endif //_MATA_INTER_AUT_HH

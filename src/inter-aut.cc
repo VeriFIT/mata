@@ -22,11 +22,11 @@
 
 namespace
 {
-    bool has_atmost_one_auto_naming(const Mata::InterAutomaton& aut)
+    bool has_atmost_one_auto_naming(const Mata::IntermediateAut& aut)
     {
-        return !(!(aut.node_naming == Mata::InterAutomaton::Naming::AUTO &&
-              aut.symbol_naming == Mata::InterAutomaton::Naming::AUTO) &&
-            (aut.state_naming == Mata::InterAutomaton::AUTO));
+        return !(!(aut.node_naming == Mata::IntermediateAut::Naming::AUTO &&
+              aut.symbol_naming == Mata::IntermediateAut::Naming::AUTO) &&
+                 (aut.state_naming == Mata::IntermediateAut::AUTO));
     }
 
     bool is_logical_operator(char ch)
@@ -34,53 +34,53 @@ namespace
         return (Mata::util::haskey(std::set<char>{'&', '|', '!'}, ch));
     }
 
-    Mata::InterAutomaton::Naming get_naming_type(const std::string &key)
+    Mata::IntermediateAut::Naming get_naming_type(const std::string &key)
     {
         const size_t found = key.find('-');
         assert(found != std::string::npos);
         const std::string& type = key.substr(found+1, std::string::npos);
 
         if (type == "auto")
-            return Mata::InterAutomaton::Naming::AUTO;
+            return Mata::IntermediateAut::Naming::AUTO;
         else if (type == "enum")
-            return Mata::InterAutomaton::Naming::ENUM;
+            return Mata::IntermediateAut::Naming::ENUM;
         else if (type == "marked")
-            return Mata::InterAutomaton::Naming::MARKED;
+            return Mata::IntermediateAut::Naming::MARKED;
 
         assert(false && "Unknown naming type - a naming type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
     }
 
-    Mata::InterAutomaton::AlphabetType get_alphabet_type(const std::string &type)
+    Mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string &type)
     {
         assert(type.find('-') != std::string::npos);
         const std::string& alph_type = type.substr(type.find('-')+1, std::string::npos);
 
         if (alph_type == "bits") {
-            return Mata::InterAutomaton::AlphabetType::BITVECTOR;
+            return Mata::IntermediateAut::AlphabetType::BITVECTOR;
         } else if (alph_type == "explicit") {
-            return Mata::InterAutomaton::AlphabetType::EXPLICIT;
+            return Mata::IntermediateAut::AlphabetType::EXPLICIT;
         } else if (alph_type == "intervals") {
-            return Mata::InterAutomaton::AlphabetType::INTERVALS;
+            return Mata::IntermediateAut::AlphabetType::INTERVALS;
         }
 
         assert(false && "Unknown alphabet type - an alphabet type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
     }
 
-    bool is_naming_marker(const Mata::InterAutomaton::Naming naming)
+    bool is_naming_marker(const Mata::IntermediateAut::Naming naming)
     {
-        return naming == Mata::InterAutomaton::Naming::MARKED;
+        return naming == Mata::IntermediateAut::Naming::MARKED;
     }
 
-    bool is_naming_enum(const Mata::InterAutomaton::Naming naming)
+    bool is_naming_enum(const Mata::IntermediateAut::Naming naming)
     {
-        return naming == Mata::InterAutomaton::Naming::ENUM;
+        return naming == Mata::IntermediateAut::Naming::ENUM;
     }
 
-    bool is_naming_auto(const Mata::InterAutomaton::Naming naming)
+    bool is_naming_auto(const Mata::IntermediateAut::Naming naming)
     {
-        return naming == Mata::InterAutomaton::Naming::AUTO;
+        return naming == Mata::IntermediateAut::Naming::AUTO;
     }
 
     bool contains(const std::vector<std::string> &vec, const std::string &item)
@@ -88,7 +88,7 @@ namespace
         return std::find(vec.begin(), vec.end(), item) != vec.end();
     }
 
-    Mata::FormulaNode create_node(const Mata::InterAutomaton &mata, const std::string &token)
+    Mata::FormulaNode create_node(const Mata::IntermediateAut &mata, const std::string &token)
     {
         if (is_logical_operator(token[0])) {
             switch (token[0]) {
@@ -158,7 +158,7 @@ namespace
      * @return A postfix notation for input
      */
     std::vector<Mata::FormulaNode> infix_to_postfix(
-            const Mata::InterAutomaton &aut, const std::vector<std::string> &tokens) {
+            const Mata::IntermediateAut &aut, const std::vector<std::string> &tokens) {
         std::vector<Mata::FormulaNode> opstack;
         std::vector<Mata::FormulaNode> output;
 
@@ -284,7 +284,7 @@ namespace
      * @param aut Automaton to which transition will be added.
      * @param tokens Series of tokens representing transition formula
      */
-    void parse_transition(Mata::InterAutomaton &aut, const std::vector<std::string> &tokens)
+    void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens)
     {
         assert(tokens.size() > 1); // transition formula has at least two items
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
@@ -292,7 +292,7 @@ namespace
 
         std::vector<Mata::FormulaNode> postfix = infix_to_postfix(aut, rhs);
         // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-        if (aut.automaton_type == Mata::InterAutomaton::NFA && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT
+        if (aut.automaton_type == Mata::IntermediateAut::NFA && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT
             && postfix.size() == 2) {
             postfix.push_back(Mata::FormulaNode(
                     Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
@@ -304,20 +304,20 @@ namespace
     }
 
     /**
-     * The wrapping function for parsing one section of input to InterAutomaton.
+     * The wrapping function for parsing one section of input to IntermediateAut.
      * It parses basic information about type of automaton and naming of its component.
      * Then it parses initial and final formula and finally it creates graphs for transition formula.
      * @param section A section of input MATA format
      * @return Parsed InterAutomata representing an automaton from input.
      */
-    Mata::InterAutomaton mf_to_aut(const Mata::Parser::ParsedSection &section)
+    Mata::IntermediateAut mf_to_aut(const Mata::Parser::ParsedSection &section)
     {
-        Mata::InterAutomaton aut;
+        Mata::IntermediateAut aut;
 
         if (section.type.find("NFA") != std::string::npos) {
-            aut.automaton_type = Mata::InterAutomaton::AutomatonType::NFA;
+            aut.automaton_type = Mata::IntermediateAut::AutomatonType::NFA;
         } else if (section.type.find("AFA") != std::string::npos) {
-            aut.automaton_type = Mata::InterAutomaton::AutomatonType::AFA;
+            aut.automaton_type = Mata::IntermediateAut::AutomatonType::AFA;
         }
         aut.alphabet_type = get_alphabet_type(section.type);
 
@@ -347,12 +347,12 @@ namespace
 
             if (key.find("Initial") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
+                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
                     postfix = add_disjunction_implicitly(postfix);
                 aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::InterAutomaton::EXPLICIT)
+                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
                     postfix = add_disjunction_implicitly(postfix);
                 aut.final_formula = postfix_to_graph(postfix);
             }
@@ -395,9 +395,9 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     return res;
 }
 
-std::vector<Mata::InterAutomaton> Mata::InterAutomaton::parse_from_mf(const Mata::Parser::Parsed &parsed)
+std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Mata::Parser::Parsed &parsed)
 {
-    std::vector<Mata::InterAutomaton> result;
+    std::vector<Mata::IntermediateAut> result;
     result.reserve(parsed.size());
 
     for (const auto& parsed_section : parsed) {
@@ -407,7 +407,7 @@ std::vector<Mata::InterAutomaton> Mata::InterAutomaton::parse_from_mf(const Mata
     return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Mata::InterAutomaton& inter_aut)
+std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
 {
     os << "Intermediate automaton type " << inter_aut.automaton_type << '\n';
     os << "Naming - state: " << inter_aut.state_naming << " symbol: " << inter_aut.symbol_naming << " node: "
