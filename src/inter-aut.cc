@@ -1,6 +1,21 @@
-//
-// Created by Martin Hruska on 10.08.2022.
-//
+/*
+ * inter-aut.hh -- intermediate representation of automata.
+ * It represents automaton after parsing and before translation to particular automaton.
+ *
+ * Copyright (c) 2022 Martin Hruska <hruskamartin25@gmail.com>
+ *
+ * This file is a part of libmata.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #include <mata/inter-aut.hh>
 #include <mata/util.hh>
