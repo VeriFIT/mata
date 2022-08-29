@@ -91,7 +91,7 @@ namespace
                                      Mata::FormulaNode::OperandType::NODE};
         } else if (is_naming_enum(mata.symbol_naming) && contains(mata.symbols_names, token)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
-                                     Mata::FormulaNode::OperandType::SYM};
+                                     Mata::FormulaNode::OperandType::SYMBOL};
         } else if (is_naming_marker(mata.state_naming) && token[0] == 'q') {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token.substr(1),
                                      Mata::FormulaNode::OperandType::STATE};
@@ -100,7 +100,7 @@ namespace
                                      Mata::FormulaNode::OperandType::NODE};
         } else if (is_naming_marker(mata.symbol_naming) && token[0] == 'a') {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token.substr(1),
-                                     Mata::FormulaNode::OperandType::SYM};
+                                     Mata::FormulaNode::OperandType::SYMBOL};
         } else if (is_naming_auto(mata.state_naming)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::STATE};
@@ -109,7 +109,7 @@ namespace
                                      Mata::FormulaNode::OperandType::NODE};
         } else if (is_naming_auto(mata.symbol_naming)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
-                                     Mata::FormulaNode::OperandType::SYM};
+                                     Mata::FormulaNode::OperandType::SYMBOL};
         }
 
         throw std::runtime_error("Unknown token " + token);

@@ -25,7 +25,7 @@ struct FormulaNode
 {
 public:
     enum OperandType {
-        SYM,
+        SYMBOL,
         STATE,
         NODE,
         NOT_OPERAND
