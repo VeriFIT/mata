@@ -858,10 +858,11 @@ void Mata::Nfa::complement_in_place(Nfa& aut) {
 void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     Nfa inverted;
+    Nfa inverted2;
     Nfa tmp;
     invert(&inverted, aut);
     determinize(&tmp, inverted);
-    invert(&inverted, tmp);
+    invert(&inverted2, tmp);
     determinize(res, inverted);
 }
 
@@ -1224,6 +1225,8 @@ void Mata::Nfa::determinize(
         subset_map = new SubsetMap();
         deallocate_subset_map = true;
     }
+
+    result->clear_nfa();
 
     if (result->get_num_of_states() != 0) {
         throw std::runtime_error("Result is not empty");
