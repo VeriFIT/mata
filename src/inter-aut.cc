@@ -326,7 +326,7 @@ namespace
             }
         }
 
-        // Once we know what states and nodes are we can parser initial and final formula
+        // Once we know what states and nodes are we can parse initial and final formula
         for (const auto& keypair : section.dict) {
             const std::string &key = keypair.first;
 
