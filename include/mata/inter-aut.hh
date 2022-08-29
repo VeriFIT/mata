@@ -174,7 +174,7 @@ public:
     FormulaGraph final_formula;
 
     /**
-     * Transitions are paris where the first member is left handed side of transition (i.e., a state)
+     * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
      * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
      */
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
