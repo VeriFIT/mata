@@ -860,10 +860,16 @@ void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     invert(&inverted, aut);
     determinize(&tmp, inverted);
     invert(&inverted2, tmp);
-    determinize(res, inverted);
+    determinize(res, inverted2);
 }
 
 void Mata::Nfa::invert(Nfa *invertedAutomaton, const Nfa& aut) {
+    invertedAutomaton->clear_nfa();
+
+    if (invertedAutomaton->get_num_of_states() != 0) {
+        throw std::runtime_error("Result is not empty");
+    }
+
     const size_t states_num = aut.get_num_of_states();
     for (State i = 0; i < states_num; ++i)
         invertedAutomaton->add_new_state();
