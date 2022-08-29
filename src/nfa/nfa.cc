@@ -192,6 +192,7 @@ void EnumAlphabet::add_symbols_from(const Nfa& nfa) {
     size_t aut_num_of_states{ nfa.get_num_of_states() };
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: nfa.transitionrelation[state]) {
+            update_next_symbol_value(state_transitions.symbol);
             try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
         }
     }
@@ -1098,6 +1099,7 @@ Nfa Nfa::get_digraph() const {
 }
 
 void Nfa::get_digraph(Nfa& result) const {
+    result.clear_nfa();
     const State num_of_states{ get_num_of_states() };
     if (result.get_num_of_states() < num_of_states) { result.increase_size(num_of_states); }
     result.initialstates = initialstates;
