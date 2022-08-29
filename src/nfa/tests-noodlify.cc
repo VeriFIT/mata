@@ -59,6 +59,26 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
 {
     Nfa aut{20};
 
+    SECTION("Small automaton") {
+        aut.make_initial(0);
+        aut.make_final(1);
+        aut.add_trans(0, 'a', 1);
+
+        Nfa noodle{2 };
+        noodle.make_initial(0);
+        noodle.add_trans(0, 'a', 1);
+        noodle.make_final(1);
+        auto result{ SegNfa::noodlify(aut, 'c') };
+        REQUIRE(result.size() == 1);
+        REQUIRE(result[0].size() == 1);
+        CHECK(equivalence_check(*result[0][0], noodle));
+
+        auto result_segments{ SegNfa::noodlify_for_equation({ aut } , aut) };
+        REQUIRE(result_segments.size() == 1);
+        REQUIRE(result_segments[0].size() == 1);
+        CHECK(equivalence_check(*result_segments[0][0], noodle));
+    }
+
     SECTION("1-2-3 epsilon transitions")
     {
         aut.make_initial(0);
@@ -197,6 +217,44 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right_side) };
         REQUIRE(result.size() == 1);
         //CHECK(equivalence_check(result[0], noodle));
+    }
+
+    SECTION("Single noodle") {
+        Nfa left{ 10};
+        left.make_initial(0);
+        left.make_final(9);
+        left.add_trans(0, 108, 1);
+        left.add_trans(1, 111, 2);
+        left.add_trans(2, 99, 3);
+        left.add_trans(3, 97, 4);
+        left.add_trans(4, 108, 5);
+        left.add_trans(5, 104, 6);
+        left.add_trans(6, 111, 7);
+        left.add_trans(7, 115, 8);
+        left.add_trans(8, 116, 9);
+
+        Nfa right_side{ 1 };
+        right_side.make_initial(0);
+        right_side.make_final(0);
+        right_side.add_trans(0, 44, 0);
+        right_side.add_trans(0, 47, 0);
+        right_side.add_trans(0, 58, 0);
+        right_side.add_trans(0, 85, 0);
+        right_side.add_trans(0, 90, 0);
+        right_side.add_trans(0, 97, 0);
+        right_side.add_trans(0, 99, 0);
+        right_side.add_trans(0, 104, 0);
+        right_side.add_trans(0, 108, 0);
+        right_side.add_trans(0, 111, 0);
+        right_side.add_trans(0, 115, 0);
+        right_side.add_trans(0, 116, 0);
+        right_side.add_trans(0, 117, 0);
+        right_side.add_trans(0, 122, 0);
+
+        auto result{ SegNfa::noodlify_for_equation({ left }, right_side) };
+        REQUIRE(result.size() == 1);
+        REQUIRE(result[0].size() == 1);
+        CHECK(equivalence_check(*result[0][0], left));
     }
 
     SECTION("Larger automata with separate noodles") {
