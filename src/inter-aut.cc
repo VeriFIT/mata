@@ -264,8 +264,8 @@ namespace
     }
 
     /**
-     * Parses a transition by firstly transforming transition formulat to postfix form and then creating
-     * a tree representing the formulat from postfix.
+     * Parses a transition by firstly transforming transition formula to postfix form and then creating
+     * a tree representing the formula from postfix.
      * @param aut Automaton to which transition will be added.
      * @param tokens Series of tokens representing transition formula
      */
