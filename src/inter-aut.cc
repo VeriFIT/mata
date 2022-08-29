@@ -22,6 +22,13 @@
 
 namespace
 {
+    bool has_atmost_one_auto_naming(const Mata::InterAutomaton& aut)
+    {
+        return !(!(aut.node_naming == Mata::InterAutomaton::Naming::AUTO &&
+              aut.symbol_naming == Mata::InterAutomaton::Naming::AUTO) &&
+            (aut.state_naming == Mata::InterAutomaton::AUTO));
+    }
+
     bool is_logical_operator(char ch)
     {
         return (Mata::util::haskey(std::set<char>{'&', '|', '!'}, ch));
@@ -346,9 +353,7 @@ namespace
             }
         }
 
-        if (!(!(!(aut.node_naming == Mata::InterAutomaton::Naming::AUTO &&
-            aut.symbol_naming == Mata::InterAutomaton::Naming::AUTO) &&
-            (aut.state_naming == Mata::InterAutomaton::AUTO)))) {
+        if (!has_atmost_one_auto_naming(aut)) {
             throw std::runtime_error("Only one of nodes, symbols and states could be specified automatically");
         }
 
