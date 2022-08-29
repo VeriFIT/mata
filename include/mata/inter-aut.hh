@@ -141,7 +141,7 @@ struct InterAutomaton
     enum Naming
     {
         AUTO,
-        MARKER,
+        MARKED,
         ENUM
     };
 

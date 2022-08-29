@@ -38,7 +38,7 @@ namespace
         else if (type == "enum")
             return Mata::InterAutomaton::Naming::ENUM;
         else if (type == "marked")
-            return Mata::InterAutomaton::Naming::MARKER;
+            return Mata::InterAutomaton::Naming::MARKED;
 
         assert(false && "Unknown naming type");
     }
@@ -61,7 +61,7 @@ namespace
 
     bool is_naming_marker(const Mata::InterAutomaton::Naming naming)
     {
-        return naming == Mata::InterAutomaton::Naming::MARKER;
+        return naming == Mata::InterAutomaton::Naming::MARKED;
     }
 
     bool is_naming_enum(const Mata::InterAutomaton::Naming naming)
