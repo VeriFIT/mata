@@ -1287,7 +1287,7 @@ void Mata::Nfa::construct(
     }
 
     // a lambda for translating state names to identifiers
-    auto get_state_name = [state_map, aut](const std::string& str) {
+    auto get_state_name = [&state_map, &aut](const std::string& str) {
         if (!state_map->count(str)) {
             State state = aut->add_new_state();
             state_map->insert({str, state});
