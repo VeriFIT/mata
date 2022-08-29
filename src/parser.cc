@@ -226,11 +226,12 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
             }
         }
 
+        const size_t length = token_string.length();
         if (last_operator == 0) {
             result.push_back(token);
-        } else if (last_operator != token_string.length()){ // operator was not last, we need parse rest of token
+        } else if (last_operator != length){ // operator was not last, we need parse rest of token
             result.push_back(std::pair<std::string, bool>(
-                    token_string.substr(last_operator, token_string.length()-last_operator), false));
+                    token_string.substr(last_operator, length-last_operator), false));
         }
     }
 
