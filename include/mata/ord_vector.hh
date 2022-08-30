@@ -171,6 +171,17 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
+    /**
+     * Create OrdVector with reserved @p capacity.
+     * @param[in] capacity Capacity of OrdVector to reserve.
+     * @return Newly create OrdVector.
+     */
+    static OrdVector with_reserved(const size_t capacity) {
+        OrdVector ord_vector{};
+        ord_vector.vec_.reserve(capacity);
+        return ord_vector;
+    }
+
 	OrdVector& operator=(const OrdVector& rhs)
 	{
 		// Assertions
