@@ -756,7 +756,7 @@ private:
      * Get directed transitions for digraph.
      * @param[out] digraph Digraph to add computed transitions to.
      */
-    void get_directed_transitions(Nfa& digraph) const;
+    void collect_directed_transitions(Nfa& digraph) const;
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use

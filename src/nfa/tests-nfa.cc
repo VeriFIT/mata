@@ -2583,6 +2583,18 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
     }
 }
 
+TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    for (size_t i{ 0 }; i < 10000; ++i) {
+        Nfa new_aut{ aut };
+        new_aut.trim();
+    }
+}
+
 TEST_CASE("Mata::Nfa::trim()")
 {
     Nfa aut{20};
