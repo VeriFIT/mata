@@ -287,3 +287,37 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
 }
+
+TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
+{
+    constexpr Symbol epsilon{'e'};
+
+    Nfa a{6};
+    a.make_initial(0);
+    a.make_final({1, 4, 5});
+    a.add_trans(0, epsilon, 1);
+    a.add_trans(1, 'a', 1);
+    a.add_trans(1, 'b', 1);
+    a.add_trans(1, 'c', 2);
+    a.add_trans(2, 'b', 4);
+    a.add_trans(2, epsilon, 3);
+    a.add_trans(3, 'a', 5);
+
+    Nfa b{10};
+    b.make_initial(0);
+    b.make_final({2, 4, 8, 7});
+    b.add_trans(0, 'b', 1);
+    b.add_trans(0, 'a', 2);
+    b.add_trans(2, 'a', 4);
+    b.add_trans(2, epsilon, 3);
+    b.add_trans(3, 'b', 4);
+    b.add_trans(0, 'c', 5);
+    b.add_trans(5, 'a', 8);
+    b.add_trans(5, epsilon, 6);
+    b.add_trans(6, 'a', 9);
+    b.add_trans(6, 'b', 7);
+
+    for (size_t i{ 0 }; i < 10000; ++i) {
+        Nfa result{ intersection(a, b, epsilon) };
+    }
+}
