@@ -358,23 +358,17 @@ void Nfa::trim()
     *this = get_trimmed_automaton();
 }
 
-Nfa Nfa::get_trimmed_automaton()
-{
-    StateSet original_useful_states{ get_useful_states() };
+Nfa Nfa::get_trimmed_automaton() {
+    if (initialstates.empty() || finalstates.empty()) { return Nfa{}; }
 
+    const StateSet original_useful_states{ get_useful_states() };
     StateToStateMap original_to_new_states_map{ original_useful_states.size() };
     size_t new_state_num{ 0 };
-    for (const State original_state: original_useful_states)
-    {
-        original_to_new_states_map.insert(std::make_pair(original_state, new_state_num));
+    for (const State original_state: original_useful_states) {
+        original_to_new_states_map[original_state] = new_state_num;
         ++new_state_num;
     }
-
-    Nfa trimmed_aut{ create_trimmed_aut(original_to_new_states_map) };
-
-    add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
-
-    return trimmed_aut;
+    return create_trimmed_aut(original_to_new_states_map);
 }
 
 StateSet Nfa::get_useful_states() const
@@ -384,12 +378,12 @@ StateSet Nfa::get_useful_states() const
     StateBoolArray reachable_states{ digraph.compute_reachability() };
     StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
 
-    StateSet useful_states{};
-    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
-    {
-        if (reachable_states[original_state] && terminating_states[original_state])
-        {
-            // we can use push_back here, because we are always increasing the value of original_state (so useful_states will always be ordered)
+    const size_t num_of_states{ get_num_of_states() };
+    auto useful_states{ StateSet::with_reserved(num_of_states) };
+    for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
+        if (reachable_states[original_state] && terminating_states[original_state]) {
+            // We can use push_back here, because we are always increasing the value of original_state (so useful_states
+            //  will always be ordered).
             useful_states.push_back(original_state);
         }
     }
@@ -400,7 +394,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
 {
     Nfa trimmed_aut{ original_to_new_states_map.size() };
 
-    for (State old_initial_state: initialstates)
+    for (const State old_initial_state: initialstates)
     {
         if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
         {
@@ -408,8 +402,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
             trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
         }
     }
-
-    for (State old_final_state: finalstates)
+    for (const State old_final_state: finalstates)
     {
         if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
         {
@@ -417,29 +410,31 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
             trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
         }
     }
+
+    add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
     return trimmed_aut;
 }
 
 void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut)
 {
-    // for each reachable original state s (which means it is mapped to the state of trimmed automaton)...
+    // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
     for (const auto& original_state_mapping: original_to_new_states_map)
     {
-        // ...add all transitions from s to some reachable state to the trimmed automaton
+        // ...add all transitions from 's' to some reachable state to the trimmed automaton.
         for (const TransSymbolStates& state_transitions_with_symbol: transitionrelation[original_state_mapping.first])
         {
-            TransSymbolStates new_state_transitions_with_symbol(state_transitions_with_symbol.symbol);
+            TransSymbolStates new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
             for (State old_state_to: state_transitions_with_symbol.states_to)
             {
                 auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
                 if (iter_to_new_state_to != original_to_new_states_map.end())
                 {
-                    // we can push here, because we assume that new states follow the ordering of orignial states
-                    new_state_transitions_with_symbol.states_to.push_back(iter_to_new_state_to->second);
+                    // We can push here, because we assume that new states follow the ordering of original states.
+                    new_state_trans_with_symbol.states_to.push_back(iter_to_new_state_to->second);
                 }
             }
-            if (new_state_transitions_with_symbol.states_to.size() != 0) {
-                trimmed_aut.transitionrelation[original_state_mapping.second].push_back(new_state_transitions_with_symbol);
+            if (!new_state_trans_with_symbol.states_to.empty()) {
+                trimmed_aut.transitionrelation[original_state_mapping.second].push_back(new_state_trans_with_symbol);
             }
         }
     }
@@ -1072,28 +1067,23 @@ Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
 
 Nfa Nfa::get_digraph() const {
     Nfa digraph{ get_num_of_states(), initialstates, finalstates};
-    get_directed_transitions(digraph);
+    collect_directed_transitions(digraph);
     return digraph;
 }
 
 void Nfa::get_digraph(Nfa& result) const {
-    result.clear_nfa();
-    const State num_of_states{ get_num_of_states() };
-    if (result.get_num_of_states() < num_of_states) { result.increase_size(num_of_states); }
-    result.initialstates = initialstates;
-    result.finalstates = finalstates;
-    get_directed_transitions(result);
+    result = get_digraph();
 }
 
-void Nfa::get_directed_transitions(Nfa& digraph) const {
+void Nfa::collect_directed_transitions(Nfa& digraph) const {
     const Symbol abstract_symbol{ 'x' };
     const State num_of_states{ get_num_of_states() };
     for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
         for (const auto& symbol_transitions: transitionrelation[src_state]) {
             for (State tgt_state: symbol_transitions.states_to) {
-                if (!digraph.has_trans(src_state, abstract_symbol, tgt_state)) {
-                    digraph.add_trans(src_state, abstract_symbol, tgt_state);
-                }
+                // Directly try to add the transition. Finding out whether the transition is already in the digraph
+                //  only iterates through transition relation again.
+                digraph.add_trans(src_state, abstract_symbol, tgt_state);
             }
         }
     }
