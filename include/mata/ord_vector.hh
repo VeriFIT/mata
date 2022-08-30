@@ -208,7 +208,7 @@ public:   // Public methods
 		size_t first = 0;
 		size_t last = vec_.size();
 
-		if ((last != 0) && (vec_[last-1] < x))
+		if ((last != 0) && (vec_.back() < x))
 		{	// for the case which would be prevalent
 			vec_.push_back(x);
 			return;
