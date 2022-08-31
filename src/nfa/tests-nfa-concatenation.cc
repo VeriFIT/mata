@@ -359,6 +359,34 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
         CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
     }
+
+    SECTION("Sample automata") {
+        lhs.increase_size_for_state(0);
+        lhs.make_initial(0);
+        lhs.make_final(0);
+        lhs.add_trans(0, 58, 0);
+        lhs.add_trans(0, 65, 0);
+        lhs.add_trans(0, 102, 0);
+        lhs.add_trans(0, 112, 0);
+        lhs.add_trans(0, 115, 0);
+        lhs.add_trans(0, 116, 0);
+
+        rhs.increase_size_for_state(5);
+        rhs.make_final({0, 5});
+        rhs.make_initial(5);
+        rhs.add_trans(1, 112, 0);
+        rhs.add_trans(2, 116, 1);
+        rhs.add_trans(3, 102, 2);
+        rhs.add_trans(4, 115, 3);
+        rhs.add_trans(5, 102, 2);
+        rhs.add_trans(5, 112, 0);
+        rhs.add_trans(5, 115, 3);
+        rhs.add_trans(5, 116, 1);
+
+        result = concatenate(lhs, rhs);
+        CHECK(result.has_initial(5));
+        // TODO: Add more checks.
+    }
 }
 
 TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {

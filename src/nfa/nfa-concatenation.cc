@@ -149,15 +149,21 @@ private:
             rhs_result_states_map.insert(std::make_pair(rhs_state, result_state_index));
             ++result_state_index;
         }
+
+        for (const State lhs_initial_state: lhs.initialstates) {
+            if (lhs_result_states_map.find(lhs_initial_state) == lhs_result_states_map.end()) {
+                for (const State rhs_initial_state: rhs.initialstates) {
+                    lhs_result_states_map.insert(std::make_pair(lhs_initial_state, rhs_result_states_map[rhs_initial_state]));
+                }
+            }
+        }
     }
 
     /**
      * Make @c result initial states.
      */
-    void make_initial_states()
-    {
-        for (State lhs_initial_state: lhs.initialstates)
-        {
+    void make_initial_states() {
+        for (State lhs_initial_state: lhs.initialstates) {
             result.make_initial(lhs_result_states_map[lhs_initial_state]);
         }
     }
