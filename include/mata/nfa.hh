@@ -860,15 +860,6 @@ inline Nfa determinize(
     return result;
 } // determinize }}}
 
-void invert(Nfa* result, const Nfa &aut);
-
-inline Nfa invert(const Nfa &aut)
-{
-    Nfa inverted;
-    invert(&inverted, aut);
-    return inverted;
-}
-
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});

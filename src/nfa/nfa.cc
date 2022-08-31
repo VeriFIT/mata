@@ -593,15 +593,17 @@ void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 
     if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
 
+    for (State sourceState = 0; sourceState < aut.transitionrelation.size(); ++sourceState)
+    {
+        for (const TransSymbolStates &transition: aut.transitionrelation[sourceState])
+        {
+            for(State targetState: transition.states_to)
+                result->add_trans(targetState, transition.symbol, sourceState);
+        }
+    }
+
     result->initialstates = aut.finalstates;
     result->finalstates = aut.initialstates;
-
-    for (size_t i = 0; i < aut.get_num_of_states(); ++i)
-    {
-        for (const auto& symStates : aut[i])
-            for (const State tgt : symStates.states_to)
-                result->add_trans(tgt, symStates.symbol, i);
-    }
 }
 
 bool Mata::Nfa::is_deterministic(const Nfa& aut)
@@ -841,26 +843,8 @@ void Mata::Nfa::complement_in_place(Nfa& aut) {
 void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     Nfa inverted;
-    invert(&inverted, aut);
+    revert(&inverted, aut);
     determinize(res, inverted);
-}
-
-void Mata::Nfa::invert(Nfa *invertedAutomaton, const Nfa& aut) {
-    const size_t states_num = aut.get_num_of_states();
-    for (State i = 0; i < states_num; ++i)
-        invertedAutomaton->add_new_state();
-
-    for (State sourceState = 0; sourceState < aut.transitionrelation.size(); ++sourceState)
-    {
-        for (const TransSymbolStates &transition: aut.transitionrelation[sourceState])
-        {
-            for(State targetState: transition.states_to)
-                invertedAutomaton->add_trans(targetState, transition.symbol, sourceState);
-        }
-    }
-
-    invertedAutomaton->initialstates = aut.finalstates;
-    invertedAutomaton->finalstates = aut.initialstates;
 }
 
 void Nfa::print_to_DOT(std::ostream &outputStream) const {
