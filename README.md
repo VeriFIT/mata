@@ -18,30 +18,30 @@ AFA, etc.). Currently, Mata offers two interfaces:
 
 To build the the library run the following:
 
-    ```
-    git clone https://github.com/VeriFIT/mata
-    cd mata
-    make release
-    ```
+```
+git clone https://github.com/VeriFIT/mata
+cd mata
+make release
+```
 
 In order, to verify the functionality of the library, you can run the test suite:
 
-    ```
-    make test
-    ```
+```
+make test
+```
 
 You might, need to install the dependencies to measure the coverage of the tests. 
 Run the following to install the dependencies for MacOS:
 
-    ```
-    brew install lcov gcovr
-    ```
+```
+brew install lcov gcovr
+```
 
 Run the following to install the dependencies for Ubuntu:
 
-    ```
-    sudo apt-get install -y build-essential lcov gcovr xdg-utils
-    ```
+```
+sudo apt-get install -y build-essential lcov gcovr xdg-utils
+```
 
 # Building the Python binding from sources
 
@@ -49,25 +49,25 @@ Mata offers binding of its efficient library to Python. You can install the bind
 package on your system as follows. First, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (`venv`) to install and use the library.
 
-    ```
-    python -m pip install --upgrade pip
-    make -C bindings/python init
+```
+python -m pip install --upgrade pip
+make -C bindings/python init
 
-    sudo apt-get -qq update 
-    sudo apt-get -qq install -y graphviz graphviz-dev
-    ```
+sudo apt-get -qq update 
+sudo apt-get -qq install -y graphviz graphviz-dev
+```
 
 Now, you can install the library.
 
-    ```
-    make -C bindings/python install
-    ```
+```
+make -C bindings/python install
+```
 
 Finally, you can verify the binding woks as expected by running the test suite:
 
-    ```
-    make -C bindings/python test
-    ```
+```
+make -C bindings/python test
+```
 
 # Getting started
 
@@ -76,25 +76,25 @@ This directory contains examples of various usage in form of:
 
   1. C/C++ example programs. To run the program run the following:
 
-  ```
-  make -C examples
-  ./examples/example01-simple
-  ```
+```
+make -C examples
+./examples/example01-simple
+```
 
   3. Python example scripts. To run the scripts run the following.
 
-  ```
-  python examples/example01-python-binding.py
-  ```
+```
+python examples/example01-python-binding.py
+```
 
   4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
   a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
   Navigate to generated link to see the available jupyter notebooks:
    
-  ```
-  pip3 install jupyter
-  jupyter notebook
-  ```
+```
+pip3 install jupyter
+jupyter notebook
+```
 
 ## Using the library
 
@@ -106,45 +106,45 @@ the repository.
 First import the library in your code. If the library is properly installed, you can use
 the standard include.
 
-    ```cpp
-    #include <mata/nfa.hh>
-    ```
+```cpp
+#include <mata/nfa.hh>
+```
 
 We recommend to use the `Mata::Nfa` namespace for easier usage:
 
-    ```cpp
-    using namespace Mata::Nfa;
-    ```
+```cpp
+using namespace Mata::Nfa;
+```
 
 Start by creating an automaton with fixed number of states.
 
-    ``cpp
-    int main() {
-        Nfa aut(4);
-    ```
+``cpp
+int main() {
+    Nfa aut(4);
+```
 
 You can set the initial and final states directly using the initializers.
 
-    ``cpp
-        aut.initialstates = {0, 1};
-        aut.finalstates = {2, 3};
-    ```
+``cpp
+    aut.initialstates = {0, 1};
+    aut.finalstates = {2, 3};
+```
 
 Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:
 
-    ``cpp
-        aut.add_trans(0, 0, 2);
-        aut.add_trans(1, 1, 3);
-    ```
+``cpp
+    aut.add_trans(0, 0, 2);
+    aut.add_trans(1, 1, 3);
+```
 
 You can verify the state of your automaton by generating the automaton in `.dot` format.
 
-    ``cpp
-        aut.print_to_DOT(std::cout);
+``cpp
+    aut.print_to_DOT(std::cout);
 
-        return 0;
-    }
-    ```
+    return 0;
+}
+```
 
 Finally, compile the code using the following Makefile:
 
@@ -170,27 +170,28 @@ either use the binding in your own scripts or in the python interpreter.
 
 You can start using the binding by importing the `mata` package.
 
-    ```python
-    import mata
-    ```
+```python
+import mata
+```
 
 In your own scripts, we recommend to use the standard guard for running the scripts, as follows.
 
-    ```python
-    if __name__ == "__main__":
-    ```
+```python
+if __name__ == "__main__":
+```
 
 The usage of the binding copies (to certain levels) the usage of the C++ library.
-    ```python
-        aut = mata.Nfa(4)
 
-        aut.initial_states = {0, 1}
-        aut.final_states = {2, 3}
-        aut.add_trans_raw(0, 0, 2)
-        aut.add_trans_raw(1, 1, 3)
+```python
+    aut = mata.Nfa(4)
 
-        print(aut.to_dot_str())
-    ```
+    aut.initial_states = {0, 1}
+    aut.final_states = {2, 3}
+    aut.add_trans_raw(0, 0, 2)
+    aut.add_trans_raw(1, 1, 3)
+
+    print(aut.to_dot_str())
+```
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
@@ -219,12 +220,12 @@ performance fixes or refactoring.
 
 # Links
 
-    - Project (origin) repository: <https://github.com/verifit/mata>
-    - Issue tracker: <https://github.com/verifit/mata/issues>
-      - In case of some sensitive bugs (like security vulnerabilities),
-        please contact us directly, instead of using issue tracker.
-        We value your effort to improve the security and privacy of this project!
-    - Project documentation: <https://verifit.github.io/mata>
+  - Project (origin) repository: <https://github.com/verifit/mata>
+  - Issue tracker: <https://github.com/verifit/mata/issues>
+    - In case of some sensitive bugs (like security vulnerabilities),
+      please contact us directly, instead of using issue tracker.
+      We value your effort to improve the security and privacy of this project!
+  - Project documentation: <https://verifit.github.io/mata>
 
 Also, check out our research group focusing on program analysis, static and dynamic analysis,
 formal methods, verification and many more: 
