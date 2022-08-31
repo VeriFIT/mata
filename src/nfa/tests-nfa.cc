@@ -544,6 +544,46 @@ TEST_CASE("Mata::Nfa::determinize()")
 	}
 } // }}}
 
+TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
+    Nfa aut(4);
+    Nfa result;
+    SubsetMap subset_map;
+
+    aut.make_initial(0);
+    aut.make_final(3);
+    aut.add_trans(0, 46, 0);
+    aut.add_trans(0, 47, 0);
+    aut.add_trans(0, 58, 0);
+    aut.add_trans(0, 58, 1);
+    aut.add_trans(0, 64, 0);
+    aut.add_trans(0, 64, 0);
+    aut.add_trans(0, 82, 0);
+    aut.add_trans(0, 92, 0);
+    aut.add_trans(0, 98, 0);
+    aut.add_trans(0, 100, 0);
+    aut.add_trans(0, 103, 0);
+    aut.add_trans(0, 109, 0);
+    aut.add_trans(0, 110, 0);
+    aut.add_trans(0, 111, 0);
+    aut.add_trans(0, 114, 0);
+    aut.add_trans(1, 47, 2);
+    aut.add_trans(2, 47, 3);
+    aut.add_trans(3, 46, 3);
+    aut.add_trans(3, 47, 3);
+    aut.add_trans(3, 58, 3);
+    aut.add_trans(3, 64, 3);
+    aut.add_trans(3, 82, 3);
+    aut.add_trans(3, 92, 3);
+    aut.add_trans(3, 98, 3);
+    aut.add_trans(3, 100, 3);
+    aut.add_trans(3, 103, 3);
+    aut.add_trans(3, 109, 3);
+    aut.add_trans(3, 110, 3);
+    aut.add_trans(3, 111, 3);
+    aut.add_trans(3, 114, 3);
+    minimize(&result, aut);
+}
+
 TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
 	Nfa aut(10);
