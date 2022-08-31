@@ -33,12 +33,12 @@ jobs:
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           branch: devel
-          bump: ${{ steps.contributor.outputs.release || steps.bot.outputs.release }}
+          bump: minor
           dry-run: 'true'
 
       - name: Set the new version to file
         run: |
-          echo "${{ steps.tagger.output.new-tag }}" > VERSION
+          echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
           git commit -m "version: bump to ${{ steps.tagger.outputs.new-tag }}" -a
 
       - name: Push changes
@@ -51,7 +51,7 @@ jobs:
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           branch: devel
-          bump: ${{ steps.contributor.outputs.release || steps.bot.outputs.release }}
+          bump: minor
 
   build-and-deploy-doc:
     needs: release
