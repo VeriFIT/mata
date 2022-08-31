@@ -649,22 +649,25 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def intersection(cls, Nfa lhs, Nfa rhs):
+    def intersection(cls, Nfa lhs, Nfa rhs, product_map = None):
         """Performs intersection of lhs and rhs
 
         :param Nfa lhs: first automaton
         :param Nfa rhs: second automaton
-        :return: intersection of lhs and rhs, product map of the results
+        :param dict product_map: Product map of the computed intersection.
+        :return: intersection of lhs and rhs.
         """
         result = Nfa()
-        cdef ProductMap product_map
+        cdef ProductMap c_product_map
         mata.intersection(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), &product_map
+            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), &c_product_map
         )
-        return result, {tuple(k): v for k, v in product_map}
+        if product_map:
+            product_map = {tuple(k): v for k, v in product_map}
+        return result
 
     @classmethod
-    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon, product_map = None):
         """
         Performs intersection of lhs and rhs preserving epsilon transitions.
 
@@ -678,12 +681,17 @@ cdef class Nfa:
         :param: Nfa lhs: First automaton with possible epsilon symbols.
         :param: Nfa rhs: Second automaton with possible epsilon symbols.
         :param: Symbol epsilon: Symbol to handle as an epsilon symbol.
-        :return: Intersection of lhs and rhs with epsilon transitions preserved, product map of the results.
+        :param dict product_map: Product map of the computed intersection.
+        :return: Intersection of lhs and rhs with epsilon transitions preserved.
         """
         result = Nfa()
-        cdef ProductMap product_map
-        mata.intersection(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon, &product_map)
-        return result, {tuple(k): v for k, v in product_map}
+        cdef ProductMap c_product_map
+        mata.intersection(
+            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon, &c_product_map
+        )
+        if product_map:
+            product_map = {tuple(k): v for k, v in product_map}
+        return result
 
     @classmethod
     def concatenate(cls, Nfa lhs, Nfa rhs):
@@ -1169,7 +1177,7 @@ cdef class CharAlphabet(Alphabet):
 
     cpdef get_symbols(self):
         """Returns list of supported symbols
-        
+
         :return: list of symbols
         """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
@@ -1177,7 +1185,7 @@ cdef class CharAlphabet(Alphabet):
 
     cdef mata.CAlphabet* as_base(self):
         """Retypes the alphabet to its base class
-        
+
         :return: alphabet as CAlphabet*
         """
         return <mata.CAlphabet*> self.thisptr
@@ -1220,7 +1228,7 @@ cdef class EnumAlphabet(Alphabet):
 
     cpdef get_symbols(self):
         """Returns list of supported symbols
-        
+
         :return: list of supported symbols
         """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
@@ -1228,7 +1236,7 @@ cdef class EnumAlphabet(Alphabet):
 
     cdef mata.CAlphabet* as_base(self):
         """Retypes the alphabet to its base class
-        
+
         :return: alphabet as CAlphabet*
         """
         return <mata.CAlphabet*> self.thisptr
@@ -1274,7 +1282,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
     cpdef get_symbols(self):
         """Returns list of supported symbols
-        
+
         :return: list of supported symbols
         """
         cdef clist[Symbol] symbols = self.thisptr.get_symbols()
@@ -1282,7 +1290,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
     cdef mata.CAlphabet* as_base(self):
         """Retypes the alphabet to its base class
-        
+
         :return: alphabet as CAlphabet*
         """
         return <mata.CAlphabet*> self.thisptr
