@@ -68,34 +68,118 @@ Finally, you can verify the binding woks as expected by running the test suite:
 
 # Getting started
 
-TODO
+To get started, we refer to the [examples](examples/) in our repository.
+This directory contains examples of various usage in form of:
+
+  1. C/C++ example programs. To run the program run the following:
+
+  ```
+  make -C examples
+  ./examples/example01-simple
+  ```
+
+  3. Python example scripts. To run the scripts run the following.
+
+  ```
+  python examples/example01-python-binding.py
+  ```
+
+  4. Python jupyter notebooks. To run the jupyter notebook, one needs to have jupyter installed as
+  a prerequisite. The run the jupyter notebook, that creates an instance on your local server.
+  Navigate to generated link to see the available jupyter notebooks:
+   
+  ```
+  pip3 install jupyter
+  jupyter notebook
+  ```
 
 ## Using the library
 
-    ```
+The library can be used directly in the C/C++ code. The result of compilation is a static
+or dynamic library, that can be linked to ones project. Note, that the library is dependent
+on several other 3rd party libraries (e.g., `libre2` or `libsimlib`), which are included in
+the repository.
+
+First import the library in your code. If the library is properly installed, you can use
+the standard include.
+
+    ```cpp
     #include <mata/nfa.hh>
+    ```
 
+We recommend to use the `Mata::Nfa` namespace for easier usage:
+
+    ```cpp
     using namespace Mata::Nfa;
+    ```
 
+Start by creating an automaton with fixed number of states.
+
+    ``cpp
     int main() {
         Nfa aut(4);
+    ```
 
+You can set the initial and final states directly using the initializers.
+
+    ``cpp
         aut.initialstates = {0, 1};
         aut.finalstates = {2, 3};
+    ```
+
+Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:
+
+    ``cpp
         aut.add_trans(0, 0, 2);
         aut.add_trans(1, 1, 3);
+    ```
 
+You can verify the state of your automaton by generating the automaton in `.dot` format.
+
+    ``cpp
         aut.print_to_DOT(std::cout);
+
+        return 0;
     }
     ```
 
+Finally, compile the code using the following Makefile:
+
+```makefile
+CFLAGS=-std=c++14 -pedantic-errors -Wextra -Wall -Wfloat-equal -Wctor-dtor-privacy -Weffc++ -Woverloaded-virtual -fdiagnostics-show-option -g
+
+INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include
+LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib
+LIBS=-lmata -lsimlib -lre2
+
+.PHONY: all clean
+
+all: $(patsubst %.cc,%,$(wildcard *.cc)) ../build/src/libmata.a
+
+example: example.cc
+	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< $(LIBS) -o $@
+```
+
 ## Using the binding
 
-    ```
-    import mata
+The python binding is installed (by default) to your local python package repository. You can
+either use the binding in your own scripts or in the python interpreter.
 
+You can start using the binding by importing the `mata` package.
+
+    ```python
+    import mata
+    ```
+
+In your own scripts, we recommend to use the standard guard for running the scripts, as follows.
+
+    ```python
     if __name__ == "__main__":
-    aut = mata.Nfa(4)
+    ```
+
+The usage of the binding copies (to certain levels) the usage of the C++ library.
+    ```python
+        aut = mata.Nfa(4)
 
         aut.initial_states = {0, 1}
         aut.final_states = {2, 3}
@@ -104,6 +188,8 @@ TODO
 
         print(aut.to_dot_str())
     ```
+
+You can either run your scripts directly using `python` or compile it using the `cython` project.
 
 # Contributing
 
@@ -137,19 +223,19 @@ The code of this project is licensed under GNU GPLv3 license.
 # Contacts
 
   - **Lukáš Holík** ([kilohsakul](https://github.com/kilohsakul)): the supreme leader, the emperor of theory;
-  - **Ondřej Lengál** ([ondrik](https://github.com/ondrik)): prototype developer and world's talest hobbit;
+  - **Ondřej Lengál** ([ondrik](https://github.com/ondrik)): prototype developer and the world's talest hobbit;
   - Martin Hruška ([martinhruska](https://github.com/martinhruska)): library maintainer;
   - Tomáš Fiedor ([tfiedor](https://github.com/tfiedor)): python binding maintainer;
   - David Chocholatý ([Adda0](https://github.com/Adda0)) library and binding developer;
   - Juraj Síč ([jurajsic](https://github.com/jurajsic)): library developer;
-  - Tomáš Vojnar ([vojnar](https://github.com/vojnar)): spiritual leader;
+  - Tomáš Vojnar ([vojnar](https://github.com/vojnar)): the spiritual leader;
 
 # Acknowledgements
 
 We thank for the support received from the Brno University of Technology 
 ([BUT FIT](https://www.fit.vutbr.cz/)).
 
-Development of this tool has been supported by the following projects:.
+Development of this tool has been supported by the following projects: ???.
 
 This tool as well as the information provided on this web page reflects
 only the author's view and no organization is responsible for any use
