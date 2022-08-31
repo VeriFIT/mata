@@ -34,7 +34,7 @@ jobs:
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           bump: minor
-          dry-run: 'true'
+          dry-run: 'TRUE'
 
       - name: Set the new version to file
         run: |
