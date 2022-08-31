@@ -10,7 +10,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
+import os
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
@@ -21,8 +21,18 @@ project = 'mata'
 copyright = '2022, VeriFIT Group, BUT, FIT'
 author = 'VeriFIT Group, BUT, FIT'
 
+
+def get_version():
+    """Parses the version of the library from the VERSION file"""
+    version_file = os.path.join("..", "VERSION")
+    if os.path.exists(version_file):
+        with open(version_file, 'r') as version_handle:
+            return version_handle.read().split()[0]
+    else:
+        return ""
+
 # The full version, including alpha/beta/rc tags
-release = '0.0'
+release = get_version()
 
 
 # -- General configuration ---------------------------------------------------

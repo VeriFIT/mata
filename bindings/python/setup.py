@@ -38,8 +38,17 @@ extensions = [
     )
 ]
 
+def get_version():
+    """Parses the version of the library from the VERSION file"""
+    version_file = os.path.join("..", "..", "VERSION")
+    if os.path.exists(version_file):
+        with open(version_file, 'r') as version_handle:
+            return version_handle.read().split()[0]
+    else:
+        return ""
+
 setup(
     name="mata",
     ext_modules=cythonize(extensions),
-    version=0.1
+    version=get_version()
 )
