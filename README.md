@@ -118,28 +118,28 @@ using namespace Mata::Nfa;
 
 Start by creating an automaton with fixed number of states.
 
-``cpp
+```cpp
 int main() {
     Nfa aut(4);
 ```
 
 You can set the initial and final states directly using the initializers.
 
-``cpp
+```cpp
     aut.initialstates = {0, 1};
     aut.finalstates = {2, 3};
 ```
 
 Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:
 
-``cpp
+```cpp
     aut.add_trans(0, 0, 2);
     aut.add_trans(1, 1, 3);
 ```
 
 You can verify the state of your automaton by generating the automaton in `.dot` format.
 
-``cpp
+```cpp
     aut.print_to_DOT(std::cout);
 
     return 0;
