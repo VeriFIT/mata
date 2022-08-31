@@ -1,7 +1,9 @@
 name: Build and Deploy Doc
 
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - devel
 
