@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
-        std::vector<Mata::InterAutomaton> inter_aut = Mata::InterAutomaton::parse_from_mf(parsed);
+        std::vector<Mata::IntermediateAut> inter_aut = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (inter_aut[0].is_nfa())
             construct(&aut, inter_aut[0]);
