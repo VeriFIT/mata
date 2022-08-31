@@ -336,7 +336,8 @@ StateSet Nfa::get_reachable_states() const
     StateBoolArray reachable_bool_array{ compute_reachability() };
 
     StateSet reachable_states{};
-    for (State original_state{ 0 }; original_state < get_num_of_states(); ++original_state)
+    const size_t num_of_states{ get_num_of_states() };
+    for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
     {
         if (reachable_bool_array[original_state])
         {
@@ -349,8 +350,7 @@ StateSet Nfa::get_reachable_states() const
 
 StateSet Nfa::get_terminating_states() const
 {
-    Nfa reversed{ revert(*this) };
-    return reversed.get_reachable_states();
+    return revert(*this).get_reachable_states();
 }
 
 void Nfa::trim()
@@ -373,13 +373,17 @@ Nfa Nfa::get_trimmed_automaton() {
 
 StateSet Nfa::get_useful_states() const
 {
-    Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
+    //if (initialstates.empty() || finalstates.empty()) { return StateSet{}; }
 
-    StateBoolArray reachable_states{ digraph.compute_reachability() };
-    StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
+    //const Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
+    //const StateBoolArray reachable_states{ digraph.compute_reachability() };
+    //const StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
+    const StateBoolArray reachable_states{ compute_reachability() };
+    const StateBoolArray terminating_states{ revert(*this).compute_reachability() };
 
     const size_t num_of_states{ get_num_of_states() };
-    auto useful_states{ StateSet::with_reserved(num_of_states) };
+    //auto useful_states{ StateSet::with_reserved(num_of_states) };
+    StateSet useful_states{};
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
         if (reachable_states[original_state] && terminating_states[original_state]) {
             // We can use push_back here, because we are always increasing the value of original_state (so useful_states
@@ -853,7 +857,7 @@ void Mata::Nfa::complement_in_place(Nfa& aut) {
 void Mata::Nfa::minimize(Nfa *res, const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     Nfa inverted;
-    Nfa inverted2;
+    Nfa trimmed_inverted;
     Nfa tmp;
     revert(&inverted, aut);
     determinize(&tmp, inverted);
@@ -1080,6 +1084,7 @@ void Nfa::collect_directed_transitions(Nfa& digraph) const {
     const State num_of_states{ get_num_of_states() };
     for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
         for (const auto& symbol_transitions: transitionrelation[src_state]) {
+            //digraph.add_trans(src_state, symbol_transitions.symbol, symbol_transitions.states_to);
             for (State tgt_state: symbol_transitions.states_to) {
                 // Directly try to add the transition. Finding out whether the transition is already in the digraph
                 //  only iterates through transition relation again.
@@ -1220,12 +1225,8 @@ void Mata::Nfa::determinize(
 
     result->clear_nfa();
 
-    if (result->get_num_of_states() != 0) {
-        throw std::runtime_error("Result is not empty");
-    }
-
-    StateSet S0 =  Mata::Util::OrdVector<State>(aut.initialstates.ToVector());
-    State S0id = result->add_new_state();
+    const StateSet S0 =  Mata::Util::OrdVector<State>(aut.initialstates.ToVector());
+    const State S0id = result->add_new_state();
     result->make_initial(S0id);
     //for fast detection of a final state in a set.
     std::vector<bool> isFinal(aut.get_num_of_states(), false);
@@ -1243,20 +1244,20 @@ void Mata::Nfa::determinize(
         return;
 
     while (!worklist.empty()) {
-        auto Spair = worklist.back();
+        const auto Spair = worklist.back();
         worklist.pop_back();
-        StateSet S = Spair.second;
-        State Sid = Spair.first;
+        const StateSet S = Spair.second;
+        const State Sid = Spair.first;
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
         Mata::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
 
         while (iterator.has_next()) {
-            auto symbolTargetPair = iterator.next();
-            Symbol currentSymbol = symbolTargetPair.first;
+            const auto symbolTargetPair = iterator.next();
+            const Symbol currentSymbol = symbolTargetPair.first;
             const StateSet &T = symbolTargetPair.second;
-            auto existingTitr = subset_map->find(T);
+            const auto existingTitr = subset_map->find(T);
             State Tid;
             if (existingTitr != subset_map->end()) {
                 Tid = existingTitr->second;

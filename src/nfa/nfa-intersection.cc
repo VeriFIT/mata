@@ -212,10 +212,10 @@ private:
         product_map[this_and_other_initial_state_pair] = new_intersection_state;
         pairs_to_process.insert(this_and_other_initial_state_pair);
 
-        product.make_initial(new_intersection_state);
+        product.initialstates.push_back(new_intersection_state);
         if (lhs.has_final(lhs_initial_state) && rhs.has_final(rhs_initial_state))
         {
-            product.make_final(new_intersection_state);
+            product.finalstates.push_back(new_intersection_state);
         }
     }
 
