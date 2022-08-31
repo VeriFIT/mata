@@ -15,9 +15,6 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - name: Set release version
-        run: echo ::set-output name=release::minor
-
       - name: Checkout latest version
         uses: actions/checkout@v2
         with:
