@@ -1,9 +1,12 @@
 # Mata: The Automata Library
-[![master: Ubuntu (build-&-test)](https://github.com/VeriFIT/toris/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/VeriFIT/toris/actions/workflows/ubuntu.yml)
-[![master: MacOS (build-&-test)](https://github.com/VeriFIT/toris/actions/workflows/macos.yml/badge.svg)](https://github.com/VeriFIT/toris/actions/workflows/macos.yml)
 
-[![devel: Ubuntu (build-&-test)](https://github.com/VeriFIT/toris/actions/workflows/ubuntu.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/toris/actions/workflows/ubuntu.yml)
-[![devel: MacOS (build-&-test)](https://github.com/VeriFIT/toris/actions/workflows/macos.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/toris/actions/workflows/macos.yml)
+[![GitHub tag](https://img.shields.io/github/tag/VeriFIT/mata.svg)](https://github.com/VeriFIT/mata)
+
+[![master: Ubuntu (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml)
+[![master: MacOS (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml/badge.svg)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml)
+
+[![devel: Ubuntu (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml)
+[![devel: MacOS (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml)
 
 Mata is an open source automata library that offers interface for different kinds of automata (NFA,
 AFA, etc.). Currently, Mata offers two interfaces:
@@ -202,6 +205,17 @@ either contact us directly through mail or
 [create a new issue](https://github.com/VeriFIT/mata/issues/new/choose).
 When creating a new issue, please, try to include everything necessary for us to know
 (such as the version, operation system, etc.) so we can sucessfully replicate the issue.
+
+## Note to main contributors
+
+By default, each merge automatically increases the `minor` version of the library
+(i.e., `0.0.0 -> 0.1.0` ). This can be overruled using either tag `#patch` (increasing 
+patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.e., 
+`0.0.0 -> 1.0.0`). This tag is specified in the merge message. 
+
+Generally, it is recommended to use `#major` for changes that introduces backward-incompatible
+changes for people that used previous versions, and `#patch` for minor changes, such as bug-fixes,
+performance fixes or refactoring.
 
 # Links
 
