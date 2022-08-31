@@ -33,7 +33,6 @@ jobs:
         uses: phish108/autotag-action@1.1.51
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          branch: devel
           bump: minor
           dry-run: 'true'
 
@@ -51,7 +50,6 @@ jobs:
         uses: phish108/autotag-action@1.1.51
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          branch: devel
           bump: minor
 
   build-and-deploy-doc:
