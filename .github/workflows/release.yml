@@ -13,20 +13,20 @@ jobs:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-      - id: Set release version
+      - name: Set release version
         run: echo ::set-output name=release::minor
 
-      - id: Checkout latest version
+      - name: Checkout latest version
         uses: actions/checkout@v2
         with:
           ref: devel
 
-      - id: Set up git config
+      - name: Set up git config
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - id: Infer the new version (without tagging)
+      - name: Infer the new version (without tagging)
         uses: phish108/autotag-action@1.1.51
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -34,7 +34,7 @@ jobs:
           bump: ${{ steps.contributor.outputs.release || steps.bot.outputs.release }}
           dry-run: 'true'
 
-      - id: Set the new version to file
+      - name: Set the new version to file
         run: |
           echo "${{ steps.tagger.output.new-tag }}" > VERSION
           git commit -m "version: bump to ${{ steps.tagger.outputs.new-tag }}" -a
@@ -44,7 +44,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - id: Tag the new version
+      - name: Tag the new version
         uses: phish108/autotag-action@1.1.51
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
