@@ -29,6 +29,7 @@ jobs:
           git config --local user.name "GitHub Action"
 
       - name: Infer the new version (without tagging)
+        id: tagger
         uses: phish108/autotag-action@1.1.51
         env:
           github-token: ${{ secrets.GITHUB_TOKEN }}
