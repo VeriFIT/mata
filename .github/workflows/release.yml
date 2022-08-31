@@ -28,7 +28,7 @@ jobs:
       - name: Infer the new version (without tagging)
         id: tagger
         uses: phish108/autotag-action@1.1.51
-        env:
+        with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           bump: minor
           dry-run: 'TRUE'
@@ -45,7 +45,7 @@ jobs:
 
       - name: Tag the new version
         uses: phish108/autotag-action@1.1.51
-        env:
+        with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           bump: minor
 
