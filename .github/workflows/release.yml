@@ -1,4 +1,4 @@
-name: Build and Deploy Doc
+name: Release
 
 on:
   pull_request:
