@@ -466,7 +466,7 @@ def test_intersection(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
-    inter, map = mata.Nfa.intersection(fa_one_divisible_by_two, fa_one_divisible_by_four)
+    inter, product_map = mata.Nfa.intersection_with_product_map(fa_one_divisible_by_two, fa_one_divisible_by_four)
 
     assert not mata.Nfa.is_in_lang(inter, [1, 1])
     assert mata.Nfa.is_in_lang(inter, [1, 1, 1, 1])
@@ -476,7 +476,7 @@ def test_intersection(
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four, alph)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_two)[0]
     assert mata.Nfa.is_included(inter, fa_one_divisible_by_four)[0]
-    assert map == {(0, 0): 0, (1, 1): 1, (1, 3): 3, (2, 2): 2, (2, 4): 4}
+    assert product_map == {(0, 0): 0, (1, 1): 1, (1, 3): 3, (2, 2): 2, (2, 4): 4}
 
 
 def test_intersection_preserving_epsilon_transitions():
@@ -506,75 +506,75 @@ def test_intersection_preserving_epsilon_transitions():
     b.add_trans_raw(6, ord('a'), 9)
     b.add_trans_raw(6, ord('b'), 7)
 
-    result, prod_map = mata.Nfa.intersection_preserving_epsilon_transitions(a, b, epsilon)
+    result, product_map = mata.Nfa.intersection_pres_eps_trans_with_prod_map(a, b, epsilon)
 
     # Check states.
     assert result.get_num_of_states() == 13
-    assert result.is_state(prod_map[(0, 0)])
-    assert result.is_state(prod_map[(1, 0)])
-    assert result.is_state(prod_map[(1, 1)])
-    assert result.is_state(prod_map[(1, 2)])
-    assert result.is_state(prod_map[(1, 3)])
-    assert result.is_state(prod_map[(1, 4)])
-    assert result.is_state(prod_map[(2, 5)])
-    assert result.is_state(prod_map[(3, 5)])
-    assert result.is_state(prod_map[(2, 6)])
-    assert result.is_state(prod_map[(3, 6)])
-    assert result.is_state(prod_map[(4, 7)])
-    assert result.is_state(prod_map[(5, 9)])
-    assert result.is_state(prod_map[(5, 8)])
+    assert result.is_state(product_map[(0, 0)])
+    assert result.is_state(product_map[(1, 0)])
+    assert result.is_state(product_map[(1, 1)])
+    assert result.is_state(product_map[(1, 2)])
+    assert result.is_state(product_map[(1, 3)])
+    assert result.is_state(product_map[(1, 4)])
+    assert result.is_state(product_map[(2, 5)])
+    assert result.is_state(product_map[(3, 5)])
+    assert result.is_state(product_map[(2, 6)])
+    assert result.is_state(product_map[(3, 6)])
+    assert result.is_state(product_map[(4, 7)])
+    assert result.is_state(product_map[(5, 9)])
+    assert result.is_state(product_map[(5, 8)])
 
-    assert result.has_initial_state(prod_map[(0, 0)])
+    assert result.has_initial_state(product_map[(0, 0)])
     assert len(result.initial_states) == 1
-    assert result.has_final_state(prod_map[(1, 2)])
-    assert result.has_final_state(prod_map[(1, 4)])
-    assert result.has_final_state(prod_map[(4, 7)])
-    assert result.has_final_state(prod_map[(5, 8)])
+    assert result.has_final_state(product_map[(1, 2)])
+    assert result.has_final_state(product_map[(1, 4)])
+    assert result.has_final_state(product_map[(4, 7)])
+    assert result.has_final_state(product_map[(5, 8)])
     assert len(result.final_states) == 4
 
     # Check transitions.
     assert result.get_num_of_trans() == 15
 
-    assert result.has_trans_raw(prod_map[(0, 0)], epsilon, prod_map[(1, 0)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(0, 0)])) == 1
+    assert result.has_trans_raw(product_map[(0, 0)], epsilon, product_map[(1, 0)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
 
-    assert result.has_trans_raw(prod_map[(1, 0)], ord('b'), prod_map[(1, 1)])
-    assert result.has_trans_raw(prod_map[(1, 0)], ord('a'), prod_map[(1, 2)])
-    assert result.has_trans_raw(prod_map[(1, 0)], ord('c'), prod_map[(2, 5)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 0)])) == 3
+    assert result.has_trans_raw(product_map[(1, 0)], ord('b'), product_map[(1, 1)])
+    assert result.has_trans_raw(product_map[(1, 0)], ord('a'), product_map[(1, 2)])
+    assert result.has_trans_raw(product_map[(1, 0)], ord('c'), product_map[(2, 5)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(1, 0)])) == 3
 
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 1)])) == 0
+    assert len(result.get_trans_from_state_as_sequence(product_map[(1, 1)])) == 0
 
-    assert result.has_trans_raw(prod_map[(1, 2)], epsilon, prod_map[(1, 3)])
-    assert result.has_trans_raw(prod_map[(1, 2)], ord('a'), prod_map[(1, 4)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 2)])) == 2
+    assert result.has_trans_raw(product_map[(1, 2)], epsilon, product_map[(1, 3)])
+    assert result.has_trans_raw(product_map[(1, 2)], ord('a'), product_map[(1, 4)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(1, 2)])) == 2
 
-    assert result.has_trans_raw(prod_map[(1, 3)], ord('b'), prod_map[(1, 4)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 3)])) == 1
+    assert result.has_trans_raw(product_map[(1, 3)], ord('b'), product_map[(1, 4)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(1, 3)])) == 1
 
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(1, 4)])) == 0
+    assert len(result.get_trans_from_state_as_sequence(product_map[(1, 4)])) == 0
 
-    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(3, 5)])
-    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(2, 6)])
-    assert result.has_trans_raw(prod_map[(2, 5)], epsilon, prod_map[(3, 6)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(2, 5)])) == 3
+    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 5)])
+    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(2, 6)])
+    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(2, 5)])) == 3
 
-    assert result.has_trans_raw(prod_map[(3, 5)], ord('a'), prod_map[(5, 8)])
-    assert result.has_trans_raw(prod_map[(3, 5)], epsilon, prod_map[(3, 6)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(3, 5)])) == 2
+    assert result.has_trans_raw(product_map[(3, 5)], ord('a'), product_map[(5, 8)])
+    assert result.has_trans_raw(product_map[(3, 5)], epsilon, product_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(3, 5)])) == 2
 
-    assert result.has_trans_raw(prod_map[(2, 6)], ord('b'), prod_map[(4, 7)])
-    assert result.has_trans_raw(prod_map[(2, 6)], epsilon, prod_map[(3, 6)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(2, 6)])) == 2
+    assert result.has_trans_raw(product_map[(2, 6)], ord('b'), product_map[(4, 7)])
+    assert result.has_trans_raw(product_map[(2, 6)], epsilon, product_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(2, 6)])) == 2
 
-    assert result.has_trans_raw(prod_map[(3, 6)], ord('a'), prod_map[(5, 9)])
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(3, 6)])) == 1
+    assert result.has_trans_raw(product_map[(3, 6)], ord('a'), product_map[(5, 9)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(3, 6)])) == 1
 
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(4, 7)])) == 0
+    assert len(result.get_trans_from_state_as_sequence(product_map[(4, 7)])) == 0
 
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(5, 9)])) == 0
+    assert len(result.get_trans_from_state_as_sequence(product_map[(5, 9)])) == 0
 
-    assert len(result.get_trans_from_state_as_sequence(prod_map[(5, 8)])) == 0
+    assert len(result.get_trans_from_state_as_sequence(product_map[(5, 8)])) == 0
 
 
 def test_complement(

@@ -15,7 +15,7 @@ def test_regex():
     assert mata.Nfa.is_in_lang(union, mata.Nfa.encode_word(symbol_map, "b"))
     assert mata.Nfa.is_in_lang(union, mata.Nfa.encode_word(symbol_map, "c"))
 
-    intersection, _ = mata.Nfa.intersection(lhs, rhs)
+    intersection = mata.Nfa.intersection(lhs, rhs)
     assert not mata.Nfa.is_in_lang(intersection, mata.Nfa.encode_word(symbol_map, "a"))
     assert mata.Nfa.is_in_lang(intersection, mata.Nfa.encode_word(symbol_map, "b"))
     assert not mata.Nfa.is_in_lang(intersection, mata.Nfa.encode_word(symbol_map, "c"))
