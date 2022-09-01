@@ -1178,9 +1178,9 @@ public:
     const AutSequence& get_segments_raw();
 
 private:
-    const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
+    const Symbol epsilon; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton{};
+    const SegNfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     AutSequence segments{}; ///< Segments for @p automaton.
     AutSequence segments_raw{}; ///< Raw segments for @p automaton.
@@ -1235,7 +1235,7 @@ private:
      * @param[in] state_depth_pair Current state depth pair.
      * @param[out] worklist Worklist of state and depth pairs to process.
      */
-    void process_state_depth_pair(StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+    void process_state_depth_pair(const StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
 
     /**
      * Add states with non-epsilon transitions to the @p worklist.
@@ -1301,7 +1301,7 @@ private:
     StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton{}; ///< Reversed input automaton.
+    const Nfa reversed_automaton; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -1338,7 +1338,7 @@ private:
      * @param[in] symbol Symbol to update with.
      */
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
-}; // ShortestWordsMap
+}; // class ShortestWordsMap.
 
 class EnumAlphabet : public Alphabet
 {
