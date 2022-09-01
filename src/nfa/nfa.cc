@@ -133,7 +133,7 @@ namespace {
                     // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
                     result->transitionrelation[q_class_state].push_back(TransSymbolStates(q_trans.symbol, representatives_class_states));
                 }
-                
+
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
                     result->make_final(q_class_state);
                 }
@@ -748,10 +748,8 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Word& word)
 WordSet Mata::Nfa::Nfa::get_shortest_words() const
 {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
-    ShortestWordsMap shortest_words_map{ *this };
-
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return shortest_words_map.get_shortest_words_for(this->initialstates);
+    return ShortestWordsMap{ *this }.get_shortest_words_for(this->initialstates);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1603,7 +1601,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa
 
 WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
-    std::set <Word> result{};
+    WordSet result{};
 
     if (!shortest_words_map.empty())
     {
