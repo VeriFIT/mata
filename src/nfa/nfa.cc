@@ -1609,7 +1609,7 @@ WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
     {
         WordLength shortest_words_length{-1};
 
-        for (State state: states)
+        for (const State state: states)
         {
             const auto& current_shortest_words_map{shortest_words_map.find(state)};
             if (current_shortest_words_map == shortest_words_map.end()) {
@@ -1642,16 +1642,19 @@ WordSet ShortestWordsMap::get_shortest_words_for(State state) const
 
 void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
 {
-    if (!reversed_automaton.initialstates.empty())
+    const auto initial_states{ reversed_automaton.initialstates };
+    if (!initial_states.empty())
     {
-        for (State state: reversed_automaton.initialstates)
+        for (const State state: initial_states)
         {
             shortest_words_map.insert(std::make_pair(state, std::make_pair(0, WordSet{ Word{} })));
         }
 
-        processed.insert(reversed_automaton.initialstates.begin(), reversed_automaton.initialstates.end());
-        fifo_queue.insert(fifo_queue.end(), reversed_automaton.initialstates.begin(),
-                          reversed_automaton.initialstates.end());
+        const auto initial_states_begin{ initial_states.begin() };
+        const auto initial_states_end{ initial_states.end() };
+        processed.insert(initial_states_begin, initial_states_end);
+        fifo_queue.insert(fifo_queue.end(), initial_states_begin,
+                          initial_states_end);
     }
 }
 
@@ -1671,12 +1674,12 @@ void ShortestWordsMap::compute()
 void ShortestWordsMap::compute_for_state(const State state)
 {
     const LengthWordsPair& dst{ map_default_shortest_words(state) };
-    WordLength dst_length_plus_one{ dst.first + 1 };
-    LengthWordsPair act{};
+    const WordLength dst_length_plus_one{ dst.first + 1 };
+    LengthWordsPair act;
 
     for (const TransSymbolStates& transition: reversed_automaton.get_transitions_from(state))
     {
-        for (State state_to: transition.states_to)
+        for (const State state_to: transition.states_to)
         {
             const LengthWordsPair& orig{ map_default_shortest_words(state_to) };
             act = orig;
@@ -1717,7 +1720,7 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     act.first = dst.first + 1;
 }
 
-void SegNfa::Segmentation::process_state_depth_pair(StateDepthPair& state_depth_pair,
+void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_depth_pair,
                                             std::deque<StateDepthPair>& worklist)
 {
     auto outgoing_transitions{ automaton.get_transitions_from(state_depth_pair.state) };

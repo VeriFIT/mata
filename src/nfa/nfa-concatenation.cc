@@ -38,6 +38,7 @@ public:
      */
     Concatenation(const Nfa& lhs, const Nfa& rhs)
             : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()) {
+        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
         concatenate();
     }
 
@@ -51,6 +52,7 @@ public:
     Concatenation(const Nfa& lhs, const Nfa& rhs, Symbol epsilon)
             : lhs(lhs), rhs(rhs), lhs_states_num(lhs.get_num_of_states()), rhs_states_num(rhs.get_num_of_states()),
               epsilon(epsilon) {
+        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
         concatenate_over_epsilon();
     }
 
@@ -58,19 +60,19 @@ public:
      * Get result of concatenation.
      * @return Concatenated automaton.
      */
-    Nfa& get_result() { return result; }
+    const Nfa& get_result() { return result; }
 
     /**
      * Get @c lhs to @c result states map.
      * @return @c lhs to @c result states map.
      */
-    StateToStateMap& get_lhs_result_states_map() { return lhs_result_states_map; }
+    const StateToStateMap& get_lhs_result_states_map() { return lhs_result_states_map; }
 
     /**
      * Get @c rhs to @c result states map.
      * @return @c rhs to @c result states map.
      */
-    StateToStateMap& get_rhs_result_states_map() { return rhs_result_states_map; }
+    const StateToStateMap& get_rhs_result_states_map() { return rhs_result_states_map; }
 
 private:
     const Nfa& lhs; ///< First automaton to concatenate.
@@ -87,9 +89,10 @@ private:
      */
     void concatenate()
     {
-        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
-        const size_t result_num_of_states(lhs_states_num - lhs.finalstates.size() + rhs_states_num);
+        const size_t lhs_num_of_states_in_result{ lhs_states_num - lhs.finalstates.size() };
+        const size_t result_num_of_states{lhs_num_of_states_in_result + rhs_states_num};
         if (result_num_of_states == 0) { return; }
+        lhs_result_states_map.reserve(lhs_num_of_states_in_result);
         result.increase_size(result_num_of_states);
         map_states_to_result_states();
         make_initial_states();
@@ -102,13 +105,11 @@ private:
      * Compute concatenation of given automata concatenating over epsilon transitions.
      */
     void concatenate_over_epsilon() {
-        if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return; }
-        const size_t result_num_of_states(lhs_states_num + rhs_states_num);
+        const size_t result_num_of_states{lhs_states_num + rhs_states_num};
         if (result_num_of_states == 0) { return; }
         map_rhs_states_to_result_states(lhs_states_num);
-        result = lhs;
+        result = Nfa(lhs.transitionrelation, lhs.initialstates);
         result.increase_size(result_num_of_states);
-        result.clear_final();
         add_epsilon_transitions();
         make_final_states();
         add_rhs_transitions();
@@ -139,16 +140,6 @@ private:
             }
         }
         map_rhs_states_to_result_states(result_state_index);
-    }
-
-    /**
-     * Map @c lhs and @c rhs states to @c result states.
-     */
-    void map_rhs_states_to_result_states(State result_state_index) {
-        for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state) {
-            rhs_result_states_map.insert(std::make_pair(rhs_state, result_state_index));
-            ++result_state_index;
-        }
 
         for (const State lhs_initial_state: lhs.initialstates) {
             if (lhs_result_states_map.find(lhs_initial_state) == lhs_result_states_map.end()) {
@@ -156,6 +147,17 @@ private:
                     lhs_result_states_map.insert(std::make_pair(lhs_initial_state, rhs_result_states_map[rhs_initial_state]));
                 }
             }
+        }
+    }
+
+    /**
+     * Map @c lhs and @c rhs states to @c result states.
+     */
+    void map_rhs_states_to_result_states(State result_state_index) {
+        rhs_result_states_map.reserve(rhs_states_num);
+        for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state) {
+            rhs_result_states_map.insert(std::make_pair(rhs_state, result_state_index));
+            ++result_state_index;
         }
     }
 

@@ -2292,6 +2292,25 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         // LIFO queue would return as shortest words string "abb", which would be incorrect.
         REQUIRE(aut.get_shortest_words() == expected);
+
+TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
+    Nfa aut('q' + 1);
+    FILL_WITH_AUT_B(aut);
+    aut.initialstates.clear();
+    aut.initialstates.push_back(8);
+    Word word{};
+    word.push_back('b');
+    word.push_back('b');
+    word.push_back('a');
+    UnorderedWordSet expected{ word };
+    Word word2{};
+    word2.push_back('b');
+    word2.push_back('a');
+    word2.push_back('a');
+    expected.insert(expected.begin(), word2);
+
+    for (size_t n{}; n < 100000; ++n) {
+        aut.get_shortest_words();
     }
 }
 
