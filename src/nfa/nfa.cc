@@ -76,7 +76,7 @@ namespace {
     }
 
 	void reduce_size_by_simulation(Nfa* result, const Nfa& aut, StateToStateMap &state_map) {
-        auto sim_relation = compute_relation(aut, StringDict{{"relation", "simulation"}, {"direction","forward"}});
+        const auto sim_relation = compute_relation(aut, StringDict{{"relation", "simulation"}, {"direction","forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -85,13 +85,13 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-		size_t num_of_states = aut.get_num_of_states(); 
+		const size_t num_of_states = aut.get_num_of_states();
 
 		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
 		for (State q = 0; q < num_of_states; ++q) {
-			State qReprState = quot_proj[q];
+			const State qReprState = quot_proj[q];
 			if (state_map.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-				State qClass = result->add_new_state();
+				const State qClass = result->add_new_state();
 				state_map[qReprState] = qClass;
 				state_map[q] = qClass;
 			} else {
@@ -100,14 +100,14 @@ namespace {
 		}
 
         for (State q = 0; q < num_of_states; ++q) {
-            State q_class_state = state_map.at(q);
+            const State q_class_state = state_map.at(q);
 
             if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial 
                 result->make_initial(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (auto &q_trans : aut.get_transitions_from(q)) {
+                for (const auto &q_trans : aut.get_transitions_from(q)) {
                     // representatives_of_states_to = representatives of q_trans.states_to
                     StateSet representatives_of_states_to;
                     for (auto s : q_trans.states_to) {
@@ -116,9 +116,9 @@ namespace {
 
                     // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
                     StateSet representatives_class_states;
-                    for (State s : representatives_of_states_to) {
+                    for (const State s : representatives_of_states_to) {
                         bool is_state_important = true; // if true, we need to keep the transition from q to s
-                        for (State p : representatives_of_states_to) {
+                        for (const State p : representatives_of_states_to) {
                             if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
                                 is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
                                 break;
