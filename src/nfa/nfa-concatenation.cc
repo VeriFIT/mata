@@ -73,10 +73,10 @@ public:
     StateToStateMap& get_rhs_result_states_map() { return rhs_result_states_map; }
 
 private:
-    const Nfa& lhs{}; ///< First automaton to concatenate.
-    const Nfa& rhs{}; ///< Second automaton to concatenate.
-    const unsigned long lhs_states_num{}; ///< Number of states in @c lhs.
-    const unsigned long rhs_states_num{}; ///< Number of states in @c rhs.
+    const Nfa& lhs; ///< First automaton to concatenate.
+    const Nfa& rhs; ///< Second automaton to concatenate.
+    const unsigned long lhs_states_num; ///< Number of states in @c lhs.
+    const unsigned long rhs_states_num; ///< Number of states in @c rhs.
     Nfa result{}; ///< Concatenated automaton.
     StateToStateMap lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
     StateToStateMap rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
@@ -163,7 +163,7 @@ private:
      * Make @c result initial states.
      */
     void make_initial_states() {
-        for (State lhs_initial_state: lhs.initialstates) {
+        for (const State lhs_initial_state: lhs.initialstates) {
             result.make_initial(lhs_result_states_map[lhs_initial_state]);
         }
     }
@@ -262,7 +262,7 @@ private:
             {
                 for (const auto& symbol_transitions: lhs.get_transitions_from(lhs_state))
                 {
-                    for (State lhs_state_to: symbol_transitions.states_to)
+                    for (const State lhs_state_to: symbol_transitions.states_to)
                     {
                         if (!lhs.has_final(lhs_state_to))
                         {
