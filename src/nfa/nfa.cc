@@ -593,7 +593,8 @@ void Mata::Nfa::revert(Nfa* result, const Nfa& aut)
 
     if (aut.get_num_of_states() > result->get_num_of_states()) { result->increase_size(aut.get_num_of_states()); }
 
-    for (State sourceState = 0; sourceState < aut.transitionrelation.size(); ++sourceState)
+    const size_t num_of_states{ aut.transitionrelation.size() };
+    for (State sourceState = 0; sourceState < num_of_states; ++sourceState)
     {
         for (const TransSymbolStates &transition: aut.transitionrelation[sourceState])
         {
