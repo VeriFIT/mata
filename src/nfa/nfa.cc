@@ -102,17 +102,20 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State q_class_state = state_map.at(q);
 
-            if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial 
+            if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial
                 result->make_initial(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
                 for (const auto &q_trans : aut.get_transitions_from(q)) {
                     // representatives_of_states_to = representatives of q_trans.states_to
-                    StateSet representatives_of_states_to;
-                    for (auto s : q_trans.states_to) {
-                        representatives_of_states_to.insert(quot_proj[s]);
-                    }
+                    const StateSet representatives_of_states_to = [&]{
+                        StateSet state_set;
+                        for (auto s : q_trans.states_to) {
+                            state_set.insert(quot_proj[s]);
+                        }
+                        return state_set;
+                    }();
 
                     // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
                     StateSet representatives_class_states;
@@ -508,6 +511,7 @@ void Mata::Nfa::make_complete(
         if (!aut->trans_empty())
         {
             for (const auto &symb_stateset: (*aut)[state]) {
+                // TODO: Possibly fix insert.
                 used_symbols.insert(symb_stateset.symbol);
 
                 const StateSet &stateset = symb_stateset.states_to;
@@ -547,6 +551,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
             if (trans.symbol == epsilon)
             {
                 StateSet &closure = it_ins_pair.first->second;
+                // TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to resize each time);
                 closure.insert(trans.states_to);
             }
         }
@@ -569,8 +574,10 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
                         for (State st: tgt_eps_cl)
                         {
                             if (src_eps_cl.count(st) == 0) changed = true;
-                            src_eps_cl.insert(st);
                         }
+
+                        // TODO: Fix insert to OrdVector.
+                        src_eps_cl.insert(tgt_eps_cl);
                     }
                 }
             }
