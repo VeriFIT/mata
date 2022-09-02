@@ -778,7 +778,9 @@ struct NfaWrapper
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
 /// Is the language of the automaton empty?
-bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
+bool is_lang_empty(const Nfa& aut, Path* cex);
+
+bool is_lang_empty(const Nfa& aut);
 
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
