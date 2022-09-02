@@ -2580,6 +2580,17 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
     }
 }
 
+TEST_CASE("Mata::Nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    for (size_t i{ 0 }; i < 10000; ++i) {
+        aut.get_useful_states();
+    }
+}
+
 TEST_CASE("Mata::Nfa::trim()")
 {
     Nfa aut{20};
