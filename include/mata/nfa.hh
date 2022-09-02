@@ -209,10 +209,10 @@ Mata::Parser::ParsedSection serialize(
 
 
 struct TransSymbolStates {
-    Symbol symbol;
+    Symbol symbol{};
     StateSet states_to;
 
-    TransSymbolStates() = delete;
+    TransSymbolStates() = default;
     explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
     TransSymbolStates(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
