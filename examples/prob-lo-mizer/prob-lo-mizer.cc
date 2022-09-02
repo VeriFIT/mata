@@ -51,18 +51,18 @@ std::unordered_map<State, size_t> state_accept_cnt;
 
 void print_usage(const char* prog_name)
 {
-	std::cout << "usage: " << prog_name << " (--tcp PORT) <aut.vtf> <input.pcap>\n";
+	std::cout << "usage: " << prog_name << " (--tcp PORT) <aut.mf> <input.pcap>\n";
 	std::cout << "\n";
-	std::cout << "Accepts a deterministic FA in aut.vtf and a PCAP file in\n";
+	std::cout << "Accepts a deterministic FA in aut.mf and a PCAP file in\n";
 	std::cout << "input.pcap and constructs a probabilistic automaton obtained\n";
-	std::cout << "by assigning transitions in aut.vtf probabilities respecting\n";
-	std::cout << "choices of aut.vtf on the input from the PCAP file\n";
+	std::cout << "by assigning transitions in aut.mf probabilities respecting\n";
+	std::cout << "choices of aut.mf on the input from the PCAP file\n";
 	std::cout << "\n";
 	std::cout << "Options:\n";
 	std::cout << "  --tcp PORT  Consider *only* TCP packets *only* on PORT (any from src or dst)\n";
 	std::cout << "\n";
 	std::cout << "Parameters:\n";
-	std::cout << "  aut.vtf     Deterministic FA with the structure to be labelled\n";
+	std::cout << "  aut.mf     Deterministic FA with the structure to be labelled\n";
 	std::cout << "  input.pcap  Input sample\n";
 }
 
@@ -72,9 +72,10 @@ Nfa load_aut(const std::string& file_name)
 	std::ifstream input(file_name);
 	if (input.is_open())
 	{
-		ParsedSection parsec = parse_vtf_section(input);
+		Parsed parsed = parse_mf(input);
 		Mata::Nfa::CharAlphabet alphabet;
-		return construct(parsec, &alphabet);
+		construct(&result, parsed[0], &alphabet);
+		return result;
 	}
 	else
 	{
@@ -319,7 +320,7 @@ void packetHandler(
 
 		++state_occur_cnt[src];
 
-		cur = aut.get_post_of_set(cur, sym);
+		cur = aut.post(cur, sym);
 		if (cur.size() != 1) { std::abort(); }
 		State tgt = *cur.begin();
 
