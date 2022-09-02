@@ -184,6 +184,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
+    cdef bool is_lang_empty(CNfa&)
     cdef bool is_lang_empty(CNfa&, Path*)
     cdef bool is_lang_empty_cex(CNfa&, Word*)
     cdef bool is_universal(CNfa&, CAlphabet&, StringDict&) except +

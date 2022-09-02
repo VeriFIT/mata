@@ -1002,8 +1002,17 @@ cdef class Nfa:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Path path
-        result = mata.is_lang_empty(dereference(lhs.thisptr.get()), &path)
-        return result, path
+        return mata.is_lang_empty(dereference(lhs.thisptr.get()), &path), path
+
+    @classmethod
+    def is_lang_empty(cls, Nfa lhs):
+        """Checks if language of automaton lhs is empty, if not, returns path of states as counter
+        example.
+
+        :param Nfa lhs:
+        :return: true if the lhs is empty, counter example if lhs is not empty
+        """
+        return mata.is_lang_empty(dereference(lhs.thisptr.get()))
 
 
     @classmethod
@@ -1014,8 +1023,7 @@ cdef class Nfa:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
         cdef Word word
-        result = mata.is_lang_empty_cex(dereference(lhs.thisptr.get()), &word)
-        return result, word
+        return mata.is_lang_empty_cex(dereference(lhs.thisptr.get()), &word), word
 
     @classmethod
     def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
