@@ -266,45 +266,47 @@ void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
         throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
     }
 
-    auto transitionFromStateIter = transitionrelation[stateFrom].begin();
-    for (; transitionFromStateIter != transitionrelation[stateFrom].end(); ++transitionFromStateIter) {
-        if (transitionFromStateIter->symbol == symbolOnTransition) {
+    auto& state_transitions{ transitionrelation[stateFrom] };
+
+    if (state_transitions.ToVector().empty()) {
+        state_transitions.push_back({symbolOnTransition, stateTo});
+    } else if (state_transitions.ToVector().back().symbol < symbolOnTransition) {
+        state_transitions.push_back({symbolOnTransition, stateTo});
+    } else {
+        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbolOnTransition }) };
+        if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from stateFrom.
-            transitionFromStateIter->states_to.insert(stateTo);
-            return;
-        } else if (transitionFromStateIter->symbol > symbolOnTransition) {
-            break;
+            symbol_transitions->states_to.insert(stateTo);
+        } else {
+            // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
+            const TransSymbolStates new_symbol_transitions { TransSymbolStates{ symbolOnTransition, stateTo }};
+            state_transitions.insert(new_symbol_transitions);
         }
     }
-
-    // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
-    transitionrelation[stateFrom].insert(transitionFromStateIter, TransSymbolStates(symbolOnTransition, stateTo));
 }
 
-void Nfa::remove_trans(State src, Symbol symb, State tgt)
-{
-    if (!has_trans(src, symb, tgt))
-    {
+void Nfa::remove_trans(State src, Symbol symb, State tgt) {
+    auto& state_transitions{ transitionrelation[src] };
+    if (state_transitions.ToVector().empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
-    }
-
-    auto transitionFromStateIter{ transitionrelation[src].begin() };
-    while (transitionFromStateIter != transitionrelation[src].end())
-    {
-        if (transitionFromStateIter->symbol == symb)
-        {
-            transitionFromStateIter->states_to.remove(tgt);
-            if (transitionFromStateIter->states_to.empty())
-            {
-                transitionrelation[src].remove(*transitionFromStateIter);
+    } else if (state_transitions.ToVector().back().symbol < symb) {
+        throw std::invalid_argument(
+                "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
+                std::to_string(tgt) + "] does not exist.");
+    } else {
+        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symb }) };
+        if (symbol_transitions == state_transitions.end()) {
+            throw std::invalid_argument(
+                    "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
+                    std::to_string(tgt) + "] does not exist.");
+        } else {
+            symbol_transitions->states_to.remove(tgt);
+            if (symbol_transitions->states_to.empty()) {
+                transitionrelation[src].remove(*symbol_transitions);
             }
-
-            return;
         }
-
-        ++transitionFromStateIter;
     }
 }
 
