@@ -586,22 +586,24 @@ public:
 
     bool has_trans(Trans trans) const
     {
-        if (transitionrelation.empty())
+        if (transitionrelation.empty()) {
             return false;
-        const TransitionList& tl = get_transitions_from(trans.src);
-
-        if (tl.empty())
-            return false;
-        for (auto& t : tl)
-        {
-            if (t.symbol > trans.symb)
-                return false;
-            if (trans.symb == t.symbol && t.states_to.count(trans.tgt))
-                return true;
-            assert(t.symbol <= trans.symb);
         }
 
-        return false;
+        const TransitionList& tl = get_transitions_from(trans.src);
+        if (tl.empty()) {
+            return false;
+        }
+        auto symbol_transitions{ tl.find(TransSymbolStates{trans.symb} ) };
+        if (symbol_transitions == tl.end()) {
+            return false;
+        }
+
+        if (symbol_transitions->states_to.find(trans.tgt) == symbol_transitions->states_to.end()) {
+            return false;
+        }
+
+        return true;
     }
     bool has_trans(State src, Symbol symb, State tgt) const
     { // {{{
