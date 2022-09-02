@@ -766,13 +766,19 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut)
     for (const auto initial_state: aut.initialstates) {
         processed[initial_state] = true;
     }
-
+    const std::vector<bool> final_states = [&]{
+        std::vector<bool> states(aut.transitionrelation.size(), false);
+        for (const auto final_state: aut.finalstates) {
+            states[final_state] = true;
+        }
+        return states;
+    }();
     const bool trans_empty{ aut.trans_empty() };
     while (!worklist.empty()) {
         const State state = worklist.back();
         worklist.pop_back();
 
-        if (haskey(aut.finalstates, state)) {
+        if (final_states[state]) {
             return false;
         }
         if (trans_empty) {
