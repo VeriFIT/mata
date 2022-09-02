@@ -375,13 +375,11 @@ Nfa Nfa::get_trimmed_automaton() {
 
 StateSet Nfa::get_useful_states() const
 {
-    //if (initialstates.empty() || finalstates.empty()) { return StateSet{}; }
+    if (initialstates.empty() || finalstates.empty()) { return StateSet{}; }
 
-    //const Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
-    //const StateBoolArray reachable_states{ digraph.compute_reachability() };
-    //const StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
-    const StateBoolArray reachable_states{ compute_reachability() };
-    const StateBoolArray terminating_states{ revert(*this).compute_reachability() };
+    const Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
+    const StateBoolArray reachable_states{ digraph.compute_reachability() };
+    const StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
 
     const size_t num_of_states{ get_num_of_states() };
     //auto useful_states{ StateSet::with_reserved(num_of_states) };
@@ -404,7 +402,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
     {
         if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
         {
-            // we can use push_back here, because initialstates is ordered + new states follow the ordering of the old states 
+            // we can use push_back here, because initialstates is ordered + new states follow the ordering of the old states
             trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
         }
     }
@@ -412,7 +410,7 @@ Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
     {
         if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
         {
-            // we can use push_back here, because finalstates is ordered + new states follow the ordering of the old states 
+            // we can use push_back here, because finalstates is ordered + new states follow the ordering of the old states
             trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
         }
     }
@@ -760,6 +758,39 @@ Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const SymbolToStringMap*  symbol_map,
         const StateToStringMap*   state_map)
 {assert(false);}
+
+bool Mata::Nfa::is_lang_empty(const Nfa& aut)
+{ // {{{
+    std::vector<State> worklist(aut.initialstates.begin(), aut.initialstates.end());
+    std::vector<bool> processed(aut.transitionrelation.size(), false);
+    for (const auto initial_state: aut.initialstates) {
+        processed[initial_state] = true;
+    }
+
+    const bool trans_empty{ aut.trans_empty() };
+    while (!worklist.empty()) {
+        const State state = worklist.back();
+        worklist.pop_back();
+
+        if (haskey(aut.finalstates, state)) {
+            return false;
+        }
+        if (trans_empty) {
+            continue;
+        }
+
+        for (const auto& symb_stateset : aut[state]) {
+            for (const auto& tgt_state : symb_stateset.states_to) {
+                if (!processed[tgt_state]) {
+                    worklist.push_back(tgt_state);
+                    processed[tgt_state] = true;
+                }
+            }
+        }
+    }
+
+    return true;
+} // is_lang_empty }}}
 
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Path* cex)
 { // {{{

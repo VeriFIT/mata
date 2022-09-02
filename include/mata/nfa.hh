@@ -801,9 +801,27 @@ struct NfaWrapper
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
-/// Is the language of the automaton empty?
-bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @param[out] cex Counter-example path for a case the language is not empty.
+ * @return True if the language is empty, false otherwise.
+ */
+bool is_lang_empty(const Nfa& aut, Path* cex);
 
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @return True if the language is empty, false otherwise.
+ */
+bool is_lang_empty(const Nfa& aut);
+
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @param[out] cex Counter-example word for a case the language is not empty.
+ * @return True if the language is empty, false otherwise.
+ */
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
 void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs);
