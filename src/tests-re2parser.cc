@@ -6,7 +6,7 @@ using namespace Mata::Nfa;
 
 TEST_CASE("Mata::RE2Parser basic_parsing")
 { // {{{
-    Mata::Nfa::Nfa aut;
+    Nfa aut;
 
     SECTION("Empty expression")
     {
@@ -62,7 +62,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(!is_in_lang(aut, Word{'a','d','c'}));
     }
 
-    SECTION("Parenthesis") {
+    SECTION("Additional parenthesis") {
         Nfa expected{2};
         expected.make_initial(0);
         expected.make_final(1);
@@ -71,124 +71,55 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
 
         SECTION("No parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "a*b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around example parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(a*b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around variable 'a' parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(a)*b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around variable 'b' parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "a*(b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Parenthesis after iteration") {
             Mata::RE2Parser::create_nfa(&aut, "((a)*)b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis around 'b'") {
             Mata::RE2Parser::create_nfa(&aut, "(a*(b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis around 'a'") {
             Mata::RE2Parser::create_nfa(&aut, "((a)*b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Many parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(((a)*)b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "((a))*((b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis after iteration") {
             Mata::RE2Parser::create_nfa(&aut, "((((a))*))((b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Many parenthesis with double parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(((((a))*))((b)))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
+
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'a','b'}));
+        CHECK(is_in_lang(aut, Word{'a','a','b'}));
+        CHECK(!is_in_lang(aut, Word{'b','a'}));
+        CHECK(equivalence_check(aut, expected));
     }
 } // }}}
 
