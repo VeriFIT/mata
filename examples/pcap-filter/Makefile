@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-CFLAGS=-std=c++11 \
+CFLAGS=-std=c++14 \
   -pedantic-errors \
   -Wextra \
   -Wall \
@@ -17,11 +17,11 @@ CFLAGS=-std=c++11 \
 	# -g
 
 
-INCLUDE=-I../../include
+INCLUDE=-I../../include -I../../3rdparty/simlib/include -I../../3rdparty/re2/include
 
-LIBS_ADD=-L../../build/src
+LIBS_ADD=-L../../build/src -L../../build/3rdparty/re2 -L../../build/3rdparty/simlib
 
-LIBS=-lmata -lpcap
+LIBS=-lmata -lsimlib -lre2 -lpcap
 
 
 ###############################################################################

@@ -50,11 +50,11 @@ pcap_dumper_t* dumper = nullptr;
 
 void print_usage(const char* prog_name)
 {
-	std::cout << "usage: " << prog_name << " [-p] <--in|--notin> <aut.vtf> <input.pcap> <output.pcap>\n";
+	std::cout << "usage: " << prog_name << " [-p] <--in|--notin> <aut.mf> <input.pcap> <output.pcap>\n";
 	std::cout << "\n";
 	std::cout << "Options:\n";
-	std::cout << "  --in     keep packets IN the language of aut.vtf\n";
-	std::cout << "  --notin  keep packets NOT IN the language of aut.vtf\n";
+	std::cout << "  --in     keep packets IN the language of aut.mf\n";
+	std::cout << "  --notin  keep packets NOT IN the language of aut.mf\n";
 	std::cout << "  -p       prefix acceptance\n";
 }
 
@@ -64,9 +64,10 @@ Nfa load_aut(const std::string& file_name)
 	std::ifstream input(file_name);
 	if (input.is_open())
 	{
-		ParsedSection parsec = parse_vtf_section(input);
+		Parsed parsed = parse_mf(input);
 		Mata::Nfa::CharAlphabet alphabet;
-		return construct(parsec, &alphabet);
+		construct(&result, parsed[0], &alphabet);
+	    return result;
 	}
 	else
 	{

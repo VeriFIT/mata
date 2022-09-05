@@ -14,6 +14,7 @@
 // Standard library headers
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
 // insert the class into proper namespace
 namespace Mata

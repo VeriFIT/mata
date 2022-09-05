@@ -7,28 +7,28 @@ using namespace Mata::Nfa;
 
 int main()
 {
-	Nfa aut;
+	Nfa aut(10);
 	Nfa determ;
 
-	aut.initialstates = {1, 3};
-	aut.finalstates = {5};
-	aut.add_trans(1, 'a', 3);
-	aut.add_trans(1, 'a', 10);
-	aut.add_trans(1, 'b', 7);
-	aut.add_trans(3, 'a', 7);
-	aut.add_trans(3, 'b', 9);
-	aut.add_trans(9, 'a', 9);
-	aut.add_trans(7, 'b', 1);
-	aut.add_trans(7, 'a', 3);
-	aut.add_trans(7, 'c', 3);
-	aut.add_trans(10, 'a', 7);
-	aut.add_trans(10, 'b', 7);
-	aut.add_trans(10, 'c', 7);
-	aut.add_trans(7, 'a', 5);
-	aut.add_trans(5, 'a', 5);
-	aut.add_trans(5, 'c', 9);
+	aut.initialstates = {0, 2};
+	aut.finalstates = {4};
+	aut.add_trans(0, 'a', 2);
+	aut.add_trans(0, 'a', 9);
+	aut.add_trans(0, 'b', 6);
+	aut.add_trans(2, 'a', 6);
+	aut.add_trans(2, 'b', 8);
+	aut.add_trans(8, 'a', 8);
+	aut.add_trans(6, 'b', 0);
+	aut.add_trans(6, 'a', 2);
+	aut.add_trans(6, 'c', 2);
+	aut.add_trans(9, 'a', 6);
+	aut.add_trans(9, 'b', 6);
+	aut.add_trans(9, 'c', 6);
+	aut.add_trans(6, 'a', 4);
+	aut.add_trans(4, 'a', 4);
+	aut.add_trans(4, 'c', 8);
 
 	determinize(&determ, aut);
 
-	std::cout << std::to_string(determ);
+	determ.print_to_DOT(std::cout);
 }

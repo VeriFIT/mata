@@ -36,7 +36,10 @@
 build/
 Testing/
 # documentation
-doc/
+doc/api/
+doc/xml/
+doc/_build
+
 
 coverage.info
 cov_html

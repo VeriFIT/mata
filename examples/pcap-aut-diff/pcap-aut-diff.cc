@@ -88,9 +88,10 @@ Nfa load_aut(const std::string& file_name)
 	std::ifstream input(file_name);
 	if (input.is_open())
 	{
-		ParsedSection parsec = parse_vtf_section(input);
+		Parsed parsed = parse_mf(input, true);
 		Mata::Nfa::DirectAlphabet alphabet;
-		return construct(parsec, &alphabet);
+		construct(&result, parsed[0], &alphabet);
+		return result;
 	}
 	else
 	{
