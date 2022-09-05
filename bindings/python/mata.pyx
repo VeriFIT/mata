@@ -893,7 +893,7 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def reduce(cls, Nfa aut, params = None):
+    def reduce_with_state_map(cls, Nfa aut, params = None):
         """
         Reduce the automaton.
 
@@ -912,6 +912,25 @@ cdef class Nfa:
         )
 
         return result, {k: v for k, v in state_map}
+
+    @classmethod
+    def reduce(cls, Nfa aut, params = None):
+        """
+        Reduce the automaton.
+
+        :param Nfa aut: Original automaton to reduce.
+        :param Dict params: Additional parameters for the reduction algorithm:
+            - "algorithm": "simulation"
+        :return: Reduced automaton
+        """
+        params = params or {"algorithm": "simulation"}
+        result = Nfa()
+        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
+                    {
+                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+                    }
+                    )
+        return result
 
     @classmethod
     def compute_relation(cls, Nfa lhs, params = None):
