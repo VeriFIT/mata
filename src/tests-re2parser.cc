@@ -51,6 +51,23 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(is_universal(aut,alph));
     }
 
+    SECTION("Special character") {
+        Mata::RE2Parser::create_nfa(&aut, "\\t");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'\t'}));
+        CHECK(!is_in_lang(aut, Word{'t'}));
+        CHECK(!is_in_lang(aut, Word{}));
+    }
+
+    SECTION("Whitespace") {
+        Mata::RE2Parser::create_nfa(&aut, "a\\sb");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'a', '\t', 'b'}));
+        CHECK(!is_in_lang(aut, Word{}));
+    }
+
     SECTION("Iteration test")
     {
         Mata::RE2Parser::create_nfa(&aut, "ab*cd*");
