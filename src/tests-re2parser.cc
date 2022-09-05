@@ -402,6 +402,50 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
         CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
     }
+
+    SECTION("(a+)a+") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)a+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+    }
+
+    SECTION("a(a+)") {
+        Mata::RE2Parser::create_nfa(&aut, "a(a+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+    }
+
+    SECTION("(a+)b") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)b");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b'}));
+    }
+
+    SECTION("b(a+)") {
+        Mata::RE2Parser::create_nfa(&aut, "b(a+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'a', 'a'}));
+    }
 } // }}}
 
 TEST_CASE("Mata::RE2Parser error")
