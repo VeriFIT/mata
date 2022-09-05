@@ -103,10 +103,10 @@ namespace {
             // Used for epsilon closure, it contains tuples (state_reachable_by_epsilon_transitions, source_state_of_epsilon_transitions)
             std::vector<std::pair<int, int>> copyEdgesFromTo;
 
-            // If the start state is nop or cap, and it is not last, it means that it has a transition to more different
-            // states. We are creating a new start state as one of the states reachable by epsilon from the start state.
-            // We must also include transitions of the other epsilon reachable states to the new start state.
-            if (this->state_cache.is_state_nop_or_cap[start_state] && !this->state_cache.is_last[start_state]) {
+            // If the start state is nop or cap, and has a transition to more different states. We are creating a new
+            // start state as one of the states reachable by epsilon from the start state. We must also include
+            // transitions of the other epsilon reachable states to the new start state.
+            if (this->state_cache.is_state_nop_or_cap[start_state] && this->state_cache.state_mapping[start_state].size() > 1) {
                 for (int index = 1; index < this->state_cache.state_mapping[start_state].size(); index++) {
                     for (auto state: this->state_cache.state_mapping[this->state_cache.state_mapping[start_state][index]]) {
                         copyEdgesFromTo.emplace_back(state, this->state_cache.state_mapping[start_state][0]);
@@ -341,6 +341,9 @@ namespace {
                     }
                 } else if (inst->opcode() == re2::kInstMatch) {
                     this->state_cache.is_final_state[state] = true;
+                    if (append_to_state != -1 && this->state_cache.has_state_incoming_edge[append_to_state]) {
+                      this->state_cache.has_state_incoming_edge[state] = true;
+                    }
                     append_to_state = -1;
                 } else {
                     // Other types of states will always have an incoming edge so the target state will always have it too
