@@ -1195,6 +1195,22 @@ TransSequence Nfa::get_transitions_to(State state_to) const
     return transitions_to_state;
 }
 
+StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+    if (trans_empty()) {
+        return StateSet{};
+    }
+
+    StateSet res{};
+    for (const auto state : states) {
+        const auto& state_transitions{ transitionrelation[state] };
+        const auto state_symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+        if (state_symbol_transitions != state_transitions.end()) {
+            res.insert(state_symbol_transitions->states_to);
+        }
+    }
+    return res;
+}
+
 void Mata::Nfa::uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) {
     *unionAutomaton = rhs;
 
