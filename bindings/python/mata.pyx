@@ -1020,7 +1020,7 @@ cdef class Nfa:
         )
 
     @classmethod
-    def is_included(
+    def is_included_with_cex(
             cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
@@ -1047,6 +1047,34 @@ cdef class Nfa:
             }
         )
         return result, word
+
+    @classmethod
+    def is_included(
+            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
+    ):
+        """Test inclusion between two automata
+
+        :param Nfa lhs: smaller automaton
+        :param Nfa rhs: bigger automaton
+        :param Alphabet alphabet: alpabet shared by two automata
+        :param dict params: additional params
+        :return: true if lhs is included by rhs, counter example word if not
+        """
+        cdef CAlphabet* c_alphabet = NULL
+        if alphabet:
+            c_alphabet = alphabet.as_base()
+        params = params or {'algo': 'antichains'}
+        result = mata.is_incl(
+            dereference(lhs.thisptr.get()),
+            dereference(rhs.thisptr.get()),
+            NULL,
+            c_alphabet,
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
+        )
+        return result
 
     @classmethod
     def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
