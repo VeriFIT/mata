@@ -324,16 +324,12 @@ void Nfa::remove_epsilon(const Symbol epsilon)
 }
 
 TransitionList::const_iterator Nfa::get_transitions_from(State state_from, Symbol symbol) const {
-    const auto state_transitions_iter_end{ transitionrelation[state_from].end() };
-
-    for (auto state_transitions_iter{ transitionrelation[state_from].begin() };
-         state_transitions_iter != state_transitions_iter_end; ++state_transitions_iter) {
-        if (state_transitions_iter->symbol == symbol) {
-            return state_transitions_iter;
-        }
-    }
-
-    return state_transitions_iter_end;
+    const auto& state_transitions{ transitionrelation[state_from] };
+    const auto state_symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+    // If the symbol for state_from exists, an iterator to state transitions with the given symbol is returned. Otherwise,
+    //  state_symbol_transitions point to the end of state_transitions. Hence, an iterator to the ned of state_transitions
+    //  is returned.
+    return state_symbol_transitions;
 }
 
 StateSet Nfa::get_reachable_states() const
