@@ -539,14 +539,15 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    for (size_t i=0; i < aut.get_num_of_states(); ++i)
+    const size_t num_of_states{ aut.get_num_of_states() };
+    for (size_t i{ 0 }; i < num_of_states; ++i)
     {
         for (const auto& trans: aut[i])
         { // initialize
-            auto it_ins_pair = eps_closure.insert({i, {i}});
+            const auto it_ins_pair = eps_closure.insert({i, {i}});
             if (trans.symbol == epsilon)
             {
-                StateSet &closure = it_ins_pair.first->second;
+                StateSet& closure = it_ins_pair.first->second;
                 // TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to resize each time);
                 closure.insert(trans.states_to);
             }
@@ -554,27 +555,20 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
     }
 
     bool changed = true;
+    const TransSymbolStates epsilon_symbol_to_find{ epsilon };
     while (changed) { // compute the fixpoint
         changed = false;
-        for (size_t i=0; i < aut.get_num_of_states(); ++i)
-        {
-            for (auto const &trans: aut[i])
-            {
-                if (trans.symbol == epsilon)
-                {
-                    StateSet &src_eps_cl = eps_closure[i];
-                    for (State tgt : trans.states_to)
-                    {
-                        const StateSet &tgt_eps_cl = eps_closure[tgt];
-
-                        for (State st: tgt_eps_cl)
-                        {
-                            if (src_eps_cl.count(st) == 0) changed = true;
-                        }
-
-                        // TODO: Fix insert to OrdVector.
-                        src_eps_cl.insert(tgt_eps_cl);
+        for (size_t i=0; i < num_of_states; ++i) {
+            const auto& state_transitions{ aut[i] };
+            const auto state_symbol_transitions{ state_transitions.find(epsilon_symbol_to_find) };
+            if (state_symbol_transitions != state_transitions.end()) {
+                StateSet &src_eps_cl = eps_closure[i];
+                for (const State tgt: state_symbol_transitions->states_to) {
+                    const StateSet &tgt_eps_cl = eps_closure[tgt];
+                    for (State st: tgt_eps_cl) {
+                        if (src_eps_cl.count(st) == 0) changed = true;
                     }
+                    src_eps_cl.insert(tgt_eps_cl);
                 }
             }
         }
@@ -594,8 +588,7 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
                 // TODO: this could be done more efficiently if we had a better add_trans method
                 for (State tgt_state : symb_set.states_to) {
                     max_state = std::max(src_state, tgt_state);
-                    if (result->get_num_of_states() < max_state)
-                    {
+                    if (result->get_num_of_states() < max_state) {
                         result->increase_size_for_state(max_state);
                     }
                     result->add_trans(src_state, symb_set.symbol, tgt_state);
