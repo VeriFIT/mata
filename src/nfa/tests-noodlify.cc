@@ -353,3 +353,33 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
     }
 }
 
+TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
+    Nfa left1{ 3};
+    left1.make_initial(0);
+    left1.make_final({ 1, 2 });
+    left1.add_trans(0, 'a', 1);
+    left1.add_trans(0, 'b', 2);
+    Nfa left2{ 2};
+    left2.make_initial(0);
+    left2.make_final(1);
+    left2.add_trans(0, 'a', 1);
+    Nfa left3{ 2};
+    left3.make_initial(0);
+    left3.make_final(1);
+    left3.add_trans(0, 'b', 1);
+
+    Nfa right_side{ 7 };
+    right_side.make_initial(0);
+    right_side.add_trans(0, 'a', 1);
+    right_side.add_trans(1, 'a', 2);
+    right_side.add_trans(2, 'b', 3);
+    right_side.add_trans(0, 'b', 4);
+    right_side.add_trans(4, 'a', 5);
+    right_side.add_trans(5, 'b', 6);
+    right_side.make_final({ 3, 6 });
+
+    AutPtrSequence left_side{ &left1, &left2, &left3 };
+    for (size_t i{}; i < 10000; ++i) {
+        SegNfa::noodlify_for_equation(left_side, right_side);
+    }
+}
