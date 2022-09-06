@@ -678,19 +678,7 @@ public:
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
 
-    StateSet post(const StateSet& states, const Symbol& symbol) const
-    {
-        if (trans_empty())
-            return StateSet{};
-
-        StateSet res;
-        for (auto state : states)
-            for (const auto& symStates : transitionrelation[state])
-                if (symStates.symbol == symbol)
-                    res.insert(symStates.states_to);
-
-        return res;
-    }
+    StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
      * Get shortest words (regarding their length) of the automaton using BFS.
