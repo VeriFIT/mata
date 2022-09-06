@@ -1146,24 +1146,17 @@ bool Mata::Nfa::Nfa::trans_empty() const
     return true;
 }
 
-TransSequence Nfa::get_transitions_to(State state_to) const
-{
+TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
-
-    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from)
-    {
-        for (const auto& symbol_transitions: transitionrelation[state_from])
-        {
-            for (const auto target_state: symbol_transitions.states_to)
-            {
-                if (target_state == state_to)
-                {
-                    transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
-                }
+    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from) {
+        for (const auto& symbol_transitions: transitionrelation[state_from]) {
+            const auto& symbol_states_to{ symbol_transitions.states_to };
+            const auto target_state{ symbol_states_to.find(state_to) };
+            if (target_state != symbol_states_to.end()) {
+                transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
             }
         }
     }
-
     return transitions_to_state;
 }
 
