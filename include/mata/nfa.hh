@@ -540,6 +540,7 @@ public:
     void trim();
     Nfa get_trimmed_automaton();
 
+    // FIXME: Resolve this comment and delete it.
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
@@ -549,18 +550,26 @@ public:
      * */
 
     /**
-     * @brief Adds a transition from stateFrom trough symbol to stateTo.
+     * Add transition from @p state_from with @p symbol to @p state_to to automaton.
+     * @param state_from Source state.
+     * @param symbol Symbol on transition.
+     * @param state_to Target states.
      */
-    void add_trans(State src, Symbol symb, State tgt);
+    void add_trans(State state_from, Symbol symbol, State state_to);
 
-    void add_trans(const Trans& trans)
-    {
-        add_trans(trans.src, trans.symb, trans.tgt);
-    }
+    /**
+     * Add transition @p trans to automaton.
+     * @param trans Transition to add.
+     */
+    void add_trans(const Trans& trans) { add_trans(trans.src, trans.symb, trans.tgt); }
 
-    void add_trans(State src, Symbol symb, const StateSet& states_to);
-
-    void add_trans(State src, const TransitionList& state_transitions);
+    /**
+     * Add transitions from @p state_from with @p symbol to @p states_to to automaton.
+     * @param state_from Source state.
+     * @param symbol Symbol on transitions.
+     * @param states_to Set of target states.
+     */
+    void add_trans(State state_from, Symbol symbol, const StateSet& states_to);
 
     /**
      * Remove transition.

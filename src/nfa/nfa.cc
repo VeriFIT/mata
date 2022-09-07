@@ -263,26 +263,56 @@ std::list<Symbol> EnumAlphabet::get_complement(
 
 ///// Nfa structure related methods
 
-void Nfa::add_trans(State stateFrom, Symbol symbolOnTransition, State stateTo) {
+void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
     // TODO: Define own exception.
-    if (!is_state(stateFrom) || !is_state(stateTo)) {
-        throw std::out_of_range(std::to_string(stateFrom) + " or " + std::to_string(stateTo) + " is not a state.");
+    if (!is_state(state_from) || !is_state(state_to)) {
+        throw std::out_of_range(std::to_string(state_from) + " or " + std::to_string(state_to) + " is not a state.");
     }
 
-    auto& state_transitions{ transitionrelation[stateFrom] };
+    auto& state_transitions{ transitionrelation[state_from] };
 
     if (state_transitions.ToVector().empty()) {
-        state_transitions.push_back({symbolOnTransition, stateTo});
-    } else if (state_transitions.ToVector().back().symbol < symbolOnTransition) {
-        state_transitions.push_back({symbolOnTransition, stateTo});
+        state_transitions.push_back({ symbol, state_to});
+    } else if (state_transitions.ToVector().back().symbol < symbol) {
+        state_transitions.push_back({ symbol, state_to});
     } else {
-        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbolOnTransition }) };
+        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from stateFrom.
-            symbol_transitions->states_to.insert(stateTo);
+            symbol_transitions->states_to.insert(state_to);
         } else {
             // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
-            const TransSymbolStates new_symbol_transitions { TransSymbolStates{ symbolOnTransition, stateTo }};
+            const TransSymbolStates new_symbol_transitions{ symbol, state_to };
+            state_transitions.insert(new_symbol_transitions);
+        }
+    }
+}
+
+void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet& states_to) {
+    // TODO: Define own exception.
+    if (!is_state(state_from)) {
+        throw std::out_of_range(std::to_string(state_from) + " is not a state.");
+    }
+    for (const State state_to: states_to) {
+        if (!is_state(state_to)) {
+            throw std::out_of_range(std::to_string(state_to) + " is not a state.");
+        }
+    }
+
+    auto& state_transitions{ transitionrelation[state_from] };
+    if (state_transitions.ToVector().empty()) {
+        state_transitions.push_back({ symbol, states_to });
+    } else if (state_transitions.ToVector().back().symbol < symbol) {
+        state_transitions.push_back({ symbol, states_to });
+    } else {
+        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+        if (symbol_transitions != state_transitions.end()) {
+            // Add transitions with symbol already used on transitions from state_from.
+            union_to_left(symbol_transitions->states_to,states_to);
+            return;
+        } else {
+            // Add transitions to a new TransSymbolStates struct with symbol yet unused on transitions from state_from.
+            const TransSymbolStates new_symbol_transitions { TransSymbolStates{ symbol, states_to }};
             state_transitions.insert(new_symbol_transitions);
         }
     }
@@ -1117,12 +1147,13 @@ void Nfa::collect_directed_transitions(Nfa& digraph) const {
     const State num_of_states{ get_num_of_states() };
     for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
         for (const auto& symbol_transitions: transitionrelation[src_state]) {
-            // Directly try to add the transition. Finding out whether the transition is already in the digraph
-            //  only iterates through transition relation again.
-            digraph.add_trans(src_state, abstract_symbol, symbol_transitions.states_to);
-            //for (const State tgt_state: symbol_transitions.states_to) {
-            //    digraph.add_trans(src_state, abstract_symbol, tgt_state);
-            //}
+            for (const State tgt_state: symbol_transitions.states_to) {
+                // Directly try to add the transition. Finding out whether the transition is already in the digraph
+                //  only iterates through transition relation again.
+                digraph.add_trans(src_state, abstract_symbol, tgt_state);
+            }
+            // FIXME: Alternatively: But it is actually slower...
+            //digraph.add_trans(src_state, abstract_symbol, symbol_transitions.states_to);
         }
     }
 }
