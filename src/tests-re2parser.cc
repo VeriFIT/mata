@@ -275,7 +275,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         CHECK(is_in_lang(aut, Word{'b'}));
         CHECK(is_in_lang(aut, Word{'w', 'b'}));
         CHECK(is_in_lang(aut, Word{'w', 'w', 'b'}));
-        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
         CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
         CHECK(is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
         CHECK(!is_in_lang(aut, Word{'w'}));

@@ -246,7 +246,7 @@ namespace {
                         }
                         // However, we still need to save the transitions (we could possibly copy them to another state in
                         // the epsilon closure that has incoming edge)
-                       if (copyEdgeFromTo->second != transition.second) {
+                       if (copyEdgeFromTo->second != copyEdgeFromTo->first) {
                          this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
                        }
                     }
