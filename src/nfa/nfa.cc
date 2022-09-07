@@ -1113,16 +1113,16 @@ void Nfa::get_digraph(Nfa& result) const {
 }
 
 void Nfa::collect_directed_transitions(Nfa& digraph) const {
-    const Symbol abstract_symbol{ 'x' };
+    constexpr Symbol abstract_symbol{ 'x' };
     const State num_of_states{ get_num_of_states() };
     for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
         for (const auto& symbol_transitions: transitionrelation[src_state]) {
-            //digraph.add_trans(src_state, symbol_transitions.symbol, symbol_transitions.states_to);
-            for (State tgt_state: symbol_transitions.states_to) {
-                // Directly try to add the transition. Finding out whether the transition is already in the digraph
-                //  only iterates through transition relation again.
-                digraph.add_trans(src_state, abstract_symbol, tgt_state);
-            }
+            // Directly try to add the transition. Finding out whether the transition is already in the digraph
+            //  only iterates through transition relation again.
+            digraph.add_trans(src_state, abstract_symbol, symbol_transitions.states_to);
+            //for (const State tgt_state: symbol_transitions.states_to) {
+            //    digraph.add_trans(src_state, abstract_symbol, tgt_state);
+            //}
         }
     }
 }
