@@ -407,14 +407,13 @@ StateSet Nfa::get_useful_states() const
     if (initialstates.empty() || finalstates.empty()) { return StateSet{}; }
 
     const Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
-    const StateBoolArray reachable_states{ digraph.compute_reachability() };
-    const StateBoolArray terminating_states{ revert(digraph).compute_reachability() };
+    // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
+    const StateBoolArray useful_states_bool_array{ revert(digraph).compute_reachability(digraph.compute_reachability()) };
 
     const size_t num_of_states{ get_num_of_states() };
-    //auto useful_states{ StateSet::with_reserved(num_of_states) };
     StateSet useful_states{};
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
-        if (reachable_states[original_state] && terminating_states[original_state]) {
+        if (useful_states_bool_array[original_state]) {
             // We can use push_back here, because we are always increasing the value of original_state (so useful_states
             //  will always be ordered).
             useful_states.push_back(original_state);
@@ -1105,7 +1104,7 @@ Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
     std::vector<State> worklist{ initialstates.ToVector() };
 
     StateBoolArray reachable(get_num_of_states(), false);
-    for (State state: initialstates)
+    for (const State state: initialstates)
     {
         reachable.at(state) = true;
     }
@@ -1118,12 +1117,41 @@ Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
 
         for (const auto& state_transitions: transitionrelation[state])
         {
-            for (State target_state: state_transitions.states_to)
+            for (const State target_state: state_transitions.states_to)
             {
                 if (!reachable.at(target_state))
                 {
                     worklist.push_back(target_state);
                     reachable.at(target_state) = true;
+                }
+            }
+        }
+    }
+
+    return reachable;
+}
+
+
+Nfa::StateBoolArray Nfa::compute_reachability(const Nfa::StateBoolArray& states_to_consider) const {
+    std::vector<State> worklist{};
+    StateBoolArray reachable(get_num_of_states(), false);
+    for (const State state: initialstates) {
+        if (states_to_consider[state]) {
+            worklist.push_back(state);
+            reachable.at(state) = true;
+        }
+    }
+
+    State state{};
+    while (!worklist.empty()) {
+        state = worklist.back();
+        worklist.pop_back();
+
+        for (const auto& state_transitions: transitionrelation[state]) {
+            for (const State target_state: state_transitions.states_to) {
+                if (states_to_consider[target_state] && !reachable[target_state]) {
+                    worklist.push_back(target_state);
+                    reachable[target_state] = true;
                 }
             }
         }

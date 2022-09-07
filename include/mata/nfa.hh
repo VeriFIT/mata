@@ -761,6 +761,8 @@ private:
      */
     StateBoolArray compute_reachability() const;
 
+    StateBoolArray compute_reachability(const StateBoolArray& states_to_consider) const;
+
     /**
      * Add transitions to the trimmed automaton.
      * @param original_to_new_states_map Map of old states to new trimmed automaton states.
