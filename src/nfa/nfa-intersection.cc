@@ -61,11 +61,11 @@ public:
     /**
      * Compute classic intersection of NFAs @p lhs and @p rhs.
      * @param lhs First NFA to compute intersection for.
-     * @param rhs Second NFA to compute intersecion for.
+     * @param rhs Second NFA to compute intersection for.
      */
     static Intersection compute(const Nfa& lhs, const Nfa& rhs)
     {
-        return {lhs, rhs};
+        return Intersection{ lhs, rhs };
     }
 
     /**
@@ -76,7 +76,7 @@ public:
      */
     static Intersection compute(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon)
     {
-        return {lhs, rhs, epsilon};
+        return Intersection{ lhs, rhs, epsilon };
     }
 
     /**
