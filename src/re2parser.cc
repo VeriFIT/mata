@@ -96,9 +96,29 @@ namespace {
 
             // Vectors are saved in this->state_cache after this
             this->create_state_cache(prog, use_epsilon);
+            // If there are more potential start states, the one without a self-loop should be chosen as a new start state
+            int initial_state_index = 0;
+            int out_state;
+            bool self_loop;
+            if (this->state_cache.state_mapping[start_state].size() > 1) {
+              for (auto potential_start_state: this->state_cache.state_mapping[start_state]) {
+                out_state = prog->inst(potential_start_state)->out();
+                self_loop = false;
+                for (auto mapped_state: this->state_cache.state_mapping[out_state]) {
+                  if (potential_start_state == mapped_state) {
+                    self_loop = true;
+                    initial_state_index++;
+                    break;
+                  }
+                }
+                if (!self_loop) {
+                  break;
+                }
+              }
+            }
 
-            explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][0]);
-            this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][0]] = true;
+            explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][initial_state_index]);
+            this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][initial_state_index]] = true;
 
             // Used for epsilon closure, it contains tuples (state_reachable_by_epsilon_transitions, source_state_of_epsilon_transitions)
             std::vector<std::pair<int, int>> copyEdgesFromTo;
@@ -107,9 +127,9 @@ namespace {
             // start state as one of the states reachable by epsilon from the start state. We must also include
             // transitions of the other epsilon reachable states to the new start state.
             if (this->state_cache.is_state_nop_or_cap[start_state] && this->state_cache.state_mapping[start_state].size() > 1) {
-                for (int index = 1; index < this->state_cache.state_mapping[start_state].size(); index++) {
+                for (int index = 0; index < this->state_cache.state_mapping[start_state].size(); index++) {
                     for (auto state: this->state_cache.state_mapping[this->state_cache.state_mapping[start_state][index]]) {
-                        copyEdgesFromTo.emplace_back(state, this->state_cache.state_mapping[start_state][0]);
+                        copyEdgesFromTo.emplace_back(state, this->state_cache.state_mapping[start_state][initial_state_index]);
                     }
                 }
             }
@@ -226,7 +246,9 @@ namespace {
                         }
                         // However, we still need to save the transitions (we could possibly copy them to another state in
                         // the epsilon closure that has incoming edge)
-                        this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
+                       if (copyEdgeFromTo->second != transition.second) {
+                         this->outgoingEdges[copyEdgeFromTo->second].emplace_back(transition.first, transition.second);
+                       }
                     }
                 }
             }
@@ -317,6 +339,7 @@ namespace {
             // When there is nop or capture type of state, we will be appending to it
             int append_to_state = -1;
             Mata::Nfa::State mapped_parget_state;
+            std::vector<int> states_for_second_check(prog_size);
 
             for (Mata::Nfa::State state = start_state; state < prog_size; state++) {
                 re2::Prog::Inst *inst = prog->inst(state);
@@ -348,8 +371,30 @@ namespace {
                 } else {
                     // Other types of states will always have an incoming edge so the target state will always have it too
                     this->state_cache.has_state_incoming_edge[inst->out()] = true;
+                    if (inst->out() < state) {
+                      for (auto mapped_state: this->state_cache.state_mapping[inst->out()]) {
+                        if (mapped_state == state) {
+                          this->state_cache.has_state_incoming_edge[state] = true;
+                        } else if (prog->inst(mapped_state)->opcode() == re2::kInstMatch) {
+                          this->state_cache.has_state_incoming_edge[mapped_state] = true;
+                        }
+                      }
+                    } else {
+                      states_for_second_check.push_back(state);
+                    }
                     append_to_state = -1;
                 }
+            }
+            // There could be epsilon transitions leading back to the same state. In such case, the state
+            // should have incoming edge set
+            for (auto state_to_check: states_for_second_check) {
+              re2::Prog::Inst *inst = prog->inst(state_to_check);
+              for (auto mappedState: this->state_cache.state_mapping[inst->out()]) {
+                if (mappedState == state_to_check) {
+                  this->state_cache.has_state_incoming_edge[state_to_check] = true;
+                  break;
+                }
+              }
             }
         }
 
