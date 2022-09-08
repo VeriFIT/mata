@@ -621,7 +621,7 @@ cdef class Nfa:
         :return: Nfa automaton
         """
         result = Nfa()
-        mata.create_nfa(result.thisptr.get(), regex.encode(encoding))
+        mata.create_nfa(result.thisptr.get(), regex.encode(encoding), True)
         return result
 
     # Operations

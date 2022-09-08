@@ -27,4 +27,4 @@ namespace Mata {
     }
 }
 
-#endif // MATA_RE2PARSER
+#endif // MATA_RE2PARSER_HH

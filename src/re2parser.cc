@@ -550,14 +550,18 @@ namespace {
  * @return mata::Nfa::Nfa corresponding to pattern
  */
 void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value) {
-    if (nfa == NULL) {
-        throw std::runtime_error("create_nfa: nfa should not be NULL");
+    if (nfa == nullptr) {
+        throw std::runtime_error("create_nfa: nfa should not be nullptr");
     }
 
     RegexParser regexParser{};
+    Mata::Nfa::Nfa tmp{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
-    regexParser.convert_pro_to_nfa(nfa, program, use_epsilon, epsilon_value);
+    regexParser.convert_pro_to_nfa(&tmp, program, use_epsilon, epsilon_value);
+    tmp.remove_epsilon(epsilon_value);
+    tmp.trim();
+    reduce(nfa, tmp);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
