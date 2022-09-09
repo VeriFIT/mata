@@ -22,23 +22,27 @@ We categorise automata according to their **transition type**, that is, the stru
 ## Automata by their transition type: 
 We use the general form of AFA, by Pavol V., and simple NFA.
 
-### AFA 
-* Each state has a transition, a booelan formula over symbol literals, states, and nodes.
-* Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
-* Since in the general formulae, the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types:
-  * By **enumeration**.
-  * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker *is* a part of the thing's name. 
-  * **Automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
-* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration.  For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-marked`.
-* Markers is the implicit option for all types of tokens, used if nothing is specified.
-* Shared nodes are used to share same formula or part of formulat among more transitions.
-* Initial formula is defined by key-value line `%Initial <Formula>`.
-* `true` means true and `false` means false.
-
 ### NFA 
 * The transitions are triples consisting of a source state, transition formula, and target state. Note that a single explicit symbol or a single interval is also a transition formula. 
 * Both symbol literals and states are determined positionally, corresponding to `auto` in AFA. Markers or enumeration can also be used.
 * Initial states are defined by key-value line `%Initial <Formula>` and final states by key-value line `%Final <Formula>`.
+* In case of NFA over bitvectors, the formulas over bits are used instead of symbols in transitions.
+
+### AFA 
+* Each state has a transition, a booelan formula over symbol literals, states, and nodes.
+* Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
+
+### Distinguishing between states, symbols, and nodes
+* When the general formulas are used in transition (as in case of AFA), the type of a token cannot be determined by its position, we require one of the three schemes for distinguishing token types:
+  * By **enumeration**.
+  * By **type-markers**. The literal is preceeded by a single character that specifies the type, we use `q` for states, `a` for symbols, and `n` for shared nodes. The marker *is* a part of the thing's name. 
+  * **Automatic**. If all the other types are specified by enumeration or by markers, the third type may be marked as automatic, the parser will assign it to everything which is not of the two previous types. 
+* The typing scheme is specified as a key value line with the key  `<Thing>-<Scheme>` where  `<Thing>` may be `Alphabet`, `States`, or `Nodes`. `<Scheme>` may be `marked`, `enum`, or `auto`.  The scheme `enum` is followed by an enumeration. For instance, we can have `%Alphabet-enum a b c karel`, `%Alphabet-auto`, `%Alphabet-marked`.
+* Moreverover, in case of alphabet one can also use `utf-8`, `chars`, or `numbers` as typing scheme to denote that an alphabet is all utf-8 symbols, all characters, or all numbers respectively.
+* Markers is the implicit option for all types of tokens, used if nothing is specified.
+* Shared nodes are used to share same formula or part of formulat among more transitions.
+* Initial formula is defined by key-value line `%Initial <Formula>`.
+* `true` means true and `false` means false.
 
 ## Alphabet type
 Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet. The type of alphabet is encoded in a name of section, e.g., `@NFA-explicit` denotes that nondeterministic finite automaton over explicit alphabet is given.
