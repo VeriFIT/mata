@@ -41,7 +41,7 @@ We use the general form of AFA, by Pavol V., and simple NFA.
 * Initial states are defined by key-value line `%Initial <Formula>` and final states by key-value line `%Final <Formula>`.
 
 ## Alphabet type
-Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, unicode (?), ascii (?), numbers (?), intervals of numbers or unicode or ascii.
+Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet. The type of alphabet is encoded in a name of section, e.g., `@NFA-explicit` denotes that nondeterministic finite automaton over explicit alphabet is given.
 * **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.
 * **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
 * **Character class**: Character classes, i.e., sets of symbols as used in normal regular expressiosn, are of the form `[bla]` or `[^bla]` where bla is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` are denote the first repsective the last letter the alphabet.
