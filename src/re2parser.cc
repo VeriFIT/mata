@@ -101,9 +101,18 @@ namespace {
             int out_state;
             bool self_loop;
             if (this->state_cache.state_mapping[start_state].size() > 1) {
+              // There are more potential start states, e.g. there are epsilon transitions from the original start state to
+              // more than one state. The new start state should be without a self loop if there is such a state. The new
+              // start state can't be a state that was originally final, because it does not have any outgoing edges.
+              re2::Prog::Inst *inst;
               for (auto potential_start_state: this->state_cache.state_mapping[start_state]) {
-                out_state = prog->inst(potential_start_state)->out();
                 self_loop = false;
+                inst = prog->inst(potential_start_state);
+                if (inst->opcode() == re2::kInstMatch) {
+                  initial_state_index++;
+                  continue;
+                }
+                out_state = inst->out();
                 for (auto mapped_state: this->state_cache.state_mapping[out_state]) {
                   if (potential_start_state == mapped_state) {
                     self_loop = true;
@@ -114,6 +123,9 @@ namespace {
                 if (!self_loop) {
                   break;
                 }
+              }
+              if (initial_state_index >= this->state_cache.state_mapping[start_state].size()) {
+                initial_state_index = 0;
               }
             }
 

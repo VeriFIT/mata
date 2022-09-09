@@ -2,7 +2,6 @@
 
 #include <mata/nfa.hh>
 #include <mata/re2parser.hh>
-
 using namespace Mata::Nfa;
 
 // Some example regexes were taken from RegExr under GPL v3: https://github.com/gskinner/regexr.
@@ -157,6 +156,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
         CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
         CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e', 'b'}));
     }
 
     SECTION("Complex regex with additional plus") {
