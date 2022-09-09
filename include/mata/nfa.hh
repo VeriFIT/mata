@@ -156,6 +156,8 @@ public:
 
 const PostSymb EMPTY_POST{};
 
+// FIXME: We can use newer library header <limits> and its built-in functions. Furthermore, we use signed long max here
+//  for unsigned Symbol and State.
 static const struct Limits {
     State maxState = LONG_MAX;
     State minState = 0;
