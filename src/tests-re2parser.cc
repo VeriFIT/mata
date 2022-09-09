@@ -2,6 +2,7 @@
 
 #include <mata/nfa.hh>
 #include <mata/re2parser.hh>
+
 using namespace Mata::Nfa;
 
 // Some example regexes were taken from RegExr under GPL v3: https://github.com/gskinner/regexr.
@@ -956,6 +957,100 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         CHECK(!is_in_lang(aut, Word{'c', 'a'}));
         CHECK(!is_in_lang(aut, Word{'a', 'e'}));
         CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("Star iteration") {
+        Nfa expected{2};
+        expected.make_initial(0);
+        expected.make_final({ 0, 1 });
+        expected.add_trans(0, 'c', 0);
+        expected.add_trans(0, 'a', 1);
+        expected.add_trans(1, 'a', 1);
+
+        SECTION("(((c)*)((a)*))") {
+            Mata::RE2Parser::create_nfa(&aut, "(((c)*)((a)*))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("((c*)((a)*))") {
+            Mata::RE2Parser::create_nfa(&aut, "((c*)((a)*))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("(c*(a*))") {
+            Mata::RE2Parser::create_nfa(&aut, "(c*(a*))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("(c*a*)") {
+            Mata::RE2Parser::create_nfa(&aut, "(c*a*)");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("c*a*") {
+            Mata::RE2Parser::create_nfa(&aut, "c*a*");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
     }
 } // }}}
 

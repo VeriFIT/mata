@@ -261,6 +261,7 @@ cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string) except +
+    cdef void create_nfa(CNfa*, string, bool) except +
 
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
