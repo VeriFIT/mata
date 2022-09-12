@@ -60,6 +60,7 @@ add_library(libmata STATIC
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc
 	nfa/nfa-concatenation.cc
+	nfa/nfa-segmentation.cc
 	nfa/noodlify.cc
 	rra/rrt.cc
 )

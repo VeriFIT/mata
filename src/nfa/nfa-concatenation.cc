@@ -79,10 +79,10 @@ private:
     const Nfa& rhs; ///< Second automaton to concatenate.
     const unsigned long lhs_states_num; ///< Number of states in @c lhs.
     const unsigned long rhs_states_num; ///< Number of states in @c rhs.
+    const Symbol epsilon{}; ///< Symbol to use as an epsilon symbol to concatenate with.
     Nfa result{}; ///< Concatenated automaton.
     StateToStateMap lhs_result_states_map{}; ///< Map mapping @c lhs states to @c result states.
     StateToStateMap rhs_result_states_map{}; ///< Map mapping @c rhs states to @c result states.
-    Symbol epsilon{}; ///< Symbol to use as an epsilon symbol to concatenate with.
 
     /**
      * Compute concatenation of given automata.
