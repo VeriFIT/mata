@@ -240,7 +240,7 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
     rhs = dfa_one_state_uni
     assert mata.Nfa.is_deterministic(rhs)
 
-    chs, sm_map = mata.Nfa.determinize(lhs)
+    chs, sm_map = mata.Nfa.determinize_with_subset_map(lhs)
     assert mata.Nfa.is_deterministic(chs)
     assert sm_map == {(0,): 0, (0, 1): 1}
 
@@ -584,7 +584,7 @@ def test_complement(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
-    res, subset_map = mata.Nfa.complement(fa_one_divisible_by_two, alph)
+    res, subset_map = mata.Nfa.complement_with_subset_map(fa_one_divisible_by_two, alph)
     assert not mata.Nfa.is_in_lang(res, [1, 1])
     assert mata.Nfa.is_in_lang(res, [1, 1, 1])
     assert not mata.Nfa.is_in_lang(res, [1, 1, 1, 1])

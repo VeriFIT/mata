@@ -1142,7 +1142,7 @@ Nfa::StateBoolArray Nfa::compute_reachability(const Nfa::StateBoolArray& states_
         }
     }
 
-    State state{};
+    State state;
     while (!worklist.empty()) {
         state = worklist.back();
         worklist.pop_back();

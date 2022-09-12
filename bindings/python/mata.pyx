@@ -623,7 +623,7 @@ cdef class Nfa:
 
     # Operations
     @classmethod
-    def determinize(cls, Nfa lhs):
+    def determinize_with_subset_map(cls, Nfa lhs):
         """Determinize the lhs automaton
 
         :param Nfa lhs: non-deterministic finite automaton
@@ -633,6 +633,17 @@ cdef class Nfa:
         cdef SubsetMap subset_map
         mata.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
         return result, subset_map_to_dictionary(subset_map)
+
+    @classmethod
+    def determinize(cls, Nfa lhs):
+        """Determinize the lhs automaton
+
+        :param Nfa lhs: non-deterministic finite automaton
+        :return: deterministic finite automaton
+        """
+        result = Nfa()
+        mata.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
+        return result
 
     @classmethod
     def union(cls, Nfa lhs, Nfa rhs):
@@ -811,7 +822,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def complement_with_subset_map(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -833,6 +844,29 @@ cdef class Nfa:
             &subset_map
         )
         return result, subset_map_to_dictionary(subset_map)
+
+    @classmethod
+    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
+        """Performs complement of lhs
+
+        :param Nfa lhs: complemented automaton
+        :param OnTheFlyAlphabet alphabet: alphabet of the lhs
+        :param dict params: additional params
+        :return: complemented automaton
+        """
+        result = Nfa()
+        params = params or {'algo': 'classical'}
+        mata.complement(
+            result.thisptr.get(),
+            dereference(lhs.thisptr.get()),
+            <CAlphabet&>dereference(alphabet.as_base()),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            },
+            NULL
+        )
+        return result
 
     @classmethod
     def make_complete(cls, Nfa lhs, State sink_state, Alphabet alphabet):
