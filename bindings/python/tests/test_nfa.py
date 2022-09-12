@@ -246,11 +246,11 @@ def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
 
 
 def test_forward_reach_states(
-        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight, binary_alphabet
+        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    assert mata.Nfa.get_forward_reachable_states(fa_one_divisible_by_two, binary_alphabet) == set(range(0, 3))
-    assert mata.Nfa.get_forward_reachable_states(fa_one_divisible_by_four, binary_alphabet) == set(range(0, 5))
-    assert mata.Nfa.get_forward_reachable_states(fa_one_divisible_by_eight, binary_alphabet) == set(range(0, 9))
+    assert fa_one_divisible_by_two.get_reachable_states() == set(range(0, 3))
+    assert fa_one_divisible_by_four.get_reachable_states() == set(range(0, 5))
+    assert fa_one_divisible_by_eight.get_reachable_states() == set(range(0, 9))
 
 
 def test_get_word_for_path(
