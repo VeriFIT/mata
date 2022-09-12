@@ -1220,11 +1220,11 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+    StateSet res{};
     if (trans_empty()) {
-        return StateSet{};
+        return res;
     }
 
-    StateSet res{};
     for (const auto state : states) {
         const auto& state_transitions{ transitionrelation[state] };
         const auto state_symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
