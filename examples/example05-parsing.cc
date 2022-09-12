@@ -29,19 +29,17 @@ int main(int argc, char *argv[])
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
 
-        if (parsed.size() != 1) {
-            throw std::runtime_error(
-                    "The number of sections in the input file is not 1\n");
+            /*
+        if (p.type.find("FA") == std::string::npos) {
+             throw std::runtime_error("The type of input automaton is not FA\n");
         }
-        if (parsed[0].type.find("NFA") == std::string::npos) {
-            throw std::runtime_error("The type of input automaton is not NFA\n");
-        }
+           */
 
         std::vector<Mata::IntermediateAut> inter_aut = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (inter_aut[0].is_nfa())
             construct(&aut, inter_aut[0]);
-    }
+        }
 
     catch (const std::exception& ex) {
         fs.close();

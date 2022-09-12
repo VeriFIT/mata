@@ -88,6 +88,15 @@ namespace
         return std::find(vec.begin(), vec.end(), item) != vec.end();
     }
 
+    bool no_operators(const std::vector<Mata::FormulaNode> nodes)
+    {
+        for (const auto& node : nodes)
+            if (node.is_operator())
+                return false;
+
+        return true;
+    }
+
     Mata::FormulaNode create_node(const Mata::IntermediateAut &mata, const std::string &token)
     {
         if (is_logical_operator(token[0])) {
@@ -290,12 +299,21 @@ namespace
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
         const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
-        std::vector<Mata::FormulaNode> postfix = infix_to_postfix(aut, rhs);
+        std::vector<Mata::FormulaNode> postfix;
+
         // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-        if (aut.automaton_type == Mata::IntermediateAut::NFA && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT
-            && postfix.size() == 2) {
+        if (aut.automaton_type == Mata::IntermediateAut::NFA && aut.alphabet_type != Mata::IntermediateAut::BITVECTOR
+            && rhs.size() == 2) {
+            // we need to take care about this case manually since user does not need to determine
+            // symbol and state naming
+            postfix.push_back(Mata::FormulaNode(Mata::FormulaNode::OPERAND, rhs[0], rhs[0],
+                                                Mata::FormulaNode::OperandType::SYMBOL));
+            postfix.push_back(Mata::FormulaNode(Mata::FormulaNode::OPERAND, rhs[1], rhs[1],
+                                                Mata::FormulaNode::OperandType::STATE));
             postfix.push_back(Mata::FormulaNode(
                     Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
+        } else {
+            postfix = infix_to_postfix(aut, rhs);
         }
 
         const Mata::FormulaGraph graph = postfix_to_graph(postfix);
@@ -347,12 +365,12 @@ namespace
 
             if (key.find("Initial") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
+                if (no_operators(postfix))
                     postfix = add_disjunction_implicitly(postfix);
                 aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
+                if (no_operators(postfix))
                     postfix = add_disjunction_implicitly(postfix);
                 aut.final_formula = postfix_to_graph(postfix);
             }
@@ -401,6 +419,9 @@ std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Ma
     result.reserve(parsed.size());
 
     for (const auto& parsed_section : parsed) {
+        if (parsed_section.type.find("FA") == std::string::npos) {
+            continue;
+        }
         result.push_back(mf_to_aut(parsed_section));
     }
 

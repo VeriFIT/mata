@@ -159,9 +159,9 @@ struct IntermediateAut
     };
 
 public:
-    Naming state_naming;
-    Naming symbol_naming;
-    Naming node_naming;
+    Naming state_naming = MARKED;
+    Naming symbol_naming = MARKED;
+    Naming node_naming = MARKED;
     AlphabetType alphabet_type;
     AutomatonType automaton_type;
 
