@@ -1801,6 +1801,53 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.has_trans(8, 'a', 7));
 		REQUIRE(result.initialstates == StateSet({3}));
 	}
+
+	SECTION("Automaton A") {
+		Nfa nfa{ 11 };
+		FILL_WITH_AUT_A(nfa);
+		Nfa res = revert(nfa);
+		CHECK(res.has_initial(5));
+		CHECK(res.has_final(1));
+		CHECK(res.has_final(3));
+		CHECK(res.get_num_of_trans() == 15);
+		CHECK(res.has_trans(5, 'a', 5));
+		CHECK(res.has_trans(5, 'a', 7));
+		CHECK(res.has_trans(9, 'a', 9));
+		CHECK(res.has_trans(9, 'c', 5));
+		CHECK(res.has_trans(9, 'b', 3));
+		CHECK(res.has_trans(7, 'a', 3));
+		CHECK(res.has_trans(7, 'a', 10));
+		CHECK(res.has_trans(7, 'b', 10));
+		CHECK(res.has_trans(7, 'c', 10));
+		CHECK(res.has_trans(7, 'b', 1));
+		CHECK(res.has_trans(3, 'a', 7));
+		CHECK(res.has_trans(3, 'c', 7));
+		CHECK(res.has_trans(3, 'a', 1));
+		CHECK(res.has_trans(1, 'b', 7));
+		CHECK(res.has_trans(10, 'a', 1));
+	}
+
+	SECTION("Automaton B") {
+		Nfa nfa{ 15 };
+		FILL_WITH_AUT_B(nfa);
+		Nfa res = revert(nfa);
+		CHECK(res.has_initial(2));
+		CHECK(res.has_initial(12));
+		CHECK(res.has_final(4));
+		CHECK(res.get_num_of_trans() == 12);
+		CHECK(res.has_trans(8, 'a', 4));
+		CHECK(res.has_trans(8, 'c', 4));
+		CHECK(res.has_trans(4, 'b', 8));
+		CHECK(res.has_trans(6, 'b', 4));
+		CHECK(res.has_trans(6, 'a', 4));
+		CHECK(res.has_trans(2, 'a', 6));
+		CHECK(res.has_trans(2, 'a', 0));
+		CHECK(res.has_trans(2, 'b', 2));
+		CHECK(res.has_trans(0, 'a', 2));
+		CHECK(res.has_trans(12, 'c', 2));
+		CHECK(res.has_trans(12, 'b', 14));
+		CHECK(res.has_trans(14, 'a', 12));
+	}
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_deterministic()")
