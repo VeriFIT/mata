@@ -594,8 +594,11 @@ void Mata::Nfa::remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
                 StateSet &src_eps_cl = eps_closure[i];
                 for (const State tgt: state_symbol_transitions->states_to) {
                     const StateSet &tgt_eps_cl = eps_closure[tgt];
-                    for (State st: tgt_eps_cl) {
-                        if (src_eps_cl.count(st) == 0) changed = true;
+                    for (const State st: tgt_eps_cl) {
+                        if (src_eps_cl.count(st) == 0) {
+                            changed = true;
+                            break;
+                        }
                     }
                     src_eps_cl.insert(tgt_eps_cl);
                 }
@@ -1207,7 +1210,8 @@ bool Mata::Nfa::Nfa::trans_empty() const
 
 TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
-    for (State state_from{ 0 }; state_from < get_num_of_states(); ++state_from) {
+    const size_t num_of_states{ get_num_of_states() };
+    for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const auto& symbol_transitions: transitionrelation[state_from]) {
             const auto& symbol_states_to{ symbol_transitions.states_to };
             const auto target_state{ symbol_states_to.find(state_to) };
