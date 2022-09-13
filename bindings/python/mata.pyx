@@ -137,6 +137,11 @@ cdef class Nfa:
     """
     Wrapper over NFA
     """
+
+    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
+    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
+    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
+    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
     cdef shared_ptr[mata.CNfa] thisptr
     cdef alphabet
 
