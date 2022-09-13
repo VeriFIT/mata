@@ -1535,9 +1535,9 @@ public:
      * @return Result of the insertion as @c InsertionResult.
      */
     InsertionResult add_new_symbol(const std::string& key) {
-        const InsertionResult insertion_result{ try_add_new_symbol(key, next_symbol_value) };
+        InsertionResult insertion_result{ try_add_new_symbol(key, next_symbol_value) };
         if (!insertion_result.second) { // If the insertion of key-value pair failed.
-            throw std::runtime_error("multiple occurrence of the same symbol");
+            throw std::runtime_error("multiple occurrences of the same symbol");
         }
         ++next_symbol_value;
         return insertion_result;
@@ -1553,9 +1553,9 @@ public:
      * @return Result of the insertion as @c InsertionResult.
      */
      InsertionResult add_new_symbol(const std::string& key, Symbol value) {
-        const InsertionResult insertion_result{ try_add_new_symbol(key, value) };
+        InsertionResult insertion_result{ try_add_new_symbol(key, value) };
         if (!insertion_result.second) { // If the insertion of key-value pair failed.
-            throw std::runtime_error("multiple occurrence of the same symbol");
+            throw std::runtime_error("multiple occurrences of the same symbol");
         }
         update_next_symbol_value(value);
         return insertion_result;
