@@ -940,9 +940,9 @@ cdef class Nfa:
         cdef StateToStateMap state_map
         result = Nfa()
         mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
+            {
+                k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+            }
         )
 
         return result, {k: v for k, v in state_map}
@@ -960,10 +960,10 @@ cdef class Nfa:
         params = params or {"algorithm": "simulation"}
         result = Nfa()
         mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
-                    {
-                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-                    }
-                    )
+            {
+                k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+            }
+        )
         return result
 
     @classmethod
