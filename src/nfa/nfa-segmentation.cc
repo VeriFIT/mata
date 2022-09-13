@@ -137,14 +137,14 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
 const AutSequence& SegNfa::Segmentation::get_segments()
 {
     if (segments.empty()) {
-        get_segments_raw();
+        get_untrimmed_segments();
         for (auto& seg_aut: segments_raw) { segments.push_back(seg_aut.get_trimmed_automaton()); }
     }
 
     return segments;
 }
 
-const AutSequence& SegNfa::Segmentation::get_segments_raw()
+const AutSequence& SegNfa::Segmentation::get_untrimmed_segments()
 {
     if (segments_raw.empty()) { split_aut_into_segments(); }
 

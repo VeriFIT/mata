@@ -1245,7 +1245,7 @@ public:
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
      */
-    const AutSequence& get_segments_raw();
+    const AutSequence& get_untrimmed_segments();
 
 private:
     const Symbol epsilon; ///< Symbol for which to execute segmentation.

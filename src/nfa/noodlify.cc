@@ -43,7 +43,7 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 
 SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
     Segmentation segmentation{ aut, epsilon };
-    const auto& segments{ segmentation.get_segments_raw() };
+    const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
         std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
