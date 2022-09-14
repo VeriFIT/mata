@@ -137,12 +137,15 @@ struct IntermediateAut
      * Naming could be automatic (all things in formula not belonging to other sets will be assigned to a
      * set with automatic naming), marker based (everything beginning with `q` is a state, with `s` is a symbol,
      * with `n` is a node), or enumerated (the given set is defined by enumeration).
+     * There are two special cases used for alphabet - symbols could be any character (CHARS) or anything from utf (UTF).
      */
     enum Naming
     {
         AUTO,
         MARKED,
-        ENUM
+        ENUM,
+        CHARS,
+        UTF
     };
 
     /**
