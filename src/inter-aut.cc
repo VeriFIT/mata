@@ -218,6 +218,12 @@ namespace
             opstack.pop_back();
         }
 
+        for (const auto& node : output) {
+            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
+            assert(node.is_leftpar() || node.name != "(");
+            assert(node.is_rightpar() || node.name != ")");
+        }
+
         return output;
     }
 
@@ -316,21 +322,25 @@ namespace
             // symbol and state naming and put conjunction to transition
             if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
                 assert(rhs.size() == 2);
-                postfix.push_back(Mata::FormulaNode(Mata::FormulaNode::OPERAND, rhs[0], rhs[0],
-                                                Mata::FormulaNode::OperandType::SYMBOL));
+                postfix.push_back(create_node(aut,rhs[0]));
+                postfix.push_back(create_node(aut,rhs[1]));
             } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
                 // this is a case where rhs state not separated by conjunction from rest of trans
                 postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
+                postfix.push_back(create_node(aut,rhs.back()));
             } else
                 assert(false && "Unknown NFA type");
 
-            postfix.push_back(Mata::FormulaNode(Mata::FormulaNode::OPERAND, rhs[1], rhs[1],
-                                                Mata::FormulaNode::OperandType::STATE));
             postfix.push_back(Mata::FormulaNode(
                     Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
         } else
             postfix = infix_to_postfix(aut, rhs);
 
+        for (const auto& node : postfix) {
+            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
+            assert(node.is_leftpar() || node.name != "(");
+            assert(node.is_rightpar() || node.name != ")");
+        }
         const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
@@ -417,8 +427,9 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
         if (g->node.type == FormulaNode::UNKNOWN)
            continue; // skip undefined nodes
 
-        if (g->node.is_operand())
+        if (g->node.is_operand()) {
             res.insert(g->node.name);
+        }
 
         for (const auto& child : g->children) {
             stack.push_back(&child);
@@ -470,6 +481,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& int
         }
         os << '\n';
     }
+    os << "\n";
 
     return os;
 }
