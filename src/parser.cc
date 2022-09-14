@@ -336,6 +336,9 @@ ParsedSection Mata::Parser::parse_mf_section(
 			continue;
 		}
 
+		if (result.type == "Regex") // so far we do not support regexs
+			continue;
+
 		std::vector<std::pair<std::string, bool>> temp_token_line = tokenize_line(line);
 		if (temp_token_line.empty()) {
 			continue;
