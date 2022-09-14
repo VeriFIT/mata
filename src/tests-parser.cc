@@ -814,6 +814,21 @@ TEST_CASE("parsing automata to intermediate representation")
 
     }
 
+    SECTION("AFA explicit correct automatic naming - parentheses")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-marked\n"
+                "%Alphabet-enum a b c\n"
+                "q1 ((a & !q2) & b) | c\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const Mata::IntermediateAut aut = auts[0];
+        REQUIRE(aut.transitions.front().first.name == "1");
+        REQUIRE(aut.transitions.front().first.raw == "q1");
+    }
+
     SECTION("AFA explicit non existing symbol error")
     {
         std::string file =
