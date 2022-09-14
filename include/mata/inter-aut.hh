@@ -77,7 +77,7 @@ public:
 
     bool is_operator() const { return type == Type::OPERATOR; }
 
-    bool is_righpar() const { return type == Type::RIGHT_PARENTHESIS; }
+    bool is_rightpar() const { return type == Type::RIGHT_PARENTHESIS; }
 
     bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS; }
 
