@@ -29,18 +29,13 @@ int main(int argc, char *argv[])
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
 
-            /*
-        if (p.type.find("FA") == std::string::npos) {
-             throw std::runtime_error("The type of input automaton is not FA\n");
-        }
-           */
+        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        for (const auto& ia : inter_auts)
+            std::cout << ia << '\n';
 
-        std::vector<Mata::IntermediateAut> inter_aut = Mata::IntermediateAut::parse_from_mf(parsed);
-
-        if (inter_aut[0].is_nfa())
-            construct(&aut, inter_aut[0]);
-        }
-
+        if (inter_auts[0].is_nfa())
+            construct(&aut, inter_auts[0]);
+    }
     catch (const std::exception& ex) {
         fs.close();
         std::cerr << "libMATA error: " << ex.what() << "\n";
