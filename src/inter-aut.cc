@@ -322,7 +322,8 @@ namespace
             // symbol and state naming and put conjunction to transition
             if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
                 assert(rhs.size() == 2);
-                postfix.push_back(create_node(aut,rhs[0]));
+                postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
+                                         Mata::FormulaNode::OperandType::SYMBOL});
                 postfix.push_back(create_node(aut,rhs[1]));
             } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
                 // this is a case where rhs state not separated by conjunction from rest of trans
