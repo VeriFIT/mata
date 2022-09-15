@@ -5,6 +5,7 @@ build-dist:
 	python setup.py sdist
 
 install:
+	python setup.py build_ext -fi
 	python setup.py install --force
 
 test:
