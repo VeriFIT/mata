@@ -8,6 +8,7 @@ from libcpp.memory cimport shared_ptr, make_shared
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
+import sys
 import shlex
 import subprocess
 import tabulate
@@ -526,6 +527,13 @@ cdef class Nfa:
                 else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symb)
             result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
         return result
+
+    def __repr__(self):
+        if get_interactive_mode() == 'notebook':
+            plot(self)
+            return ""
+        else:
+            return str(self)
 
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
@@ -1708,3 +1716,65 @@ cdef class Segmentation:
             segments.append(segment)
 
         return segments
+
+def plot(*automata: Nfa):
+    """Plots the stream of automata
+
+    Possible customization:
+      node_size: either a single value for all nodes or a list of value for each node
+      node_color: either a single colour for all nodes or a list of colours for each
+        node; can be either string or rbg(a) tuple of floats
+      width: either a single value for all edges or a list of values for each edge
+      edge_color: similar to node_color
+      font_size/font_color/font_weight/font_family: font specification
+
+    Node customization (for each node):
+      node_size
+      node_color
+      alpha
+      edgecolors
+      linewidths
+      margins
+
+    Edge customization (for each edge):
+      width
+      edge_color
+      style
+
+    :param list automata: stream of automata that will be plotted using networkx + matplotlib
+    """
+    node_options = {
+        "node_size": 500,
+        "node_color": "white",
+        "edgecolors": "black",
+        "linewidths": 2.0,
+    }
+    edge_options = {
+        "arrowstyle": "->",
+        "arrowsize": 15,
+        "node_size": 500,
+        "width": 2.0,
+    }
+    for aut in automata:
+        G = aut.to_networkx_graph()
+        pos = nx.circular_layout(G)
+        nx.draw_networkx_nodes(G, pos=pos, **node_options)
+        nx.draw_networkx_edges(G, pos=pos, **edge_options)
+        nx.draw_networkx_labels(G, pos=pos)
+
+def get_interactive_mode() -> str:
+    """Checks and returns, which interactive mode (if any) the code is run in
+
+    The function returns:
+      1. 'none' if the code is not run in any interactive mode
+      2. 'notebook' if the code is run in the jupyter notebook
+      3. 'terminal' if the code is run in the interactive terminal
+
+    :return: type of the interactive mode
+    """
+    if 'ipykernel' in sys.modules:
+        return 'notebook'
+    elif 'IPython' in sys.modules:
+        return 'terminal'
+    else:
+        return 'none'
