@@ -1,4 +1,5 @@
 cimport mata
+
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
@@ -10,6 +11,8 @@ from libcpp.unordered_map cimport unordered_map as umap
 import shlex
 import subprocess
 import tabulate
+import pandas
+import networkx as nx
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -561,6 +564,38 @@ cdef class Nfa:
         finally:
             del output_stream
         return result.decode(encoding)
+
+    def to_dataframe(self) -> pandas.DataFrame:
+        """Transforms the automaton to DataFrame format.
+
+        Transforms the automaton into pandas.DataFrame format,
+        that is suitable for further (statistical) analysis.
+        The resulting DataFrame is in tabular format, with
+        'source', 'symbol' and 'target' as the columns
+
+        :return: automaton represented as a pandas dataframe
+        """
+        columns = ['source', 'symbol', 'target']
+        data = [
+            [trans.src, trans.symb, trans.tgt] for trans in self.iterate()
+        ]
+        return pandas.DataFrame(data, columns=columns)
+
+    def to_networkx_graph(self) -> nx.Graph:
+        """Transforms the automaton into networkx.Graph
+
+        Transforms the automaton into networkx.Graph format,
+        that is represented as graph with edges (src, tgt) with
+        additional properties.
+
+        Each symbol is added as an property to each edge.
+
+        :return:
+        """
+        G = nx.DiGraph()
+        for trans in self.iterate():
+            G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
+        return G
 
     def post_map_of(self, State st, Alphabet alphabet):
         """Returns mapping of symbols to set of states.
