@@ -540,6 +540,16 @@ public:
      * the starting point of a path ending in a final state).
      */
     void trim();
+
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     *
+     * @return Trimmed automaton.
+     */
     Nfa get_trimmed_automaton();
 
     // FIXME: Resolve this comment and delete it.
@@ -755,35 +765,6 @@ public:
     } // operator[] }}}
 
 private:
-    using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
-
-    /**
-     * Compute reachability of states.
-     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
-     */
-    StateBoolArray compute_reachability() const;
-
-    StateBoolArray compute_reachability(const StateBoolArray& states_to_consider) const;
-
-    /**
-     * Add transitions to the trimmed automaton.
-     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
-     * @param trimmed_aut The new trimmed automaton.
-     */
-    void add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut);
-
-    /**
-     * Get a new trimmed automaton.
-     * @param original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
-     * @return Newly created trimmed automaton.
-     */
-    Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
-
-    /**
-     * Get directed transitions for digraph.
-     * @param[out] digraph Digraph to add computed transitions to.
-     */
-    void collect_directed_transitions(Nfa& digraph) const;
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
@@ -1609,7 +1590,7 @@ private:
     /**
      * Fill @p alphabet with symbols from @p nfa.
      * @param[in] nfa NFA with symbols to fill @p alphabet with.
-     * @param alphabet Alphabet to be filled with symbols from @p nfa.
+     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     static void fill_alphabet(const Nfa& nfa, EnumAlphabet& alphabet) {
         size_t nfa_num_of_states{ nfa.get_num_of_states() };

@@ -29,6 +29,8 @@ using namespace Mata::util;
 using namespace Mata::Nfa;
 using Mata::Nfa::Symbol;
 
+using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
+
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
@@ -140,6 +142,159 @@ namespace {
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
                     result->make_final(q_class_state);
                 }
+            }
+        }
+    }
+
+    /**
+     * Compute reachability of states.
+     *
+     * @param[in] nfa NFA to compute reachability for.
+     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+     */
+    StateBoolArray compute_reachability(const Nfa& nfa) {
+        std::vector<State> worklist{ nfa.initialstates.ToVector() };
+
+        StateBoolArray reachable(nfa.get_num_of_states(), false);
+        for (const State state: nfa.initialstates)
+        {
+            reachable.at(state) = true;
+        }
+
+        State state{};
+        while (!worklist.empty())
+        {
+            state = worklist.back();
+            worklist.pop_back();
+
+            for (const auto& state_transitions: nfa.transitionrelation[state])
+            {
+                for (const State target_state: state_transitions.states_to)
+                {
+                    if (!reachable.at(target_state))
+                    {
+                        worklist.push_back(target_state);
+                        reachable.at(target_state) = true;
+                    }
+                }
+            }
+        }
+
+        return reachable;
+    }
+
+    /**
+     * Compute reachability of states considering only specified states.
+     *
+     * @param[in] nfa NFA to compute reachability for.
+     * @param[in] states_to_consider State to consider as potentially reachable.
+     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
+     */
+    StateBoolArray compute_reachability(const Nfa& nfa, const StateBoolArray& states_to_consider) {
+        std::vector<State> worklist{};
+        StateBoolArray reachable(nfa.get_num_of_states(), false);
+        for (const State state: nfa.initialstates) {
+            if (states_to_consider[state]) {
+                worklist.push_back(state);
+                reachable.at(state) = true;
+            }
+        }
+
+        State state;
+        while (!worklist.empty()) {
+            state = worklist.back();
+            worklist.pop_back();
+
+            for (const auto& state_transitions: nfa.transitionrelation[state]) {
+                for (const State target_state: state_transitions.states_to) {
+                    if (states_to_consider[target_state] && !reachable[target_state]) {
+                        worklist.push_back(target_state);
+                        reachable[target_state] = true;
+                    }
+                }
+            }
+        }
+
+        return reachable;
+    }
+
+    /**
+     * Add transitions to the trimmed automaton.
+     * @param[in] nfa NFA to add transitions from.
+     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param[out] trimmed_aut The new trimmed automaton.
+     */
+    void add_trimmed_transitions(const Nfa& nfa, const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut) {
+        // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
+        for (const auto& original_state_mapping: original_to_new_states_map)
+        {
+            // ...add all transitions from 's' to some reachable state to the trimmed automaton.
+            for (const auto& state_transitions_with_symbol: nfa.transitionrelation[original_state_mapping.first])
+            {
+                TransSymbolStates new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
+                for (State old_state_to: state_transitions_with_symbol.states_to)
+                {
+                    auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
+                    if (iter_to_new_state_to != original_to_new_states_map.end())
+                    {
+                        // We can push here, because we assume that new states follow the ordering of original states.
+                        new_state_trans_with_symbol.states_to.push_back(iter_to_new_state_to->second);
+                    }
+                }
+                if (!new_state_trans_with_symbol.states_to.empty()) {
+                    trimmed_aut.transitionrelation[original_state_mapping.second].push_back(new_state_trans_with_symbol);
+                }
+            }
+        }
+    }
+
+    /**
+     * Get a new trimmed automaton.
+     * @param[in] nfa NFA to trim.
+     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
+     * @return Newly created trimmed automaton.
+     */
+    Nfa create_trimmed_aut(const Nfa& nfa, const StateToStateMap& original_to_new_states_map) {
+        Nfa trimmed_aut{ original_to_new_states_map.size() };
+
+        for (const State old_initial_state: nfa.initialstates)
+        {
+            if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
+            {
+                // we can use push_back here, because initialstates is ordered + new states follow the ordering of the old states
+                trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
+            }
+        }
+        for (const State old_final_state: nfa.finalstates)
+        {
+            if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
+            {
+                // we can use push_back here, because finalstates is ordered + new states follow the ordering of the old states
+                trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
+            }
+        }
+
+        add_trimmed_transitions(nfa, original_to_new_states_map, trimmed_aut);
+        return trimmed_aut;
+    }
+
+    /**
+     * Get directed transitions for digraph.
+     * @param[in] nfa NFA to get directed transitions from.
+     * @param[out] digraph Digraph to add computed transitions to.
+     */
+    void collect_directed_transitions(const Nfa& nfa, Nfa& digraph) {
+        constexpr Symbol abstract_symbol{ 'x' };
+        const State num_of_states{ nfa.get_num_of_states() };
+        for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
+            for (const auto& symbol_transitions: nfa.transitionrelation[src_state]) {
+                for (const State tgt_state: symbol_transitions.states_to) {
+                    // Directly try to add the transition. Finding out whether the transition is already in the digraph
+                    //  only iterates through transition relation again.
+                    digraph.add_trans(src_state, abstract_symbol, tgt_state);
+                }
+                // FIXME: Alternatively: But it is actually slower...
+                //digraph.add_trans(src_state, abstract_symbol, symbol_transitions.states_to);
             }
         }
     }
@@ -364,7 +519,7 @@ TransitionList::const_iterator Nfa::get_transitions_from(State state_from, Symbo
 
 StateSet Nfa::get_reachable_states() const
 {
-    StateBoolArray reachable_bool_array{ compute_reachability() };
+    StateBoolArray reachable_bool_array{ compute_reachability(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{ get_num_of_states() };
@@ -399,7 +554,7 @@ Nfa Nfa::get_trimmed_automaton() {
         original_to_new_states_map[original_state] = new_state_num;
         ++new_state_num;
     }
-    return create_trimmed_aut(original_to_new_states_map);
+    return create_trimmed_aut(*this, original_to_new_states_map);
 }
 
 StateSet Nfa::get_useful_states() const
@@ -408,7 +563,7 @@ StateSet Nfa::get_useful_states() const
 
     const Nfa digraph{ get_digraph() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
-    const StateBoolArray useful_states_bool_array{ revert(digraph).compute_reachability(digraph.compute_reachability()) };
+    const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
     const size_t num_of_states{ get_num_of_states() };
     StateSet useful_states{};
@@ -420,56 +575,6 @@ StateSet Nfa::get_useful_states() const
         }
     }
     return useful_states;
-}
-
-Nfa Nfa::create_trimmed_aut(const StateToStateMap& original_to_new_states_map)
-{
-    Nfa trimmed_aut{ original_to_new_states_map.size() };
-
-    for (const State old_initial_state: initialstates)
-    {
-        if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
-        {
-            // we can use push_back here, because initialstates is ordered + new states follow the ordering of the old states
-            trimmed_aut.initialstates.push_back(original_to_new_states_map.at(old_initial_state));
-        }
-    }
-    for (const State old_final_state: finalstates)
-    {
-        if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
-        {
-            // we can use push_back here, because finalstates is ordered + new states follow the ordering of the old states
-            trimmed_aut.finalstates.push_back(original_to_new_states_map.at(old_final_state));
-        }
-    }
-
-    add_trimmed_transitions(original_to_new_states_map, trimmed_aut);
-    return trimmed_aut;
-}
-
-void Nfa::add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut)
-{
-    // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
-    for (const auto& original_state_mapping: original_to_new_states_map)
-    {
-        // ...add all transitions from 's' to some reachable state to the trimmed automaton.
-        for (const TransSymbolStates& state_transitions_with_symbol: transitionrelation[original_state_mapping.first])
-        {
-            TransSymbolStates new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
-            for (State old_state_to: state_transitions_with_symbol.states_to)
-            {
-                auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
-                if (iter_to_new_state_to != original_to_new_states_map.end())
-                {
-                    // We can push here, because we assume that new states follow the ordering of original states.
-                    new_state_trans_with_symbol.states_to.push_back(iter_to_new_state_to->second);
-                }
-            }
-            if (!new_state_trans_with_symbol.states_to.empty()) {
-                trimmed_aut.transitionrelation[original_state_mapping.second].push_back(new_state_trans_with_symbol);
-            }
-        }
-    }
 }
 
 // General methods for NFA.
@@ -1102,91 +1207,14 @@ size_t Nfa::get_num_of_trans() const
     return num_of_transitions;
 }
 
-Nfa::Nfa::StateBoolArray Nfa::compute_reachability() const
-{
-    std::vector<State> worklist{ initialstates.ToVector() };
-
-    StateBoolArray reachable(get_num_of_states(), false);
-    for (const State state: initialstates)
-    {
-        reachable.at(state) = true;
-    }
-
-    State state{};
-    while (!worklist.empty())
-    {
-        state = worklist.back();
-        worklist.pop_back();
-
-        for (const auto& state_transitions: transitionrelation[state])
-        {
-            for (const State target_state: state_transitions.states_to)
-            {
-                if (!reachable.at(target_state))
-                {
-                    worklist.push_back(target_state);
-                    reachable.at(target_state) = true;
-                }
-            }
-        }
-    }
-
-    return reachable;
-}
-
-
-Nfa::StateBoolArray Nfa::compute_reachability(const Nfa::StateBoolArray& states_to_consider) const {
-    std::vector<State> worklist{};
-    StateBoolArray reachable(get_num_of_states(), false);
-    for (const State state: initialstates) {
-        if (states_to_consider[state]) {
-            worklist.push_back(state);
-            reachable.at(state) = true;
-        }
-    }
-
-    State state;
-    while (!worklist.empty()) {
-        state = worklist.back();
-        worklist.pop_back();
-
-        for (const auto& state_transitions: transitionrelation[state]) {
-            for (const State target_state: state_transitions.states_to) {
-                if (states_to_consider[target_state] && !reachable[target_state]) {
-                    worklist.push_back(target_state);
-                    reachable[target_state] = true;
-                }
-            }
-        }
-    }
-
-    return reachable;
-}
-
 Nfa Nfa::get_digraph() const {
     Nfa digraph{ get_num_of_states(), initialstates, finalstates};
-    collect_directed_transitions(digraph);
+    collect_directed_transitions(*this, digraph);
     return digraph;
 }
 
 void Nfa::get_digraph(Nfa& result) const {
     result = get_digraph();
-}
-
-void Nfa::collect_directed_transitions(Nfa& digraph) const {
-    constexpr Symbol abstract_symbol{ 'x' };
-    const State num_of_states{ get_num_of_states() };
-    for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
-        for (const auto& symbol_transitions: transitionrelation[src_state]) {
-            for (const State tgt_state: symbol_transitions.states_to) {
-                // Directly try to add the transition. Finding out whether the transition is already in the digraph
-                //  only iterates through transition relation again.
-                digraph.add_trans(src_state, abstract_symbol, tgt_state);
-            }
-            // FIXME: Alternatively: But it is actually slower...
-            //digraph.add_trans(src_state, abstract_symbol, symbol_transitions.states_to);
-        }
-    }
 }
 
 bool Mata::Nfa::Nfa::trans_empty() const
