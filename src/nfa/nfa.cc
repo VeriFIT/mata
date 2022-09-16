@@ -281,10 +281,10 @@ namespace {
     /**
      * Get directed transitions for digraph.
      * @param[in] nfa NFA to get directed transitions from.
+     * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @param[out] digraph Digraph to add computed transitions to.
      */
-    void collect_directed_transitions(const Nfa& nfa, Nfa& digraph) {
-        constexpr Symbol abstract_symbol{ 'x' };
+    void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
         const State num_of_states{ nfa.get_num_of_states() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
             for (const auto& symbol_transitions: nfa.transitionrelation[src_state]) {
@@ -1207,9 +1207,9 @@ size_t Nfa::get_num_of_trans() const
     return num_of_transitions;
 }
 
-Nfa Nfa::get_digraph() const {
+Nfa Nfa::get_digraph(const Symbol abstract_symbol) const {
     Nfa digraph{ get_num_of_states(), initialstates, finalstates};
-    collect_directed_transitions(*this, digraph);
+    collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
 
