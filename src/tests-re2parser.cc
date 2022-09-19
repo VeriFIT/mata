@@ -4,9 +4,11 @@
 #include <mata/re2parser.hh>
 using namespace Mata::Nfa;
 
+// Some example regexes were taken from RegExr under GPL v3: https://github.com/gskinner/regexr.
+
 TEST_CASE("Mata::RE2Parser basic_parsing")
 { // {{{
-    Mata::Nfa::Nfa aut;
+    Nfa aut;
 
     SECTION("Empty expression")
     {
@@ -49,6 +51,23 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(is_universal(aut,alph));
     }
 
+    SECTION("Special character") {
+        Mata::RE2Parser::create_nfa(&aut, "\\t");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'\t'}));
+        CHECK(!is_in_lang(aut, Word{'t'}));
+        CHECK(!is_in_lang(aut, Word{}));
+    }
+
+    SECTION("Whitespace") {
+        Mata::RE2Parser::create_nfa(&aut, "a\\sb");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'a', '\t', 'b'}));
+        CHECK(!is_in_lang(aut, Word{}));
+    }
+
     SECTION("Iteration test")
     {
         Mata::RE2Parser::create_nfa(&aut, "ab*cd*");
@@ -62,7 +81,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(!is_in_lang(aut, Word{'a','d','c'}));
     }
 
-    SECTION("Parenthesis") {
+    SECTION("Additional parenthesis") {
         Nfa expected{2};
         expected.make_initial(0);
         expected.make_final(1);
@@ -71,123 +90,1134 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
 
         SECTION("No parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "a*b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around example parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(a*b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around variable 'a' parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(a)*b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Around variable 'b' parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "a*(b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Parenthesis after iteration") {
             Mata::RE2Parser::create_nfa(&aut, "((a)*)b");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis around 'b'") {
             Mata::RE2Parser::create_nfa(&aut, "(a*(b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis around 'a'") {
             Mata::RE2Parser::create_nfa(&aut, "((a)*b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Many parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(((a)*)b)");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "((a))*((b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Double parenthesis after iteration") {
             Mata::RE2Parser::create_nfa(&aut, "((((a))*))((b))");
-            CHECK(!aut.trans_empty());
-            CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
-            CHECK(equivalence_check(aut, expected));
         }
 
         SECTION("Many parenthesis with double parenthesis") {
             Mata::RE2Parser::create_nfa(&aut, "(((((a))*))((b)))");
+        }
+
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'a','b'}));
+        CHECK(is_in_lang(aut, Word{'a','a','b'}));
+        CHECK(!is_in_lang(aut, Word{'b','a'}));
+        CHECK(equivalence_check(aut, expected));
+    }
+
+    SECTION("Complex regex") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)|(e)(w*)(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e', 'b'}));
+    }
+
+    SECTION("Complex regex with additional plus") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)|(e)(w*)+(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus") {
+        Mata::RE2Parser::create_nfa(&aut, "(e)(w*)+(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 2") {
+        Mata::RE2Parser::create_nfa(&aut, "(w*)+(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 2.5") {
+        Mata::RE2Parser::create_nfa(&aut, "(w*)(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 2.63") {
+        Mata::RE2Parser::create_nfa(&aut, "w*b+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 2.75") {
+        Mata::RE2Parser::create_nfa(&aut, "w(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w', 'w', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 2.85") {
+        Mata::RE2Parser::create_nfa(&aut, "w*(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'w'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Reduced complex regex with additional plus 3") {
+        Mata::RE2Parser::create_nfa(&aut, "(b+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Complex regex 2") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)|(e)(w*)(b*)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("Complex regex 2 with additional plus") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)|(e)(w*)+(b*)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w'}));
+        CHECK(is_in_lang(aut, Word{'e', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'e', 'w', 'w', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'w', 'b'}));
+    }
+
+    SECTION("a+b+") {
+        Mata::RE2Parser::create_nfa(&aut, "a+b+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a', 'b', 'a'}));
+    }
+
+    SECTION("a+b+a*") {
+        Mata::RE2Parser::create_nfa(&aut, "a+b+a*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a', 'a'}));
+    }
+
+    SECTION("a+(b+)a*") {
+        Mata::RE2Parser::create_nfa(&aut, "a+(b+)a*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a', 'a'}));
+    }
+
+    SECTION("(a+(b+)a*)") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+(b+)a*)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a', 'a'}));
+    }
+
+    SECTION("(a+b*a*)") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+b*a*)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b', 'b', 'a', 'a'}));
+    }
+
+    SECTION("a+a+") {
+        Mata::RE2Parser::create_nfa(&aut, "a+a+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+    }
+
+    SECTION("(a+)a+") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)a+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+    }
+
+    SECTION("a(a+)") {
+        Mata::RE2Parser::create_nfa(&aut, "a(a+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+    }
+
+    SECTION("(a+)b") {
+        Mata::RE2Parser::create_nfa(&aut, "(a+)b");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'b'}));
+    }
+
+    SECTION("b(a+)") {
+        Mata::RE2Parser::create_nfa(&aut, "b(a+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'a', 'a'}));
+    }
+
+    SECTION("b|(a+)") {
+        Mata::RE2Parser::create_nfa(&aut, "b|(a+)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+    }
+
+    SECTION("b|a+") {
+        Mata::RE2Parser::create_nfa(&aut, "b|a+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+    }
+
+    SECTION("b|a") {
+        Mata::RE2Parser::create_nfa(&aut, "b|a");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a', 'a'}));
+    }
+
+    SECTION("b|a*") {
+        Mata::RE2Parser::create_nfa(&aut, "b|a*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+    }
+
+    SECTION("bba+") {
+        Mata::RE2Parser::create_nfa(&aut, "bba+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a', 'a', 'a'}));
+    }
+
+    SECTION("b*ba+") {
+        Mata::RE2Parser::create_nfa(&aut, "b*ba+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'a', 'a', 'a'}));
+    }
+
+    SECTION("b*ca+") {
+        Mata::RE2Parser::create_nfa(&aut, "b*ca+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c', 'a'}));
+        CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b', 'c', 'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c', 'a', 'a', 'a'}));
+    }
+
+    SECTION("[abcd]") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+    }
+
+    SECTION("[abcd]*") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c'}));
+    }
+
+    SECTION("[abcd]*e*") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]*e*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c'}));
+
+        CHECK(is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e', 'e'}));
+    }
+
+    SECTION("[abcd]*e+") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]*e+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'c'}));
+        CHECK(!is_in_lang(aut, Word{'d'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'd', 'c'}));
+
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e', 'e'}));
+    }
+
+    SECTION("[abcd]*.*") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]*.*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c'}));
+
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e', 'e'}));
+
+        CHECK(is_in_lang(aut, Word{'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'g'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'g', 'g'}));
+    }
+
+    SECTION("[abcd]*.+") {
+        Mata::RE2Parser::create_nfa(&aut, "[abcd]*.+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c'}));
+
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'e', 'e'}));
+
+        CHECK(is_in_lang(aut, Word{'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'g'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd', 'c', 'g', 'g'}));
+    }
+
+    SECTION("[a-c]+") {
+        Mata::RE2Parser::create_nfa(&aut, "[a-c]+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(!is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'c', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+    }
+
+    SECTION("d[a-c]+") {
+        Mata::RE2Parser::create_nfa(&aut, "d[a-c]+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'c'}));
+        CHECK(!is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'d', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'d', 'c', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'b', 'c'}));
+    }
+
+    SECTION("d*[a-c]+") {
+        Mata::RE2Parser::create_nfa(&aut, "d*[a-c]+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a'}));
+        CHECK(is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'c'}));
+        CHECK(!is_in_lang(aut, Word{'d'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'d', 'b', 'b'}));
+        CHECK(is_in_lang(aut, Word{'d', 'c', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'b'}));
+        CHECK(is_in_lang(aut, Word{'d', 'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'d', 'd', 'a', 'b', 'c'}));
+    }
+
+    SECTION("[^a-c]") {
+        Mata::RE2Parser::create_nfa(&aut, "[^a-c]");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'c'}));
+        CHECK(is_in_lang(aut, Word{'d'}));
+        CHECK(!is_in_lang(aut, Word{'d', 'd'}));
+        CHECK(is_in_lang(aut, Word{'e'}));
+        CHECK(!is_in_lang(aut, Word{'e', 'e'}));
+    }
+
+    SECTION("(ha)+") {
+        Mata::RE2Parser::create_nfa(&aut, "(ha)+");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'h'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'h'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a', 'h', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'h', 'a', 'h'}));
+        CHECK(!is_in_lang(aut, Word{'h', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a', 'h', 'a', 'h', 'a'}));
+    }
+
+    SECTION("(ha)*") {
+        Mata::RE2Parser::create_nfa(&aut, "(ha)*");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'a'}));
+        CHECK(!is_in_lang(aut, Word{'h'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'h'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a', 'h', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'h', 'a', 'h'}));
+        CHECK(!is_in_lang(aut, Word{'h', 'a', 'a'}));
+        CHECK(is_in_lang(aut, Word{'h', 'a', 'h', 'a', 'h', 'a'}));
+    }
+
+    SECTION("b\\w{2,3}") {
+        Mata::RE2Parser::create_nfa(&aut, "b\\w{2,3}");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'e'}));
+        CHECK(is_in_lang(aut, Word{'b', 'e', 'e'}));
+        CHECK(is_in_lang(aut, Word{'b', 'e', 'e', 'r'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'e', 'e', 'r', 's'}));
+    }
+
+    SECTION("b\\w+?") {
+        Mata::RE2Parser::create_nfa(&aut, "b\\w+?");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(!is_in_lang(aut, Word{'b'}));
+        CHECK(is_in_lang(aut, Word{'b', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'e', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'e', 'e', 'r'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'e', 'e', 'r', 's'}));
+    }
+
+    SECTION("b(a|e|i)d") {
+        Mata::RE2Parser::create_nfa(&aut, "b(a|e|i)d");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'b', 'a', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'u', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'b', 'o', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'e', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'i', 'd'}));
+    }
+
+    SECTION("[ab](c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "[ab](c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("[ab](c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "[ab](c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("[ab]+(c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "[ab]+(c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'a', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("([ab])+(c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "([ab])+(c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'a', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("(([ab])+)(c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "(([ab])+)(c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'a', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("g|((([ab])+)(c|d))") {
+        Mata::RE2Parser::create_nfa(&aut, "(g|(([ab])+))(c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'a', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+        CHECK(is_in_lang(aut, Word{'g', 'c'}));
+        CHECK(is_in_lang(aut, Word{'g', 'd'}));
+    }
+
+    SECTION("g|([ab])+(c|d)") {
+        Mata::RE2Parser::create_nfa(&aut, "g|([ab])+(c|d)");
+        CHECK(!aut.trans_empty());
+        CHECK(!is_lang_empty(aut));
+        CHECK(!is_in_lang(aut, Word{}));
+        CHECK(is_in_lang(aut, Word{'g'}));
+        CHECK(is_in_lang(aut, Word{'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'd'}));
+        CHECK(is_in_lang(aut, Word{'b', 'd'}));
+        CHECK(is_in_lang(aut, Word{'a', 'a', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'c'}));
+        CHECK(is_in_lang(aut, Word{'a', 'b', 'a', 'c'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'c', 'a'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'e'}));
+        CHECK(!is_in_lang(aut, Word{'a', 'c', 'd'}));
+    }
+
+    SECTION("Star iteration") {
+        Nfa expected{2};
+        expected.make_initial(0);
+        expected.make_final({ 0, 1 });
+        expected.add_trans(0, 'c', 0);
+        expected.add_trans(0, 'a', 1);
+        expected.add_trans(1, 'a', 1);
+
+        SECTION("(((c)*)((a)*))") {
+            Mata::RE2Parser::create_nfa(&aut, "(((c)*)((a)*))");
             CHECK(!aut.trans_empty());
             CHECK(!is_lang_empty(aut));
-            CHECK(is_in_lang(aut, Word{'b'}));
-            CHECK(is_in_lang(aut, Word{'a','b'}));
-            CHECK(is_in_lang(aut, Word{'a','a','b'}));
-            CHECK(!is_in_lang(aut, Word{'b','a'}));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("((c*)((a)*))") {
+            Mata::RE2Parser::create_nfa(&aut, "((c*)((a)*))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("(c*(a*))") {
+            Mata::RE2Parser::create_nfa(&aut, "(c*(a*))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("(c*a*)") {
+            Mata::RE2Parser::create_nfa(&aut, "(c*a*)");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("c*a*") {
+            Mata::RE2Parser::create_nfa(&aut, "c*a*");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(is_in_lang(aut, Word{}));
+            CHECK(is_in_lang(aut, Word{'c'}));
+            CHECK(is_in_lang(aut, Word{'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            CHECK(equivalence_check(aut, expected));
+        }
+
+        SECTION("(((c)+)((a)+))") {
+            Mata::RE2Parser::create_nfa(&aut, "(((c)+)((a)+))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("((c+)((a)+))") {
+            Mata::RE2Parser::create_nfa(&aut, "((c+)((a)+))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("((c+)(a+))") {
+            Mata::RE2Parser::create_nfa(&aut, "((c+)(a+))");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("(c+)(a+)") {
+            Mata::RE2Parser::create_nfa(&aut, "(c+)(a+)");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("c+(a+)") {
+            Mata::RE2Parser::create_nfa(&aut, "c+(a+)");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("(c+)a+") {
+            Mata::RE2Parser::create_nfa(&aut, "(c+)a+");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
+        }
+
+        SECTION("c+a+") {
+            Mata::RE2Parser::create_nfa(&aut, "c+a+");
+            CHECK(!aut.trans_empty());
+            CHECK(!is_lang_empty(aut));
+            CHECK(!is_in_lang(aut, Word{}));
+            CHECK(!is_in_lang(aut, Word{'c'}));
+            CHECK(!is_in_lang(aut, Word{'a'}));
+            CHECK(!is_in_lang(aut, Word{'c', 'c'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a'}));
+            CHECK(!is_in_lang(aut, Word{'a', 'c'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
+            CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
+            Nfa expected_plus_iteration{ 3 };
+            expected_plus_iteration.make_initial(0);
+            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.add_trans(0, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'c', 1);
+            expected_plus_iteration.add_trans(1, 'a', 2);
+            expected_plus_iteration.add_trans(2, 'a', 2);
+            CHECK(equivalence_check(aut, expected_plus_iteration));
         }
     }
 } // }}}

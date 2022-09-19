@@ -305,226 +305,6 @@ TEST_CASE("Mata::Nfa::union_norename()")
 } // }}}
 */
 
-TEST_CASE("Mata::Nfa::intersection()")
-{ // {{{
-	Nfa a, b, res;
-	ProductMap prod_map;
-
-	SECTION("Intersection of empty automata")
-	{
-		intersection(&res, a, b, &prod_map);
-
-		REQUIRE(res.initialstates.empty());
-		REQUIRE(res.finalstates.empty());
-		REQUIRE(res.trans_empty());
-		REQUIRE(prod_map.empty());
-	}
-
-	SECTION("Intersection of empty automata 2")
-	{
-		intersection(&res, a, b);
-
-		REQUIRE(res.initialstates.empty());
-		REQUIRE(res.finalstates.empty());
-		REQUIRE(res.trans_empty());
-	}
-
-    a.increase_size(6);
-    b.increase_size(7);
-
-	SECTION("Intersection of automata with no transitions")
-	{
-		a.initialstates = {1, 3};
-		a.finalstates = {3, 5};
-
-		b.initialstates = {4, 6};
-		b.finalstates = {4, 2};
-
-        REQUIRE(!a.initialstates.empty());
-        REQUIRE(!b.initialstates.empty());
-        REQUIRE(!a.finalstates.empty());
-        REQUIRE(!b.finalstates.empty());
-
-		intersection(&res, a, b, &prod_map);
-
-		REQUIRE(!res.initialstates.empty());
-		REQUIRE(!res.finalstates.empty());
-
-		State init_fin_st = prod_map[{3, 4}];
-
-		REQUIRE(res.has_initial(init_fin_st));
-		REQUIRE(res.has_final(init_fin_st));
-	}
-
-    a.increase_size(11);
-    b.increase_size(15);
-
-	SECTION("Intersection of automata with some transitions")
-	{
-		FILL_WITH_AUT_A(a);
-		FILL_WITH_AUT_B(b);
-
-		intersection(&res, a, b, &prod_map);
-
-		REQUIRE(res.has_initial(prod_map[{1, 4}]));
-		REQUIRE(res.has_initial(prod_map[{3, 4}]));
-		REQUIRE(res.has_final(prod_map[{5, 2}]));
-
-        //for (const auto& c : prod_map) std::cout << c.first.first << "," << c.first.second << " -> " << c.second << "\n";
-        //std::cout << prod_map[{7, 2}] << " " <<  prod_map[{1, 2}] << '\n';
-		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{3, 6}]));
-		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 8}]));
-		REQUIRE(res.has_trans(prod_map[{1, 4}], 'a', prod_map[{10, 6}]));
-		REQUIRE(res.has_trans(prod_map[{1, 4}], 'b', prod_map[{7, 6}]));
-		REQUIRE(res.has_trans(prod_map[{3, 6}], 'a', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{3, 0}]));
-		REQUIRE(res.has_trans(prod_map[{7, 2}], 'a', prod_map[{5, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 2}], 'b', prod_map[{1, 2}]));
-		REQUIRE(res.has_trans(prod_map[{3, 0}], 'a', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{10, 0}]));
-		REQUIRE(res.has_trans(prod_map[{1, 2}], 'a', prod_map[{3, 0}]));
-		// REQUIRE(res.has_trans(prod_map[{1, 2}], 'b', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{10, 0}], 'a', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{5, 0}], 'a', prod_map[{5, 2}]));
-		REQUIRE(res.has_trans(prod_map[{5, 2}], 'a', prod_map[{5, 0}]));
-		REQUIRE(res.has_trans(prod_map[{10, 6}], 'a', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{5, 2}]));
-		REQUIRE(res.has_trans(prod_map[{7, 6}], 'a', prod_map[{3, 2}]));
-		REQUIRE(res.has_trans(prod_map[{10, 8}], 'b', prod_map[{7, 4}]));
-		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 6}]));
-		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{3, 8}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
-		REQUIRE(res.has_trans(prod_map[{7, 4}], 'a', prod_map[{5, 6}]));
-		// REQUIRE(res.has_trans(prod_map[{7, 4}], 'b', prod_map[{1, 6}]));
-		REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{3, 2}]));
-		REQUIRE(res.has_trans(prod_map[{1, 6}], 'a', prod_map[{10, 2}]));
-		// REQUIRE(res.has_trans(prod_map[{10, 2}], 'b', prod_map[{7, 2}]));
-		REQUIRE(res.has_trans(prod_map[{10, 2}], 'a', prod_map[{7, 0}]));
-		REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{5, 2}]));
-		REQUIRE(res.has_trans(prod_map[{7, 0}], 'a', prod_map[{3, 2}]));
-		REQUIRE(res.has_trans(prod_map[{3, 2}], 'a', prod_map[{7, 0}]));
-		REQUIRE(res.has_trans(prod_map[{5, 6}], 'a', prod_map[{5, 2}]));
-		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 6}]));
-		REQUIRE(res.has_trans(prod_map[{3, 4}], 'a', prod_map[{7, 8}]));
-		REQUIRE(res.has_trans(prod_map[{7, 8}], 'b', prod_map[{1, 4}]));
-	}
-
-	SECTION("Intersection of automata with some transitions but without a final state")
-	{
-		FILL_WITH_AUT_A(a);
-		FILL_WITH_AUT_B(b);
-		b.finalstates = {12};
-
-		intersection(&res, a, b, &prod_map);
-
-		REQUIRE(res.has_initial(prod_map[{1, 4}]));
-		REQUIRE(res.has_initial(prod_map[{3, 4}]));
-		REQUIRE(is_lang_empty(res));
-	}
-} // }}}
-
-TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
-{
-    constexpr Symbol epsilon{'e'};
-    ProductMap prod_map;
-
-    Nfa a{6};
-    a.make_initial(0);
-    a.make_final({1, 4, 5});
-    a.add_trans(0, epsilon, 1);
-    a.add_trans(1, 'a', 1);
-    a.add_trans(1, 'b', 1);
-    a.add_trans(1, 'c', 2);
-    a.add_trans(2, 'b', 4);
-    a.add_trans(2, epsilon, 3);
-    a.add_trans(3, 'a', 5);
-
-    Nfa b{10};
-    b.make_initial(0);
-    b.make_final({2, 4, 8, 7});
-    b.add_trans(0, 'b', 1);
-    b.add_trans(0, 'a', 2);
-    b.add_trans(2, 'a', 4);
-    b.add_trans(2, epsilon, 3);
-    b.add_trans(3, 'b', 4);
-    b.add_trans(0, 'c', 5);
-    b.add_trans(5, 'a', 8);
-    b.add_trans(5, epsilon, 6);
-    b.add_trans(6, 'a', 9);
-    b.add_trans(6, 'b', 7);
-
-    Nfa result{ intersection(a, b, epsilon, &prod_map) };
-
-    // Check states.
-    CHECK(result.is_state(prod_map[{0, 0}]));
-    CHECK(result.is_state(prod_map[{1, 0}]));
-    CHECK(result.is_state(prod_map[{1, 1}]));
-    CHECK(result.is_state(prod_map[{1, 2}]));
-    CHECK(result.is_state(prod_map[{1, 3}]));
-    CHECK(result.is_state(prod_map[{1, 4}]));
-    CHECK(result.is_state(prod_map[{2, 5}]));
-    CHECK(result.is_state(prod_map[{3, 5}]));
-    CHECK(result.is_state(prod_map[{2, 6}]));
-    CHECK(result.is_state(prod_map[{3, 6}]));
-    CHECK(result.is_state(prod_map[{4, 7}]));
-    CHECK(result.is_state(prod_map[{5, 9}]));
-    CHECK(result.is_state(prod_map[{5, 8}]));
-    CHECK(result.get_num_of_states() == 13);
-
-    CHECK(result.has_initial(prod_map[{0, 0}]));
-    CHECK(result.initialstates.size() == 1);
-
-    CHECK(result.has_final(prod_map[{1, 2}]));
-    CHECK(result.has_final(prod_map[{1, 4}]));
-    CHECK(result.has_final(prod_map[{4, 7}]));
-    CHECK(result.has_final(prod_map[{5, 8}]));
-    CHECK(result.finalstates.size() == 4);
-
-    // Check transitions.
-    CHECK(result.get_num_of_trans() == 15);
-
-    CHECK(result.has_trans(prod_map[{0, 0}], epsilon, prod_map[{1, 0}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 0, 0 }]).size() == 1);
-
-    CHECK(result.has_trans(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
-    CHECK(result.has_trans(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
-    CHECK(result.has_trans(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 0 }]).size() == 3);
-
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 1 }]).empty());
-
-    CHECK(result.has_trans(prod_map[{1, 2}], epsilon, prod_map[{1, 3}]));
-    CHECK(result.has_trans(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 2 }]).size() == 2);
-
-    CHECK(result.has_trans(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 3 }]).size() == 1);
-
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 4 }]).empty());
-
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 5}]));
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{2, 6}]));
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 5 }]).size() == 3);
-
-    CHECK(result.has_trans(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
-    CHECK(result.has_trans(prod_map[{3, 5}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 5 }]).size() == 2);
-
-    CHECK(result.has_trans(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
-    CHECK(result.has_trans(prod_map[{2, 6}], epsilon, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 6 }]).size() == 2);
-
-    CHECK(result.has_trans(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 6 }]).size() == 1);
-
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 4, 7 }]).empty());
-
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 9 }]).empty());
-
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
-}
-
 TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
 	Nfa aut(14);
@@ -763,6 +543,46 @@ TEST_CASE("Mata::Nfa::determinize()")
 		REQUIRE(result.has_trans(subset_map[{1}], 'a', subset_map[{2}]));
 	}
 } // }}}
+
+TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
+    Nfa aut(4);
+    Nfa result;
+    SubsetMap subset_map;
+
+    aut.make_initial(0);
+    aut.make_final(3);
+    aut.add_trans(0, 46, 0);
+    aut.add_trans(0, 47, 0);
+    aut.add_trans(0, 58, 0);
+    aut.add_trans(0, 58, 1);
+    aut.add_trans(0, 64, 0);
+    aut.add_trans(0, 64, 0);
+    aut.add_trans(0, 82, 0);
+    aut.add_trans(0, 92, 0);
+    aut.add_trans(0, 98, 0);
+    aut.add_trans(0, 100, 0);
+    aut.add_trans(0, 103, 0);
+    aut.add_trans(0, 109, 0);
+    aut.add_trans(0, 110, 0);
+    aut.add_trans(0, 111, 0);
+    aut.add_trans(0, 114, 0);
+    aut.add_trans(1, 47, 2);
+    aut.add_trans(2, 47, 3);
+    aut.add_trans(3, 46, 3);
+    aut.add_trans(3, 47, 3);
+    aut.add_trans(3, 58, 3);
+    aut.add_trans(3, 64, 3);
+    aut.add_trans(3, 82, 3);
+    aut.add_trans(3, 92, 3);
+    aut.add_trans(3, 98, 3);
+    aut.add_trans(3, 100, 3);
+    aut.add_trans(3, 103, 3);
+    aut.add_trans(3, 109, 3);
+    aut.add_trans(3, 110, 3);
+    aut.add_trans(3, 111, 3);
+    aut.add_trans(3, 114, 3);
+    minimize(&result, aut);
+}
 
 TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
@@ -1981,6 +1801,53 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.has_trans(8, 'a', 7));
 		REQUIRE(result.initialstates == StateSet({3}));
 	}
+
+	SECTION("Automaton A") {
+		Nfa nfa{ 11 };
+		FILL_WITH_AUT_A(nfa);
+		Nfa res = revert(nfa);
+		CHECK(res.has_initial(5));
+		CHECK(res.has_final(1));
+		CHECK(res.has_final(3));
+		CHECK(res.get_num_of_trans() == 15);
+		CHECK(res.has_trans(5, 'a', 5));
+		CHECK(res.has_trans(5, 'a', 7));
+		CHECK(res.has_trans(9, 'a', 9));
+		CHECK(res.has_trans(9, 'c', 5));
+		CHECK(res.has_trans(9, 'b', 3));
+		CHECK(res.has_trans(7, 'a', 3));
+		CHECK(res.has_trans(7, 'a', 10));
+		CHECK(res.has_trans(7, 'b', 10));
+		CHECK(res.has_trans(7, 'c', 10));
+		CHECK(res.has_trans(7, 'b', 1));
+		CHECK(res.has_trans(3, 'a', 7));
+		CHECK(res.has_trans(3, 'c', 7));
+		CHECK(res.has_trans(3, 'a', 1));
+		CHECK(res.has_trans(1, 'b', 7));
+		CHECK(res.has_trans(10, 'a', 1));
+	}
+
+	SECTION("Automaton B") {
+		Nfa nfa{ 15 };
+		FILL_WITH_AUT_B(nfa);
+		Nfa res = revert(nfa);
+		CHECK(res.has_initial(2));
+		CHECK(res.has_initial(12));
+		CHECK(res.has_final(4));
+		CHECK(res.get_num_of_trans() == 12);
+		CHECK(res.has_trans(8, 'a', 4));
+		CHECK(res.has_trans(8, 'c', 4));
+		CHECK(res.has_trans(4, 'b', 8));
+		CHECK(res.has_trans(6, 'b', 4));
+		CHECK(res.has_trans(6, 'a', 4));
+		CHECK(res.has_trans(2, 'a', 6));
+		CHECK(res.has_trans(2, 'a', 0));
+		CHECK(res.has_trans(2, 'b', 2));
+		CHECK(res.has_trans(0, 'a', 2));
+		CHECK(res.has_trans(12, 'c', 2));
+		CHECK(res.has_trans(12, 'b', 14));
+		CHECK(res.has_trans(14, 'a', 12));
+	}
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_deterministic()")
@@ -2475,6 +2342,27 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     }
 }
 
+TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
+    Nfa aut('q' + 1);
+    FILL_WITH_AUT_B(aut);
+    aut.initialstates.clear();
+    aut.initialstates.push_back(8);
+    Word word{};
+    word.push_back('b');
+    word.push_back('b');
+    word.push_back('a');
+    WordSet expected{ word };
+    Word word2{};
+    word2.push_back('b');
+    word2.push_back('a');
+    word2.push_back('a');
+    expected.insert(expected.begin(), word2);
+
+    for (size_t n{}; n < 100000; ++n) {
+        aut.get_shortest_words();
+    }
+}
+
 TEST_CASE("Mata::Nfa::remove_final()")
 {
     Nfa aut('q' + 1);
@@ -2727,6 +2615,29 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
     }
 }
 
+TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    for (size_t i{ 0 }; i < 10000; ++i) {
+        Nfa new_aut{ aut };
+        new_aut.trim();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.remove_trans(1, 'a', 10);
+
+    for (size_t i{ 0 }; i < 10000; ++i) {
+        aut.get_useful_states();
+    }
+}
+
 TEST_CASE("Mata::Nfa::trim()")
 {
     Nfa aut{20};
@@ -2797,5 +2708,113 @@ TEST_CASE("Mata::Nfa::Nfa::trans_empty()")
         aut.make_final(1);
         aut.add_trans(0, 'a', 1);
         CHECK(!aut.trans_empty());
+    }
+}
+
+TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
+    Nfa nfa{10};
+
+    SECTION("No initial") {
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.initialstates.empty());
+    }
+
+    SECTION("initial==final unify final") {
+        nfa.make_initial(0);
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.unify_final();
+        REQUIRE(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+        CHECK(nfa.has_initial(10));
+    }
+
+    SECTION("initial==final unify initial") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.make_final(0);
+        nfa.unify_initial();
+        REQUIRE(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+        CHECK(nfa.has_final(10));
+    }
+
+    SECTION("Single initial") {
+        nfa.make_initial(0);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(0));
+    }
+
+    SECTION("Multiple initial") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+    }
+
+    SECTION("With transitions") {
+        nfa.make_initial(0);
+        nfa.make_initial(1);
+        nfa.add_trans(0, 'a', 3);
+        nfa.add_trans(1, 'b', 0);
+        nfa.add_trans(1, 'c', 1);
+        nfa.unify_initial();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.initialstates.size() == 1);
+        CHECK(nfa.has_initial(10));
+        CHECK(nfa.has_trans(10, 'a', 3));
+        CHECK(nfa.has_trans(10, 'b', 0));
+        CHECK(nfa.has_trans(10, 'c', 1));
+        CHECK(nfa.has_trans(0, 'a', 3));
+        CHECK(nfa.has_trans(1, 'b', 0));
+        CHECK(nfa.has_trans(1, 'c', 1));
+    }
+
+    SECTION("No final") {
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.finalstates.empty());
+    }
+
+    SECTION("Single final") {
+        nfa.make_final(0);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 10);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(0));
+    }
+
+    SECTION("Multiple final") {
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+    }
+
+    SECTION("With transitions") {
+        nfa.make_final(0);
+        nfa.make_final(1);
+        nfa.add_trans(3, 'a', 0);
+        nfa.add_trans(4, 'b', 1);
+        nfa.add_trans(1, 'c', 1);
+        nfa.unify_final();
+        CHECK(nfa.get_num_of_states() == 11);
+        CHECK(nfa.finalstates.size() == 1);
+        CHECK(nfa.has_final(10));
+        CHECK(nfa.has_trans(3, 'a', 10));
+        CHECK(nfa.has_trans(4, 'b', 10));
+        CHECK(nfa.has_trans(1, 'c', 10));
+        CHECK(nfa.has_trans(3, 'a', 0));
+        CHECK(nfa.has_trans(4, 'b', 1));
+        CHECK(nfa.has_trans(1, 'c', 1));
     }
 }

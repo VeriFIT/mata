@@ -8,8 +8,8 @@
  *
  *****************************************************************************/
 
-#ifndef _Mata2_ORD_VECTOR_HH_
-#define _Mata2_ORD_VECTOR_HH_
+#ifndef _MATA_ORD_VECTOR_HH_
+#define _MATA_ORD_VECTOR_HH_
 
 // Standard library headers
 #include <vector>
@@ -172,6 +172,17 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
+    /**
+     * Create OrdVector with reserved @p capacity.
+     * @param[in] capacity Capacity of OrdVector to reserve.
+     * @return Newly create OrdVector.
+     */
+    static OrdVector with_reserved(const size_t capacity) {
+        OrdVector ord_vector{};
+        ord_vector.vec_.reserve(capacity);
+        return ord_vector;
+    }
+
 	OrdVector& operator=(const OrdVector& rhs)
 	{
 		// Assertions
@@ -208,7 +219,7 @@ public:   // Public methods
 		size_t first = 0;
 		size_t last = vec_.size();
 
-		if ((last != 0) && (vec_[last-1] < x))
+		if ((last != 0) && (vec_.back() < x))
 		{	// for the case which would be prevalent
 			vec_.push_back(x);
 			return;
@@ -415,6 +426,34 @@ public:   // Public methods
 
 		return end();
 	}
+
+    iterator find(const Key& key)
+    {
+        // Assertions
+        assert(vectorIsSorted());
+
+        size_t first = 0;
+        size_t last = vec_.size();
+
+        while (first < last)
+        {	// while the pointers do not overlap
+            size_t middle = first + (last - first) / 2;
+            if (vec_[middle] == key)
+            {	// in case we found x
+                return vec_.begin() + middle;
+            }
+            else if (vec_[middle] < key)
+            {	// in case middle is less than x
+                first = middle + 1;
+            }
+            else
+            {	// in case middle is greater than x
+                last = middle;
+            }
+        }
+
+        return end();
+    }
 
     inline void remove(Key k)
     {

@@ -3,6 +3,7 @@ from libcpp.set cimport set as cset
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.vector cimport vector
+from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
@@ -148,6 +149,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void reset_final(State)
         void reset_final(vector[State])
         void clear_final()
+        void unify_initial()
+        void unify_final()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         void remove_trans(CTrans) except +
@@ -172,7 +175,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
         void trim()
-        CNfa get_digraph()
+        void get_digraph(CNfa&)
         StateSet get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
@@ -181,6 +184,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
+    cdef bool is_lang_empty(CNfa&)
     cdef bool is_lang_empty(CNfa&, Path*)
     cdef bool is_lang_empty_cex(CNfa&, Word*)
     cdef bool is_universal(CNfa&, CAlphabet&, StringDict&) except +
@@ -195,6 +199,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Automata operations
     cdef void determinize(CNfa*, CNfa&, SubsetMap*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
+    cdef void intersection(CNfa*, CNfa&, CNfa&)
+    cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
     cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
     cdef void concatenate(CNfa*, CNfa&, CNfa&)
@@ -247,12 +253,15 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
-    cdef AutSequence noodlify(CNfa&, Symbol, bool)
-    cdef AutSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool)
+    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
+    
+    cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
+    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringDict&)
 
 
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string) except +
+    cdef void create_nfa(CNfa*, string, bool) except +
 
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":

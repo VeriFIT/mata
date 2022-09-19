@@ -41,7 +41,6 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-// START OF THE DECLARATIONS
 using State = unsigned long;
 using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
@@ -157,6 +156,8 @@ public:
 
 const PostSymb EMPTY_POST{};
 
+// FIXME: We can use newer library header <limits> and its built-in functions. Furthermore, we use signed long max here
+//  for unsigned Symbol and State.
 static const struct Limits {
     State maxState = LONG_MAX;
     State minState = 0;
@@ -200,6 +201,8 @@ template<typename T> using ConstPtrSequence = Sequence<T* const>; ///< A sequenc
 using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const pointers to non-deterministic finite automata.
 using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
+using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
+
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
 	const Nfa&                aut,
@@ -207,12 +210,11 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-///  An NFA
 struct TransSymbolStates {
-    Symbol symbol;
+    Symbol symbol{};
     StateSet states_to;
 
-    TransSymbolStates() = delete;
+    TransSymbolStates() = default;
     explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
     TransSymbolStates(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
@@ -226,9 +228,14 @@ struct TransSymbolStates {
     inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
 };
 
+/// List of transitions from a certain state. Each element holds transitions with a certain symbol.
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
+/// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
+/**
+ * A struct representing an NFA.
+ */
 struct Nfa
 {
     /**
@@ -248,14 +255,25 @@ public:
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
-    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
+    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{})
         : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
 
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
-    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{}, const StateSet& final_states = StateSet{})
-            : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
+                 const StateSet& final_states = StateSet{})
+        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+
+    /**
+     * Clear transitions but keep the automata states.
+     */
+    void clear_transitions() {
+        for (auto& state_transitions: transitionrelation) {
+            state_transitions.clear();
+        }
+    }
 
     auto get_num_of_states() const { return transitionrelation.size(); }
 
@@ -428,7 +446,67 @@ public:
      */
     State add_new_state();
 
+    /**
+     * Unify initial states into a single new initial state.
+     */
+    void unify_initial() {
+        if (initialstates.empty() || initialstates.size() == 1) { return; }
+        const State new_initial_state{ add_new_state() };
+        for (const auto& orig_initial_state: initialstates) {
+            for (const auto& transitions: get_transitions_from(orig_initial_state)) {
+                for (const State state_to: transitions.states_to) {
+                    add_trans(new_initial_state, transitions.symbol, state_to);
+                }
+            }
+            if (has_final(orig_initial_state)) { make_final(new_initial_state); }
+        }
+        reset_initial(new_initial_state);
+    }
+
+    /**
+     * Unify final states into a single new final state.
+     */
+    void unify_final() {
+        if (finalstates.empty() || finalstates.size() == 1) { return; }
+        const State new_final_state{ add_new_state() };
+        for (const auto& orig_final_state: finalstates) {
+            for (const auto& transitions: get_transitions_to(orig_final_state)) {
+                add_trans(transitions.src, transitions.symb, new_final_state);
+            }
+            if (has_initial(orig_final_state)) { make_initial(new_final_state); }
+        }
+        reset_final(new_final_state);
+    }
+
     bool is_state(const State &state_to_check) const { return state_to_check < transitionrelation.size(); }
+
+    /**
+     * @brief Clear the underlying NFA to a blank NFA.
+     *
+     * The whole NFA is cleared, each member is set to its zero value.
+     */
+    void clear_nfa() {
+        transitionrelation.clear();
+        clear_initial();
+        clear_final();
+    }
+
+    /**
+     * @brief Reset the underlying NFA to the specified values.
+     *
+     * Clear the underlying NFA and set its members to the passed argument values.
+     *
+     * @param[in] num_of_states A number of states to reset to..
+     * @param[in] initial_states A set of initial states to reset to.
+     * @param[in] final_states A set of final states to reset to.
+     */
+    void reset_nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+                   const StateSet& final_states = StateSet{}) {
+        clear_nfa();
+        increase_size(num_of_states);
+        initialstates = initial_states;
+        finalstates = final_states;
+    }
 
     /**
      * @brief Get set of reachable states.
@@ -452,7 +530,7 @@ public:
      * Useful states are reachable and terminating states.
      * @return Set of useful states.
      */
-    StateSet get_useful_states();
+    StateSet get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -463,6 +541,18 @@ public:
      */
     void trim();
 
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     *
+     * @return Trimmed automaton.
+     */
+    Nfa get_trimmed_automaton();
+
+    // FIXME: Resolve this comment and delete it.
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
      * But I don't know how to do a similar thing inside TransitionList.
@@ -472,14 +562,26 @@ public:
      * */
 
     /**
-     * @brief Adds a transition from stateFrom trough symbol to stateTo.
+     * Add transition from @p state_from with @p symbol to @p state_to to automaton.
+     * @param state_from Source state.
+     * @param symbol Symbol on transition.
+     * @param state_to Target states.
      */
-    void add_trans(State src, Symbol symb, State tgt);
+    void add_trans(State state_from, Symbol symbol, State state_to);
 
-    void add_trans(const Trans& trans)
-    {
-        add_trans(trans.src, trans.symb, trans.tgt);
-    }
+    /**
+     * Add transition @p trans to automaton.
+     * @param trans Transition to add.
+     */
+    void add_trans(const Trans& trans) { add_trans(trans.src, trans.symb, trans.tgt); }
+
+    /**
+     * Add transitions from @p state_from with @p symbol to @p states_to to automaton.
+     * @param state_from Source state.
+     * @param symbol Symbol on transitions.
+     * @param states_to Set of target states.
+     */
+    void add_trans(State state_from, Symbol symbol, const StateSet& states_to);
 
     /**
      * Remove transition.
@@ -505,22 +607,24 @@ public:
 
     bool has_trans(Trans trans) const
     {
-        if (transitionrelation.empty())
+        if (transitionrelation.empty()) {
             return false;
-        const TransitionList& tl = get_transitions_from(trans.src);
-
-        if (tl.empty())
-            return false;
-        for (auto& t : tl)
-        {
-            if (t.symbol > trans.symb)
-                return false;
-            if (trans.symb == t.symbol && t.states_to.count(trans.tgt))
-                return true;
-            assert(t.symbol <= trans.symb);
         }
 
-        return false;
+        const TransitionList& tl = get_transitions_from(trans.src);
+        if (tl.empty()) {
+            return false;
+        }
+        auto symbol_transitions{ tl.find(TransSymbolStates{trans.symb} ) };
+        if (symbol_transitions == tl.end()) {
+            return false;
+        }
+
+        if (symbol_transitions->states_to.find(trans.tgt) == symbol_transitions->states_to.end()) {
+            return false;
+        }
+
+        return true;
     }
     bool has_trans(State src, Symbol symb, State tgt) const
     { // {{{
@@ -581,26 +685,22 @@ public:
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
+     * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
-    Nfa get_digraph();
+    Nfa get_digraph(Symbol abstract_symbol = 'x') const;
+
+    /**
+     * Unify transitions to create a directed graph with at most a single transition between two states.
+     *
+     * @param[out] result An automaton representing a directed graph.
+     */
+    void get_digraph(Nfa& result) const;
 
     void print_to_DOT(std::ostream &outputStream) const;
     static Nfa read_from_our_format(std::istream &inputStream);
 
-    StateSet post(const StateSet& states, const Symbol& symbol) const
-    {
-        if (trans_empty())
-            return StateSet{};
-
-        StateSet res;
-        for (auto state : states)
-            for (const auto& symStates : transitionrelation[state])
-                if (symStates.symbol == symbol)
-                    res.insert(symStates.states_to);
-
-        return res;
-    }
+    StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
      * Get shortest words (regarding their length) of the automaton using BFS.
@@ -666,27 +766,6 @@ public:
     } // operator[] }}}
 
 private:
-    using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
-
-    /**
-     * Compute reachability of states.
-     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
-     */
-    StateBoolArray compute_reachability() const;
-
-    /**
-     * Add transitions to the trimmed automaton.
-     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
-     * @param trimmed_aut The new trimmed automaton.
-     */
-    void add_trimmed_transitions(const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut);
-
-    /**
-     * Get a new trimmed automaton.
-     * @param original_to_new_states_map Map of old states to new trimmed automaton states.
-     * @return Newly created trimmed automaton.
-     */
-    Nfa create_trimmed_aut(const StateToStateMap& original_to_new_states_map);
 }; // Nfa
 
 /// a wrapper encapsulating @p Nfa for higher-level use
@@ -705,9 +784,27 @@ struct NfaWrapper
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
-/// Is the language of the automaton empty?
-bool is_lang_empty(const Nfa& aut, Path* cex = nullptr);
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @param[out] cex Counter-example path for a case the language is not empty.
+ * @return True if the language is empty, false otherwise.
+ */
+bool is_lang_empty(const Nfa& aut, Path* cex);
 
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @return True if the language is empty, false otherwise.
+ */
+bool is_lang_empty(const Nfa& aut);
+
+/**
+ * Check whether is the language of the automaton empty.
+ * @param[in] aut Automaton to check.
+ * @param[out] cex Counter-example word for a case the language is not empty.
+ * @return True if the language is empty, false otherwise.
+ */
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
 void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs);
@@ -896,7 +993,17 @@ inline bool is_universal(
     return is_universal(aut, alphabet, nullptr, params);
 } // }}}
 
-/// Checks inclusion of languages of two automata (smaller <= bigger)?
+/**
+ * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
+ *
+ * @param smaller[in] First automaton to concatenate.
+ * @param bigger[in] Second automaton to concatenate.
+ * @param cex[out] Counterexample for the inclusion.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p smaller is included in @p bigger, false otherwise.
+ */
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
@@ -904,6 +1011,16 @@ bool is_incl(
         const Alphabet*    alphabet = nullptr,
         const StringDict&  params = {{"algo", "antichains"}});
 
+/**
+ * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
+ *
+ * @param smaller[in] First automaton to concatenate.
+ * @param bigger[in] Second automaton to concatenate.
+ * @param alphabet[in] Alphabet of both NFAs to compute with.
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ * @return True if @p smaller is included in @p bigger, false otherwise.
+ */
 inline bool is_incl(
         const Nfa&             smaller,
         const Nfa&             bigger,
@@ -934,7 +1051,7 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * the alphabet has to be computed first.
  *
  * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
- * That way, alphabet has to be compute only once, as opposed to the current ad-hoc construction of alphabet.
+ * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
  * @param lhs[in] First automaton to concatenate.
@@ -1068,6 +1185,7 @@ namespace SegNfa
 /// Segment automaton.
 /// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
 /// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+/// Segment automaton can have initial states only in the first segment and final states only in the last segment.
 using SegNfa = Nfa;
 
 /**
@@ -1104,12 +1222,20 @@ public:
      */
     const AutSequence& get_segments();
 
+    /**
+     * Get raw segment automata.
+     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
+     * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
+     */
+    const AutSequence& get_untrimmed_segments();
+
 private:
-    const Symbol epsilon{}; ///< Symbol for which to execute segmentation.
+    const Symbol epsilon; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton{};
+    const SegNfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     AutSequence segments{}; ///< Segments for @p automaton.
+    AutSequence segments_raw{}; ///< Raw segments for @p automaton.
 
     /**
      * Pair of state and its depth.
@@ -1131,11 +1257,11 @@ private:
     void split_aut_into_segments();
 
     /**
-     * Propagate changes to the current segment automaton to the remaining segments with higher depths.
+     * Propagate changes to the current segment automaton to the next segment automaton.
      * @param[in] current_depth Current depth.
      * @param[in] transition Current epsilon transition.
      */
-    void propagate_to_other_segments(size_t current_depth, const Trans& transition);
+    void update_next_segment(size_t current_depth, const Trans& transition);
 
     /**
      * Update current segment automaton.
@@ -1143,11 +1269,6 @@ private:
      * @param[in] transition Current epsilon transition.
      */
     void update_current_segment(size_t current_depth, const Trans& transition);
-
-    /**
-     * Trim created segments of redundant states and epsilon transitions.
-     */
-    void trim_segments();
 
     /**
      * Initialize map of visited states.
@@ -1166,7 +1287,7 @@ private:
      * @param[in] state_depth_pair Current state depth pair.
      * @param[out] worklist Worklist of state and depth pairs to process.
      */
-    void process_state_depth_pair(StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+    void process_state_depth_pair(const StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
 
     /**
      * Add states with non-epsilon transitions to the @p worklist.
@@ -1205,11 +1326,8 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const Nfa& aut)
-        : reversed_automaton(revert(aut))
-    {
+    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
         insert_initial_lengths();
-
         compute();
     }
 
@@ -1235,7 +1353,7 @@ private:
     StateMap<LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton{}; ///< Reversed input automaton.
+    const Nfa reversed_automaton; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -1272,7 +1390,7 @@ private:
      * @param[in] symbol Symbol to update with.
      */
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
-}; // ShortestWordsMap
+}; // class ShortestWordsMap.
 
 class EnumAlphabet : public Alphabet
 {
@@ -1304,12 +1422,7 @@ public:
         EnumAlphabet alphabet{};
         // TODO: When we are on C++17, we can use fold expression here instead of the manual for_each_argument reimplementation.
         for_each_argument([&alphabet](const Nfa& aut) {
-            size_t aut_num_of_states{ aut.get_num_of_states() };
-            for (State state{ 0 }; state < aut_num_of_states; ++state) {
-                for (const auto& state_transitions: aut.transitionrelation[state]) {
-                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-                }
-            }
+            fill_alphabet(aut, alphabet);
         }, nfas...);
         return alphabet;
     }
@@ -1321,15 +1434,21 @@ public:
      */
     static EnumAlphabet from_nfas(const ConstAutRefSequence& nfas) {
         EnumAlphabet alphabet{};
-        size_t nfa_num_of_states{};
         for (const auto& nfa: nfas) {
-            nfa_num_of_states = nfa.get().get_num_of_states();
-            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
-                for (const auto& state_transitions: nfa.get().transitionrelation[state]) {
-                    alphabet.update_next_symbol_value(state_transitions.symbol);
-                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-                }
-            }
+            fill_alphabet(nfa, alphabet);
+        }
+        return alphabet;
+    }
+
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const AutRefSequence& nfas) {
+        EnumAlphabet alphabet{};
+        for (const auto& nfa: nfas) {
+            fill_alphabet(nfa, alphabet);
         }
         return alphabet;
     }
@@ -1341,15 +1460,21 @@ public:
      */
     static EnumAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
         EnumAlphabet alphabet{};
-        size_t nfa_num_of_states{};
         for (const Nfa* const nfa: nfas) {
-            nfa_num_of_states = nfa->get_num_of_states();
-            for (State state{ 0 }; state < nfa_num_of_states; ++state) {
-                for (const auto& state_transitions: nfa->transitionrelation[state]) {
-                    alphabet.update_next_symbol_value(state_transitions.symbol);
-                    alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-                }
-            }
+            fill_alphabet(*nfa, alphabet);
+        }
+        return alphabet;
+    }
+
+    /**
+     * Create alphabet from vector of of NFAs.
+     * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
+     * @return Created alphabet.
+     */
+    static EnumAlphabet from_nfas(const AutPtrSequence& nfas) {
+        EnumAlphabet alphabet{};
+        for (const Nfa* const nfa: nfas) {
+            fill_alphabet(*nfa, alphabet);
         }
         return alphabet;
     }
@@ -1384,6 +1509,23 @@ public:
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 
     /**
+     * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
+     *
+     * Throws an exception when the adding fails.
+     *
+     * @param[in] key User-space representation of the symbol.
+     * @return Result of the insertion as @c InsertionResult.
+     */
+    InsertionResult add_new_symbol(const std::string& key) {
+        InsertionResult insertion_result{ try_add_new_symbol(key, next_symbol_value) };
+        if (!insertion_result.second) { // If the insertion of key-value pair failed.
+            throw std::runtime_error("multiple occurrences of the same symbol");
+        }
+        ++next_symbol_value;
+        return insertion_result;
+    }
+
+    /**
      * @brief Add new symbol to the alphabet.
      *
      * Throws an exception when the adding fails.
@@ -1393,9 +1535,9 @@ public:
      * @return Result of the insertion as @c InsertionResult.
      */
      InsertionResult add_new_symbol(const std::string& key, Symbol value) {
-        const InsertionResult insertion_result{ try_add_new_symbol(key, value) };
+        InsertionResult insertion_result{ try_add_new_symbol(key, value) };
         if (!insertion_result.second) { // If the insertion of key-value pair failed.
-            throw std::runtime_error("multiple occurrence of the same symbol");
+            throw std::runtime_error("multiple occurrences of the same symbol");
         }
         update_next_symbol_value(value);
         return insertion_result;
@@ -1411,8 +1553,7 @@ public:
      * @return Result of the insertion as @c InsertionResult.
      */
     InsertionResult try_add_new_symbol(const std::string& key, Symbol value) {
-        const InsertionResult insertion_result{ symbol_map.insert({ key, value}) };
-        return insertion_result;
+        return symbol_map.insert({ key, value});
     }
 
     /**
@@ -1444,6 +1585,21 @@ private:
     void update_next_symbol_value(Symbol value) {
         if (next_symbol_value <= value) {
             next_symbol_value = value + 1;
+        }
+    }
+
+    /**
+     * Fill @p alphabet with symbols from @p nfa.
+     * @param[in] nfa NFA with symbols to fill @p alphabet with.
+     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
+     */
+    static void fill_alphabet(const Nfa& nfa, EnumAlphabet& alphabet) {
+        size_t nfa_num_of_states{ nfa.get_num_of_states() };
+        for (State state{ 0 }; state < nfa_num_of_states; ++state) {
+            for (const auto& state_transitions: nfa.transitionrelation[state]) {
+                alphabet.update_next_symbol_value(state_transitions.symbol);
+                alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+            }
         }
     }
 }; // class EnumAlphabet.

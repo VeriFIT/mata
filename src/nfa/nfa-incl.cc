@@ -101,7 +101,7 @@ bool is_incl_antichains(
 			return false;
 		}
 
-		ProdStateType st = std::make_pair(state, bigger.initialstates);
+		const ProdStateType st = std::make_pair(state, bigger.initialstates);
 		worklist.push_back(st);
 		processed.push_back(st);
 
@@ -127,8 +127,8 @@ bool is_incl_antichains(
 			const Symbol& symb = post_symb.symbol;
 
 			for (const State& smaller_succ : post_symb.states_to) {
-				StateSet bigger_succ = bigger.post(bigger_set, symb);
-				ProdStateType succ = {smaller_succ, bigger_succ};
+				const StateSet bigger_succ = bigger.post(bigger_set, symb);
+				const ProdStateType succ = {smaller_succ, bigger_succ};
 
 				if (smaller.has_final(smaller_succ) &&
 					are_disjoint(bigger_succ, bigger.finalstates))
@@ -243,8 +243,8 @@ bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet
 
     if (params.at("algo") == "naive") {
         if (alphabet == nullptr) {
-            auto compute_alphabet{ EnumAlphabet::from_nfas(lhs, rhs) };
-            return compute_equivalence(lhs, rhs, alphabet, params, algo);
+            const auto computed_alphabet{ EnumAlphabet::from_nfas(lhs, rhs) };
+            return compute_equivalence(lhs, rhs, &computed_alphabet, params, algo);
         }
     }
 
