@@ -731,6 +731,33 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(aut.transitions.front().second.children[1].children.empty());
     }
 
+    SECTION("NFA explicit enumeration of initials and finals")
+    {
+        std::string file =
+                "@NFA-explicit\n"
+                "%States-enum q r s t \"(r,s)\"\n"
+                "%Alphabet-auto\n"
+                "%Initial r s\n"
+                "%Final q t\n"
+                "q symbol r\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        REQUIRE(auts.size() == 1);
+        const Mata::IntermediateAut& aut = auts.back();
+        REQUIRE(aut.transitions.size() == 1);
+        REQUIRE(aut.initial_enumerated);
+        REQUIRE(aut.final_enumerated);
+        const auto initials = aut.get_enumerated_initials();
+        REQUIRE(initials.count("r"));
+        REQUIRE(initials.count("s"));
+        REQUIRE(!initials.count("q"));
+        const auto finals = aut.get_enumerated_finals();
+        REQUIRE(finals.count("t"));
+        REQUIRE(finals.count("q"));
+        REQUIRE(!finals.count("r"));
+    }
+
     SECTION("AFA explicit")
     {
         std::string file =

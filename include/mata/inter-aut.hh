@@ -176,6 +176,9 @@ public:
     FormulaGraph initial_formula;
     FormulaGraph final_formula;
 
+    bool initial_enumerated = false;
+    bool final_enumerated = false;
+
     /**
      * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
      * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
@@ -200,6 +203,9 @@ public:
     bool are_nodes_enum_type() const {return node_naming == Naming::ENUM;}
 
     bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
+
+    std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
+    std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
 };
 
 } /* Mata */

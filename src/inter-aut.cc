@@ -391,13 +391,17 @@ namespace
 
             if (key.find("Initial") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (no_operators(postfix))
+                if (no_operators(postfix)) {
+                    aut.initial_enumerated = true;
                     postfix = add_disjunction_implicitly(postfix);
+                }
                 aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (no_operators(postfix))
+                if (no_operators(postfix)) {
                     postfix = add_disjunction_implicitly(postfix);
+                    aut.final_enumerated = true;
+                }
                 aut.final_formula = postfix_to_graph(postfix);
             }
         }
