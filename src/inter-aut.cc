@@ -46,6 +46,10 @@ namespace
             return Mata::IntermediateAut::Naming::ENUM;
         else if (type == "marked")
             return Mata::IntermediateAut::Naming::MARKED;
+        else if (type == "chars")
+            return Mata::IntermediateAut::Naming::CHARS;
+        else if (type == "utf")
+            return Mata::IntermediateAut::Naming::UTF;
 
         assert(false && "Unknown naming type - a naming type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
@@ -88,6 +92,15 @@ namespace
         return std::find(vec.begin(), vec.end(), item) != vec.end();
     }
 
+    bool no_operators(const std::vector<Mata::FormulaNode> nodes)
+    {
+        for (const auto& node : nodes)
+            if (node.is_operator())
+                return false;
+
+        return true;
+    }
+
     Mata::FormulaNode create_node(const Mata::IntermediateAut &mata, const std::string &token)
     {
         if (is_logical_operator(token[0])) {
@@ -108,6 +121,12 @@ namespace
             return Mata::FormulaNode{Mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
         } else if (token == ")") {
             return Mata::FormulaNode{Mata::FormulaNode::Type::RIGHT_PARENTHESIS, token};
+        } else if (token == "true") {
+            return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
+                                     Mata::FormulaNode::OperandType::SYMBOL};
+        } else if (token == "false") {
+            return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
+                                     Mata::FormulaNode::OperandType::SYMBOL};
         } else if (is_naming_enum(mata.state_naming) && contains(mata.states_names, token)) {
             return Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, token, token,
                                      Mata::FormulaNode::OperandType::STATE};
@@ -175,7 +194,6 @@ namespace
                     while (!opstack.back().is_leftpar()) {
                         output.push_back(opstack.back());
                         opstack.pop_back();
-                        break;
                     }
                     opstack.pop_back();
                     break;
@@ -198,6 +216,12 @@ namespace
         while (!opstack.empty()) {
             output.push_back(opstack.back());
             opstack.pop_back();
+        }
+
+        for (const auto& node : output) {
+            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
+            assert(node.is_leftpar() || node.name != "(");
+            assert(node.is_rightpar() || node.name != ")");
         }
 
         return output;
@@ -235,7 +259,7 @@ namespace
                             opstack.push_back(gr);
                     }
                     break;
-                default: assert(false);
+                default: assert(false && "Unknown type of node");
             }
         }
 
@@ -290,14 +314,34 @@ namespace
         const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
         const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
-        std::vector<Mata::FormulaNode> postfix = infix_to_postfix(aut, rhs);
+        std::vector<Mata::FormulaNode> postfix;
+
         // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-        if (aut.automaton_type == Mata::IntermediateAut::NFA && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT
-            && postfix.size() == 2) {
+        if (aut.automaton_type == Mata::IntermediateAut::NFA && tokens[tokens.size()-2] != "&") {
+            // we need to take care about this case manually since user does not need to determine
+            // symbol and state naming and put conjunction to transition
+            if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
+                assert(rhs.size() == 2);
+                postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
+                                         Mata::FormulaNode::OperandType::SYMBOL});
+                postfix.push_back(create_node(aut,rhs[1]));
+            } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
+                // this is a case where rhs state not separated by conjunction from rest of trans
+                postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
+                postfix.push_back(create_node(aut,rhs.back()));
+            } else
+                assert(false && "Unknown NFA type");
+
             postfix.push_back(Mata::FormulaNode(
                     Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
-        }
+        } else
+            postfix = infix_to_postfix(aut, rhs);
 
+        for (const auto& node : postfix) {
+            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
+            assert(node.is_leftpar() || node.name != "(");
+            assert(node.is_rightpar() || node.name != ")");
+        }
         const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
         aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
@@ -347,13 +391,17 @@ namespace
 
             if (key.find("Initial") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
+                if (no_operators(postfix)) {
+                    aut.initial_enumerated = true;
                     postfix = add_disjunction_implicitly(postfix);
+                }
                 aut.initial_formula = postfix_to_graph(postfix);
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
-                if (aut.is_nfa() && aut.alphabet_type == Mata::IntermediateAut::EXPLICIT)
+                if (no_operators(postfix)) {
                     postfix = add_disjunction_implicitly(postfix);
+                    aut.final_enumerated = true;
+                }
                 aut.final_formula = postfix_to_graph(postfix);
             }
         }
@@ -384,8 +432,9 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
         if (g->node.type == FormulaNode::UNKNOWN)
            continue; // skip undefined nodes
 
-        if (g->node.is_operand())
+        if (g->node.is_operand()) {
             res.insert(g->node.name);
+        }
 
         for (const auto& child : g->children) {
             stack.push_back(&child);
@@ -401,6 +450,9 @@ std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Ma
     result.reserve(parsed.size());
 
     for (const auto& parsed_section : parsed) {
+        if (parsed_section.type.find("FA") == std::string::npos) {
+            continue;
+        }
         result.push_back(mf_to_aut(parsed_section));
     }
 
@@ -434,6 +486,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& int
         }
         os << '\n';
     }
+    os << "\n";
 
     return os;
 }

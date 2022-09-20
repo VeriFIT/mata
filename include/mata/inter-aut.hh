@@ -77,7 +77,7 @@ public:
 
     bool is_operator() const { return type == Type::OPERATOR; }
 
-    bool is_righpar() const { return type == Type::RIGHT_PARENTHESIS; }
+    bool is_rightpar() const { return type == Type::RIGHT_PARENTHESIS; }
 
     bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS; }
 
@@ -137,12 +137,15 @@ struct IntermediateAut
      * Naming could be automatic (all things in formula not belonging to other sets will be assigned to a
      * set with automatic naming), marker based (everything beginning with `q` is a state, with `s` is a symbol,
      * with `n` is a node), or enumerated (the given set is defined by enumeration).
+     * There are two special cases used for alphabet - symbols could be any character (CHARS) or anything from utf (UTF).
      */
     enum Naming
     {
         AUTO,
         MARKED,
-        ENUM
+        ENUM,
+        CHARS,
+        UTF
     };
 
     /**
@@ -159,9 +162,9 @@ struct IntermediateAut
     };
 
 public:
-    Naming state_naming;
-    Naming symbol_naming;
-    Naming node_naming;
+    Naming state_naming = MARKED;
+    Naming symbol_naming = MARKED;
+    Naming node_naming = MARKED;
     AlphabetType alphabet_type;
     AutomatonType automaton_type;
 
@@ -172,6 +175,9 @@ public:
 
     FormulaGraph initial_formula;
     FormulaGraph final_formula;
+
+    bool initial_enumerated = false;
+    bool final_enumerated = false;
 
     /**
      * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
@@ -197,6 +203,9 @@ public:
     bool are_nodes_enum_type() const {return node_naming == Naming::ENUM;}
 
     bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
+
+    std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
+    std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
 };
 
 } /* Mata */
