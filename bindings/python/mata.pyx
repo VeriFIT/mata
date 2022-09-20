@@ -14,6 +14,8 @@ import subprocess
 import tabulate
 import pandas
 import networkx as nx
+import graphviz
+import IPython
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -530,8 +532,7 @@ cdef class Nfa:
 
     def __repr__(self):
         if get_interactive_mode() == 'notebook':
-            plot(self)
-            return ""
+            return plot_using_graphviz(self)
         else:
             return str(self)
 
@@ -1717,50 +1718,68 @@ cdef class Segmentation:
 
         return segments
 
-def plot(*automata: Nfa):
+def plot(*automata: Nfa, with_scc: bool = False):
     """Plots the stream of automata
 
-    Possible customization:
-      node_size: either a single value for all nodes or a list of value for each node
-      node_color: either a single colour for all nodes or a list of colours for each
-        node; can be either string or rbg(a) tuple of floats
-      width: either a single value for all edges or a list of values for each edge
-      edge_color: similar to node_color
-      font_size/font_color/font_weight/font_family: font specification
-
-    Node customization (for each node):
-      node_size
-      node_color
-      alpha
-      edgecolors
-      linewidths
-      margins
-
-    Edge customization (for each edge):
-      width
-      edge_color
-      style
-
-    :param list automata: stream of automata that will be plotted using networkx + matplotlib
+    :param list automata: stream of automata that will be plotted using graphviz
     """
-    node_options = {
-        "node_size": 500,
-        "node_color": "white",
-        "edgecolors": "black",
-        "linewidths": 2.0,
-    }
-    edge_options = {
-        "arrowstyle": "->",
-        "arrowsize": 15,
-        "node_size": 500,
-        "width": 2.0,
-    }
     for aut in automata:
+        dot = plot_using_graphviz(aut, with_scc)
+        if get_interactive_mode() == 'notebook':
+            IPython.display.display_svg(dot)
+        else:
+            dot.view()
+
+
+def plot_using_graphviz(aut: Nfa, with_scc: bool = False):
+    """Plots automaton using graphviz
+
+    :param Nfa aut: plotted automaton
+    :param bool with_scc: will plot with strongly connected components
+    :return: automaton in graphviz
+    """
+    # Configuration
+    base_configuration = {
+        "width": "0.3",
+        "height": "0.3",
+        "fontsize": "10",
+        "fixedsize": "true",
+        "penwidth": "1.5",
+    }
+    dot = graphviz.Digraph("dot")
+    dot.attr(rankdir='LR')
+
+    if with_scc:
         G = aut.to_networkx_graph()
-        pos = nx.circular_layout(G)
-        nx.draw_networkx_nodes(G, pos=pos, **node_options)
-        nx.draw_networkx_edges(G, pos=pos, **edge_options)
-        nx.draw_networkx_labels(G, pos=pos)
+        for i, scc in enumerate(nx.strongly_connected_components(G)):
+            with dot.subgraph(name=f"cluster_{i}") as c:
+                c.attr(color='black', label=f"scc_{i}")
+                for state in scc:
+                    if aut.has_initial_state(state):
+                        c.node(f"q{state}", "", shape="plaintext", fontsize="1")
+                    c.node(
+                        f"{state}", label=f"{state}", **base_configuration,
+                        shape='doublecircle' if aut.has_final_state(state) else 'circle',
+                    )
+    else:
+        # Only print reachable states
+        for state in aut.get_reachable_states():
+            # Helper node to simulate initial automaton
+            if aut.has_initial_state(state):
+                dot.node(f"q{state}", "", shape="plaintext", fontsize="1")
+            dot.node(
+                f"{state}", label=f"{state}", **base_configuration,
+                shape='doublecircle' if aut.has_final_state(state) else 'circle',
+            )
+
+    # Plot edges
+    for state in aut.initial_states:
+        dot.edge(f"q{state}", f"{state}")
+    for trans in aut.iterate():
+        dot.edge(f"{trans.src}", f"{trans.tgt}", label=f"{trans.symb}", penwidth="1.5")
+
+    return dot
+
 
 def get_interactive_mode() -> str:
     """Checks and returns, which interactive mode (if any) the code is run in
