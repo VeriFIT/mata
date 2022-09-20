@@ -807,13 +807,11 @@ bool is_lang_empty(const Nfa& aut);
  */
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
-void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs);
+Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
-inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
-{ // {{
-    Nfa uni_aut;
-    uni(&uni_aut, lhs, rhs);
-    return uni_aut;
+inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
+{ // {{{
+    *unionAutomaton = uni(lhs, rhs);
 } // uni }}}
 
 /**
@@ -907,7 +905,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
 
 /// makes the transition relation complete
 void make_complete(
-        Nfa*             aut,
+        Nfa&             aut,
         const Alphabet&  alphabet,
         State            sink_state);
 
@@ -915,46 +913,40 @@ void make_complete(
 void complement_in_place(Nfa &aut);
 
 /// Co
-void complement(
-        Nfa*               result,
+Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params = {{"algo", "classical"}},
         SubsetMap*         subset_map = nullptr);
 
-inline Nfa complement(
+inline void complement(
+        Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params = {{"algo", "classical"}},
         SubsetMap*         subset_map = nullptr)
 { // {{{
-    Nfa result;
-    complement(&result, aut, alphabet, params, subset_map);
-    return result;
+    *result = complement(aut, alphabet, params, subset_map);
 } // complement }}}
 
-void minimize(Nfa* res, const Nfa &aut);
+Nfa minimize(const Nfa &aut);
 
-inline Nfa minimize(const Nfa &aut)
-{
-    Nfa minimized;
-    minimize(&minimized, aut);
-    return aut;
-}
+inline void minimize(Nfa* res, const Nfa &aut)
+{ // {{{
+    *res = minimize(aut);
+} // minimize }}}
 
 /// Determinize an automaton
-void determinize(
-        Nfa*        result,
+Nfa determinize(
         const Nfa&  aut,
         SubsetMap*  subset_map = nullptr);
 
-inline Nfa determinize(
+inline void determinize(
+        Nfa*        result,
         const Nfa&  aut,
-        SubsetMap*  subset_map)
+        SubsetMap*  subset_map = nullptr)
 { // {{{
-    Nfa result;
-    determinize(&result, aut, subset_map);
-    return result;
+    *result = determinize(aut, subset_map);
 } // determinize }}}
 
 Simlib::Util::BinaryRelation compute_relation(
@@ -962,21 +954,19 @@ Simlib::Util::BinaryRelation compute_relation(
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
 // Reduce the size of the automaton
-void reduce(
-        Nfa* result,
+Nfa reduce(
         const Nfa &aut,
         StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}});
 
-inline Nfa reduce(
+inline void reduce(
+        Nfa* result,
         const Nfa &aut,
         StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}})
-{
-    Nfa reduced;
-    reduce(&reduced, aut, state_map, params);
-    return reduced;
-}
+{ // {{{
+    *result = reduce(aut, state_map, params);
+} // reduce }}}
 
 /// Is the language of the automaton universal?
 bool is_universal(
@@ -1063,24 +1053,20 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
 
 /// Reverting the automaton
-void revert(Nfa* result, const Nfa& aut);
+Nfa revert(const Nfa& aut);
 
-inline Nfa revert(const Nfa& aut)
+inline void revert(Nfa* result, const Nfa& aut)
 { // {{{
-    Nfa result;
-    revert(&result, aut);
-    return result;
+    *result = revert(aut);
 } // revert }}}
 
 /// Removing epsilon transitions
-void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
+Nfa remove_epsilon(const Nfa& aut, Symbol epsilon);
 
-inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
+inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
 { // {{{
-    Nfa result{};
-    remove_epsilon(&result, aut, epsilon);
-    return result;
-} // }}}
+    *result = remove_epsilon(aut, epsilon);
+} // remove_epsilon }}}
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
 /// one initial state and every state has at most one outgoing transition over
@@ -1093,14 +1079,24 @@ bool is_deterministic(const Nfa& aut);
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::Parser::ParsedSection&   parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::IntermediateAut&         inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
 template <class ParsedObject>
-void construct(
-        Nfa*                                 aut,
+Nfa construct(
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
-    assert(nullptr != aut);
+    Nfa aut;
 
     bool remove_symbol_map = false;
     if (nullptr == symbol_map)
@@ -1115,7 +1111,7 @@ void construct(
 
     try
     {
-        construct(aut, parsed, &alphabet, state_map);
+        aut = construct(parsed, &alphabet, state_map);
     }
     catch (std::exception&)
     {
@@ -1124,31 +1120,18 @@ void construct(
     }
 
     release_res();
+    return aut;
 }
 
 /** Loads an automaton from Parsed object */
-void construct(
-        Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
- void construct(
-         Nfa*                                 aut,
-         const Mata::IntermediateAut&          inter_aut,
-         Alphabet*                            alphabet,
-         StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
 template <class ParsedObject>
-inline Nfa construct(
+void construct(
+        Nfa*                                 result,
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
-    Nfa result;
-    construct(&result, parsed, symbol_map, state_map);
-    return result;
+    *result = construct(parsed, symbol_map, state_map);
 } // construct }}}
 
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);

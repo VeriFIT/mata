@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
             std::cout << ia << '\n';
 
         if (inter_auts[0].is_nfa())
-            construct(&aut, inter_auts[0]);
+            aut = construct(inter_auts[0]);
     }
     catch (const std::exception& ex) {
         fs.close();
