@@ -233,6 +233,9 @@ using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
+/// An epsilon symbol which is now defined as the maximal value of data type used for symbols
+const Symbol EPSILON = limits.maxSymbol;
+
 /**
  * A struct representing an NFA.
  */
