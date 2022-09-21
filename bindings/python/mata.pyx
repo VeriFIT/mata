@@ -16,6 +16,7 @@ import pandas
 import networkx as nx
 import graphviz
 import IPython
+import spot_jupyter_helpers as spot_helpers
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -1721,14 +1722,34 @@ cdef class Segmentation:
 def plot(*automata: Nfa, with_scc: bool = False):
     """Plots the stream of automata
 
+    :param bool with_scc: whether the SCC should be displayed
     :param list automata: stream of automata that will be plotted using graphviz
     """
+    dots = []
     for aut in automata:
         dot = plot_using_graphviz(aut, with_scc)
         if get_interactive_mode() == 'notebook':
-            IPython.display.display_svg(dot)
+            dots.append(dot)
         else:
             dot.view()
+    if get_interactive_mode() == 'notebook':
+        spot_helpers.display_inline(*dots)
+
+
+def _plot_state(aut, dot, state, configuration):
+    """Plots the state
+
+    :param aut: base automaton
+    :param dot: output digraph
+    :param state: plotted state
+    :param configuration: configuration of the state
+    """
+    if aut.has_initial_state(state):
+        dot.node(f"q{state}", "", shape="plaintext", fontsize="1")
+    dot.node(
+        f"{state}", label=f"{state}", **configuration,
+        shape='doublecircle' if aut.has_final_state(state) else 'circle',
+    )
 
 
 def plot_using_graphviz(aut: Nfa, with_scc: bool = False):
@@ -1747,30 +1768,20 @@ def plot_using_graphviz(aut: Nfa, with_scc: bool = False):
         "penwidth": "1.5",
     }
     dot = graphviz.Digraph("dot")
-    dot.attr(rankdir='LR')
+    dot.attr()
 
     if with_scc:
         G = aut.to_networkx_graph()
         for i, scc in enumerate(nx.strongly_connected_components(G)):
             with dot.subgraph(name=f"cluster_{i}") as c:
-                c.attr(color='black', label=f"scc_{i}")
+                c.attr(color='black')
                 for state in scc:
-                    if aut.has_initial_state(state):
-                        c.node(f"q{state}", "", shape="plaintext", fontsize="1")
-                    c.node(
-                        f"{state}", label=f"{state}", **base_configuration,
-                        shape='doublecircle' if aut.has_final_state(state) else 'circle',
-                    )
+                    _plot_state(aut, dot, state, base_configuration)
     else:
         # Only print reachable states
         for state in aut.get_reachable_states():
             # Helper node to simulate initial automaton
-            if aut.has_initial_state(state):
-                dot.node(f"q{state}", "", shape="plaintext", fontsize="1")
-            dot.node(
-                f"{state}", label=f"{state}", **base_configuration,
-                shape='doublecircle' if aut.has_final_state(state) else 'circle',
-            )
+            _plot_state(aut, dot, state, base_configuration)
 
     # Plot edges
     for state in aut.initial_states:

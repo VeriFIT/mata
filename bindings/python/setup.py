@@ -27,16 +27,20 @@ def get_cpp_sources(src_dir):
                 sources.append(os.path.join(root, file))
     return sorted(sources)
 
+
 extensions = [
     Extension(
         "mata",
-        sources=["mata.pyx"] + get_cpp_sources(source_dir) + get_cpp_sources(re2_source_dir) +
-                get_cpp_sources(simlib_source_dir),
+        sources=["mata.pyx", 'spot_jupyter_helpers.py']
+                + get_cpp_sources(source_dir)
+                + get_cpp_sources(re2_source_dir)
+                + get_cpp_sources(simlib_source_dir),
         include_dirs=[include_dir, third_party_include_dir, re2_include_dir, simlib_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     )
 ]
+
 
 def get_version():
     """Parses the version of the library from the VERSION file"""
@@ -46,6 +50,7 @@ def get_version():
             return version_handle.read().split()[0]
     else:
         return ""
+
 
 setup(
     name="mata",
