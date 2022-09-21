@@ -378,8 +378,14 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMa
     return intersection.get_product();
 }
 
-Nfa intersection(const Nfa& lhs, const Nfa& rhs)
+Nfa intersection(const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map)
 {
+    Intersection intersection { Intersection::compute(lhs, rhs) };
+    if (prod_map != nullptr)
+    {
+        *prod_map = intersection.get_product_map();
+    }
+
     return Intersection{ lhs, rhs }.get_product();
 }
 

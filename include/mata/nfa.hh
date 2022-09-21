@@ -870,7 +870,7 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map
  * @param[in] rhs Second NFA to compute intersection for.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection(const Nfa &lhs, const Nfa &rhs);
+Nfa intersection(const Nfa &lhs, const Nfa &rhs, ProductMap* prod_map = nullptr);
 
 /**
  * Concatenate two NFAs.

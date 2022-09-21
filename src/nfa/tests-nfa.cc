@@ -513,7 +513,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 
 	SECTION("empty automaton")
 	{
-		determinize(&result, aut);
+		result = determinize(aut);
 
 		REQUIRE(result.has_initial(subset_map[{}]));
 		REQUIRE(result.finalstates.empty());
@@ -524,7 +524,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 	{
 		aut.initialstates = { 1 };
 		aut.finalstates = { 1 };
-		determinize(&result, aut, &subset_map);
+		result = determinize(aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
 		REQUIRE(result.has_final(subset_map[{1}]));
@@ -536,7 +536,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 		aut.initialstates = { 1 };
 		aut.finalstates = { 2 };
 		aut.add_trans(1, 'a', 2);
-		determinize(&result, aut, &subset_map);
+		result = determinize(aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
         REQUIRE(result.has_final(subset_map[{2}]));
@@ -2225,8 +2225,7 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     REQUIRE(!is_in_lang(rhs, zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result;
-        uni(&result, lhs, rhs);
+        Nfa result = uni(lhs, rhs);
         REQUIRE(is_in_lang(result, one));
         REQUIRE(is_in_lang(result, zero));
     }
