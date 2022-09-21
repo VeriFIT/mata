@@ -1719,15 +1719,22 @@ cdef class Segmentation:
 
         return segments
 
-def plot(*automata: Nfa, with_scc: bool = False):
+def plot(
+        *automata: Nfa,
+        with_scc: bool = False,
+        node_highlight: list = None,
+        edge_highlight: list = None
+):
     """Plots the stream of automata
 
     :param bool with_scc: whether the SCC should be displayed
     :param list automata: stream of automata that will be plotted using graphviz
+    :param list node_highlight: list of rules for changing style of nodes
+    :param list edge_highlight: list of rules for changing style of edges
     """
     dots = []
     for aut in automata:
-        dot = plot_using_graphviz(aut, with_scc)
+        dot = plot_using_graphviz(aut, with_scc, node_highlight, edge_highlight)
         if get_interactive_mode() == 'notebook':
             dots.append(dot)
         else:
@@ -1752,9 +1759,25 @@ def _plot_state(aut, dot, state, configuration):
     )
 
 
-def plot_using_graphviz(aut: Nfa, with_scc: bool = False):
+def get_configuration_for(default, rules, *args):
+    conf = {}
+    conf.update(default)
+    for rule, style in rules or []:
+        if rule(*args):
+            conf.update(style)
+    return conf
+
+
+def plot_using_graphviz(
+        aut: Nfa,
+        with_scc: bool = False,
+        node_highlight: list = None,
+        edge_highlight: list = None
+):
     """Plots automaton using graphviz
 
+    :param list node_highlight: list of rules for changing style of nodes
+    :param list edge_highlight: list of rules for changing style of edges
     :param Nfa aut: plotted automaton
     :param bool with_scc: will plot with strongly connected components
     :return: automaton in graphviz
@@ -1776,18 +1799,29 @@ def plot_using_graphviz(aut: Nfa, with_scc: bool = False):
             with dot.subgraph(name=f"cluster_{i}") as c:
                 c.attr(color='black')
                 for state in scc:
-                    _plot_state(aut, dot, state, base_configuration)
+                    _plot_state(
+                        aut, dot, state,
+                        get_configuration_for(base_configuration, node_highlight, aut, state)
+                    )
     else:
         # Only print reachable states
         for state in aut.get_reachable_states():
             # Helper node to simulate initial automaton
-            _plot_state(aut, dot, state, base_configuration)
+            _plot_state(
+                aut, dot, state,
+                get_configuration_for(base_configuration, node_highlight, aut, state)
+            )
 
     # Plot edges
     for state in aut.initial_states:
         dot.edge(f"q{state}", f"{state}")
     for trans in aut.iterate():
-        dot.edge(f"{trans.src}", f"{trans.tgt}", label=f"{trans.symb}", penwidth="1.5")
+        dot.edge(
+            f"{trans.src}", f"{trans.tgt}",
+            **get_configuration_for(
+                {'penwidth': '1.5', 'label': f"{trans.symb}"}, edge_highlight, aut, trans
+            ),
+        )
 
     return dot
 
