@@ -1797,10 +1797,10 @@ def plot_using_graphviz(
         G = aut.to_networkx_graph()
         for i, scc in enumerate(nx.strongly_connected_components(G)):
             with dot.subgraph(name=f"cluster_{i}") as c:
-                c.attr(color='black')
+                c.attr(color='black', style='filled', fillcolor="lightgray")
                 for state in scc:
                     _plot_state(
-                        aut, dot, state,
+                        aut, c, state,
                         get_configuration_for(base_configuration, node_highlight, aut, state)
                     )
     else:
