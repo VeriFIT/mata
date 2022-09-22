@@ -470,7 +470,7 @@ public:   // Public methods
 		return vec_.empty();
 	}
 
-	inline bool back() const
+	inline const_reference back() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
