@@ -386,7 +386,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map)
         *prod_map = intersection.get_product_map();
     }
 
-    return Intersection{ lhs, rhs }.get_product();
+    return intersection.get_product();
 }
 
 } // Nfa
