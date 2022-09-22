@@ -1257,34 +1257,21 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
-TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State& state, const Symbol& epsilon) const {
-    assert(get_num_of_states() >= state + 1);
-    const auto trans_from = this->get_transitions_from(state);
-    if (trans_from.empty()) {
-        return trans_from.end();
-    }
-
-    if (epsilon == EPSILON) {
-        auto& back = this->get_transitions_from(state).back();
-        if (back.symbol == epsilon) {
-            return std::prev(trans_from.end());
+TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
+    assert(is_state(state));
+    const auto& trans_from{ get_transitions_from(state) };
+    if (!trans_from.empty()) {
+        if (epsilon == EPSILON) {
+            const auto& back = trans_from.back();
+            if (back.symbol == epsilon) {
+                return std::prev(trans_from.end());
+            }
         } else {
-            return trans_from.end();
-        }
-    } else {
-        const auto eps_trans = TransSymbolStates(epsilon);
-        const auto it = std::lower_bound(trans_from.begin(),
-                           trans_from.end(),
-                           eps_trans,
-                           [](TransSymbolStates x, const TransSymbolStates& y){return x.symbol == y.symbol;});
-        if (it != trans_from.end()) {
-            return std::prev(trans_from.end());
-        } else {
-            return trans_from.end();
+            return trans_from.find(TransSymbolStates(epsilon));
         }
     }
 
-    assert(false);
+    return trans_from.end();
 }
 
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
