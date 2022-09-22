@@ -2817,3 +2817,18 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         CHECK(nfa.has_trans(1, 'c', 1));
     }
 }
+
+TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.add_trans(0, EPSILON, 3);
+    aut.add_trans(3, EPSILON, 3);
+    aut.add_trans(3, EPSILON, 4);
+
+    auto state_eps_trans{ aut.get_epsilon_transitions(0) };
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3 });
+    state_eps_trans = aut.get_epsilon_transitions(3);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+}
