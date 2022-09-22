@@ -681,7 +681,7 @@ cdef class Nfa:
     @classmethod
     def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
         """
-        Performs intersection of lhs and rhs preserving epsilon transitions.
+        Performs intersection_over_epsilon of lhs and rhs preserving epsilon transitions.
 
         Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
@@ -712,7 +712,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef ProductMap c_product_map
-        mata.intersection(
+        mata.intersection_over_epsilon(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), &c_product_map
         )
         return result, {tuple(k): v for k, v in c_product_map}

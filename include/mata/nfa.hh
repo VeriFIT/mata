@@ -816,7 +816,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
 } // uni }}}
 
 /**
- * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ * @brief Compute intersection_over_epsilon of two NFAs preserving epsilon transitions.
  *
  * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
  * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
@@ -831,10 +831,10 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+Nfa intersection_over_epsilon(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON, ProductMap* prod_map = nullptr);
 
 /**
- * @brief Compute intersection of two NFAs preserving epsilon transitions.
+ * @brief Compute intersection_over_epsilon of two NFAs preserving epsilon transitions.
  *
  * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
  * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
@@ -843,18 +843,19 @@ Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* pro
  *
  * Automata must share alphabets.
  *
- * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs with ε-transitions preserved.
+ * @param[out] res Result product NFA of the intersection_over_epsilon of @p lhs and @p rhs with ε-transitions preserved.
  * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
  * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
  * @param[in] epsilon Symbol to handle as an epsilon symbol.
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  */
-void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON,
+                               ProductMap* prod_map = nullptr);
 
 /**
- * @brief Compute intersection of two NFAs.
+ * @brief Compute intersection_over_epsilon of two NFAs.
  *
- * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
+ * @param[out] res Result product NFA of the intersection_over_epsilon of @p lhs and @p rhs.
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.

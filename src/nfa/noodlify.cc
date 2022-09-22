@@ -186,7 +186,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
         concatenated_left_side = concatenate(concatenated_left_side, *next_left_automaton_it, epsilon);
     }
 
-    auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
@@ -238,7 +238,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
         concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), epsilon);
     }
 
-    auto product_pres_eps_trans{ intersection(concatenated_left_side, right_automaton, epsilon) };
+    auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
