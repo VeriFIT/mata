@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <climits>
+#include <limits>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -156,13 +156,11 @@ public:
 
 const PostSymb EMPTY_POST{};
 
-// FIXME: We can use newer library header <limits> and its built-in functions. Furthermore, we use signed long max here
-//  for unsigned Symbol and State.
-static const struct Limits {
-    State maxState = LONG_MAX;
-    State minState = 0;
-    Symbol maxSymbol = LONG_MAX;
-    Symbol minSymbol = 0;
+static constexpr struct Limits {
+    State maxState = std::numeric_limits<State>::max();
+    State minState = std::numeric_limits<State>::min();
+    Symbol maxSymbol = std::numeric_limits<Symbol>::max();
+    Symbol minSymbol = std::numeric_limits<Symbol>::min();
 } limits;
 
 /// A transition.
