@@ -1063,9 +1063,9 @@ inline void revert(Nfa* result, const Nfa& aut)
 } // revert }}}
 
 /// Removing epsilon transitions
-Nfa remove_epsilon(const Nfa& aut, Symbol epsilon);
+Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
-inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon)
+inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON)
 { // {{{
     *result = remove_epsilon(aut, epsilon);
 } // remove_epsilon }}}
@@ -1189,7 +1189,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    Segmentation(const SegNfa& aut, const Symbol epsilon) : epsilon(epsilon), automaton(aut)
+    Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
     {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
