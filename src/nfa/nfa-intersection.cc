@@ -48,7 +48,7 @@ public:
     }
 
     /**
-     * Compute epsilon transitions preserving intersection_over_epsilon of NFAs @p lhs and @p rhs.
+     * Compute epsilon transitions preserving intersection of NFAs @p lhs and @p rhs.
      * @param lhs First NFA to compute intersection for.
      * @param rhs Second NFA to compute intersection for.
      * @param epsilon Symbol to handle as an epsilon symbol.
@@ -358,7 +358,7 @@ void intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_ma
     *res = intersection.get_product();
 }
 
-void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map)
+void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, const Symbol epsilon, ProductMap* prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)
@@ -368,7 +368,7 @@ void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol 
     *res = intersection.get_product();
 }
 
-Nfa intersection_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon, ProductMap*  prod_map)
+Nfa intersection_over_epsilon(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMap*  prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)
