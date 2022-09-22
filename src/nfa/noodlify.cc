@@ -183,7 +183,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
     Nfa concatenated_left_side{ *left_automata_begin };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
          ++next_left_automaton_it) {
-        concatenated_left_side = concatenate(concatenated_left_side, *next_left_automaton_it, epsilon);
+        concatenated_left_side = concatenate_over_epsilon(concatenated_left_side, *next_left_automaton_it, epsilon);
     }
 
     auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };
@@ -235,7 +235,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
     Nfa concatenated_left_side{ *(*left_automata_begin) };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
          ++next_left_automaton_it) {
-        concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), epsilon);
+        concatenated_left_side = concatenate_over_epsilon(concatenated_left_side, *(*next_left_automaton_it), epsilon);
     }
 
     auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };

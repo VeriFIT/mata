@@ -398,7 +398,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Empty automaton") {
         lhs.increase_size(1);
         rhs.increase_size(1);
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
@@ -413,7 +413,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         rhs.make_initial(0);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
@@ -429,7 +429,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         rhs.make_initial(0);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.finalstates.empty());
@@ -447,7 +447,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_initial(0);
         rhs.make_final(0);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(1));
@@ -465,7 +465,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_initial(0);
         rhs.make_final(1);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
@@ -484,7 +484,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(1);
         rhs.add_trans(0, 'a', 1);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
@@ -505,7 +505,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(1);
         rhs.add_trans(0, 'a', 1);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(3));
@@ -532,7 +532,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.add_trans(0, 'a', 1);
         rhs.add_trans(0, 'c', 3);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(3));
@@ -559,7 +559,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(0);
         rhs.add_trans(0, 'a', 0);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
@@ -581,7 +581,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size_for_state(14);
         FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(lhs, rhs, epsilon);
+        result = concatenate_over_epsilon(lhs, rhs, epsilon);
 
         CHECK(result.initialstates.size() == 2);
         CHECK(result.has_initial(1));
@@ -604,7 +604,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size_for_state(14);
         FILL_WITH_AUT_B(rhs);
 
-        result = concatenate(rhs, lhs, epsilon);
+        result = concatenate_over_epsilon(rhs, lhs, epsilon);
 
         CHECK(result.get_num_of_states() == 26);
 

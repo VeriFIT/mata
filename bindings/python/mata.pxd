@@ -203,7 +203,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol)
     cdef void intersection_over_epsilon(CNfa*, CNfa&, CNfa&, ProductMap*)
     cdef void intersection_over_epsilon(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
-    cdef void concatenate(CNfa*, CNfa&, CNfa&)
+    cdef void concatenate_over_epsilon(CNfa*, CNfa&, CNfa&)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)

@@ -894,7 +894,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+void concatenate_over_epsilon(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
 
 /**
  * Concatenate two NFAs over epsilon transitions.
@@ -903,7 +903,7 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
  * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
  * @return Concatenated automaton.
  */
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
 
 /// makes the transition relation complete
 void make_complete(

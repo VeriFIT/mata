@@ -11,7 +11,7 @@
   * `@` opens the line with a section name and is used in transducer alphabet tokens of the form `x@a1`, `y@[10-55]`,...
   * `%` opens a key-value line.
   * `"` strings containing white spaces and special characters can be written in between `"`. The special characters lose their special meaning. The characters `"` and `\` inside a string must be escaped, i.e. `\"` and `\\`. 
-  * `\` for escaping characters. `\` is also used to concatenate lines.
+  * `\` for escaping characters. `\` is also used to concatenate_over_epsilon lines.
   * `a`,`q`,`n`,`t`,`f` are token type specifiers (alphabet, state, node, attribute, formula). 
   * `#` starts a comment line.
 * There are **words with a special meaning**: `\true`,`\false`,`\min`, and `\max`. Every word with special meaning starts with `\`.

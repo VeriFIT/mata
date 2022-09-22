@@ -748,11 +748,11 @@ cdef class Nfa:
         Concatenate two NFAs.
 
         :param Nfa lhs: First automaton to concatenate.
-        :param Nfa rhs: Second automaton to concatenate.
+        :param Nfa rhs: Second automaton to concatenate_over_epsilon.
         :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
+        mata.concatenate_over_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
         return result
 
     @classmethod
