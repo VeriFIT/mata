@@ -91,7 +91,8 @@ Nfa complement_naive(
 void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 
-    for (State q = 0; q < aut.transitionrelation.size(); ++q) {
+    const size_t size = aut.transitionrelation.size();
+    for (State q = 0; q < size; ++q) {
         if (aut.finalstates.count(q) == 0) {
             newFinalStates.insert(q);
         }
