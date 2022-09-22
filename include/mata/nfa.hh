@@ -766,6 +766,15 @@ public:
         return transitionrelation[state];
     } // operator[] }}}
 
+    /**
+     * Return all epsilon transitions from epsilon symbol under a given state.
+     * @param state State from which are epsilon transitions checked
+     * @param epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    TransitionList::const_iterator get_epsilon_transitions(const State& state, const Symbol& epsilon = EPSILON) const;
+
 private:
 }; // Nfa
 
