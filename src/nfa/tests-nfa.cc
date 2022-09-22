@@ -2831,4 +2831,25 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     state_eps_trans = aut.get_epsilon_transitions(3);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+
+    CHECK(aut.get_epsilon_transitions(1) == aut.get_transitions_from(1).end());
+    CHECK(aut.get_epsilon_transitions(5) == aut.get_transitions_from(5).end());
+    CHECK(aut.get_epsilon_transitions(19) == aut.get_transitions_from(19).end());
+
+    auto state_transitions{ aut.transitionrelation[0] };
+    state_eps_trans = aut.get_epsilon_transitions(state_transitions);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3 });
+    state_transitions = aut.transitionrelation[3];
+    state_eps_trans = aut.get_epsilon_transitions(state_transitions);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+
+    state_transitions = aut.get_transitions_from(1);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+    state_transitions = aut.get_transitions_from(5);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+    state_transitions = aut.get_transitions_from(19);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+
 }
