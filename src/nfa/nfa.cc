@@ -1259,19 +1259,22 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
 
 TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
-    const auto& trans_from{ get_transitions_from(state) };
-    if (!trans_from.empty()) {
+    return get_epsilon_transitions(get_transitions_from(state));
+}
+
+TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const TransitionList& state_transitions, const Symbol epsilon) {
+    if (!state_transitions.empty()) {
         if (epsilon == EPSILON) {
-            const auto& back = trans_from.back();
+            const auto& back = state_transitions.back();
             if (back.symbol == epsilon) {
-                return std::prev(trans_from.end());
+                return std::prev(state_transitions.end());
             }
         } else {
-            return trans_from.find(TransSymbolStates(epsilon));
+            return state_transitions.find(TransSymbolStates(epsilon));
         }
     }
 
-    return trans_from.end();
+    return state_transitions.end();
 }
 
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {

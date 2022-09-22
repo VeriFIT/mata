@@ -775,6 +775,15 @@ public:
      */
     TransitionList::const_iterator get_epsilon_transitions(const State state, const Symbol epsilon = EPSILON) const;
 
+    /**
+     * Return all epsilon transitions from epsilon symbol under given state transitions.
+     * @param[in] state_transitions State transitions from which are epsilon transitions checked.
+     * @param[in] epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, const Symbol epsilon = EPSILON) ;
+
 private:
 }; // Nfa
 
