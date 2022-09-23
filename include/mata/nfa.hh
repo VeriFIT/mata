@@ -231,7 +231,7 @@ using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
-/// An epsilon symbol which is now defined as the maximal value of data type used for symbols
+/// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
 
 /**
@@ -604,7 +604,7 @@ public:
     /**
      * Remove epsilon transitions from the automaton.
      */
-    void remove_epsilon(Symbol epsilon);
+    void remove_epsilon(Symbol epsilon = EPSILON);
 
     bool has_trans(Trans trans) const
     {
@@ -773,7 +773,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    TransitionList::const_iterator get_epsilon_transitions(const State state, const Symbol epsilon = EPSILON) const;
+    TransitionList::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -782,7 +782,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, const Symbol epsilon = EPSILON) ;
+    static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, Symbol epsilon = EPSILON) ;
 
 private:
 }; // Nfa

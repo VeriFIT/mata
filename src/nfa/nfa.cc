@@ -1263,7 +1263,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
 
 TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
-    return get_epsilon_transitions(get_transitions_from(state));
+    return get_epsilon_transitions(get_transitions_from(state), epsilon);
 }
 
 TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const TransitionList& state_transitions, const Symbol epsilon) {

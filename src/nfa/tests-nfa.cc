@@ -2832,6 +2832,14 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
 
+    aut.add_trans(8, 42, 3);
+    aut.add_trans(8, 42, 4);
+    aut.add_trans(8, 42, 6);
+
+    state_eps_trans = aut.get_epsilon_transitions(8, 42);
+    CHECK(state_eps_trans->symbol == 42);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4, 6 });
+
     CHECK(aut.get_epsilon_transitions(1) == aut.get_transitions_from(1).end());
     CHECK(aut.get_epsilon_transitions(5) == aut.get_transitions_from(5).end());
     CHECK(aut.get_epsilon_transitions(19) == aut.get_transitions_from(19).end());
