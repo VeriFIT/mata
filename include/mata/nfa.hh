@@ -232,7 +232,7 @@ using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 using TransitionRelation = std::vector<TransitionList>;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols
-const Symbol EPSILON = limits.maxSymbol;
+constexpr Symbol EPSILON = limits.maxSymbol;
 
 /**
  * A struct representing an NFA.
@@ -926,6 +926,17 @@ Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EP
 /// makes the transition relation complete
 void make_complete(
         Nfa&             aut,
+        const Alphabet&  alphabet,
+        State            sink_state);
+
+/**
+ * Make the transition relation complete.
+ * @param[out] aut Automaton with transition relation to be made complete.
+ * @param[in] alphabet Alphabet of the automaton.
+ * @param[in] sink_state State to handle as a sink state.
+ */
+void make_complete(
+        Nfa*             aut,
         const Alphabet&  alphabet,
         State            sink_state);
 
