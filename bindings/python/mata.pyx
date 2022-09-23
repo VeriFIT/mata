@@ -701,7 +701,7 @@ cdef class Nfa:
          to new states.
         """
         result = Nfa()
-        mata.intersection_over_epsilon(
+        mata.intersection_preserving_epsilon_transitions(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon
         )
         return result
@@ -741,7 +741,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef ProductMap c_product_map
-        mata.intersection_over_epsilon(
+        mata.intersection_preserving_epsilon_transitions(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon, &c_product_map
         )
         return result, {tuple(k): v for k, v in c_product_map}
@@ -951,16 +951,6 @@ cdef class Nfa:
 
         cdef CTransSymbolStates epsilon_transitions = dereference(c_epsilon_transitions_iter)
         return TransSymbolStates(epsilon_transitions.symbol, epsilon_transitions.states_to.ToVector())
-
-
-    #@classmethod
-    #def get_epsilon_transitions(cls, TransitionList state_transitions, Symbol epsilon = CEPSILON) -> TransSymbolStates | None:
-    #    """
-    #    Get epsilon transitions for a state.
-    #    :param state: State to get epsilon transitions for.
-    #    :param epsilon: Epsilon symbol.
-    #    :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
-    #    """
 
 
     @classmethod

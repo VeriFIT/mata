@@ -216,7 +216,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     b.add_trans(6, 'a', 9);
     b.add_trans(6, 'b', 7);
 
-    Nfa result{intersection_over_epsilon(a, b, epsilon, &prod_map) };
+    Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon, &prod_map) };
 
     // Check states.
     CHECK(result.is_state(prod_map[{0, 0}]));
@@ -318,6 +318,6 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
     b.add_trans(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nfa result{intersection_over_epsilon(a, b, epsilon) };
+        Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon) };
     }
 }

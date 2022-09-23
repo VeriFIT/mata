@@ -358,7 +358,7 @@ void intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_ma
     *res = intersection.get_product();
 }
 
-void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, const Symbol epsilon, ProductMap* prod_map)
+void intersection_preserving_epsilon_transitions(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)
@@ -368,7 +368,7 @@ void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, const S
     *res = intersection.get_product();
 }
 
-Nfa intersection_over_epsilon(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMap*  prod_map)
+Nfa intersection_preserving_epsilon_transitions(const Nfa& lhs, const Nfa& rhs, Symbol epsilon, ProductMap*  prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)

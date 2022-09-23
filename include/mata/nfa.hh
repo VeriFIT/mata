@@ -849,7 +849,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection_over_epsilon(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON, ProductMap* prod_map = nullptr);
+Nfa intersection_preserving_epsilon_transitions(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON, ProductMap* prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs preserving epsilon transitions.
@@ -867,8 +867,8 @@ Nfa intersection_over_epsilon(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = E
  * @param[in] epsilon Symbol to handle as an epsilon symbol.
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  */
-void intersection_over_epsilon(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON,
-                               ProductMap* prod_map = nullptr);
+void intersection_preserving_epsilon_transitions(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON,
+                                                 ProductMap* prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs.
