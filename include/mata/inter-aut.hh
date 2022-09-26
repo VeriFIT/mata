@@ -206,6 +206,8 @@ public:
 
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
+
+    static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
 };
 
 } /* Mata */
