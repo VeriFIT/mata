@@ -1,3 +1,4 @@
+
 cimport mata
 
 from libcpp.vector cimport vector
@@ -16,7 +17,9 @@ import pandas
 import networkx as nx
 import graphviz
 import IPython
+
 import spot_jupyter_helpers as spot_helpers
+import configuration
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -1760,6 +1763,11 @@ def _plot_state(aut, dot, state, configuration):
 
 
 def get_configuration_for(default, rules, *args):
+    """For given node or edge, processes the list of rules and applies them.
+
+    :param dict default: default style of the primitive
+    :param list rules: list of rules in form of condition and style
+    """
     conf = {}
     conf.update(default)
     for rule, style in rules or []:
@@ -1783,13 +1791,7 @@ def plot_using_graphviz(
     :return: automaton in graphviz
     """
     # Configuration
-    base_configuration = {
-        "width": "0.3",
-        "height": "0.3",
-        "fontsize": "10",
-        "fixedsize": "true",
-        "penwidth": "1.5",
-    }
+    base_configuration = configuration.store()['node_style']
     dot = graphviz.Digraph("dot")
     dot.attr()
 

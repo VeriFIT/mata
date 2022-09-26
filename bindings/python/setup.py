@@ -31,7 +31,7 @@ def get_cpp_sources(src_dir):
 extensions = [
     Extension(
         "mata",
-        sources=["mata.pyx", 'spot_jupyter_helpers.py']
+        sources=["mata.pyx", 'spot_jupyter_helpers.py', 'configuration.py']
                 + get_cpp_sources(source_dir)
                 + get_cpp_sources(re2_source_dir)
                 + get_cpp_sources(simlib_source_dir),
