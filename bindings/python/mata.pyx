@@ -323,19 +323,20 @@ cdef class Nfa:
         """
         return self.thisptr.get().get_num_of_states()
 
-    def add_trans(self, Trans tr):
+    def add_transition_object(self, Trans tr):
         """Adds transition to automaton
 
         :param Trans tr: added transition
         """
         self.thisptr.get().add_trans(dereference(tr.thisptr))
 
-    def add_trans_raw(self, State src, Symbol symb, State tgt):
+    def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
         :param State src: source state
         :param Symbol symb: symbol
         :param State tgt: target state
+        :param Alphabet alphabet: alphabet of the transition
         """
         self.thisptr.get().add_trans(src, symb, tgt)
 

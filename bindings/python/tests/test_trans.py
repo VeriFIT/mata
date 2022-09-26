@@ -43,10 +43,10 @@ def test_transsymbstates():
 
 def test_transition_operations(prepare_automaton_a):
     nfa = mata.Nfa(10)
-    nfa.add_trans_raw(3, ord('c'), 4)
+    nfa.add_transition(3, ord('c'), 4)
     assert nfa.has_trans_raw(3, ord('c'), 4)
     trans = mata.Trans(4, ord('c'), 5)
-    nfa.add_trans(trans)
+    nfa.add_transition_object(trans)
     assert nfa.has_trans(trans)
 
     nfa.remove_trans_raw(3, ord('c'), 4)
