@@ -52,6 +52,7 @@ add_library(libmata STATIC
 	afa/afa.cc
 	config.cc
 	inter-aut.cc
+	mintermization.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
@@ -88,7 +89,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-target_link_libraries(libmata simlib)
+find_library(CUDD cudd HINTS ../3rdparty/cudd/)
+find_library(CUDD++ obj HINTS ../3rdparty/cudd/)
+target_link_libraries(libmata simlib ${CUDD} ${CUDD++})
 target_link_libraries(tests libmata re2 simlib)
 include(Catch)
 catch_discover_tests(tests)
