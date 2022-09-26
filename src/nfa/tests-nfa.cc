@@ -513,7 +513,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 
 	SECTION("empty automaton")
 	{
-		determinize(&result, aut);
+		result = determinize(aut);
 
 		REQUIRE(result.has_initial(subset_map[{}]));
 		REQUIRE(result.finalstates.empty());
@@ -524,7 +524,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 	{
 		aut.initialstates = { 1 };
 		aut.finalstates = { 1 };
-		determinize(&result, aut, &subset_map);
+		result = determinize(aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
 		REQUIRE(result.has_final(subset_map[{1}]));
@@ -536,7 +536,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 		aut.initialstates = { 1 };
 		aut.finalstates = { 2 };
 		aut.add_trans(1, 'a', 2);
-		determinize(&result, aut, &subset_map);
+		result = determinize(aut, &subset_map);
 
 		REQUIRE(result.has_initial(subset_map[{1}]));
         REQUIRE(result.has_final(subset_map[{2}]));
@@ -594,7 +594,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 	{
 		parsec.type = Mata::Nfa::TYPE_NFA;
 
-		construct(&aut, parsec);
+		aut = construct(parsec);
 
 		REQUIRE(is_lang_empty(aut));
 	}
@@ -605,7 +605,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
-		construct(&aut, parsec);
+		aut = construct(parsec);
 
 		REQUIRE(!is_lang_empty(aut));
 	}
@@ -616,7 +616,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-		construct(&aut, parsec);
+		aut = construct(parsec);
 
 		REQUIRE(aut.initialstates.size() == 2);
 		REQUIRE(aut.finalstates.size() == 3);
@@ -629,7 +629,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a", "q2"} };
 
-		construct(&aut, parsec, &symbol_map);
+		aut = construct(parsec, &symbol_map);
 
 		Path cex;
 		REQUIRE(!is_lang_empty(aut, &cex));
@@ -661,7 +661,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.body.push_back({"q5", "a", "q5"});
 		parsec.body.push_back({"q5", "c", "q9"});
 
-		construct(&aut, parsec, &symbol_map);
+		aut = construct(parsec, &symbol_map);
 
 		// some samples
 		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
@@ -684,7 +684,7 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 	{
 		parsec.type = "FA";
 
-		CHECK_THROWS_WITH(construct(&aut, parsec),
+		CHECK_THROWS_WITH(construct(parsec),
 			Catch::Contains("expecting type"));
 	}
 
@@ -693,7 +693,7 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "q2"} };
 
-		CHECK_THROWS_WITH(construct(&aut, parsec),
+		CHECK_THROWS_WITH(construct(parsec),
 			Catch::Contains("Epsilon transition"));
 	}
 
@@ -717,7 +717,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
     {
         inter_aut.automaton_type = Mata::IntermediateAut::NFA;
         REQUIRE(is_lang_empty(aut));
-        construct(&aut, inter_aut);
+        aut = construct(inter_aut);
         REQUIRE(is_lang_empty(aut));
     }
 
@@ -732,7 +732,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut);
+        aut = construct(inter_aut);
 
         REQUIRE(!is_lang_empty(aut));
     }
@@ -955,7 +955,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 	{
 		EnumAlphabet alph = { };
 
-		make_complete(&aut, alph, 0);
+		make_complete(aut, alph, 0);
 
 		REQUIRE(aut.initialstates.empty());
 		REQUIRE(aut.finalstates.empty());
@@ -966,7 +966,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 	{
 		EnumAlphabet alph = {"a", "b"};
 
-		make_complete(&aut, alph, 0);
+		make_complete(aut, alph, 0);
 
 		REQUIRE(aut.initialstates.empty());
 		REQUIRE(aut.finalstates.empty());
@@ -980,7 +980,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 		aut.initialstates = {1};
 
-		make_complete(&aut, alphabet, 0);
+		make_complete(aut, alphabet, 0);
 
 		REQUIRE(aut.initialstates.size() == 1);
 		REQUIRE(*aut.initialstates.begin() == 1);
@@ -995,7 +995,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 		aut.initialstates = {1};
 
-		make_complete(&aut, alph, SINK);
+		make_complete(aut, alph, SINK);
 
 		REQUIRE(aut.initialstates.size() == 1);
 		REQUIRE(*aut.initialstates.begin() == 1);
@@ -1020,7 +1020,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 		aut.add_trans(3, alph["b"], 5);
 		aut.add_trans(4, alph["c"], 8);
 
-		make_complete(&aut, alph, SINK);
+		make_complete(aut, alph, SINK);
 
 		REQUIRE(aut.has_trans(1, alph["a"], 2));
 		REQUIRE(aut.has_trans(1, alph["b"], SINK));
@@ -1953,7 +1953,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 		REQUIRE(!is_complete(aut, alph));
 
-		make_complete(&aut, alph, 100);
+		make_complete(aut, alph, 100);
 		REQUIRE(is_complete(aut, alph));
 	}
 
@@ -1994,7 +1994,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 		REQUIRE(!is_complete(aut, alph));
 
-		make_complete(&aut, alph, 100);
+		make_complete(aut, alph, 100);
 		REQUIRE(is_complete(aut, alph));
 	}
 } // }}}
@@ -2225,8 +2225,7 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     REQUIRE(!is_in_lang(rhs, zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result;
-        uni(&result, lhs, rhs);
+        Nfa result = uni(lhs, rhs);
         REQUIRE(is_in_lang(result, one));
         REQUIRE(is_in_lang(result, zero));
     }
@@ -2817,4 +2816,48 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         CHECK(nfa.has_trans(4, 'b', 1));
         CHECK(nfa.has_trans(1, 'c', 1));
     }
+}
+
+TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    aut.add_trans(0, EPSILON, 3);
+    aut.add_trans(3, EPSILON, 3);
+    aut.add_trans(3, EPSILON, 4);
+
+    auto state_eps_trans{ aut.get_epsilon_transitions(0) };
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3 });
+    state_eps_trans = aut.get_epsilon_transitions(3);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+
+    aut.add_trans(8, 42, 3);
+    aut.add_trans(8, 42, 4);
+    aut.add_trans(8, 42, 6);
+
+    state_eps_trans = aut.get_epsilon_transitions(8, 42);
+    CHECK(state_eps_trans->symbol == 42);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4, 6 });
+
+    CHECK(aut.get_epsilon_transitions(1) == aut.get_transitions_from(1).end());
+    CHECK(aut.get_epsilon_transitions(5) == aut.get_transitions_from(5).end());
+    CHECK(aut.get_epsilon_transitions(19) == aut.get_transitions_from(19).end());
+
+    auto state_transitions{ aut.transitionrelation[0] };
+    state_eps_trans = aut.get_epsilon_transitions(state_transitions);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3 });
+    state_transitions = aut.transitionrelation[3];
+    state_eps_trans = aut.get_epsilon_transitions(state_transitions);
+    CHECK(state_eps_trans->symbol == EPSILON);
+    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+
+    state_transitions = aut.get_transitions_from(1);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+    state_transitions = aut.get_transitions_from(5);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+    state_transitions = aut.get_transitions_from(19);
+    CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+
 }

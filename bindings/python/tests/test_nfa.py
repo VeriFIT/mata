@@ -391,6 +391,22 @@ def test_concatenate():
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
+    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs)
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_trans_raw(0, ord('b'), 1)
+    assert result.has_trans_raw(1, 0xffffffffffffffff, 2)
+    assert result.has_trans_raw(2, ord('a'), 3)
+
+    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs, ord('e'))
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_trans_raw(0, ord('b'), 1)
+    assert result.has_trans_raw(1, ord('e'), 2)
+    assert result.has_trans_raw(2, ord('a'), 3)
+
 
 def test_completeness(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
@@ -1059,3 +1075,27 @@ def test_unify():
     nfa.unify_initial()
     assert nfa.has_initial_state(10)
     assert nfa.has_trans_raw(10, 1, 2)
+
+
+def test_get_epsilon_transitions():
+    nfa = mata.Nfa(10)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+
+    nfa.add_trans_raw(1, 1, 2)
+    nfa.add_trans_raw(1, 2, 2)
+    nfa.add_trans_raw(1, mata.epsilon(), 2)
+    nfa.add_trans_raw(1, mata.epsilon(), 3)
+    epsilon_transitions = nfa.get_epsilon_transitions(1)
+    assert epsilon_transitions.symbol == mata.epsilon()
+    assert epsilon_transitions.states_to == [2, 3]
+
+    nfa.add_trans_raw(0, 1, 2)
+    nfa.add_trans_raw(0, 2, 2)
+    nfa.add_trans_raw(0, 8, 5)
+    nfa.add_trans_raw(0, 8, 6)
+    epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
+    assert epsilon_transitions.symbol == 8
+    assert epsilon_transitions.states_to == [5, 6]
+
+    assert nfa.get_epsilon_transitions(5) is None

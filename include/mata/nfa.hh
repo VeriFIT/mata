@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
-#include <climits>
+#include <limits>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -156,13 +156,11 @@ public:
 
 const PostSymb EMPTY_POST{};
 
-// FIXME: We can use newer library header <limits> and its built-in functions. Furthermore, we use signed long max here
-//  for unsigned Symbol and State.
-static const struct Limits {
-    State maxState = LONG_MAX;
-    State minState = 0;
-    Symbol maxSymbol = LONG_MAX;
-    Symbol minSymbol = 0;
+static constexpr struct Limits {
+    State maxState = std::numeric_limits<State>::max();
+    State minState = std::numeric_limits<State>::min();
+    Symbol maxSymbol = std::numeric_limits<Symbol>::max();
+    Symbol minSymbol = std::numeric_limits<Symbol>::min();
 } limits;
 
 /// A transition.
@@ -232,6 +230,9 @@ struct TransSymbolStates {
 using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
+
+/// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
+constexpr Symbol EPSILON = limits.maxSymbol;
 
 /**
  * A struct representing an NFA.
@@ -603,7 +604,7 @@ public:
     /**
      * Remove epsilon transitions from the automaton.
      */
-    void remove_epsilon(Symbol epsilon);
+    void remove_epsilon(Symbol epsilon = EPSILON);
 
     bool has_trans(Trans trans) const
     {
@@ -765,6 +766,24 @@ public:
         return transitionrelation[state];
     } // operator[] }}}
 
+    /**
+     * Return all epsilon transitions from epsilon symbol under a given state.
+     * @param[in] state State from which are epsilon transitions checked
+     * @param[in] epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    TransitionList::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
+
+    /**
+     * Return all epsilon transitions from epsilon symbol under given state transitions.
+     * @param[in] state_transitions State transitions from which are epsilon transitions checked.
+     * @param[in] epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, Symbol epsilon = EPSILON) ;
+
 private:
 }; // Nfa
 
@@ -807,13 +826,11 @@ bool is_lang_empty(const Nfa& aut);
  */
 bool is_lang_empty_cex(const Nfa& aut, Word* cex);
 
-void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs);
+Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
-inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
-{ // {{
-    Nfa uni_aut;
-    uni(&uni_aut, lhs, rhs);
-    return uni_aut;
+inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
+{ // {{{
+    *unionAutomaton = uni(lhs, rhs);
 } // uni }}}
 
 /**
@@ -832,7 +849,7 @@ inline Nfa uni(const Nfa &lhs, const Nfa &rhs)
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+Nfa intersection_preserving_epsilon_transitions(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON, ProductMap* prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs preserving epsilon transitions.
@@ -850,7 +867,8 @@ Nfa intersection(const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* pro
  * @param[in] epsilon Symbol to handle as an epsilon symbol.
  * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
  */
-void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map = nullptr);
+void intersection_preserving_epsilon_transitions(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON,
+                                                 ProductMap* prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs.
@@ -869,7 +887,7 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map
  * @param[in] rhs Second NFA to compute intersection for.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection(const Nfa &lhs, const Nfa &rhs);
+Nfa intersection(const Nfa &lhs, const Nfa &rhs, ProductMap* prod_map = nullptr);
 
 /**
  * Concatenate two NFAs.
@@ -894,7 +912,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+void concatenate_over_epsilon(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
 
 /**
  * Concatenate two NFAs over epsilon transitions.
@@ -903,9 +921,20 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
  * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
  * @return Concatenated automaton.
  */
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs, Symbol epsilon);
+Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
 
 /// makes the transition relation complete
+void make_complete(
+        Nfa&             aut,
+        const Alphabet&  alphabet,
+        State            sink_state);
+
+/**
+ * Make the transition relation complete.
+ * @param[out] aut Automaton with transition relation to be made complete.
+ * @param[in] alphabet Alphabet of the automaton.
+ * @param[in] sink_state State to handle as a sink state.
+ */
 void make_complete(
         Nfa*             aut,
         const Alphabet&  alphabet,
@@ -915,46 +944,40 @@ void make_complete(
 void complement_in_place(Nfa &aut);
 
 /// Co
-void complement(
-        Nfa*               result,
+Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params = {{"algo", "classical"}},
         SubsetMap*         subset_map = nullptr);
 
-inline Nfa complement(
+inline void complement(
+        Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params = {{"algo", "classical"}},
         SubsetMap*         subset_map = nullptr)
 { // {{{
-    Nfa result;
-    complement(&result, aut, alphabet, params, subset_map);
-    return result;
+    *result = complement(aut, alphabet, params, subset_map);
 } // complement }}}
 
-void minimize(Nfa* res, const Nfa &aut);
+Nfa minimize(const Nfa &aut);
 
-inline Nfa minimize(const Nfa &aut)
-{
-    Nfa minimized;
-    minimize(&minimized, aut);
-    return aut;
-}
+inline void minimize(Nfa* res, const Nfa &aut)
+{ // {{{
+    *res = minimize(aut);
+} // minimize }}}
 
 /// Determinize an automaton
-void determinize(
-        Nfa*        result,
+Nfa determinize(
         const Nfa&  aut,
         SubsetMap*  subset_map = nullptr);
 
-inline Nfa determinize(
+inline void determinize(
+        Nfa*        result,
         const Nfa&  aut,
-        SubsetMap*  subset_map)
+        SubsetMap*  subset_map = nullptr)
 { // {{{
-    Nfa result;
-    determinize(&result, aut, subset_map);
-    return result;
+    *result = determinize(aut, subset_map);
 } // determinize }}}
 
 Simlib::Util::BinaryRelation compute_relation(
@@ -962,21 +985,19 @@ Simlib::Util::BinaryRelation compute_relation(
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
 
 // Reduce the size of the automaton
-void reduce(
-        Nfa* result,
+Nfa reduce(
         const Nfa &aut,
         StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}});
 
-inline Nfa reduce(
+inline void reduce(
+        Nfa* result,
         const Nfa &aut,
         StateToStateMap *state_map = nullptr,
         const StringDict&  params = {{"algorithm", "simulation"}})
-{
-    Nfa reduced;
-    reduce(&reduced, aut, state_map, params);
-    return reduced;
-}
+{ // {{{
+    *result = reduce(aut, state_map, params);
+} // reduce }}}
 
 /// Is the language of the automaton universal?
 bool is_universal(
@@ -1063,24 +1084,20 @@ bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params = {{ "algo", "antichains"}});
 
 /// Reverting the automaton
-void revert(Nfa* result, const Nfa& aut);
+Nfa revert(const Nfa& aut);
 
-inline Nfa revert(const Nfa& aut)
+inline void revert(Nfa* result, const Nfa& aut)
 { // {{{
-    Nfa result;
-    revert(&result, aut);
-    return result;
+    *result = revert(aut);
 } // revert }}}
 
 /// Removing epsilon transitions
-void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon);
+Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
-inline Nfa remove_epsilon(const Nfa& aut, Symbol epsilon)
+inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON)
 { // {{{
-    Nfa result{};
-    remove_epsilon(&result, aut, epsilon);
-    return result;
-} // }}}
+    *result = remove_epsilon(aut, epsilon);
+} // remove_epsilon }}}
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
 /// one initial state and every state has at most one outgoing transition over
@@ -1093,14 +1110,24 @@ bool is_deterministic(const Nfa& aut);
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::Parser::ParsedSection&   parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::IntermediateAut&         inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
 template <class ParsedObject>
-void construct(
-        Nfa*                                 aut,
+Nfa construct(
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
-    assert(nullptr != aut);
+    Nfa aut;
 
     bool remove_symbol_map = false;
     if (nullptr == symbol_map)
@@ -1115,7 +1142,7 @@ void construct(
 
     try
     {
-        construct(aut, parsed, &alphabet, state_map);
+        aut = construct(parsed, &alphabet, state_map);
     }
     catch (std::exception&)
     {
@@ -1124,31 +1151,18 @@ void construct(
     }
 
     release_res();
+    return aut;
 }
 
 /** Loads an automaton from Parsed object */
-void construct(
-        Nfa*                                 aut,
-        const Mata::Parser::ParsedSection&  parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
- void construct(
-         Nfa*                                 aut,
-         const Mata::IntermediateAut&          inter_aut,
-         Alphabet*                            alphabet,
-         StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
 template <class ParsedObject>
-inline Nfa construct(
+void construct(
+        Nfa*                                 result,
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
-    Nfa result;
-    construct(&result, parsed, symbol_map, state_map);
-    return result;
+    *result = construct(parsed, symbol_map, state_map);
 } // construct }}}
 
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
@@ -1204,7 +1218,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    Segmentation(const SegNfa& aut, const Symbol epsilon) : epsilon(epsilon), automaton(aut)
+    Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
     {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }

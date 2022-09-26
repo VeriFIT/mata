@@ -23,25 +23,24 @@ using namespace Mata::util;
 
 namespace { // anonymous namespace
 
-void complement_classical(
-	Nfa*               result,
+Nfa complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	SubsetMap*         subset_map)
 { // {{{
-	assert(nullptr != result);
+ 	Nfa result;
 
-	bool delete_subset_map = false;
+ 	bool delete_subset_map = false;
 	if  (nullptr == subset_map)
 	{
 		subset_map = new SubsetMap();
 		delete_subset_map = true;
 	}
 
-	*result = determinize(aut, subset_map);
-	State sink_state = result->get_num_of_states() + 1;
-	result->increase_size(sink_state+1);
-	assert(sink_state < result->get_num_of_states());
+	result = determinize(aut, subset_map);
+	State sink_state = result.get_num_of_states() + 1;
+	result.increase_size(sink_state+1);
+	assert(sink_state < result.get_num_of_states());
 	auto it_inserted_pair = subset_map->insert({{}, sink_state});
 	if (!it_inserted_pair.second)
 	{
@@ -49,20 +48,20 @@ void complement_classical(
 	}
 
 	make_complete(result, alphabet, sink_state);
-	StateSet old_fs = std::move(result->finalstates);
-	result->finalstates = { };
-	assert(result->initialstates.size() == 1);
+	StateSet old_fs = std::move(result.finalstates);
+	result.finalstates = { };
+	assert(result.initialstates.size() == 1);
 
 	auto make_final_if_not_in_old = [&](const State& state) {
 		if (!haskey(old_fs, state))
 		{
-			result->finalstates.insert(state);
+			result.finalstates.insert(state);
 		}
 	};
 
-	make_final_if_not_in_old(*result->initialstates.begin());
+	make_final_if_not_in_old(*result.initialstates.begin());
 
-	for (const auto& trs : *result) {
+	for (const auto& trs : result) {
                 make_final_if_not_in_old(trs.tgt);
 	}
 
@@ -70,29 +69,45 @@ void complement_classical(
 	{
 		delete subset_map;
 	}
+
+	return result;
 } // complement_classical }}}
 
 } // namespace
 
 /// Complement
-void complement_naive(
-        Nfa*               result,
+Nfa complement_naive(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params,
         SubsetMap*         subset_map)
 {
-    determinize(result, aut);
-    complement_in_place(*result);
+    Nfa result = determinize(aut);
+    complement_in_place(result);
+
+    return result;
 }
 
-void Mata::Nfa::complement(
-	Nfa*               result,
+void Mata::Nfa::complement_in_place(Nfa& aut) {
+    StateSet newFinalStates;
+
+    const size_t size = aut.transitionrelation.size();
+    for (State q = 0; q < size; ++q) {
+        if (aut.finalstates.count(q) == 0) {
+            newFinalStates.insert(q);
+        }
+    }
+
+    aut.finalstates = newFinalStates;
+}
+
+Nfa Mata::Nfa::complement(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	const StringDict&  params,
 	SubsetMap*         subset_map)
 {
+	Nfa result;
 	// setting the default algorithm
 	decltype(complement_classical)* algo = complement_classical;
 	if (!haskey(params, "algo")) {
@@ -108,5 +123,5 @@ void Mata::Nfa::complement(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	algo(result, aut, alphabet, subset_map);
+	return algo(aut, alphabet, subset_map);
 } // complement

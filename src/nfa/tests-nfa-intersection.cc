@@ -75,7 +75,7 @@ TEST_CASE("Mata::Nfa::intersection()")
 
     SECTION("Intersection of empty automata")
     {
-        intersection(&res, a, b, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.initialstates.empty());
         REQUIRE(res.finalstates.empty());
@@ -85,7 +85,7 @@ TEST_CASE("Mata::Nfa::intersection()")
 
     SECTION("Intersection of empty automata 2")
     {
-        intersection(&res, a, b);
+        res = intersection(a, b);
 
         REQUIRE(res.initialstates.empty());
         REQUIRE(res.finalstates.empty());
@@ -108,7 +108,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         REQUIRE(!a.finalstates.empty());
         REQUIRE(!b.finalstates.empty());
 
-        intersection(&res, a, b, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(!res.initialstates.empty());
         REQUIRE(!res.finalstates.empty());
@@ -127,7 +127,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         FILL_WITH_AUT_A(a);
         FILL_WITH_AUT_B(b);
 
-        intersection(&res, a, b, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.has_initial(prod_map[{1, 4}]));
         REQUIRE(res.has_initial(prod_map[{3, 4}]));
@@ -178,7 +178,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         FILL_WITH_AUT_B(b);
         b.finalstates = {12};
 
-        intersection(&res, a, b, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.has_initial(prod_map[{1, 4}]));
         REQUIRE(res.has_initial(prod_map[{3, 4}]));
@@ -216,7 +216,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     b.add_trans(6, 'a', 9);
     b.add_trans(6, 'b', 7);
 
-    Nfa result{ intersection(a, b, epsilon, &prod_map) };
+    Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon, &prod_map) };
 
     // Check states.
     CHECK(result.is_state(prod_map[{0, 0}]));
@@ -318,6 +318,6 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
     b.add_trans(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nfa result{ intersection(a, b, epsilon) };
+        Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon) };
     }
 }
