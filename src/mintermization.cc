@@ -20,20 +20,6 @@
 #include <mata/mintermization.hh>
 #include <cudd/cudd.h>
 
-namespace
-{
-    void cudd()
-    {
-        Cudd mgr(0,0);
-        BDD x = mgr.bddVar();
-        BDD y = mgr.bddVar();
-        BDD f = x * y;
-        BDD g = y + !x;
-        std::cout << "f is" << (f <= g ? "" : " not")
-                  << " less than or equal to g\n";
-    }
-}
-
 std::vector<BDD> Mata::Mintermization::build_minterms(const std::vector<BDD>& bdds)
 {
     std::vector<BDD> stack;
@@ -119,12 +105,11 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
         // for each t=(q1,s,q2)
         const auto& symbol_part = trans.second.children[0];
         assert(trans_to_bddvar.count(&symbol_part));
-        BDD bdd = trans_to_bddvar[&symbol_part];
+        const BDD& bdd = trans_to_bddvar[&symbol_part];
 
-        for (const auto minterm : minterms) {
+        for (const auto& minterm : minterms) {
             // for each minterm x:
-            BDD conj = bdd * minterm;
-            if (!(conj.IsZero())) {
+            if (!((bdd * minterm).IsZero())) {
                 // if for symbol s of t is BDD_s < x: bool p (BDD, BDD)
                 // add q1,x,q2 to transitions
                 IntermediateAut::parse_transition(res, {trans.first.name, std::to_string(symbol),
