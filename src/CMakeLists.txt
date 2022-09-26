@@ -73,6 +73,7 @@ set_target_properties(libmata PROPERTIES
 
 add_executable(tests
 	tests-main.cc
+	tests-mintermization.cc
 	tests-parser.cc
 	tests-re2parser.cc
 	tests-ord-vector.cc
