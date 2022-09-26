@@ -1,4 +1,3 @@
-
 cimport mata
 
 from libcpp.vector cimport vector
@@ -8,6 +7,9 @@ from libcpp.utility cimport pair
 from libcpp.memory cimport shared_ptr, make_shared
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
+
+cimport alphabets
+import alphabets
 
 import sys
 import shlex
@@ -330,7 +332,7 @@ cdef class Nfa:
         """
         self.thisptr.get().add_trans(dereference(tr.thisptr))
 
-    def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
+    def add_transition(self, State src, symb, State tgt, alphabets.Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
         :param State src: source state
@@ -338,7 +340,11 @@ cdef class Nfa:
         :param State tgt: target state
         :param Alphabet alphabet: alphabet of the transition
         """
-        self.thisptr.get().add_trans(src, symb, tgt)
+        if isinstance(symb, str):
+            if not alphabet:
+                alphabet = configuration.store().get('alphabet', None)
+        else:
+            self.thisptr.get().add_trans(src, symb, tgt)
 
     def remove_trans(self, Trans tr):
         """Removes transition from the automaton.
@@ -611,7 +617,7 @@ cdef class Nfa:
             G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
         return G
 
-    def post_map_of(self, State st, Alphabet alphabet):
+    def post_map_of(self, State st, alphabets.Alphabet alphabet):
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
@@ -863,7 +869,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def complement_with_subset_map(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def complement_with_subset_map(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -887,7 +893,7 @@ cdef class Nfa:
         return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
-    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def complement(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -910,7 +916,7 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def make_complete(cls, Nfa lhs, State sink_state, Alphabet alphabet):
+    def make_complete(cls, Nfa lhs, State sink_state, alphabets.Alphabet alphabet):
         """Makes lhs complete
 
         :param Nfa lhs: automaton that will be made complete
@@ -1087,7 +1093,7 @@ cdef class Nfa:
         return mata.is_lang_empty_cex(dereference(lhs.thisptr.get()), &word), word
 
     @classmethod
-    def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def is_universal(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
         """Tests if lhs is universal wrt given alphabet
 
         :param Nfa lhs: automaton tested for universality
@@ -1108,7 +1114,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included_with_cex(
-            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
@@ -1137,7 +1143,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included(
-            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
@@ -1164,7 +1170,7 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
+    def equivalence_check(cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None) -> bool:
         """Test equivalence of two automata.
 
         :param Nfa lhs: Smaller automaton.
@@ -1206,7 +1212,7 @@ cdef class Nfa:
         return {s for s in symbols}
 
     @classmethod
-    def is_complete(cls, Nfa lhs, Alphabet alphabet):
+    def is_complete(cls, Nfa lhs, alphabets.Alphabet alphabet):
         """Test if automaton is complete
 
         :param Nf lhs: tested automaton

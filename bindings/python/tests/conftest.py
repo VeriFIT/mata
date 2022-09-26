@@ -104,7 +104,7 @@ def fa_even_ones():
 
 @pytest.fixture(scope="function")
 def binary_alphabet():
-    alph = mata.OnTheFlyAlphabet()
+    alph = mata.alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("0")
     alph.translate_symbol("1")
     yield alph

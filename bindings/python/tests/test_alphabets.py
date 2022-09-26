@@ -43,14 +43,14 @@ def test_on_the_fly_alphabet():
     OnTheFlyAlphabet translates the symbols into values on-the-fly,
     based on a given counter.
     """
-    alphabet = mata.OnTheFlyAlphabet()
+    alphabet = mata.alphabets.OnTheFlyAlphabet()
     assert alphabet.translate_symbol('a') == 0
     assert alphabet.translate_symbol('a') == 0
     assert alphabet.translate_symbol('b') == 1
     assert alphabet.translate_symbol('a') == 0
     assert alphabet.translate_symbol('c') == 2
 
-    alphabet = mata.OnTheFlyAlphabet(3)
+    alphabet = mata.alphabets.OnTheFlyAlphabet(3)
     assert alphabet.translate_symbol('a') == 3
     assert alphabet.translate_symbol('b') == 4
     assert alphabet.translate_symbol('c') == 5
