@@ -18,7 +18,6 @@
  */
 
 #include <mata/mintermization.hh>
-#include <cudd/cudd.h>
 
 std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& bdds)
 {
