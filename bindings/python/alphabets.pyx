@@ -101,8 +101,9 @@ cdef class EnumAlphabet(Alphabet):
         :return: symbol as the original string
         """
         if symbol < len(self.enums_as_strings):
+            return self.enums_as_strings[symbol].decode('utf-8')
+        else:
             raise IndexError(f"{symbol} is out of range of enumeration")
-        return self.enums_as_strings[symbol]
 
     cpdef get_symbols(self):
         """Returns list of supported symbols
