@@ -48,7 +48,6 @@ const BDD Mata::Mintermization::graph_to_bdd(const FormulaGraph &graph)
 
     if (node.is_operand()) {
         if (symbol_to_bddvar.count(node.name)) {
-            assert(symbol_to_bddvar.at(node.name) != NULL);
             return symbol_to_bddvar.at(node.name);
         } else {
             BDD res = bdd_mng.bddVar();
@@ -112,8 +111,8 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
             if (!((bdd * minterm).IsZero())) {
                 // if for symbol s of t is BDD_s < x: bool p (BDD, BDD)
                 // add q1,x,q2 to transitions
-                IntermediateAut::parse_transition(res, {trans.first.name, std::to_string(symbol),
-                                                        trans.second.children[1].node.name});
+                IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
+                                                        trans.second.children[1].node.raw});
                 symbol++;
             }
         }
