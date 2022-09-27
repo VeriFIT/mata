@@ -20,7 +20,7 @@
 #include <mata/mintermization.hh>
 #include <cudd/cudd.h>
 
-std::vector<BDD> Mata::Mintermization::build_minterms(const std::vector<BDD>& bdds)
+std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& bdds)
 {
     std::vector<BDD> stack;
     stack.push_back(bdds.front());
@@ -80,21 +80,19 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
         throw std::runtime_error("We currently support mintermization only for NFA with bitvectors");
     }
 
+    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
+    std::unordered_map<std::string, BDD> symbol_to_bddvar;
     std::vector<BDD> bdds;
     for (const auto& trans : aut.transitions) {
         // Foreach transition create a BDD: vector<BDD> f(aut)
-        assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::STATE);
-        // TODO: implement a projection to symbol part of transition
-        assert(trans.second.node.is_operator()); // conjunction with rhs state
-        assert(trans.second.children[1].node.is_operand()); // rhs state
-        const auto& symbol_part = trans.second.children[0];
+        const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert(symbol_part.node.is_operator()); // beginning of symbol part of transition
         bdds.push_back(graph_to_bdd(symbol_part));
         trans_to_bddvar[&symbol_part] = bdds.back();
     }
 
     // Build minterm tree over BDDs
-    std::vector<BDD> minterms = build_minterms(bdds);
+    std::vector<BDD> minterms = compute_minterms(bdds);
     IntermediateAut res = aut;
     res.alphabet_type = IntermediateAut::EXPLICIT;
     res.transitions.clear();

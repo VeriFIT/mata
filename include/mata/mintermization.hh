@@ -32,14 +32,33 @@ class Mintermization
 private: // private data members
     Cudd bdd_mng;
     std::unordered_map<std::string, BDD> symbol_to_bddvar;
-    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
 
 public:
-    std::vector<BDD> build_minterms(const std::vector<BDD>& bdds);
+    /**
+     * Takes a set of BDDs and build a minterm tree over it.
+     * The leaves of BDDs, which are minterms of input set, are returned
+     * @param bdds BDDs for which minterms are computed
+     * @return Computed minterms
+     */
+    std::vector<BDD> compute_minterms(const std::vector<BDD>& bdds);
+
+    /**
+     * Transforms a graph representing formula on transition to bdd.
+     * @param graph Graph to be transformed
+     * @return Resulting BDD
+     */
     const BDD graph_to_bdd(const FormulaGraph& graph);
+
+    /**
+     * Methods mintermizes given automaton which has bitvector alphabet.
+     * It transforms its transition to BDDs, then build a minterm tree over the BDDs
+     * and finally transforms automaton to explicit one.
+     * @param aut Automaton to be mintermized.
+     * @return Mintermized automaton
+     */
     Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
 
-    Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar{}
+    Mintermization() : bdd_mng(0), symbol_to_bddvar{}
     {}
 };
 

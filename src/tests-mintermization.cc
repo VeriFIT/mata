@@ -91,7 +91,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd")
     }
 } // trans to bdd section
 
-TEST_CASE("Mata::Mintermization::build_minterms")
+TEST_CASE("Mata::Mintermization::compute_minterms")
 {
     Parsed parsed;
     Mata::Mintermization mintermization{};
@@ -115,7 +115,7 @@ TEST_CASE("Mata::Mintermization::build_minterms")
         std::vector<BDD> bdds;
         bdds.push_back(mintermization.graph_to_bdd(aut.transitions[0].second.children[0]));
         bdds.push_back(mintermization.graph_to_bdd(aut.transitions[1].second.children[0]));
-        std::vector<BDD> res = mintermization.build_minterms(bdds);
+        std::vector<BDD> res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 4);
     }
 
@@ -138,10 +138,10 @@ TEST_CASE("Mata::Mintermization::build_minterms")
         std::vector<BDD> bdds;
         bdds.push_back(mintermization.graph_to_bdd(aut.transitions[0].second.children[0]));
         bdds.push_back(mintermization.graph_to_bdd(aut.transitions[1].second.children[0]));
-        std::vector<BDD> res = mintermization.build_minterms(bdds);
+        std::vector<BDD> res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 3);
     }
-} // build_minterms
+} // compute_minterms
 
 TEST_CASE("Mata::Mintermization::mintermization")
 {
