@@ -85,3 +85,12 @@ add_subdirectory(src)
 add_subdirectory(cli)
 add_subdirectory(3rdparty/re2)
 add_subdirectory(3rdparty/simlib)
+
+# Since cudd package use autotools it needs to be added via external project feature
+include(ExternalProject)
+ExternalProject_Add(
+        cudd_library
+        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd
+        CONFIGURE_COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd/configure --enable-obj --prefix ${CMAKE_CURRENT_BINARY_DIR}/3rdparty/cudd
+        BUILD_COMMAND make
+)
