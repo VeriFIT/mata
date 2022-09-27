@@ -1,5 +1,7 @@
 # cython: language_level=3
 
+import alphabets
+
 __author__ = 'Tomas Fiedor'
 
 _store = {
@@ -10,6 +12,7 @@ _store = {
         "fixedsize": "true",
         "penwidth": "1.5",
     },
+    'alphabet': alphabets.OnTheFlyAlphabet(),
 }
 
 

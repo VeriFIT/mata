@@ -342,7 +342,9 @@ cdef class Nfa:
         """
         if isinstance(symb, str):
             if not alphabet:
-                alphabet = configuration.store().get('alphabet', None)
+                alphabet = configuration.store().get('alphabet')
+                assert alphabet is not None
+            self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
         else:
             self.thisptr.get().add_trans(src, symb, tgt)
 
