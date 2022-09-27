@@ -6,11 +6,19 @@ __author__ = 'Tomas Fiedor'
 
 _store = {
     'node_style': {
+        "style": "filled",
+        "color": "darkblue",
+        "fillcolor": "lightsteelblue",
+        "fontname": "Courier-Bold",
         "width": "0.3",
         "height": "0.3",
-        "fontsize": "10",
+        "fontsize": "12",
         "fixedsize": "true",
         "penwidth": "1.5",
+    },
+    'edge_style': {
+        "penwidth": "1.5",
+        "color": "midnightblue",
     },
     'alphabet': alphabets.OnTheFlyAlphabet(),
 }

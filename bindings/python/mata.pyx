@@ -19,6 +19,7 @@ import pandas
 import networkx as nx
 import graphviz
 import IPython
+import collections
 
 import spot_jupyter_helpers as spot_helpers
 import configuration
@@ -837,7 +838,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False, params = None):
+    def noodlify_for_equation(cls, left_side_automata: list, Nfa right_side_automaton, include_empty = False, params = None):
         """Create noodles for equation.
 
         Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
@@ -1745,7 +1746,8 @@ def plot(
         *automata: Nfa,
         with_scc: bool = False,
         node_highlight: list = None,
-        edge_highlight: list = None
+        edge_highlight: list = None,
+        alphabet: alphabets.Alphabet = None
 ):
     """Plots the stream of automata
 
@@ -1753,10 +1755,11 @@ def plot(
     :param list automata: stream of automata that will be plotted using graphviz
     :param list node_highlight: list of rules for changing style of nodes
     :param list edge_highlight: list of rules for changing style of edges
+    :param Alphabet alphabet: alphabet for printing the symbols
     """
     dots = []
     for aut in automata:
-        dot = plot_using_graphviz(aut, with_scc, node_highlight, edge_highlight)
+        dot = plot_using_graphviz(aut, with_scc, node_highlight, edge_highlight, alphabet)
         if get_interactive_mode() == 'notebook':
             dots.append(dot)
         else:
@@ -1799,7 +1802,8 @@ def plot_using_graphviz(
         aut: Nfa,
         with_scc: bool = False,
         node_highlight: list = None,
-        edge_highlight: list = None
+        edge_highlight: list = None,
+        alphabet: alphabets.Alphabet = None
 ):
     """Plots automaton using graphviz
 
@@ -1807,13 +1811,21 @@ def plot_using_graphviz(
     :param list edge_highlight: list of rules for changing style of edges
     :param Nfa aut: plotted automaton
     :param bool with_scc: will plot with strongly connected components
+    :param Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz
     """
     # Configuration
     base_configuration = configuration.store()['node_style']
+    edge_configuration = configuration.store()['edge_style']
+    if not alphabet:
+        alphabet = configuration.store()['alphabet']
+        assert alphabet
     dot = graphviz.Digraph("dot")
     if aut.label:
-        dot.attr(label=aut.label, labelloc="t", kw="graph")
+        dot.attr(
+            label=aut.label, labelloc="t", kw="graph",
+            fontname="Helvetica", fontsize="14"
+        )
 
     if with_scc:
         G = aut.to_networkx_graph()
@@ -1836,14 +1848,29 @@ def plot_using_graphviz(
 
     # Plot edges
     for state in aut.initial_states:
-        dot.edge(f"q{state}", f"{state}")
+        dot.edge(f"q{state}", f"{state}", **edge_configuration)
+    edges = {}
     for trans in aut.iterate():
-        dot.edge(
-            f"{trans.src}", f"{trans.tgt}",
-            **get_configuration_for(
-                {'penwidth': '1.5', 'label': f"{trans.symb}"}, edge_highlight, aut, trans
-            ),
+        key = f"{trans.src},{trans.tgt}"
+        if key not in edges.keys():
+            edges[key] = []
+        symbol = "{}".format(
+            alphabet.reverse_translate_symbol(trans.symb)
         )
+        edges[key].append((
+            f"{trans.src}", f"{trans.tgt}", symbol,
+            get_configuration_for(
+                edge_configuration, edge_highlight, aut, trans
+            )
+        ))
+    for edge in edges.values():
+        src = edge[0][0]
+        tgt = edge[0][1]
+        label = "<" + " | ".join(sorted(t[2] for t in edge)) + ">"
+        style = {}
+        for val in edge:
+            style.update(val[3])
+        dot.edge(src, tgt, label=label, **style)
 
     return dot
 

@@ -153,7 +153,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
             key = dereference(it).first
             value = dereference(it).second
             if value == symbol:
-                return key
+                return key.decode('utf-8')
             postinc(it)
         raise IndexError(f"{symbol} is out of range of enumeration")
 
