@@ -461,6 +461,18 @@ std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Ma
     return result;
 }
 
+const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
+        const std::pair<FormulaNode, FormulaGraph>& trans) const
+{
+    if (!this->is_nfa()) {
+        throw std::runtime_error("We currently support symbol extraction only for NFA");
+    }
+    assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::STATE);
+    assert(trans.second.node.is_operator()); // conjunction with rhs state
+    assert(trans.second.children[1].node.is_operand()); // rhs state
+    return trans.second.children[0];
+}
+
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
 {
     os << "Intermediate automaton type " << inter_aut.automaton_type << '\n';

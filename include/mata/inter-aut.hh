@@ -186,6 +186,15 @@ public:
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
     /**
+     * Returns symbolic part of transition. That may be just a symbol or bitvector formula.
+     * This function is supported only for NFA where transitions have a rhs state at the end of right
+     * handed side of transition.
+     * @param transition Transition from which symbol is returned
+     * @return Graph representing symbol. It maybe just an explicit symbol or graph representing bitvector formula
+     */
+    const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& trans) const;
+
+    /**
      * A method for building a vector of IntermediateAut for a parsed input.
      * For each section in input is created one IntermediateAut.
      * It parses basic information about type of automata, its naming conventions etc.
