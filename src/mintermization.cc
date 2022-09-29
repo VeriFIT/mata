@@ -83,7 +83,7 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
     std::unordered_map<std::string, BDD> symbol_to_bddvar;
     std::vector<BDD> bdds;
     for (const auto& trans : aut.transitions) {
-        // Foreach transition create a BDD: vector<BDD> f(aut)
+        // Foreach transition create a BDD
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert(symbol_part.node.is_operator()); // beginning of symbol part of transition
         bdds.push_back(graph_to_bdd(symbol_part));
@@ -106,7 +106,7 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
         for (const auto& minterm : minterms) {
             // for each minterm x:
             if (!((bdd * minterm).IsZero())) {
-                // if for symbol s of t is BDD_s < x: bool p (BDD, BDD)
+                // if for symbol s of t is BDD_s < x
                 // add q1,x,q2 to transitions
                 IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
                                                         trans.second.children[1].node.raw});
