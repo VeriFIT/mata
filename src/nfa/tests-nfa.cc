@@ -63,8 +63,7 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 } // }}}
 */
 
-TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()")
-{
+TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()") {
     Nfa a{1};
     a.add_trans(0, 'a', 0);
 
@@ -74,13 +73,13 @@ TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()")
     Nfa c{1};
     b.add_trans(0, 'c', 0);
 
-    auto alphabet{ EnumAlphabet::from_nfas(a, b, c) };
+    auto alphabet{ OnTheFlyAlphabet::from_nfas(a, b, c) };
 
     auto symbols{ alphabet.get_symbols() };
     CHECK(symbols == std::list<Symbol>{ 'c', 'b', 'a' });
 
-    //EnumAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
-    //EnumAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
+    //OnTheFlyAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+    //OnTheFlyAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
 TEST_CASE("Mata::Nfa::Nfa::add_trans()/has_trans()")
@@ -277,7 +276,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 
 		union_norename(&res, a, b);
 
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		StringDict params;
 		params["algo"] = "antichains";
 
@@ -293,7 +292,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 
 		union_norename(&res, a, b);
 
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		StringDict params;
 		params["algo"] = "antichains";
 
@@ -953,7 +952,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 	SECTION("empty automaton, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 
 		make_complete(aut, alph, 0);
 
@@ -964,7 +963,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 	SECTION("empty automaton")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 
 		make_complete(aut, alph, 0);
 
@@ -976,7 +975,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 	SECTION("non-empty automaton, empty alphabet")
 	{
-		EnumAlphabet alphabet{};
+		OnTheFlyAlphabet alphabet{};
 
 		aut.initialstates = {1};
 
@@ -990,7 +989,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 	SECTION("one-state automaton")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		const State SINK = 10;
 
 		aut.initialstates = {1};
@@ -1008,7 +1007,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 	SECTION("bigger automaton")
 	{
-		EnumAlphabet alph = {"a", "b", "c"};
+		OnTheFlyAlphabet alph{"a", "b", "c"};
 		const State SINK = 9;
 
 		aut.initialstates = {1, 2};
@@ -1054,7 +1053,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 	SECTION("empty automaton, empty alphabet")
 	{
-		EnumAlphabet alph = {};
+		OnTheFlyAlphabet alph{};
 
 		cmpl = complement(aut, alph);
 
@@ -1067,7 +1066,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 	SECTION("empty automaton")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 
 		cmpl = complement(aut, alph);
 
@@ -1092,7 +1091,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
-		EnumAlphabet alph = {};
+		OnTheFlyAlphabet alph{};
 		aut.initialstates = {1};
 		aut.finalstates = {1};
 
@@ -1106,7 +1105,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 	SECTION("empty automaton accepting epsilon")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1};
 		aut.finalstates = {1};
 
@@ -1129,7 +1128,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 	SECTION("non-empty automaton accepting a*b*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,2};
 		aut.finalstates = {1,2};
 
@@ -1172,7 +1171,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("empty automaton, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1184,7 +1183,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 		aut.initialstates = {1};
 		aut.finalstates = {1};
 
@@ -1199,7 +1198,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("empty automaton accepting epsilon")
 	{
-		EnumAlphabet alph = {"a"};
+		OnTheFlyAlphabet alph{"a"};
 		aut.initialstates = {1};
 		aut.finalstates = {1};
 
@@ -1214,7 +1213,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("automaton for a*b*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,2};
 		aut.finalstates = {1,2};
 
@@ -1232,7 +1231,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("automaton for a* + b*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,2};
 		aut.finalstates = {1,2};
 
@@ -1249,7 +1248,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("automaton for (a + b)*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1};
 		aut.finalstates = {1};
 
@@ -1266,7 +1265,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1};
 		aut.finalstates = {1, 2, 3, 4, 5};
 
@@ -1298,7 +1297,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,3};
 		aut.finalstates = {1,2,4};
 
@@ -1319,7 +1318,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("example from Abdulla et al. TACAS'10")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,2};
 		aut.finalstates = {1,2,3};
 
@@ -1343,7 +1342,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("subsumption-pruning in processed")
 	{
-		EnumAlphabet alph = {"a"};
+		OnTheFlyAlphabet alph{"a"};
 		aut.initialstates = {1,2};
 		aut.finalstates = {1};
 
@@ -1359,7 +1358,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("wrong parameters 1")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 
 		CHECK_THROWS_WITH(is_universal(aut, alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
@@ -1367,7 +1366,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	SECTION("wrong parameters 2")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 		params["algo"] = "foo";
 
 		CHECK_THROWS_WITH(is_universal(aut, alph, params),
@@ -1389,7 +1388,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("{} <= {}, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1403,7 +1402,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("{} <= {epsilon}, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 		bigger.initialstates = {1};
 		bigger.finalstates = {1};
 
@@ -1419,7 +1418,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("{epsilon} <= {epsilon}, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 		smaller.initialstates = {1};
 		smaller.finalstates = {1};
 		bigger.initialstates = {11};
@@ -1437,7 +1436,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("{epsilon} !<= {}, empty alphabet")
 	{
-		EnumAlphabet alph = { };
+		OnTheFlyAlphabet alph{};
 		smaller.initialstates = {1};
 		smaller.finalstates = {1};
 
@@ -1456,7 +1455,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("a* + b* <= (a+b)*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		smaller.initialstates = {1,2};
 		smaller.finalstates = {1,2};
 		smaller.add_trans(1, alph["a"], 1);
@@ -1479,7 +1478,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("(a+b)* !<= a* + b*")
 	{
-		EnumAlphabet alph = {"a", "b"};
+		OnTheFlyAlphabet alph{"a", "b"};
 		smaller.initialstates = {1};
 		smaller.finalstates = {1};
 		smaller.add_trans(1, alph["a"], 1);
@@ -1510,7 +1509,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
 	{
-		EnumAlphabet alph = {"a", "b"};
+        OnTheFlyAlphabet alph{"a", "b"};
 		smaller.initialstates = {1};
 		smaller.finalstates = {1};
 		smaller.add_trans(1, alph["a"], 1);
@@ -1556,7 +1555,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("wrong parameters 1")
 	{
-		EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
 
 		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
@@ -1565,7 +1564,7 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 	SECTION("wrong parameters 2")
 	{
-		EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
 		params["algo"] = "foo";
 
 		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
@@ -1588,7 +1587,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("{} == {}, empty alphabet")
     {
-        EnumAlphabet alph{};
+        OnTheFlyAlphabet alph{};
 
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
@@ -1605,7 +1604,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("{} == {epsilon}, empty alphabet")
     {
-        EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
         bigger.initialstates = {1};
         bigger.finalstates = {1};
 
@@ -1624,7 +1623,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("{epsilon} == {epsilon}, empty alphabet")
     {
-        EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
         smaller.initialstates = {1};
         smaller.finalstates = {1};
         bigger.initialstates = {11};
@@ -1645,7 +1644,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("a* + b* == (a+b)*")
     {
-        EnumAlphabet alph = {"a", "b"};
+        OnTheFlyAlphabet alph{"a", "b"};
         smaller.initialstates = {1,2};
         smaller.finalstates = {1,2};
         smaller.add_trans(1, alph["a"], 1);
@@ -1671,7 +1670,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
     {
-        EnumAlphabet alph = {"a", "b"};
+        OnTheFlyAlphabet alph{"a", "b"};
         smaller.initialstates = {1};
         smaller.finalstates = {1};
         smaller.add_trans(1, alph["a"], 1);
@@ -1706,7 +1705,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("wrong parameters 1")
     {
-        EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
 
         CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
                           Catch::Contains("requires setting the \"algo\" key"));
@@ -1717,7 +1716,7 @@ TEST_CASE("Mata::Nfa::equivalence_check")
 
     SECTION("wrong parameters 2")
     {
-        EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
         params["algo"] = "foo";
 
         CHECK_THROWS_WITH(equivalence_check(smaller, bigger, &alph, params),
@@ -1914,8 +1913,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 	SECTION("empty automaton")
 	{
-		StringToSymbolMap ssmap;
-		OnTheFlyAlphabet alph(&ssmap);
+		OnTheFlyAlphabet alph{};
 
 		// is complete for the empty alphabet
 		REQUIRE(is_complete(aut, alph));
@@ -1933,8 +1931,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 	SECTION("small automaton")
 	{
-		StringToSymbolMap ssmap;
-		OnTheFlyAlphabet alph(&ssmap);
+		OnTheFlyAlphabet alph{};
 
 		aut.make_initial(4);
 		aut.add_trans(4, alph["a"], 8);
@@ -1959,8 +1956,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 	SECTION("using a non-alphabet symbol")
 	{
-		StringToSymbolMap ssmap;
-		OnTheFlyAlphabet alph(&ssmap);
+		OnTheFlyAlphabet alph{};
 
 		aut.make_initial(4);
 		aut.add_trans(4, alph["a"], 8);
@@ -1971,31 +1967,6 @@ TEST_CASE("Mata::Nfa::is_complete()")
 
 		CHECK_THROWS_WITH(is_complete(aut, alph),
 			Catch::Contains("symbol that is not in the provided alphabet"));
-	}
-
-	SECTION("a small automaton using CharAlphabet")
-	{
-		CharAlphabet alph;
-
-        aut.make_initial(4);
-		aut.add_trans(4, 'a', 8);
-		aut.add_trans(4, 'c', 8);
-		aut.add_trans(4, 'a', 6);
-		aut.add_trans(4, 'b', 6);
-		aut.add_trans(8, 'b', 4);
-		aut.add_trans(6, 'a', 2);
-		aut.add_trans(2, 'b', 2);
-		aut.add_trans(2, 'a', 0);
-		aut.add_trans(2, 'c', 12);
-		aut.add_trans(0, 'a', 2);
-		aut.add_trans(12, 'a', 14);
-		aut.add_trans(14, 'b', 12);
-		aut.make_final({2, 12});
-
-		REQUIRE(!is_complete(aut, alph));
-
-		make_complete(aut, alph, 100);
-		REQUIRE(is_complete(aut, alph));
 	}
 } // }}}
 

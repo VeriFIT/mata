@@ -94,66 +94,6 @@ public:
     virtual ~Alphabet() { }
 };
 
-class OnTheFlyAlphabet : public Alphabet
-{
-private:
-    StringToSymbolMap* symbol_map;
-    Symbol cnt_symbol;
-
-private:
-    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs);
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-public:
-
-    explicit OnTheFlyAlphabet(StringToSymbolMap* str_sym_map, Symbol init_symbol = 0) :
-            symbol_map(str_sym_map), cnt_symbol(init_symbol)
-    {
-        assert(nullptr != symbol_map);
-    }
-
-    std::list<Symbol> get_symbols() const override;
-    Symbol translate_symb(const std::string& str) override;
-    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
-};
-
-class DirectAlphabet : public Alphabet
-{
-public:
-    Symbol translate_symb(const std::string& str) override
-    {
-        Symbol symb;
-        std::istringstream stream(str);
-        stream >> symb;
-        return symb;
-    }
-};
-
-class CharAlphabet : public Alphabet
-{
-public:
-
-    Symbol translate_symb(const std::string& str) override
-    {
-        if (str.length() == 3 &&
-            ((str[0] == '\'' && str[2] == '\'') ||
-             (str[0] == '\"' && str[2] == '\"')
-            ))
-        { // direct occurrence of a character
-            return str[1];
-        }
-
-        Symbol symb;
-        std::istringstream stream(str);
-        stream >> symb;
-        return symb;
-    }
-
-    std::list<Symbol> get_symbols() const override;
-    std::list<Symbol> get_complement(
-            const std::set<Symbol>& syms) const override;
-};
-
 const PostSymb EMPTY_POST{};
 
 static constexpr struct Limits {
@@ -1109,62 +1049,6 @@ bool is_deterministic(const Nfa& aut);
 /// symbol.
 bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
-/** Loads an automaton from Parsed object */
-Nfa construct(
-        const Mata::Parser::ParsedSection&   parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
-Nfa construct(
-        const Mata::IntermediateAut&         inter_aut,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-template <class ParsedObject>
-Nfa construct(
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr)
-{ // {{{
-    Nfa aut;
-
-    bool remove_symbol_map = false;
-    if (nullptr == symbol_map)
-    {
-        symbol_map = new StringToSymbolMap();
-        remove_symbol_map = true;
-    }
-
-    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
-
-    Mata::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
-
-    try
-    {
-        aut = construct(parsed, &alphabet, state_map);
-    }
-    catch (std::exception&)
-    {
-        release_res();
-        throw;
-    }
-
-    release_res();
-    return aut;
-}
-
-/** Loads an automaton from Parsed object */
-template <class ParsedObject>
-void construct(
-        Nfa*                                 result,
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr)
-{ // {{{
-    *result = construct(parsed, symbol_map, state_map);
-} // construct }}}
-
 std::pair<Word, bool> get_word_for_path(const Nfa& aut, const Path& path);
 
 /// Checks whether a string is in the language of an automaton
@@ -1406,13 +1290,21 @@ private:
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
 }; // class ShortestWordsMap.
 
-class EnumAlphabet : public Alphabet
-{
+class OnTheFlyAlphabet : public Alphabet {
 public:
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
 
-    EnumAlphabet() = default;
-    EnumAlphabet(const EnumAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
+    OnTheFlyAlphabet() = default;
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
+
+    explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map, Symbol init_symbol = 0)
+        : symbol_map(str_sym_map), next_symbol_value(init_symbol) {}
+
+    std::list<Symbol> get_symbols() const override;
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+private:
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 
 private:
     // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
@@ -1432,8 +1324,8 @@ public:
      * @return Created alphabet.
      */
     template<typename... Nfas, typename = AreAllNfas<Nfas...>>
-    static EnumAlphabet from_nfas(const Nfas&... nfas) {
-        EnumAlphabet alphabet{};
+    static OnTheFlyAlphabet from_nfas(const Nfas&... nfas) {
+        OnTheFlyAlphabet alphabet{};
         // TODO: When we are on C++17, we can use fold expression here instead of the manual for_each_argument reimplementation.
         for_each_argument([&alphabet](const Nfa& aut) {
             fill_alphabet(aut, alphabet);
@@ -1446,8 +1338,8 @@ public:
      * @param[in] nfas Vector of NFAs to create alphabet from.
      * @return Created alphabet.
      */
-    static EnumAlphabet from_nfas(const ConstAutRefSequence& nfas) {
-        EnumAlphabet alphabet{};
+    static OnTheFlyAlphabet from_nfas(const ConstAutRefSequence& nfas) {
+        OnTheFlyAlphabet alphabet{};
         for (const auto& nfa: nfas) {
             fill_alphabet(nfa, alphabet);
         }
@@ -1459,8 +1351,8 @@ public:
      * @param[in] nfas Vector of NFAs to create alphabet from.
      * @return Created alphabet.
      */
-    static EnumAlphabet from_nfas(const AutRefSequence& nfas) {
-        EnumAlphabet alphabet{};
+    static OnTheFlyAlphabet from_nfas(const AutRefSequence& nfas) {
+        OnTheFlyAlphabet alphabet{};
         for (const auto& nfa: nfas) {
             fill_alphabet(nfa, alphabet);
         }
@@ -1472,8 +1364,8 @@ public:
      * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
      * @return Created alphabet.
      */
-    static EnumAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
-        EnumAlphabet alphabet{};
+    static OnTheFlyAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
+        OnTheFlyAlphabet alphabet{};
         for (const Nfa* const nfa: nfas) {
             fill_alphabet(*nfa, alphabet);
         }
@@ -1485,8 +1377,8 @@ public:
      * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
      * @return Created alphabet.
      */
-    static EnumAlphabet from_nfas(const AutPtrSequence& nfas) {
-        EnumAlphabet alphabet{};
+    static OnTheFlyAlphabet from_nfas(const AutPtrSequence& nfas) {
+        OnTheFlyAlphabet alphabet{};
         for (const Nfa* const nfa: nfas) {
             fill_alphabet(*nfa, alphabet);
         }
@@ -1500,27 +1392,33 @@ public:
     void add_symbols_from(const Nfa& nfa);
 
     template <class InputIt>
-    EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
+    OnTheFlyAlphabet(InputIt first, InputIt last) : OnTheFlyAlphabet() {
         for (; first != last; ++first) {
             add_new_symbol(*first, next_symbol_value);
         }
     }
 
-    EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
+    OnTheFlyAlphabet(std::initializer_list<std::string> l) : OnTheFlyAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override
     {
-        auto it = symbol_map.find(str);
-        if (symbol_map.end() == it)
-        {
-            throw std::runtime_error("unknown symbol \'" + str + "\'");
+        const auto it_insert_pair = symbol_map.insert({str, next_symbol_value});
+        if (it_insert_pair.second) {
+            return next_symbol_value++;
+        } else {
+            return it_insert_pair.first->second;
         }
 
-        return it->second;
-    }
+        // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
+        //  the alphabet should have a only the previously fixed symbols?
+        //auto it = symbol_map.find(str);
+        //if (symbol_map.end() == it)
+        //{
+        //    throw std::runtime_error("unknown symbol \'" + str + "\'");
+        //}
 
-    std::list<Symbol> get_symbols() const override;
-    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+        //return it->second;
+    }
 
     /**
      * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
@@ -1571,16 +1469,20 @@ public:
     }
 
     /**
-     * Get next value for a potential new symbol.
+     * Get the next value for a potential new symbol.
      * @return Next Symbol value.
      */
     Symbol get_next_value() const { return next_symbol_value; }
 
+    /**
+     * Get the number of existing symbols, epsilon symbols excluded.
+     * @return The number of symbols.
+     */
+    size_t get_number_of_symbols() const { return next_symbol_value; }
+
 private:
     StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
     Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
-
-    EnumAlphabet& operator=(const EnumAlphabet& rhs);
 
     // Adapted from: https://stackoverflow.com/a/41623721.
     template <typename TF, typename... Ts>
@@ -1607,7 +1509,7 @@ private:
      * @param[in] nfa NFA with symbols to fill @p alphabet with.
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
-    static void fill_alphabet(const Nfa& nfa, EnumAlphabet& alphabet) {
+    static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         size_t nfa_num_of_states{ nfa.get_num_of_states() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto& state_transitions: nfa.transitionrelation[state]) {
@@ -1616,7 +1518,63 @@ private:
             }
         }
     }
-}; // class EnumAlphabet.
+}; // class OnTheFlyAlphabet.
+
+/** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::Parser::ParsedSection&   parsec,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+/** Loads an automaton from Parsed object */
+Nfa construct(
+        const Mata::IntermediateAut&         inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+template <class ParsedObject>
+Nfa construct(
+        const ParsedObject&                  parsed,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    Nfa aut;
+
+    bool remove_symbol_map = false;
+    if (nullptr == symbol_map)
+    {
+        symbol_map = new StringToSymbolMap();
+        remove_symbol_map = true;
+    }
+
+    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
+    Mata::Nfa::OnTheFlyAlphabet alphabet(*symbol_map);
+
+    try
+    {
+        aut = construct(parsed, &alphabet, state_map);
+    }
+    catch (std::exception&)
+    {
+        release_res();
+        throw;
+    }
+
+    release_res();
+    return aut;
+}
+
+/** Loads an automaton from Parsed object */
+template <class ParsedObject>
+void construct(
+        Nfa*                                 result,
+        const ParsedObject&                  parsed,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    *result = construct(parsed, symbol_map, state_map);
+} // construct }}}
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
