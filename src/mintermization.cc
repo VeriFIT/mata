@@ -71,6 +71,8 @@ const BDD Mata::Mintermization::graph_to_bdd(const FormulaGraph &graph)
         } else
             assert(false);
     }
+
+    assert(false);
 }
 
 Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateAut& aut)
@@ -80,7 +82,6 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
     }
 
     std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
-    std::unordered_map<std::string, BDD> symbol_to_bddvar;
     std::vector<BDD> bdds;
     for (const auto& trans : aut.transitions) {
         // Foreach transition create a BDD
