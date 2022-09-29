@@ -40,7 +40,7 @@ public:
      * @param bdds BDDs for which minterms are computed
      * @return Computed minterms
      */
-    std::vector<BDD> compute_minterms(const std::vector<BDD>& bdds);
+    static std::vector<BDD> compute_minterms(const std::vector<BDD>& bdds);
 
     /**
      * Transforms a graph representing formula on transition to bdd.
