@@ -1,5 +1,5 @@
 /*
- * mintermization.cc -- Mintermization of automaton
+ * mintermization.hh -- Mintermization of automaton
  * It transforms an automaton with a bitvector formula used a symbol to minterminized version of the automaton.
  *
  * Copyright (c) 2022 Martin Hruska <hruskamartin25@gmail.com>
