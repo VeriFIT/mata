@@ -248,10 +248,12 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         COnTheFlyAlphabet(StringToSymbolMap) except +
         COnTheFlyAlphabet(Symbol) except +
         COnTheFlyAlphabet(COnTheFlyAlphabet) except +
+        COnTheFlyAlphabet(vector[string]) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
         StringToSymbolMap get_symbol_map()
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
+        StringToSymbolMap add_symbols_from(vector[string])
 
     cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
         CSegmentation(CNfa&, Symbol) except +

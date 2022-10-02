@@ -1296,8 +1296,19 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
     @classmethod
     def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
+        """
+        Create on the fly alphabet filled with symbol_map.
+        :param symbol_map: Map mapping symbol names to symbol values.
+        :return: On the fly alphabet.
+        """
         alphabet = cls()
         alphabet.add_symbols_from_symbol_map(symbol_map)
+        return alphabet
+
+    @classmethod
+    def for_symbol_names(cls, symbol_map: list[str]) -> OnTheFlyAlphabet:
+        alphabet = cls()
+        alphabet.add_symbols_for_names(symbol_map)
         return alphabet
 
     def add_symbols_from_symbol_map(self, symbol_map: dict[str, int]) -> None:
@@ -1309,6 +1320,16 @@ cdef class OnTheFlyAlphabet(Alphabet):
         for symbol, value in symbol_map.items():
             c_symbol_map[symbol.encode('utf-8')] = value
         self.thisptr.add_symbols_from(c_symbol_map)
+
+    def add_symbols_for_names(self, symbol_names: list[str]) -> None:
+        """
+        Add symbols for symbol names to the current alphabet.
+        :param symbol_names: Vector of symbol names.
+        """
+        cdef vector[string] c_symbol_names
+        for symbol_name in symbol_names:
+            c_symbol_names.push_back(symbol_name.encode('utf-8'))
+        self.thisptr.add_symbols_from(c_symbol_names)
 
     def __dealloc__(self):
         del self.thisptr

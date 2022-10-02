@@ -1300,6 +1300,14 @@ public:
     explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map)
         : symbol_map(str_sym_map) {}
 
+    /**
+     * Create alphabet from a list of symbol names.
+     * @param symbol_names Names for symbols on transitions.
+     * @param init_symbol Start of a sequence of values to use for new symbols.
+     */
+    explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
+            : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
+
     std::list<Symbol> get_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 
@@ -1392,6 +1400,18 @@ public:
      * @param[in] nfa Automaton with whose transition symbols to expand the current alphabet.
      */
     void add_symbols_from(const Nfa& nfa);
+
+    /**
+     * @brief Expand alphabet by symbols from the passed @p symbol_names.
+     *
+     * Adding a symbol name which already exists will throw an exception.
+     * @param[in] symbol_names Vector of symbol names.
+     */
+    void add_symbols_from(const std::vector<std::string>& symbol_names) {
+        for (const std::string& symbol_name: symbol_names) {
+            add_new_symbol(symbol_name);
+        }
+    }
 
     /**
      * @brief Expand alphabet by symbols from the passed @p symbol_map.
