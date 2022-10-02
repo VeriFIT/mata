@@ -63,7 +63,7 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 } // }}}
 */
 
-TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()") {
+TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::from_nfas()") {
     Nfa a{1};
     a.add_trans(0, 'a', 0);
 
@@ -80,6 +80,28 @@ TEST_CASE("Mata::Nfa::EnumAlphabet::from_nfas()") {
 
     //OnTheFlyAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
     //OnTheFlyAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
+}
+
+TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
+    OnTheFlyAlphabet alphabet{};
+    StringToSymbolMap symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
+    alphabet.add_symbols_from(symbol_map);
+
+    auto symbols{ alphabet.get_symbols() };
+    CHECK(symbols == std::list<Symbol>{ 4, 2, 10 });
+    CHECK(alphabet.get_next_value() == 11);
+    CHECK(alphabet.get_symbol_map() == symbol_map);
+
+    symbol_map["a"] = 6;
+	symbol_map["e"] = 7;
+    alphabet.add_symbols_from(symbol_map);
+
+    symbols = alphabet.get_symbols();
+    CHECK(symbols == std::list<Symbol>{ 7, 4, 2, 10 });
+    CHECK(alphabet.get_next_value() == 11);
+    CHECK(alphabet.get_symbol_map() == StringToSymbolMap{
+		{ "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
+	});
 }
 
 TEST_CASE("Mata::Nfa::Nfa::add_trans()/has_trans()")

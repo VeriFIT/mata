@@ -336,7 +336,7 @@ void Mata::Afa::construct(
 
 	auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
 
-  Mata::Nfa::OnTheFlyAlphabet alphabet(symbol_map);
+    Mata::Nfa::OnTheFlyAlphabet alphabet(*symbol_map);
 
 	try
 	{
@@ -405,4 +405,3 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa
 		"|state_dict: " << std::to_string(afa_wrap.state_dict) << "}";
 	return os;
 } // operator<<(AfaWrapper) }}}
-

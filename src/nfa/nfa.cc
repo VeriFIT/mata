@@ -344,6 +344,13 @@ void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
     }
 }
 
+void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
+    for (const auto& symbol_binding: new_symbol_map) {
+        update_next_symbol_value(symbol_binding.second);
+        try_add_new_symbol(symbol_binding.first, symbol_binding.second);
+    }
+}
+
 ///// Nfa structure related methods
 
 void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {

@@ -329,7 +329,7 @@ def test_inclusion(
     # Test equivalence of two NFAs.
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = ["a", "b"]
+    symbol_map = {"a": ord("a"), "b": ord("b")}
     smaller.make_initial_state(1)
     smaller.make_final_state(1)
     smaller.add_trans_raw(1, ord('a'), 1)
@@ -349,22 +349,22 @@ def test_inclusion(
     bigger.add_trans_raw(13, ord('b'), 15)
     bigger.add_trans_raw(15, ord('b'), 15)
 
-    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(smaller, bigger)
-    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(bigger, smaller)
 
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = []
+    symbol_map = {}
     smaller.initial_states = [1]
     smaller.final_states = [1]
     bigger.initial_states = [11]
     bigger.final_states = [11]
 
-    assert mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(smaller, bigger)
-    assert mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(bigger, smaller)
 
 

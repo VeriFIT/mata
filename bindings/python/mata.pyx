@@ -1284,114 +1284,46 @@ cdef class Alphabet:
     cdef mata.CAlphabet* as_base(self):
         pass
 
-cdef class CharAlphabet(Alphabet):
-    """
-    CharAlphabet translates characters in quotes, such as 'a' or "b" to their ordinal values.
-    """
-    cdef mata.CCharAlphabet *thisptr
-
-    def __cinit__(self):
-        self.thisptr = new mata.CCharAlphabet()
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        """Translates character to its ordinal value. If the character is not in quotes,
-        it is interpreted as 0 byte
-
-        :param str symbol: translated symbol
-        :return: ordinal value of the symbol
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates the ordinal value back to the character
-
-        :param Symbol symbol: integer symbol
-        :return: symbol as a character
-        """
-        return "'" + chr(symbol) + "'"
-
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
-
-        :return: list of symbols
-        """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
-
-cdef class EnumAlphabet(Alphabet):
-    """
-    EnumAlphabet represents alphabet that has fixed number of possible values
-    """
-
-    cdef mata.CEnumAlphabet *thisptr
-    cdef vector[string] enums_as_strings
-
-    def __cinit__(self, enums):
-        self.enums_as_strings = [e.encode('utf-8') for e in enums]
-        self.thisptr = new mata.CEnumAlphabet(
-            self.enums_as_strings.begin(), self.enums_as_strings.end()
-        )
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        """Translates the symbol ot its position in the enumeration
-
-        :param str symbol: translated symbol
-        :return: symbol as an position in the enumeration
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates the symbol back to its string representation
-
-        :param Symbol symbol: integer symbol (position in enumeration)
-        :return: symbol as the original string
-        """
-        if symbol < len(self.enums_as_strings):
-            raise IndexError(f"{symbol} is out of range of enumeration")
-        return self.enums_as_strings[symbol]
-
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
-
-        :return: list of supported symbols
-        """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
 
 cdef class OnTheFlyAlphabet(Alphabet):
     """
     OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly
     """
     cdef mata.COnTheFlyAlphabet *thisptr
-    cdef StringToSymbolMap string_to_symbol_map
 
     def __cinit__(self, State initial_symbol = 0):
-        self.thisptr = new mata.COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
+        self.thisptr = new mata.COnTheFlyAlphabet(initial_symbol)
+
+    @classmethod
+    def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
+        alphabet = cls()
+        alphabet.add_symbols_from_symbol_map(symbol_map)
+        return alphabet
+
+    def add_symbols_from_symbol_map(self, symbol_map: dict[str, int]) -> None:
+        """
+        Add symbols from symbol_map to the current alphabet.
+        :param symbol_map: Map mapping strings to symbols.
+        """
+        cdef StringToSymbolMap c_symbol_map
+        for symbol, value in symbol_map.items():
+            c_symbol_map[symbol.encode('utf-8')] = value
+        self.thisptr.add_symbols_from(c_symbol_map)
 
     def __dealloc__(self):
         del self.thisptr
+
+    def get_symbol_map(self) -> dict[str, int]:
+        """
+        Get map mapping strings to symbols.
+
+        :return: Map of strings to symbols.
+        """
+        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
+        symbol_map = {}
+        for symbol, value in c_symbol_map:
+            symbol_map[symbol.encode('utf-8')] = value
+        return symbol_map
 
     def translate_symbol(self, str symbol):
         """Translates symbol to the position of the seen values
@@ -1407,8 +1339,9 @@ cdef class OnTheFlyAlphabet(Alphabet):
         :param Symbol symbol: integer symbol
         :return: original string
         """
-        cdef umap[string, Symbol].iterator it = self.string_to_symbol_map.begin()
-        cdef umap[string, Symbol].iterator end = self.string_to_symbol_map.end()
+        cdef StringToSymbolMap c_symbol_map = self.thisptr.get_symbol_map()
+        cdef umap[string, Symbol].iterator it = c_symbol_map.begin()
+        cdef umap[string, Symbol].iterator end = c_symbol_map.end()
         while it != end:
             key = dereference(it).first
             value = dereference(it).second

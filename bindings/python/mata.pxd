@@ -243,27 +243,15 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
         CAlphabet() except +
 
-    cdef cppclass CCharAlphabet "Mata::Nfa::CharAlphabet" (CAlphabet):
-        CCharAlphabet() except +
-        Symbol translate_symb(string)
-        clist[Symbol] get_symbols()
-
-    cdef cppclass CDirectAlphabet "Mata::Nfa::DirectAlphabet" (CAlphabet):
-        CDirectAlphabet() except +
-        Symbol translate_symb(string)
-        clist[Symbol] get_symbols()
-
-    cdef cppclass CEnumAlphabet "Mata::Nfa::EnumAlphabet" (CAlphabet):
-        CEnumAlphabet() except +
-        CEnumAlphabet(vector[string].iterator, vector[string].iterator) except +
-        Symbol translate_symb(string) except +
-        clist[Symbol] get_symbols()
-
     cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap* symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
+        StringToSymbolMap symbol_map
+        COnTheFlyAlphabet(StringToSymbolMap) except +
+        COnTheFlyAlphabet(Symbol) except +
+        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
+        StringToSymbolMap get_symbol_map()
+        StringToSymbolMap add_symbols_from(StringToSymbolMap)
 
     cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
         CSegmentation(CNfa&, Symbol) except +

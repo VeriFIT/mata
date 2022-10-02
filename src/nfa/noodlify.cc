@@ -175,7 +175,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
 
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
-    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
+    auto alphabet{ OnTheFlyAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
     const Symbol epsilon{ alphabet.get_next_value() };
 
@@ -228,7 +228,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
-    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
+    auto alphabet{ OnTheFlyAlphabet::from_nfas(left_automata) };
     alphabet.add_symbols_from(right_automaton);
     const Symbol epsilon{ alphabet.get_next_value() };
 

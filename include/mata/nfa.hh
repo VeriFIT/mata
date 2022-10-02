@@ -1294,11 +1294,11 @@ class OnTheFlyAlphabet : public Alphabet {
 public:
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
 
-    OnTheFlyAlphabet() = default;
+    explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value(init_symbol) {};
     OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
 
-    explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map, Symbol init_symbol = 0)
-        : symbol_map(str_sym_map), next_symbol_value(init_symbol) {}
+    explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map)
+        : symbol_map(str_sym_map) {}
 
     std::list<Symbol> get_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
@@ -1386,10 +1386,20 @@ public:
     }
 
     /**
-     * Expand alphabet by symbols from the passed @p nfa.
+     * @brief Expand alphabet by symbols from the passed @p nfa.
+     *
+     * The value of the already existing symbols will NOT be overwritten.
      * @param[in] nfa Automaton with whose transition symbols to expand the current alphabet.
      */
     void add_symbols_from(const Nfa& nfa);
+
+    /**
+     * @brief Expand alphabet by symbols from the passed @p symbol_map.
+     *
+     * The value of the already existing symbols will NOT be overwritten.
+     * @param[in] new_symbol_map Map of strings to symbols.
+     */
+    void add_symbols_from(const StringToSymbolMap& new_symbol_map);
 
     template <class InputIt>
     OnTheFlyAlphabet(InputIt first, InputIt last) : OnTheFlyAlphabet() {
@@ -1480,6 +1490,12 @@ public:
      */
     size_t get_number_of_symbols() const { return next_symbol_value; }
 
+    /**
+     * Get the symbol map used in the alphabet.
+     * @return Map mapping strings to symbols used internally in Mata.
+     */
+    const StringToSymbolMap& get_symbol_map() const { return symbol_map; }
+
 private:
     StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
     Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
@@ -1562,6 +1578,9 @@ Nfa construct(
     }
 
     release_res();
+    if (!remove_symbol_map) {
+        *symbol_map = alphabet.get_symbol_map();
+    }
     return aut;
 }
 
