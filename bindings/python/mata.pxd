@@ -196,6 +196,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_trans_from_as_sequence(State)
         void trim()
         void get_digraph(CNfa&)
+        bool is_epsilon(Symbol)
         StateSet get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
@@ -267,7 +268,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
-    
+
     cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
     cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringDict&)
 

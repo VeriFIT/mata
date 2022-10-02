@@ -632,6 +632,19 @@ public:
     Nfa get_digraph(Symbol abstract_symbol = 'x') const;
 
     /**
+     * Check whether @p symbol is epsilon symbol or not.
+     * @param symbol Symbol to check.
+     * @return True if the passed @p symbol is epsilon, false otherwise.
+     */
+    bool is_epsilon(Symbol symbol) const {
+        // TODO: When multiple epsilon symbols specificatin inside the alphabets is implemented, update this check to
+        //  reflect the new changes:
+        //  Check for alphabet in the NFA, check for specified epsilon symbol and compare. Otherwise, compare with the
+        //  default epsilon symbol EPSILON.
+        return symbol == EPSILON;
+    }
+
+    /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      *
      * @param[out] result An automaton representing a directed graph.

@@ -523,6 +523,14 @@ cdef class Nfa:
         self.thisptr.get().get_digraph(dereference(digraph.thisptr.get()))
         return digraph
 
+    def is_epsilon(self, Symbol symbol) -> bool:
+        """
+        Check whether passed symbol is epsilon symbol or not.
+        :param Symbol symbol: The symbol to check.
+        :return: True if the passed symbol is epsilon symbol, False otherwise.
+        """
+        return self.thisptr.get().is_epsilon(symbol)
+
     def __str__(self):
         """String representation of the automaton displays states, and transitions
 

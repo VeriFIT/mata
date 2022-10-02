@@ -1099,3 +1099,11 @@ def test_get_epsilon_transitions():
     assert epsilon_transitions.states_to == [5, 6]
 
     assert nfa.get_epsilon_transitions(5) is None
+
+
+def test_is_epsilon():
+    nfa = mata.Nfa()
+    assert nfa.is_epsilon(mata.epsilon())
+    assert not nfa.is_epsilon(0)
+
+    # TODO: Add checks for user-specified epsilons when user-specified epsilons are implemented.
