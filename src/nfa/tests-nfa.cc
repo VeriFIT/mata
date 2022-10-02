@@ -88,7 +88,10 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
     alphabet.add_symbols_from(symbol_map);
 
     auto symbols{ alphabet.get_symbols() };
-    CHECK(symbols == std::list<Symbol>{ 4, 2, 10 });
+	symbols.sort();
+	std::list<Symbol> expected{ 4, 2, 10 };
+	expected.sort();
+    CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == symbol_map);
 
@@ -97,7 +100,10 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
     alphabet.add_symbols_from(symbol_map);
 
     symbols = alphabet.get_symbols();
-    CHECK(symbols == std::list<Symbol>{ 7, 4, 2, 10 });
+	symbols.sort();
+	expected = std::list<Symbol>{ 7, 4, 2, 10 };
+	expected.sort();
+    CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == StringToSymbolMap{
 		{ "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
