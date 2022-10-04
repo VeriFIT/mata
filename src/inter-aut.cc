@@ -101,6 +101,33 @@ namespace
         return true;
     }
 
+    std::string serialize_graph(const Mata::FormulaGraph& graph)
+    {
+        if (graph.node.is_operand())
+            return graph.node.raw;
+
+        if (graph.children.size() == 1) { // unary operator
+            const auto& child = graph.children.front();
+            std::string child_name = child.node.is_operand() ? child.node.raw :
+                    "(" + serialize_graph(child.node) + ")";
+            return graph.node.raw + child_name;
+        }
+
+        assert(graph.node.is_operator() && graph.children.size() == 2);
+        const auto& left_child = graph.children.front();
+        std::string lhs = (left_child.node.is_operand()) ? left_child.node.raw :
+                serialize_graph(left_child);
+        if (left_child.children.size() == 2)
+            lhs = "(" + lhs + ")";
+        const auto& right_child = graph.children[1];
+        std::string rhs = (right_child.node.is_operand()) ? right_child.node.raw :
+                serialize_graph(right_child);
+        if (right_child.children.size() == 2)
+            rhs = "(" + rhs + ")";
+
+        return lhs + " " + graph.node.raw + " " + rhs;
+    }
+
     Mata::FormulaNode create_node(const Mata::IntermediateAut &mata, const std::string &token)
     {
         if (is_logical_operator(token[0])) {
@@ -475,7 +502,8 @@ const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
 {
-    os << "Intermediate automaton type " << inter_aut.automaton_type << '\n';
+    std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");
+    os << "Intermediate automaton type " << type << '\n';
     os << "Naming - state: " << inter_aut.state_naming << " symbol: " << inter_aut.symbol_naming << " node: "
         << inter_aut.node_naming << '\n';
     os << "Alphabet " << inter_aut.alphabet_type << '\n';
@@ -494,10 +522,13 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& int
 
     os << "Transitions: \n";
     for (const auto& trans : inter_aut.transitions) {
-        os << trans.first.name << " -> ";
+        os << trans.first.raw << " -> ";
+        os << serialize_graph(trans.second);
+        /*
         for (const auto& rhs : trans.second.collect_node_names()) {
             os << rhs << ' ';
         }
+         */
         os << '\n';
     }
     os << "\n";

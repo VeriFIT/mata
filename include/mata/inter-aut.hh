@@ -212,6 +212,7 @@ public:
     bool are_nodes_enum_type() const {return node_naming == Naming::ENUM;}
 
     bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
+    bool is_afa() const {return automaton_type == AutomatonType::AFA;}
 
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
