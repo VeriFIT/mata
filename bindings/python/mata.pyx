@@ -348,9 +348,9 @@ cdef class Nfa:
         :param Alphabet alphabet: alphabet of the transition
         """
         if isinstance(symb, str):
+            alphabet = alphabet or store().get('alphabet')
             if not alphabet:
-                alphabet = store().get('alphabet')
-                assert alphabet is not None
+                raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
             self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
         else:
             self.thisptr.get().add_trans(src, symb, tgt)
@@ -1980,9 +1980,9 @@ def plot_using_graphviz(
     # Configuration
     base_configuration = store()['node_style']
     edge_configuration = store()['edge_style']
+    alphabet = alphabet or store()['alphabet']
     if not alphabet:
-        alphabet = store()['alphabet']
-        assert alphabet
+        print("warning: missing alphabet necessary to translate the symbols")
     dot = graphviz.Digraph("dot")
     if aut.label:
         dot.attr(
@@ -2018,7 +2018,7 @@ def plot_using_graphviz(
         if key not in edges.keys():
             edges[key] = []
         symbol = "{}".format(
-            alphabet.reverse_translate_symbol(trans.symb)
+            alphabet.reverse_translate_symbol(trans.symb) if alphabet else trans.symb
         )
         edges[key].append((
             f"{trans.src}", f"{trans.tgt}", symbol,
