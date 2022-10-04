@@ -8,9 +8,6 @@ from libcpp.memory cimport shared_ptr, make_shared
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
-cimport alphabets
-import alphabets
-
 import sys
 import shlex
 import subprocess
@@ -21,8 +18,7 @@ import graphviz
 import IPython
 import collections
 
-import spot_jupyter_helpers as spot_helpers
-import configuration
+from IPython.display import display, HTML, DisplayObject
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -343,7 +339,7 @@ cdef class Nfa:
         """
         self.thisptr.get().add_trans(dereference(tr.thisptr))
 
-    def add_transition(self, State src, symb, State tgt, alphabets.Alphabet alphabet = None):
+    def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
         :param State src: source state
@@ -353,7 +349,7 @@ cdef class Nfa:
         """
         if isinstance(symb, str):
             if not alphabet:
-                alphabet = configuration.store().get('alphabet')
+                alphabet = store().get('alphabet')
                 assert alphabet is not None
             self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
         else:
@@ -630,7 +626,7 @@ cdef class Nfa:
             G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
         return G
 
-    def post_map_of(self, State st, alphabets.Alphabet alphabet):
+    def post_map_of(self, State st, Alphabet alphabet):
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
@@ -882,7 +878,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def complement_with_subset_map(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
+    def complement_with_subset_map(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -906,7 +902,7 @@ cdef class Nfa:
         return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
-    def complement(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
+    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -929,7 +925,7 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def make_complete(cls, Nfa lhs, State sink_state, alphabets.Alphabet alphabet):
+    def make_complete(cls, Nfa lhs, State sink_state, Alphabet alphabet):
         """Makes lhs complete
 
         :param Nfa lhs: automaton that will be made complete
@@ -1106,7 +1102,7 @@ cdef class Nfa:
         return mata.is_lang_empty_cex(dereference(lhs.thisptr.get()), &word), word
 
     @classmethod
-    def is_universal(cls, Nfa lhs, alphabets.Alphabet alphabet, params = None):
+    def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Tests if lhs is universal wrt given alphabet
 
         :param Nfa lhs: automaton tested for universality
@@ -1127,7 +1123,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included_with_cex(
-            cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
@@ -1156,7 +1152,7 @@ cdef class Nfa:
 
     @classmethod
     def is_included(
-            cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
@@ -1183,8 +1179,9 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def equivalence_check(cls, Nfa lhs, Nfa rhs, alphabets.Alphabet alphabet = None, params = None) -> bool:
-        """Test equivalence of two automata.
+    def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
+        """
+        Test equivalence of two automata.
 
         :param Nfa lhs: Smaller automaton.
         :param Nfa rhs: Bigger automaton.
@@ -1225,7 +1222,7 @@ cdef class Nfa:
         return {s for s in symbols}
 
     @classmethod
-    def is_complete(cls, Nfa lhs, alphabets.Alphabet alphabet):
+    def is_complete(cls, Nfa lhs, Alphabet alphabet):
         """Test if automaton is complete
 
         :param Nf lhs: tested automaton
@@ -1693,6 +1690,172 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
     return cmdout, cmderr
 
+
+cdef class Alphabet:
+    """
+    Base class for alphabets
+    """
+    cdef CAlphabet* as_base(self):
+        pass
+
+    def translate_symbol(self, str symbol):
+        pass
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        pass
+
+    cdef get_symbols(self):
+        pass
+
+cdef class CharAlphabet(Alphabet):
+    """
+    CharAlphabet translates characters in quotes, such as 'a' or "b" to their ordinal values.
+    """
+    cdef CCharAlphabet *thisptr
+
+    def __cinit__(self):
+        self.thisptr = new CCharAlphabet()
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        """Translates character to its ordinal value. If the character is not in quotes,
+        it is interpreted as 0 byte
+
+        :param str symbol: translated symbol
+        :return: ordinal value of the symbol
+        """
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        """Translates the ordinal value back to the character
+
+        :param Symbol symbol: integer symbol
+        :return: symbol as a character
+        """
+        return "'" + chr(symbol) + "'"
+
+    cpdef get_symbols(self):
+        """Returns list of supported symbols
+
+        :return: list of symbols
+        """
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
+
+    cdef CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+
+        :return: alphabet as CAlphabet*
+        """
+        return <CAlphabet*> self.thisptr
+
+
+cdef class EnumAlphabet(Alphabet):
+    """
+    EnumAlphabet represents alphabet that has fixed number of possible values
+    """
+
+    cdef CEnumAlphabet *thisptr
+    cdef vector[string] enums_as_strings
+
+    def __cinit__(self, enums):
+        self.enums_as_strings = [e.encode('utf-8') for e in enums]
+        self.thisptr = new CEnumAlphabet(
+            self.enums_as_strings.begin(), self.enums_as_strings.end()
+        )
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        """Translates the symbol ot its position in the enumeration
+
+        :param str symbol: translated symbol
+        :return: symbol as an position in the enumeration
+        """
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        """Translates the symbol back to its string representation
+
+        :param Symbol symbol: integer symbol (position in enumeration)
+        :return: symbol as the original string
+        """
+        if symbol < len(self.enums_as_strings):
+            return self.enums_as_strings[symbol].decode('utf-8')
+        else:
+            raise IndexError(f"{symbol} is out of range of enumeration")
+
+    cpdef get_symbols(self):
+        """Returns list of supported symbols
+
+        :return: list of supported symbols
+        """
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
+
+    cdef CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+
+        :return: alphabet as CAlphabet*
+        """
+        return <CAlphabet*> self.thisptr
+
+
+cdef class OnTheFlyAlphabet(Alphabet):
+    """
+    OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly
+    """
+    cdef COnTheFlyAlphabet *thisptr
+    cdef StringToSymbolMap string_to_symbol_map
+
+    def __cinit__(self, Symbol initial_symbol = 0):
+        self.thisptr = new COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        """Translates symbol to the position of the seen values
+
+        :param str symbol: translated symbol
+        :return: order of the symbol as was seen during the construction
+        """
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        """Translates symbol back to its string representation
+
+        :param Symbol symbol: integer symbol
+        :return: original string
+        """
+        cdef umap[string, Symbol].iterator it = self.string_to_symbol_map.begin()
+        cdef umap[string, Symbol].iterator end = self.string_to_symbol_map.end()
+        while it != end:
+            key = dereference(it).first
+            value = dereference(it).second
+            if value == symbol:
+                return key.decode('utf-8')
+            postinc(it)
+        raise IndexError(f"{symbol} is out of range of enumeration")
+
+
+    cpdef get_symbols(self):
+        """Returns list of supported symbols
+
+        :return: list of supported symbols
+        """
+        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
+        return [s for s in symbols]
+
+    cdef CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+
+        :return: alphabet as CAlphabet*
+        """
+        return <CAlphabet*> self.thisptr
 cdef class Segmentation:
     """Wrapper over Segmentation."""
     cdef mata.CSegmentation* thisptr
@@ -1747,7 +1910,7 @@ def plot(
         with_scc: bool = False,
         node_highlight: list = None,
         edge_highlight: list = None,
-        alphabet: alphabets.Alphabet = None
+        alphabet: Alphabet = None
 ):
     """Plots the stream of automata
 
@@ -1765,7 +1928,7 @@ def plot(
         else:
             dot.view()
     if get_interactive_mode() == 'notebook':
-        spot_helpers.display_inline(*dots)
+        display_inline(*dots)
 
 
 def _plot_state(aut, dot, state, configuration):
@@ -1803,7 +1966,7 @@ def plot_using_graphviz(
         with_scc: bool = False,
         node_highlight: list = None,
         edge_highlight: list = None,
-        alphabet: alphabets.Alphabet = None
+        alphabet: Alphabet = None
 ):
     """Plots automaton using graphviz
 
@@ -1815,10 +1978,10 @@ def plot_using_graphviz(
     :return: automaton in graphviz
     """
     # Configuration
-    base_configuration = configuration.store()['node_style']
-    edge_configuration = configuration.store()['edge_style']
+    base_configuration = store()['node_style']
+    edge_configuration = store()['edge_style']
     if not alphabet:
-        alphabet = configuration.store()['alphabet']
+        alphabet = store()['alphabet']
         assert alphabet
     dot = graphviz.Digraph("dot")
     if aut.label:
@@ -1891,3 +2054,125 @@ def get_interactive_mode() -> str:
         return 'terminal'
     else:
         return 'none'
+
+
+def display_inline(*args, per_row=None, show=None):
+    """
+    This is a wrapper around IPython's `display()` to display multiple
+    elements in a row, without forced line break between them.
+
+    Copyright (C) 2018 Laboratoire de Recherche et Développement de l'Epita
+    (LRDE).
+
+    This function is part of Spot, a model checking library.
+
+    If the `per_row` argument is given, at most `per_row` arguments are
+    displayed on each row, each one taking 1/per_row of the line width.
+    """
+    width = res = ''
+    if per_row:
+        width = 'width:{}%;'.format(100//per_row)
+    for arg in args:
+        dpy = 'inline-block'
+        if show is not None and hasattr(arg, 'show'):
+            rep = arg.show(show)._repr_svg_()
+        elif hasattr(arg, '_repr_image_svg_xml'):
+            rep = arg._repr_image_svg_xml()
+        elif hasattr(arg, '_repr_svg_'):
+            rep = arg._repr_svg_()
+        elif hasattr(arg, '_repr_html_'):
+            rep = arg._repr_html_()
+        elif hasattr(arg, '_repr_latex_'):
+            rep = arg._repr_latex_()
+            if not per_row:
+                dpy = 'inline'
+        else:
+            rep = str(arg)
+        res += ("<div style='vertical-align:text-top;display:{};{}'>{}</div>"
+                .format(dpy, width, rep))
+    display(HTML(res))
+
+
+_store = {
+    'node_style': {
+        "style": "filled",
+        "color": "darkblue",
+        "fillcolor": "lightsteelblue",
+        "fontname": "Courier-Bold",
+        "width": "0.3",
+        "height": "0.3",
+        "fontsize": "12",
+        "fixedsize": "true",
+        "penwidth": "1.5",
+    },
+    'edge_style': {
+        "penwidth": "1.5",
+        "color": "midnightblue",
+    },
+    'alphabet': None,
+}
+
+
+def store():
+    """
+    Returns the configuration of the library
+    """
+    return _store
+
+
+def setup(**kwargs):
+    """
+    Provides the setup of the configuration of the mata library
+    """
+    _store.update(kwargs)
+
+
+class Style:
+    """
+    Collection of helper styles for coloring nodes and edges in automata
+    """
+    @classmethod
+    def filled(cls, fillcolor, edgecolor=None):
+        """Style that fills the primitive with color"""
+        style = {'fillcolor': fillcolor}
+        if edgecolor:
+            style['color'] = edgecolor
+        return style
+
+    @classmethod
+    def colored(cls, color):
+        """Style that make primitive colored"""
+        return {'color': color}
+
+    @classmethod
+    def dashed(cls, color=None):
+        """Style that makes lines dashed"""
+        style = {'style': 'dashed'}
+        if color:
+            style['color'] = color
+        return style
+
+    @classmethod
+    def hidden(cls):
+        """Style that hides the primitive"""
+        return {'style': 'invis'}
+
+
+class Condition:
+    """
+    Collection of helper functions that can be used as conditions in highlighting rule
+    """
+    @classmethod
+    def state_is_initial(cls, automaton, state):
+        """Tests if state in automaton is initial"""
+        return automaton.has_initial_state(state)
+
+    @classmethod
+    def state_is_final(cls, automaton, state):
+        """Tests if state in automaton is final"""
+        return automaton.has_final_state(state)
+
+    @classmethod
+    def transition_is_cycle(cls, _, trans):
+        """Tests if transition is self cycle"""
+        return trans.src == trans.tgt
