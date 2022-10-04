@@ -81,6 +81,8 @@ public:
 
     bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS; }
 
+    bool is_state() const { return operand_type == OperandType::STATE; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
