@@ -350,7 +350,7 @@ cdef class Nfa:
         if isinstance(symb, str):
             alphabet = alphabet or store().get('alphabet')
             if not alphabet:
-                raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
+                raise Exception(f"Cannot translate symbol '{symb}' without specified alphabet")
             self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
         else:
             self.thisptr.get().add_trans(src, symb, tgt)
@@ -551,10 +551,7 @@ cdef class Nfa:
         return result
 
     def __repr__(self):
-        if get_interactive_mode() == 'notebook':
-            return plot_using_graphviz(self)
-        else:
-            return str(self)
+        return str(self)
 
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
@@ -2002,7 +1999,7 @@ def plot_using_graphviz(
                     )
     else:
         # Only print reachable states
-        for state in aut.get_reachable_states():
+        for state in range(0, aut.get_num_of_states()):
             # Helper node to simulate initial automaton
             _plot_state(
                 aut, dot, state,
