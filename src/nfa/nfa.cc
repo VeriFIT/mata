@@ -311,33 +311,19 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
 
 ////// Alphabet related functions
 
-Symbol OnTheFlyAlphabet::translate_symb(const std::string& str)
-{ // {{{
-    auto it_insert_pair = symbol_map->insert({str, cnt_symbol});
-    if (it_insert_pair.second) { return cnt_symbol++; }
-    else { return it_insert_pair.first->second; }
-} // OnTheFlyAlphabet::translate_symb }}}
-
-std::list<Symbol> OnTheFlyAlphabet::get_symbols() const
-{ // {{{
+std::list<Symbol> OnTheFlyAlphabet::get_symbols() const { // {{{
 	std::list<Symbol> result;
-	for (const auto& str_sym_pair : *(this->symbol_map))
-	{
+	for (const auto& str_sym_pair : symbol_map) {
 		result.push_back(str_sym_pair.second);
 	}
-
 	return result;
 } // OnTheFlyAlphabet::get_symbols }}}
 
-std::list<Symbol> OnTheFlyAlphabet::get_complement(
-        const std::set<Symbol>& syms) const
-{ // {{{
+std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms) const { // {{{
     std::list<Symbol> result;
-
-    // TODO: could be optimized
+    // TODO: Could be optimized.
     std::set<Symbol> symbols_alphabet;
-    for (const auto& str_sym_pair : *(this->symbol_map))
-    {
+    for (const auto& str_sym_pair : symbol_map) {
         symbols_alphabet.insert(str_sym_pair.second);
     }
 
@@ -345,11 +331,10 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(
             symbols_alphabet.begin(), symbols_alphabet.end(),
             syms.begin(), syms.end(),
             std::inserter(result, result.end()));
-
     return result;
 } // OnTheFlyAlphabet::get_complement }}}
 
-void EnumAlphabet::add_symbols_from(const Nfa& nfa) {
+void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
     size_t aut_num_of_states{ nfa.get_num_of_states() };
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: nfa.transitionrelation[state]) {
@@ -359,65 +344,12 @@ void EnumAlphabet::add_symbols_from(const Nfa& nfa) {
     }
 }
 
-std::list<Symbol> CharAlphabet::get_symbols() const
-{ // {{{
-    std::list<Symbol> result;
-    for (size_t i = 0; i < 256; ++i)
-    {
-        result.push_back(i);
+void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
+    for (const auto& symbol_binding: new_symbol_map) {
+        update_next_symbol_value(symbol_binding.second);
+        try_add_new_symbol(symbol_binding.first, symbol_binding.second);
     }
-
-    return result;
-} // CharAlphabet::get_symbols }}}
-
-std::list<Symbol> CharAlphabet::get_complement(
-        const std::set<Symbol>& syms) const
-{ // {{{
-    std::list<Symbol> result;
-
-    std::list<Symbol> symb_list = this->get_symbols();
-
-    // TODO: could be optimized
-    std::set<Symbol> symbols_alphabet(symb_list.begin(), symb_list.end());
-
-    std::set_difference(
-            symbols_alphabet.begin(), symbols_alphabet.end(),
-            syms.begin(), syms.end(),
-            std::inserter(result, result.end()));
-
-    return result;
-} // CharAlphabet::get_complement }}}
-
-std::list<Symbol> EnumAlphabet::get_symbols() const
-{ // {{{
-    std::list<Symbol> result;
-    for (const auto& str_sym_pair : this->symbol_map)
-    {
-        result.push_back(str_sym_pair.second);
-    }
-
-    return result;
-} // EnumAlphabet::get_symbols }}}
-
-std::list<Symbol> EnumAlphabet::get_complement(
-        const std::set<Symbol>& syms) const
-{ // {{{
-    std::list<Symbol> result;
-
-    // TODO: could be optimized
-    std::set<Symbol> symbols_alphabet;
-    for (const auto& str_sym_pair : this->symbol_map)
-    {
-        symbols_alphabet.insert(str_sym_pair.second);
-    }
-
-    std::set_difference(
-            symbols_alphabet.begin(), symbols_alphabet.end(),
-            syms.begin(), syms.end(),
-            std::inserter(result, result.end()));
-
-    return result;
-} // EnumAlphabet::get_complement }}}
+}
 
 ///// Nfa structure related methods
 
