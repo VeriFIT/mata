@@ -473,6 +473,26 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     return res;
 }
 
+void Mata::FormulaGraph::print_tree(std::ostream& os) const
+{
+    std::vector<const FormulaGraph*> next_level;
+    std::vector<const FormulaGraph*> this_level;
+
+    next_level.push_back(this);
+    while (!next_level.empty())
+    {
+        this_level = next_level;
+        next_level.clear();
+        for (const auto& graph : this_level) {
+            for (const auto& child : graph->children) {
+                next_level.push_back(&child);
+            }
+            os << graph->node.raw << "    ";
+        }
+        os << "\n";
+    }
+}
+
 std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Mata::Parser::Parsed &parsed)
 {
     std::vector<Mata::IntermediateAut> result;
@@ -498,6 +518,23 @@ const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
     assert(trans.second.node.is_operator()); // conjunction with rhs state
     assert(trans.second.children[1].node.is_operand()); // rhs state
     return trans.second.children[0];
+}
+
+void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs)
+{
+    FormulaNode conjunction(FormulaNode::OPERATOR, "&", "&", FormulaNode::AND);
+    FormulaGraph graph(conjunction);
+    graph.children.push_back(FormulaGraph(symbol));
+    graph.children.push_back(rhs);
+    this->transitions.push_back(std::pair<FormulaNode, FormulaGraph>(lhs, graph));
+}
+
+void Mata::IntermediateAut::print_transitions_trees(std::ostream& os) const
+{
+    for (const auto& trans : transitions) {
+        os << trans.first.raw << " -> ";
+        trans.second.print_tree(os);
+    }
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)

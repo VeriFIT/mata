@@ -83,6 +83,8 @@ public:
 
     bool is_state() const { return operand_type == OperandType::STATE; }
 
+    bool is_symbol() const { return operand_type == OperandType::SYMBOL; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
@@ -113,6 +115,7 @@ struct FormulaGraph
     FormulaGraph(FormulaNode n) : node(n), children() {}
 
     std::unordered_set<std::string> collect_node_names() const;
+    void print_tree(std::ostream& os) const;
 };
 
 /**
@@ -220,6 +223,8 @@ public:
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
 
     static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
+    void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
+    void print_transitions_trees(std::ostream&) const;
 };
 
 } /* Mata */
