@@ -29,9 +29,58 @@ namespace Mata
 
 class Mintermization
 {
+private: // data types
+    struct BddOrNothing
+    {
+        enum TYPE {NOTHING_E, BDD_E};
+
+        TYPE type;
+        BDD val;
+
+        BddOrNothing(TYPE t) : type(t) {}
+        BddOrNothing(const BDD& bdd) : type(BDD_E), val(bdd) {}
+        BddOrNothing(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
+
+        BddOrNothing operator*(const BddOrNothing& b) const
+        {
+            if (this->type == NOTHING_E)
+                return b;
+            else if (b.type == NOTHING_E)
+                return *this;
+            else
+                return BddOrNothing(BDD_E, this->val * b.val);
+        }
+
+        BddOrNothing operator+(const BddOrNothing& b) const
+        {
+            if (this->type == NOTHING_E)
+                return b;
+            else if (b.type == NOTHING_E)
+                return *this;
+            else
+                return BddOrNothing(BDD_E, this->val + b.val);
+        }
+
+        BddOrNothing operator!() const
+        {
+            if (this->type == NOTHING_E)
+                return BddOrNothing(NOTHING_E);
+            else
+                return BddOrNothing(BDD_E, !this->val);
+        }
+    };
+
+    using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
+
 private: // private data members
     Cudd bdd_mng;
     std::unordered_map<std::string, BDD> symbol_to_bddvar;
+    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
+    std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
+
+private:
+    std::vector<BDD> trans_to_bdd(const IntermediateAut& aut);
+    std::vector<BDD> trans_to_bdd_afa(const IntermediateAut& aut);
 
 public:
     /**
@@ -49,6 +98,8 @@ public:
      */
     const BDD graph_to_bdd(const FormulaGraph& graph);
 
+    const BddOrNothing graph_to_bdd_generalized(const FormulaGraph& graph);
+
     /**
      * Methods mintermizes given automaton which has bitvector alphabet.
      * It transforms its transition to BDDs, then build a minterm tree over the BDDs
@@ -58,7 +109,12 @@ public:
      */
     Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
 
-    Mintermization() : bdd_mng(0), symbol_to_bddvar{}
+    void minterms_to_aut(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
+
+    void minterms_to_aut_afa(Mata::IntermediateAut& res,
+                             const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
+
+    Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar()
     {}
 };
 
