@@ -189,6 +189,15 @@ struct Nfa
     TransitionRelation transitionrelation;
     StateSet initialstates = {};
     StateSet finalstates = {};
+    Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
+    /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
+    ///  are up to the user.
+    /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
+    ///  respective names, or "transition_dict" for transition dictionary adding a human-readable meaning to each
+    ///  transition.
+    // TODO: When there is a need for state dictionary, consider creating default library implementation of state
+    //  dictionary in the attributes.
+    std::unordered_map<std::string, void*> attributes;
 
 public:
     Nfa() : transitionrelation(), initialstates(), finalstates() {}
@@ -197,15 +206,17 @@ public:
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{})
-        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = nullptr)
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
+          alphabet(alphabet_p) {}
 
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
     explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{})
-        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+                 const StateSet& final_states = StateSet{},Alphabet* alphabet_p = nullptr)
+        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states),
+          alphabet(alphabet_p) {}
 
     /**
      * Clear transitions but keep the automata states.
@@ -739,19 +750,6 @@ public:
 
 private:
 }; // Nfa
-
-/// a wrapper encapsulating @p Nfa for higher-level use
-struct NfaWrapper
-{ // {{{
-	/// the NFA
-	Nfa nfa;
-
-	/// the alphabet
-	Alphabet* alphabet;
-
-	/// mapping of state names (as strings) to their numerical values
-	StringToStateMap state_dict;
-}; // NfaWrapper }}}
 
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
@@ -1647,7 +1645,7 @@ struct hash<Mata::Nfa::Trans>
 };
 
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
 } // std }}}
 
 #endif /* _MATA_NFA_HH_ */

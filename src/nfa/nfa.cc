@@ -1676,17 +1676,11 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     return result;
 }
 
-std::ostream& Mata::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
-{ // {{{
-    return os << std::to_string(serialize(nfa));
-} // Nfa::operator<<(ostream) }}}
-
-std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap)
-{ // {{{
-	os << "{NFA wrapper|NFA: " << nfa_wrap.nfa << "|alphabet: " << nfa_wrap.alphabet <<
-		"|state_dict: " << std::to_string(nfa_wrap.state_dict) << "}";
-	return os;
-} // operator<<(NfaWrapper) }}}
+std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
+    os << "{NFA: " << std::to_string(serialize(nfa)) << "|alphabet: " << nfa.alphabet << "}";
+    // TODO: If the default implementation for state_dict is implemented, consider printing the state dictionary with
+    //  std::to_string(<state_dict_object>);
+}
 
 WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
