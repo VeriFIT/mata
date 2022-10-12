@@ -76,6 +76,14 @@ public:
 
     /// translates a string into a symbol
     virtual Symbol translate_symb(const std::string& symb) = 0;
+
+    /**
+     * Translate internal @p symbol representation back to its original string name.
+     * @param symbol Symbol to translate.
+     * @return @p symbol original name.
+     */
+    virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
+
     /// also translates strings to symbols
     Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
     /// gets a list of symbols in the alphabet
@@ -1080,9 +1088,6 @@ inline Word encode_word(
 	return result;
 } // encode_word }}}
 
-/// operator<<
-std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
-
 /// global constructor to be called at program startup (from vm-dispatch)
 void init();
 
@@ -1321,6 +1326,15 @@ public:
 
     std::list<Symbol> get_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+    std::string reverse_translate_symbol(const Symbol symbol) const override {
+        for (const auto& symbol_mapping: symbol_map) {
+            if (symbol_mapping.second == symbol) {
+                return symbol_mapping.first;
+            }
+        }
+        throw std::runtime_error("symbol is out of range of enumeration");
+    }
 
 private:
     OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
@@ -1646,6 +1660,7 @@ struct hash<Mata::Nfa::Trans>
 
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Alphabet& alphabet);
 } // std }}}
 
 #endif /* _MATA_NFA_HH_ */
