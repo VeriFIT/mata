@@ -104,7 +104,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
             // create bdd for the whole disjunct
             const auto bdd = graph_to_bdd_generalized(*ds_pair.first);
             trans_to_bddvar[ds_pair.first] = bdd.val;
-            assert(bdd.type == BddOrNothing::BDD_E); // TODO this will probably fail since the last conjunct is state
+            assert(bdd.type == BddOrNothing::BDD_E);
             bdds.push_back(bdd.val);
         }
     }

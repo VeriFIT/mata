@@ -37,8 +37,8 @@ private: // data types
         TYPE type;
         BDD val;
 
-        BddOrNothing(TYPE t) : type(t) {}
-        BddOrNothing(const BDD& bdd) : type(BDD_E), val(bdd) {}
+        explicit BddOrNothing(TYPE t) : type(t) {}
+        explicit BddOrNothing(const BDD& bdd) : type(BDD_E), val(bdd) {}
         BddOrNothing(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
 
         BddOrNothing operator*(const BddOrNothing& b) const
@@ -48,7 +48,7 @@ private: // data types
             else if (b.type == NOTHING_E)
                 return *this;
             else
-                return BddOrNothing(BDD_E, this->val * b.val);
+                return BddOrNothing{BDD_E, this->val * b.val};
         }
 
         BddOrNothing operator+(const BddOrNothing& b) const
@@ -58,7 +58,7 @@ private: // data types
             else if (b.type == NOTHING_E)
                 return *this;
             else
-                return BddOrNothing(BDD_E, this->val + b.val);
+                return BddOrNothing{BDD_E, this->val + b.val};
         }
 
         BddOrNothing operator!() const
@@ -66,7 +66,7 @@ private: // data types
             if (this->type == NOTHING_E)
                 return BddOrNothing(NOTHING_E);
             else
-                return BddOrNothing(BDD_E, !this->val);
+                return BddOrNothing{BDD_E, !this->val};
         }
     };
 
@@ -140,4 +140,4 @@ public:
 };
 
 }  // namespace Mata
-#endif //_MATA_INTER_AUT_HH
+#endif //_MATA_MINTERM_HH
