@@ -237,7 +237,6 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
 
         const auto res = mintermization.mintermize(aut);
-        std::cout << res << '\n';
         REQUIRE(res.transitions.size() == 26);
         REQUIRE(res.transitions[0].first.name == "1");
         REQUIRE(res.transitions[1].first.name == "1");
@@ -257,5 +256,30 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[2].second.children[1].node.name == "2");
         REQUIRE(res.transitions[3].second.children[0].node.name == "3");
         REQUIRE(res.transitions[3].second.children[1].node.name == "2");
+    }
+
+    SECTION("Mintermization AFA complex")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+
+        std::string file =
+                "@AFA-bits\n"
+                "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
+                "%Final true & (!q3' | (!q1))\n"
+                "q1 (!a0 & !a1 & !a2 & !a3 & (q2))\n"
+                "q0 (a4 & !a5 & !a6 & !a7 & (q0)) | (!a4 & a5 & !a6 & !a7 & (q0)) | (a4 & a5 & !a6 & !a7 & (q0)) | (!a4 & !a5 & a6 & !a7 & (q0)) | (a4 & !a5 & a6 & !a7 & (q0)) | (!a4 & a5 & a6 & !a7 & (q0)) | (a4 & a5 & a6 & !a7 & (q0)) | (!a4 & !a5 & !a6 & a7 & (q0)) | (a4 & !a5 & !a6 & a7 & (q0)) | (!a4 & a5 & !a6 & a7 & (q0)) | (a4 & a5 & !a6 & a7 & (q0)) | (!a4 & !a5 & a6 & a7 & (q0)) | (!a4 & !a5 & !a6 & !a7 & (q0)) | (a4 & !a5 & a6 & a7 & (q0))\n"
+                "q3 (a8 & !a9 & !a10 & !a11 & (q3)) | (!a8 & a9 & !a10 & !a11 & (q3)) | (a8 & a9 & !a10 & !a11 & (q3)) | (!a8 & !a9 & a10 & !a11 & (q3)) | (a8 & !a9 & a10 & !a11 & (q3)) | (!a8 & a9 & a10 & !a11 & (q3)) | (a8 & a9 & a10 & !a11 & (q3)) | (!a8 & !a9 & !a10 & a11 & (q3)) | (a8 & !a9 & !a10 & a11 & (q3)) | (!a8 & a9 & !a10 & a11 & (q3)) | (a8 & a9 & !a10 & a11 & (q3)) | (!a8 & !a9 & a10 & a11 & (q3)) | (!a8 & !a9 & !a10 & !a11 & (q3)) | (a8 & !a9 & a10 & a11 & (q3))\n"
+                "q1' q1'\n"
+                "q3' q3'\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
+
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 1965);
     }
 } // mintermization
