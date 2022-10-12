@@ -149,16 +149,19 @@ cdef class Nfa:
     #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
     #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
     cdef shared_ptr[mata.CNfa] thisptr
-    cdef alphabet
 
-    def __cinit__(self, state_number = 0, alphabet = None):
-        """Constructor of the NFA
+    def __cinit__(self, state_number = 0, Alphabet alphabet = None):
+        """
+        Constructor of the NFA.
 
         :param int state_number: number of states in automaton
         :param Alphabet alphabet: alphabet corresponding to the automaton
         """
-        self.thisptr = make_shared[CNfa](mata.CNfa(state_number))
-        self.alphabet = alphabet
+        cdef CAlphabet* c_alphabet = NULL
+        cdef COrdVector[State] state_set
+        if alphabet:
+            c_alphabet = alphabet.as_base()
+        self.thisptr = make_shared[CNfa](mata.CNfa(state_number, state_set, state_set, c_alphabet))
 
     @property
     def initial_states(self):
@@ -542,8 +545,8 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in final_states])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symb if self.alphabet is None \
-                else self.alphabet.reverse_translate_symbol(trans.symb)
+            symbol = trans.symb if self.thisptr.get().alphabet == NULL \
+                else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symb)
             result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
         return result
 
@@ -1362,23 +1365,14 @@ cdef class OnTheFlyAlphabet(Alphabet):
         """
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates symbol back to its string representation
-
-        :param Symbol symbol: integer symbol
-        :return: original string
+    def reverse_translate_symbol(self, Symbol symbol) -> str:
         """
-        cdef StringToSymbolMap c_symbol_map = self.thisptr.get_symbol_map()
-        cdef umap[string, Symbol].iterator it = c_symbol_map.begin()
-        cdef umap[string, Symbol].iterator end = c_symbol_map.end()
-        while it != end:
-            key = dereference(it).first
-            value = dereference(it).second
-            if value == symbol:
-                return key
-            postinc(it)
-        raise IndexError(f"{symbol} is out of range of enumeration")
+        Translate internal symbol value to the original symbol name.
 
+        :param Symbol symbol: Internal symbol value to be translated.
+        :return str: Original symbol string name.
+        """
+        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
 
     cpdef get_symbols(self):
         """Returns list of supported symbols

@@ -147,10 +147,13 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet initialstates
         StateSet finalstates
         TransitionRelation transitionrelation
+        umap[string, void*] attributes
+        CAlphabet* alphabet
 
         # Constructor
         CNfa() except +
         CNfa(unsigned long) except +
+        CNfa(unsigned long, StateSet, StateSet, CAlphabet*)
 
         # Public Functions
         void make_initial(State)
@@ -244,13 +247,15 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
         CAlphabet() except +
 
+        Symbol translate_symb(string)
+        string reverse_translate_symbol(Symbol)
+
     cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
         StringToSymbolMap symbol_map
         COnTheFlyAlphabet(StringToSymbolMap) except +
         COnTheFlyAlphabet(Symbol) except +
         COnTheFlyAlphabet(COnTheFlyAlphabet) except +
         COnTheFlyAlphabet(vector[string]) except +
-        Symbol translate_symb(string)
         clist[Symbol] get_symbols()
         StringToSymbolMap get_symbol_map()
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
