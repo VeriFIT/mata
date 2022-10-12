@@ -96,7 +96,7 @@ endif()
 # link_directories(../build/3rdparty/cudd/lib)
 add_dependencies(libmata cudd_library)
 target_link_libraries(libmata simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
-target_link_libraries(tests libmata re2 simlib)
+target_link_libraries(tests libmata re2 simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(
