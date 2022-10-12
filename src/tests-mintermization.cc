@@ -176,4 +176,86 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[2].second.children[1].node.name == "t");
         REQUIRE(res.transitions[3].second.children[1].node.name == "t");
     }
+
+    SECTION("Mintermization AFA small")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+        std::string file =
+            "@AFA-bits\n"
+            "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
+            "%Final true & (!q3' | (!q1))\n"
+            "q1 (!a0 & !a1 & (q2))\n"
+            "q1 (a1 & !a2 & (q3))\n"
+            "q1' q1'\n"
+            "q3' q3'\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
+
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 8);
+        REQUIRE(res.transitions[0].first.name == "1");
+        REQUIRE(res.transitions[1].first.name == "1");
+        REQUIRE(res.transitions[2].first.name == "1'");
+        REQUIRE(res.transitions[3].first.name == "1'");
+        REQUIRE(res.transitions[4].first.name == "1'");
+        REQUIRE(res.transitions[5].first.name == "3'");
+        REQUIRE(res.transitions[6].first.name == "3'");
+        REQUIRE(res.transitions[7].first.name == "3'");
+        REQUIRE(res.transitions[0].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[1].second.children[1].node.name == "3");
+        REQUIRE(res.transitions[2].second.children[1].node.name == "1'");
+        REQUIRE(res.transitions[3].second.children[1].node.name == "1'");
+        REQUIRE(res.transitions[4].second.children[1].node.name == "1'");
+        REQUIRE(res.transitions[5].second.children[1].node.name == "3'");
+        REQUIRE(res.transitions[6].second.children[1].node.name == "3'");
+        REQUIRE(res.transitions[7].second.children[1].node.name == "3'");
+    }
+
+    SECTION("Mintermization AFA normal")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+
+        std::string file =
+                "@AFA-bits\n"
+                "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
+                "%Final true & (!q3' | (!q1))\n"
+                "q1 (!a0 & !a1 & !a2 & !a3 & (q2))\n"
+                "q0 (a4 & !a5 & !a6 & !a7 & (q0)) | (!a4 & a5 & !a6 & !a7 & (q1)) | (a4 & a5 & !a6 & !a7 & (q2))\n"
+                "q1' q1'\n"
+                "q3' q3'\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
+
+        const auto res = mintermization.mintermize(aut);
+        std::cout << res << '\n';
+        REQUIRE(res.transitions.size() == 26);
+        REQUIRE(res.transitions[0].first.name == "1");
+        REQUIRE(res.transitions[1].first.name == "1");
+        REQUIRE(res.transitions[2].first.name == "1");
+        REQUIRE(res.transitions[3].first.name == "1");
+        REQUIRE(res.transitions[4].first.name == "0");
+        REQUIRE(res.transitions[5].first.name == "0");
+        REQUIRE(res.transitions[6].first.name == "0");
+        REQUIRE(res.transitions[7].first.name == "0");
+        REQUIRE(res.transitions[8].first.name == "0");
+        REQUIRE(res.transitions[9].first.name == "0");
+        REQUIRE(res.transitions[0].second.children[0].node.name == "0");
+        REQUIRE(res.transitions[0].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[1].second.children[0].node.name == "1");
+        REQUIRE(res.transitions[1].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[2].second.children[0].node.name == "2");
+        REQUIRE(res.transitions[2].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[3].second.children[0].node.name == "3");
+        REQUIRE(res.transitions[3].second.children[1].node.name == "2");
+    }
 } // mintermization

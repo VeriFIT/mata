@@ -30,9 +30,9 @@ namespace
             todo.pop_back();
             if (act_node->children.size() != 2)
                 continue;
-            if (act_node->children.front().node.is_symbol() && act_node->children[1].node.is_state())
+            if (act_node->node.is_operator() && act_node->children[1].node.is_state())
                 return &act_node->children[1];
-            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_symbol())
+            else if (act_node->children.front().node.is_state() && act_node->node.is_operator())
                 return &act_node->children.front();
             else if (act_node->children.front().node.is_operand() && act_node->children[1].node.is_state())
                 return act_node;
@@ -70,23 +70,40 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
     std::vector<BDD> bdds;
 
     for (const auto& trans : aut.transitions) {
-        if (trans.second.node.is_state())
-            continue;
         lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
+        if (trans.second.node.is_state()) { // node from state to state - we can skip it
+            const auto bdd = bdd_mng.bddOne();
+            lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&trans.second, &trans.second));
+            trans_to_bddvar[&trans.second] = bdd;
+            continue;
+        }
         // split transition to disjuncts
         const FormulaGraph *act_graph = &trans.second;
-        while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OR) {
-            // map lhs to disjunct and its state fomula
+
+        if (act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OR) // there are no disjuncts
             lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph, detect_state_part(
                     act_graph)));
-            act_graph = &(act_graph->children.front());
+        else {
+            while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OR) {
+                // map lhs to disjunct and its state formula. The content of disjunct is right son of actual graph
+                // since the left one is a rest of formula
+                lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&act_graph->children[1],
+                                                                                       detect_state_part(
+                                                                                               &act_graph->children[1])));
+                act_graph = &(act_graph->children.front());
+            }
+
+            // take care of last disjunct
+            lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph,
+                                                                                   detect_state_part(
+                                                                                           act_graph)));
         }
 
         // Foreach disjunct create a BDD
-        for (const DisjunctStatesPair ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
+        for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
             const auto bdd = graph_to_bdd_generalized(*ds_pair.first);
-            trans_to_bddvar[ds_pair.first] = bdds.back();
+            trans_to_bddvar[ds_pair.first] = bdd.val;
             assert(bdd.type == BddOrNothing::BDD_E); // TODO this will probably fail since the last conjunct is state
             bdds.push_back(bdd.val);
         }
@@ -190,11 +207,11 @@ const BDD Mata::Mintermization::graph_to_bdd(const FormulaGraph &graph)
 void Mata::Mintermization::minterms_to_aut(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
                                            const std::vector<BDD>& minterms)
 {
-    size_t symbol = 0;
     for (const auto& trans : aut.transitions) {
             // for each t=(q1,s,q2)
         const auto &symbol_part = trans.second.children[0];
 
+        size_t symbol = 0;
         assert(trans_to_bddvar.count(&symbol_part));
         const BDD &bdd = trans_to_bddvar[&symbol_part];
 
@@ -205,8 +222,8 @@ void Mata::Mintermization::minterms_to_aut(Mata::IntermediateAut& res, const Mat
                 // add q1,x,q2 to transitions
                 IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
                                                         trans.second.children[1].node.raw});
-                symbol++;
             }
+            symbol++;
         }
     }
 }
@@ -214,7 +231,6 @@ void Mata::Mintermization::minterms_to_aut(Mata::IntermediateAut& res, const Mat
 void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
                                            const std::vector<BDD>& minterms)
 {
-    size_t symbol = 0;
     for (const auto& trans : aut.transitions) {
         for (const auto& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // for each t=(q1,s,q2)
@@ -223,6 +239,7 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
             assert(trans_to_bddvar.count(disjunct));
             const BDD &bdd = trans_to_bddvar[disjunct];
 
+            size_t symbol = 0;
             for (const auto &minterm: minterms) {
                 // for each minterm x:
                 if (!((bdd * minterm).IsZero())) {
@@ -231,9 +248,10 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
                     const auto str_symbol = std::to_string(symbol);
                     FormulaNode node_symbol(FormulaNode::OPERAND, str_symbol, str_symbol,
                                             Mata::FormulaNode::OperandType::SYMBOL);
+                    assert(ds_pair.second != nullptr);
                     res.add_transition(trans.first, node_symbol, *ds_pair.second);
-                    symbol++;
                 }
+                symbol++;
             }
         }
     }
@@ -245,10 +263,9 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
         throw std::runtime_error("We currently support mintermization only for NFA with bitvectors");
     }
 
-    if (aut.is_afa())
-        aut.print_transitions_trees(std::cout);
-
     std::vector<BDD> bdds = aut.is_nfa() ? trans_to_bdd(aut) : trans_to_bdd_afa(aut);
+
+    assert(aut.transitions.empty() || !bdds.empty());
 
     // Build minterm tree over BDDs
     std::vector<BDD> minterms = compute_minterms(bdds);
