@@ -92,12 +92,19 @@ public:
     static std::vector<BDD> compute_minterms(const std::vector<BDD>& bdds);
 
     /**
-     * Transforms a graph representing formula on transition to bdd.
+     * Transforms a graph representing formula at transition to bdd.
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
     const BDD graph_to_bdd(const FormulaGraph& graph);
 
+    /**
+     * Transforms a graph representing formula at transition to bdd.
+     * This version of method is a more general one and accepts also
+     * formula including states.
+     * @param graph Graph to be transformed
+     * @return Resulting BDD
+     */
     const BddOrNothing graph_to_bdd_generalized(const FormulaGraph& graph);
 
     /**
@@ -109,8 +116,22 @@ public:
      */
     Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
 
+    /**
+     * The method performs the mintermization over @aut with given @minterms.
+     * It is method specialized for NFA.
+     * @param res The resulting mintermized automaton
+     * @param aut Automaton to be mintermized
+     * @param minterms Set of minterms for mintermization
+     */
     void minterms_to_aut(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
 
+    /**
+     * The method for mintermization of alternating finite automaton using
+     * a given set of minterms
+     * @param res The resulting mintermized automaton
+     * @param aut Automaton to be mintermized
+     * @param minterms Set of minterms for mintermization
+     */
     void minterms_to_aut_afa(Mata::IntermediateAut& res,
                              const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
 
