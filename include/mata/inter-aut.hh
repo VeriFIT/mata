@@ -96,7 +96,10 @@ public:
                                        operand_type(operand) {}
 
     FormulaNode(Type t, std::string raw) : type(t), raw(raw), name(raw), operator_type(NOT_OPERATOR),
-                                           operand_type(NOT_OPERAND) {}
+                                        operand_type(NOT_OPERAND) {}
+
+    FormulaNode(const FormulaNode& n) : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type),
+                                        operand_type(n.operand_type) {}
 };
 
 /**
@@ -113,6 +116,7 @@ struct FormulaGraph
 
     FormulaGraph() : node(), children() {}
     FormulaGraph(FormulaNode n) : node(n), children() {}
+    FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
