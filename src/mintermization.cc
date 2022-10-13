@@ -30,14 +30,19 @@ namespace
             todo.pop_back();
             if (act_node->children.size() != 2)
                 continue;
-            if (act_node->node.is_operator() && act_node->children[1].node.is_state())
-                return &act_node->children[1];
+
+            if (act_node->children.front().node.is_and() && act_node->children[1].node.is_state())
+                return act_node; // ... & a1 & q1 ... & qn
+            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_and())
+                return act_node; // ... & a1 & q1 ... & qn
+            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state())
+                return act_node; // ... & a1 & q1 & q2
+            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state())
+                return act_node; // ... & a1 & q1 & q2
+            else if (act_node->node.is_operator() && act_node->children[1].node.is_state())
+                return &act_node->children[1]; // a1 & q1
             else if (act_node->children.front().node.is_state() && act_node->node.is_operator())
-                return &act_node->children.front();
-            else if (act_node->children.front().node.is_operand() && act_node->children[1].node.is_state())
-                return act_node;
-            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_operand())
-                return act_node;
+                return &act_node->children.front(); // a1 & q1
             else {
                 for (const Mata::FormulaGraph& child : act_node->children) {
                     todo.push_back(&child);
@@ -89,7 +94,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
                 // since the left one is a rest of formula
                 lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&act_graph->children[1],
                                                                                        detect_state_part(
-                                                                                               &act_graph->children[1])));
+                                                                                           &act_graph->children[1])));
                 act_graph = &(act_graph->children.front());
             }
 
