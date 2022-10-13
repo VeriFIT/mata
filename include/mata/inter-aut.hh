@@ -85,6 +85,8 @@ public:
 
     bool is_symbol() const { return operand_type == OperandType::SYMBOL; }
 
+    bool is_and() const { return type == OPERATOR && operator_type == AND; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
