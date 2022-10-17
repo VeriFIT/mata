@@ -5,12 +5,16 @@ from Cython.Build import cythonize
 
 project_dir = os.path.abspath(os.path.join("..", ".."))
 include_dir = os.path.join(project_dir, "include")
+source_dir = os.path.join(project_dir, "src")
+
 third_party_include_dir = os.path.join(project_dir, "3rdparty")
 re2_include_dir = os.path.join(project_dir, "3rdparty", "re2")
-source_dir = os.path.join(project_dir, "src")
 re2_source_dir = os.path.join(project_dir, "3rdparty", "re2")
 simlib_include_dir = os.path.join(project_dir, "3rdparty", "simlib", "include")
 simlib_source_dir = os.path.join(project_dir, "3rdparty", "simlib", "src")
+
+with open(os.path.join(project_dir, "README.md")) as readme_handle:
+    README_MD = readme_handle.read()
 
 
 def get_cpp_sources(src_dir):
@@ -54,6 +58,19 @@ def get_version():
 
 setup(
     name="mata",
+    version=get_version(),
     ext_modules=cythonize(extensions),
-    version=get_version()
+    description="The automata library",
+    author_name="Lukáš Holík <holik@fit.vutbr.cz>, "
+                "Ondřej Lengál <lengal@fit.vutbr.cz>, "
+                "Martin Hruška <ihruskam@fit.vutbr.cz>, "
+                "Tomáš Fiedor <ifiedortom@fit.vutbr.cz>, "
+                "David Chocholatý <chocholaty.david@protonmail.com>, "
+                "Juraj Síč <sicjuraj@fit.vutbr.cz>, "
+                "Tomáš Vojnar <vojnar@fit.vutbr.cz>",
+    author_email="lengal@fit.vutbr.cz",
+    long_description=README_MD,
+    long_description_content_type="text/markdown",
+    keywords="automata, finite automata, alternating automata",
+    url="https://github.com/verifit/mata",
 )
