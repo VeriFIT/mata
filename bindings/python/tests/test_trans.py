@@ -1,7 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import pytest
-import mata
+import libmata as mata
 
 
 __author__ = 'Tomas Fiedor'

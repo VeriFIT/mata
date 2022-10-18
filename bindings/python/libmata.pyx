@@ -1,4 +1,4 @@
-cimport mata
+cimport libmata as mata
 
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist

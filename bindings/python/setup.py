@@ -34,8 +34,8 @@ def get_cpp_sources(src_dir):
 
 extensions = [
     Extension(
-        "mata",
-        sources=["mata.pyx"]
+        "libmata",
+        sources=["libmata.pyx"]
                 + get_cpp_sources(source_dir)
                 + get_cpp_sources(re2_source_dir)
                 + get_cpp_sources(simlib_source_dir),
@@ -57,7 +57,7 @@ def get_version():
 
 
 setup(
-    name="mata",
+    name="libmata",
     version=get_version(),
     ext_modules=cythonize(extensions),
     description="The automata library",

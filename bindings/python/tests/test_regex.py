@@ -1,7 +1,7 @@
 __author__ = 'Tomas Fiedor'
 
 import pytest
-import mata
+import libmata as mata
 
 
 def test_regex():

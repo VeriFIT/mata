@@ -1,7 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import pytest
-import mata
+import libmata as mata
 import os
 
 __author__ = 'Tomas Fiedor'
@@ -284,7 +284,7 @@ def test_language_emptiness(fa_one_divisible_by_two):
 
 
 def test_universality(fa_one_divisible_by_two):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
     assert mata.Nfa.is_universal(fa_one_divisible_by_two, alph) == False
@@ -300,7 +300,7 @@ def test_universality(fa_one_divisible_by_two):
 def test_inclusion(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
     result, cex = mata.Nfa.is_included_with_cex(fa_one_divisible_by_two, fa_one_divisible_by_four, alph)
@@ -413,7 +413,7 @@ def test_concatenate():
 def test_completeness(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
     assert mata.Nfa.is_complete(fa_one_divisible_by_two, alph)
@@ -459,7 +459,7 @@ def test_in_language(
 def test_union(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
@@ -480,7 +480,7 @@ def test_union(
 def test_intersection(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
@@ -598,7 +598,7 @@ def test_intersection_preserving_epsilon_transitions():
 def test_complement(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
@@ -1084,18 +1084,18 @@ def test_get_epsilon_transitions():
     nfa.make_initial_state(0)
     nfa.make_final_state(1)
 
-    nfa.add_trans_raw(1, 1, 2)
-    nfa.add_trans_raw(1, 2, 2)
-    nfa.add_trans_raw(1, mata.epsilon(), 2)
-    nfa.add_trans_raw(1, mata.epsilon(), 3)
+    nfa.add_transition(1, 1, 2)
+    nfa.add_transition(1, 2, 2)
+    nfa.add_transition(1, mata.epsilon(), 2)
+    nfa.add_transition(1, mata.epsilon(), 3)
     epsilon_transitions = nfa.get_epsilon_transitions(1)
     assert epsilon_transitions.symbol == mata.epsilon()
     assert epsilon_transitions.states_to == [2, 3]
 
-    nfa.add_trans_raw(0, 1, 2)
-    nfa.add_trans_raw(0, 2, 2)
-    nfa.add_trans_raw(0, 8, 5)
-    nfa.add_trans_raw(0, 8, 6)
+    nfa.add_transition(0, 1, 2)
+    nfa.add_transition(0, 2, 2)
+    nfa.add_transition(0, 8, 5)
+    nfa.add_transition(0, 8, 6)
     epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
     assert epsilon_transitions.symbol == 8
     assert epsilon_transitions.states_to == [5, 6]

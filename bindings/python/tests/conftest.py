@@ -3,7 +3,7 @@
 import os
 import shutil
 import pytest
-import mata
+import libmata as mata
 
 __author__ = 'Tomas Fiedor'
 
@@ -104,7 +104,7 @@ def fa_even_ones():
 
 @pytest.fixture(scope="function")
 def binary_alphabet():
-    alph = mata.alphabets.OnTheFlyAlphabet()
+    alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("0")
     alph.translate_symbol("1")
     yield alph
