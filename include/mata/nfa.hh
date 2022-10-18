@@ -69,11 +69,8 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
-// ALPHABET {{{
-class Alphabet
-{
+class Alphabet {
 public:
-
     /// translates a string into a symbol
     virtual Symbol translate_symb(const std::string& symb) = 0;
 
@@ -149,6 +146,82 @@ using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of
 
 using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
 
+/**
+* Direct alphabet (also identity alphabet or integer alphabet) using integers as symbols.
+*
+* This alphabet presumes that all integers are valid symbols.
+* Therefore, calling member functions get_complement() and get_symbols() makes no sense in this context and the methods
+*  will throw exceptions warning about the inappropriate use of IntAlphabet. If one needs these functions, they should
+*  use OnTheFlyAlphabet instead of IntAlphabet.
+*/
+class IntAlphabet : public Alphabet {
+public:
+    IntAlphabet(): alphabet(IntAlphabetSingleton::get()) {}
+
+    Symbol translate_symb(const std::string& symb) override {
+        return alphabet.translate_symb(symb);
+    }
+
+    std::string reverse_translate_symbol(Symbol symbol, const std::string* const default_if_missing = nullptr) const override {
+        (void)default_if_missing;
+        return alphabet.reverse_translate_symbol(symbol);
+    }
+
+    std::list<Symbol> get_symbols() const override {
+        throw std::runtime_error("Nonsensical use of get_symbols() on IntAlphabet.");
+    }
+
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override {
+        (void)syms;
+        throw std::runtime_error("Nonsensical use of get_symbols() on IntAlphabet.");
+    }
+
+    bool operator==(const IntAlphabet& rhs) const {
+        (void)rhs;
+        return true;
+    }
+
+    IntAlphabet(const IntAlphabet&) = default;
+    IntAlphabet& operator=(const IntAlphabet& int_alphabet) = default;
+
+private:
+    /**
+     * Singleton class implementing integer alphabet for class IntAlphabet.
+     *
+     * Users have to use IntAlphabet instead which provides interface identical to other alphabets and can be used in
+     *  places where an instance of the abstract class Alphabet is required.
+     */
+    class IntAlphabetSingleton {
+    public:
+        static IntAlphabetSingleton& get() {
+            static IntAlphabetSingleton alphabet;
+            return alphabet;
+        }
+
+        Symbol translate_symb(const std::string& str) const {
+            Symbol symbol;
+            std::istringstream stream(str);
+            stream >> symbol;
+            return symbol;
+        }
+
+        std::string reverse_translate_symbol(const Symbol symbol) const {
+            return std::to_string(symbol);
+        }
+
+        IntAlphabetSingleton(IntAlphabetSingleton&) = delete;
+        IntAlphabetSingleton(IntAlphabetSingleton&&) = delete;
+        IntAlphabetSingleton& operator=(const IntAlphabetSingleton&) = delete;
+        IntAlphabetSingleton& operator=(IntAlphabetSingleton&&) = delete;
+
+        ~IntAlphabetSingleton() = default;
+    protected:
+        IntAlphabetSingleton() = default;
+    }; // class IntAlphabetSingleton.
+    
+    IntAlphabetSingleton& alphabet;
+}; // class IntAlphabet.
+
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
 	const Nfa&                aut,
@@ -205,7 +278,7 @@ struct Nfa
     ///  transition.
     // TODO: When there is a need for state dictionary, consider creating default library implementation of state
     //  dictionary in the attributes.
-    std::unordered_map<std::string, void*> attributes;
+    std::unordered_map<std::string, void*> attributes{};
 
 public:
     Nfa() : transitionrelation(), initialstates(), finalstates() {}
@@ -214,7 +287,7 @@ public:
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = nullptr)
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
         : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
           alphabet(alphabet_p) {}
 
@@ -222,9 +295,15 @@ public:
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
     explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{},Alphabet* alphabet_p = nullptr)
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = nullptr)
         : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states),
           alphabet(alphabet_p) {}
+
+    /**
+     * @brief Construct a new explicit NFA from other NFA.
+     */
+    Nfa(const Mata::Nfa::Nfa& other) = default;
+    Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
 
     /**
      * Clear transitions but keep the automata states.
@@ -1118,7 +1197,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
+    explicit Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
     {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
@@ -1306,6 +1385,10 @@ private:
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
 }; // class ShortestWordsMap.
 
+/**
+ * An alphabet constructed 'on the fly'.
+ * Should be use anytime the automata have a specific names for the symbols.
+ */
 class OnTheFlyAlphabet : public Alphabet {
 public:
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
@@ -1314,7 +1397,7 @@ public:
     OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
 
     explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map)
-        : symbol_map(str_sym_map) {}
+            : symbol_map(str_sym_map) {}
 
     /**
      * Create alphabet from a list of symbol names.
@@ -1501,7 +1584,7 @@ public:
      * @param[in] value Number of the symbol to be used on transitions.
      * @return Result of the insertion as @c InsertionResult.
      */
-     InsertionResult add_new_symbol(const std::string& key, Symbol value) {
+    InsertionResult add_new_symbol(const std::string& key, Symbol value) {
         InsertionResult insertion_result{ try_add_new_symbol(key, value) };
         if (!insertion_result.second) { // If the insertion of key-value pair failed.
             throw std::runtime_error("multiple occurrences of the same symbol");
@@ -1662,5 +1745,6 @@ std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Alphabet& alphabet);
 } // std }}}
+
 
 #endif /* _MATA_NFA_HH_ */

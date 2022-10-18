@@ -63,6 +63,17 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 } // }}}
 */
 
+TEST_CASE("Mata::Nfa::IntAlphabet") {
+    auto alphabet1 = IntAlphabet();
+    auto alphabet2 = IntAlphabet();
+    CHECK(alphabet1 == alphabet2);
+
+    auto& alphabet3 = alphabet2;
+    CHECK(alphabet3 == alphabet1);
+    const auto& alphabet4 = alphabet2;
+    CHECK(alphabet4 == alphabet1);
+}
+
 TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::from_nfas()") {
     Nfa a{1};
     a.add_trans(0, 'a', 0);
