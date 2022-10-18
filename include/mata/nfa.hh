@@ -45,6 +45,7 @@ using State = unsigned long;
 using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
+using SymbolSet = Mata::Util::OrdVector<Symbol>;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
 
@@ -69,6 +70,9 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
+/**
+ * The abstract interface for NFA alphabets.
+ */
 class Alphabet {
 public:
     /// translates a string into a symbol
@@ -83,8 +87,14 @@ public:
 
     /// also translates strings to symbols
     Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
-    /// gets a list of symbols in the alphabet
-    virtual std::list<Symbol> get_symbols() const
+
+    /**
+     * @brief Get a list of symbols in the alphabet.
+     *
+     * The result does not have to equal the list of symbols in the automaton using this alphabet.
+     * @return
+     */
+    virtual SymbolSet get_alphabet_symbols() const
     { // {{{
         throw std::runtime_error("Unimplemented");
     } // }}}
@@ -97,7 +107,7 @@ public:
     } // }}}
 
     virtual ~Alphabet() { }
-};
+}; // class Alphabet.
 
 const PostSymb EMPTY_POST{};
 
@@ -150,7 +160,7 @@ using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
 * Direct alphabet (also identity alphabet or integer alphabet) using integers as symbols.
 *
 * This alphabet presumes that all integers are valid symbols.
-* Therefore, calling member functions get_complement() and get_symbols() makes no sense in this context and the methods
+* Therefore, calling member functions get_complement() and get_alphabet_symbols() makes no sense in this context and the methods
 *  will throw exceptions warning about the inappropriate use of IntAlphabet. If one needs these functions, they should
 *  use OnTheFlyAlphabet instead of IntAlphabet.
 */
@@ -167,13 +177,13 @@ public:
         return alphabet.reverse_translate_symbol(symbol);
     }
 
-    std::list<Symbol> get_symbols() const override {
-        throw std::runtime_error("Nonsensical use of get_symbols() on IntAlphabet.");
+    SymbolSet get_alphabet_symbols() const override {
+        throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
     }
 
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override {
         (void)syms;
-        throw std::runtime_error("Nonsensical use of get_symbols() on IntAlphabet.");
+        throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
     }
 
     bool operator==(const IntAlphabet& rhs) const {
@@ -546,6 +556,14 @@ public:
         initialstates = initial_states;
         finalstates = final_states;
     }
+
+    /**
+     * @brief Get set of symbols used on the transitions in the automaton.
+     *
+     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+     * @return Set of symbols used on the transitions.
+     */
+    SymbolSet get_symbols() const;
 
     /**
      * @brief Get set of reachable states.
@@ -1407,7 +1425,7 @@ public:
     explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
             : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
 
-    std::list<Symbol> get_symbols() const override;
+    SymbolSet get_alphabet_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
 
     std::string reverse_translate_symbol(const Symbol symbol) const override {

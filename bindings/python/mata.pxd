@@ -77,6 +77,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef uintptr_t Symbol
+    ctypedef COrdVector[Symbol] SymbolSet
     ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb
@@ -174,6 +175,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void clear_final()
         void unify_initial()
         void unify_final()
+        SymbolSet get_symbols()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         void remove_trans(CTrans) except +
@@ -256,7 +258,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         COnTheFlyAlphabet(Symbol) except +
         COnTheFlyAlphabet(COnTheFlyAlphabet) except +
         COnTheFlyAlphabet(vector[string]) except +
-        clist[Symbol] get_symbols()
+        SymbolSet get_alphabet_symbols()
         StringToSymbolMap get_symbol_map()
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
         StringToSymbolMap add_symbols_from(vector[string])

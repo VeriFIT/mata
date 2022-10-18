@@ -311,15 +311,15 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
 
 ////// Alphabet related functions
 
-std::list<Symbol> OnTheFlyAlphabet::get_symbols() const { // {{{
-	std::list<Symbol> result;
+StateSet OnTheFlyAlphabet::get_alphabet_symbols() const {
+	SymbolSet result;
 	for (const auto& str_sym_pair : symbol_map) {
-		result.push_back(str_sym_pair.second);
+		result.insert(str_sym_pair.second);
 	}
 	return result;
-} // OnTheFlyAlphabet::get_symbols }}}
+} // OnTheFlyAlphabet::get_alphabet_symbols.
 
-std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms) const { // {{{
+std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms) const {
     std::list<Symbol> result;
     // TODO: Could be optimized.
     std::set<Symbol> symbols_alphabet;
@@ -332,7 +332,7 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms)
             syms.begin(), syms.end(),
             std::inserter(result, result.end()));
     return result;
-} // OnTheFlyAlphabet::get_complement }}}
+} // OnTheFlyAlphabet::get_complement.
 
 void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
     size_t aut_num_of_states{ nfa.get_num_of_states() };
@@ -712,8 +712,8 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 }
 bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
-    std::list<Symbol> symbs_ls = alphabet.get_symbols();
-    std::unordered_set<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
+    SymbolSet symbs_ls = alphabet.get_alphabet_symbols();
+    SymbolSet symbs(symbs_ls.cbegin(), symbs_ls.cend());
 
     // TODO: make a general function for traversal over reachable states that can
     // be shared by other functions?
@@ -1809,3 +1809,13 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     }
     act.first = dst.first + 1;
 }
+
+SymbolSet Nfa::get_symbols() const {
+     SymbolSet symbols{};
+     for (const auto& state_transitions: transitionrelation) {
+         for (const auto& symbol_transitions: state_transitions) {
+             symbols.insert(symbol_transitions.symbol);
+         }
+     }
+     return symbols;
+ }

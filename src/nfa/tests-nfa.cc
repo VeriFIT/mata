@@ -86,8 +86,8 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::from_nfas()") {
 
     auto alphabet{ OnTheFlyAlphabet::from_nfas(a, b, c) };
 
-    auto symbols{ alphabet.get_symbols() };
-    CHECK(symbols == std::list<Symbol>{ 'c', 'b', 'a' });
+    auto symbols{alphabet.get_alphabet_symbols() };
+    CHECK(symbols == SymbolSet{ 'c', 'b', 'a' });
 
     //OnTheFlyAlphabet::from_nfas(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
     //OnTheFlyAlphabet::from_nfas(a, b, 4); // Will not compile: '4' is not of the required type.
@@ -98,10 +98,8 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
     StringToSymbolMap symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
     alphabet.add_symbols_from(symbol_map);
 
-    auto symbols{ alphabet.get_symbols() };
-	symbols.sort();
-	std::list<Symbol> expected{ 4, 2, 10 };
-	expected.sort();
+    auto symbols{alphabet.get_alphabet_symbols() };
+	SymbolSet expected{ 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == symbol_map);
@@ -110,10 +108,8 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
 	symbol_map["e"] = 7;
     alphabet.add_symbols_from(symbol_map);
 
-    symbols = alphabet.get_symbols();
-	symbols.sort();
-	expected = std::list<Symbol>{ 7, 4, 2, 10 };
-	expected.sort();
+    symbols = alphabet.get_alphabet_symbols();
+	expected = SymbolSet{ 7, 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == StringToSymbolMap{

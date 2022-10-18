@@ -158,7 +158,7 @@ cdef class Nfa:
         :param Alphabet alphabet: alphabet corresponding to the automaton
         """
         cdef CAlphabet* c_alphabet = NULL
-        cdef COrdVector[State] state_set
+        cdef StateSet state_set
         if alphabet:
             c_alphabet = alphabet.as_base()
         self.thisptr = make_shared[CNfa](mata.CNfa(state_number, state_set, state_set, c_alphabet))
@@ -433,7 +433,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: TransSymbolStates
         """
-        cdef TransitionList transitions = self.thisptr.get().get_transitions_from(state)
+        cdef mata.TransitionList transitions = self.thisptr.get().get_transitions_from(state)
         cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
 
         cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
@@ -596,7 +596,7 @@ cdef class Nfa:
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
         symbol_map = {}
-        for symbol in alphabet.get_symbols():
+        for symbol in alphabet.get_alphabet_symbols():
             symbol_map[symbol] = self.post_of({st}, symbol)
         return symbol_map
 
@@ -1194,7 +1194,14 @@ cdef class Nfa:
                 }
             )
 
+    def get_symbols(self):
+        """
+        Return a set of symbols used on the transitions in NFA.
 
+        :return: Set of symbols.
+        """
+        cdef SymbolSet symbols = self.thisptr.get().get_symbols()
+        return {s for s in symbols}
 
     @classmethod
     def is_complete(cls, Nfa lhs, Alphabet alphabet):
@@ -1374,13 +1381,13 @@ cdef class OnTheFlyAlphabet(Alphabet):
         """
         return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
 
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
+    cpdef get_alphabet_symbols(self):
+        """Returns a set of supported symbols.
 
-        :return: list of supported symbols
+        :return: Set of supported symbols.
         """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
+        cdef SymbolSet symbols = self.thisptr.get_alphabet_symbols()
+        return {s for s in symbols}
 
     cdef mata.CAlphabet* as_base(self):
         """Retypes the alphabet to its base class
