@@ -17,7 +17,11 @@ init:
 build-install: build-ext install
 
 pypi-release:
-	python3 setup.py sdist bdist_wheel --user
+	python3 setup.py sdist bdist_wheel
+
+pypi-release-local:
+	mkdir ~/bdist
+	python3 setup.py sdist bdist_wheel --bdist-dir ~/bdist
 
 
 .PHONY: build-ext build-dist install init test pypi-release
