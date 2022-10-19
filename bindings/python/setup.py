@@ -61,7 +61,7 @@ setup(
     version=get_version(),
     ext_modules=cythonize(extensions),
     description="The automata library",
-    author_name="Lukáš Holík <holik@fit.vutbr.cz>, "
+    author="Lukáš Holík <holik@fit.vutbr.cz>, "
                 "Ondřej Lengál <lengal@fit.vutbr.cz>, "
                 "Martin Hruška <ihruskam@fit.vutbr.cz>, "
                 "Tomáš Fiedor <ifiedortom@fit.vutbr.cz>, "
