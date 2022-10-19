@@ -400,7 +400,28 @@ namespace
     }
 } // anonymous
 
+size_t Mata::IntermediateAut::get_number_of_disjuncts() const
+{
+    size_t res = 0;
 
+    for (const auto& trans : this->transitions) {
+        size_t trans_disjuncts = 0;
+        std::vector<const FormulaGraph *> stack;
+        stack.push_back(&trans.second);
+
+        while (!stack.empty()) {
+            const FormulaGraph *gr = stack.back();
+            stack.pop_back();
+            if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OR)
+                trans_disjuncts++;
+            for (const auto &ch: gr->children)
+                stack.push_back(&ch);
+        }
+        res += std::max(trans_disjuncts, (size_t) 1);
+    }
+
+    return res;
+}
 
 /**
  * Parses a transition by firstly transforming transition formula to postfix form and then creating

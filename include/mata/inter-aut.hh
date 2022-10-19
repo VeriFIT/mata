@@ -228,6 +228,8 @@ public:
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
 
+    size_t get_number_of_disjuncts() const;
+
     static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
     void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
     void print_transitions_trees(std::ostream&) const;
