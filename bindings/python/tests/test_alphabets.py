@@ -55,3 +55,9 @@ def test_on_the_fly_alphabet():
     assert alphabet.translate_symbol('b') == 4
     assert alphabet.translate_symbol('c') == 5
     assert alphabet.translate_symbol('a') == 3
+
+
+def test_int_alphabet():
+    alphabet = mata.IntAlphabet()
+    assert alphabet.translate_symbol('4') == 4
+    assert alphabet.reverse_translate_symbol(4) == '4'

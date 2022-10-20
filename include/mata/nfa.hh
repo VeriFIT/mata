@@ -80,7 +80,9 @@ public:
 
     /**
      * Translate internal @p symbol representation back to its original string name.
-     * @param symbol Symbol to translate.
+     * @param[in] symbol Symbol to translate.
+     * @param[in] default_if_missing Value to return if the @p symbol is not in the alphabet. Default: Throw an
+     *  exception when the @p symbol is missing.
      * @return @p symbol original name.
      */
     virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
@@ -1434,7 +1436,7 @@ public:
                 return symbol_mapping.first;
             }
         }
-        throw std::runtime_error("symbol is out of range of enumeration");
+        throw std::runtime_error("symbol '" + std::to_string(symbol) + "' is out of range of enumeration");
     }
 
 private:

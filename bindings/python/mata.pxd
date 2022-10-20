@@ -252,6 +252,9 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         Symbol translate_symb(string)
         string reverse_translate_symbol(Symbol)
 
+    cdef cppclass CIntAlphabet "Mata::Nfa::IntAlphabet" (CAlphabet):
+        SymbolSet get_alphabet_symbols()
+
     cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
         StringToSymbolMap symbol_map
         COnTheFlyAlphabet(StringToSymbolMap) except +
