@@ -48,7 +48,7 @@
  * -> remove a node/more nodes from the closed set (nonsense (???))
  * -> perform an union over two closed sets of different types or different carriers (nonsense)
  * -> perform an intersection over two closed sets of different types or different carriers (nonsense) 
- * -> perform a complement of the closed set (TODO)
+ * -> compute a complement of a closed set (TODO)
  *
  * Examples:
  *
@@ -190,8 +190,8 @@ struct ClosedSet
 
        bool is_upward_closed(void) const {return type == upward_closed;};
        bool is_downward_closed(void) const {return type == downward_closed;};
-       const bool get_type(void) const {return (const bool)type;};
-       const Nodes get_antichain(void) const {return (const Nodes)antichain;};
+       const bool get_type(void) const {return type;};
+       const Nodes get_antichain(void) const {return antichain;};
        const T get_min(void) const {return min_val;};
        const T get_max(void) const {return max_val;};
 
