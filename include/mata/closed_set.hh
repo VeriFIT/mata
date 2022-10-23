@@ -159,7 +159,7 @@ struct ClosedSet
         bool operator>=(ClosedSet<T> rhs) const
 	    { // {{{
             assert(type == rhs.type && min_val == rhs.min_val && max_val == rhs.max_val);
-            return this.contains(rhs.antichain);
+            return contains(rhs.antichain);
 	    } // operator<= }}}
 
         // Text representation of a closed set
