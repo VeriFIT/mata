@@ -79,10 +79,10 @@ public:
     virtual Symbol translate_symb(const std::string& symb) = 0;
 
     /**
-     * Translate internal @p symbol representation back to its original string name.
+     * @brief Translate internal @p symbol representation back to its original string name.
+     *
+     * Throws an exception when the @p symbol is missing in the alphabet.
      * @param[in] symbol Symbol to translate.
-     * @param[in] default_if_missing Value to return if the @p symbol is not in the alphabet. Default: Throw an
-     *  exception when the @p symbol is missing.
      * @return @p symbol original name.
      */
     virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
@@ -108,7 +108,29 @@ public:
         throw std::runtime_error("Unimplemented");
     } // }}}
 
-    virtual ~Alphabet() { }
+    virtual ~Alphabet() = default;
+
+    /**
+     * @brief Check whether two alphabets are equal.
+     *
+     * In general, two alphabets are equal if and only if they are of the same class instance.
+     * @param other_alphabet The other alphabet to compare with for equality.
+     * @return True if equal, false otherwise.
+     */
+    virtual bool is_equal(const Alphabet& other_alphabet) const { return address() == other_alphabet.address(); }
+    /**
+     * @brief Check whether two alphabets are equal.
+     *
+     * In general, two alphabets are equal if and only if they are of the same class instance.
+     * @param other_alphabet The other alphabet to compare with for equality.
+     * @return True if equal, false otherwise.
+     */
+    virtual bool is_equal(const Alphabet* const other_alphabet) const { return address() == other_alphabet->address(); }
+
+    bool operator==(const Alphabet&) const = delete;
+
+protected:
+    virtual const void* address() const { return this; }
 }; // class Alphabet.
 
 const PostSymb EMPTY_POST{};
@@ -168,15 +190,17 @@ using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
 */
 class IntAlphabet : public Alphabet {
 public:
-    IntAlphabet(): alphabet(IntAlphabetSingleton::get()) {}
+    IntAlphabet(): alphabet_instance(IntAlphabetSingleton::get()) {}
 
     Symbol translate_symb(const std::string& symb) override {
-        return alphabet.translate_symb(symb);
+        Symbol symbol;
+        std::istringstream stream(symb);
+        stream >> symbol;
+        return symbol;
     }
 
-    std::string reverse_translate_symbol(Symbol symbol, const std::string* const default_if_missing = nullptr) const override {
-        (void)default_if_missing;
-        return alphabet.reverse_translate_symbol(symbol);
+    std::string reverse_translate_symbol(Symbol symbol) const override {
+        return std::to_string(symbol);
     }
 
     SymbolSet get_alphabet_symbols() const override {
@@ -188,17 +212,13 @@ public:
         throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
     }
 
-    bool operator==(const IntAlphabet& rhs) const {
-        (void)rhs;
-        return true;
-    }
-
     IntAlphabet(const IntAlphabet&) = default;
-    IntAlphabet& operator=(const IntAlphabet& int_alphabet) = default;
-
+    IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+protected:
+    const void* address() const override { return &alphabet_instance; }
 private:
     /**
-     * Singleton class implementing integer alphabet for class IntAlphabet.
+     * Singleton class implementing integer alphabet_instance for class IntAlphabet.
      *
      * Users have to use IntAlphabet instead which provides interface identical to other alphabets and can be used in
      *  places where an instance of the abstract class Alphabet is required.
@@ -208,17 +228,6 @@ private:
         static IntAlphabetSingleton& get() {
             static IntAlphabetSingleton alphabet;
             return alphabet;
-        }
-
-        Symbol translate_symb(const std::string& str) const {
-            Symbol symbol;
-            std::istringstream stream(str);
-            stream >> symbol;
-            return symbol;
-        }
-
-        std::string reverse_translate_symbol(const Symbol symbol) const {
-            return std::to_string(symbol);
         }
 
         IntAlphabetSingleton(IntAlphabetSingleton&) = delete;
@@ -231,7 +240,7 @@ private:
         IntAlphabetSingleton() = default;
     }; // class IntAlphabetSingleton.
     
-    IntAlphabetSingleton& alphabet;
+    IntAlphabetSingleton& alphabet_instance;
 }; // class IntAlphabet.
 
 /// serializes Nfa into a ParsedSection
@@ -1568,7 +1577,7 @@ public:
         }
 
         // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
-        //  the alphabet should have a only the previously fixed symbols?
+        //  the alphabet should have only the previously fixed symbols?
         //auto it = symbol_map.find(str);
         //if (symbol_map.end() == it)
         //{

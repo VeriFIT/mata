@@ -66,12 +66,18 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 TEST_CASE("Mata::Nfa::IntAlphabet") {
     auto alphabet1 = IntAlphabet();
     auto alphabet2 = IntAlphabet();
-    CHECK(alphabet1 == alphabet2);
+    CHECK(alphabet1.is_equal(alphabet2));
 
     auto& alphabet3 = alphabet2;
-    CHECK(alphabet3 == alphabet1);
+    CHECK(alphabet3.is_equal(&alphabet1));
     const auto& alphabet4 = alphabet2;
-    CHECK(alphabet4 == alphabet1);
+    CHECK(alphabet4.is_equal(alphabet1));
+
+    OnTheFlyAlphabet different_alphabet{};
+    OnTheFlyAlphabet different_alphabet2{};
+    CHECK(!alphabet1.is_equal(different_alphabet));
+    CHECK(!different_alphabet.is_equal(different_alphabet2));
+    CHECK(different_alphabet.is_equal(&different_alphabet));
 }
 
 TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::from_nfas()") {

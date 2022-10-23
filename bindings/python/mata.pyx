@@ -1334,6 +1334,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
     def reverse_translate_symbol(self, Symbol symbol) -> str:
         """Translate internal symbol value to the original symbol name.
 
+        Throw an exception when the symbol is missing in the alphabet.
         :param Symbol symbol: Internal symbol value to be translated.
         :return str: Original symbol string name.
         """
