@@ -1,4 +1,4 @@
-/* nfa.cc -- operations for NFA
+/* nfa.cc -- operations for NFA  
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
