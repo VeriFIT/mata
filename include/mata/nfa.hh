@@ -946,34 +946,24 @@ Nfa intersection(const Nfa &lhs, const Nfa &rhs, ProductMap* prod_map = nullptr)
  * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
+ * @param[out] lhs_result_states_map Map mapping lhs states to result states.
+ * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /**
  * Concatenate two NFAs.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
+ * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
+ * @param[out] lhs_result_states_map Map mapping lhs states to result states.
+ * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
-
-/**
- * Concatenate two NFAs over epsilon transitions.
- * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
- */
-void concatenate_over_epsilon(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
-
-/**
- * Concatenate two NFAs over epsilon transitions.
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
- * @return Concatenated automaton.
- */
-Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+                StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /// makes the transition relation complete
 void make_complete(

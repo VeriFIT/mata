@@ -393,12 +393,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     Nfa lhs{};
     Nfa rhs{};
     Nfa result{};
-    Symbol epsilon{ 'x' };
 
     SECTION("Empty automaton") {
         lhs.increase_size(1);
         rhs.increase_size(1);
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
@@ -413,7 +412,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         rhs.make_initial(0);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.get_num_of_states() == 0);
         CHECK(result.initialstates.empty());
@@ -429,13 +428,13 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         rhs.make_initial(0);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.finalstates.empty());
         CHECK(result.get_num_of_states() == 2);
         CHECK(result.get_num_of_trans() == 1);
-        CHECK(result.has_trans(0, epsilon, 1));
+        CHECK(result.has_trans(0, EPSILON, 1));
     }
 
     SECTION("Single state automata accepting an empty string")
@@ -447,13 +446,13 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_initial(0);
         rhs.make_final(0);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(1));
         CHECK(result.get_num_of_states() == 2);
         CHECK(result.get_num_of_trans() == 1);
-        CHECK(result.has_trans(0, epsilon, 1));
+        CHECK(result.has_trans(0, EPSILON, 1));
     }
 
     SECTION("Empty language rhs automaton")
@@ -465,13 +464,13 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_initial(0);
         rhs.make_final(1);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
         CHECK(result.get_num_of_states() == 3);
         CHECK(result.get_num_of_trans() == 1);
-        CHECK(result.has_trans(0, epsilon, 1));
+        CHECK(result.has_trans(0, EPSILON, 1));
     }
 
     SECTION("Simple two state rhs automaton")
@@ -484,14 +483,14 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(1);
         rhs.add_trans(0, 'a', 1);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
         CHECK(result.get_num_of_states() == 3);
         CHECK(result.get_num_of_trans() == 2);
         CHECK(result.has_trans(1, 'a', 2));
-        CHECK(result.has_trans(0, epsilon, 1));
+        CHECK(result.has_trans(0, EPSILON, 1));
     }
 
     SECTION("Simple two state automata")
@@ -505,7 +504,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(1);
         rhs.add_trans(0, 'a', 1);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(3));
@@ -513,11 +512,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(2, 'a', 3));
-        CHECK(result.has_trans(1, epsilon, 2));
+        CHECK(result.has_trans(1, EPSILON, 2));
 
         auto shortest_words{ result.get_shortest_words() };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon, 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state automata with higher state num for non-final state")
@@ -532,7 +531,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.add_trans(0, 'a', 1);
         rhs.add_trans(0, 'c', 3);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(3));
@@ -541,11 +540,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(2, 'a', 3));
         CHECK(result.has_trans(2, 'c', 5));
-        CHECK(result.has_trans(1, epsilon, 2));
+        CHECK(result.has_trans(1, EPSILON, 2));
 
         auto shortest_words{ result.get_shortest_words() };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon, 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON, 'a' }) != shortest_words.end());
     }
 
     SECTION("Simple two state lhs automaton")
@@ -559,7 +558,12 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.make_final(0);
         rhs.add_trans(0, 'a', 0);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        StateToStateMap lhs_map{};
+        StateToStateMap rhs_map{};
+        result = concatenate(lhs, rhs, true, &lhs_map, &rhs_map);
+
+        CHECK(lhs_map.empty());
+        CHECK(rhs_map == StateToStateMap{ { 0, 2 } });
 
         CHECK(result.has_initial(0));
         CHECK(result.has_final(2));
@@ -567,11 +571,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(2, 'a', 2));
-        CHECK(result.has_trans(1, epsilon, 2));
+        CHECK(result.has_trans(1, EPSILON, 2));
 
         auto shortest_words{ result.get_shortest_words() };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', epsilon }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON }) != shortest_words.end());
     }
 
     SECTION("Automaton A concatenate automaton B")
@@ -581,7 +585,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size_for_state(14);
         FILL_WITH_AUT_B(rhs);
 
-        result = concatenate_over_epsilon(lhs, rhs, epsilon);
+        result = concatenate(lhs, rhs, true);
 
         CHECK(result.initialstates.size() == 2);
         CHECK(result.has_initial(1));
@@ -591,10 +595,10 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         auto shortest_words{ result.get_shortest_words() };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
     }
 
     SECTION("Automaton B concatenate automaton A")
@@ -604,7 +608,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size_for_state(14);
         FILL_WITH_AUT_B(rhs);
 
-        result = concatenate_over_epsilon(rhs, lhs, epsilon);
+        result = concatenate(rhs, lhs, true);
 
         CHECK(result.get_num_of_states() == 26);
 
@@ -613,9 +617,9 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         auto shortest_words{ result.get_shortest_words() };
         CHECK(shortest_words.size() == 4);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'a', 'a' }) != shortest_words.end());
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', epsilon, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
     }
 }

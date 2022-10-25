@@ -391,21 +391,23 @@ def test_concatenate():
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
-    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs)
+    result = mata.Nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.get_num_of_states() == 4
     assert result.has_trans_raw(0, ord('b'), 1)
-    assert result.has_trans_raw(1, 0xffffffffffffffff, 2)
+    assert result.has_trans_raw(1, mata.epsilon(), 2)
     assert result.has_trans_raw(2, ord('a'), 3)
 
-    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs, ord('e'))
+    result, lhs_map, rhs_map = mata.Nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.get_num_of_states() == 4
     assert result.has_trans_raw(0, ord('b'), 1)
-    assert result.has_trans_raw(1, ord('e'), 2)
+    assert result.has_trans_raw(1, mata.epsilon(), 2)
     assert result.has_trans_raw(2, ord('a'), 3)
+    assert lhs_map == {}
+    assert rhs_map == {0: 2, 1: 3}
 
 
 def test_completeness(

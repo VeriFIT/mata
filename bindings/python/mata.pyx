@@ -730,29 +730,42 @@ cdef class Nfa:
         return result, {tuple(k): v for k, v in c_product_map}
 
     @classmethod
-    def concatenate(cls, Nfa lhs, Nfa rhs):
+    def concatenate(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
         """Concatenate two NFAs.
 
         :param Nfa lhs: First automaton to concatenate.
         :param Nfa rhs: Second automaton to concatenate.
+        :param use_epsilon: Whether to concatenate over an epsilon symbol.
         :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
+        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, NULL, NULL)
         return result
 
     @classmethod
-    def concatenate_over_epsilon(cls, Nfa lhs, Nfa rhs, epsilon = CEPSILON):
-        """Concatenate two NFAs over an epsilon symbol.
+    def concatenate_with_result_state_maps(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
+            -> tuple[Nfa, dict[str, str], dict[str, str]]:
+        """Concatenate two NFAs.
 
-        :param Nfa lhs: First automaton to concatenate over epsilon.
-        :param Nfa rhs: Second automaton to concatenate over epsilon.
-        :param Symbol epsilon: Symbol to concatenate over (Default: Default Mata epsilon value).
-        :return: Nfa: Concatenated automaton over epsilon.
+        :param Nfa lhs: First automaton to concatenate.
+        :param Nfa rhs: Second automaton to concatenate.
+        :param use_epsilon: Whether to concatenate over an epsilon symbol.
+        :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        mata.concatenate_over_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon)
-        return result
+        cdef StateToStateMap c_lhs_map
+        cdef StateToStateMap c_rhs_map
+        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, &c_lhs_map, &c_rhs_map)
+        lhs_map = {}
+        for key, value in c_lhs_map:
+            lhs_map[key] = value
+        rhs_map = {}
+        for key, value in c_rhs_map:
+            rhs_map[key] = value
+
+        return result, lhs_map, rhs_map
 
     @classmethod
     def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
