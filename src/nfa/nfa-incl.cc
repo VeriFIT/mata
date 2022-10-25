@@ -17,14 +17,13 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-internals.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
-namespace {
-
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool is_incl_naive(
+bool Mata::Nfa::Internals::is_incl_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -51,7 +50,7 @@ bool is_incl_naive(
 
 
 /// language inclusion check using Antichains
-bool is_incl_antichains(
+bool Mata::Nfa::Internals::is_incl_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -186,44 +185,42 @@ bool is_incl_antichains(
 	return true;
 } // }}}
 
+namespace {
+    using AlgoType = decltype(Internals::is_incl_naive)*;
 
-using AlgoType = decltype(is_incl_naive)*;
-
-bool compute_equivalence(const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const StringDict& params, const AlgoType& algo) {
-    if (algo(lhs, rhs, alphabet, nullptr, params))
-    {
-        if (algo(rhs, lhs, alphabet, nullptr, params))
-        {
-            return true;
+    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringDict &params,
+                             const AlgoType &algo) {
+        if (algo(lhs, rhs, alphabet, nullptr, params)) {
+            if (algo(rhs, lhs, alphabet, nullptr, params)) {
+                return true;
+            }
         }
+
+        return false;
     }
 
-    return false;
+    AlgoType set_algorithm(const std::string &function_name, const StringDict &params) {
+        if (!haskey(params, "algo")) {
+            throw std::runtime_error(function_name +
+                                     " requires setting the \"algo\" key in the \"params\" argument; "
+                                     "received: " + std::to_string(params));
+        }
+
+        decltype(Internals::is_incl_naive) *algo;
+        const std::string &str_algo = params.at("algo");
+        if ("naive" == str_algo) {
+            algo = Internals::is_incl_naive;
+        } else if ("antichains" == str_algo) {
+            algo = Internals::is_incl_antichains;
+        } else {
+            throw std::runtime_error(std::to_string(__func__) +
+                                     " received an unknown value of the \"algo\" key: " + str_algo);
+        }
+
+        return algo;
+    }
+
 }
-
-AlgoType set_algorithm(const std::string& function_name, const StringDict& params) {
-    if (!haskey(params, "algo")) {
-        throw std::runtime_error(function_name +
-                                 " requires setting the \"algo\" key in the \"params\" argument; "
-                                 "received: " + std::to_string(params));
-    }
-
-    decltype(is_incl_naive)* algo;
-    const std::string& str_algo = params.at("algo");
-    if ("naive" == str_algo) {
-        algo = is_incl_naive;
-    } else if ("antichains" == str_algo) {
-        algo = is_incl_antichains;
-    } else {
-        throw std::runtime_error(std::to_string(__func__) +
-                                 " received an unknown value of the \"algo\" key: " + str_algo);
-    }
-
-    return algo;
-}
-
-} // namespace
-
 
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_incl(

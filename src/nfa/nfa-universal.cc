@@ -17,14 +17,13 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-internals.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
-namespace {
-
 /// naive universality check (complementation + emptiness)
-bool is_universal_naive(
+bool Mata::Nfa::Internals::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Word*              cex,
@@ -44,7 +43,7 @@ bool is_universal_naive(
 
 
 /// universality check using Antichains
-bool is_universal_antichains(
+bool Mata::Nfa::Internals::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Word*              cex,
@@ -150,9 +149,6 @@ bool is_universal_antichains(
 	return true;
 } // }}}
 
-} // namespace
-
-
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_universal(
 	const Nfa&         aut,
@@ -162,7 +158,7 @@ bool Mata::Nfa::is_universal(
 { // {{{
 
 	// setting the default algorithm
-	decltype(is_universal_naive)* algo = is_universal_naive;
+	decltype(Internals::is_universal_naive)* algo = Internals::is_universal_naive;
 	if (!haskey(params, "algo")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
@@ -172,7 +168,7 @@ bool Mata::Nfa::is_universal(
 	const std::string& str_algo = params.at("algo");
 	if ("naive" == str_algo) { /* default */ }
 	else if ("antichains" == str_algo) {
-		algo = is_universal_antichains;
+		algo = Internals::is_universal_antichains;
 	} else {
 		throw std::runtime_error(std::to_string(__func__) +
 			" received an unknown value of the \"algo\" key: " + str_algo);
