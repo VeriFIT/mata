@@ -29,7 +29,7 @@ namespace Nfa {
  * to make them accessible to users of library. Typically, that are different algorithms for
  * operations such as complement, inclusion, or universality checking.
  * In Nfa interface, there are dispatch functions calling these function according to parameters
- * provided by an user.
+ * provided by a user.
  */
 namespace Internals {
 
