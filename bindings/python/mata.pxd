@@ -56,6 +56,23 @@ cdef extern from "mata/ord_vector.hh" namespace "Mata::Util":
         COrdVector(vector[T]) except+
         vector[T] ToVector()
 
+        cppclass const_iterator:
+            const T operator *()
+            const_iterator operator++()
+            bint operator ==(const_iterator)
+            bint operator !=(const_iterator)
+        const_iterator cbegin()
+        const_iterator cend()
+
+        cppclass iterator:
+            T operator *()
+            iterator operator++()
+            bint operator ==(iterator)
+            bint operator !=(iterator)
+        iterator begin()
+        iterator end()
+
+
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
@@ -82,6 +99,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef vector[CNfa*] AutPtrSequence
     ctypedef vector[const CNfa*] ConstAutPtrSequence
 
+    cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
+
     cdef cppclass CTrans "Mata::Nfa::Trans":
         # Public Attributes
         State src
@@ -104,6 +123,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet states_to
 
         # Constructors
+        CTransSymbolStates() except +
         CTransSymbolStates(Symbol) except +
         CTransSymbolStates(Symbol, State) except +
         CTransSymbolStates(Symbol, StateSet) except +
@@ -176,10 +196,13 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_trans_from_as_sequence(State)
         void trim()
         void get_digraph(CNfa&)
+        bool is_epsilon(Symbol)
         StateSet get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
+        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
+        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(TransitionList& state_transitions, Symbol epsilon)
 
 
     # Automata tests
@@ -200,10 +223,11 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef void determinize(CNfa*, CNfa&, SubsetMap*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&)
-    cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol)
     cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
-    cdef void intersection(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
+    cdef void intersection_preserving_epsilon_transitions(CNfa*, CNfa&, CNfa&, Symbol)
+    cdef void intersection_preserving_epsilon_transitions(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
     cdef void concatenate(CNfa*, CNfa&, CNfa&)
+    cdef void concatenate_over_epsilon(CNfa*, CNfa&, CNfa&, Symbol)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)
@@ -220,27 +244,17 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
         CAlphabet() except +
 
-    cdef cppclass CCharAlphabet "Mata::Nfa::CharAlphabet" (CAlphabet):
-        CCharAlphabet() except +
-        Symbol translate_symb(string)
-        clist[Symbol] get_symbols()
-
-    cdef cppclass CDirectAlphabet "Mata::Nfa::DirectAlphabet" (CAlphabet):
-        CDirectAlphabet() except +
-        Symbol translate_symb(string)
-        clist[Symbol] get_symbols()
-
-    cdef cppclass CEnumAlphabet "Mata::Nfa::EnumAlphabet" (CAlphabet):
-        CEnumAlphabet() except +
-        CEnumAlphabet(vector[string].iterator, vector[string].iterator) except +
-        Symbol translate_symb(string) except +
-        clist[Symbol] get_symbols()
-
     cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap* symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap*, Symbol) except +
+        StringToSymbolMap symbol_map
+        COnTheFlyAlphabet(StringToSymbolMap) except +
+        COnTheFlyAlphabet(Symbol) except +
+        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
+        COnTheFlyAlphabet(vector[string]) except +
         Symbol translate_symb(string)
         clist[Symbol] get_symbols()
+        StringToSymbolMap get_symbol_map()
+        StringToSymbolMap add_symbols_from(StringToSymbolMap)
+        StringToSymbolMap add_symbols_from(vector[string])
 
     cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
         CSegmentation(CNfa&, Symbol) except +
@@ -254,7 +268,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
-    
+
     cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
     cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringDict&)
 

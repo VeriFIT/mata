@@ -299,11 +299,11 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs)
     return Concatenation(lhs, rhs).get_result();
 }
 
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
+void concatenate_over_epsilon(Nfa* res, const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
     *res = Concatenation(lhs, rhs, epsilon).get_result();
 }
 
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
+Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon) {
     return Concatenation(lhs, rhs, epsilon).get_result();
 }
 

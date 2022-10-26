@@ -358,7 +358,7 @@ void intersection(Nfa *res, const Nfa &lhs, const Nfa &rhs, ProductMap*  prod_ma
     *res = intersection.get_product();
 }
 
-void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map)
+void intersection_preserving_epsilon_transitions(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, ProductMap* prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)
@@ -368,7 +368,7 @@ void intersection(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon, Prod
     *res = intersection.get_product();
 }
 
-Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMap*  prod_map)
+Nfa intersection_preserving_epsilon_transitions(const Nfa& lhs, const Nfa& rhs, Symbol epsilon, ProductMap*  prod_map)
 {
     Intersection intersection { Intersection::compute(lhs, rhs, epsilon) };
     if (prod_map != nullptr)
@@ -378,9 +378,15 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol epsilon, ProductMa
     return intersection.get_product();
 }
 
-Nfa intersection(const Nfa& lhs, const Nfa& rhs)
+Nfa intersection(const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map)
 {
-    return Intersection{ lhs, rhs }.get_product();
+    Intersection intersection { Intersection::compute(lhs, rhs) };
+    if (prod_map != nullptr)
+    {
+        *prod_map = intersection.get_product_map();
+    }
+
+    return intersection.get_product();
 }
 
 } // Nfa

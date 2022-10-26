@@ -47,7 +47,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(is_in_lang(aut, Word{127}));
         REQUIRE(is_in_lang(aut, Word{0x7f}));
         REQUIRE(is_in_lang(aut, Word{}));
-        EnumAlphabet alph = { };
+        OnTheFlyAlphabet alph{};
         REQUIRE(is_universal(aut,alph));
     }
 

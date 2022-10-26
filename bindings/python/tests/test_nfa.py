@@ -329,7 +329,7 @@ def test_inclusion(
     # Test equivalence of two NFAs.
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = ["a", "b"]
+    symbol_map = {"a": ord("a"), "b": ord("b")}
     smaller.make_initial_state(1)
     smaller.make_final_state(1)
     smaller.add_trans_raw(1, ord('a'), 1)
@@ -349,22 +349,22 @@ def test_inclusion(
     bigger.add_trans_raw(13, ord('b'), 15)
     bigger.add_trans_raw(15, ord('b'), 15)
 
-    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(smaller, bigger)
-    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(bigger, smaller)
 
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = []
+    symbol_map = {}
     smaller.initial_states = [1]
     smaller.final_states = [1]
     bigger.initial_states = [11]
     bigger.final_states = [11]
 
-    assert mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(smaller, bigger)
-    assert mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(bigger, smaller)
 
 
@@ -390,6 +390,22 @@ def test_concatenate():
     shortest_words = result.get_shortest_words()
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
+
+    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs)
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_trans_raw(0, ord('b'), 1)
+    assert result.has_trans_raw(1, 0xffffffffffffffff, 2)
+    assert result.has_trans_raw(2, ord('a'), 3)
+
+    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs, ord('e'))
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_trans_raw(0, ord('b'), 1)
+    assert result.has_trans_raw(1, ord('e'), 2)
+    assert result.has_trans_raw(2, ord('a'), 3)
 
 
 def test_completeness(
@@ -1059,3 +1075,35 @@ def test_unify():
     nfa.unify_initial()
     assert nfa.has_initial_state(10)
     assert nfa.has_trans_raw(10, 1, 2)
+
+
+def test_get_epsilon_transitions():
+    nfa = mata.Nfa(10)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+
+    nfa.add_trans_raw(1, 1, 2)
+    nfa.add_trans_raw(1, 2, 2)
+    nfa.add_trans_raw(1, mata.epsilon(), 2)
+    nfa.add_trans_raw(1, mata.epsilon(), 3)
+    epsilon_transitions = nfa.get_epsilon_transitions(1)
+    assert epsilon_transitions.symbol == mata.epsilon()
+    assert epsilon_transitions.states_to == [2, 3]
+
+    nfa.add_trans_raw(0, 1, 2)
+    nfa.add_trans_raw(0, 2, 2)
+    nfa.add_trans_raw(0, 8, 5)
+    nfa.add_trans_raw(0, 8, 6)
+    epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
+    assert epsilon_transitions.symbol == 8
+    assert epsilon_transitions.states_to == [5, 6]
+
+    assert nfa.get_epsilon_transitions(5) is None
+
+
+def test_is_epsilon():
+    nfa = mata.Nfa()
+    assert nfa.is_epsilon(mata.epsilon())
+    assert not nfa.is_epsilon(0)
+
+    # TODO: Add checks for user-specified epsilons when user-specified epsilons are implemented.

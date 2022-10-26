@@ -11,6 +11,11 @@ import shlex
 import subprocess
 import tabulate
 
+cdef Symbol EPSILON = CEPSILON
+
+def epsilon():
+    return EPSILON
+
 cdef class Trans:
     """
     Wrapper over the transitions in NFA
@@ -132,6 +137,7 @@ cdef class TransSymbolStates:
 
     def __repr__(self):
         return str(self)
+
 
 cdef class Nfa:
     """
@@ -517,6 +523,14 @@ cdef class Nfa:
         self.thisptr.get().get_digraph(dereference(digraph.thisptr.get()))
         return digraph
 
+    def is_epsilon(self, Symbol symbol) -> bool:
+        """
+        Check whether passed symbol is epsilon symbol or not.
+        :param Symbol symbol: The symbol to check.
+        :return: True if the passed symbol is epsilon symbol, False otherwise.
+        """
+        return self.thisptr.get().is_epsilon(symbol)
+
     def __str__(self):
         """String representation of the automaton displays states, and transitions
 
@@ -666,20 +680,18 @@ cdef class Nfa:
 
     @classmethod
     def intersection(cls, Nfa lhs, Nfa rhs):
-        """Performs intersection of lhs and rhs
+        """Performs intersection of lhs and rhs.
 
-        :param Nfa lhs: first automaton
-        :param Nfa rhs: second automaton
-        :return: intersection of lhs and rhs.
+        :param Nfa lhs: First automaton.
+        :param Nfa rhs: Second automaton.
+        :return: Intersection of lhs and rhs.
         """
         result = Nfa()
-        mata.intersection(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
-        )
+        mata.intersection(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
         return result
 
     @classmethod
-    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
         """
         Performs intersection of lhs and rhs preserving epsilon transitions.
 
@@ -697,18 +709,18 @@ cdef class Nfa:
          to new states.
         """
         result = Nfa()
-        mata.intersection(
+        mata.intersection_preserving_epsilon_transitions(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon
         )
         return result
 
     @classmethod
     def intersection_with_product_map(cls, Nfa lhs, Nfa rhs):
-        """Performs intersection of lhs and rhs
+        """Performs intersection of lhs and rhs.
 
-        :param Nfa lhs: first automaton
-        :param Nfa rhs: second automaton
-        :return: intersection of lhs and rhs, product map of original pairs of states to new states.
+        :param Nfa lhs: First automaton.
+        :param Nfa rhs: Second automaton.
+        :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
         """
         result = Nfa()
         cdef ProductMap c_product_map
@@ -718,7 +730,7 @@ cdef class Nfa:
         return result, {tuple(k): v for k, v in c_product_map}
 
     @classmethod
-    def intersection_pres_eps_trans_with_prod_map(cls, Nfa lhs, Nfa rhs, Symbol epsilon):
+    def intersection_pres_eps_trans_with_prod_map(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
         """
         Performs intersection of lhs and rhs preserving epsilon transitions.
 
@@ -737,7 +749,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef ProductMap c_product_map
-        mata.intersection(
+        mata.intersection_preserving_epsilon_transitions(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon, &c_product_map
         )
         return result, {tuple(k): v for k, v in c_product_map}
@@ -753,6 +765,20 @@ cdef class Nfa:
         """
         result = Nfa()
         mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
+        return result
+
+    @classmethod
+    def concatenate_over_epsilon(cls, Nfa lhs, Nfa rhs, epsilon = CEPSILON):
+        """
+        Concatenate two NFAs over an epsilon symbol.
+
+        :param Nfa lhs: First automaton to concatenate over epsilon.
+        :param Nfa rhs: Second automaton to concatenate over epsilon.
+        :param Symbol epsilon: Symbol to concatenate over (Default: Default Mata epsilon value).
+        :return: Nfa: Concatenated automaton over epsilon.
+        """
+        result = Nfa()
+        mata.concatenate_over_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon)
         return result
 
     @classmethod
@@ -793,7 +819,7 @@ cdef class Nfa:
          the equation in a way that libMata understands. The left side automata represent the left side of the equation
          and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
          representing the intersection. That can be achieved by computing a product of both sides. First, the left side
-         has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
+         has to be concatenated over an epsilon transition into a single automaton to compute the intersection on, though.
 
         :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
         :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
@@ -897,20 +923,18 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def remove_epsilon(cls, Nfa lhs, Symbol epsilon):
-        """Removes transitions that contain epsilon symbol
+    def remove_epsilon(cls, Nfa lhs, Symbol epsilon = CEPSILON):
+        """Removes transitions that contain epsilon symbol.
 
-        TODO: Possibly there may be issue with setting the size of the automaton beforehand?
-
-        :param Nfa lhs: automaton, where epsilon transitions will be removed
-        :param Symbol epsilon: symbol representing the epsilon
-        :return: automaton, with epsilon transitions removed
+        :param Nfa lhs: Automaton, where epsilon transitions will be removed.
+        :param Symbol epsilon: Symbol representing the epsilon.
+        :return: Nfa: Automaton with epsilon transitions removed.
         """
         result = Nfa()
         mata.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
         return result
 
-    def remove_epsilon(self, Symbol epsilon):
+    def remove_epsilon(self, Symbol epsilon = CEPSILON):
         """
         Removes transitions which contain epsilon symbol.
 
@@ -920,9 +944,26 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_epsilon(epsilon)
 
+    def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> TransSymbolStates | None:
+        """
+        Get epsilon transitions for a state.
+        :param state: State to get epsilon transitions for.
+        :param epsilon: Epsilon symbol.
+        :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
+        """
+        cdef COrdVector[CTransSymbolStates].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
+            state, epsilon
+        )
+        if c_epsilon_transitions_iter == self.thisptr.get().get_transitions_from(state).cend():
+            return None
+
+        cdef CTransSymbolStates epsilon_transitions = dereference(c_epsilon_transitions_iter)
+        return TransSymbolStates(epsilon_transitions.symbol, epsilon_transitions.states_to.ToVector())
+
+
     @classmethod
     def minimize(cls, Nfa lhs):
-        """Minimies the automaton lhs
+        """Minimizes the automaton lhs
 
         :param Nfa lhs: automaton to be minimized
         :return: minimized automaton
@@ -1251,114 +1292,67 @@ cdef class Alphabet:
     cdef mata.CAlphabet* as_base(self):
         pass
 
-cdef class CharAlphabet(Alphabet):
-    """
-    CharAlphabet translates characters in quotes, such as 'a' or "b" to their ordinal values.
-    """
-    cdef mata.CCharAlphabet *thisptr
-
-    def __cinit__(self):
-        self.thisptr = new mata.CCharAlphabet()
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        """Translates character to its ordinal value. If the character is not in quotes,
-        it is interpreted as 0 byte
-
-        :param str symbol: translated symbol
-        :return: ordinal value of the symbol
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates the ordinal value back to the character
-
-        :param Symbol symbol: integer symbol
-        :return: symbol as a character
-        """
-        return "'" + chr(symbol) + "'"
-
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
-
-        :return: list of symbols
-        """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
-
-cdef class EnumAlphabet(Alphabet):
-    """
-    EnumAlphabet represents alphabet that has fixed number of possible values
-    """
-
-    cdef mata.CEnumAlphabet *thisptr
-    cdef vector[string] enums_as_strings
-
-    def __cinit__(self, enums):
-        self.enums_as_strings = [e.encode('utf-8') for e in enums]
-        self.thisptr = new mata.CEnumAlphabet(
-            self.enums_as_strings.begin(), self.enums_as_strings.end()
-        )
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        """Translates the symbol ot its position in the enumeration
-
-        :param str symbol: translated symbol
-        :return: symbol as an position in the enumeration
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates the symbol back to its string representation
-
-        :param Symbol symbol: integer symbol (position in enumeration)
-        :return: symbol as the original string
-        """
-        if symbol < len(self.enums_as_strings):
-            raise IndexError(f"{symbol} is out of range of enumeration")
-        return self.enums_as_strings[symbol]
-
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
-
-        :return: list of supported symbols
-        """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
 
 cdef class OnTheFlyAlphabet(Alphabet):
     """
     OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly
     """
     cdef mata.COnTheFlyAlphabet *thisptr
-    cdef StringToSymbolMap string_to_symbol_map
 
     def __cinit__(self, State initial_symbol = 0):
-        self.thisptr = new mata.COnTheFlyAlphabet(&self.string_to_symbol_map, initial_symbol)
+        self.thisptr = new mata.COnTheFlyAlphabet(initial_symbol)
+
+    @classmethod
+    def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
+        """
+        Create on the fly alphabet filled with symbol_map.
+        :param symbol_map: Map mapping symbol names to symbol values.
+        :return: On the fly alphabet.
+        """
+        alphabet = cls()
+        alphabet.add_symbols_from_symbol_map(symbol_map)
+        return alphabet
+
+    @classmethod
+    def for_symbol_names(cls, symbol_map: list[str]) -> OnTheFlyAlphabet:
+        alphabet = cls()
+        alphabet.add_symbols_for_names(symbol_map)
+        return alphabet
+
+    def add_symbols_from_symbol_map(self, symbol_map: dict[str, int]) -> None:
+        """
+        Add symbols from symbol_map to the current alphabet.
+        :param symbol_map: Map mapping strings to symbols.
+        """
+        cdef StringToSymbolMap c_symbol_map
+        for symbol, value in symbol_map.items():
+            c_symbol_map[symbol.encode('utf-8')] = value
+        self.thisptr.add_symbols_from(c_symbol_map)
+
+    def add_symbols_for_names(self, symbol_names: list[str]) -> None:
+        """
+        Add symbols for symbol names to the current alphabet.
+        :param symbol_names: Vector of symbol names.
+        """
+        cdef vector[string] c_symbol_names
+        for symbol_name in symbol_names:
+            c_symbol_names.push_back(symbol_name.encode('utf-8'))
+        self.thisptr.add_symbols_from(c_symbol_names)
 
     def __dealloc__(self):
         del self.thisptr
+
+    def get_symbol_map(self) -> dict[str, int]:
+        """
+        Get map mapping strings to symbols.
+
+        :return: Map of strings to symbols.
+        """
+        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
+        symbol_map = {}
+        for symbol, value in c_symbol_map:
+            symbol_map[symbol.encode('utf-8')] = value
+        return symbol_map
 
     def translate_symbol(self, str symbol):
         """Translates symbol to the position of the seen values
@@ -1374,8 +1368,9 @@ cdef class OnTheFlyAlphabet(Alphabet):
         :param Symbol symbol: integer symbol
         :return: original string
         """
-        cdef umap[string, Symbol].iterator it = self.string_to_symbol_map.begin()
-        cdef umap[string, Symbol].iterator end = self.string_to_symbol_map.end()
+        cdef StringToSymbolMap c_symbol_map = self.thisptr.get_symbol_map()
+        cdef umap[string, Symbol].iterator it = c_symbol_map.begin()
+        cdef umap[string, Symbol].iterator end = c_symbol_map.end()
         while it != end:
             key = dereference(it).first
             value = dereference(it).second
@@ -1653,7 +1648,7 @@ cdef class Segmentation:
     """Wrapper over Segmentation."""
     cdef mata.CSegmentation* thisptr
 
-    def __cinit__(self, Nfa aut, Symbol symbol):
+    def __cinit__(self, Nfa aut, Symbol symbol = CEPSILON):
         """
         Compute segmentation.
 
