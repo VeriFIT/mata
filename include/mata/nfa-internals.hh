@@ -33,12 +33,28 @@ namespace Nfa {
  */
 namespace Internals {
 
+    /**
+     * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
+     * final states which were non final in the original automaton.
+     * @param result Complemented automaton
+     * @param aut Automaton to be complemented
+     * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
+     * @param subset_map Maps states to subsets created during complementation.
+     */
     void complement_classical(
             Nfa*               result,
             const Nfa&         aut,
             const Alphabet&    alphabet,
             SubsetMap*         subset_map);
 
+    /**
+     * Complement implemented by determization and making final states which were non final in the original automaton.
+     * @param result Complemented automaton
+     * @param aut Automaton to be complemented
+     * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
+     * @param params Determines algorithms properties
+     * @param subset_map Maps states to subsets created during complementation.
+     */
     void complement_naive(
             Nfa*               result,
             const Nfa&         aut,
@@ -46,6 +62,16 @@ namespace Internals {
             const StringDict&  params,
             SubsetMap*         subset_map);
 
+    /**
+     * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then
+     * it checks emptiness of intersection
+     * @param smaller Automaton which language should be included in the bigger one
+     * @param bigger Automaton which language should include the smaller one
+     * @param alphabet Alphabet of the both automaton
+     * @param cex A potential counterexample word which breaks inclusion
+     * @return True if smaller language is included,
+     * i.e., if the final intersection of smaller complement of bigger is empty.
+     */
     bool is_incl_naive(
             const Nfa&             smaller,
             const Nfa&             bigger,
@@ -53,6 +79,16 @@ namespace Internals {
             Word*                  cex,
             const StringDict&  /* params*/);
 
+    /**
+     * Inclusion implemented by antichain algorithms.
+     * @param smaller Automaton which language should be included in the bigger one
+     * @param bigger Automaton which language should include the smaller one
+     * @param alphabet Alphabet of the both automaton
+     * @param cex A potential counterexample word which breaks inclusion
+     * @param params The parameters used in algorithm. E.g., type of simulation relation
+     * @return True if smaller language is included,
+     * i.e., if the final intersection of smaller complement of bigger is empty.
+     */
     bool is_incl_antichains(
             const Nfa&             smaller,
             const Nfa&             bigger,
@@ -60,12 +96,27 @@ namespace Internals {
             Word*                  cex,
             const StringDict&      params);
 
+    /**
+     * Universality check implemented by checking emptiness of complemented automaton
+     * @param aut Automaton which universality is checked
+     * @param alphabet Alphabet of the automaton
+     * @param cex Counterexample word which eventually breaks the universality
+     * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
+     */
     bool is_universal_naive(
             const Nfa&         aut,
             const Alphabet&    alphabet,
             Word*              cex,
             const StringDict&  /* params*/);
 
+    /**
+     * Universality checking based on subset construction with antichain.
+     * @param aut Automaton which universality is checked
+     * @param alphabet Alphabet of the automaton
+     * @param cex Counterexample word which eventually breaks the universality
+     * @param params Parameters of the automaton, i.e., simulation relation to be used for antichains
+     * @return True if the automaton is universal, otherwise false.
+     */
     bool is_universal_antichains(
             const Nfa&         aut,
             const Alphabet&    alphabet,
