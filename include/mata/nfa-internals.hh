@@ -36,27 +36,25 @@ namespace Internals {
     /**
      * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
      * final states which were non final in the original automaton.
-     * @param result Complemented automaton
      * @param aut Automaton to be complemented
      * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
      * @param subset_map Maps states to subsets created during complementation.
+     * @return Complemented automaton
      */
-    void complement_classical(
-            Nfa*               result,
+    Nfa complement_classical(
             const Nfa&         aut,
             const Alphabet&    alphabet,
             SubsetMap*         subset_map);
 
     /**
      * Complement implemented by determization and making final states which were non final in the original automaton.
-     * @param result Complemented automaton
      * @param aut Automaton to be complemented
      * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
      * @param params Determines algorithms properties
      * @param subset_map Maps states to subsets created during complementation.
+     * @return result Complemented automaton
      */
-    void complement_naive(
-            Nfa*               result,
+    Nfa complement_naive(
             const Nfa&         aut,
             const Alphabet&    alphabet,
             const StringDict&  params,
