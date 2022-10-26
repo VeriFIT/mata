@@ -45,6 +45,7 @@ using State = unsigned long;
 using StatePair = std::pair<State, State>;
 using StateSet = Mata::Util::OrdVector<State>;
 using Symbol = unsigned long;
+using SymbolSet = Mata::Util::OrdVector<Symbol>;
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
 
@@ -69,17 +70,33 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 using StringDict = std::unordered_map<std::string, std::string>;
 
-// ALPHABET {{{
-class Alphabet
-{
+/**
+ * The abstract interface for NFA alphabets.
+ */
+class Alphabet {
 public:
-
     /// translates a string into a symbol
     virtual Symbol translate_symb(const std::string& symb) = 0;
+
+    /**
+     * @brief Translate internal @p symbol representation back to its original string name.
+     *
+     * Throws an exception when the @p symbol is missing in the alphabet.
+     * @param[in] symbol Symbol to translate.
+     * @return @p symbol original name.
+     */
+    virtual std::string reverse_translate_symbol(Symbol symbol) const = 0;
+
     /// also translates strings to symbols
     Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
-    /// gets a list of symbols in the alphabet
-    virtual std::list<Symbol> get_symbols() const
+
+    /**
+     * @brief Get a list of symbols in the alphabet.
+     *
+     * The result does not have to equal the list of symbols in the automaton using this alphabet.
+     * @return
+     */
+    virtual SymbolSet get_alphabet_symbols() const
     { // {{{
         throw std::runtime_error("Unimplemented");
     } // }}}
@@ -91,8 +108,30 @@ public:
         throw std::runtime_error("Unimplemented");
     } // }}}
 
-    virtual ~Alphabet() { }
-};
+    virtual ~Alphabet() = default;
+
+    /**
+     * @brief Check whether two alphabets are equal.
+     *
+     * In general, two alphabets are equal if and only if they are of the same class instance.
+     * @param other_alphabet The other alphabet to compare with for equality.
+     * @return True if equal, false otherwise.
+     */
+    virtual bool is_equal(const Alphabet& other_alphabet) const { return address() == other_alphabet.address(); }
+    /**
+     * @brief Check whether two alphabets are equal.
+     *
+     * In general, two alphabets are equal if and only if they are of the same class instance.
+     * @param other_alphabet The other alphabet to compare with for equality.
+     * @return True if equal, false otherwise.
+     */
+    virtual bool is_equal(const Alphabet* const other_alphabet) const { return address() == other_alphabet->address(); }
+
+    bool operator==(const Alphabet&) const = delete;
+
+protected:
+    virtual const void* address() const { return this; }
+}; // class Alphabet.
 
 const PostSymb EMPTY_POST{};
 
@@ -140,6 +179,69 @@ using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const poin
 using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
 using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
+
+/**
+* Direct alphabet (also identity alphabet or integer alphabet) using integers as symbols.
+*
+* This alphabet presumes that all integers are valid symbols.
+* Therefore, calling member functions get_complement() and get_alphabet_symbols() makes no sense in this context and the methods
+*  will throw exceptions warning about the inappropriate use of IntAlphabet. If one needs these functions, they should
+*  use OnTheFlyAlphabet instead of IntAlphabet.
+*/
+class IntAlphabet : public Alphabet {
+public:
+    IntAlphabet(): alphabet_instance(IntAlphabetSingleton::get()) {}
+
+    Symbol translate_symb(const std::string& symb) override {
+        Symbol symbol;
+        std::istringstream stream(symb);
+        stream >> symbol;
+        return symbol;
+    }
+
+    std::string reverse_translate_symbol(Symbol symbol) const override {
+        return std::to_string(symbol);
+    }
+
+    SymbolSet get_alphabet_symbols() const override {
+        throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
+    }
+
+    std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override {
+        (void)syms;
+        throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
+    }
+
+    IntAlphabet(const IntAlphabet&) = default;
+    IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+protected:
+    const void* address() const override { return &alphabet_instance; }
+private:
+    /**
+     * Singleton class implementing integer alphabet_instance for class IntAlphabet.
+     *
+     * Users have to use IntAlphabet instead which provides interface identical to other alphabets and can be used in
+     *  places where an instance of the abstract class Alphabet is required.
+     */
+    class IntAlphabetSingleton {
+    public:
+        static IntAlphabetSingleton& get() {
+            static IntAlphabetSingleton alphabet;
+            return alphabet;
+        }
+
+        IntAlphabetSingleton(IntAlphabetSingleton&) = delete;
+        IntAlphabetSingleton(IntAlphabetSingleton&&) = delete;
+        IntAlphabetSingleton& operator=(const IntAlphabetSingleton&) = delete;
+        IntAlphabetSingleton& operator=(IntAlphabetSingleton&&) = delete;
+
+        ~IntAlphabetSingleton() = default;
+    protected:
+        IntAlphabetSingleton() = default;
+    }; // class IntAlphabetSingleton.
+    
+    IntAlphabetSingleton& alphabet_instance;
+}; // class IntAlphabet.
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
@@ -189,6 +291,15 @@ struct Nfa
     TransitionRelation transitionrelation;
     StateSet initialstates = {};
     StateSet finalstates = {};
+    Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
+    /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
+    ///  are up to the user.
+    /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
+    ///  respective names, or "transition_dict" for transition dictionary adding a human-readable meaning to each
+    ///  transition.
+    // TODO: When there is a need for state dictionary, consider creating default library implementation of state
+    //  dictionary in the attributes.
+    std::unordered_map<std::string, void*> attributes{};
 
 public:
     Nfa() : transitionrelation(), initialstates(), finalstates() {}
@@ -197,15 +308,23 @@ public:
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{})
-        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
+        : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
+          alphabet(alphabet_p) {}
 
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
     explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{})
-        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states) {}
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = nullptr)
+        : transitionrelation(transition_relation), initialstates(initial_states), finalstates(final_states),
+          alphabet(alphabet_p) {}
+
+    /**
+     * @brief Construct a new explicit NFA from other NFA.
+     */
+    Nfa(const Mata::Nfa::Nfa& other) = default;
+    Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
 
     /**
      * Clear transitions but keep the automata states.
@@ -448,6 +567,14 @@ public:
         initialstates = initial_states;
         finalstates = final_states;
     }
+
+    /**
+     * @brief Get set of symbols used on the transitions in the automaton.
+     *
+     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+     * @return Set of symbols used on the transitions.
+     */
+    SymbolSet get_symbols() const;
 
     /**
      * @brief Get set of reachable states.
@@ -739,19 +866,6 @@ public:
 
 private:
 }; // Nfa
-
-/// a wrapper encapsulating @p Nfa for higher-level use
-struct NfaWrapper
-{ // {{{
-	/// the NFA
-	Nfa nfa;
-
-	/// the alphabet
-	Alphabet* alphabet;
-
-	/// mapping of state names (as strings) to their numerical values
-	StringToStateMap state_dict;
-}; // NfaWrapper }}}
 
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
@@ -1082,9 +1196,6 @@ inline Word encode_word(
 	return result;
 } // encode_word }}}
 
-/// operator<<
-std::ostream& operator<<(std::ostream& strm, const Nfa& nfa);
-
 /// global constructor to be called at program startup (from vm-dispatch)
 void init();
 
@@ -1115,7 +1226,7 @@ public:
      * @param[in] aut Segment automaton to make segments for.
      * @param[in] epsilon Symbol to execute segmentation for.
      */
-    Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
+    explicit Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
     {
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
@@ -1303,6 +1414,10 @@ private:
     static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
 }; // class ShortestWordsMap.
 
+/**
+ * An alphabet constructed 'on the fly'.
+ * Should be use anytime the automata have a specific names for the symbols.
+ */
 class OnTheFlyAlphabet : public Alphabet {
 public:
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
@@ -1311,7 +1426,7 @@ public:
     OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
 
     explicit OnTheFlyAlphabet(const StringToSymbolMap& str_sym_map)
-        : symbol_map(str_sym_map) {}
+            : symbol_map(str_sym_map) {}
 
     /**
      * Create alphabet from a list of symbol names.
@@ -1321,8 +1436,17 @@ public:
     explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
             : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
 
-    std::list<Symbol> get_symbols() const override;
+    SymbolSet get_alphabet_symbols() const override;
     std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+
+    std::string reverse_translate_symbol(const Symbol symbol) const override {
+        for (const auto& symbol_mapping: symbol_map) {
+            if (symbol_mapping.second == symbol) {
+                return symbol_mapping.first;
+            }
+        }
+        throw std::runtime_error("symbol '" + std::to_string(symbol) + "' is out of range of enumeration");
+    }
 
 private:
     OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
@@ -1453,7 +1577,7 @@ public:
         }
 
         // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
-        //  the alphabet should have a only the previously fixed symbols?
+        //  the alphabet should have only the previously fixed symbols?
         //auto it = symbol_map.find(str);
         //if (symbol_map.end() == it)
         //{
@@ -1489,7 +1613,7 @@ public:
      * @param[in] value Number of the symbol to be used on transitions.
      * @return Result of the insertion as @c InsertionResult.
      */
-     InsertionResult add_new_symbol(const std::string& key, Symbol value) {
+    InsertionResult add_new_symbol(const std::string& key, Symbol value) {
         InsertionResult insertion_result{ try_add_new_symbol(key, value) };
         if (!insertion_result.second) { // If the insertion of key-value pair failed.
             throw std::runtime_error("multiple occurrences of the same symbol");
@@ -1647,7 +1771,9 @@ struct hash<Mata::Nfa::Trans>
 };
 
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::NfaWrapper& nfa_wrap);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Alphabet& alphabet);
 } // std }}}
+
 
 #endif /* _MATA_NFA_HH_ */

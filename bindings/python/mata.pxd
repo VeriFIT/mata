@@ -77,6 +77,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef uintptr_t Symbol
+    ctypedef COrdVector[Symbol] SymbolSet
     ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb
@@ -147,10 +148,13 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet initialstates
         StateSet finalstates
         TransitionRelation transitionrelation
+        umap[string, void*] attributes
+        CAlphabet* alphabet
 
         # Constructor
         CNfa() except +
         CNfa(unsigned long) except +
+        CNfa(unsigned long, StateSet, StateSet, CAlphabet*)
 
         # Public Functions
         void make_initial(State)
@@ -171,6 +175,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void clear_final()
         void unify_initial()
         void unify_final()
+        SymbolSet get_symbols()
         void add_trans(CTrans) except +
         void add_trans(State, Symbol, State) except +
         void remove_trans(CTrans) except +
@@ -244,14 +249,19 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
         CAlphabet() except +
 
+        Symbol translate_symb(string)
+        string reverse_translate_symbol(Symbol)
+
+    cdef cppclass CIntAlphabet "Mata::Nfa::IntAlphabet" (CAlphabet):
+        SymbolSet get_alphabet_symbols()
+
     cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
         StringToSymbolMap symbol_map
         COnTheFlyAlphabet(StringToSymbolMap) except +
         COnTheFlyAlphabet(Symbol) except +
         COnTheFlyAlphabet(COnTheFlyAlphabet) except +
         COnTheFlyAlphabet(vector[string]) except +
-        Symbol translate_symb(string)
-        clist[Symbol] get_symbols()
+        SymbolSet get_alphabet_symbols()
         StringToSymbolMap get_symbol_map()
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
         StringToSymbolMap add_symbols_from(vector[string])

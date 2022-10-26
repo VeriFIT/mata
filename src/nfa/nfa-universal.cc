@@ -76,7 +76,7 @@ bool is_universal_antichains(
 	// initialize
 	WorklistType worklist = { aut.initialstates };
 	ProcessedType processed = { aut.initialstates };
-	std::list<Symbol> alph_symbols = alphabet.get_symbols();
+	SymbolSet alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state

@@ -17,9 +17,7 @@ def epsilon():
     return EPSILON
 
 cdef class Trans:
-    """
-    Wrapper over the transitions in NFA
-    """
+    """Wrapper over the transitions in NFA."""
     cdef mata.CTrans *thisptr
 
     @property
@@ -53,9 +51,7 @@ cdef class Trans:
         self.thisptr = new mata.CTrans(src, s, tgt)
 
     def __dealloc__(self):
-        """
-        Destructor
-        """
+        """Destructor"""
         if self.thisptr != NULL:
             del self.thisptr
 
@@ -82,9 +78,7 @@ cdef class Trans:
 
 
 cdef class TransSymbolStates:
-    """
-    Wrapper over pair of symbol and states for transitions
-    """
+    """Wrapper over pair of symbol and states for transitions"""
     cdef mata.CTransSymbolStates *thisptr
 
     @property
@@ -140,25 +134,26 @@ cdef class TransSymbolStates:
 
 
 cdef class Nfa:
-    """
-    Wrapper over NFA
-    """
+    """Wrapper over NFA"""
 
     # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
     #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
     #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
     #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
     cdef shared_ptr[mata.CNfa] thisptr
-    cdef alphabet
 
-    def __cinit__(self, state_number = 0, alphabet = None):
-        """Constructor of the NFA
+    def __cinit__(self, state_number = 0, Alphabet alphabet = None):
+        """Constructor of the NFA.
 
         :param int state_number: number of states in automaton
         :param Alphabet alphabet: alphabet corresponding to the automaton
         """
-        self.thisptr = make_shared[CNfa](mata.CNfa(state_number))
-        self.alphabet = alphabet
+        cdef CAlphabet* c_alphabet = NULL
+        cdef StateSet empty_default_state_set
+        if alphabet:
+            c_alphabet = alphabet.as_base()
+        self.thisptr = make_shared[CNfa](mata.CNfa(state_number, empty_default_state_set, empty_default_state_set,
+                                                   c_alphabet))
 
     @property
     def initial_states(self):
@@ -196,16 +191,14 @@ cdef class Nfa:
         return self.thisptr.get().add_new_state()
 
     def make_initial_state(self, State state):
-        """
-        Makes specified state from the automaton initial.
+        """Makes specified state from the automaton initial.
 
         :param State state: State to be made initial.
         """
         self.thisptr.get().make_initial(state)
 
     def make_initial_states(self, vector[State] states):
-        """
-        Makes specified states from the automaton initial.
+        """Makes specified states from the automaton initial.
 
         :param list states: List of states to be made initial.
         """
@@ -220,32 +213,28 @@ cdef class Nfa:
         return self.thisptr.get().has_initial(st)
 
     def remove_initial_state(self, State state):
-        """
-        Removes state from initial state set of the automaton.
+        """Removes state from initial state set of the automaton.
 
         :param State state: State to be removed from initial states.
         """
         self.thisptr.get().remove_initial(state)
 
     def remove_initial_states(self, vector[State] states):
-        """
-        Removes states from initial state set of the automaton.
+        """Removes states from initial state set of the automaton.
 
         :param list State states: States to be removed from initial states.
         """
         self.thisptr.get().remove_initial(states)
 
     def reset_initial_state(self, State state):
-        """
-        Resets initial state set of the automaton to the specified state.
+        """Resets initial state set of the automaton to the specified state.
 
         :param State state: State to be made initial.
         """
         self.thisptr.get().reset_initial(state)
 
     def reset_initial_states(self, vector[State] states):
-        """
-        Resets initial state set of the automaton to the specified states.
+        """Resets initial state set of the automaton to the specified states.
 
         :param list states: List of states to be made initial.
         """
@@ -256,16 +245,14 @@ cdef class Nfa:
         self.thisptr.get().clear_initial()
 
     def make_final_state(self, State state):
-        """
-        Makes specified state from the automaton final.
+        """Makes specified state from the automaton final.
 
         :param State state: State to be made final.
         """
         self.thisptr.get().make_final(state)
 
     def make_final_states(self, vector[State] states):
-        """
-        Makes specified states from the automaton final.
+        """Makes specified states from the automaton final.
 
         :param vector[State] states: List of states to be made final.
         """
@@ -280,32 +267,28 @@ cdef class Nfa:
         return self.thisptr.get().has_final(st)
 
     def remove_final_state(self, State state):
-        """
-        Removes state from final state set of the automaton.
+        """Removes state from final state set of the automaton.
 
         :param State state: State to be removed from final states.
         """
         self.thisptr.get().remove_final(state)
 
     def remove_final_states(self, vector[State] states):
-        """
-        Removes states from final state set of the automaton.
+        """Removes states from final state set of the automaton.
 
         :param list State states: States to be removed from final states.
         """
         self.thisptr.get().remove_final(states)
 
     def reset_final_state(self, State state):
-        """
-        Resets final state set of the automaton to the specified state.
+        """Resets final state set of the automaton to the specified state.
 
         :param State state: State to be made final.
         """
         self.thisptr.get().reset_final(state)
 
     def reset_final_states(self, vector[State] states):
-        """
-        Resets final state set of the automaton to the specified states.
+        """Resets final state set of the automaton to the specified states.
 
         :param list states: List of states to be made final.
         """
@@ -347,16 +330,14 @@ cdef class Nfa:
         self.thisptr.get().add_trans(src, symb, tgt)
 
     def remove_trans(self, Trans tr):
-        """
-        Removes transition from the automaton.
+        """Removes transition from the automaton.
 
         :param Trans tr: Transition to be removed.
         """
         self.thisptr.get().remove_trans(dereference(tr.thisptr))
 
     def remove_trans_raw(self, State src, Symbol symb, State tgt):
-        """
-        Constructs transition and removes it from the automaton.
+        """Constructs transition and removes it from the automaton.
 
         :param State src: Source state of the transition to be removed.
         :param Symbol symb: Symbol of the transition to be removed.
@@ -404,8 +385,7 @@ cdef class Nfa:
         self.thisptr.get().increase_size(size)
 
     def resize_for_state(self, State state):
-        """
-        Increases the size of the automaton to include state.
+        """Increases the size of the automaton to include state.
 
         :param State state: State to resize for.
         """
@@ -430,7 +410,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: TransSymbolStates
         """
-        cdef TransitionList transitions = self.thisptr.get().get_transitions_from(state)
+        cdef mata.TransitionList transitions = self.thisptr.get().get_transitions_from(state)
         cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
 
         cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
@@ -446,8 +426,7 @@ cdef class Nfa:
         return transsymbols
 
     def get_transitions_to_state(self, State state_to):
-        """
-        Get transitions leading to state_to (state_to is their target state).
+        """Get transitions leading to state_to (state_to is their target state).
 
         :return: List mata.CTrans: List of transitions leading to state_to.
         """
@@ -458,8 +437,8 @@ cdef class Nfa:
         return trans
 
     def get_trans_as_sequence(self):
-        """
-        Get automaton transitions as a sequence.
+        """Get automaton transitions as a sequence.
+
         :return: List of automaton transitions.
         """
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
@@ -469,8 +448,8 @@ cdef class Nfa:
         return transitions
 
     def get_trans_from_state_as_sequence(self, State state_from):
-        """
-        Get automaton transitions from state_from as a sequence.
+        """Get automaton transitions from state_from as a sequence.
+
         :return: List of automaton transitions.
         """
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_from_as_sequence(state_from)
@@ -480,32 +459,31 @@ cdef class Nfa:
         return transitions
 
     def get_useful_states(self):
-        """
-        Get useful states (states which are reachable and terminating at the same time).
+        """Get useful states (states which are reachable and terminating at the same time).
+
         :return: A set of useful states.
         """
         cdef vector[State] return_value = self.thisptr.get().get_useful_states().ToVector()
         return {state for state in return_value}
 
     def get_reachable_states(self):
-        """
-        Get reachable states.
+        """Get reachable states.
+
         :return: A set of reachable states.
         """
         cdef vector[State] return_value = self.thisptr.get().get_reachable_states().ToVector()
         return {state for state in return_value}
 
     def get_terminating_states(self):
-        """
-        Get terminating states (states with a path from them leading to any final state).
+        """Get terminating states (states with a path from them leading to any final state).
+
         :return: A set of terminating states.
         """
         cdef vector[State] return_value = self.thisptr.get().get_terminating_states().ToVector()
         return {state for state in return_value}
 
     def trim(self):
-        """
-        Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+        """Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
 
         Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
@@ -514,8 +492,7 @@ cdef class Nfa:
         self.thisptr.get().trim()
 
     def get_digraph(self) -> Nfa:
-        """
-        Unify transitions to create a directed graph with at most a single transition between two states.
+        """Unify transitions to create a directed graph with at most a single transition between two states.
 
         :return: mata.Nfa: An automaton representing a directed graph.
         """
@@ -524,8 +501,8 @@ cdef class Nfa:
         return digraph
 
     def is_epsilon(self, Symbol symbol) -> bool:
-        """
-        Check whether passed symbol is epsilon symbol or not.
+        """Check whether passed symbol is epsilon symbol or not.
+
         :param Symbol symbol: The symbol to check.
         :return: True if the passed symbol is epsilon symbol, False otherwise.
         """
@@ -542,8 +519,8 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in final_states])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symb if self.alphabet is None \
-                else self.alphabet.reverse_translate_symbol(trans.symb)
+            symbol = trans.symb if self.thisptr.get().alphabet == NULL \
+                else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symb)
             result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
         return result
 
@@ -593,7 +570,7 @@ cdef class Nfa:
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
         symbol_map = {}
-        for symbol in alphabet.get_symbols():
+        for symbol in alphabet.get_alphabet_symbols():
             symbol_map[symbol] = self.post_of({st}, symbol)
         return symbol_map
 
@@ -692,8 +669,7 @@ cdef class Nfa:
 
     @classmethod
     def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
-        """
-        Performs intersection of lhs and rhs preserving epsilon transitions.
+        """Performs intersection of lhs and rhs preserving epsilon transitions.
 
         Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
@@ -731,8 +707,7 @@ cdef class Nfa:
 
     @classmethod
     def intersection_pres_eps_trans_with_prod_map(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
-        """
-        Performs intersection of lhs and rhs preserving epsilon transitions.
+        """Performs intersection of lhs and rhs preserving epsilon transitions.
 
         Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
@@ -756,8 +731,7 @@ cdef class Nfa:
 
     @classmethod
     def concatenate(cls, Nfa lhs, Nfa rhs):
-        """
-        Concatenate two NFAs.
+        """Concatenate two NFAs.
 
         :param Nfa lhs: First automaton to concatenate.
         :param Nfa rhs: Second automaton to concatenate.
@@ -769,8 +743,7 @@ cdef class Nfa:
 
     @classmethod
     def concatenate_over_epsilon(cls, Nfa lhs, Nfa rhs, epsilon = CEPSILON):
-        """
-        Concatenate two NFAs over an epsilon symbol.
+        """Concatenate two NFAs over an epsilon symbol.
 
         :param Nfa lhs: First automaton to concatenate over epsilon.
         :param Nfa rhs: Second automaton to concatenate over epsilon.
@@ -783,8 +756,7 @@ cdef class Nfa:
 
     @classmethod
     def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
-        """
-        Create noodles from segment automaton.
+        """Create noodles from segment automaton.
 
         Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
         A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
@@ -809,8 +781,7 @@ cdef class Nfa:
 
     @classmethod
     def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False, params = None):
-        """
-        Create noodles for equation.
+        """Create noodles for equation.
 
         Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
         A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
@@ -935,8 +906,7 @@ cdef class Nfa:
         return result
 
     def remove_epsilon(self, Symbol epsilon = CEPSILON):
-        """
-        Removes transitions which contain epsilon symbol.
+        """Removes transitions which contain epsilon symbol.
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
 
@@ -945,8 +915,8 @@ cdef class Nfa:
         self.thisptr.get().remove_epsilon(epsilon)
 
     def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> TransSymbolStates | None:
-        """
-        Get epsilon transitions for a state.
+        """Get epsilon transitions for a state.
+
         :param state: State to get epsilon transitions for.
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
@@ -974,8 +944,7 @@ cdef class Nfa:
 
     @classmethod
     def reduce_with_state_map(cls, Nfa aut, params = None):
-        """
-        Reduce the automaton.
+        """Reduce the automaton.
 
         :param Nfa aut: Original automaton to reduce.
         :param Dict params: Additional parameters for the reduction algorithm:
@@ -995,8 +964,7 @@ cdef class Nfa:
 
     @classmethod
     def reduce(cls, Nfa aut, params = None):
-        """
-        Reduce the automaton.
+        """Reduce the automaton.
 
         :param Nfa aut: Original automaton to reduce.
         :param Dict params: Additional parameters for the reduction algorithm:
@@ -1158,8 +1126,7 @@ cdef class Nfa:
 
     @classmethod
     def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
-        """
-        Test equivalence of two automata.
+        """Test equivalence of two automata.
 
         :param Nfa lhs: Smaller automaton.
         :param Nfa rhs: Bigger automaton.
@@ -1191,7 +1158,13 @@ cdef class Nfa:
                 }
             )
 
+    def get_symbols(self):
+        """Return a set of symbols used on the transitions in NFA.
 
+        :return: Set of symbols.
+        """
+        cdef SymbolSet symbols = self.thisptr.get().get_symbols()
+        return {s for s in symbols}
 
     @classmethod
     def is_complete(cls, Nfa lhs, Alphabet alphabet):
@@ -1271,8 +1244,7 @@ cdef class Nfa:
         )
 
 cdef class Alphabet:
-    """
-    Base class for alphabets
+    """Base class for alphabets
     """
     def __cinit__(self):
         pass
@@ -1294,9 +1266,7 @@ cdef class Alphabet:
 
 
 cdef class OnTheFlyAlphabet(Alphabet):
-    """
-    OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly
-    """
+    """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
     cdef mata.COnTheFlyAlphabet *thisptr
 
     def __cinit__(self, State initial_symbol = 0):
@@ -1304,8 +1274,8 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
     @classmethod
     def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
-        """
-        Create on the fly alphabet filled with symbol_map.
+        """Create on the fly alphabet filled with symbol_map.
+
         :param symbol_map: Map mapping symbol names to symbol values.
         :return: On the fly alphabet.
         """
@@ -1320,8 +1290,8 @@ cdef class OnTheFlyAlphabet(Alphabet):
         return alphabet
 
     def add_symbols_from_symbol_map(self, symbol_map: dict[str, int]) -> None:
-        """
-        Add symbols from symbol_map to the current alphabet.
+        """Add symbols from symbol_map to the current alphabet.
+
         :param symbol_map: Map mapping strings to symbols.
         """
         cdef StringToSymbolMap c_symbol_map
@@ -1330,8 +1300,8 @@ cdef class OnTheFlyAlphabet(Alphabet):
         self.thisptr.add_symbols_from(c_symbol_map)
 
     def add_symbols_for_names(self, symbol_names: list[str]) -> None:
-        """
-        Add symbols for symbol names to the current alphabet.
+        """Add symbols for symbol names to the current alphabet.
+
         :param symbol_names: Vector of symbol names.
         """
         cdef vector[string] c_symbol_names
@@ -1343,8 +1313,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         del self.thisptr
 
     def get_symbol_map(self) -> dict[str, int]:
-        """
-        Get map mapping strings to symbols.
+        """Get map mapping strings to symbols.
 
         :return: Map of strings to symbols.
         """
@@ -1362,31 +1331,57 @@ cdef class OnTheFlyAlphabet(Alphabet):
         """
         return self.thisptr.translate_symb(symbol.encode('utf-8'))
 
-    def reverse_translate_symbol(self, Symbol symbol):
-        """Translates symbol back to its string representation
+    def reverse_translate_symbol(self, Symbol symbol) -> str:
+        """Translate internal symbol value to the original symbol name.
 
-        :param Symbol symbol: integer symbol
-        :return: original string
+        Throw an exception when the symbol is missing in the alphabet.
+        :param Symbol symbol: Internal symbol value to be translated.
+        :return str: Original symbol string name.
         """
-        cdef StringToSymbolMap c_symbol_map = self.thisptr.get_symbol_map()
-        cdef umap[string, Symbol].iterator it = c_symbol_map.begin()
-        cdef umap[string, Symbol].iterator end = c_symbol_map.end()
-        while it != end:
-            key = dereference(it).first
-            value = dereference(it).second
-            if value == symbol:
-                return key
-            postinc(it)
-        raise IndexError(f"{symbol} is out of range of enumeration")
+        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
 
+    cpdef get_alphabet_symbols(self):
+        """Returns a set of supported symbols.
 
-    cpdef get_symbols(self):
-        """Returns list of supported symbols
-
-        :return: list of supported symbols
+        :return: Set of supported symbols.
         """
-        cdef clist[Symbol] symbols = self.thisptr.get_symbols()
-        return [s for s in symbols]
+        cdef SymbolSet symbols = self.thisptr.get_alphabet_symbols()
+        return {s for s in symbols}
+
+    cdef mata.CAlphabet* as_base(self):
+        """Retypes the alphabet to its base class
+
+        :return: alphabet as CAlphabet*
+        """
+        return <mata.CAlphabet*> self.thisptr
+
+
+cdef class IntAlphabet(Alphabet):
+    """IntAlphabet represents integer alphabet that directly maps integer string to their values."""
+
+    cdef mata.CIntAlphabet *thisptr
+
+    def __cinit__(self):
+        self.thisptr = new mata.CIntAlphabet()
+
+    def __dealloc__(self):
+        del self.thisptr
+
+    def translate_symbol(self, str symbol):
+        """Translates symbol to the position of the seen values
+
+        :param str symbol: translated symbol
+        :return: order of the symbol as was seen during the construction
+        """
+        return self.thisptr.translate_symb(symbol.encode('utf-8'))
+
+    def reverse_translate_symbol(self, Symbol symbol) -> str:
+        """Translate internal symbol value to the original symbol name.
+
+        :param Symbol symbol: Internal symbol value to be translated.
+        :return str: Original symbol string name.
+        """
+        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
 
     cdef mata.CAlphabet* as_base(self):
         """Retypes the alphabet to its base class
@@ -1396,9 +1391,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         return <mata.CAlphabet*> self.thisptr
 
 cdef class BinaryRelation:
-    """
-    Wrapper for binary relation
-    """
+    """Wrapper for binary relation."""
     cdef mata.CBinaryRelation *thisptr
 
     def __cinit__(self, size_t size=0, bool defVal=False, size_t rowSize=16):
@@ -1569,9 +1562,7 @@ cdef subset_map_to_dictionary(SubsetMap subset_map):
 
 # Temporary for testing
 def divisible_by(k: int):
-    """
-    Constructs automaton accepting strings containing ones divisible by "k"
-    """
+    """Constructs automaton accepting strings containing ones divisible by "k"."""
     assert k > 1
     lhs = Nfa(k+1)
     lhs.make_initial_state(0)
@@ -1649,8 +1640,7 @@ cdef class Segmentation:
     cdef mata.CSegmentation* thisptr
 
     def __cinit__(self, Nfa aut, Symbol symbol = CEPSILON):
-        """
-        Compute segmentation.
+        """Compute segmentation.
 
         :param aut: Segment automaton to compute epsilon depths for.
         :param symbol: Symbol to execute segmentation for.
@@ -1661,8 +1651,7 @@ cdef class Segmentation:
         del self.thisptr
 
     def get_epsilon_depths(self):
-        """
-        Get segmentation depths for ε-transitions.
+        """Get segmentation depths for ε-transitions.
 
         :return: Map of depths to lists of ε-transitions.
         """
@@ -1678,8 +1667,7 @@ cdef class Segmentation:
         return result
 
     def get_segments(self):
-        """
-        Get segment automata.
+        """Get segment automata.
 
         :return: A vector of segments for the segment automaton in the order from the left (initial state in segment
                  automaton) to the right (final states of segment automaton).
