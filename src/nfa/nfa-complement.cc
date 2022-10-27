@@ -17,13 +17,12 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
-namespace { // anonymous namespace
-
-Nfa complement_classical(
+Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	SubsetMap*         subset_map)
@@ -73,10 +72,9 @@ Nfa complement_classical(
 	return result;
 } // complement_classical }}}
 
-} // namespace
 
 /// Complement
-Nfa complement_naive(
+Nfa Mata::Nfa::Algorithms::complement_naive(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params,
@@ -109,7 +107,7 @@ Nfa Mata::Nfa::complement(
 {
 	Nfa result;
 	// setting the default algorithm
-	decltype(complement_classical)* algo = complement_classical;
+	decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
 	if (!haskey(params, "algo")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
