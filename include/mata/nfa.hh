@@ -888,6 +888,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
 /**
  * @brief Compute intersection of two NFAs.
  *
+ * Supports epsilon symbols when @p preserve_epsilon is set to true.
  * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
  *  contain ε-transitions. The product preserves the ε-transitions
  *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
@@ -908,6 +909,7 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
 /**
  * @brief Compute intersection of two NFAs.
  *
+ * Supports epsilon symbols when @p preserve_epsilon is set to true.
  * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
  *  contain ε-transitions. The product preserves the ε-transitions
  *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
@@ -926,7 +928,9 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
                  bool preserve_epsilon = false, ProductMap* prod_map = nullptr);
 
 /**
- * Concatenate two NFAs.
+ * @brief Concatenate two NFAs.
+ *
+ * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
@@ -938,7 +942,9 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = fa
                  StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /**
- * Concatenate two NFAs.
+ * @brief Concatenate two NFAs.
+ *
+ * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.

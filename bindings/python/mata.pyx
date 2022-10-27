@@ -659,6 +659,8 @@ cdef class Nfa:
     def intersection(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
         """Performs intersection of lhs and rhs.
 
+        Supports epsilon symbols when preserve_epsilon is set to True.
+
         When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
          an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
@@ -680,6 +682,8 @@ cdef class Nfa:
     @classmethod
     def intersection_with_product_map(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
         """Performs intersection of lhs and rhs.
+
+        Supports epsilon symbols when preserve_epsilon is set to True.
 
         When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
@@ -705,6 +709,7 @@ cdef class Nfa:
     def concatenate(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
         """Concatenate two NFAs.
 
+        Supports epsilon symbols when @p use_epsilon is set to true.
         :param Nfa lhs: First automaton to concatenate.
         :param Nfa rhs: Second automaton to concatenate.
         :param use_epsilon: Whether to concatenate over an epsilon symbol.
