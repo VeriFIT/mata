@@ -17,12 +17,12 @@
 
 // MATA headers
 #include <mata/nfa.hh>
-#include <mata/nfa-internals.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
-Nfa Mata::Nfa::Internals::complement_classical(
+Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	SubsetMap*         subset_map)
@@ -74,7 +74,7 @@ Nfa Mata::Nfa::Internals::complement_classical(
 
 
 /// Complement
-Nfa Mata::Nfa::Internals::complement_naive(
+Nfa Mata::Nfa::Algorithms::complement_naive(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringDict&  params,
@@ -107,7 +107,7 @@ Nfa Mata::Nfa::complement(
 {
 	Nfa result;
 	// setting the default algorithm
-	decltype(Internals::complement_classical)* algo = Internals::complement_classical;
+	decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
 	if (!haskey(params, "algo")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "

@@ -31,7 +31,7 @@ namespace Nfa {
  * In Nfa interface, there are dispatch functions calling these function according to parameters
  * provided by a user.
  */
-namespace Internals {
+namespace Algorithms {
 
     /**
      * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
@@ -120,7 +120,7 @@ namespace Internals {
             const Alphabet&    alphabet,
             Word*              cex,
             const StringDict&  params);
-} // Internals
+} // Algorithms
 } // Nfa
 }
 

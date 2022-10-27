@@ -17,13 +17,13 @@
 
 // MATA headers
 #include <mata/nfa.hh>
-#include <mata/nfa-internals.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool Mata::Nfa::Internals::is_incl_naive(
+bool Mata::Nfa::Algorithms::is_incl_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -50,7 +50,7 @@ bool Mata::Nfa::Internals::is_incl_naive(
 
 
 /// language inclusion check using Antichains
-bool Mata::Nfa::Internals::is_incl_antichains(
+bool Mata::Nfa::Algorithms::is_incl_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -186,7 +186,7 @@ bool Mata::Nfa::Internals::is_incl_antichains(
 } // }}}
 
 namespace {
-    using AlgoType = decltype(Internals::is_incl_naive)*;
+    using AlgoType = decltype(Algorithms::is_incl_naive)*;
 
     bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringDict &params,
                              const AlgoType &algo) {
@@ -206,12 +206,12 @@ namespace {
                                      "received: " + std::to_string(params));
         }
 
-        decltype(Internals::is_incl_naive) *algo;
+        decltype(Algorithms::is_incl_naive) *algo;
         const std::string &str_algo = params.at("algo");
         if ("naive" == str_algo) {
-            algo = Internals::is_incl_naive;
+            algo = Algorithms::is_incl_naive;
         } else if ("antichains" == str_algo) {
-            algo = Internals::is_incl_antichains;
+            algo = Algorithms::is_incl_antichains;
         } else {
             throw std::runtime_error(std::to_string(__func__) +
                                      " received an unknown value of the \"algo\" key: " + str_algo);
