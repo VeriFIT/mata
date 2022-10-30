@@ -359,7 +359,7 @@ InvTrans::InvResultPtrs Afa::perform_inv_trans(State src, Symbol symb) const
 * according to the given source states and symbol
 * Otherwise, it gives us an empty list which means that the result does not exist. We return pointers
 * to be able to directly change the inverse transition relation if there is a neccessity to add a new transition 
-* @brief performs a transition using a single state and symbol
+* @brief performs an inverse transition using a single state and symbol
 * @param node source states
 * @param symb a symbol used to perform an inverse transition
 * @return a vector of pointers to the inverse results
