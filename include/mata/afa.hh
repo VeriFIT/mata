@@ -71,7 +71,7 @@ using Alphabet = Mata::Nfa::Alphabet;
 */
 struct Trans
 {
-	State src; // source state
+    State src; // source state
     Symbol symb; // transition symbol
     Nodes dst; // a vector of vectors of states
 
