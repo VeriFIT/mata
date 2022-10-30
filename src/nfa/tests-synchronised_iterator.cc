@@ -9,12 +9,12 @@
 
 using namespace Mata::Util;
 
-TEST_CASE("Mata::Util::synchronized_iterator")
+TEST_CASE("Mata::Util::SynchronizedIterator")
 {
 
     SECTION("synchronized_universal_iterator, basic functionality")
     {
-        synchronized_univerzal_iterator<int> iu;
+        SynchronizedUniverzalIterator<int> iu;
 
         // Basic functionality, position[0] gets emptied first
         OrdVector<int> v1{1, 2, 4};
@@ -64,7 +64,7 @@ TEST_CASE("Mata::Util::synchronized_iterator")
 
     SECTION("synchronized_universal_iterator, corner cases") {
 
-        synchronized_univerzal_iterator<int> iu;
+        SynchronizedUniverzalIterator<int> iu;
 
         // Empty iterator
         REQUIRE(!iu.advance());
@@ -115,9 +115,9 @@ TEST_CASE("Mata::Util::synchronized_iterator")
         REQUIRE(!iu.advance());
     }
 
-    SECTION("synchronized_existential_iterator, basic functionality")
+    SECTION("SynchronizedExistentialIterator, basic functionality")
     {
-        synchronized_existential_iterator<int> ie;
+        SynchronizedExistentialIterator<int> ie;
 
         // Basic functionality
         OrdVector<int> v1{1, 2};
@@ -139,9 +139,9 @@ TEST_CASE("Mata::Util::synchronized_iterator")
         REQUIRE(i==4);
     }
 
-    SECTION("synchronized_existential_iterator, corner cases") {
+    SECTION("SynchronizedExistentialIterator, corner cases") {
 
-        synchronized_existential_iterator<int> ie;
+        SynchronizedExistentialIterator<int> ie;
 
         // Empty iterator
         REQUIRE(!ie.advance());

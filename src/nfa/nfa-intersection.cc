@@ -320,10 +320,10 @@ private:
         }
     }
 
-    // Alternative for the above that uses synchronized_univerzal_iterator
+    // Alternative for the above that uses SynchronizedUniverzalIterator
     void compute_for_state_pair_using_sui()
     {
-        Mata::Util::synchronized_univerzal_iterator<Move> sui(2);
+        Mata::Util::SynchronizedUniverzalIterator<Move> sui(2);
         sui.push_back(lhs.transitionrelation[pair_to_process.first]);
         sui.push_back(rhs.transitionrelation[pair_to_process.second]);
 

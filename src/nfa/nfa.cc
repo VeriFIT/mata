@@ -1328,7 +1328,7 @@ Nfa Mata::Nfa::determinize(
         return result;
 
     //
-    Mata::Util::synchronized_existential_iterator<Move> sei;
+    Mata::Util::SynchronizedExistentialIterator<Move> sei;
 
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
