@@ -285,9 +285,6 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 	aut.finalstates = {1};
     
-    std::cout << aut.get_initial_nodes();
-    std::cout << aut.post(aut.get_initial_nodes());
-
     REQUIRE(!antichain_concrete_forward_emptiness_test(aut));
     REQUIRE(!antichain_concrete_backward_emptiness_test(aut));
 
