@@ -18,7 +18,7 @@ namespace Mata {
         // The intended usage in, for instance, determinisation is for Key to be Move.
         // Move is ordered by the symbol.
         //
-        // syncrhonised_iterator is the parent virtual class.
+        // SyncrhonisedIterator is the parent virtual class.
         // It stores a vector of end-iterators for the OrdVectors and a vector of current positions.
         // They are filled in using the function push_back(v), that adds v.begin() to positions and v.end() to ends.
         // Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
