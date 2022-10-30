@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc libsimlib.a CMakeFiles/simlib.dir/src/explicit_lts_sim.cc.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib libsimlib.a

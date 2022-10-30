@@ -1,0 +1,137 @@
+[
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/afa/afa.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/afa/afa.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/afa/afa.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/config.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/config.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/config.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/inter-aut.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/inter-aut.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/inter-aut.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/parser.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/parser.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/parser.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/re2parser.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/re2parser.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/re2parser.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-incl.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-incl.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-incl.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-universal.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-universal.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-universal.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-complement.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-complement.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-complement.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-intersection.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-intersection.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-intersection.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-concatenation.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-concatenation.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-concatenation.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/nfa-segmentation.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-segmentation.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/nfa-segmentation.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/noodlify.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/noodlify.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/noodlify.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/rra/rrt.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/rra/rrt.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/rra/rrt.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/libmata.dir/nfa/tests-synchronised_iterator.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-synchronised_iterator.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-synchronised_iterator.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/tests-main.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/tests-main.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/tests-main.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/tests-parser.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/tests-parser.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/tests-parser.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/tests-re2parser.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/tests-re2parser.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/tests-re2parser.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/tests-ord-vector.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/tests-ord-vector.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/tests-ord-vector.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/afa/tests-afa.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/afa/tests-afa.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/afa/tests-afa.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-nfa.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-nfa-concatenation.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-concatenation.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-concatenation.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-nfa-segmentation.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-segmentation.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-segmentation.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-nfa-intersection.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-intersection.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-nfa-intersection.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-noodlify.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-noodlify.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-noodlify.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/rra/tests-rrt.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/rra/tests-rrt.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/rra/tests-rrt.cc"
+},
+{
+  "directory": "/Users/holik/Research/Brno/MATA/mata/cmake-build-debug/src",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/Users/holik/Research/Brno/MATA/mata/src/../include -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/re2 -I/Users/holik/Research/Brno/MATA/mata/src/../3rdparty/simlib/include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/simlib/./include -I/Users/holik/Research/Brno/MATA/mata/3rdparty/re2/.  -Wextra -Wall -Wfloat-equal -fms-extensions -fdiagnostics-show-option -std=c++14 -Wctor-dtor-privacy -Weffc++ -fPIC -fno-strict-aliasing -Woverloaded-virtual -Wold-style-cast -pedantic-errors -Wgnu-anonymous-struct -Wnested-anon-types -g -arch x86_64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk -o CMakeFiles/tests.dir/nfa/tests-synchronised_iterator.cc.o -c /Users/holik/Research/Brno/MATA/mata/src/nfa/tests-synchronised_iterator.cc",
+  "file": "/Users/holik/Research/Brno/MATA/mata/src/nfa/tests-synchronised_iterator.cc"
+}
+]

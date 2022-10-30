@@ -1,0 +1,5 @@
+/Applications/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -S /Users/holik/Research/Brno/MATA/mata -B /Users/holik/Research/Brno/MATA/mata/cmake-build-debug
+-- Default C++ compiler: /Library/Developer/CommandLineTools/usr/bin/c++
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/holik/Research/Brno/MATA/mata/cmake-build-debug
