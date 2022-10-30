@@ -99,50 +99,50 @@ using TransRelation = std::vector<TransList>;
 * A tuple (result_nodes, sharing_list). If 'a' is an element of result_nodes, it means that there exists a symbol
 * 'b' such that sharing_list belongs to delta(a, b), where sharing_list is a node (vector of states). 
 */
-typedef struct InvResults_{
+typedef struct InverseResults_{
 
     Node result_nodes{}; 
     Node sharing_list{};
 
-    InvResults_() : result_nodes(), sharing_list() { }
-    InvResults_(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
-    InvResults_(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
+    InverseResults_() : result_nodes(), sharing_list() { }
+    InverseResults_(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
+    InverseResults_(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
 
-    bool operator==(InvResults_ rhs) const
+    bool operator==(InverseResults_ rhs) const
     { // {{{
         return sharing_list == rhs.sharing_list && result_nodes == rhs.result_nodes;
     } // operator== }}}
     
-    bool operator!=(InvResults_ rhs) const
+    bool operator!=(InverseResults_ rhs) const
     { // {{{
         return !this->operator==(rhs);
     } // operator!= }}}
 
-    bool operator<(InvResults_ rhs) const
+    bool operator<(InverseResults_ rhs) const
     { // {{{
         return sharing_list < rhs.sharing_list || (sharing_list == rhs.sharing_list && result_nodes < rhs.result_nodes);
     } // operator< }}}
 
-}InvResults;
+}InverseResults;
 
 /*
-* A tuple (symb, vector_of_pointers). Each pointer points to the instance of InvResults. If &(result_nodes, sharing_list) belongs to the
+* A tuple (symb, vector_of_pointers). Each pointer points to the instance of InverseResults. If &(result_nodes, sharing_list) belongs to the
 * vector_of_pointers, then for each 'a' which is part of result_nodes holds that 'sharing_list' is a member of delta(a, symbol).
 */
-typedef struct InvTrans_{
+typedef struct InverseTrans_{
 
-    using InvResultPtrs = std::vector<std::shared_ptr<InvResults>>;
+    using InverseResultPtrs = std::vector<std::shared_ptr<InverseResults>>;
 
     Symbol symb;    
-    InvResultPtrs invResultPtrs{};
+    InverseResultPtrs inverseResultPtrs{};
 
-    InvTrans_() : symb(), invResultPtrs() { }
-    InvTrans_(Symbol symb) : symb(symb), invResultPtrs(InvResultPtrs()) { }
-    InvTrans_(Symbol symb, InvResultPtrs invResultPtrs) : symb(symb), invResultPtrs(invResultPtrs) { }
+    InverseTrans_() : symb(), inverseResultPtrs() { }
+    InverseTrans_(Symbol symb) : symb(symb), inverseResultPtrs(InverseResultPtrs()) { }
+    InverseTrans_(Symbol symb, InverseResultPtrs inverseResultPtrs) : symb(symb), inverseResultPtrs(inverseResultPtrs) { }
 
-}InvTrans;
+}InverseTrans;
 
-using InvTransRelation = std::vector<std::vector<InvTrans>>;
+using InverseTransRelation = std::vector<std::vector<InverseTrans>>;
 
 struct Afa;
 
@@ -159,15 +159,15 @@ struct Afa
 public:
 
     TransRelation transRelation{};
-    InvTransRelation invTransRelation{};
+    InverseTransRelation inverseTransRelation{};
 
 public:
 
-    Afa() : transRelation(), invTransRelation() {}
+    Afa() : transRelation(), inverseTransRelation() {}
 
     explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{})
-        : transRelation(num_of_states), invTransRelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+        : transRelation(num_of_states), inverseTransRelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
 
 public:
 
@@ -207,20 +207,20 @@ public:
 		this->add_trans({src, symb, dst});
 	} // }}}
 
-	void add_inv_trans(const Trans& trans);
-	void add_inv_trans(State src, Symbol symb, Node dst)
+	void add_inverse_trans(const Trans& trans);
+	void add_inverse_trans(State src, Symbol symb, Node dst)
 	{ // {{{
-		this->add_inv_trans({src, symb, Nodes(dst)});
+		this->add_inverse_trans({src, symb, Nodes(dst)});
 	} // }}}
-	void add_inv_trans(State src, Symbol symb, Nodes dst)
+	void add_inverse_trans(State src, Symbol symb, Nodes dst)
 	{ // {{{
-		this->add_inv_trans({src, symb, dst});
+		this->add_inverse_trans({src, symb, dst});
 	} // }}}
 
     std::unique_ptr<Nodes> perform_trans (State src, Symbol symb) const;
 
-    InvTrans::InvResultPtrs perform_inv_trans(State src, Symbol symb) const;
-    InvTrans::InvResultPtrs perform_inv_trans(Node src, Symbol symb) const;
+    InverseTrans::InverseResultPtrs perform_inverse_trans(State src, Symbol symb) const;
+    InverseTrans::InverseResultPtrs perform_inverse_trans(Node src, Symbol symb) const;
 
 	bool has_trans(const Trans& trans) const;
 	bool has_trans(State src, Symbol symb, Node dst) const
@@ -284,8 +284,12 @@ bool are_state_disjoint(const Afa& lhs, const Afa& rhs);
 bool is_lang_empty(const Afa& aut, Path* cex = nullptr);
 bool is_lang_empty_cex(const Afa& aut, Word* cex);
 
-bool antichain_concrete_forward_emptiness_test(const Afa& aut);
-bool antichain_concrete_backward_emptiness_test(const Afa& aut);
+bool antichain_concrete_forward_emptiness_test_old(const Afa& aut);
+bool antichain_concrete_backward_emptiness_test_old(const Afa& aut);
+
+bool antichain_concrete_forward_emptiness_test_new(const Afa& aut);
+bool antichain_concrete_backward_emptiness_test_new(const Afa& aut);
+
 
 /// Retrieves the states reachable from initial states
 std::unordered_set<State> get_fwd_reach_states(const Afa& aut);
