@@ -11,26 +11,26 @@ namespace Mata {
     namespace Util {
 
         // Classes that provide "synchronized" iterators through a vector of ordered vectors,
-        // needed in computation of post in
-        // subset construction, product, and non-detesminization.
-        // Key is the type stored in OrdVectors, which it must be comparable with <,>,==,!=,<=,>=,
-        // who must be a total (linear) ordering.
-        // The intended usage in determinisation for instance is for it to be the Move,
-        // which are ordered by the symbol.
+        // needed in computation of post
+        // in subset construction, product, and non-determinization.
+        // Key is the type stored in OrdVectors, it must be comparable with <,>,==,!=,<=,>=,
+        // and it must be a total (linear) ordering.
+        // The intended usage in, for instance, determinisation is for Key to be Move.
+        // Move is ordered by the symbol.
         //
         // syncrhonised_iterator is the parent virtual class.
-        // It stores a vector of end-iterators for the OrdVectors and a vector of current positions in them.
-        // They are filled in using the function push_back (usage turns out simpler than passing a vector of vectors).
-        // Method advace advances all positions forward so that they are synchronized on the next smallest equiv. class
+        // It stores a vector of end-iterators for the OrdVectors and a vector of current positions.
+        // They are filled in using the function push_back(v), that adds v.begin() to positions and v.end() to ends.
+        // Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
         // (next smallest symbol in the case of Move).
         //
-        // There are two version of what it is to be synchronized.
-        // In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
-        // Method get_current then returns the vector of all positions thus synchronized.
-        // In determinisation, it is enough that there EXISTS a position that points to the next smallest class.
-        // Method get_current then returns the vector of those positions that point to the smallest equiv. class.
+        // There are two versions of the class.
+        // i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
+        // Method get_current then returns the vector of all position iterators, synchronized.
+        // In determinization, it is enough that there EXISTS a position that points to the smallest class.
+        // Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
         //
-        // Usage: 0) construct, 1) fill in using iterate using with advance and get_current, 2) reset, goto 1)
+        // Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
 
         template<typename Key> class synchronized_iterator {
         public:
