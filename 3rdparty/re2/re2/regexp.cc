@@ -23,7 +23,7 @@
 
 namespace re2 {
 
-// Constructor.  Allocates vectors as appropriate for operator.
+// Constructor.  Allocates _vectors as appropriate for operator.
 Regexp::Regexp(RegexpOp op, ParseFlags parse_flags)
   : op_(static_cast<uint8_t>(op)),
     simple_(false),

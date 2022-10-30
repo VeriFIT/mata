@@ -58,7 +58,7 @@ namespace {
         const size_t state_num = aut.get_num_of_states();
 
         for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
-            for (const TransSymbolStates &t : aut.get_transitions_from(stateFrom)) {
+            for (const Move &t : aut.get_transitions_from(stateFrom)) {
                 for (State stateTo : t.states_to) {
                     LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
                 }
@@ -137,7 +137,7 @@ namespace {
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
                     // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.transitionrelation[q_class_state].push_back(TransSymbolStates(q_trans.symbol, representatives_class_states));
+                    result.transitionrelation[q_class_state].push_back(Move(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -234,7 +234,7 @@ namespace {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.transitionrelation[original_state_mapping.first])
             {
-                TransSymbolStates new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
+                Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.states_to)
                 {
                     auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
@@ -366,13 +366,13 @@ void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
     } else if (state_transitions.ToVector().back().symbol < symbol) {
         state_transitions.push_back({ symbol, state_to});
     } else {
-        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+        const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from stateFrom.
             symbol_transitions->states_to.insert(state_to);
         } else {
-            // Add transition to a new TransSymbolStates struct with symbolOnTransition yet unused on transitions from stateFrom.
-            const TransSymbolStates new_symbol_transitions{ symbol, state_to };
+            // Add transition to a new Move struct with symbolOnTransition yet unused on transitions from stateFrom.
+            const Move new_symbol_transitions{symbol, state_to };
             state_transitions.insert(new_symbol_transitions);
         }
     }
@@ -395,14 +395,14 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
     } else if (state_transitions.ToVector().back().symbol < symbol) {
         state_transitions.push_back({ symbol, states_to });
     } else {
-        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+        const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transitions with symbol already used on transitions from state_from.
             union_to_left(symbol_transitions->states_to,states_to);
             return;
         } else {
-            // Add transitions to a new TransSymbolStates struct with symbol yet unused on transitions from state_from.
-            const TransSymbolStates new_symbol_transitions { TransSymbolStates{ symbol, states_to }};
+            // Add transitions to a new Move struct with symbol yet unused on transitions from state_from.
+            const Move new_symbol_transitions {Move{symbol, states_to }};
             state_transitions.insert(new_symbol_transitions);
         }
     }
@@ -419,7 +419,7 @@ void Nfa::remove_trans(State src, Symbol symb, State tgt) {
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
     } else {
-        const auto symbol_transitions{ state_transitions.find(TransSymbolStates{ symb }) };
+        const auto symbol_transitions{ state_transitions.find(Move{symb }) };
         if (symbol_transitions == state_transitions.end()) {
             throw std::invalid_argument(
                     "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -443,9 +443,9 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = Mata::Nfa::remove_epsilon(*this, epsilon);
 }
 
-TransitionList::const_iterator Nfa::get_transitions_from(State state_from, Symbol symbol) const {
+MoveList::const_iterator Nfa::get_transitions_from(State state_from, Symbol symbol) const {
     const auto& state_transitions{ transitionrelation[state_from] };
-    const auto state_symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+    const auto state_symbol_transitions{ state_transitions.find(Move{symbol }) };
     // If the symbol for state_from exists, an iterator to state transitions with the given symbol is returned. Otherwise,
     //  state_symbol_transitions point to the end of state_transitions. Hence, an iterator to the ned of state_transitions
     //  is returned.
@@ -626,7 +626,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     }
 
     bool changed = true;
-    const TransSymbolStates epsilon_symbol_to_find{ epsilon };
+    const Move epsilon_symbol_to_find{epsilon };
     while (changed) { // compute the fixpoint
         changed = false;
         for (size_t i=0; i < num_of_states; ++i) {
@@ -681,7 +681,7 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     result.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
-        for (const TransSymbolStates &transition: aut.transitionrelation[sourceState]) {
+        for (const Move &transition: aut.transitionrelation[sourceState]) {
             for (const State targetState: transition.states_to) {
                 result.add_trans(targetState, transition.symbol, sourceState);
             }
@@ -970,7 +970,7 @@ void Nfa::print_to_DOT(std::ostream &outputStream) const {
     }
 
     for (State s = 0; s != transitionrelation.size(); ++s) {
-        for (const TransSymbolStates &t: transitionrelation[s]) {
+        for (const Move &t: transitionrelation[s]) {
             outputStream << s << " -> {";
             for (State sTo: t.states_to) {
                 outputStream << sTo << " ";
@@ -1185,7 +1185,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
 
     for (const auto state : states) {
         const auto& state_transitions{ transitionrelation[state] };
-        const auto state_symbol_transitions{ state_transitions.find(TransSymbolStates{ symbol }) };
+        const auto state_symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (state_symbol_transitions != state_transitions.end()) {
             res.insert(state_symbol_transitions->states_to);
         }
@@ -1193,12 +1193,12 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
-TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
+MoveList::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
     return get_epsilon_transitions(get_transitions_from(state), epsilon);
 }
 
-TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const TransitionList& state_transitions, const Symbol epsilon) {
+MoveList::const_iterator Nfa::Nfa::get_epsilon_transitions(const MoveList& state_transitions, const Symbol epsilon) {
     if (!state_transitions.empty()) {
         if (epsilon == EPSILON) {
             const auto& back = state_transitions.back();
@@ -1206,7 +1206,7 @@ TransitionList::const_iterator Nfa::Nfa::get_epsilon_transitions(const Transitio
                 return std::prev(state_transitions.end());
             }
         } else {
-            return state_transitions.find(TransSymbolStates(epsilon));
+            return state_transitions.find(Move(epsilon));
         }
     }
 
@@ -1231,9 +1231,9 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
 
     for (State thisState = 0; thisState < lhs.transitionrelation.size(); ++thisState) {
         State unionState = thisStateToUnionState[thisState];
-        for (const TransSymbolStates &transitionFromThisState : lhs.transitionrelation[thisState]) {
+        for (const Move &transitionFromThisState : lhs.transitionrelation[thisState]) {
 
-            TransSymbolStates transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
+            Move transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
 
             for (State stateTo : transitionFromThisState.states_to) {
                 transitionFromUnionState.states_to.insert(thisStateToUnionState[stateTo]);
@@ -1297,6 +1297,7 @@ Nfa Mata::Nfa::determinize(
         const Nfa&  aut,
         SubsetMap*  subset_map)
 {
+
     Nfa result;
     //assuming all sets states_to are non-empty
     std::vector<std::pair<State, StateSet>> worklist;
@@ -1326,6 +1327,9 @@ Nfa Mata::Nfa::determinize(
     if (aut.trans_empty())
         return result;
 
+    //
+    Mata::Util::synchronized_existential_iterator<Move> sei;
+
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
@@ -1334,12 +1338,22 @@ Nfa Mata::Nfa::determinize(
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
-        Mata::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
 
-        while (iterator.has_next()) {
-            const auto symbolTargetPair = iterator.next();
-            const Symbol currentSymbol = symbolTargetPair.first;
-            const StateSet &T = symbolTargetPair.second;
+        // add moves of S to the sync ex iterator
+        for (State q: S) {
+            sei.push_back(aut.transitionrelation[q]);
+        }
+
+        while (sei.advance()) {
+
+            // extract post from the sei iterator
+            std::vector<Mata::Util::OrdVector<Move>::const_iterator> moves = sei.get_current();
+            Symbol currentSymbol = (*moves.begin())->symbol;
+            StateSet T;
+            for (auto m: moves){
+                T = T.Union(m->states_to);
+            }
+
             const auto existingTitr = subset_map->find(T);
             State Tid;
             if (existingTitr != subset_map->end()) {
@@ -1352,7 +1366,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.transitionrelation[Sid].push_back(TransSymbolStates(currentSymbol, Tid));
+            result.transitionrelation[Sid].push_back(Move(currentSymbol, Tid));
         }
     }
 
@@ -1527,32 +1541,6 @@ Nfa Mata::Nfa::construct(
     return aut;
 } // construct }}}
 
-bool Nfa::state_set_post_iterator::has_next() const
-{
-    return (size > 0);
-}
-
-Nfa::state_set_post_iterator::state_set_post_iterator(std::vector<State> states, const Nfa &aut): state_vector(std::move(states)), automaton(aut), size(state_vector.size())
-{
-    transition_iterators.reserve(size);
-    min_symbol = limits.maxSymbol;
-    for (size_t i=0; i < size;) {
-        State q = state_vector[i];
-        if (automaton.transitionrelation[q].empty()) { // we keep in state_vector only states that have some transitions
-            transition_iterators[i] = transition_iterators[size-1];
-            state_vector[i] = state_vector[size-1];
-            size--;
-            //then process the same i in the next iteration (no i++ here)
-        } else {
-            transition_iterators[i] = automaton.transitionrelation[q].begin();
-            Symbol transitionSymbol =  transition_iterators[i]->symbol;
-            if (transitionSymbol < min_symbol) {
-                min_symbol = transitionSymbol;
-            }
-            i++;
-        }
-    }
-}
 
 Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
@@ -1599,7 +1587,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of state set
     ++(this->tlIt);
-    const TransitionList& tlist = this->nfa->get_transitions_from(this->trIt);
+    const MoveList& tlist = this->nfa->get_transitions_from(this->trIt);
     assert(!tlist.empty());
     if (this->tlIt != tlist.end())
     {
@@ -1635,46 +1623,6 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     return *this;
 } // operator++ }}}
-
-/**
- * Returns the min_symbol and its post (subset construction), advances the min_symbol to the next minimal symbol,
- * If it meets a state with no more transitions, it swaps it with the last state and decreases the size.
- * size == 0 means no more post.
- * It would be nice to make this parameterized by a functor that defines what is to be done with the individual posts
- * Alternatively, one might return a vector of references to those individual posts, looks like a good idea actually, the cost of this vector should be small enough
- */
- std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
-    StateSet post;
-    Symbol newMinSymbol = limits.maxSymbol;
-    for (size_t i=0; i < size;) {
-        Symbol transitionSymbol = transition_iterators[i]->symbol;
-        if (transitionSymbol == min_symbol) {
-            union_to_left(post, transition_iterators[i]->states_to);
-            transition_iterators[i]++;
-            if (transition_iterators[i] != automaton.transitionrelation[state_vector[i]].end()) {
-                Symbol nextTransitionSymbol = transition_iterators[i]->symbol;
-                if (nextTransitionSymbol < newMinSymbol) {
-                    newMinSymbol = nextTransitionSymbol;
-                }
-                i++;
-            } else {
-                //swap the ith state with the last state and decrease the size
-                transition_iterators[i] = transition_iterators[size-1];
-                state_vector[i] = state_vector[size-1];
-                size--;
-                //do the same i again, the previously last state is there now (no i++)
-            }
-        } else {
-            if (transitionSymbol < newMinSymbol) {
-                newMinSymbol = transitionSymbol;
-            }
-            i++;
-        }
-    }
-    std::pair<Symbol,StateSet> result(min_symbol, post);
-    min_symbol = newMinSymbol;
-    return result;
-}
 
 std::ostream& Mata::Nfa::operator<<(std::ostream& os, const Nfa& nfa)
 { // {{{
@@ -1764,7 +1712,7 @@ void ShortestWordsMap::compute_for_state(const State state)
     const WordLength dst_length_plus_one{ dst.first + 1 };
     LengthWordsPair act;
 
-    for (const TransSymbolStates& transition: reversed_automaton.get_transitions_from(state))
+    for (const Move& transition: reversed_automaton.get_transitions_from(state))
     {
         for (const State state_to: transition.states_to)
         {
@@ -1806,3 +1754,31 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     }
     act.first = dst.first + 1;
 }
+
+//auto dump_nfa = [](const Nfa nfa) {
+//    for (auto moves: nfa.transitionrelation) {
+//        for (auto m: moves) {
+//            std::cout << m.to_string() << " ";
+//        }
+//        std::cout << std::endl;
+//    }
+//    std::cout << std::endl;
+//};
+//auto dump_iterator = [&post_iterator]() {
+//    if (post_iterator.positions.empty()) {
+//        std::cout<<"iterator empty\n";
+//        return;
+//    }
+//    auto nm = post_iterator.next_minimum;
+//    std::cout << "next_minimum = " << nm->to_string() << std::endl;
+//    std::cout << "positions = ";
+//    for (auto p: post_iterator.positions) {
+//        std::cout<<p->to_string()<<" ";
+//    }
+//    std::cout<<std::endl;
+//    std::cout << "current = ";
+//    for (auto c: post_iterator.current) {
+//        std::cout<<c->to_string()<<" ";
+//    }
+//    std::cout<<std::endl<<std::flush;
+//};

@@ -15,6 +15,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <utility>
 
 // insert the class into proper namespace
 namespace Mata
@@ -318,7 +319,7 @@ public:   // Public methods
         auto rhsIt = rhs.vec_.begin();
 
         while ((lhsIt != vec_.end()) && (rhsIt != rhs.vec_.end()))
-        {	// until we get to the end of both vectors
+        {	// until we get to the end of both _vectors
             if (*lhsIt == *rhsIt)
             {
                 newVector.push_back(*lhsIt);
@@ -356,7 +357,7 @@ public:   // Public methods
 		auto rhsIt = rhs.vec_.begin();
 
 		while ((lhsIt != vec_.end()) || (rhsIt != rhs.vec_.end()))
-		{	// until we get to the end of both vectors
+		{	// until we get to the end of both _vectors
 			if (lhsIt == vec_.end())
 			{	// if we are finished with the left-hand side vector
 				newVector.push_back(*rhsIt);
@@ -620,6 +621,7 @@ public:   // Public methods
 		return true;
 	}
 };
+
 
 namespace std {
     template <class Key>

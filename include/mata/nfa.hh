@@ -34,6 +34,7 @@
 #include <mata/ord_vector.hh>
 #include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
+#include <mata/synchronized_iterator.hh>
 
 namespace Mata
 {
@@ -148,28 +149,48 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-struct TransSymbolStates {
+struct Move {
     Symbol symbol{};
     StateSet states_to;
 
-    TransSymbolStates() = default;
-    explicit TransSymbolStates(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
-    TransSymbolStates(Symbol symbolOnTransition, State states_to) :
+    Move() = default;
+    explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
+    Move(Symbol symbolOnTransition, State states_to) :
             symbol(symbolOnTransition), states_to{states_to} {}
-    TransSymbolStates(Symbol symbolOnTransition, const StateSet& states_to) :
+    Move(Symbol symbolOnTransition, const StateSet& states_to) :
             symbol(symbolOnTransition), states_to(states_to) {}
 
-    inline bool operator<(const TransSymbolStates& rhs) const { return symbol < rhs.symbol; }
-    inline bool operator<=(const TransSymbolStates& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
-    inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
+    inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
+    inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
+    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
+    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+    inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
+    inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
+
+    //just a hack
+    std::string to_string() const {
+        std::string result = "(" + std::to_string(symbol) + ",{";
+        for (auto it = states_to.begin(); it != states_to.end(); it++) {
+            if (it>states_to.begin())
+                result += ",";
+            result += std::to_string(*it);
+        }
+        result+="})";
+        return result;
+    }
+
 };
 
+
+//std::ostream& operator<<(std::ostream& strm, const Move& move)
+//{ // {{{
+//    return strm << '(' << move.symbol << ',' << move.states_to << ')';
+//} // Move::operator<<(ostream) }}}
+
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
+using MoveList = Mata::Util::OrdVector<Move>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
-using TransitionRelation = std::vector<TransitionList>;
+using TransitionRelation = std::vector<MoveList>;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
@@ -496,7 +517,7 @@ public:
     // FIXME: Resolve this comment and delete it.
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
      * so one can iterate over all states for instance using this, and it is fast.
-     * But I don't know how to do a similar thing inside TransitionList.
+     * But I don't know how to do a similar thing inside MoveList.
      * Returning a transition of q with the symbol a means to search for it in the list,
      * so iteration over the entire list would be very inefficient.
      * An efficient iteration would probably need an interface for an iterator, I don't know...
@@ -552,11 +573,11 @@ public:
             return false;
         }
 
-        const TransitionList& tl = get_transitions_from(trans.src);
+        const MoveList& tl = get_transitions_from(trans.src);
         if (tl.empty()) {
             return false;
         }
-        auto symbol_transitions{ tl.find(TransSymbolStates{trans.symb} ) };
+        auto symbol_transitions{ tl.find(Move{trans.symb} ) };
         if (symbol_transitions == tl.end()) {
             return false;
         }
@@ -576,10 +597,10 @@ public:
      * Get transitions from @p state_from using transition @p symbol.
      * @param state_from State from which to get transitions.
      * @param symbol Transition symbol to look for in transitions.
-     * @return Iterator for @c TransitionList; Allows us to compare to TransitionsList::end() to see whether the specified
+     * @return Iterator for @c MoveList; Allows us to compare to TransitionsList::end() to see whether the specified
      *  transitions exist. If they do, we can access the transitions with a dereference operator (*iter).
      */
-    TransitionList::const_iterator get_transitions_from(State state_from, Symbol symbol) const;
+    MoveList::const_iterator get_transitions_from(State state_from, Symbol symbol) const;
 
     /**
      * Check whether automaton has no transitions.
@@ -611,7 +632,7 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const TransitionList& get_transitions_from(const State state_from) const
+    const MoveList& get_transitions_from(const State state_from) const
     {
         assert(get_num_of_states() >= state_from + 1);
         return transitionrelation[state_from];
@@ -662,28 +683,11 @@ public:
      */
     WordSet get_shortest_words() const;
 
-    //class for iterating successors of a set of states represented as a StateSet
-    //the iteration will take the symbols in from the smallest
-    struct state_set_post_iterator {
-    private:
-        std::vector<State> state_vector;
-        const Nfa &automaton;//or just give it a transition relation, that would make it more universal
-        std::size_t size; // usable size of stateVector
-        Symbol min_symbol;//the smallest symbol, for the next post
-        std::vector<TransitionList::const_iterator> transition_iterators; //vector of iterators into TransitionLists (that are assumed sorted by symbol), for every state
-    public:
-        state_set_post_iterator(std::vector<State> states, const Nfa &aut);
-
-        bool has_next() const;
-
-        std::pair<Symbol, const StateSet> next();
-    };
-
     struct const_iterator
     { // {{{
         const Nfa* nfa;
         size_t trIt;
-        TransitionList::const_iterator tlIt;
+        MoveList::const_iterator tlIt;
         StateSet::const_iterator ssIt;
         Trans trans;
         bool is_end = { false };
@@ -712,7 +716,7 @@ public:
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
 
-    const TransitionList& operator[](State state) const
+    const MoveList& operator[](State state) const
     { // {{{
         assert(state < transitionrelation.size());
 
@@ -726,7 +730,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    TransitionList::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
+    MoveList::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -735,7 +739,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, Symbol epsilon = EPSILON) ;
+    static MoveList::const_iterator get_epsilon_transitions(const MoveList& state_transitions, Symbol epsilon = EPSILON) ;
 
 private:
 }; // Nfa
@@ -1206,7 +1210,7 @@ private:
      * @param depth[in] Current depth.
      * @param worklist[out] Worklist of state and depth pairs to process.
      */
-    static void add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+    static void add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
                                             std::deque<StateDepthPair>& worklist);
 
     /**
@@ -1215,7 +1219,7 @@ private:
      * @param[in] state_transitions Transitions from current state.
      * @param[out] worklist Worklist of state and depth pairs to process.
      */
-    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const TransSymbolStates& state_transitions,
+    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const Move& state_transitions,
                                     std::deque<StateDepthPair>& worklist);
 
     /**

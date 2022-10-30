@@ -396,7 +396,7 @@ class Regexp {
   bool RequiredPrefixForAccel(std::string* prefix, bool* foldcase);
 
  private:
-  // Constructor allocates vectors as appropriate for operator.
+  // Constructor allocates _vectors as appropriate for operator.
   explicit Regexp(RegexpOp op, ParseFlags parse_flags);
 
   // Use Decref() instead of delete to release Regexps.

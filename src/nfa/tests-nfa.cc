@@ -1154,7 +1154,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(sum == 4);
 	}
 
-	SECTION("non-empty automaton accepting a*b*")
+
+    SECTION("weirdness")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
 		aut.initialstates = {1,2};
@@ -1194,7 +1195,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
-		"antichains",
+		//"antichains",
 	};
 
 	SECTION("empty automaton, empty alphabet")
@@ -1285,6 +1286,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
+
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(is_univ);

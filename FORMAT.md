@@ -136,7 +136,7 @@ q3 xxxxxxxx q1    # the length needs to match the value in '%Symbol-Vars'
 %Final 00x
 
 111 000x11x1 0x0  # the format of transitions is <source> <symbol> <target> 
-xxx xx11xx00 11x  # 'x' in the binary vectors denote don't care values
+xxx xx11xx00 11x  # 'x' in the binary _vectors denote don't care values
 
 ```
 ### A sequence of operations

@@ -37,7 +37,7 @@ void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_
 }
 
 void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& state_depth_pair,
-                                                      const TransSymbolStates& state_transitions,
+                                                      const Move& state_transitions,
                                                       std::deque<StateDepthPair>& worklist)
 {
     epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
@@ -50,7 +50,7 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& stat
     }
 }
 
-void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+void SegNfa::Segmentation::add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
                                                        std::deque<StateDepthPair>& worklist)
 {
     for (State target_state: state_transitions.states_to)

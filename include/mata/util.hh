@@ -199,7 +199,7 @@ struct hash<std::set<A>>
 };
 
 /**
- * @brief  A hasher for vectors
+ * @brief  A hasher for _vectors
  */
 template <class A>
 struct hash<std::vector<A>>

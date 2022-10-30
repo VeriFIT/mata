@@ -45,12 +45,12 @@ We use the general form of AFA, by Pavol V., and simple NFA.
 * `true` means true and `false` means false.
 
 ## Alphabet type
-Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet. The type of alphabet is encoded in a name of section, e.g., `@NFA-explicit` denotes that nondeterministic finite automaton over explicit alphabet is given.
+Next, we categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit _vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet. The type of alphabet is encoded in a name of section, e.g., `@NFA-explicit` denotes that nondeterministic finite automaton over explicit alphabet is given.
 * **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.
 * **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
 * **Character class**: Character classes, i.e., sets of symbols as used in normal regular expressiosn, are of the form `[bla]` or `[^bla]` where bla is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` are denote the first repsective the last letter the alphabet.
 
-We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme). The formula may be just a single letter which is supposed to mean epsilon, it may be a disjunciton of letters, when we need several different epsilons, or a more complex formula describing boolean vectors that are supposed to mean epsilons.  Use cases for multiple epsilons appear for instance in string solving.
+We support specifying **epsilons**, by a key-value line `%Epsilon <formula>` where formula has the same syntax and meaning as the formulae used in transitions (depends on the alphabet type and typing scheme). The formula may be just a single letter which is supposed to mean epsilon, it may be a disjunciton of letters, when we need several different epsilons, or a more complex formula describing boolean _vectors that are supposed to mean epsilons.  Use cases for multiple epsilons appear for instance in string solving.
 
 ## AFA and NFA Examples
 ```

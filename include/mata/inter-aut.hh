@@ -29,6 +29,8 @@
 #include <string>
 #include <vector>
 
+#include <mata/synchronized_iterator.hh>
+
 namespace Mata
 {
 
@@ -168,7 +170,7 @@ public:
     AlphabetType alphabet_type;
     AutomatonType automaton_type;
 
-    // The vectors represent the given sets when enumeration is used.
+    // The _vectors represent the given sets when enumeration is used.
     std::vector<std::string> states_names;
     std::vector<std::string> symbols_names;
     std::vector<std::string> nodes_names;

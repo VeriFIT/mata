@@ -63,7 +63,7 @@ add_library(libmata STATIC
 	nfa/nfa-segmentation.cc
 	nfa/noodlify.cc
 	rra/rrt.cc
-)
+        ../include/mata/synchronized_iterator.hh nfa/tests-synchronised_iterator.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
@@ -82,7 +82,7 @@ add_executable(tests
 	nfa/tests-nfa-intersection.cc
 	nfa/tests-noodlify.cc
 	rra/tests-rrt.cc
-)
+		nfa/tests-synchronised_iterator.cc)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)

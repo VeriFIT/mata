@@ -119,7 +119,8 @@ private:
 
             // TODO rewrite this (TODO from previous Vata implementation -- rewrite the algorithm, or the format?).
 
-            compute_for_state_pair();
+            //compute_for_state_pair();
+            compute_for_state_pair_using_sui();
         }
     }
 
@@ -184,7 +185,7 @@ private:
      * Add transition to the product.
      * @param[in] intersection_transition State transitions to add to the product.
      */
-    void add_product_transition(const TransSymbolStates& intersection_transition)
+    void add_product_transition(const Move& intersection_transition)
     {
         if (intersection_transition.states_to.empty()) { return; }
 
@@ -224,12 +225,12 @@ private:
      * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
      * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
      */
-    void compute_for_same_symbols(const TransSymbolStates& lhs_state_transitions,
-                                  const TransSymbolStates& rhs_state_transitions)
+    void compute_for_same_symbols(const Move& lhs_state_transitions,
+                                  const Move& rhs_state_transitions)
     {
         // Create transition from the pair_to_process to all pairs between states to which first transition goes and states
         // to which second one goes.
-        TransSymbolStates intersection_transition{ lhs_state_transitions.symbol };
+        Move intersection_transition{lhs_state_transitions.symbol };
         for (const State this_state_to: lhs_state_transitions.states_to)
         {
             for (const State other_state_to: rhs_state_transitions.states_to)
@@ -244,10 +245,10 @@ private:
      * Compute product for state transitions with @c lhs state epsilon transition.
      * @param[in] lhs_state_transitions State transitions of NFA @c lhs to compute product for.
      */
-    void compute_for_lhs_state_epsilon_transitions(const TransSymbolStates& lhs_state_transitions)
+    void compute_for_lhs_state_epsilon_transitions(const Move& lhs_state_transitions)
     {
         // Create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes.
-        TransSymbolStates intersection_transition{ lhs_state_transitions.symbol };
+        Move intersection_transition{lhs_state_transitions.symbol };
         for (const State this_state_to: lhs_state_transitions.states_to)
         {
             create_product_state_and_trans(this_state_to, pair_to_process.second, intersection_transition);
@@ -259,10 +260,10 @@ private:
      * Compute product for state transitions with @c rhs state epsilon transition.
      * @param[in] rhs_state_transitions State transitions of NFA @c rhs to compute product for.
      */
-    void compute_for_rhs_state_epsilon_transitions(const TransSymbolStates& rhs_state_transitions)
+    void compute_for_rhs_state_epsilon_transitions(const Move& rhs_state_transitions)
     {
         // create transition from the pair_to_process to all pairs between states to which first transition goes and states to which second one goes
-        TransSymbolStates intersection_transition{ rhs_state_transitions.symbol };
+        Move intersection_transition{rhs_state_transitions.symbol };
         for (const State other_state_to: rhs_state_transitions.states_to)
         {
             create_product_state_and_trans(pair_to_process.first, other_state_to, intersection_transition);
@@ -319,13 +320,27 @@ private:
         }
     }
 
+    // Alternative for the above that uses synchronized_univerzal_iterator
+    void compute_for_state_pair_using_sui()
+    {
+        Mata::Util::synchronized_univerzal_iterator<Move> sui(2);
+        sui.push_back(lhs.transitionrelation[pair_to_process.first]);
+        sui.push_back(rhs.transitionrelation[pair_to_process.second]);
+
+        while (sui.advance()){
+            std::vector<Mata::Util::OrdVector<Move>::const_iterator> moves = sui.get_current();
+            assert(moves.size() == 2);
+            compute_for_same_symbols(*moves[0],*moves[1]);
+        }
+    }
+
     /**
      * Create product state and its transitions.
      * @param[in] lhs_state_to Target state in NFA @c lhs.
      * @param[in] rhs_state_to Target state in NFA @c rhs.
      * @param[out] intersect_transitions Transitions of the product state.
      */
-    void create_product_state_and_trans(const State lhs_state_to, const State rhs_state_to, TransSymbolStates& intersect_transitions)
+    void create_product_state_and_trans(const State lhs_state_to, const State rhs_state_to, Move& intersect_transitions)
     {
         const StatePair intersect_state_pair_to(lhs_state_to, rhs_state_to);
         State intersect_state_to;

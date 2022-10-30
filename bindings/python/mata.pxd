@@ -93,8 +93,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringDict
-    ctypedef COrdVector[CTransSymbolStates] TransitionList
-    ctypedef vector[TransitionList] TransitionRelation
+    ctypedef COrdVector[CTransSymbolStates] MoveList
+    ctypedef vector[MoveList] TransitionRelation
     ctypedef vector[CNfa] AutSequence
     ctypedef vector[CNfa*] AutPtrSequence
     ctypedef vector[const CNfa*] ConstAutPtrSequence
@@ -117,7 +117,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
     ctypedef vector[CTrans] TransitionSequence
 
-    cdef cppclass CTransSymbolStates "Mata::Nfa::TransSymbolStates":
+    cdef cppclass CTransSymbolStates "Mata::Nfa::Move":
         # Public Attributes
         Symbol symbol
         StateSet states_to
@@ -190,7 +190,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         State add_new_state()
         void print_to_DOT(ostream)
         WordSet get_shortest_words()
-        TransitionList get_transitions_from(State)
+        MoveList get_transitions_from(State)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
@@ -202,7 +202,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
         COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(TransitionList& state_transitions, Symbol epsilon)
+        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(MoveList& state_transitions, Symbol epsilon)
 
 
     # Automata tests

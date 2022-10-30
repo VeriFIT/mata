@@ -30,7 +30,7 @@ namespace {
     class RegexParser {
     private:
         /**
-         * Holds all state cache vectors needed throughout the computation. Vector index is the state number
+         * Holds all state cache _vectors needed throughout the computation. Vector index is the state number
          * state_mapping for each state (vector index), it holds a vector of states that map to it (cause by epsilon transitions)
          * is_final_state determines if the state is final (true) or not (false)
          * is_state_nop_or_cap determines if the state is of type nop/cap (true) or not (false)
@@ -305,7 +305,7 @@ namespace {
         }
 
        /**
-        * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
+        * Creates all state cache _vectors needed throughout the computation and saves them to the private variable state_cache.
         * It calls appropriate method based on use_epsilon param
         * @param prog RE2 prog corresponding to the parsed regex
         * @param use_epsilon whether to create NFA with epsilon transitions or not
@@ -319,7 +319,7 @@ namespace {
         }
 
         /**
-         * Creates all state cache vectors needed throughout the computation and saves them
+         * Creates all state cache _vectors needed throughout the computation and saves them
          * to the private variable state_cache
          * It creates state cache for creating ExplicitNFA without epsilon transitions
          * @param prog RE2 prog corresponding to the parsed regex
@@ -411,7 +411,7 @@ namespace {
         }
 
         /**
-          * Creates all state cache vectors needed throughout the computation and saves them to the private variable state_cache.
+          * Creates all state cache _vectors needed throughout the computation and saves them to the private variable state_cache.
           * It creates state cache for creating ExplicitNFA with epsilon transitions
           * @param prog RE2 prog corresponding to the parsed regex
           */
