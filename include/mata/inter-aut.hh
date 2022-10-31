@@ -29,8 +29,6 @@
 #include <string>
 #include <vector>
 
-#include <mata/synchronized_iterator.hh>
-
 namespace Mata
 {
 
