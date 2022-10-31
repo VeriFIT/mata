@@ -297,12 +297,18 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 
 	aut.finalstates = {1};
+<<<<<<< HEAD
 
     REQUIRE(!antichain_concrete_forward_emptiness_test_old(aut));
     REQUIRE(!antichain_concrete_backward_emptiness_test_old(aut));
 
     REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
     REQUIRE(!antichain_concrete_backward_emptiness_test_new(aut));
+=======
+    
+    REQUIRE(!antichain_concrete_forward_emptiness_test(aut));
+    REQUIRE(!antichain_concrete_backward_emptiness_test(aut));
+>>>>>>> refs/remotes/origin/devel
 
     /////////////////////////////////
     // Example of an automaton
