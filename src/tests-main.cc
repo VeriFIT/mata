@@ -3,8 +3,6 @@
 #define CATCH_CONFIG_RUNNER
 #include "../3rdparty/catch.hpp"
 #include <mata/util.hh>
-#include <mata/ord_vector.hh>
-
 
 int main( int argc, char* argv[])
 {
