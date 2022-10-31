@@ -85,12 +85,7 @@ struct Trans
 	} // operator== }}}
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 
-    /*friend std::ostream& operator<<(std::ostream& os, const Trans trans)
-    {
-        return os << std::to_string(trans.src) + ":" + std::to_string(trans.symb) + "->" + std::to_string(trans.dst) + "\n";
-    }*/
-
-};
+}; // struct Trans
 
 using TransList = std::vector<Trans>;
 using TransRelation = std::vector<TransList>;
@@ -99,48 +94,48 @@ using TransRelation = std::vector<TransList>;
 * A tuple (result_nodes, sharing_list). If 'a' is an element of result_nodes, it means that there exists a symbol
 * 'b' such that sharing_list belongs to delta(a, b), where sharing_list is a node (vector of states). 
 */
-typedef struct InverseResults_{
+struct InverseResults{
 
     Node result_nodes{}; 
     Node sharing_list{};
 
-    InverseResults_() : result_nodes(), sharing_list() { }
-    InverseResults_(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
-    InverseResults_(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
+    InverseResults() : result_nodes(), sharing_list() { }
+    InverseResults(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
+    InverseResults(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
 
-    bool operator==(InverseResults_ rhs) const
+    bool operator==(InverseResults rhs) const
     { // {{{
         return sharing_list == rhs.sharing_list && result_nodes == rhs.result_nodes;
     } // operator== }}}
     
-    bool operator!=(InverseResults_ rhs) const
+    bool operator!=(InverseResults rhs) const
     { // {{{
         return !this->operator==(rhs);
     } // operator!= }}}
 
-    bool operator<(InverseResults_ rhs) const
+    bool operator<(InverseResults rhs) const
     { // {{{
         return sharing_list < rhs.sharing_list || (sharing_list == rhs.sharing_list && result_nodes < rhs.result_nodes);
     } // operator< }}}
 
-}InverseResults;
+}; // struct InverseResults
 
 /*
 * A tuple (symb, vector_of_pointers). Each pointer points to the instance of InverseResults. If &(result_nodes, sharing_list) belongs to the
 * vector_of_pointers, then for each 'a' which is part of result_nodes holds that 'sharing_list' is a member of delta(a, symbol).
 */
-typedef struct InverseTrans_{
+struct InverseTrans{
 
     using InverseResultPtrs = std::vector<std::shared_ptr<InverseResults>>;
 
     Symbol symb;    
     InverseResultPtrs inverseResultPtrs{};
 
-    InverseTrans_() : symb(), inverseResultPtrs() { }
-    InverseTrans_(Symbol symb) : symb(symb), inverseResultPtrs(InverseResultPtrs()) { }
-    InverseTrans_(Symbol symb, InverseResultPtrs inverseResultPtrs) : symb(symb), inverseResultPtrs(inverseResultPtrs) { }
+    InverseTrans() : symb(), inverseResultPtrs() { }
+    InverseTrans(Symbol symb) : symb(symb), inverseResultPtrs(InverseResultPtrs()) { }
+    InverseTrans(Symbol symb, InverseResultPtrs inverseResultPtrs) : symb(symb), inverseResultPtrs(inverseResultPtrs) { }
 
-}InverseTrans;
+}; // struct InverseTrans
 
 using InverseTransRelation = std::vector<std::vector<InverseTrans>>;
 
@@ -156,8 +151,7 @@ Mata::Parser::ParsedSection serialize(
 ///  An AFA
 struct Afa
 { // {{{
-public:
-
+private:
     TransRelation transRelation{};
     InverseTransRelation inverseTransRelation{};
 
@@ -244,7 +238,7 @@ public:
     ClosedSet<State> post(Node node) const;
     ClosedSet<State> post(Nodes nodes) const;
 
-    ClosedSet<State> post(ClosedSet<State> closed_set) const {return post(closed_set.get_antichain());};
+    ClosedSet<State> post(ClosedSet<State> closed_set) const {return post(closed_set.antichain());};
 
     ClosedSet<State> pre(Node node, Symbol symb) const;
     ClosedSet<State> pre(State state, Symbol symb) const {return pre(Node(state), symb);};
@@ -254,7 +248,7 @@ public:
     ClosedSet<State> pre(Node node) const;
     ClosedSet<State> pre(Nodes nodes) const;
 
-    ClosedSet<State> pre(ClosedSet<State> closed_set) const {return pre(closed_set.get_antichain());};
+    ClosedSet<State> pre(ClosedSet<State> closed_set) const {return pre(closed_set.antichain());};
 
     ClosedSet<State> get_initial_nodes(void) const;
     ClosedSet<State> get_non_initial_nodes(void) const;

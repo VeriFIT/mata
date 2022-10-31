@@ -50,7 +50,6 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::Trans& trans)
 */
 void Afa::add_trans(const Trans& trans)
 { // {{{
-    assert(!this->transRelation.empty());
 
     // Performs a transition using given src state and symbol
     // in context of transitions which have been already added to the automaton
@@ -60,18 +59,12 @@ void Afa::add_trans(const Trans& trans)
     auto nodesPtr = perform_trans(trans.src, trans.symb);
     if(!nodesPtr->empty())
     {
-        // TODO: It would be nice to remove redundant clauses (like (1 || (1 && 2)))
-        // The clause (1 && 2) could be deleted. Solution:
-        // create closed set -> add the new transition -> extract the antichain ->
-        // store it to the transition (???). Working solution:
-        //        
-        // auto cl = ClosedSet<State>(ClosedSet<State>::upward_closed, 0, max_state_used, *nodesPtr);
-        // cl.insert(trans.dst);
-        // *nodesPtr = cl.get_antichain();
-        //        
-        // Is it worth it?         
-
-        *nodesPtr = nodesPtr->Union(trans.dst);
+        // Before the dst nodes are added to the transition, we want to get rid
+        // of redundant clauses. For example, in context of the formula
+        // (1 || (1 && 2)), the clause (1 && 2) could be deleted
+        auto cl = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, *nodesPtr);
+        cl.insert(trans.dst);
+        *nodesPtr = cl.antichain();
         return;
     }
     transRelation[trans.src].push_back(trans);
@@ -90,11 +83,6 @@ void Afa::add_inverse_trans(const Trans& trans)
     // Iterating through all the nodes which were given as a destination of the current transition
     for(auto node : trans.dst)
     {
-        // TODO: Could this ever happen?
-        if(node.empty())
-        {
-            continue;
-        }
 
         // If there is already a memory cell which corresponds to the current dst node and a transition symbol,
         // we have to find it and add the 'src' state to the corresponding result_nodes vector. 
@@ -179,7 +167,8 @@ void Afa::add_inverse_trans(const Trans& trans)
 */
 std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 {
-    assert(src < this->transRelation.size());
+    assert(src < this->transRelation.size() && "It is not possible to perform a transition " +
+    "from non-existing state.");
     for(auto transVec : transRelation[src])
     {
         if(transVec.symb == symb)
@@ -200,14 +189,13 @@ std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 */
 ClosedSet<State> Afa::post(State state, Symbol symb) const
 {
-    assert(state < this->transRelation.size());
     Nodes result = *perform_trans(state, symb);
     if(result.size())
     {
-        return ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1, result);
+        return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, result);
     }   
     // if there is no proper result, we will return an empty closed set
-    return ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
 } // post }}}
 
 /** This function takes a single node and a symbol and returns all the nodes which are accessible from the node
@@ -223,7 +211,7 @@ ClosedSet<State> Afa::post(State state, Symbol symb) const
 ClosedSet<State> Afa::post(Node node, Symbol symb) const
 {
     // initially, the result is empty
-    ClosedSet<State> result = ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
     if(node.empty())
     {
         result.insert(node);
@@ -235,10 +223,9 @@ ClosedSet<State> Afa::post(Node node, Symbol symb) const
     bool used = false;
     for(auto state : node)
     {
-        assert(state < this->transRelation.size());
         if(!used)
         {
-            result.insert(post(state, symb).get_antichain());
+            result.insert(post(state, symb).antichain());
             used = true;
             continue;
         }
@@ -260,10 +247,10 @@ ClosedSet<State> Afa::post(Node node, Symbol symb) const
 ClosedSet<State> Afa::post(Nodes nodes, Symbol symb) const
 {
     // initially, the result is empty
-    ClosedSet<State> result = ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
-        result.insert(post(node, symb).get_antichain());
+        result.insert(post(node, symb).antichain());
     }
     return result;
 } // post }}}
@@ -279,8 +266,9 @@ ClosedSet<State> Afa::post(Nodes nodes, Symbol symb) const
 */
 ClosedSet<State> Afa::post(ClosedSet<State> closed_set, Symbol symb) const
 {
-    assert(closed_set.get_type() == ClosedSet<State>::upward_closed);
-    return post(closed_set.get_antichain(), symb);
+    assert(closed_set.get_type() == Mata::upward_closed_set && "The predicate transformer " +
+    "post can be computed only over upward-closed sets.");
+    return post(closed_set.antichain(), symb);
 } // post }}}
 
 
@@ -297,12 +285,12 @@ ClosedSet<State> Afa::post(Node node) const
 {
     if(node.empty())
     {
-        return ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1, Nodes{Node{}});
+        return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
     }
-    ClosedSet<State> result = ClosedSet<State>(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
     for(auto transVec : transRelation[*(node.begin())])
     {
-        result.insert(post(node, transVec.symb).get_antichain());
+        result.insert(post(node, transVec.symb).antichain());
     }
     return result;
 } // post }}}
@@ -317,10 +305,10 @@ ClosedSet<State> Afa::post(Node node) const
 */
 ClosedSet<State> Afa::post(Nodes nodes) const
 {
-    ClosedSet<State> result(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
-        result.insert(post(node).get_antichain());
+        result.insert(post(node).antichain());
     }
     return result;
 } // post }}}
@@ -407,7 +395,7 @@ ClosedSet<State> Afa::pre(Node node, Symbol symb) const
             }
         }
     }
-    return ClosedSet<State>(ClosedSet<State>::downward_closed, 0, transRelation.size()-1, result);
+    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, result);
 } // pre }}}
 
 /** This function takes set of nodes and a symbol and returns all the nodes which are able to access the given nodes
@@ -420,7 +408,7 @@ ClosedSet<State> Afa::pre(Node node, Symbol symb) const
 */
 ClosedSet<State> Afa::pre(Nodes nodes, Symbol symb) const
 {
-    ClosedSet<State> result(ClosedSet<State>::downward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
         result = result.Union(pre(node, symb));
@@ -436,8 +424,9 @@ ClosedSet<State> Afa::pre(Nodes nodes, Symbol symb) const
 */
 ClosedSet<State> Afa::pre(ClosedSet<State> closed_set, Symbol symb) const
 {
-    assert(closed_set.get_type() == ClosedSet<State>::downward_closed);
-    return pre(closed_set.get_antichain(), symb);
+    assert(closed_set.get_type() == downward_closed_set && "The predicate transformer " +
+    "pre can be computed only over downward-closed sets.");
+    return pre(closed_set.antichain(), symb);
 } // pre }}}
 
 /** This function allows us to perfom pre over a node and use the whole alphabet to perform individual transitions 
@@ -449,12 +438,12 @@ ClosedSet<State> Afa::pre(Node node) const
 {
     if(node.empty())
     {
-        return ClosedSet<State>(ClosedSet<State>::downward_closed, 0, transRelation.size()-1, Nodes{Node{}});
+        return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
     }
-    ClosedSet<State> result(ClosedSet<State>::downward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
     for(auto transVec : inverseTransRelation[*(node.begin())])
     {
-        result.insert(pre(node, transVec.symb).get_antichain());
+        result.insert(pre(node, transVec.symb).antichain());
     }
     return result;
 } // pre }}}
@@ -466,10 +455,10 @@ ClosedSet<State> Afa::pre(Node node) const
 */
 ClosedSet<State> Afa::pre(Nodes nodes) const
 {
-    ClosedSet<State> result(ClosedSet<State>::downward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
-        result.insert(pre(node).get_antichain());
+        result.insert(pre(node).antichain());
     }
     return result;
 } // pre }}}
@@ -503,7 +492,7 @@ size_t Afa::trans_size() const
 */
 ClosedSet<State> Afa::get_initial_nodes(void) const
 {
-    ClosedSet<State> result(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
     for(State state = 0; state < transRelation.size(); ++state)
     {
         if(has_initial(state))
@@ -527,7 +516,7 @@ ClosedSet<State> Afa::get_non_initial_nodes(void) const
             subresult.insert(state);
         }  
     }
-    return ClosedSet<State>(ClosedSet<State>::downward_closed, 0, transRelation.size()-1, subresult);
+    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, subresult);
 } // get_non_initial_nodes() }}}
 
 /** This function returns a downward-closed set of all the nodes which are final
@@ -543,7 +532,7 @@ ClosedSet<State> Afa::get_final_nodes(void) const
             subresult.insert(state);
         }  
     }
-    return ClosedSet<State>(ClosedSet<State>::downward_closed, 0, transRelation.size()-1, subresult);
+    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, subresult);
 } // get_final_nodes() }}}
 
 /** This function returns an upward-closed set of all the nodes which are non-final
@@ -551,7 +540,7 @@ ClosedSet<State> Afa::get_final_nodes(void) const
 */
 ClosedSet<State> Afa::get_non_final_nodes(void) const
 {
-    ClosedSet<State> result(ClosedSet<State>::upward_closed, 0, transRelation.size()-1);
+    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
     for(State state = 0; state < transRelation.size(); ++state)
     {
         if(!has_final(state))
@@ -665,9 +654,9 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
 {
     ClosedSet<Mata::Afa::State> goal = aut.get_non_final_nodes();
     ClosedSet<Mata::Afa::State> result = aut.get_initial_nodes();
-    std::vector<Node> processed = std::vector<Node>();
+    std::set<Node> processed = std::set<Node>();
     std::vector<Node> worklist = std::vector<Node>();
-    for(Node node : aut.get_initial_nodes().get_antichain())
+    for(Node node : aut.get_initial_nodes().antichain())
     {
         worklist.push_back(node);
     }
@@ -683,18 +672,18 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
         worklist.pop_back();
         auto post_current = aut.post(current);
         result = result.Union(post_current);
-        for(Node node : post_current.get_antichain())
+        for(Node node : post_current.antichain())
         {
             if(!goal.contains(node))
             {
                 return false;
             }
-            if(std::find(processed.begin(), processed.end(), node) == processed.end())
+            if(!processed.count(node))
             {
                 worklist.push_back(node);
             }
         }
-        processed.push_back(current);
+        processed.insert(current);
     }
     return true;
 }
@@ -738,9 +727,9 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
 {
     ClosedSet<Mata::Afa::State> goal = aut.get_non_initial_nodes();
     ClosedSet<Mata::Afa::State> result = aut.get_final_nodes();
-    std::vector<Node> processed = std::vector<Node>();
+    std::set<Node> processed = std::set<Node>();
     std::vector<Node> worklist = std::vector<Node>();
-    for(Node node : aut.get_final_nodes().get_antichain())
+    for(Node node : aut.get_final_nodes().antichain())
     {
         worklist.push_back(node);
     }
@@ -756,18 +745,18 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
         worklist.pop_back();
         auto pre_current = aut.pre(current);
         result = result.Union(pre_current);
-        for(Node node : pre_current.get_antichain())
+        for(Node node : pre_current.antichain())
         {
             if(!goal.contains(node))
             {
                 return false;
             }
-            if(std::find(processed.begin(), processed.end(), node) == processed.end())
+            if(!processed.count(node))
             {
                 worklist.push_back(node);
             }
         }
-        processed.push_back(current);
+        processed.insert(current);
     }
     return true;
 }
@@ -845,13 +834,7 @@ Mata::Parser::ParsedSection Mata::Afa::serialize(
 	}
 	parsec.dict["Final"] = fin_states;
 
-	/*for (const auto& trans : aut.transitions) {
-		bool_str_pair src_bsp = state_namer(trans.src);
-		bool_str_pair symb_bsp = symbol_namer(trans.src);
-		if (!src_bsp.first) { throw std::runtime_error("cannot translate state " + std::to_string(trans.src)); }
-
-		parsec.body.push_back({ src_bsp.second, symb_bsp.second, trans.dst });
-	}*/ // TODO
+    // TODO: transitions serialization
 
 	return parsec;
 } // serialize }}}
@@ -962,8 +945,12 @@ void Mata::Afa::construct(
       formula += body_line[i] + " ";
     }
 
-    //aut->add_trans(src_state, formula);
-    //TODO
+    // TODO: Transform a positive Boolean formula from the string format
+    // to the inner representation (src state, symbol on transition, ordered
+    // vector of ordered vectors of states which corresponds to the formula in DNF) 
+    // Call the "add_trans" and "add_inverse_trans" functions over the
+    // parsed formula to add it do the automaton
+
 	}
 
 	// do the dishes and take out garbage
