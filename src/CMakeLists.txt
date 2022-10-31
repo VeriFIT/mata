@@ -63,7 +63,7 @@ add_library(libmata STATIC
 	nfa/nfa-segmentation.cc
 	nfa/noodlify.cc
 	rra/rrt.cc
-)
+        ../include/mata/synchronized_iterator.hh nfa/tests-syncrhonized_iterator.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata

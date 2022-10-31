@@ -119,7 +119,8 @@ private:
 
             // TODO rewrite this (TODO from previous Vata implementation -- rewrite the algorithm, or the format?).
 
-            compute_for_state_pair();
+            //compute_for_state_pair();
+            compute_for_state_pair_using_sui();
         }
     }
 
@@ -316,6 +317,20 @@ private:
                 ++this_state_transitions_iter;
                 ++other_state_transitions_iter;
             }
+        }
+    }
+
+    // Alternative for the above that uses SynchronizedUniverzalIterator
+    void compute_for_state_pair_using_sui()
+    {
+        Mata::Util::SynchronizedUniverzalIterator<TransSymbolStates> sui(2);
+        sui.push_back(lhs.transitionrelation[pair_to_process.first]);
+        sui.push_back(rhs.transitionrelation[pair_to_process.second]);
+
+        while (sui.advance()){
+            std::vector<Mata::Util::OrdVector<TransSymbolStates>::const_iterator> moves = sui.get_current();
+            assert(moves.size() == 2);
+            compute_for_same_symbols(*moves[0],*moves[1]);
         }
     }
 
