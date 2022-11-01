@@ -1297,6 +1297,7 @@ Nfa Mata::Nfa::determinize(
         const Nfa&  aut,
         SubsetMap*  subset_map)
 {
+
     Nfa result;
     //assuming all sets states_to are non-empty
     std::vector<std::pair<State, StateSet>> worklist;
@@ -1326,6 +1327,9 @@ Nfa Mata::Nfa::determinize(
     if (aut.trans_empty())
         return result;
 
+    //
+    Mata::Util::SynchronizedExistentialIterator<TransSymbolStates> sychronized_iterator;
+
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
@@ -1334,12 +1338,22 @@ Nfa Mata::Nfa::determinize(
         if (S.empty()) {
             break;//this should not happen assuming all sets states_to are non empty
         }
-        Mata::Nfa::Nfa::state_set_post_iterator iterator(S.ToVector(), aut);
 
-        while (iterator.has_next()) {
-            const auto symbolTargetPair = iterator.next();
-            const Symbol currentSymbol = symbolTargetPair.first;
-            const StateSet &T = symbolTargetPair.second;
+        // add moves of S to the sync ex iterator
+        for (State q: S) {
+            sychronized_iterator.push_back(aut.transitionrelation[q]);
+        }
+
+        while (sychronized_iterator.advance()) {
+
+            // extract post from the sychronized_iterator iterator
+            std::vector<Mata::Util::OrdVector<TransSymbolStates>::const_iterator> moves = sychronized_iterator.get_current();
+            Symbol currentSymbol = (*moves.begin())->symbol;
+            StateSet T;
+            for (auto m: moves){
+                T = T.Union(m->states_to);
+            }
+
             const auto existingTitr = subset_map->find(T);
             State Tid;
             if (existingTitr != subset_map->end()) {
@@ -1527,33 +1541,6 @@ Nfa Mata::Nfa::construct(
     return aut;
 } // construct }}}
 
-bool Nfa::state_set_post_iterator::has_next() const
-{
-    return (size > 0);
-}
-
-Nfa::state_set_post_iterator::state_set_post_iterator(std::vector<State> states, const Nfa &aut): state_vector(std::move(states)), automaton(aut), size(state_vector.size())
-{
-    transition_iterators.reserve(size);
-    min_symbol = limits.maxSymbol;
-    for (size_t i=0; i < size;) {
-        State q = state_vector[i];
-        if (automaton.transitionrelation[q].empty()) { // we keep in state_vector only states that have some transitions
-            transition_iterators[i] = transition_iterators[size-1];
-            state_vector[i] = state_vector[size-1];
-            size--;
-            //then process the same i in the next iteration (no i++ here)
-        } else {
-            transition_iterators[i] = automaton.transitionrelation[q].begin();
-            Symbol transitionSymbol =  transition_iterators[i]->symbol;
-            if (transitionSymbol < min_symbol) {
-                min_symbol = transitionSymbol;
-            }
-            i++;
-        }
-    }
-}
-
 Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 { // {{{
     assert(nullptr != nfa);
@@ -1635,46 +1622,6 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     return *this;
 } // operator++ }}}
-
-/**
- * Returns the min_symbol and its post (subset construction), advances the min_symbol to the next minimal symbol,
- * If it meets a state with no more transitions, it swaps it with the last state and decreases the size.
- * size == 0 means no more post.
- * It would be nice to make this parameterized by a functor that defines what is to be done with the individual posts
- * Alternatively, one might return a vector of references to those individual posts, looks like a good idea actually, the cost of this vector should be small enough
- */
- std::pair<Symbol,const StateSet> Nfa::state_set_post_iterator::next() {
-    StateSet post;
-    Symbol newMinSymbol = limits.maxSymbol;
-    for (size_t i=0; i < size;) {
-        Symbol transitionSymbol = transition_iterators[i]->symbol;
-        if (transitionSymbol == min_symbol) {
-            union_to_left(post, transition_iterators[i]->states_to);
-            transition_iterators[i]++;
-            if (transition_iterators[i] != automaton.transitionrelation[state_vector[i]].end()) {
-                Symbol nextTransitionSymbol = transition_iterators[i]->symbol;
-                if (nextTransitionSymbol < newMinSymbol) {
-                    newMinSymbol = nextTransitionSymbol;
-                }
-                i++;
-            } else {
-                //swap the ith state with the last state and decrease the size
-                transition_iterators[i] = transition_iterators[size-1];
-                state_vector[i] = state_vector[size-1];
-                size--;
-                //do the same i again, the previously last state is there now (no i++)
-            }
-        } else {
-            if (transitionSymbol < newMinSymbol) {
-                newMinSymbol = transitionSymbol;
-            }
-            i++;
-        }
-    }
-    std::pair<Symbol,StateSet> result(min_symbol, post);
-    min_symbol = newMinSymbol;
-    return result;
-}
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     os << "{ NFA: " << std::to_string(serialize(nfa));

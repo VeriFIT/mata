@@ -34,6 +34,7 @@
 #include <mata/ord_vector.hh>
 #include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
+#include <mata/synchronized_iterator.hh>
 
 namespace Mata
 {
@@ -266,6 +267,7 @@ struct TransSymbolStates {
     inline bool operator>(const TransSymbolStates& rhs) const { return symbol > rhs.symbol; }
     inline bool operator>=(const TransSymbolStates& rhs) const { return symbol >= rhs.symbol; }
     inline bool operator==(const TransSymbolStates& rhs) const { return symbol == rhs.symbol; }
+    inline bool operator!=(const TransSymbolStates& rhs) const { return symbol != rhs.symbol; }
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
@@ -788,23 +790,6 @@ public:
      * @return Set of shortest words.
      */
     WordSet get_shortest_words() const;
-
-    //class for iterating successors of a set of states represented as a StateSet
-    //the iteration will take the symbols in from the smallest
-    struct state_set_post_iterator {
-    private:
-        std::vector<State> state_vector;
-        const Nfa &automaton;//or just give it a transition relation, that would make it more universal
-        std::size_t size; // usable size of stateVector
-        Symbol min_symbol;//the smallest symbol, for the next post
-        std::vector<TransitionList::const_iterator> transition_iterators; //vector of iterators into TransitionLists (that are assumed sorted by symbol), for every state
-    public:
-        state_set_post_iterator(std::vector<State> states, const Nfa &aut);
-
-        bool has_next() const;
-
-        std::pair<Symbol, const StateSet> next();
-    };
 
     struct const_iterator
     { // {{{
