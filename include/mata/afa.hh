@@ -46,7 +46,6 @@ using State = Mata::Nfa::State;
 using Symbol = Mata::Nfa::Symbol;
 
 template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
-template<typename T> using ClosedSet = Mata::ClosedSet<T>;
 
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
@@ -62,12 +61,22 @@ using Word = Mata::Nfa::Word;
 using StringDict = Mata::Nfa::StringDict;
 
 using StateSet = OrdVec<State>;
+using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
 
 using Alphabet = Mata::Nfa::Alphabet;
 
 /*
-* A transition consists of a source state, a symbol and a vector of vector of states / vector of nodes
-* This corresponds to the formula in DNF
+* A node is an ordered vector of states of the automaton.
+* A transition consists of a source state, a symbol on the transition 
+* and a vector of nodes (which are the destination of the transition).
+*
+* In context of an AFA, the transition relation maps a state and a symbol
+* to the positive Boolean formula over states, which is a Boolean formula
+* using states in positive form, conjunctions and disjunctions. Since such
+* a formula can be converted to the DNF, we can represent is as an ordered vector
+* of nodes. The ordered vector represents a set of disjuncts. Each node corresponds
+* to a single disjunct of a formula in DNF (states connected by conjunctions).
+* 
 */
 struct Trans
 {
@@ -228,30 +237,30 @@ public:
 	size_t trans_size() const;/// number of transitions; has linear time complexity
 
 
-    ClosedSet<State> post(State state, Symbol symb) const;
-    ClosedSet<State> post(Node node, Symbol symb) const;
-    ClosedSet<State> post(Nodes nodes, Symbol symb) const;
-    ClosedSet<State> post(ClosedSet<State> closed_set, Symbol symb) const;
+    StateClosedSet post(State state, Symbol symb) const;
+    StateClosedSet post(Node node, Symbol symb) const;
+    StateClosedSet post(Nodes nodes, Symbol symb) const;
+    StateClosedSet post(StateClosedSet closed_set, Symbol symb) const;
 
-    ClosedSet<State> post(Node node) const;
-    ClosedSet<State> post(Nodes nodes) const;
+    StateClosedSet post(Node node) const;
+    StateClosedSet post(Nodes nodes) const;
 
-    ClosedSet<State> post(ClosedSet<State> closed_set) const {return post(closed_set.antichain());};
+    StateClosedSet post(StateClosedSet closed_set) const {return post(closed_set.antichain());};
 
-    ClosedSet<State> pre(Node node, Symbol symb) const;
-    ClosedSet<State> pre(State state, Symbol symb) const {return pre(Node(state), symb);};
-    ClosedSet<State> pre(Nodes nodes, Symbol symb) const;
-    ClosedSet<State> pre(ClosedSet<State> closed_set, Symbol symb) const;
+    StateClosedSet pre(Node node, Symbol symb) const;
+    StateClosedSet pre(State state, Symbol symb) const {return pre(Node(state), symb);};
+    StateClosedSet pre(Nodes nodes, Symbol symb) const;
+    StateClosedSet pre(StateClosedSet closed_set, Symbol symb) const;
 
-    ClosedSet<State> pre(Node node) const;
-    ClosedSet<State> pre(Nodes nodes) const;
+    StateClosedSet pre(Node node) const;
+    StateClosedSet pre(Nodes nodes) const;
 
-    ClosedSet<State> pre(ClosedSet<State> closed_set) const {return pre(closed_set.antichain());};
+    StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
 
-    ClosedSet<State> get_initial_nodes(void) const;
-    ClosedSet<State> get_non_initial_nodes(void) const;
-    ClosedSet<State> get_final_nodes(void) const;
-    ClosedSet<State> get_non_final_nodes(void) const;
+    StateClosedSet get_initial_nodes(void) const;
+    StateClosedSet get_non_initial_nodes(void) const;
+    StateClosedSet get_final_nodes(void) const;
+    StateClosedSet get_non_final_nodes(void) const;
 
 }; // Afa }}}
 

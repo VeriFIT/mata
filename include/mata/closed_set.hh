@@ -157,7 +157,7 @@ struct ClosedSet
         // has to be upward- or downward-closed set
         bool operator>=(ClosedSet<T> rhs) const
 	    { // {{{
-            assert(type == rhs.type && min_val == rhs.min_val && max_val == rhs.max_val);
+            assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
             return contains(rhs.antichain);
 	    } // operator<= }}}
 
@@ -365,7 +365,7 @@ void ClosedSet<T>::insert(Node node)
 template <typename T>
 ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const
 {
-    assert(type_ == rhs.type() && min_val_ == rhs.min_val() && max_val_ == rhs.max_val());
+    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
     ClosedSet<T> result(type_, min_val_, max_val_, antichain_);
     result.insert(rhs.antichain());
     return result;
@@ -379,7 +379,7 @@ ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const
 template <typename T>
 ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const
 {
-    assert(type == rhs.type() && min_val == rhs.min_val() && max_val == rhs.max_val());
+    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
     ClosedSet<T> result(type_, min_val_, max_val_);
 
     // Iterates through all the tuples from Antichan1 X Antichan2 and creates an union of them

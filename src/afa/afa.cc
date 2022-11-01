@@ -62,7 +62,7 @@ void Afa::add_trans(const Trans& trans)
         // Before the dst nodes are added to the transition, we want to get rid
         // of redundant clauses. For example, in context of the formula
         // (1 || (1 && 2)), the clause (1 && 2) could be deleted
-        auto cl = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, *nodesPtr);
+        auto cl = StateClosedSet(upward_closed_set, 0, transRelation.size()-1, *nodesPtr);
         cl.insert(trans.dst);
         *nodesPtr = cl.antichain();
         return;
@@ -86,21 +86,23 @@ void Afa::add_inverse_trans(const Trans& trans)
 
         // If there is already a memory cell which corresponds to the current dst node and a transition symbol,
         // we have to find it and add the 'src' state to the corresponding result_nodes vector. 
-        // Let us recall that the inverse transition datatype is a vector of vectors of tuples (symbol, vector_of_pointers)
-        // Each mentioned pointer points to the tuple (result_nodes, sharing_list). If there exists such a tuple, where
+        // Let us recall that the inverse transition datatype is a vector of vectors of tuples (symbol, vector_of_inverse_results)
+        // Each InverseResult is a tuple (result_nodes, sharing_list). If there exists such a tuple, where
         // the sharing_list corresponds to the current dst node, we can simply add the current 'src' state to the result_nodes.
-        // Since the corresponding tuple (result_nodes, sharing_list) must be referred from all the vector_of_pointers, where
-        // symbol == trans.symbol, it is sufficient to choose the first element of the dst node and look if there exists such a
+        // Since the corresponding tuple (result_nodes, sharing_list) would be identical for all states of the current node,
+        // we can store it to the memory only once. For this purpose, we choose the minimal element from the current node. 
+        // Then, it is sufficient to choose the minimal element of the dst node and look if there exists such a
         // tuple (result_nodes, sharing_list), where sharing_list == dst node in context of the current symbol
         //
         // Example: We have transitions (0, a, {0, 1}), (0, b, {1}). The inverse transition data structure looks like this:
         //
-        // 0 -> {('a', {&(result_nodes:{0}, sharing_list:{0, 1})})}
-        // 1 -> {('a', {&(result_nodes:{0}, sharing_list:{0, 1})}),
-        //      ('b', {&(result_nodes:{0}, sharing_list:{1})})}
+        // 0 -> {('a', {(result_nodes:{0}, sharing_list:{0, 1})})}
+        // 1 -> {('a', {}),
+        //      ('b', {(result_nodes:{0}, sharing_list:{1})})}
         //
-        // Now, we want to add the transition (1, a, {0, 1}), so we choose only one element of the dst node (0 or 1) and look if there exists
-        // a tuple (result_nodes, sharing_list), where sharing_list == {0, 1}. If so, we add 0 to the result_nodes. 
+        // Now, we want to add the transition (1, a, {0, 1}), so we choose only one element of the dst node (0 or 1) and
+        // look if there exists a tuple (result_nodes, sharing_list), where sharing_list == {0, 1}. 
+        // If so, we add 0 to the result_nodes. 
         bool found = false;
 
         State storeTo = *(node.begin());
@@ -121,9 +123,8 @@ void Afa::add_inverse_trans(const Trans& trans)
             continue;
         }
 
-        // Otherwise, we need to create a new tuple (result_nodes, sharing_list) == ({src state}, node) and ensure us
-        // that the pointer to this tuple will be part of all the vectors_of_pointers which correspond to the (dst_state, symbol)
-        // where dst_state is an element of the current node
+        // Otherwise, we need to create a new tuple (result_nodes, sharing_list) == ({src state}, node) and store
+        // it to the vector given by the minimal state of the current node and the current symbol
 
         // If there is no tuple (symbol, vector_of_pointers) in context of the current state and symbol because the
         // symbol has not been used yet, we need to create it
@@ -133,8 +134,8 @@ void Afa::add_inverse_trans(const Trans& trans)
             continue;
         } 
 
-        // Otherwise, we need to find the appropriate tuple (symbol vector_of_pointers) and store the pointer
-        // to the vector of pointers
+        // Otherwise, we need to find the appropriate tuple (symbol, vector_of_pointers) and store the inverse result
+        // to the vector of inverse results
         for(auto & transVec : inverseTransRelation[storeTo])
         {
             if(transVec.symb == trans.symb)
@@ -165,7 +166,7 @@ void Afa::add_inverse_trans(const Trans& trans)
 */
 std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 {
-    assert(src < this->transRelation.size() && "It is not possible to perform a transition " +
+    assert(src < this->transRelation.size() && "It is not possible to perform a transition " &&
     "from non-existing state.");
     for(auto transVec : transRelation[src])
     {
@@ -185,15 +186,15 @@ std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 * @param symb a symbol used to perform a transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(State state, Symbol symb) const
+StateClosedSet Afa::post(State state, Symbol symb) const
 {
     Nodes result = *perform_trans(state, symb);
     if(result.size())
     {
-        return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, result);
+        return StateClosedSet(upward_closed_set, 0, transRelation.size()-1, result);
     }   
     // if there is no proper result, we will return an empty closed set
-    return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
+    return StateClosedSet(upward_closed_set, 0, transRelation.size()-1);
 } // post }}}
 
 /** This function takes a single node and a symbol and returns all the nodes which are accessible from the node
@@ -206,10 +207,10 @@ ClosedSet<State> Afa::post(State state, Symbol symb) const
 * @param symb a symbol used to perform a transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(Node node, Symbol symb) const
+StateClosedSet Afa::post(Node node, Symbol symb) const
 {
     // initially, the result is empty
-    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result = StateClosedSet(upward_closed_set, 0, transRelation.size()-1);
     if(node.empty())
     {
         result.insert(node);
@@ -242,10 +243,10 @@ ClosedSet<State> Afa::post(Node node, Symbol symb) const
 * @param symb a symbol used to perform a transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(Nodes nodes, Symbol symb) const
+StateClosedSet Afa::post(Nodes nodes, Symbol symb) const
 {
     // initially, the result is empty
-    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result = StateClosedSet(upward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
         result.insert(post(node, symb).antichain());
@@ -262,10 +263,10 @@ ClosedSet<State> Afa::post(Nodes nodes, Symbol symb) const
 * @param symb a symbol used to perform a transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(ClosedSet<State> closed_set, Symbol symb) const
+StateClosedSet Afa::post(StateClosedSet closed_set, Symbol symb) const
 {
-    assert(closed_set.get_type() == Mata::upward_closed_set && "The predicate transformer " +
-    "post can be computed only over upward-closed sets.");
+    assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " && 
+    " post can be computed only over upward-closed sets.");
     return post(closed_set.antichain(), symb);
 } // post }}}
 
@@ -279,13 +280,13 @@ ClosedSet<State> Afa::post(ClosedSet<State> closed_set, Symbol symb) const
 * @param node a source set of states
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(Node node) const
+StateClosedSet Afa::post(Node node) const
 {
     if(node.empty())
     {
-        return ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
+        return StateClosedSet(upward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
     }
-    ClosedSet<State> result = ClosedSet<State>(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result = StateClosedSet(upward_closed_set, 0, transRelation.size()-1);
     for(auto transVec : transRelation[*(node.begin())])
     {
         result.insert(post(node, transVec.symb).antichain());
@@ -301,9 +302,9 @@ ClosedSet<State> Afa::post(Node node) const
 * @param nodes a set of sets of nodes used to perform a transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::post(Nodes nodes) const
+StateClosedSet Afa::post(Nodes nodes) const
 {
-    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(upward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
         result.insert(post(node).antichain());
@@ -321,14 +322,13 @@ ClosedSet<State> Afa::post(Nodes nodes) const
 //
 //***************************************************
 
-/** This function inspects an inverse transition relation and returns a vector of pointers
+/** This function inspects an inverse transition relation and returns a vector of inverse results
 * according to the given source state and symbol
-* Otherwise, it gives us an empty list which means that the result does not exist. We return pointers
-* to be able to directly change the inverse transition relation if there is a neccessity to add a new transition 
+* Otherwise, it gives us an empty vector which means that the result does not exist.
 * @brief performs an inverse transition using a single state and symbol
 * @param src a source state
 * @param symb a symbol used to perform an inverse transition
-* @return a vector of pointers to the inverse results
+* @return a vector of the inverse results
 */
 std::vector<InverseResults> Afa::perform_inverse_trans(State src, Symbol symb) const
 {
@@ -342,14 +342,13 @@ std::vector<InverseResults> Afa::perform_inverse_trans(State src, Symbol symb) c
     return std::vector<InverseResults>();
 }  // perform_inverse_trans }}}
 
-/** This function inspects an inverse transition relation and returns a vector of pointers
+/** This function inspects an inverse transition relation and returns a vector of inverse results
 * according to the given source states and symbol
-* Otherwise, it gives us an empty list which means that the result does not exist. We return pointers
-* to be able to directly change the inverse transition relation if there is a neccessity to add a new transition 
+* Otherwise, it gives us an empty vector which means that the result does not exist.
 * @brief performs an inverse transition using a single state and symbol
 * @param node source states
 * @param symb a symbol used to perform an inverse transition
-* @return a vector of pointers to the inverse results
+* @return a vector of the inverse results
 */
 std::vector<InverseResults> Afa::perform_inverse_trans(Node node, Symbol symb) const
 {
@@ -370,7 +369,7 @@ std::vector<InverseResults> Afa::perform_inverse_trans(Node node, Symbol symb) c
 * @param symb a symbol used to perform an inverse transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::pre(Node node, Symbol symb) const
+StateClosedSet Afa::pre(Node node, Symbol symb) const
 {
     std::vector<InverseResults> candidates = perform_inverse_trans(node, symb);
     Node result{};
@@ -384,7 +383,7 @@ ClosedSet<State> Afa::pre(Node node, Symbol symb) const
             }
         }
     }
-    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, result);
+    return StateClosedSet(downward_closed_set, 0, transRelation.size()-1, result);
 } // pre }}}
 
 /** This function takes set of nodes and a symbol and returns all the nodes which are able to access the given nodes
@@ -395,9 +394,9 @@ ClosedSet<State> Afa::pre(Node node, Symbol symb) const
 * @param symb a symbol used to perform an inverse transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::pre(Nodes nodes, Symbol symb) const
+StateClosedSet Afa::pre(Nodes nodes, Symbol symb) const
 {
-    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(downward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
         result = result.Union(pre(node, symb));
@@ -411,9 +410,9 @@ ClosedSet<State> Afa::pre(Nodes nodes, Symbol symb) const
 * @param symb a symbol used to perform an inverse transition
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::pre(ClosedSet<State> closed_set, Symbol symb) const
+StateClosedSet Afa::pre(StateClosedSet closed_set, Symbol symb) const
 {
-    assert(closed_set.get_type() == downward_closed_set && "The predicate transformer " +
+    assert(closed_set.type() == downward_closed_set && "The predicate transformer " &&
     "pre can be computed only over downward-closed sets.");
     return pre(closed_set.antichain(), symb);
 } // pre }}}
@@ -423,13 +422,13 @@ ClosedSet<State> Afa::pre(ClosedSet<State> closed_set, Symbol symb) const
 * @param node a set of states
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::pre(Node node) const
+StateClosedSet Afa::pre(Node node) const
 {
     if(node.empty())
     {
-        return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
+        return StateClosedSet(downward_closed_set, 0, transRelation.size()-1, Nodes{Node{}});
     }
-    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(downward_closed_set, 0, transRelation.size()-1);
     for(auto transVec : inverseTransRelation[*(node.begin())])
     {
         result.insert(pre(node, transVec.symb).antichain());
@@ -442,9 +441,9 @@ ClosedSet<State> Afa::pre(Node node) const
 * @param nodes a set of sets of states
 * @return closed set of nodes
 */
-ClosedSet<State> Afa::pre(Nodes nodes) const
+StateClosedSet Afa::pre(Nodes nodes) const
 {
-    ClosedSet<State> result(downward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(downward_closed_set, 0, transRelation.size()-1);
     for(auto node : nodes)
     {
         result.insert(pre(node).antichain());
@@ -479,9 +478,9 @@ size_t Afa::trans_size() const
 /** This function takes all the initial states and creates a corresponding upward-closed set
 * @return closed set of initial nodes
 */
-ClosedSet<State> Afa::get_initial_nodes(void) const
+StateClosedSet Afa::get_initial_nodes(void) const
 {
-    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(upward_closed_set, 0, transRelation.size()-1);
     for(State state = 0; state < transRelation.size(); ++state)
     {
         if(has_initial(state))
@@ -495,7 +494,7 @@ ClosedSet<State> Afa::get_initial_nodes(void) const
 /** This function returns a downward-closed set of all the nodes which are not initial
 * @return closed set of non-initial nodes
 */
-ClosedSet<State> Afa::get_non_initial_nodes(void) const
+StateClosedSet Afa::get_non_initial_nodes(void) const
 {
     OrdVec<State> subresult{};
     for(State state = 0; state < transRelation.size(); ++state)
@@ -505,13 +504,13 @@ ClosedSet<State> Afa::get_non_initial_nodes(void) const
             subresult.insert(state);
         }  
     }
-    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, subresult);
+    return StateClosedSet(downward_closed_set, 0, transRelation.size()-1, subresult);
 } // get_non_initial_nodes() }}}
 
 /** This function returns a downward-closed set of all the nodes which are final
 * @return closed set of final nodes
 */
-ClosedSet<State> Afa::get_final_nodes(void) const
+StateClosedSet Afa::get_final_nodes(void) const
 {
     OrdVec<State> subresult{};
     for(State state = 0; state < transRelation.size(); ++state)
@@ -521,15 +520,15 @@ ClosedSet<State> Afa::get_final_nodes(void) const
             subresult.insert(state);
         }  
     }
-    return ClosedSet<State>(downward_closed_set, 0, transRelation.size()-1, subresult);
+    return StateClosedSet(downward_closed_set, 0, transRelation.size()-1, subresult);
 } // get_final_nodes() }}}
 
 /** This function returns an upward-closed set of all the nodes which are non-final
 * @return closed set of non-final nodes
 */
-ClosedSet<State> Afa::get_non_final_nodes(void) const
+StateClosedSet Afa::get_non_final_nodes(void) const
 {
-    ClosedSet<State> result(upward_closed_set, 0, transRelation.size()-1);
+    StateClosedSet result(upward_closed_set, 0, transRelation.size()-1);
     for(State state = 0; state < transRelation.size(); ++state)
     {
         if(!has_final(state))
@@ -617,9 +616,9 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
     // point or until we find out that there exists a final node which is reachable (is not part of goal).
     // We will perform each operation directly over antichains
     // Note that the fixed point always exists so the while loop always terminates
-    ClosedSet<Mata::Afa::State> goal = aut.get_non_final_nodes();
-    ClosedSet<Mata::Afa::State> current = ClosedSet<Mata::Afa::State>();
-    ClosedSet<Mata::Afa::State> next = aut.get_initial_nodes();
+    StateClosedSet goal = aut.get_non_final_nodes();
+    StateClosedSet current = StateClosedSet();
+    StateClosedSet next = aut.get_initial_nodes();
 
     while(current != next)
     {
@@ -641,8 +640,8 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
 */
 bool Mata::Afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
 {
-    ClosedSet<Mata::Afa::State> goal = aut.get_non_final_nodes();
-    ClosedSet<Mata::Afa::State> result = aut.get_initial_nodes();
+    StateClosedSet goal = aut.get_non_final_nodes();
+    StateClosedSet result = aut.get_initial_nodes();
     std::set<Node> processed = std::set<Node>();
     std::vector<Node> worklist = std::vector<Node>();
     for(Node node : aut.get_initial_nodes().antichain())
@@ -689,9 +688,9 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
     // point or until we find out that there exists a initial node which is terminating (is not part of goal).
     // We will perform each operation directly over antichains
     // Note that the fixed point always exists so the while loop always terminates
-    ClosedSet<Mata::Afa::State> goal = aut.get_non_initial_nodes();
-    ClosedSet<Mata::Afa::State> current = ClosedSet<Mata::Afa::State>();
-    ClosedSet<Mata::Afa::State> next = aut.get_final_nodes();
+    StateClosedSet goal = aut.get_non_initial_nodes();
+    StateClosedSet current = StateClosedSet();
+    StateClosedSet next = aut.get_final_nodes();
 
     while(current != next)
     {
@@ -714,8 +713,8 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
 */
 bool Mata::Afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
 {
-    ClosedSet<Mata::Afa::State> goal = aut.get_non_initial_nodes();
-    ClosedSet<Mata::Afa::State> result = aut.get_final_nodes();
+    StateClosedSet goal = aut.get_non_initial_nodes();
+    StateClosedSet result = aut.get_final_nodes();
     std::set<Node> processed = std::set<Node>();
     std::vector<Node> worklist = std::vector<Node>();
     for(Node node : aut.get_final_nodes().antichain())
