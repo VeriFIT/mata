@@ -42,34 +42,55 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
+// All ord vectors should be a set. And everywhere use set when you are using OrdVectors.
+
+
 using State = unsigned long;
-using StatePair = std::pair<State, State>;
-using StateSet = Mata::Util::OrdVector<State>;
+using StatePair = std::pair<State, State>; // Remove.
 using Symbol = unsigned long;
 using SymbolSet = Mata::Util::OrdVector<Symbol>;
 
-using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol.
+template<typename T, typename U> using Pair = std::pair<T, U>;
+Pair<State, State>; // use then everywhere.
 
-using ProductMap = std::unordered_map<StatePair, State>;
-using SubsetMap = std::unordered_map<StateSet, State>;
+using StateSet = Mata::Util::OrdVector<State>;
+template<typename T> using Set = Mata::Util::OrdVector<T>;
+Set<State>; // Use then everywhere.
+
+using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol. // Delete, not used anyway.
+
+using ProductMap = std::unordered_map<StatePair, State>; // Maybe remove? Theoretically, it is not important.
+using SubsetMap = std::unordered_map<StateSet, State>; // Maybe remove? Theoretically, it is not important.
+
+// We can try to creatae UnorderedMap and
+
+// function returning a Run: pair of word and path.
+struct Run {
+    Word get_word();
+    Word get_path();
+};
+
 using Path = std::vector<State>;        ///< A finite-length path through automaton.
 using Word = std::vector<Symbol>;       ///< A finite-length word.
-using WordSet = std::set<Word>;         ///< A set of words.
+using WordSet = std::set<Word>;         ///< A set of words. // Rename or delete.
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
 template<typename Target>
-using StateMap = std::unordered_map<State, Target>;
+using StateMap = std::unordered_map<State, Target>; // Potentially remove?
+//
+// Use vector instead because it would be faster. But do we need to have 0, 40, 10000?
+
 
 using StateToStringMap = StateMap<std::string>;
 using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
 using StateToStateMap = StateMap<State>;
 
-using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
+using SymbolToStringMap = std::unordered_map<Symbol, std::string>;  // vector? When finite set of states, ector, otehrwise, something different?
 
-using StringDict = std::unordered_map<std::string, std::string>;
+using StringDict = std::unordered_map<std::string, std::string>;  // StringMap, it is more consistent
 
 /**
  * The abstract interface for NFA alphabets.
@@ -164,6 +185,7 @@ using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
 
+// Use vector, do not call sequence. And rather do not use the specific types, use only ad-hoc as vector[poniter to NFA]
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
 
@@ -251,7 +273,7 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-struct TransSymbolStates {
+struct TransSymbolStates { // Move (it is a set of possible moves from state with symbol)
     Symbol symbol{};
     StateSet states_to;
 
@@ -271,9 +293,12 @@ struct TransSymbolStates {
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using TransitionList = Mata::Util::OrdVector<TransSymbolStates>;
+using TransitionList = Mata::Util::OrdVector<TransSymbolStates>; // set (it is not a vector) of moves, not a list of transitions.
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
+
+
+// All lists rename to vectors.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
@@ -290,9 +315,9 @@ struct Nfa
      *
      * @todo maybe have this as its own class
      */
-    TransitionRelation transitionrelation;
-    StateSet initialstates = {};
-    StateSet finalstates = {};
+    TransitionRelation transitionrelation;  // Use transition_relation.
+    StateSet initialstates = {}; // Use initial_states.
+    StateSet finalstates = {}; // Use final_states.
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -314,6 +339,7 @@ public:
         : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
           alphabet(alphabet_p) {}
 
+    // Remove this constructor.
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
@@ -337,6 +363,7 @@ public:
         }
     }
 
+    // Think of a better name. size()? To be consistent with increase_size().
     auto get_num_of_states() const { return transitionrelation.size(); }
 
     void increase_size(size_t size)
