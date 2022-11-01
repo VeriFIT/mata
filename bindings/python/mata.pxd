@@ -227,10 +227,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Automata operations
     cdef void determinize(CNfa*, CNfa&, SubsetMap*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
-    cdef void intersection(CNfa*, CNfa&, CNfa&)
-    cdef void intersection(CNfa*, CNfa&, CNfa&, ProductMap*)
-    cdef void intersection_preserving_epsilon_transitions(CNfa*, CNfa&, CNfa&, Symbol)
-    cdef void intersection_preserving_epsilon_transitions(CNfa*, CNfa&, CNfa&, Symbol, ProductMap*)
+    cdef void intersection(CNfa*, CNfa&, CNfa&, bool, ProductMap*)
     cdef void concatenate(CNfa*, CNfa&, CNfa&, bool, StateToStateMap*, StateToStateMap*)
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringDict&, SubsetMap*) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +

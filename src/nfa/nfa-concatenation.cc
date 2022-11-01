@@ -33,11 +33,11 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 
     if (lhs.initialstates.empty() || lhs.finalstates.empty() || rhs.initialstates.empty()) { return Nfa{}; }
 
-    const unsigned long lhs_states_num{ lhs.get_num_of_states() }; ///< Number of states in lhs.
-    const unsigned long rhs_states_num{ rhs.get_num_of_states() }; ///< Number of states in rhs.
-    Nfa result{}; ///< Concatenated automaton.
-    StateToStateMap lhs_result_states_map_internal{}; ///< Map mapping rhs states to result states.
-    StateToStateMap rhs_result_states_map_internal{}; ///< Map mapping rhs states to result states.
+    const unsigned long lhs_states_num{ lhs.get_num_of_states() };
+    const unsigned long rhs_states_num{ rhs.get_num_of_states() };
+    Nfa result{}; // Concatenated automaton.
+    StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
+    StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
 
     if (use_epsilon) {
         const size_t result_num_of_states{lhs_states_num + rhs_states_num};
