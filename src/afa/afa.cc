@@ -103,12 +103,14 @@ void Afa::add_inverse_trans(const Trans& trans)
         // a tuple (result_nodes, sharing_list), where sharing_list == {0, 1}. If so, we add 0 to the result_nodes. 
         bool found = false;
 
-        auto inverseTransPtrs = perform_inverse_trans(*(node.begin()), trans.symb);
-        for(auto result : inverseTransPtrs)
+        State storeTo = *(node.begin());
+
+        auto inverseTransResults = perform_inverse_trans(storeTo, trans.symb);
+        for(auto result : inverseTransResults)
         {
-            if(result->sharing_list == node)
+            if(result.sharing_list == node)
             {
-                result->result_nodes.insert(trans.src);
+                result.result_nodes.insert(trans.src);
                 found = true;
                 break;
             }
@@ -122,27 +124,23 @@ void Afa::add_inverse_trans(const Trans& trans)
         // Otherwise, we need to create a new tuple (result_nodes, sharing_list) == ({src state}, node) and ensure us
         // that the pointer to this tuple will be part of all the vectors_of_pointers which correspond to the (dst_state, symbol)
         // where dst_state is an element of the current node
-        auto result = std::make_shared<InverseResults>(InverseResults(trans.src, node));
 
-        for(auto state : node)
+        // If there is no tuple (symbol, vector_of_pointers) in context of the current state and symbol because the
+        // symbol has not been used yet, we need to create it
+        if(perform_inverse_trans(storeTo, trans.symb).empty())
         {
-            // If there is no tuple (symbol, vector_of_pointers) in context of the current state and symbol because the
-            // symbol has not been used yet, we need to create it
-            if(perform_inverse_trans(state, trans.symb).empty())
-            {
-                inverseTransRelation[state].push_back(InverseTrans(trans.symb, InverseTrans::InverseResultPtrs{result}));
-                continue;
-            } 
+            inverseTransRelation[storeTo].push_back(InverseTrans(trans.symb, InverseResults(trans.src, node)));
+            continue;
+        } 
 
-            // Otherwise, we need to find the appropriate tuple (symbol vector_of_pointers) and store the pointer
-            // to the vector of pointers
-            for(auto & transVec : inverseTransRelation[state])
+        // Otherwise, we need to find the appropriate tuple (symbol vector_of_pointers) and store the pointer
+        // to the vector of pointers
+        for(auto & transVec : inverseTransRelation[storeTo])
+        {
+            if(transVec.symb == trans.symb)
             {
-                if(transVec.symb == trans.symb)
-                {
-                    transVec.inverseResultPtrs.push_back(std::make_shared<InverseResults>(trans.src, node));
-                    break;
-                }
+                transVec.inverseResults.push_back(InverseResults(trans.src, node));
+                break;
             }
         }
     }
@@ -332,16 +330,16 @@ ClosedSet<State> Afa::post(Nodes nodes) const
 * @param symb a symbol used to perform an inverse transition
 * @return a vector of pointers to the inverse results
 */
-InverseTrans::InverseResultPtrs Afa::perform_inverse_trans(State src, Symbol symb) const
+std::vector<InverseResults> Afa::perform_inverse_trans(State src, Symbol symb) const
 {
     for(auto element : this->inverseTransRelation[src])
     {
         if(element.symb == symb)
         {
-            return element.inverseResultPtrs;
+            return element.inverseResults;
         }
     }
-    return InverseTrans::InverseResultPtrs();
+    return std::vector<InverseResults>();
 }  // perform_inverse_trans }}}
 
 /** This function inspects an inverse transition relation and returns a vector of pointers
@@ -353,22 +351,13 @@ InverseTrans::InverseResultPtrs Afa::perform_inverse_trans(State src, Symbol sym
 * @param symb a symbol used to perform an inverse transition
 * @return a vector of pointers to the inverse results
 */
-InverseTrans::InverseResultPtrs Afa::perform_inverse_trans(Node node, Symbol symb) const
+std::vector<InverseResults> Afa::perform_inverse_trans(Node node, Symbol symb) const
 {
-    InverseTrans::InverseResultPtrs result{};
-    bool used = false;
+    std::vector<InverseResults> result{};
     for(auto state : node)
     {
-        if(!used)
-        {
-            result = perform_inverse_trans(state, symb);
-            used = true;
-        }
-        else
-        {
-            auto subresult = perform_inverse_trans(state, symb);
-            result.insert(result.end(), subresult.begin(), subresult.end());
-        }
+        auto subresult = perform_inverse_trans(state, symb);
+        result.insert(result.end(), subresult.begin(), subresult.end());
     }
     return result;
 } // perform_inverse_trans }}}
@@ -383,13 +372,13 @@ InverseTrans::InverseResultPtrs Afa::perform_inverse_trans(Node node, Symbol sym
 */
 ClosedSet<State> Afa::pre(Node node, Symbol symb) const
 {
-    InverseTrans::InverseResultPtrs ptrs = perform_inverse_trans(node, symb);
+    std::vector<InverseResults> candidates = perform_inverse_trans(node, symb);
     Node result{};
-    for(auto ptr : ptrs)
+    for(auto candidate : candidates)
     {
-        if(ptr->sharing_list.IsSubsetOf(node))
+        if(candidate.sharing_list.IsSubsetOf(node))
         {
-            for(auto el : ptr->result_nodes)
+            for(auto el : candidate.result_nodes)
             {
                 result.insert(el);
             }

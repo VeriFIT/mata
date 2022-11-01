@@ -126,14 +126,12 @@ struct InverseResults{
 */
 struct InverseTrans{
 
-    using InverseResultPtrs = std::vector<std::shared_ptr<InverseResults>>;
-
     Symbol symb;    
-    InverseResultPtrs inverseResultPtrs{};
+    std::vector<InverseResults> inverseResults{};
 
-    InverseTrans() : symb(), inverseResultPtrs() { }
-    InverseTrans(Symbol symb) : symb(symb), inverseResultPtrs(InverseResultPtrs()) { }
-    InverseTrans(Symbol symb, InverseResultPtrs inverseResultPtrs) : symb(symb), inverseResultPtrs(inverseResultPtrs) { }
+    InverseTrans() : symb(), inverseResults() { }
+    InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
+    InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
 
 }; // struct InverseTrans
 
@@ -213,8 +211,8 @@ public:
 
     std::unique_ptr<Nodes> perform_trans (State src, Symbol symb) const;
 
-    InverseTrans::InverseResultPtrs perform_inverse_trans(State src, Symbol symb) const;
-    InverseTrans::InverseResultPtrs perform_inverse_trans(Node src, Symbol symb) const;
+    std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
+    std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
 
 	bool has_trans(const Trans& trans) const;
 	bool has_trans(State src, Symbol symb, Node dst) const
