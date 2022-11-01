@@ -42,29 +42,29 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-// All ord vectors should be a set. And everywhere use set when you are using OrdVectors.
+// TODO: All ord vectors should be a set. And everywhere use set when you are using OrdVectors.
 
 
 using State = unsigned long;
-using StatePair = std::pair<State, State>; // Remove.
+using StatePair = std::pair<State, State>; // TODO: Remove.
 using Symbol = unsigned long;
 using SymbolSet = Mata::Util::OrdVector<Symbol>;
 
 template<typename T, typename U> using Pair = std::pair<T, U>;
-Pair<State, State>; // use then everywhere.
+Pair<State, State>; // TODO: use then everywhere.
 
 using StateSet = Mata::Util::OrdVector<State>;
 template<typename T> using Set = Mata::Util::OrdVector<T>;
-Set<State>; // Use then everywhere.
+Set<State>; // TODO: Use then everywhere.
 
-using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol. // Delete, not used anyway.
+using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol. // TODO: Delete, not used anyway.
 
-using ProductMap = std::unordered_map<StatePair, State>; // Maybe remove? Theoretically, it is not important.
-using SubsetMap = std::unordered_map<StateSet, State>; // Maybe remove? Theoretically, it is not important.
+using ProductMap = std::unordered_map<StatePair, State>; // TODO: Maybe remove? Theoretically, it is not important.
+using SubsetMap = std::unordered_map<StateSet, State>; // TODO: Maybe remove? Theoretically, it is not important.
 
-// We can try to creatae UnorderedMap and
+// TODO: We can try to create UnorderedMap type for consistency sake.
 
-// function returning a Run: pair of word and path.
+// TODO: Use for all functions returning a Run: pair of word and path.
 struct Run {
     Word get_word();
     Word get_path();
@@ -78,9 +78,14 @@ using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
 template<typename Target>
-using StateMap = std::unordered_map<State, Target>; // Potentially remove?
-//
-// Use vector instead because it would be faster. But do we need to have 0, 40, 10000?
+using StateMap = std::unordered_map<State, Target>; // TODO: Potentially remove?
+
+// TODO: Use vector instead because it would be faster. But do we need to have 0, 40, 10000?
+
+
+// TODO: To think about it and work on it:
+// Remove documentation which does not add anything new.
+// Do not try to fill empty doxygen spaces.
 
 
 using StateToStringMap = StateMap<std::string>;
@@ -88,9 +93,9 @@ using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
 using StateToStateMap = StateMap<State>;
 
-using SymbolToStringMap = std::unordered_map<Symbol, std::string>;  // vector? When finite set of states, ector, otehrwise, something different?
+using SymbolToStringMap = std::unordered_map<Symbol, std::string>;  // TODO: vector? When finite set of states, ector, otehrwise, something different?
 
-using StringDict = std::unordered_map<std::string, std::string>;  // StringMap, it is more consistent
+using StringDict = std::unordered_map<std::string, std::string>;  // TODO: StringMap, it is more consistent
 
 /**
  * The abstract interface for NFA alphabets.
@@ -116,7 +121,7 @@ public:
      * @brief Get a list of symbols in the alphabet.
      *
      * The result does not have to equal the list of symbols in the automaton using this alphabet.
-     * @return
+     * @return // TODO: Finish.
      */
     virtual SymbolSet get_alphabet_symbols() const
     { // {{{
@@ -165,6 +170,7 @@ static constexpr struct Limits {
 } limits;
 
 /// A transition.
+// TODO: Ideally remove functions using this struct as a parameter.
 struct Trans
 {
 	State src;
@@ -185,7 +191,7 @@ using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
 
-// Use vector, do not call sequence. And rather do not use the specific types, use only ad-hoc as vector[poniter to NFA]
+// TODO: Use vector, do not call sequence. And rather do not use the specific types, use only ad-hoc as vector[pointer to NFA]
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
 
@@ -273,7 +279,7 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-struct TransSymbolStates { // Move (it is a set of possible moves from state with symbol)
+struct TransSymbolStates { // TODO: Move (it is a set of possible moves from state with symbol)
     Symbol symbol{};
     StateSet states_to;
 
@@ -293,12 +299,12 @@ struct TransSymbolStates { // Move (it is a set of possible moves from state wit
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using TransitionList = Mata::Util::OrdVector<TransSymbolStates>; // set (it is not a vector) of moves, not a list of transitions.
+using TransitionList = Mata::Util::OrdVector<TransSymbolStates>; // TODO: set (it is not a vector) of moves, not a list of transitions.
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
 
-// All lists rename to vectors.
+// TODO: All lists rename to vectors.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
@@ -315,9 +321,9 @@ struct Nfa
      *
      * @todo maybe have this as its own class
      */
-    TransitionRelation transitionrelation;  // Use transition_relation.
-    StateSet initialstates = {}; // Use initial_states.
-    StateSet finalstates = {}; // Use final_states.
+    TransitionRelation transitionrelation;  // TODO: Use transition_relation.
+    StateSet initialstates = {}; // TODO: Use initial_states.
+    StateSet finalstates = {}; // TODO: Use final_states.
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -339,7 +345,7 @@ public:
         : transitionrelation(num_of_states), initialstates(initial_states), finalstates(final_states),
           alphabet(alphabet_p) {}
 
-    // Remove this constructor.
+    // TODO: Remove this constructor.
     /**
      * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
      */
@@ -363,7 +369,7 @@ public:
         }
     }
 
-    // Think of a better name. size()? To be consistent with increase_size().
+    // TODO: Think of a better name. size()? To be consistent with increase_size().
     auto get_num_of_states() const { return transitionrelation.size(); }
 
     void increase_size(size_t size)
@@ -390,7 +396,7 @@ public:
      * Make @p state initial.
      * @param state State to be added to initial states.
      */
-    void make_initial(State state)
+    void make_initial(State state)  // TODO: Rename back to add?
     {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
@@ -406,6 +412,7 @@ public:
      *
      * @param state State to be set as the new initial state.
      */
+     // TODO: Remove both resets.
     void reset_initial(State state)
     {
         clear_initial();
@@ -428,6 +435,7 @@ public:
      *
      * @param vec Vector of states to be set as new initial states.
      */
+     // TODO: Remove.
     void reset_initial(const std::vector<State>& vec)
     {
         clear_initial();
@@ -446,10 +454,13 @@ public:
         this->initialstates.remove(state);
     }
 
+    // TODO: Maybe hide intialstates and finalstates from direct access, allow it, but hide it somehow?
+
     /**
      * Remove @p vec of states from initial states.
      * @param vec[in] Vector of states to be removed from initial states.
      */
+     // TODO: Remove.
     void remove_initial(const std::vector<State>& vec)
     {
         for (const State& st : vec) { this->remove_initial(st); }
@@ -533,11 +544,13 @@ public:
      * Add a new state to the automaton.
      * @return The newly created state.
      */
+     // TODO: remove substring "new".
     State add_new_state();
 
     /**
      * Unify initial states into a single new initial state.
      */
+     // TODO: Move implementation to both unifies to .cc files.
     void unify_initial() {
         if (initialstates.empty() || initialstates.size() == 1) { return; }
         const State new_initial_state{ add_new_state() };
@@ -603,6 +616,7 @@ public:
      * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
      * @return Set of symbols used on the transitions.
      */
+     // TODO: Rename to get_used_symbols()
     SymbolSet get_symbols() const;
 
     /**
@@ -702,6 +716,7 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
+    // TODO: Use only one has_trans version.
     bool has_trans(Trans trans) const
     {
         if (transitionrelation.empty()) {
@@ -735,14 +750,22 @@ public:
      * @return Iterator for @c TransitionList; Allows us to compare to TransitionsList::end() to see whether the specified
      *  transitions exist. If they do, we can access the transitions with a dereference operator (*iter).
      */
+     // TODO: Remove.
     TransitionList::const_iterator get_transitions_from(State state_from, Symbol symbol) const;
 
     /**
      * Check whether automaton has no transitions.
      * @return True if there are no transitions in the automaton, false otherwise.
      */
+     // TODO: Rename has_no_transtions().
     bool trans_empty() const;
+
+    // TODO: Reformat automata structures to have classes initial_states, final_states, transition_relation and methods to be called on
+    //  these classes instead of on the whole automaton.
+
     size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
+
+    // TODO: Remove.
     bool nothing_in_trans() const
     {
         return std::all_of(this->transitionrelation.begin(), this->transitionrelation.end(),
@@ -753,6 +776,7 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
+     // TODO: Remove for now, maybe, use iterator instead.
     TransSequence get_trans_as_sequence() const;
 
     /**
@@ -767,6 +791,7 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
+     // TODO: Rename to get_moves_from(). Delete completely maybe.
     const TransitionList& get_transitions_from(const State state_from) const
     {
         assert(get_num_of_states() >= state_from + 1);
@@ -785,6 +810,7 @@ public:
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
+     // TODO: Rename to get_one_letter_nfa().
     Nfa get_digraph(Symbol abstract_symbol = 'x') const;
 
     /**
@@ -793,7 +819,7 @@ public:
      * @return True if the passed @p symbol is epsilon, false otherwise.
      */
     bool is_epsilon(Symbol symbol) const {
-        // TODO: When multiple epsilon symbols specificatin inside the alphabets is implemented, update this check to
+        // TODO: When multiple epsilon symbols specification inside the alphabets is implemented, update this check to
         //  reflect the new changes:
         //  Check for alphabet in the NFA, check for specified epsilon symbol and compare. Otherwise, compare with the
         //  default epsilon symbol EPSILON.
@@ -805,17 +831,22 @@ public:
      *
      * @param[out] result An automaton representing a directed graph.
      */
+     // TODO: Move all pointer functions to special namespace and call from python and optinoally from c++ if user wants to
     void get_digraph(Nfa& result) const;
 
     void print_to_DOT(std::ostream &outputStream) const;
+
+    // TODO: Does it work at all?
     static Nfa read_from_our_format(std::istream &inputStream);
 
+    // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
      * Get shortest words (regarding their length) of the automaton using BFS.
      * @return Set of shortest words.
      */
+     // TODO: Move to string solving.
     WordSet get_shortest_words() const;
 
     struct const_iterator
@@ -848,7 +879,9 @@ public:
         const_iterator& operator++();
     }; // }}}
 
+    // TODO: Rename to begin_transitions().
     const_iterator begin() const { return const_iterator::for_begin(this); }
+    // TODO: Rename to end_transitions().
     const_iterator end() const { return const_iterator::for_end(this); }
 
     const TransitionList& operator[](State state) const
@@ -874,6 +907,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
+     // TODO: Remove because it is not necessary.
     static TransitionList::const_iterator get_epsilon_transitions(const TransitionList& state_transitions, Symbol epsilon = EPSILON) ;
 
 private:
@@ -881,6 +915,11 @@ private:
 
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
+
+
+// TODO: These cexs use object run which returns all of those and nulls those which cannot be filled. Then we could combine these
+//  functions into a single function.
+// TODO: Have one for lang empty and one for cex
 
 /**
  * Check whether is the language of the automaton empty.
@@ -927,7 +966,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
  * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
- * @param[out] prod_map Mapping of pairs of original states (lhs_state, rhs_state) to new product states.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
  */
 void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
@@ -948,7 +987,7 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
  * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
- * @param[out] prod_map Mapping of pairs of original states (lhs_state, rhs_state) to new product states.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 Nfa intersection(const Nfa& lhs, const Nfa& rhs,
@@ -965,6 +1004,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
  */
+ // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon()
 void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                  StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
@@ -983,10 +1023,13 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /// makes the transition relation complete
+// TODO: complete().
 void make_complete(
         Nfa&             aut,
         const Alphabet&  alphabet,
         State            sink_state);
+
+// TODO: Use is_<xyz> for all checks asking the automaton for some property.
 
 /**
  * Make the transition relation complete.
@@ -1039,6 +1082,7 @@ inline void determinize(
     *result = determinize(aut, subset_map);
 } // determinize }}}
 
+// TODO: Move all dispatch functions to a separate namespace.
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringDict&  params = {{"relation", "simulation"}, {"direction","forward"}});
@@ -1084,6 +1128,7 @@ inline bool is_universal(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
+ // TODO: is_included()
 bool is_incl(
         const Nfa&         smaller,
         const Nfa&         bigger,
@@ -1120,6 +1165,7 @@ inline bool is_incl(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
+ // TODO: are_equivalent()
 bool equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
                        const StringDict& params = {{"algo", "antichains"}});
 
@@ -1179,6 +1225,7 @@ bool is_prfx_in_lang(const Nfa& aut, const Word& word);
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
  */
+ // TODO: rename to something, but no idea to what.
 inline Word encode_word(
 	const StringToSymbolMap&         symbol_map,
 	const std::vector<std::string>&  input)
@@ -1189,11 +1236,13 @@ inline Word encode_word(
 } // encode_word }}}
 
 /// global constructor to be called at program startup (from vm-dispatch)
+// TODO: Remove, unless it is necessary.
 void init();
 
 /**
  * Operations on segment automata.
  */
+ // TODO: Move all to string solving.
 namespace SegNfa
 {
 /// Segment automaton.
@@ -1333,6 +1382,7 @@ private:
 /**
  * Class mapping states to the shortest words accepted by languages of the states.
  */
+ // TODO: Move to string solving.
 class ShortestWordsMap
 {
 public:
