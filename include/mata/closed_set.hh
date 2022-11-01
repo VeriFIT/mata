@@ -187,8 +187,8 @@ struct ClosedSet
        // other methods
        /////////////////////////////////////////////
 
-       bool is_upward_closed(void) const {return type == upward_closed_set;};
-       bool is_downward_closed(void) const {return type == downward_closed_set;};
+       bool is_upward_closed(void) const {return type_ == upward_closed_set;};
+       bool is_downward_closed(void) const {return type_ == downward_closed_set;};
 
        ClosedSetType type() {return type_;}
        const ClosedSetType type() const {return type_;}
