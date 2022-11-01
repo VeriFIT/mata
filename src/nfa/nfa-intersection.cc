@@ -329,7 +329,7 @@ private:
 
         while (sui.advance()){
             std::vector<Mata::Util::OrdVector<TransSymbolStates>::const_iterator> moves = sui.get_current();
-            assert(moves.size() == 2);
+            assert(moves.size() == 2); //one move per state in the pair
             compute_for_same_symbols(*moves[0],*moves[1]);
         }
     }

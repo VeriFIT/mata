@@ -95,7 +95,7 @@ namespace Mata {
 
                 // If already synchronized, start moving forward by advancing position[0] (and so break synchronization).
                 if (this->synchronized_at_current_minimum) {
-                    this->positions[0]++;
+                    ++this->positions[0];
                     synchronized_at_current_minimum = false;
                 }
 
@@ -104,7 +104,7 @@ namespace Mata {
                     return false;
 
                 // Synchronise all positions with position[0].
-                for (size_t i = 1; i < this->positions.size(); i++)
+                for (size_t i = 1, positions_size = this->positions.size(); i < positions_size; ++i)
                 {
                     // If some positions has nowhere to go, then sync is not possible.
                     if (this->positions[i] == this->ends[i])
@@ -115,14 +115,14 @@ namespace Mata {
 
                         // Advance position[i] to or beyond position[0].
                         while (*this->positions[i] < *this->positions[0]) {
-                            this->positions[i]++;
+                            ++this->positions[i];
                             if (this->positions[i] == this->ends[i])
                                 return false;
                         }
 
                         // Advance position[0] to or beyond position[i].
                         while (*this->positions[i] > *this->positions[0]) {
-                            this->positions[0]++;
+                            ++this->positions[0];
                             if (this->positions[0] == this->ends[0])
                                 return false;
                         }
@@ -179,30 +179,31 @@ namespace Mata {
                 // Here we collect the result.
                 currently_synchronized.clear();
 
-                for (size_t i = 0; i < this->positions.size();)
+                for (size_t i = 0, positions_size = this->positions.size();i < positions_size;)
                 {
                     if (this->positions[i] == this->ends[i])
                         // If there is nothing left at the position, it is removed, that is,
                         // swapped with a position form the end of the vector,
                         // and shorten the vector.
                         // The same is done with ends.
-                        while (this->positions[i] == this->ends[i] && i < this->positions.size())
+                        while (this->positions[i] == this->ends[i] && i < positions_size)
                         {
-                            this->positions[i] = this->positions[this->positions.size() - 1];
-                            this->ends[i] =      this->ends     [this->positions.size() - 1];
+                            this->positions[i] = this->positions[positions_size - 1];
+                            this->ends[i] =      this->ends     [positions_size - 1];
                             this->positions.pop_back();
                             this->ends     .pop_back();
+                            positions_size--;
                         }
                     // If the i-th position, i.e., where we are now, was erased,
                     // then we reached the end of active positions.
-                    if (i == this->positions.size())
+                    if (i == positions_size)
                         return !currently_synchronized.empty();
 
                     // If we are at the current_minimum, then save it and advance the position.
                     if (*this->positions[i] == *current_minimum)
                     {
                         this->currently_synchronized.push_back(this->positions[i]);
-                        this->positions[i]++;
+                        ++this->positions[i];
                         continue;
                     }
 
@@ -211,7 +212,7 @@ namespace Mata {
                     if (*this->next_minimum > *this->positions[i] || *this->next_minimum == *current_minimum)
                         this->next_minimum = this->positions[i];
 
-                    i++;
+                    ++i;
                 }
                 return !currently_synchronized.empty();
             };
