@@ -80,7 +80,7 @@ add_executable(tests
 	nfa/tests-nfa-concatenation.cc
 	nfa/tests-nfa-segmentation.cc
 	nfa/tests-nfa-intersection.cc
-	nfa/tests-syncrhonized_iterator.cc
+	nfa/tests-synchronized_iterator.cc
 	nfa/tests-noodlify.cc
 	rra/tests-rrt.cc
 )
