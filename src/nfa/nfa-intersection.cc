@@ -54,9 +54,16 @@ void add_product_transition(Nfa& product, ProductMap& product_map, const StatePa
  * @param[in] rhs_state_to Target state in NFA @c rhs.
  * @param[out] intersect_transitions Transitions of the product state.
  */
-void create_product_state_and_trans(Nfa& product, ProductMap& product_map, const Nfa& lhs, const Nfa& rhs,
-                                    std::unordered_set<StatePair>& pairs_to_process, const State lhs_state_to,
-                                    const State rhs_state_to, TransSymbolStates& intersect_transitions) {
+void create_product_state_and_trans(
+        Nfa& product,
+        ProductMap& product_map,
+        const Nfa& lhs,
+        const Nfa& rhs,
+        std::unordered_set<StatePair>& pairs_to_process,
+        const State lhs_state_to,
+        const State rhs_state_to,
+        TransSymbolStates& intersect_transitions
+) {
     const StatePair intersect_state_pair_to(lhs_state_to, rhs_state_to);
     State intersect_state_to;
     if (product_map.find(intersect_state_pair_to) == product_map.end()) {
