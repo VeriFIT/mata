@@ -175,6 +175,10 @@ public:
 	StateSet initialstates = {};
 	StateSet finalstates = {};
 
+    State add_new_state(void);
+
+    auto get_num_of_states() const { return transRelation.size(); }
+
 	void add_initial(State state) { this->initialstates.insert(state); }
 	void add_initial(const std::vector<State> vec)
 	{ // {{{

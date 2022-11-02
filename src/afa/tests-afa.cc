@@ -118,6 +118,18 @@ TEST_CASE("Mata::Afa creating an AFA, basic properties")
 	REQUIRE(!aut.has_final(2));
 	REQUIRE(aut.has_initial(0));
 	REQUIRE(!aut.has_initial(1));
+
+    REQUIRE(aut.get_num_of_states() == 4);
+    REQUIRE(aut.add_new_state() == 4);
+    REQUIRE(aut.add_new_state() == 5);
+    REQUIRE(aut.add_new_state() == 6);
+    REQUIRE(aut.add_new_state() == 7);
+    REQUIRE(aut.get_num_of_states() == 8);
+
+	aut.add_trans(7, 0, Node{0});
+
+    REQUIRE(aut.trans_size() == 7);
+
 } // }}}
 
 TEST_CASE("Mata::Afa transition test")

@@ -148,6 +148,13 @@ void Afa::add_inverse_trans(const Trans& trans)
 
 } // add_inverse_trans }}}
 
+
+State Afa::add_new_state() {
+    transRelation.emplace_back();
+    inverseTransRelation.emplace_back();
+    return transRelation.size() - 1;
+}
+
 //***************************************************
 //
 // POST
