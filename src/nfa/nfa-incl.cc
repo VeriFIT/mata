@@ -36,7 +36,7 @@ bool Mata::Nfa::Algorithms::is_incl_naive(
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
-	Nfa nfa_isect = intersection(smaller, bigger_cmpl);
+	Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
 
 	bool result;
 	if (nullptr == cex) {

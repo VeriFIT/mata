@@ -391,21 +391,23 @@ def test_concatenate():
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
-    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs)
+    result = mata.Nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.get_num_of_states() == 4
     assert result.has_trans_raw(0, ord('b'), 1)
-    assert result.has_trans_raw(1, 0xffffffffffffffff, 2)
+    assert result.has_trans_raw(1, mata.epsilon(), 2)
     assert result.has_trans_raw(2, ord('a'), 3)
 
-    result = mata.Nfa.concatenate_over_epsilon(lhs, rhs, ord('e'))
+    result, lhs_map, rhs_map = mata.Nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.get_num_of_states() == 4
     assert result.has_trans_raw(0, ord('b'), 1)
-    assert result.has_trans_raw(1, ord('e'), 2)
+    assert result.has_trans_raw(1, mata.epsilon(), 2)
     assert result.has_trans_raw(2, ord('a'), 3)
+    assert lhs_map == {}
+    assert rhs_map == {0: 2, 1: 3}
 
 
 def test_completeness(
@@ -500,12 +502,12 @@ def test_intersection_preserving_epsilon_transitions():
     a = mata.Nfa(6)
     a.make_initial_state(0)
     a.make_final_states([1, 4, 5])
-    a.add_trans_raw(0, epsilon, 1)
+    a.add_trans_raw(0, mata.epsilon(), 1)
     a.add_trans_raw(1, ord('a'), 1)
     a.add_trans_raw(1, ord('b'), 1)
     a.add_trans_raw(1, ord('c'), 2)
     a.add_trans_raw(2, ord('b'), 4)
-    a.add_trans_raw(2, epsilon, 3)
+    a.add_trans_raw(2, mata.epsilon(), 3)
     a.add_trans_raw(3, ord('a'), 5)
 
     b = mata.Nfa(10)
@@ -514,15 +516,15 @@ def test_intersection_preserving_epsilon_transitions():
     b.add_trans_raw(0, ord('b'), 1)
     b.add_trans_raw(0, ord('a'), 2)
     b.add_trans_raw(2, ord('a'), 4)
-    b.add_trans_raw(2, epsilon, 3)
+    b.add_trans_raw(2, mata.epsilon(), 3)
     b.add_trans_raw(3, ord('b'), 4)
     b.add_trans_raw(0, ord('c'), 5)
     b.add_trans_raw(5, ord('a'), 8)
-    b.add_trans_raw(5, epsilon, 6)
+    b.add_trans_raw(5, mata.epsilon(), 6)
     b.add_trans_raw(6, ord('a'), 9)
     b.add_trans_raw(6, ord('b'), 7)
 
-    result, product_map = mata.Nfa.intersection_pres_eps_trans_with_prod_map(a, b, epsilon)
+    result, product_map = mata.Nfa.intersection_with_product_map(a, b, True)
 
     # Check states.
     assert result.get_num_of_states() == 13
@@ -551,7 +553,7 @@ def test_intersection_preserving_epsilon_transitions():
     # Check transitions.
     assert result.get_num_of_trans() == 15
 
-    assert result.has_trans_raw(product_map[(0, 0)], epsilon, product_map[(1, 0)])
+    assert result.has_trans_raw(product_map[(0, 0)], mata.epsilon(), product_map[(1, 0)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
 
     assert result.has_trans_raw(product_map[(1, 0)], ord('b'), product_map[(1, 1)])
@@ -561,7 +563,7 @@ def test_intersection_preserving_epsilon_transitions():
 
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 1)])) == 0
 
-    assert result.has_trans_raw(product_map[(1, 2)], epsilon, product_map[(1, 3)])
+    assert result.has_trans_raw(product_map[(1, 2)], mata.epsilon(), product_map[(1, 3)])
     assert result.has_trans_raw(product_map[(1, 2)], ord('a'), product_map[(1, 4)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 2)])) == 2
 
@@ -570,17 +572,17 @@ def test_intersection_preserving_epsilon_transitions():
 
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 4)])) == 0
 
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 5)])
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(2, 6)])
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 6)])
+    assert result.has_trans_raw(product_map[(2, 5)], mata.epsilon(), product_map[(3, 5)])
+    assert result.has_trans_raw(product_map[(2, 5)], mata.epsilon(), product_map[(2, 6)])
+    assert result.has_trans_raw(product_map[(2, 5)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(2, 5)])) == 3
 
     assert result.has_trans_raw(product_map[(3, 5)], ord('a'), product_map[(5, 8)])
-    assert result.has_trans_raw(product_map[(3, 5)], epsilon, product_map[(3, 6)])
+    assert result.has_trans_raw(product_map[(3, 5)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(3, 5)])) == 2
 
     assert result.has_trans_raw(product_map[(2, 6)], ord('b'), product_map[(4, 7)])
-    assert result.has_trans_raw(product_map[(2, 6)], epsilon, product_map[(3, 6)])
+    assert result.has_trans_raw(product_map[(2, 6)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(2, 6)])) == 2
 
     assert result.has_trans_raw(product_map[(3, 6)], ord('a'), product_map[(5, 9)])

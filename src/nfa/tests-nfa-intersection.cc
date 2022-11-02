@@ -75,7 +75,7 @@ TEST_CASE("Mata::Nfa::intersection()")
 
     SECTION("Intersection of empty automata")
     {
-        res = intersection(a, b, &prod_map);
+        res = intersection(a, b, false, &prod_map);
 
         REQUIRE(res.initialstates.empty());
         REQUIRE(res.finalstates.empty());
@@ -108,7 +108,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         REQUIRE(!a.finalstates.empty());
         REQUIRE(!b.finalstates.empty());
 
-        res = intersection(a, b, &prod_map);
+        res = intersection(a, b, false, &prod_map);
 
         REQUIRE(!res.initialstates.empty());
         REQUIRE(!res.finalstates.empty());
@@ -127,7 +127,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         FILL_WITH_AUT_A(a);
         FILL_WITH_AUT_B(b);
 
-        res = intersection(a, b, &prod_map);
+        res = intersection(a, b, false, &prod_map);
 
         REQUIRE(res.has_initial(prod_map[{1, 4}]));
         REQUIRE(res.has_initial(prod_map[{3, 4}]));
@@ -178,7 +178,7 @@ TEST_CASE("Mata::Nfa::intersection()")
         FILL_WITH_AUT_B(b);
         b.finalstates = {12};
 
-        res = intersection(a, b, &prod_map);
+        res = intersection(a, b, false, &prod_map);
 
         REQUIRE(res.has_initial(prod_map[{1, 4}]));
         REQUIRE(res.has_initial(prod_map[{3, 4}]));
@@ -188,18 +188,17 @@ TEST_CASE("Mata::Nfa::intersection()")
 
 TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 {
-    constexpr Symbol epsilon{'e'};
     ProductMap prod_map;
 
     Nfa a{6};
     a.make_initial(0);
     a.make_final({1, 4, 5});
-    a.add_trans(0, epsilon, 1);
+    a.add_trans(0, EPSILON, 1);
     a.add_trans(1, 'a', 1);
     a.add_trans(1, 'b', 1);
     a.add_trans(1, 'c', 2);
     a.add_trans(2, 'b', 4);
-    a.add_trans(2, epsilon, 3);
+    a.add_trans(2, EPSILON, 3);
     a.add_trans(3, 'a', 5);
 
     Nfa b{10};
@@ -208,15 +207,15 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     b.add_trans(0, 'b', 1);
     b.add_trans(0, 'a', 2);
     b.add_trans(2, 'a', 4);
-    b.add_trans(2, epsilon, 3);
+    b.add_trans(2, EPSILON, 3);
     b.add_trans(3, 'b', 4);
     b.add_trans(0, 'c', 5);
     b.add_trans(5, 'a', 8);
-    b.add_trans(5, epsilon, 6);
+    b.add_trans(5, EPSILON, 6);
     b.add_trans(6, 'a', 9);
     b.add_trans(6, 'b', 7);
 
-    Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon, &prod_map) };
+    Nfa result{intersection(a, b, true, &prod_map) };
 
     // Check states.
     CHECK(result.is_state(prod_map[{0, 0}]));
@@ -246,7 +245,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     // Check transitions.
     CHECK(result.get_num_of_trans() == 15);
 
-    CHECK(result.has_trans(prod_map[{0, 0}], epsilon, prod_map[{1, 0}]));
+    CHECK(result.has_trans(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 0, 0 }]).size() == 1);
 
     CHECK(result.has_trans(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
@@ -256,7 +255,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 1 }]).empty());
 
-    CHECK(result.has_trans(prod_map[{1, 2}], epsilon, prod_map[{1, 3}]));
+    CHECK(result.has_trans(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
     CHECK(result.has_trans(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 2 }]).size() == 2);
 
@@ -265,17 +264,17 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 4 }]).empty());
 
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 5}]));
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{2, 6}]));
-    CHECK(result.has_trans(prod_map[{2, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
+    CHECK(result.has_trans(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 5 }]).size() == 3);
 
     CHECK(result.has_trans(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
-    CHECK(result.has_trans(prod_map[{3, 5}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.has_trans(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 5 }]).size() == 2);
 
     CHECK(result.has_trans(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
-    CHECK(result.has_trans(prod_map[{2, 6}], epsilon, prod_map[{3, 6}]));
+    CHECK(result.has_trans(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 6 }]).size() == 2);
 
     CHECK(result.has_trans(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
@@ -290,17 +289,15 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 
 TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
 {
-    constexpr Symbol epsilon{'e'};
-
     Nfa a{6};
     a.make_initial(0);
     a.make_final({1, 4, 5});
-    a.add_trans(0, epsilon, 1);
+    a.add_trans(0, EPSILON, 1);
     a.add_trans(1, 'a', 1);
     a.add_trans(1, 'b', 1);
     a.add_trans(1, 'c', 2);
     a.add_trans(2, 'b', 4);
-    a.add_trans(2, epsilon, 3);
+    a.add_trans(2, EPSILON, 3);
     a.add_trans(3, 'a', 5);
 
     Nfa b{10};
@@ -309,15 +306,15 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
     b.add_trans(0, 'b', 1);
     b.add_trans(0, 'a', 2);
     b.add_trans(2, 'a', 4);
-    b.add_trans(2, epsilon, 3);
+    b.add_trans(2, EPSILON, 3);
     b.add_trans(3, 'b', 4);
     b.add_trans(0, 'c', 5);
     b.add_trans(5, 'a', 8);
-    b.add_trans(5, epsilon, 6);
+    b.add_trans(5, EPSILON, 6);
     b.add_trans(6, 'a', 9);
     b.add_trans(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nfa result{intersection_preserving_epsilon_transitions(a, b, epsilon) };
+        Nfa result{intersection(a, b, true) };
     }
 }

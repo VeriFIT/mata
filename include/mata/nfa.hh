@@ -886,94 +886,74 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
 } // uni }}}
 
 /**
- * @brief Compute intersection of two NFAs preserving epsilon transitions.
- *
- * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
- * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
- * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
- * a product state `(s, a) -ε-> (p, b)` is created.
- *
- * Automata must share alphabets.
- *
- * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
- * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
- * @param[in] epsilon Symbol to handle as an epsilon symbol.
- * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
- * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
- */
-Nfa intersection_preserving_epsilon_transitions(const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON, ProductMap* prod_map = nullptr);
-
-/**
- * @brief Compute intersection of two NFAs preserving epsilon transitions.
- *
- * Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
- * of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
- * an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
- * a product state `(s, a) -ε-> (p, b)` is created.
- *
- * Automata must share alphabets.
- *
- * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs with ε-transitions preserved.
- * @param[in] lhs First NFA with possible epsilon symbols @p epsilon.
- * @param[in] rhs Second NFA with possible epsilon symbols @p epsilon.
- * @param[in] epsilon Symbol to handle as an epsilon symbol.
- * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
- */
-void intersection_preserving_epsilon_transitions(Nfa* res, const Nfa &lhs, const Nfa &rhs, Symbol epsilon = EPSILON,
-                                                 ProductMap* prod_map = nullptr);
-
-/**
  * @brief Compute intersection of two NFAs.
+ *
+ * Supports epsilon symbols when @p preserve_epsilon is set to true.
+ * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
+ *  contain ε-transitions. The product preserves the ε-transitions
+ *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ *  an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ *  a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
  *
  * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
- * @param[out] prod_map Mapping of pairs of states (lhs_state, rhs_state) to new product states.
+ * @param[out] prod_map Mapping of pairs of original states (lhs_state, rhs_state) to new product states.
+ * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
  */
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, ProductMap* prod_map = nullptr);
+void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
+                  bool preserve_epsilon = false, ProductMap* prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs.
  *
+ * Supports epsilon symbols when @p preserve_epsilon is set to true.
+ * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
+ *  contain ε-transitions. The product preserves the ε-transitions
+ *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
+ *  an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
+ *  a product state `(s, a) -ε-> (p, b)` is created.
+ *
+ * Automata must share alphabets.
+ *
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
+ * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
+ * @param[out] prod_map Mapping of pairs of original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection(const Nfa &lhs, const Nfa &rhs, ProductMap* prod_map = nullptr);
+Nfa intersection(const Nfa& lhs, const Nfa& rhs,
+                 bool preserve_epsilon = false, ProductMap* prod_map = nullptr);
 
 /**
- * Concatenate two NFAs.
+ * @brief Concatenate two NFAs.
+ *
+ * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
+ * @param[out] lhs_result_states_map Map mapping lhs states to result states.
+ * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs);
+void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /**
- * Concatenate two NFAs.
+ * @brief Concatenate two NFAs.
+ *
+ * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
+ * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
+ * @param[out] lhs_result_states_map Map mapping lhs states to result states.
+ * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nfa concatenate(const Nfa& lhs, const Nfa& rhs);
-
-/**
- * Concatenate two NFAs over epsilon transitions.
- * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
- */
-void concatenate_over_epsilon(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
-
-/**
- * Concatenate two NFAs over epsilon transitions.
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon symbol to concatenate @p lhs with @p rhs over.
- * @return Concatenated automaton.
- */
-Nfa concatenate_over_epsilon(const Nfa& lhs, const Nfa& rhs, Symbol epsilon = EPSILON);
+Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+                StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /// makes the transition relation complete
 void make_complete(

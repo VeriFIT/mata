@@ -656,44 +656,43 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def intersection(cls, Nfa lhs, Nfa rhs):
+    def intersection(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
         """Performs intersection of lhs and rhs.
 
-        :param Nfa lhs: First automaton.
-        :param Nfa rhs: Second automaton.
-        :return: Intersection of lhs and rhs.
-        """
-        result = Nfa()
-        mata.intersection(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
-        return result
+        Supports epsilon symbols when preserve_epsilon is set to True.
 
-    @classmethod
-    def intersection_preserving_epsilon_transitions(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
-        """Performs intersection of lhs and rhs preserving epsilon transitions.
-
-        Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+        When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
          of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
          an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
          a product state `(s,a)-ε->(p,b)` is created.
 
         Automata must share alphabets.
 
-        :param: Nfa lhs: First automaton with possible epsilon symbols.
-        :param: Nfa rhs: Second automaton with possible epsilon symbols.
-        :param: Symbol epsilon: Symbol to handle as an epsilon symbol.
-        :return: Intersection of lhs and rhs with epsilon transitions preserved, product map of original pairs of states
-         to new states.
+        :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
+        :param Nfa lhs: First automaton.
+        :param Nfa rhs: Second automaton.
+        :return: Intersection of lhs and rhs.
         """
         result = Nfa()
-        mata.intersection_preserving_epsilon_transitions(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon
+        mata.intersection(
+            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
         )
         return result
 
     @classmethod
-    def intersection_with_product_map(cls, Nfa lhs, Nfa rhs):
+    def intersection_with_product_map(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
         """Performs intersection of lhs and rhs.
 
+        Supports epsilon symbols when preserve_epsilon is set to True.
+
+        When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
+         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
+         a product state `(s,a)-ε->(p,b)` is created.
+
+        Automata must share alphabets.
+
+        :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
         :param Nfa lhs: First automaton.
         :param Nfa rhs: Second automaton.
         :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
@@ -701,58 +700,49 @@ cdef class Nfa:
         result = Nfa()
         cdef ProductMap c_product_map
         mata.intersection(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), &c_product_map
+            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
+            &c_product_map
         )
         return result, {tuple(k): v for k, v in c_product_map}
 
     @classmethod
-    def intersection_pres_eps_trans_with_prod_map(cls, Nfa lhs, Nfa rhs, Symbol epsilon = CEPSILON):
-        """Performs intersection of lhs and rhs preserving epsilon transitions.
+    def concatenate(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
+        """Concatenate two NFAs.
 
-        Create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
-         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
-         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
-         a product state `(s,a)-ε->(p,b)` is created.
-
-        Automata must share alphabets.
-
-        :param: Nfa lhs: First automaton with possible epsilon symbols.
-        :param: Nfa rhs: Second automaton with possible epsilon symbols.
-        :param: Symbol epsilon: Symbol to handle as an epsilon symbol.
-        :return: Intersection of lhs and rhs with epsilon transitions preserved, product map of original pairs of states
-         to new states.
+        Supports epsilon symbols when @p use_epsilon is set to true.
+        :param Nfa lhs: First automaton to concatenate.
+        :param Nfa rhs: Second automaton to concatenate.
+        :param use_epsilon: Whether to concatenate over an epsilon symbol.
+        :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        cdef ProductMap c_product_map
-        mata.intersection_preserving_epsilon_transitions(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon, &c_product_map
-        )
-        return result, {tuple(k): v for k, v in c_product_map}
+        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, NULL, NULL)
+        return result
 
     @classmethod
-    def concatenate(cls, Nfa lhs, Nfa rhs):
+    def concatenate_with_result_state_maps(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
+            -> tuple[Nfa, dict[str, str], dict[str, str]]:
         """Concatenate two NFAs.
 
         :param Nfa lhs: First automaton to concatenate.
         :param Nfa rhs: Second automaton to concatenate.
+        :param use_epsilon: Whether to concatenate over an epsilon symbol.
         :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()))
-        return result
+        cdef StateToStateMap c_lhs_map
+        cdef StateToStateMap c_rhs_map
+        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, &c_lhs_map, &c_rhs_map)
+        lhs_map = {}
+        for key, value in c_lhs_map:
+            lhs_map[key] = value
+        rhs_map = {}
+        for key, value in c_rhs_map:
+            rhs_map[key] = value
 
-    @classmethod
-    def concatenate_over_epsilon(cls, Nfa lhs, Nfa rhs, epsilon = CEPSILON):
-        """Concatenate two NFAs over an epsilon symbol.
-
-        :param Nfa lhs: First automaton to concatenate over epsilon.
-        :param Nfa rhs: Second automaton to concatenate over epsilon.
-        :param Symbol epsilon: Symbol to concatenate over (Default: Default Mata epsilon value).
-        :return: Nfa: Concatenated automaton over epsilon.
-        """
-        result = Nfa()
-        mata.concatenate_over_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), epsilon)
-        return result
+        return result, lhs_map, rhs_map
 
     @classmethod
     def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
