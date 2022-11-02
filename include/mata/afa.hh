@@ -80,12 +80,12 @@ using Alphabet = Mata::Nfa::Alphabet;
 */
 struct Trans
 {
-    State src; // source state
-    Symbol symb; // transition symbol
-    Nodes dst; // a vector of vectors of states
+	State src; // source state
+	Symbol symb; // transition symbol
+	Nodes dst; // a vector of vectors of states
 
 	Trans() : src(), symb(), dst() { }
-  	Trans(State src, Symbol symb, Node dst) : src(src), symb(symb), dst(Nodes(dst)) { }
+	Trans(State src, Symbol symb, Node dst) : src(src), symb(symb), dst(Nodes(dst)) { }
 	Trans(State src, Symbol symb, Nodes dst) : src(src), symb(symb), dst(dst) { }
 
 	bool operator==(const Trans& rhs) const
@@ -105,27 +105,27 @@ using TransRelation = std::vector<TransList>;
 */
 struct InverseResults{
 
-    Node result_nodes{}; 
-    Node sharing_list{};
+	Node result_nodes{}; 
+	Node sharing_list{};
 
-    InverseResults() : result_nodes(), sharing_list() { }
-    InverseResults(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
-    InverseResults(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
+	InverseResults() : result_nodes(), sharing_list() { }
+	InverseResults(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
+	InverseResults(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
 
-    bool operator==(InverseResults rhs) const
-    { // {{{
-        return sharing_list == rhs.sharing_list && result_nodes == rhs.result_nodes;
-    } // operator== }}}
-    
-    bool operator!=(InverseResults rhs) const
-    { // {{{
-        return !this->operator==(rhs);
-    } // operator!= }}}
+	bool operator==(InverseResults rhs) const
+	{ // {{{
+		return sharing_list == rhs.sharing_list && result_nodes == rhs.result_nodes;
+	} // operator== }}}
 
-    bool operator<(InverseResults rhs) const
-    { // {{{
-        return sharing_list < rhs.sharing_list || (sharing_list == rhs.sharing_list && result_nodes < rhs.result_nodes);
-    } // operator< }}}
+	bool operator!=(InverseResults rhs) const
+	{ // {{{
+		return !this->operator==(rhs);
+	} // operator!= }}}
+
+	bool operator<(InverseResults rhs) const
+	{ // {{{
+		return sharing_list < rhs.sharing_list || (sharing_list == rhs.sharing_list && result_nodes < rhs.result_nodes);
+	} // operator< }}}
 
 }; // struct InverseResults
 
@@ -135,12 +135,12 @@ struct InverseResults{
 */
 struct InverseTrans{
 
-    Symbol symb;    
-    std::vector<InverseResults> inverseResults{};
+	Symbol symb;    
+	std::vector<InverseResults> inverseResults{};
 
-    InverseTrans() : symb(), inverseResults() { }
-    InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
-    InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
+	InverseTrans() : symb(), inverseResults() { }
+	InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
+	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
 
 }; // struct InverseTrans
 
@@ -164,20 +164,20 @@ private:
 
 public:
 
-    Afa() : transRelation(), inverseTransRelation() {}
+	Afa() : transRelation(), inverseTransRelation() {}
 
-    explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{})
-        : transRelation(num_of_states), inverseTransRelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+	explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+		         const StateSet& final_states = StateSet{})
+		: transRelation(num_of_states), inverseTransRelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
 
 public:
 
 	StateSet initialstates = {};
 	StateSet finalstates = {};
 
-    State add_new_state(void);
+	State add_new_state(void);
 
-    auto get_num_of_states() const { return transRelation.size(); }
+	auto get_num_of_states() const { return transRelation.size(); }
 
 	void add_initial(State state) { this->initialstates.insert(state); }
 	void add_initial(const std::vector<State> vec)
@@ -222,10 +222,10 @@ public:
 		this->add_inverse_trans({src, symb, dst});
 	} // }}}
 
-    std::unique_ptr<Nodes> perform_trans (State src, Symbol symb) const;
+	std::unique_ptr<Nodes> perform_trans (State src, Symbol symb) const;
 
-    std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
-    std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
+	std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
+	std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
 
 	bool has_trans(const Trans& trans) const;
 	bool has_trans(State src, Symbol symb, Node dst) const
@@ -241,30 +241,30 @@ public:
 	size_t trans_size() const;/// number of transitions; has linear time complexity
 
 
-    StateClosedSet post(State state, Symbol symb) const;
-    StateClosedSet post(Node node, Symbol symb) const;
-    StateClosedSet post(Nodes nodes, Symbol symb) const;
-    StateClosedSet post(StateClosedSet closed_set, Symbol symb) const;
+	StateClosedSet post(State state, Symbol symb) const;
+	StateClosedSet post(Node node, Symbol symb) const;
+	StateClosedSet post(Nodes nodes, Symbol symb) const;
+	StateClosedSet post(StateClosedSet closed_set, Symbol symb) const;
 
-    StateClosedSet post(Node node) const;
-    StateClosedSet post(Nodes nodes) const;
+	StateClosedSet post(Node node) const;
+	StateClosedSet post(Nodes nodes) const;
 
-    StateClosedSet post(StateClosedSet closed_set) const {return post(closed_set.antichain());};
+	StateClosedSet post(StateClosedSet closed_set) const {return post(closed_set.antichain());};
 
-    StateClosedSet pre(Node node, Symbol symb) const;
-    StateClosedSet pre(State state, Symbol symb) const {return pre(Node(state), symb);};
-    StateClosedSet pre(Nodes nodes, Symbol symb) const;
-    StateClosedSet pre(StateClosedSet closed_set, Symbol symb) const;
+	StateClosedSet pre(Node node, Symbol symb) const;
+	StateClosedSet pre(State state, Symbol symb) const {return pre(Node(state), symb);};
+	StateClosedSet pre(Nodes nodes, Symbol symb) const;
+	StateClosedSet pre(StateClosedSet closed_set, Symbol symb) const;
 
-    StateClosedSet pre(Node node) const;
-    StateClosedSet pre(Nodes nodes) const;
+	StateClosedSet pre(Node node) const;
+	StateClosedSet pre(Nodes nodes) const;
 
-    StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
+	StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
 
-    StateClosedSet get_initial_nodes(void) const;
-    StateClosedSet get_non_initial_nodes(void) const;
-    StateClosedSet get_final_nodes(void) const;
-    StateClosedSet get_non_final_nodes(void) const;
+	StateClosedSet get_initial_nodes(void) const;
+	StateClosedSet get_non_initial_nodes(void) const;
+	StateClosedSet get_final_nodes(void) const;
+	StateClosedSet get_non_final_nodes(void) const;
 
 }; // Afa }}}
 
@@ -503,7 +503,7 @@ struct hash<Mata::Afa::Trans>
 	{
 		size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
 		accum = Mata::util::hash_combine(accum, trans.symb);
-        accum = Mata::util::hash_combine(accum, trans.dst);
+		accum = Mata::util::hash_combine(accum, trans.dst);
 		return accum;
 	}
 };
