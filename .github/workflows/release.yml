@@ -85,7 +85,8 @@ jobs:
   build-and-deploy-to-pypi:
     needs: release
     runs-on: ubuntu-latest
-      strategy:
+    strategy:
+      matrix:
         python-version: ["3.9"]
 
     steps:
