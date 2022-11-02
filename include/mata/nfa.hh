@@ -42,8 +42,18 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-// TODO: All ord vectors should be a set. And everywhere use set when you are using OrdVectors.
-
+/*TODO: Generally, there are
+ * 1) many and messy type names
+ * 2) a lot of stuff in general
+ * 3) method/function names are sometimes weird and not systematic too
+ * This is a proposal to, firstly, reduce and systematize
+ * type names,
+ * function / method names.
+ * Secondly,
+ * maybe we organize automaton a bit more, by
+ * making transition relation a class,
+ * some other things as well ...?
+ * */
 
 using State = unsigned long;
 using StatePair = std::pair<State, State>; // TODO: Remove.
@@ -51,41 +61,42 @@ using Symbol = unsigned long;
 using SymbolSet = Mata::Util::OrdVector<Symbol>;
 
 template<typename T, typename U> using Pair = std::pair<T, U>;
-Pair<State, State>; // TODO: use then everywhere.
+Pair<State, State>; // TODO: use Pair whenever naming a std:pair?
 
 using StateSet = Mata::Util::OrdVector<State>;
 template<typename T> using Set = Mata::Util::OrdVector<T>;
-Set<State>; // TODO: Use then everywhere.
+Set<State>; // TODO: Use Set whenever naming some OrdVector?
+// TODO: We could have UnorderedMap / UMap/OMap type for consistency sake.
 
 using PostSymb = std::unordered_map<Symbol, StateSet>;      ///< Post over a symbol. // TODO: Delete, not used anyway.
 
-using ProductMap = std::unordered_map<StatePair, State>; // TODO: Maybe remove? Theoretically, it is not important.
-using SubsetMap = std::unordered_map<StateSet, State>; // TODO: Maybe remove? Theoretically, it is not important.
+using ProductMap = std::unordered_map<StatePair, State>; // TODO: Maybe remove?
+using SubsetMap = std::unordered_map<StateSet, State>; // TODO: Maybe remove?
 
-// TODO: We can try to create UnorderedMap type for consistency sake.
-
-// TODO: Use for all functions returning a Run: pair of word and path.
-struct Run {
-    Word get_word();
-    Word get_path();
-};
 
 using Path = std::vector<State>;        ///< A finite-length path through automaton.
 using Word = std::vector<Symbol>;       ///< A finite-length word.
 using WordSet = std::set<Word>;         ///< A set of words. // Rename or delete.
+
+// TODO: Use for all functions returning a Run: pair of word and path.
+        struct Run {
+            Word word;
+            Path path;
+        };
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
 template<typename Target>
 using StateMap = std::unordered_map<State, Target>; // TODO: Potentially remove?
-
 // TODO: Use vector instead because it would be faster. But do we need to have 0, 40, 10000?
 
-
-// TODO: To think about it and work on it:
-// Remove documentation which does not add anything new.
-// Do not try to fill empty doxygen spaces.
+/*
+ *TODO:
+ * Remove documentation/comments which does not add anything interesting?
+ * Ie comments of the form "@param final_states: this is the set of final_states".
+ * Do not try to fill empty doxygen spaces.
+ * */
 
 
 using StateToStringMap = StateMap<std::string>;
@@ -93,9 +104,16 @@ using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
 using StateToStateMap = StateMap<State>;
 
-using SymbolToStringMap = std::unordered_map<Symbol, std::string>;  // TODO: vector? When finite set of states, ector, otehrwise, something different?
+using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
+/*TODO: this should become a part of the automaton somehow.
+ * It should be a vector indexed by states.
+ * */
 
 using StringDict = std::unordered_map<std::string, std::string>;  // TODO: StringMap, it is more consistent
+
+/*TODO: What about to
+ * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, State<UMap>, ...
+ * maybe something else is needed for the more complex maps*/
 
 /**
  * The abstract interface for NFA alphabets.
@@ -169,8 +187,11 @@ static constexpr struct Limits {
     Symbol minSymbol = std::numeric_limits<Symbol>::min();
 } limits;
 
+/*TODO: Ideally remove functions using this struct as a parameter.
+ * unpack the trans. relation to transitions is inefficient, goes against the hairs of the library.
+ * Do we want to support it?
+ */
 /// A transition.
-// TODO: Ideally remove functions using this struct as a parameter.
 struct Trans
 {
 	State src;
@@ -191,7 +212,6 @@ using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
 
-// TODO: Use vector, do not call sequence. And rather do not use the specific types, use only ad-hoc as vector[pointer to NFA]
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
 
@@ -279,7 +299,7 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-struct TransSymbolStates { // TODO: Move (it is a set of possible moves from state with symbol)
+struct TransSymbolStates { // TODO: Move (it is a set of possible moves from state with symbol), or another simple name
     Symbol symbol{};
     StateSet states_to;
 
@@ -299,12 +319,12 @@ struct TransSymbolStates { // TODO: Move (it is a set of possible moves from sta
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using TransitionList = Mata::Util::OrdVector<TransSymbolStates>; // TODO: set (it is not a vector) of moves, not a list of transitions.
+using TransitionList = Mata::Util::OrdVector<TransSymbolStates>; // TODO: Rather a Set of Moves, definitely not something of transitions.
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<TransitionList>;
 
 
-// TODO: All lists rename to vectors.
+// TODO: All lists rename to vectors or maybe to Sequences ...
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
@@ -319,8 +339,8 @@ struct Nfa
      *
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
-     * @todo maybe have this as its own class
      */
+     //TODO: make transition_relation its own class?
     TransitionRelation transitionrelation;  // TODO: Use transition_relation.
     StateSet initialstates = {}; // TODO: Use initial_states.
     StateSet finalstates = {}; // TODO: Use final_states.
@@ -369,10 +389,10 @@ public:
         }
     }
 
-    // TODO: Think of a better name. size()? To be consistent with increase_size().
+    // TODO: Think of a better name. size()? To be consistent with increase_size() and the function below?
     auto get_num_of_states() const { return transitionrelation.size(); }
 
-    void increase_size(size_t size)
+    void increase_size(size_t size) //TODO: or increase_num_of_states?
     {
         assert(get_num_of_states() <= size);
         transitionrelation.resize(size);
@@ -396,7 +416,7 @@ public:
      * Make @p state initial.
      * @param state State to be added to initial states.
      */
-    void make_initial(State state)  // TODO: Rename back to add?
+    void make_initial(State state)  // TODO: Rename back to add? Unless initial and final are not sets but rather properties of states.
     {
         if (this->get_num_of_states() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
@@ -454,7 +474,7 @@ public:
         this->initialstates.remove(state);
     }
 
-    // TODO: Maybe hide intialstates and finalstates from direct access, allow it, but hide it somehow?
+    // TODO: think of systematic way of naming manipulations with initial/final states. Are they sets or properties of states?
 
     /**
      * Remove @p vec of states from initial states.
@@ -716,7 +736,7 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    // TODO: Use only one has_trans version.
+    // TODO: Use only one has_trans version. Perhaps rename to has_transitions.
     bool has_trans(Trans trans) const
     {
         if (transitionrelation.empty()) {
@@ -760,8 +780,11 @@ public:
      // TODO: Rename has_no_transtions().
     bool trans_empty() const;
 
-    // TODO: Reformat automata structures to have classes initial_states, final_states, transition_relation and methods to be called on
-    //  these classes instead of on the whole automaton.
+    /* TODO: Reformat automata structures to have classes initial_states, final_states, transition_relation and methods to be called on
+     *  these classes instead of on the whole automaton
+     *  Or maybe not in fact, since these classes cannot work independently?
+     *  Or how to do this damn.
+     */
 
     size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
 
@@ -776,7 +799,7 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-     // TODO: Remove for now, maybe, use iterator instead.
+     // TODO: Remove for now, maybe, use the iterator which is here somewhere instead.
     TransSequence get_trans_as_sequence() const;
 
     /**
@@ -917,10 +940,8 @@ private:
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
 
-// TODO: These cexs use object run which returns all of those and nulls those which cannot be filled. Then we could combine these
-//  functions into a single function.
-// TODO: Have one for lang empty and one for cex
-
+// TODO: Functions that return word or path could just return a run, the pair of the two.
+// TODO: The have a variant with and a variant without cex.
 /**
  * Check whether is the language of the automaton empty.
  * @param[in] aut Automaton to check.
@@ -1226,6 +1247,8 @@ bool is_prfx_in_lang(const Nfa& aut, const Word& word);
  *  @c Word instance
  */
  // TODO: rename to something, but no idea to what.
+ // Maybe we need some terminology - Symbols and Words are made of numbers.
+ // What are the symbol names and their sequences?
 inline Word encode_word(
 	const StringToSymbolMap&         symbol_map,
 	const std::vector<std::string>&  input)
