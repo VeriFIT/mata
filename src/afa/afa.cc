@@ -56,17 +56,22 @@ void Afa::add_trans(const Trans& trans)
 	// If there is no result, a new transition will be created
 	// If the corresponding transition already exists, given 'dst' will be added to
 	// the transition
-	auto nodesPtr = perform_trans(trans.src, trans.symb);
-	if(!nodesPtr->empty())
+	assert(trans.src < this->transRelation.size() && "It is not possible to perform a transition " &&
+	"from non-existing state.");
+	for(auto & transVec : transRelation[trans.src])
 	{
-		// Before the dst nodes are added to the transition, we want to get rid
-		// of redundant clauses. For example, in context of the formula
-		// (1 || (1 && 2)), the clause (1 && 2) could be deleted
-		auto cl = StateClosedSet(upward_closed_set, 0, transRelation.size()-1, *nodesPtr);
-		cl.insert(trans.dst);
-		*nodesPtr = cl.antichain();
-		return;
-	}
+		if(transVec.symb == trans.symb)
+		{
+			// Before the dst nodes are added to the transition, we want to get rid
+			// of redundant clauses. For example, in context of the formula
+			// (1 || (1 && 2)), the clause (1 && 2) could be deleted
+			auto cl = StateClosedSet(upward_closed_set, 0, transRelation.size()-1, transVec.dst);
+			cl.insert(trans.dst);
+			transVec.dst = cl.antichain();	
+			return;
+		}
+	}    
+
 	transRelation[trans.src].push_back(trans);
 
 } // add_trans }}}
@@ -171,7 +176,7 @@ State Afa::add_new_state() {
 * @param symb a symbol used to perform a transition
 * @return a pointer to the set of nodes
 */
-std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
+Nodes Afa::perform_trans(State src, Symbol symb) const
 {
 	assert(src < this->transRelation.size() && "It is not possible to perform a transition " &&
 	"from non-existing state.");
@@ -179,10 +184,10 @@ std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 	{
 		if(transVec.symb == symb)
 		{
-			return std::make_unique<Nodes>(transVec.dst);
+			return transVec.dst;
 		}
 	}    
-	return std::make_unique<Nodes>(Nodes());
+	return Nodes();
 } // perform_trans }}}
 
 /** This function takes a single state and a symbol and returns all the nodes which are accessible from the node {state}
@@ -195,13 +200,7 @@ std::unique_ptr<Nodes> Afa::perform_trans(State src, Symbol symb) const
 */
 StateClosedSet Afa::post(State state, Symbol symb) const
 {
-	Nodes result = *perform_trans(state, symb);
-	if(result.size())
-	{
-		return StateClosedSet(upward_closed_set, 0, transRelation.size()-1, result);
-	}   
-	// if there is no proper result, we will return an empty closed set
-	return StateClosedSet(upward_closed_set, 0, transRelation.size()-1);
+	return StateClosedSet(upward_closed_set, 0, transRelation.size()-1, perform_trans(state, symb));
 } // post }}}
 
 /** This function takes a single node and a symbol and returns all the nodes which are accessible from the node
@@ -463,7 +462,7 @@ StateClosedSet Afa::pre(Nodes nodes) const
 
 bool Afa::has_trans(const Trans& trans) const
 { // {{{
-	Nodes res = *perform_trans(trans.src, trans.symb);
+	Nodes res = perform_trans(trans.src, trans.symb);
 	if(res.size() && res.IsSubsetOf(trans.dst))
 	{
 		return true;

@@ -222,7 +222,7 @@ public:
 		this->add_inverse_trans({src, symb, dst});
 	} // }}}
 
-	std::unique_ptr<Nodes> perform_trans (State src, Symbol symb) const;
+	Nodes perform_trans (State src, Symbol symb) const;
 
 	std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
 	std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
