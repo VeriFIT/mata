@@ -17,7 +17,7 @@ init:
 build-install: build-ext install
 
 pypi-release:
-	python3 setup.py sdist bdist_wheel
+	python3 setup.py sdist
 
 pypi-release-local:
 	mkdir ~/bdist
