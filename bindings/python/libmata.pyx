@@ -1177,8 +1177,7 @@ cdef class Nfa:
 
     @classmethod
     def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
-        """
-        Test equivalence of two automata.
+        """Test equivalence of two automata.
 
         :param Nfa lhs: Smaller automaton.
         :param Nfa rhs: Bigger automaton.
