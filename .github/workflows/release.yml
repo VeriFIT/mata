@@ -104,8 +104,23 @@ jobs:
           python3 -m pip install --upgrade pip
           # Install dependencies for build and deploy
           python3 -m pip install setuptools wheel twine
-          # Install the binding (mostly to verify it is compilable)
+
+      - name: Install Python Dependencies
+        run: |
+          make -C bindings/python init
+
+      - name: Install Unix dependencies
+        run: |
+          sudo apt-get -qq update 
+          sudo apt-get -qq install -y graphviz graphviz-dev
+
+      - name: Verify that the Binding can be installed
+        run: |
           make -C bindings/python install
+
+      - name: Verify tests tests
+        run: |
+          make -C bindings/python test
 
       - name: Build python release distribution package
         run: |
