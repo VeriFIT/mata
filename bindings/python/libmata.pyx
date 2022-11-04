@@ -1,4 +1,5 @@
-cimport mata
+cimport libmata as mata
+
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
@@ -7,9 +8,17 @@ from libcpp.memory cimport shared_ptr, make_shared
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
+import sys
 import shlex
 import subprocess
 import tabulate
+import pandas
+import networkx as nx
+import graphviz
+import IPython
+import collections
+
+from IPython.display import display, HTML, DisplayObject
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -141,8 +150,9 @@ cdef class Nfa:
     #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
     #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
     cdef shared_ptr[mata.CNfa] thisptr
+    cdef label
 
-    def __cinit__(self, state_number = 0, Alphabet alphabet = None):
+    def __cinit__(self, state_number = 0, Alphabet alphabet = None, label=None):
         """Constructor of the NFA.
 
         :param int state_number: number of states in automaton
@@ -154,6 +164,15 @@ cdef class Nfa:
             c_alphabet = alphabet.as_base()
         self.thisptr = make_shared[CNfa](mata.CNfa(state_number, empty_default_state_set, empty_default_state_set,
                                                    c_alphabet))
+        self.label = label
+
+    @property
+    def label(self):
+        return self.label
+
+    @label.setter
+    def label(self, value):
+        self.label = value
 
     @property
     def initial_states(self):
@@ -313,21 +332,28 @@ cdef class Nfa:
         """
         return self.thisptr.get().get_num_of_states()
 
-    def add_trans(self, Trans tr):
+    def add_transition_object(self, Trans tr):
         """Adds transition to automaton
 
         :param Trans tr: added transition
         """
         self.thisptr.get().add_trans(dereference(tr.thisptr))
 
-    def add_trans_raw(self, State src, Symbol symb, State tgt):
+    def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
         :param State src: source state
         :param Symbol symb: symbol
         :param State tgt: target state
+        :param Alphabet alphabet: alphabet of the transition
         """
-        self.thisptr.get().add_trans(src, symb, tgt)
+        if isinstance(symb, str):
+            alphabet = alphabet or store().get('alphabet')
+            if not alphabet:
+                raise Exception(f"Cannot translate symbol '{symb}' without specified alphabet")
+            self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
+        else:
+            self.thisptr.get().add_trans(src, symb, tgt)
 
     def remove_trans(self, Trans tr):
         """Removes transition from the automaton.
@@ -524,6 +550,9 @@ cdef class Nfa:
             result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
         return result
 
+    def __repr__(self):
+        return str(self)
+
     def to_dot_file(self, output_file='aut.dot', output_format='pdf'):
         """Transforms the automaton to dot format.
 
@@ -561,6 +590,38 @@ cdef class Nfa:
         finally:
             del output_stream
         return result.decode(encoding)
+
+    def to_dataframe(self) -> pandas.DataFrame:
+        """Transforms the automaton to DataFrame format.
+
+        Transforms the automaton into pandas.DataFrame format,
+        that is suitable for further (statistical) analysis.
+        The resulting DataFrame is in tabular format, with
+        'source', 'symbol' and 'target' as the columns
+
+        :return: automaton represented as a pandas dataframe
+        """
+        columns = ['source', 'symbol', 'target']
+        data = [
+            [trans.src, trans.symb, trans.tgt] for trans in self.iterate()
+        ]
+        return pandas.DataFrame(data, columns=columns)
+
+    def to_networkx_graph(self) -> nx.Graph:
+        """Transforms the automaton into networkx.Graph
+
+        Transforms the automaton into networkx.Graph format,
+        that is represented as graph with edges (src, tgt) with
+        additional properties.
+
+        Each symbol is added as an property to each edge.
+
+        :return:
+        """
+        G = nx.DiGraph()
+        for trans in self.iterate():
+            G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
+        return G
 
     def post_map_of(self, State st, Alphabet alphabet):
         """Returns mapping of symbols to set of states.
@@ -770,7 +831,7 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def noodlify_for_equation(cls, left_side_automata: list[Nfa], Nfa right_side_automaton, include_empty = False, params = None):
+    def noodlify_for_equation(cls, left_side_automata: list, Nfa right_side_automaton, include_empty = False, params = None):
         """Create noodles for equation.
 
         Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
@@ -1233,27 +1294,6 @@ cdef class Nfa:
             [s.encode('utf-8') for s in word]
         )
 
-cdef class Alphabet:
-    """Base class for alphabets
-    """
-    def __cinit__(self):
-        pass
-
-    def __dealloc__(self):
-        pass
-
-    def translate_symbol(self, str symbol):
-        pass
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        pass
-
-    cdef get_symbols(self):
-        pass
-
-    cdef mata.CAlphabet* as_base(self):
-        pass
-
 
 cdef class OnTheFlyAlphabet(Alphabet):
     """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
@@ -1556,11 +1596,11 @@ def divisible_by(k: int):
     assert k > 1
     lhs = Nfa(k+1)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
+    lhs.add_transition(0, 0, 0)
     for i in range(1, k + 1):
-        lhs.add_trans_raw(i - 1, 1, i)
-        lhs.add_trans_raw(i, 0, i)
-    lhs.add_trans_raw(k, 1, 1)
+        lhs.add_transition(i - 1, 1, i)
+        lhs.add_transition(i, 0, i)
+    lhs.add_transition(k, 1, 1)
     lhs.make_final_state(k)
     return lhs
 
@@ -1625,6 +1665,23 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
     return cmdout, cmderr
 
+
+cdef class Alphabet:
+    """
+    Base class for alphabets
+    """
+    cdef CAlphabet* as_base(self):
+        pass
+
+    def translate_symbol(self, str symbol):
+        pass
+
+    def reverse_translate_symbol(self, Symbol symbol):
+        pass
+
+    cdef get_symbols(self):
+        pass
+
 cdef class Segmentation:
     """Wrapper over Segmentation."""
     cdef mata.CSegmentation* thisptr
@@ -1673,3 +1730,275 @@ cdef class Segmentation:
             segments.append(segment)
 
         return segments
+
+def plot(
+        *automata: Nfa,
+        with_scc: bool = False,
+        node_highlight: list = None,
+        edge_highlight: list = None,
+        alphabet: Alphabet = None
+):
+    """Plots the stream of automata
+
+    :param bool with_scc: whether the SCC should be displayed
+    :param list automata: stream of automata that will be plotted using graphviz
+    :param list node_highlight: list of rules for changing style of nodes
+    :param list edge_highlight: list of rules for changing style of edges
+    :param Alphabet alphabet: alphabet for printing the symbols
+    """
+    dots = []
+    for aut in automata:
+        dot = plot_using_graphviz(aut, with_scc, node_highlight, edge_highlight, alphabet)
+        if get_interactive_mode() == 'notebook':
+            dots.append(dot)
+        else:
+            dot.view()
+    if get_interactive_mode() == 'notebook':
+        display_inline(*dots)
+
+
+def _plot_state(aut, dot, state, configuration):
+    """Plots the state
+
+    :param aut: base automaton
+    :param dot: output digraph
+    :param state: plotted state
+    :param configuration: configuration of the state
+    """
+    if aut.has_initial_state(state):
+        dot.node(f"q{state}", "", shape="plaintext", fontsize="1")
+    dot.node(
+        f"{state}", label=f"{state}", **configuration,
+        shape='doublecircle' if aut.has_final_state(state) else 'circle',
+    )
+
+
+def get_configuration_for(default, rules, *args):
+    """For given node or edge, processes the list of rules and applies them.
+
+    :param dict default: default style of the primitive
+    :param list rules: list of rules in form of condition and style
+    """
+    conf = {}
+    conf.update(default)
+    for rule, style in rules or []:
+        if rule(*args):
+            conf.update(style)
+    return conf
+
+
+def plot_using_graphviz(
+        aut: Nfa,
+        with_scc: bool = False,
+        node_highlight: list = None,
+        edge_highlight: list = None,
+        alphabet: Alphabet = None
+):
+    """Plots automaton using graphviz
+
+    :param list node_highlight: list of rules for changing style of nodes
+    :param list edge_highlight: list of rules for changing style of edges
+    :param Nfa aut: plotted automaton
+    :param bool with_scc: will plot with strongly connected components
+    :param Alphabet alphabet: alphabet for reverse translation of symbols
+    :return: automaton in graphviz
+    """
+    # Configuration
+    base_configuration = store()['node_style']
+    edge_configuration = store()['edge_style']
+    alphabet = alphabet or store()['alphabet']
+    if not alphabet:
+        print("warning: missing alphabet necessary to translate the symbols")
+    dot = graphviz.Digraph("dot")
+    if aut.label:
+        dot.attr(
+            label=aut.label, labelloc="t", kw="graph",
+            fontname="Helvetica", fontsize="14"
+        )
+
+    if with_scc:
+        G = aut.to_networkx_graph()
+        for i, scc in enumerate(nx.strongly_connected_components(G)):
+            with dot.subgraph(name=f"cluster_{i}") as c:
+                c.attr(color='black', style='filled', fillcolor="lightgray", label="")
+                for state in scc:
+                    _plot_state(
+                        aut, c, state,
+                        get_configuration_for(base_configuration, node_highlight, aut, state)
+                    )
+    else:
+        # Only print reachable states
+        for state in range(0, aut.get_num_of_states()):
+            # Helper node to simulate initial automaton
+            _plot_state(
+                aut, dot, state,
+                get_configuration_for(base_configuration, node_highlight, aut, state)
+            )
+
+    # Plot edges
+    for state in aut.initial_states:
+        dot.edge(f"q{state}", f"{state}", **edge_configuration)
+    edges = {}
+    for trans in aut.iterate():
+        key = f"{trans.src},{trans.tgt}"
+        if key not in edges.keys():
+            edges[key] = []
+        symbol = "{}".format(
+            alphabet.reverse_translate_symbol(trans.symb) if alphabet else trans.symb
+        )
+        edges[key].append((
+            f"{trans.src}", f"{trans.tgt}", symbol,
+            get_configuration_for(
+                edge_configuration, edge_highlight, aut, trans
+            )
+        ))
+    for edge in edges.values():
+        src = edge[0][0]
+        tgt = edge[0][1]
+        label = "<" + " | ".join(sorted(t[2] for t in edge)) + ">"
+        style = {}
+        for val in edge:
+            style.update(val[3])
+        dot.edge(src, tgt, label=label, **style)
+
+    return dot
+
+
+def get_interactive_mode() -> str:
+    """Checks and returns, which interactive mode (if any) the code is run in
+
+    The function returns:
+      1. 'none' if the code is not run in any interactive mode
+      2. 'notebook' if the code is run in the jupyter notebook
+      3. 'terminal' if the code is run in the interactive terminal
+
+    :return: type of the interactive mode
+    """
+    if 'ipykernel' in sys.modules:
+        return 'notebook'
+    elif 'IPython' in sys.modules:
+        return 'terminal'
+    else:
+        return 'none'
+
+
+def display_inline(*args, per_row=None, show=None):
+    """
+    This is a wrapper around IPython's `display()` to display multiple
+    elements in a row, without forced line break between them.
+
+    Copyright (C) 2018 Laboratoire de Recherche et Développement de l'Epita
+    (LRDE).
+
+    This function is part of Spot, a model checking library.
+
+    If the `per_row` argument is given, at most `per_row` arguments are
+    displayed on each row, each one taking 1/per_row of the line width.
+    """
+    width = res = ''
+    if per_row:
+        width = 'width:{}%;'.format(100//per_row)
+    for arg in args:
+        dpy = 'inline-block'
+        if show is not None and hasattr(arg, 'show'):
+            rep = arg.show(show)._repr_svg_()
+        elif hasattr(arg, '_repr_image_svg_xml'):
+            rep = arg._repr_image_svg_xml()
+        elif hasattr(arg, '_repr_svg_'):
+            rep = arg._repr_svg_()
+        elif hasattr(arg, '_repr_html_'):
+            rep = arg._repr_html_()
+        elif hasattr(arg, '_repr_latex_'):
+            rep = arg._repr_latex_()
+            if not per_row:
+                dpy = 'inline'
+        else:
+            rep = str(arg)
+        res += ("<div style='vertical-align:text-top;display:{};{}'>{}</div>"
+                .format(dpy, width, rep))
+    display(HTML(res))
+
+
+_store = {
+    'node_style': {
+        "style": "filled",
+        "color": "darkblue",
+        "fillcolor": "lightsteelblue",
+        "fontname": "Courier-Bold",
+        "width": "0.3",
+        "height": "0.3",
+        "fontsize": "12",
+        "fixedsize": "true",
+        "penwidth": "1.5",
+    },
+    'edge_style': {
+        "penwidth": "1.5",
+        "color": "midnightblue",
+    },
+    'alphabet': None,
+}
+
+
+def store():
+    """
+    Returns the configuration of the library
+    """
+    return _store
+
+
+def setup(**kwargs):
+    """
+    Provides the setup of the configuration of the mata library
+    """
+    _store.update(kwargs)
+
+
+class Style:
+    """
+    Collection of helper styles for coloring nodes and edges in automata
+    """
+    @classmethod
+    def filled(cls, fillcolor, edgecolor=None):
+        """Style that fills the primitive with color"""
+        style = {'fillcolor': fillcolor}
+        if edgecolor:
+            style['color'] = edgecolor
+        return style
+
+    @classmethod
+    def colored(cls, color):
+        """Style that make primitive colored"""
+        return {'color': color}
+
+    @classmethod
+    def dashed(cls, color=None):
+        """Style that makes lines dashed"""
+        style = {'style': 'dashed'}
+        if color:
+            style['color'] = color
+        return style
+
+    @classmethod
+    def hidden(cls):
+        """Style that hides the primitive"""
+        return {'style': 'invis'}
+
+
+class Condition:
+    """
+    Collection of helper functions that can be used as conditions in highlighting rule
+    """
+    @classmethod
+    def state_is_initial(cls, automaton, state):
+        """Tests if state in automaton is initial"""
+        return automaton.has_initial_state(state)
+
+    @classmethod
+    def state_is_final(cls, automaton, state):
+        """Tests if state in automaton is final"""
+        return automaton.has_final_state(state)
+
+    @classmethod
+    def transition_is_cycle(cls, _, trans):
+        """Tests if transition is self cycle"""
+        return trans.src == trans.tgt

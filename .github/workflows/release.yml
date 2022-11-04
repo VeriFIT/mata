@@ -81,3 +81,47 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: doc/_build/html
+
+  build-and-deploy-to-pypi:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          # Install and upgrade pip
+          python3 -m pip install --upgrade pip
+          # Install dependencies for build and deploy
+          python3 -m pip install setuptools wheel twine
+          # Install the binding (mostly to verify it is compilable)
+          make -C bindings/python install
+
+      - name: Build python release distribution package
+        run: |
+          make -C bindings/python pypi-release
+
+      - name: Upload to TestPypi
+        run: |
+          python3 -m twine upload bindings/python/dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
+          TWINE_REPOSITORY: testpypi
+
+      - name: Upload to Pypi
+        run: |
+          python3 -m twine upload bindings/python/dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}

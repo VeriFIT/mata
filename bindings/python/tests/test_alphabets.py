@@ -1,6 +1,6 @@
 __author__ = 'Tomas Fiedor'
 
-import mata
+import libmata as mata
 import pytest
 
 
