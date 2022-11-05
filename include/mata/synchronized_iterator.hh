@@ -55,8 +55,8 @@ namespace Mata {
                 // begin is actually incremented in advance ...? But tests do pass ...
                 // Also, I don't know why, but I cannot overload the name push_back here,
                 // so I am using this uglier longer name.
-                this->positions.push_back(begin);
-                this->ends.push_back(end);
+                this->positions.emplace_back(begin);
+                this->ends.emplace_back(end);
             };
 
             // This is supposed to be called only before an iteration,
@@ -223,7 +223,7 @@ namespace Mata {
                     // If we are at the current_minimum, then save it and advance the position.
                     if (*this->positions[i] == *current_minimum)
                     {
-                        this->currently_synchronized.push_back(this->positions[i]);
+                        this->currently_synchronized.emplace_back(this->positions[i]);
                         ++this->positions[i];
                         continue;
                     }
@@ -262,8 +262,8 @@ namespace Mata {
 
                 // Let position point to the beginning the vector,
                 // save the end of the vector.
-                this->positions.push_back(begin);
-                this->ends.push_back(end);
+                this->positions.emplace_back(begin);
+                this->ends.emplace_back(end);
             };
 
             explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Container>(size)
