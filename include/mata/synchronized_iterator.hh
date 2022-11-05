@@ -11,12 +11,12 @@ namespace Mata {
     namespace Util {
 
         // Classes that provide "synchronized" iterators through a vector of ordered vectors,
-        // (or of some Container that have a similar const_iterator),
+        // (or of some ordered Container that have a similar const_iterator),
         // needed in computation of post
         // in subset construction, product, and non-determinization.
-        // Key is the type stored in OrdVectors, it must be comparable with <,>,==,!=,<=,>=,
+        // The Type stored in Containers must be comparable with <,>,==,!=,<=,>=,
         // and it must be a total (linear) ordering.
-        // The intended usage in, for instance, determinisation is for Key to be TransSymbolStates.
+        // The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
         // TransSymbolStates is ordered by the symbol.
         //
         // SyncrhonisedIterator is the parent virtual class.
@@ -41,30 +41,41 @@ namespace Mata {
             std::vector<Iterator> positions;
             std::vector<Iterator> ends;
 
+            //@param size Number of elements to reserve up-front for positions and ends.
             explicit SynchronizedIterator(const int size = 0)
             {
                 positions.reserve(size);
                 ends.reserve(size);
             };
 
-            // This is supposed to be called only before an iteration,
-            // after constructor of reset.
-            // Calling after advance breaks the iterator.
+            // Supposed to be called only before the iteration starts.
+            // Specifies begin and end of one vector, supposed to be called several times.
             virtual void push_back_boundaries (const Iterator &begin, const Iterator &end) {
-                // Btw, I don't know what I am doing with the const & parameter passing, begin actually changes ...?.
-                // But tests do pass ...
+                // Btw, I don't know what I am doing with the const & parameter passing,
+                // begin is actually incremented in advance ...? But tests do pass ...
+                // Also, I don't know why, but I cannot overload the name push_back here,
+                // so I am using this uglier longer name.
                 this->positions.push_back(begin);
                 this->ends.push_back(end);
             };
 
-            // to make initialisation less ugly, the begin and the end can be extracted from the container
-            // this is the only reason why the template is parameterized by Container and not directly by Iterator
+            // This is supposed to be called only before an iteration,
+            // after constructor of reset.
+            // Calling after advance breaks the iterator.
+            //
+            // To make initialisation look less ugly than inputing the begin and end iterators
+            // into push_back_boundaries. The iterators are extracted from the container.
+            //
+            // This function is also the only reason for parametrizing the template by Container and not directly by Iterator.
+            // Version parameterised by Iterator would work too,
+            // it would be a little simpler and hypothetically more flexible.
             virtual void push_back (const Container &container) {
                 push_back_boundaries(container.begin(),container.end());
             };
 
             // Empties positions and ends.
             // Though they should keep the allocated space.
+            // @param size Number of elements to reserve up-front for positions and ends.
             void reset(const int size = 0) {
                 positions.clear();
                 ends.clear();
@@ -148,6 +159,7 @@ namespace Mata {
                 return true;
             }
 
+            // Returns the vector of current positions.
             const std::vector<Iterator> get_current()
             {
                 // How to return so that things don't get copied?
@@ -226,12 +238,14 @@ namespace Mata {
                 return !currently_synchronized.empty();
             };
 
+            // Returns the vector of current still active positions.
+            // Beware, thy will be ordered differently from how there were input into the iterator.
+            // This is due to swapping of the emptied positions with positions at the end.
             const std::vector<Iterator> get_current()
             {
                 return this->currently_synchronized;
             };
 
-            // Supposed to be called only before the iteration starts.
             void push_back_boundaries (const Iterator &begin, const Iterator &end) {
 
                 // Empty vector would not have any effect (unlike in the case of the universal iterator).
