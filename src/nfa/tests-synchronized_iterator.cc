@@ -14,7 +14,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("synchronized_universal_iterator, basic functionality")
     {
-        SynchronizedUniverzalIterator<int> iu;
+        SynchronizedUniverzalIterator<OrdVector<int>> iu;
 
         // Basic functionality, position[0] gets emptied first
         OrdVector<int> v1{1, 2, 4};
@@ -64,7 +64,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("synchronized_universal_iterator, corner cases") {
 
-        SynchronizedUniverzalIterator<int> iu;
+        SynchronizedUniverzalIterator<OrdVector<int>> iu;
 
         // Empty iterator
         REQUIRE(!iu.advance());
@@ -117,7 +117,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("SynchronizedExistentialIterator, basic functionality")
     {
-        SynchronizedExistentialIterator<int> ie;
+        SynchronizedExistentialIterator<OrdVector<int>> ie;
 
         // Basic functionality
         OrdVector<int> v1{1, 2};
@@ -141,7 +141,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("SynchronizedExistentialIterator, corner cases") {
 
-        SynchronizedExistentialIterator<int> ie;
+        SynchronizedExistentialIterator<OrdVector<int>> ie;
 
         // Empty iterator
         REQUIRE(!ie.advance());

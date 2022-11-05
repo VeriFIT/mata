@@ -11,6 +11,7 @@ namespace Mata {
     namespace Util {
 
         // Classes that provide "synchronized" iterators through a vector of ordered vectors,
+        // (or of some Container that have a similar const_iterator),
         // needed in computation of post
         // in subset construction, product, and non-determinization.
         // Key is the type stored in OrdVectors, it must be comparable with <,>,==,!=,<=,>=,
@@ -32,9 +33,10 @@ namespace Mata {
         //
         // Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
 
-        template<typename Key> class SynchronizedIterator {
+        template<typename Container> class SynchronizedIterator {
         public:
-            using Iterator = typename OrdVector<Key>::const_iterator;
+
+            using Iterator = typename Container::const_iterator;
 
             std::vector<Iterator> positions;
             std::vector<Iterator> ends;
@@ -48,10 +50,17 @@ namespace Mata {
             // This is supposed to be called only before an iteration,
             // after constructor of reset.
             // Calling after advance breaks the iterator.
-            virtual void push_back (const OrdVector<Key> &vector) {
-                // hope that the parameter is not deep copied ... is it?
-                this->positions.push_back(vector.begin());
-                this->ends.push_back(vector.end());
+            virtual void push_back_boundaries (const Iterator &begin, const Iterator &end) {
+                // Btw, I don't know what I am doing with the const & parameter passing, begin actually changes ...?.
+                // But tests do pass ...
+                this->positions.push_back(begin);
+                this->ends.push_back(end);
+            };
+
+            // to make initialisation less ugly, the begin and the end can be extracted from the container
+            // this is the only reason why the template is parameterized by Container and not directly by Iterator
+            virtual void push_back (const Container &container) {
+                push_back_boundaries(container.begin(),container.end());
             };
 
             // Empties positions and ends.
@@ -71,11 +80,11 @@ namespace Mata {
 
 
 
-        template<typename Key>
-        class SynchronizedUniverzalIterator: public SynchronizedIterator<Key> {
+        template<typename Container>
+        class SynchronizedUniverzalIterator: public SynchronizedIterator<Container> {
         public:
 
-            using Iterator = typename OrdVector<Key>::const_iterator;
+            using Iterator = typename Container::const_iterator;
 
             // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdVectos.
             // Are all positions at this class?
@@ -147,10 +156,10 @@ namespace Mata {
                 return this->positions;
             };
 
-            explicit SynchronizedUniverzalIterator(const int size=0) : SynchronizedIterator<Key>(size) {};
+            explicit SynchronizedUniverzalIterator(const int size=0) : SynchronizedIterator<Container>(size) {};
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Key > ::reset(size);
+                SynchronizedIterator < Container > ::reset(size);
                 this->synchronized_at_current_minimum = false;
             };
         };
@@ -158,11 +167,11 @@ namespace Mata {
 
 
 
-        template<typename Key>
-        class SynchronizedExistentialIterator : public SynchronizedIterator<Key> {
+        template<typename Container>
+        class SynchronizedExistentialIterator : public SynchronizedIterator<Container> {
         public:
 
-            using Iterator = typename OrdVector<Key>::const_iterator;
+            using Iterator = typename Container::const_iterator;
 
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
             Iterator next_minimum;
@@ -223,33 +232,33 @@ namespace Mata {
             };
 
             // Supposed to be called only before the iteration starts.
-            void push_back (const OrdVector<Key> &vector) {
+            void push_back_boundaries (const Iterator &begin, const Iterator &end) {
 
                 // Empty vector would not have any effect (unlike in the case of the universal iterator).
-                if (vector.empty()) return;
+                if (begin == end) return;
 
                 // Initialise next_minimum as the first position at the first vector.
                 if (this->positions.empty())
-                    this->next_minimum = vector.begin();
+                    this->next_minimum = begin;
 
                     // If the first position is of the new vector is smaller then minimum,
                     // update minimum.
-                else if (*this->next_minimum > *vector.begin())
-                    this->next_minimum = vector.begin();
+                else if (*this->next_minimum > *begin)
+                    this->next_minimum = begin;
 
                 // Let position point to the beginning the vector,
                 // save the end of the vector.
-                this->positions.push_back(vector.begin());
-                this->ends.push_back(vector.end());
+                this->positions.push_back(begin);
+                this->ends.push_back(end);
             };
 
-            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Key>(size)
+            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Container>(size)
             {
                 this->currently_synchronized.reserve(size);
             };
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Key > ::reset(size);
+                SynchronizedIterator < Container > ::reset(size);
                 if (size > 0) {
                     this->currently_synchronized.reserve(size);
                 }
