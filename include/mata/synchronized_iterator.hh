@@ -83,12 +83,13 @@ namespace Mata {
         class SynchronizedUniversalIterator: public SynchronizedIterator<Iterator> {
         public:
 
-            // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdVectos.
-            // Are all positions at this class?
+            // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdContainers.
+            // Are we sure that all positions at this class?
             // Invariant: it can be true only if all positions are indeed synchronized.
             bool synchronized_at_current_minimum = false;
 
-            // advance() advances all positions to the NEXT minimum and returns true,
+            // advance() advances all positions to the NEXT minimum and returns true.
+            // (though the next minimum might be the current state if synchronized_at_current_minimum is false).
             // or returns false if positions cannot be synchronized.
             // If positions are synchronized to start with,
             // then synchronized_at_current_minimum decides whether to stay or advance further.
@@ -134,8 +135,10 @@ namespace Mata {
                         }
 
                         // If position[0] changed, start from position 1 again.
-                        // (note that i gets incremented at the for-loop body end,
-                        // and that, since we are inside the for, there are at least two positions
+                        // (note that
+                        // i gets incremented at the end of the for-loop body,
+                        // and that,
+                        // since we are inside the for, there are at least two positions
                         // as the for starts with i=1.)
                         if (this->positions[0] > this->positions[1])
                             i=0;
@@ -161,9 +164,6 @@ namespace Mata {
                 this->synchronized_at_current_minimum = false;
             };
         };
-
-
-
 
         template<typename Iterator>
         class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
@@ -273,7 +273,5 @@ namespace Mata {
         };
     }
 }
-
-
 
 #endif //LIBMATA_SYNCHRONIZED_ITERATOR_HH
