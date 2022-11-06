@@ -14,16 +14,16 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("synchronized_universal_iterator, basic functionality")
     {
-        SynchronizedUniverzalIterator<OrdVector<int>> iu;
+        SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
 
         // Basic functionality, position[0] gets emptied first
         OrdVector<int> v1{1, 2, 4};
         OrdVector<int> v2{0, 1, 3, 5};
         OrdVector<int> v3{0, 1, 2, 4};
 
-        iu.push_back(v1);
-        iu.push_back(v2);
-        iu.push_back(v3);
+        push_back(iu,v1);
+        push_back(iu,v2);
+        push_back(iu,v3);
 
         REQUIRE(iu.advance());
         auto current = iu.get_current();
@@ -43,9 +43,9 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         v2 = {0, 1, 3};
         v3 = {1, 2, 3};
 
-        iu.push_back(v1);
-        iu.push_back(v2);
-        iu.push_back(v3);
+        push_back(iu,v1);
+        push_back(iu,v2);
+        push_back(iu,v3);
 
         REQUIRE(iu.advance());
         current = iu.get_current();
@@ -64,7 +64,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("synchronized_universal_iterator, corner cases") {
 
-        SynchronizedUniverzalIterator<OrdVector<int>> iu;
+        SynchronizedUniversalIterator<OrdVector<int>::const_iterator> iu;
 
         // Empty iterator
         REQUIRE(!iu.advance());
@@ -76,9 +76,9 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         OrdVector<int> v2{1};
         OrdVector<int> v3{};
 
-        iu.push_back(v1);
-        iu.push_back(v2);
-        iu.push_back(v3);
+        push_back(iu,v1);
+        push_back(iu,v2);
+        push_back(iu,v3);
 
         REQUIRE(!iu.advance());
 
@@ -90,11 +90,11 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         REQUIRE(current.empty());
 
         // Only empty vectors
-        iu.push_back(v1);
+        push_back(iu,v1);
 
         REQUIRE(!iu.advance());
 
-        iu.push_back(v3);
+        push_back(iu,v3);
         iu.reset();
 
         REQUIRE(!iu.advance());
@@ -103,9 +103,9 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         OrdVector<int> v4{1,2};
         OrdVector<int> v5{2};
 
-        iu.push_back(v4);
-        iu.push_back(v4);
-        iu.push_back(v5);
+        push_back(iu,v4);
+        push_back(iu,v4);
+        push_back(iu,v5);
 
         REQUIRE(iu.advance());
         current = iu.get_current();
@@ -117,16 +117,16 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("SynchronizedExistentialIterator, basic functionality")
     {
-        SynchronizedExistentialIterator<OrdVector<int>> ie;
+        SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
 
         // Basic functionality
         OrdVector<int> v1{1, 2};
         OrdVector<int> v2{0, 3};
         OrdVector<int> v3{0, 1, 2, 3};
 
-        ie.push_back(v1);
-        ie.push_back(v2);
-        ie.push_back(v3);
+        push_back(ie,v1);
+        push_back(ie,v2);
+        push_back(ie,v3);
 
         int i = 0;
         while(ie.advance()) {
@@ -141,7 +141,7 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
 
     SECTION("SynchronizedExistentialIterator, corner cases") {
 
-        SynchronizedExistentialIterator<OrdVector<int>> ie;
+        SynchronizedExistentialIterator<OrdVector<int>::const_iterator> ie;
 
         // Empty iterator
         REQUIRE(!ie.advance());
@@ -154,9 +154,9 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         OrdVector<int> v2{1};
         OrdVector<int> v3{};
 
-        ie.push_back(v1);
-        ie.push_back(v2);
-        ie.push_back(v3);
+        push_back(ie,v1);
+        push_back(ie,v2);
+        push_back(ie,v3);
 
         REQUIRE(ie.advance());
         current = ie.get_current();
@@ -174,11 +174,11 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         REQUIRE(current.empty());
 
         // Only empty vectors
-        ie.push_back(v1);
+        push_back(ie,v1);
 
         REQUIRE(!ie.advance());
 
-        ie.push_back(v3);
+        push_back(ie,v3);
         ie.reset();
 
         REQUIRE(!ie.advance());
@@ -187,9 +187,9 @@ TEST_CASE("Mata::Util::SynchronizedIterator")
         OrdVector<int> v4{1,2};
         OrdVector<int> v5{2};
 
-        ie.push_back(v4);
-        ie.push_back(v5);
-        ie.push_back(v4);
+        push_back(ie,v4);
+        push_back(ie,v5);
+        push_back(ie,v4);
 
         REQUIRE(ie.advance());
         current = ie.get_current();

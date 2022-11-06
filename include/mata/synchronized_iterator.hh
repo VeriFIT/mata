@@ -9,34 +9,35 @@
 
 namespace Mata {
     namespace Util {
+        /* Two classes that provide "synchronized" iterators through a vector of ordered vectors,
+        *  (or of some ordered OrdContainer that have a similar iterator),
+        *  needed in computation of post
+        *  in subset construction, product, and non-determinization.
+        *  The Type stored in OrdContainers must be comparable with <,>,==,!=,<=,>=,
+        *  and it must be a total (linear) ordering.
+        *  The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
+        *  TransSymbolStates is ordered by the symbol.
+        *
+        *  SyncrhonisedIterator is the parent virtual class.
+        *  It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
+        *  They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and ends, respectively
+        *  Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
+        *  (next smallest symbol in the case of TransSymbolStates).
+        *
+        *  There are two versions of the class.
+        *  i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
+        *  Method get_current then returns the vector of all position iterators, synchronized.
+        *  ii) In determinization, it is enough that there EXISTS a position that points to the smallest class.
+        *  Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
+        *
+        *  Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
+        *
+        *  The memory allocated internally for positions and ends is kept after reset, so it is advisable to use the same iterator for many iterations, as
+        *  opposed to creating a new one for each iteration.
+        *  */
 
-        // Classes that provide "synchronized" iterators through a vector of ordered vectors,
-        // (or of some ordered Container that have a similar const_iterator),
-        // needed in computation of post
-        // in subset construction, product, and non-determinization.
-        // The Type stored in Containers must be comparable with <,>,==,!=,<=,>=,
-        // and it must be a total (linear) ordering.
-        // The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
-        // TransSymbolStates is ordered by the symbol.
-        //
-        // SyncrhonisedIterator is the parent virtual class.
-        // It stores a vector of end-iterators for the OrdVectors and a vector of current positions.
-        // They are filled in using the function push_back(v), that adds v.begin() to positions and v.end() to ends.
-        // Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
-        // (next smallest symbol in the case of TransSymbolStates).
-        //
-        // There are two versions of the class.
-        // i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
-        // Method get_current then returns the vector of all position iterators, synchronized.
-        // In determinization, it is enough that there EXISTS a position that points to the smallest class.
-        // Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
-        //
-        // Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
-
-        template<typename Container> class SynchronizedIterator {
+        template<typename Iterator> class SynchronizedIterator {
         public:
-
-            using Iterator = typename Container::const_iterator;
 
             std::vector<Iterator> positions;
             std::vector<Iterator> ends;
@@ -48,30 +49,17 @@ namespace Mata {
                 ends.reserve(size);
             };
 
-            // Supposed to be called only before the iteration starts.
-            // Specifies begin and end of one vector, supposed to be called several times.
-            virtual void push_back_boundaries (const Iterator &begin, const Iterator &end) {
+            // This is supposed to be called only before an iteration,
+            // after constructor of reset.
+            // Calling after advance breaks the iterator.
+            // Specifies begin and end of one vector, to initialise before the iteration starts.
+            virtual void push_back (const Iterator &begin, const Iterator &end) {
                 // Btw, I don't know what I am doing with the const & parameter passing,
                 // begin is actually incremented in advance ...? But tests do pass ...
-                // Also, I don't know why, but I cannot overload the name push_back here,
-                // so I am using this uglier longer name.
                 this->positions.emplace_back(begin);
                 this->ends.emplace_back(end);
             };
 
-            // This is supposed to be called only before an iteration,
-            // after constructor of reset.
-            // Calling after advance breaks the iterator.
-            //
-            // To make initialisation look less ugly than inputing the begin and end iterators
-            // into push_back_boundaries. The iterators are extracted from the container.
-            //
-            // This function is also the only reason for parametrizing the template by Container and not directly by Iterator.
-            // Version parameterised by Iterator would work too,
-            // it would be a little simpler and hypothetically more flexible.
-            virtual void push_back (const Container &container) {
-                push_back_boundaries(container.begin(),container.end());
-            };
 
             // Empties positions and ends.
             // Though they should keep the allocated space.
@@ -91,11 +79,9 @@ namespace Mata {
 
 
 
-        template<typename Container>
-        class SynchronizedUniverzalIterator: public SynchronizedIterator<Container> {
+        template<typename Iterator>
+        class SynchronizedUniversalIterator: public SynchronizedIterator<Iterator> {
         public:
-
-            using Iterator = typename Container::const_iterator;
 
             // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdVectos.
             // Are all positions at this class?
@@ -168,10 +154,10 @@ namespace Mata {
                 return this->positions;
             };
 
-            explicit SynchronizedUniverzalIterator(const int size=0) : SynchronizedIterator<Container>(size) {};
+            explicit SynchronizedUniversalIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {};
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Container > ::reset(size);
+                SynchronizedIterator < Iterator > ::reset(size);
                 this->synchronized_at_current_minimum = false;
             };
         };
@@ -179,11 +165,9 @@ namespace Mata {
 
 
 
-        template<typename Container>
-        class SynchronizedExistentialIterator : public SynchronizedIterator<Container> {
+        template<typename Iterator>
+        class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
         public:
-
-            using Iterator = typename Container::const_iterator;
 
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
             Iterator next_minimum;
@@ -246,7 +230,7 @@ namespace Mata {
                 return this->currently_synchronized;
             };
 
-            void push_back_boundaries (const Iterator &begin, const Iterator &end) {
+            void push_back (const Iterator &begin, const Iterator &end) {
 
                 // Empty vector would not have any effect (unlike in the case of the universal iterator).
                 if (begin == end) return;
@@ -266,19 +250,30 @@ namespace Mata {
                 this->ends.emplace_back(end);
             };
 
-            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Container>(size)
+            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Iterator>(size)
             {
                 this->currently_synchronized.reserve(size);
             };
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Container > ::reset(size);
+                SynchronizedIterator < Iterator > ::reset(size);
                 if (size > 0) {
                     this->currently_synchronized.reserve(size);
                 }
             };
         };
+
+        // In order to make initialisation of the sync. iterator nicer than inputting v.begin() and v.end()
+        // as the two parameters of the method push_back,
+        // this function wraps the method push_back,
+        // takes the iterator and v and extracts the v.begin() and v.end() from v.
+        template<class Container>
+        void push_back (SynchronizedIterator<typename Container::const_iterator> &i,const Container &container) {
+            i.push_back(container.begin(),container.end());
+        };
     }
 }
+
+
 
 #endif //LIBMATA_SYNCHRONIZED_ITERATOR_HH
