@@ -428,6 +428,139 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 }
 
+TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
+{ // {{{
+    Afa aut;
+    Mata::IntermediateAut inter_aut;
+    StringToSymbolMap symbol_map;
+
+    SECTION("construct an empty automaton")
+    {
+        inter_aut.automaton_type = Mata::IntermediateAut::AFA;
+        //REQUIRE(is_lang_empty(aut));
+        aut = Mata::Afa::construct(inter_aut);
+        REQUIRE(true);
+        //REQUIRE(is_lang_empty(aut));
+    }
+
+    SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q r\n"
+                "%Alphabet-auto\n"
+                "%Initial p | q\n"
+                "%Final p | q\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        aut = construct(inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 2);
+    }
+
+    SECTION("construct an automaton with more than one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial p | q\n"
+                "%Final p & q & r\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 3);
+    }
+
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q r\n"
+                "%Alphabet-auto\n"
+                "%Initial p q\n"
+                "%Final p q r\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(aut.finalstates.size() == 3);
+    }
+
+    SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q r m n\n"
+                "%Alphabet-auto\n"
+                "%Initial p q r\n"
+                "%Final p q m n\n";
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut);
+
+        REQUIRE(aut.initialstates.size() == 3);
+        REQUIRE(aut.finalstates.size() == 4);
+    }
+
+    SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial q1\n"
+                "%Final q2\n"
+                "q1 a & q2\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+        construct(&aut, inter_aut, &symbol_map);
+    }
+
+    SECTION("construct a more complicated non-empty automaton from intermediate automaton")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%States-enum p q 3\n"
+                "%Alphabet-auto\n"
+                "%Initial q1 | q3\n"
+                "%Final q5\n"
+                "q1 a & ((q2 & q3) | (q4 & q5))\n"
+                "q1 a & q1 & q3\n"
+                "q1 b & q3 & q4\n"
+                "q2 a & ((q3 & q4) | (q4 & q5) | (q3 & q6))\n"
+                "q3 a & ((q3 & q4) | (q4 & q5) | (q3 & q6 & q4) & q5)\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+
+        REQUIRE(aut.trans_size() == 4);
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.size() == 3);
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.begin()->count(
+                state_map["q1"]));
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.begin()->count(
+                state_map["q3"]));
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.size() == 1);
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.begin()->count(
+                state_map["q3"]));
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.begin()->count(
+                state_map["q4"]));
+        REQUIRE(aut.get_trans_from_state(state_map["q2"], symbol_map["a"]).dst.size() == 3);
+        REQUIRE(aut.get_trans_from_state(state_map["q3"], symbol_map["a"]).dst.size() == 2);
+    }
+} // }}}
 
 /*
 TEST_CASE("Mata::Afa::construct() correct calls")
