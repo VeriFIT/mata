@@ -237,6 +237,9 @@ public:
 		return this->has_trans({src, symb, dst});
 	} // }}}
 
+	std::vector<Trans> get_trans_from_state(State state) const;
+	Trans get_trans_from_state(State state, Symbol symbol) const;
+
 	bool trans_empty() const {!transRelation.size();};// no transitions
 	size_t trans_size() const;/// number of transitions; has linear time complexity
 

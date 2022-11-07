@@ -76,6 +76,30 @@ void Afa::add_trans(const Trans& trans)
 
 } // add_trans }}}
 
+std::vector<Trans> Afa::get_trans_from_state(State state) const
+{
+	assert(state < transRelation.size());
+	std::vector<Trans> result = std::vector<Trans>();
+	for(auto transition : transRelation[state])
+	{
+		result.push_back(transition);
+	}
+	return result;
+}
+
+Trans Afa::get_trans_from_state(State state, Symbol symbol) const
+{
+	assert(state < transRelation.size());
+	for(auto transition : transRelation[state])
+	{
+		if(transition.symb == symbol)
+		{
+			return transition;
+		}
+	}
+	return Trans(state, symbol, Nodes());
+}
+
 
 /** This function adds a new inverse transition to the automaton
 * It changes an inverse transition relation.
