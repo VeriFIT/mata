@@ -1340,7 +1340,6 @@ Nfa Mata::Nfa::determinize(
 
         // add moves of S to the sync ex iterator
         for (State q: S) {
-            //synchronized_iterator.push_back(aut.transitionrelation[q]);
             Mata::Util::push_back(synchronized_iterator, aut.transitionrelation[q]);
         }
 
