@@ -9,7 +9,7 @@
 
 namespace Mata {
     namespace Util {
-        /* Two classes that provide "synchronized" iterators through a vector of ordered vectors,
+       /* Two classes that provide "synchronized" iterators through a vector of ordered vectors,
         *  (or of some ordered OrdContainer that have a similar iterator),
         *  needed in computation of post
         *  in subset construction, product, and non-determinization.
@@ -34,7 +34,7 @@ namespace Mata {
         *
         *  The memory allocated internally for positions and ends is kept after reset, so it is advisable to use the same iterator for many iterations, as
         *  opposed to creating a new one for each iteration.
-        *  */
+        */
 
         template<typename Iterator> class SynchronizedIterator {
         public:
@@ -49,10 +49,11 @@ namespace Mata {
                 ends.reserve(size);
             };
 
-            // This is supposed to be called only before an iteration,
-            // after constructor of reset.
-            // Calling after advance breaks the iterator.
-            // Specifies begin and end of one vector, to initialise before the iteration starts.
+           /* This is supposed to be called only before an iteration,
+            * after constructor of reset.
+            * Calling after advance breaks the iterator.
+            * Specifies begin and end of one vector, to initialise before the iteration starts.
+            */
             virtual void push_back (const Iterator &begin, const Iterator &end) {
                 // Btw, I don't know what I am doing with the const & parameter passing,
                 // begin is actually incremented in advance ...? But tests do pass ...
@@ -61,9 +62,10 @@ namespace Mata {
             };
 
 
-            // Empties positions and ends.
-            // Though they should keep the allocated space.
-            // @param size Number of elements to reserve up-front for positions and ends.
+           /* Empties positions and ends.
+            * Though they should keep the allocated space.
+            * @param size Number of elements to reserve up-front for positions and ends.
+            */
             void reset(const int size = 0) {
                 positions.clear();
                 ends.clear();
@@ -83,17 +85,19 @@ namespace Mata {
         class SynchronizedUniversalIterator: public SynchronizedIterator<Iterator> {
         public:
 
-            // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdContainers.
-            // Are we sure that all positions at this class?
-            // Invariant: it can be true only if all positions are indeed synchronized.
+           /* "minimum" would be the smallest class bounded from below by all positions that appears in all OrdContainers.
+            * Are we sure that all positions at this class?
+            * Invariant: it can be true only if all positions are indeed synchronized.
+            */
             bool synchronized_at_current_minimum = false;
 
-            // advance() advances all positions to the NEXT minimum and returns true.
-            // (though the next minimum might be the current state if synchronized_at_current_minimum is false).
-            // or returns false if positions cannot be synchronized.
-            // If positions are synchronized to start with,
-            // then synchronized_at_current_minimum decides whether to stay or advance further.
-            // The general of the algorithm is to synchronize everybody with position[0].
+           /* advance() advances all positions to the NEXT minimum and returns true.
+            * (though the next minimum might be the current state if synchronized_at_current_minimum is false).
+            * or returns false if positions cannot be synchronized.
+            * If positions are synchronized to start with,
+            * then synchronized_at_current_minimum decides whether to stay or advance further.
+            * The general of the algorithm is to synchronize everybody with position[0].
+            */
             bool advance()
             {
                 //Nothing to synchronize.
@@ -172,11 +176,13 @@ namespace Mata {
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
             Iterator next_minimum;
 
-            // Advances all positions just above current_minimum,
-            // that is, to or above next_minimum.
-            // Those at next_minimum are added to currently_synchronized.
-            // Since next_minimum becomes the current minimum,
-            // new next_minimum must be updated too.
+
+            /* Advances all positions just above current_minimum,
+             * that is, to or above next_minimum.
+             * Those at next_minimum are added to currently_synchronized.
+             * Since next_minimum becomes the current minimum,
+             * new next_minimum must be updated too.
+             */
             bool advance() {
                 // The next_minimum becomes the current current_minimum.
                 auto current_minimum = this->next_minimum;
@@ -222,9 +228,10 @@ namespace Mata {
                 return !currently_synchronized.empty();
             };
 
-            // Returns the vector of current still active positions.
-            // Beware, thy will be ordered differently from how there were input into the iterator.
-            // This is due to swapping of the emptied positions with positions at the end.
+           /* Returns the vector of current still active positions.
+            * Beware, thy will be ordered differently from how there were input into the iterator.
+            * This is due to swapping of the emptied positions with positions at the end.
+            */
             const std::vector<Iterator> get_current()
             {
                 return this->currently_synchronized;
@@ -263,10 +270,11 @@ namespace Mata {
             };
         };
 
-        // In order to make initialisation of the sync. iterator nicer than inputting v.begin() and v.end()
-        // as the two parameters of the method push_back,
-        // this function wraps the method push_back,
-        // takes the iterator and v and extracts the v.begin() and v.end() from v.
+       /* In order to make initialisation of the sync. iterator nicer than inputting v.begin() and v.end()
+        * as the two parameters of the method push_back,
+        * this function wraps the method push_back,
+        * takes the iterator and v and extracts the v.begin() and v.end() from v.
+        */
         template<class Container>
         void push_back (SynchronizedIterator<typename Container::const_iterator> &i,const Container &container) {
             i.push_back(container.begin(),container.end());
