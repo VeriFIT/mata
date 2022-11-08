@@ -1041,11 +1041,13 @@ Afa Mata::Afa::construct(
         if (remove_state_map) { delete state_map; }
     };
 
+    // lambda returning true if node is operator of given type
     auto is_node_operator =
             [](const FormulaNode& node, FormulaNode::OperatorType type) -> bool {
         return node.is_operator() && node.operator_type == type;
     };
 
+    // lambda creates Node from set of strings which are state names
     auto create_node = [get_state_name](
             const std::unordered_set<std::string>& states_names) -> Node {
         Node tgt_node;
@@ -1095,15 +1097,18 @@ Afa Mata::Afa::construct(
         const FormulaGraph* act_graph = &trans.second.children[1];
 
         while (is_node_operator(act_graph->node, FormulaNode::OR))
-        {
+        {  // Processes each clause separately
             assert(act_graph->children[1].node.is_operand() ||
                 is_node_operator(act_graph->children[1].node, FormulaNode::AND));
+            // Conjunction is the right son of current node
             aut.add_trans(src_state, symbol,
                           create_node(act_graph->children[1].collect_node_names()));
 
+            // jump to another clause which is the left son of current node
             act_graph = &act_graph->children.front();
         }
 
+        // process remaining conjunction
         assert(act_graph->node.is_operand() ||
                is_node_operator(act_graph->node, FormulaNode::AND));
         aut.add_trans(src_state, symbol,

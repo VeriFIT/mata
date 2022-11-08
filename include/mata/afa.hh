@@ -426,12 +426,18 @@ Afa construct(
 	    const Mata::Parser::ParsedSection&   parsec,
         Alphabet*                            alphabet,
 	    StringToStateMap*                    state_map = nullptr);
-
+/**
+ * Loads automaton from intermediate automaton
+ */
 Afa construct(
         const Mata::IntermediateAut&         inter_aut,
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map = nullptr);
 
+/**
+ * Loads automaton from parsed object (either ParsedSection or Intermediate automaton.
+ * If user does not provide symbol map or state map, it allocates its own ones.
+ */
 template <class ParsedObject>
 Afa construct(
         const ParsedObject&                  parsed,
