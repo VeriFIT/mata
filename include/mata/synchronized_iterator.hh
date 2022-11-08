@@ -9,53 +9,63 @@
 
 namespace Mata {
     namespace Util {
+       /* Two classes that provide "synchronized" iterators through a vector of ordered vectors,
+        *  (or of some ordered OrdContainer that have a similar iterator),
+        *  needed in computation of post
+        *  in subset construction, product, and non-determinization.
+        *  The Type stored in OrdContainers must be comparable with <,>,==,!=,<=,>=,
+        *  and it must be a total (linear) ordering.
+        *  The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
+        *  TransSymbolStates is ordered by the symbol.
+        *
+        *  SyncrhonisedIterator is the parent virtual class.
+        *  It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
+        *  They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and ends, respectively
+        *  Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
+        *  (next smallest symbol in the case of TransSymbolStates).
+        *
+        *  There are two versions of the class.
+        *  i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
+        *  Method get_current then returns the vector of all position iterators, synchronized.
+        *  ii) In determinization, it is enough that there EXISTS a position that points to the smallest class.
+        *  Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
+        *
+        *  Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
+        *
+        *  The memory allocated internally for positions and ends is kept after reset, so it is advisable to use the same iterator for many iterations, as
+        *  opposed to creating a new one for each iteration.
+        */
 
-        // Classes that provide "synchronized" iterators through a vector of ordered vectors,
-        // needed in computation of post
-        // in subset construction, product, and non-determinization.
-        // Key is the type stored in OrdVectors, it must be comparable with <,>,==,!=,<=,>=,
-        // and it must be a total (linear) ordering.
-        // The intended usage in, for instance, determinisation is for Key to be TransSymbolStates.
-        // TransSymbolStates is ordered by the symbol.
-        //
-        // SyncrhonisedIterator is the parent virtual class.
-        // It stores a vector of end-iterators for the OrdVectors and a vector of current positions.
-        // They are filled in using the function push_back(v), that adds v.begin() to positions and v.end() to ends.
-        // Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
-        // (next smallest symbol in the case of TransSymbolStates).
-        //
-        // There are two versions of the class.
-        // i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
-        // Method get_current then returns the vector of all position iterators, synchronized.
-        // In determinization, it is enough that there EXISTS a position that points to the smallest class.
-        // Method get_current then returns the vector of only those positions that point to the smallest equiv. class.
-        //
-        // Usage: 0) construct, 1) fill in using push_back, iterate using advance and get_current, 2) reset, goto 1)
-
-        template<typename Key> class SynchronizedIterator {
+        template<typename Iterator> class SynchronizedIterator {
         public:
-            using Iterator = typename OrdVector<Key>::const_iterator;
 
             std::vector<Iterator> positions;
             std::vector<Iterator> ends;
 
+            //@param size Number of elements to reserve up-front for positions and ends.
             explicit SynchronizedIterator(const int size = 0)
             {
                 positions.reserve(size);
                 ends.reserve(size);
             };
 
-            // This is supposed to be called only before an iteration,
-            // after constructor of reset.
-            // Calling after advance breaks the iterator.
-            virtual void push_back (const OrdVector<Key> &vector) {
-                // hope that the parameter is not deep copied ... is it?
-                this->positions.push_back(vector.begin());
-                this->ends.push_back(vector.end());
+           /* This is supposed to be called only before an iteration,
+            * after constructor of reset.
+            * Calling after advance breaks the iterator.
+            * Specifies begin and end of one vector, to initialise before the iteration starts.
+            */
+            virtual void push_back (const Iterator &begin, const Iterator &end) {
+                // Btw, I don't know what I am doing with the const & parameter passing,
+                // begin is actually incremented in advance ...? But tests do pass ...
+                this->positions.emplace_back(begin);
+                this->ends.emplace_back(end);
             };
 
-            // Empties positions and ends.
-            // Though they should keep the allocated space.
+
+           /* Empties positions and ends.
+            * Though they should keep the allocated space.
+            * @param size Number of elements to reserve up-front for positions and ends.
+            */
             void reset(const int size = 0) {
                 positions.clear();
                 ends.clear();
@@ -71,22 +81,23 @@ namespace Mata {
 
 
 
-        template<typename Key>
-        class SynchronizedUniverzalIterator: public SynchronizedIterator<Key> {
+        template<typename Iterator>
+        class SynchronizedUniversalIterator: public SynchronizedIterator<Iterator> {
         public:
 
-            using Iterator = typename OrdVector<Key>::const_iterator;
-
-            // "minimum" would be the smallest class bounded from below by all positions that appears in all OrdVectos.
-            // Are all positions at this class?
-            // Invariant: it can be true only if all positions are indeed synchronized.
+           /* "minimum" would be the smallest class bounded from below by all positions that appears in all OrdContainers.
+            * Are we sure that all positions at this class?
+            * Invariant: it can be true only if all positions are indeed synchronized.
+            */
             bool synchronized_at_current_minimum = false;
 
-            // advance() advances all positions to the NEXT minimum and returns true,
-            // or returns false if positions cannot be synchronized.
-            // If positions are synchronized to start with,
-            // then synchronized_at_current_minimum decides whether to stay or advance further.
-            // The general of the algorithm is to synchronize everybody with position[0].
+           /* advance() advances all positions to the NEXT minimum and returns true.
+            * (though the next minimum might be the current state if synchronized_at_current_minimum is false).
+            * or returns false if positions cannot be synchronized.
+            * If positions are synchronized to start with,
+            * then synchronized_at_current_minimum decides whether to stay or advance further.
+            * The general of the algorithm is to synchronize everybody with position[0].
+            */
             bool advance()
             {
                 //Nothing to synchronize.
@@ -128,8 +139,10 @@ namespace Mata {
                         }
 
                         // If position[0] changed, start from position 1 again.
-                        // (note that i gets incremented at the for-loop body end,
-                        // and that, since we are inside the for, there are at least two positions
+                        // (note that
+                        // i gets incremented at the end of the for-loop body,
+                        // and that,
+                        // since we are inside the for, there are at least two positions
                         // as the for starts with i=1.)
                         if (this->positions[0] > this->positions[1])
                             i=0;
@@ -139,6 +152,7 @@ namespace Mata {
                 return true;
             }
 
+            // Returns the vector of current positions.
             const std::vector<Iterator> get_current()
             {
                 // How to return so that things don't get copied?
@@ -147,31 +161,28 @@ namespace Mata {
                 return this->positions;
             };
 
-            explicit SynchronizedUniverzalIterator(const int size=0) : SynchronizedIterator<Key>(size) {};
+            explicit SynchronizedUniversalIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {};
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Key > ::reset(size);
+                SynchronizedIterator < Iterator > ::reset(size);
                 this->synchronized_at_current_minimum = false;
             };
         };
 
-
-
-
-        template<typename Key>
-        class SynchronizedExistentialIterator : public SynchronizedIterator<Key> {
+        template<typename Iterator>
+        class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
         public:
-
-            using Iterator = typename OrdVector<Key>::const_iterator;
 
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
             Iterator next_minimum;
 
-            // Advances all positions just above current_minimum,
-            // that is, to or above next_minimum.
-            // Those at next_minimum are added to currently_synchronized.
-            // Since next_minimum becomes the current minimum,
-            // new next_minimum must be updated too.
+
+            /* Advances all positions just above current_minimum,
+             * that is, to or above next_minimum.
+             * Those at next_minimum are added to currently_synchronized.
+             * Since next_minimum becomes the current minimum,
+             * new next_minimum must be updated too.
+             */
             bool advance() {
                 // The next_minimum becomes the current current_minimum.
                 auto current_minimum = this->next_minimum;
@@ -202,7 +213,7 @@ namespace Mata {
                     // If we are at the current_minimum, then save it and advance the position.
                     if (*this->positions[i] == *current_minimum)
                     {
-                        this->currently_synchronized.push_back(this->positions[i]);
+                        this->currently_synchronized.emplace_back(this->positions[i]);
                         ++this->positions[i];
                         continue;
                     }
@@ -217,43 +228,56 @@ namespace Mata {
                 return !currently_synchronized.empty();
             };
 
+           /* Returns the vector of current still active positions.
+            * Beware, thy will be ordered differently from how there were input into the iterator.
+            * This is due to swapping of the emptied positions with positions at the end.
+            */
             const std::vector<Iterator> get_current()
             {
                 return this->currently_synchronized;
             };
 
-            // Supposed to be called only before the iteration starts.
-            void push_back (const OrdVector<Key> &vector) {
+            void push_back (const Iterator &begin, const Iterator &end) {
 
                 // Empty vector would not have any effect (unlike in the case of the universal iterator).
-                if (vector.empty()) return;
+                if (begin == end) return;
 
                 // Initialise next_minimum as the first position at the first vector.
                 if (this->positions.empty())
-                    this->next_minimum = vector.begin();
+                    this->next_minimum = begin;
 
                     // If the first position is of the new vector is smaller then minimum,
                     // update minimum.
-                else if (*this->next_minimum > *vector.begin())
-                    this->next_minimum = vector.begin();
+                else if (*this->next_minimum > *begin)
+                    this->next_minimum = begin;
 
                 // Let position point to the beginning the vector,
                 // save the end of the vector.
-                this->positions.push_back(vector.begin());
-                this->ends.push_back(vector.end());
+                this->positions.emplace_back(begin);
+                this->ends.emplace_back(end);
             };
 
-            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Key>(size)
+            explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Iterator>(size)
             {
                 this->currently_synchronized.reserve(size);
             };
 
             void reset(const int size = 0) {
-                SynchronizedIterator < Key > ::reset(size);
+                SynchronizedIterator < Iterator > ::reset(size);
                 if (size > 0) {
                     this->currently_synchronized.reserve(size);
                 }
             };
+        };
+
+       /* In order to make initialisation of the sync. iterator nicer than inputting v.begin() and v.end()
+        * as the two parameters of the method push_back,
+        * this function wraps the method push_back,
+        * takes the iterator and v and extracts the v.begin() and v.end() from v.
+        */
+        template<class Container>
+        void push_back (SynchronizedIterator<typename Container::const_iterator> &i,const Container &container) {
+            i.push_back(container.begin(),container.end());
         };
     }
 }

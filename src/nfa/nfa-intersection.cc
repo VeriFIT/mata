@@ -117,12 +117,12 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductM
         pair_to_process = *pairs_to_process.cbegin();
         pairs_to_process.erase(pair_to_process);
         // Compute classic product for current state pair.
-        Mata::Util::SynchronizedUniverzalIterator<TransSymbolStates> sui(2);
-        sui.push_back(lhs.transitionrelation[pair_to_process.first]);
-        sui.push_back(rhs.transitionrelation[pair_to_process.second]);
+        Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<TransSymbolStates>::const_iterator> sync_iterator(2);
+        Mata::Util::push_back(sync_iterator,lhs.transitionrelation[pair_to_process.first]);
+        Mata::Util::push_back(sync_iterator,rhs.transitionrelation[pair_to_process.second]);
 
-        while (sui.advance()) {
-            std::vector<TransitionList::const_iterator> moves = sui.get_current();
+        while (sync_iterator.advance()) {
+            std::vector<TransitionList::const_iterator> moves = sync_iterator.get_current();
             assert(moves.size() == 2); // One move per state in the pair.
 
             // Compute product for state transitions with same symbols.
