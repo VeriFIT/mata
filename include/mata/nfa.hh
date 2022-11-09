@@ -70,10 +70,6 @@ struct Run {
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
-template<typename Target>
-using StateMap = std::unordered_map<State, Target>; // TODO: Potentially remove?
-// TODO: Use vector instead because it would be faster. But do we need to have 0, 40, 10000?
-
 /*
  *TODO:
  * Remove documentation/comments which does not add anything interesting?
@@ -82,10 +78,10 @@ using StateMap = std::unordered_map<State, Target>; // TODO: Potentially remove?
  * */
 
 
-using StateToStringMap = StateMap<std::string>;
+using StateToStringMap = std::unordered_map<State, std::string>;
 // using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
-using StateToStateMap = StateMap<State>;
+using StateToStateMap = std::unordered_map<State, State>;
 
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 /*TODO: this should become a part of the automaton somehow.
@@ -1184,7 +1180,7 @@ private:
      * Initialize map of visited states.
      * @return Map of visited states.
      */
-    StateMap<bool> initialize_visited_map() const;
+    std::unordered_map<State, bool> initialize_visited_map() const;
 
     /**
      * Initialize worklist of states with depths to process.
@@ -1261,7 +1257,7 @@ private:
     /// Pair binding the length of all words in the word set and word set with words of the given length.
     using LengthWordsPair = std::pair<WordLength, WordSet>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    StateMap<LengthWordsPair> shortest_words_map{};
+    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
     const Nfa reversed_automaton; ///< Reversed input automaton.

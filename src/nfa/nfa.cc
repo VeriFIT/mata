@@ -597,7 +597,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     result.increase_size(aut.size());
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    StateMap<StateSet> eps_closure;
+    std::unordered_map<State, StateSet> eps_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure

@@ -69,9 +69,9 @@ std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initializ
     return worklist;
 }
 
-StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
+std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() const
 {
-    StateMap<bool> visited{};
+    std::unordered_map<State, bool> visited{};
     const size_t state_num = automaton.size();
     for (State state{ 0 }; state < state_num; ++state)
     {
@@ -153,7 +153,7 @@ const AutSequence& SegNfa::Segmentation::get_untrimmed_segments()
 
 void SegNfa::Segmentation::compute_epsilon_depths()
 {
-    StateMap<bool> visited{ initialize_visited_map() };
+    std::unordered_map<State, bool> visited{ initialize_visited_map() };
     std::deque<StateDepthPair> worklist{ initialize_worklist() };
 
     while (!worklist.empty())
