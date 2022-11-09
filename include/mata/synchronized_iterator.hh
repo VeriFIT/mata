@@ -15,14 +15,14 @@ namespace Mata {
         // in subset construction, product, and non-determinization.
         // Key is the type stored in OrdVectors, it must be comparable with <,>,==,!=,<=,>=,
         // and it must be a total (linear) ordering.
-        // The intended usage in, for instance, determinisation is for Key to be TransSymbolStates.
-        // TransSymbolStates is ordered by the symbol.
+        // The intended usage in, for instance, determinisation is for Key to be Move.
+        // Move is ordered by the symbol.
         //
         // SyncrhonisedIterator is the parent virtual class.
         // It stores a vector of end-iterators for the OrdVectors and a vector of current positions.
         // They are filled in using the function push_back(v), that adds v.begin() to positions and v.end() to ends.
         // Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
-        // (next smallest symbol in the case of TransSymbolStates).
+        // (next smallest symbol in the case of Move).
         //
         // There are two versions of the class.
         // i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).

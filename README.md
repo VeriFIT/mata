@@ -126,8 +126,8 @@ int main() {
 You can set the initial and final states directly using the initializers.
 
 ```cpp
-    aut.initialstates = {0, 1};
-    aut.finalstates = {2, 3};
+    aut.initial_states = {0, 1};
+    aut.final_states = {2, 3};
 ```
 
 Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:

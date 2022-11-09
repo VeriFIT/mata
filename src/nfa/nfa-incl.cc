@@ -27,8 +27,8 @@ bool Mata::Nfa::Algorithms::is_incl_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
-	Word*                  cex,
-	const StringDict&  /* params*/)
+	Run*                   cex,
+	const StringMap&  /* params*/)
 { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
@@ -54,8 +54,8 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
-	Word*                  cex,
-	const StringDict&      params)
+	Run*                   cex,
+	const StringMap&      params)
 { // {{{
 	(void)params;
 	(void)alphabet;
@@ -92,15 +92,15 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
 	// check initial states first
-	for (const auto& state : smaller.initialstates) {
+	for (const auto& state : smaller.initial_states) {
 		if (smaller.has_final(state) &&
-			are_disjoint(bigger.initialstates, bigger.finalstates))
+			are_disjoint(bigger.initial_states, bigger.final_states))
 		{
-			if (nullptr != cex) { cex->clear(); }
+			if (nullptr != cex) { cex->word.clear(); }
 			return false;
 		}
 
-		const ProdStateType st = std::make_pair(state, bigger.initialstates);
+		const ProdStateType st = std::make_pair(state, bigger.initial_states);
 		worklist.push_back(st);
 		processed.push_back(st);
 
@@ -130,19 +130,19 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 				const ProdStateType succ = {smaller_succ, bigger_succ};
 
 				if (smaller.has_final(smaller_succ) &&
-					are_disjoint(bigger_succ, bigger.finalstates))
+					are_disjoint(bigger_succ, bigger.final_states))
 				{
 					if (nullptr != cex) {
-						cex->clear();
-						cex->push_back(symb);
+						cex->word.clear();
+						cex->word.push_back(symb);
 						ProdStateType trav = prod_state;
 						while (paths[trav].first != trav)
 						{ // go back until initial state
-							cex->push_back(paths[trav].second);
+							cex->word.push_back(paths[trav].second);
 							trav = paths[trav].first;
 						}
 
-						std::reverse(cex->begin(), cex->end());
+						std::reverse(cex->word.begin(), cex->word.end());
 					}
 
 					return false;
@@ -188,7 +188,7 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 namespace {
     using AlgoType = decltype(Algorithms::is_incl_naive)*;
 
-    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringDict &params,
+    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringMap &params,
                              const AlgoType &algo) {
         if (algo(lhs, rhs, alphabet, nullptr, params)) {
             if (algo(rhs, lhs, alphabet, nullptr, params)) {
@@ -199,7 +199,7 @@ namespace {
         return false;
     }
 
-    AlgoType set_algorithm(const std::string &function_name, const StringDict &params) {
+    AlgoType set_algorithm(const std::string &function_name, const StringMap &params) {
         if (!haskey(params, "algo")) {
             throw std::runtime_error(function_name +
                                      " requires setting the \"algo\" key in the \"params\" argument; "
@@ -226,15 +226,15 @@ namespace {
 bool Mata::Nfa::is_incl(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
-    Word*                  cex,
+    Run*                   cex,
 	const Alphabet* const  alphabet,
-	const StringDict&      params)
+	const StringMap&      params)
 { // {{{
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 	return algo(smaller, bigger, alphabet, cex, params);
 } // is_incl }}}
 
-bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet* const alphabet, const StringDict& params)
+bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
 {
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
@@ -248,6 +248,6 @@ bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const Alphabet
     return compute_equivalence(lhs, rhs, alphabet, params, algo);
 }
 
-bool Mata::Nfa::equivalence_check(const Nfa& lhs, const Nfa& rhs, const StringDict& params) {
-    return equivalence_check(lhs, rhs, nullptr, params);
+bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params) {
+    return are_equivalent(lhs, rhs, nullptr, params);
 }

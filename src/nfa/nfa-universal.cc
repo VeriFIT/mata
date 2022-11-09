@@ -26,8 +26,8 @@ using namespace Mata::util;
 bool Mata::Nfa::Algorithms::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  /* params*/)
+	Run*               cex,
+	const StringMap&  /* params*/)
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
 
@@ -46,8 +46,8 @@ bool Mata::Nfa::Algorithms::is_universal_naive(
 bool Mata::Nfa::Algorithms::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	Run*               cex,
+	const StringMap&  params)
 { // {{{
 	(void)params;
 
@@ -67,20 +67,20 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 	bool is_dfs = true;
 
 	// check the initial state
-	if (are_disjoint(aut.initialstates, aut.finalstates)) {
-		if (nullptr != cex) { cex->clear(); }
+	if (are_disjoint(aut.initial_states, aut.final_states)) {
+		if (nullptr != cex) { cex->word.clear(); }
 		return false;
 	}
 
 	// initialize
-	WorklistType worklist = { aut.initialstates };
-	ProcessedType processed = { aut.initialstates };
-	SymbolSet alph_symbols = alphabet.get_alphabet_symbols();
+	WorklistType worklist = { aut.initial_states };
+	ProcessedType processed = { aut.initial_states };
+	Mata::Util::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
 	std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-		{ {aut.initialstates, {aut.initialstates, 0}} };
+		{ {aut.initial_states, {aut.initial_states, 0}} };
 
 	while (!worklist.empty()) {
 		// get a next state
@@ -96,18 +96,18 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols) {
 			StateSet succ = aut.post(state, symb);
-			if (are_disjoint(succ, aut.finalstates)) {
+			if (are_disjoint(succ, aut.final_states)) {
 				if (nullptr != cex) {
-					cex->clear();
-					cex->push_back(symb);
+					cex->word.clear();
+					cex->word.push_back(symb);
 					StateSet trav = state;
 					while (paths[trav].first != trav)
 					{ // go back until initial state
-						cex->push_back(paths[trav].second);
+						cex->word.push_back(paths[trav].second);
 						trav = paths[trav].first;
 					}
 
-					std::reverse(cex->begin(), cex->end());
+					std::reverse(cex->word.begin(), cex->word.end());
 				}
 
 				return false;
@@ -153,8 +153,8 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 bool Mata::Nfa::is_universal(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	Run*               cex,
+	const StringMap&  params)
 { // {{{
 
 	// setting the default algorithm

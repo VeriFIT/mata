@@ -22,7 +22,7 @@ using namespace Mata::Nfa;
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_depth_pair,
                                                     std::deque<StateDepthPair>& worklist)
 {
-    auto outgoing_transitions{ automaton.get_transitions_from(state_depth_pair.state) };
+    auto outgoing_transitions{automaton.get_moves_from(state_depth_pair.state) };
     for (const auto& state_transitions: outgoing_transitions)
     {
         if (state_transitions.symbol == epsilon)
@@ -37,7 +37,7 @@ void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_
 }
 
 void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& state_depth_pair,
-                                                      const TransSymbolStates& state_transitions,
+                                                      const Move& state_transitions,
                                                       std::deque<StateDepthPair>& worklist)
 {
     epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
@@ -50,7 +50,7 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& stat
     }
 }
 
-void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+void SegNfa::Segmentation::add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
                                                        std::deque<StateDepthPair>& worklist)
 {
     for (State target_state: state_transitions.states_to)
@@ -62,7 +62,7 @@ void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& 
 std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initialize_worklist() const
 {
     std::deque<StateDepthPair> worklist{};
-    for (State state: automaton.initialstates)
+    for (State state: automaton.initial_states)
     {
         worklist.push_back(StateDepthPair{ state, 0 });
     }
@@ -72,7 +72,7 @@ std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initializ
 StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
 {
     StateMap<bool> visited{};
-    const size_t state_num = automaton.get_num_of_states();
+    const size_t state_num = automaton.size();
     for (State state{ 0 }; state < state_num; ++state)
     {
         visited[state] = false;
@@ -117,7 +117,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     assert(transition.symb == epsilon);
     assert(segments_raw[current_depth].has_trans(transition));
 
-    segments_raw[current_depth].make_final(transition.src);
+    segments_raw[current_depth].add_final(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
     segments_raw[current_depth].remove_trans(transition);
 }
@@ -131,7 +131,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
-    segments_raw[next_depth].make_initial(transition.tgt);
+    segments_raw[next_depth].add_initial(transition.tgt);
 }
 
 const AutSequence& SegNfa::Segmentation::get_segments()

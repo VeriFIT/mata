@@ -30,8 +30,8 @@ using namespace Mata::Parser;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-	x.initialstates = {1, 3}; \
-	x.finalstates = {5}; \
+	x.initial_states = {1, 3}; \
+	x.final_states = {5}; \
 	x.add_trans(1, 'a', 3); \
 	x.add_trans(1, 'a', 10); \
 	x.add_trans(1, 'b', 7); \
@@ -85,8 +85,8 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
     SECTION("Small automaton with depths")
     {
-        aut.make_initial(1);
-        aut.make_final(8);
+        aut.add_initial(1);
+        aut.add_final(8);
         aut.add_trans(1, epsilon, 2);
         aut.add_trans(2, 'a', 3);
         aut.add_trans(2, 'b', 4);
@@ -111,8 +111,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
     Symbol epsilon{ 'c' };
     SECTION("Large automaton") {
         Nfa aut(100);
-        aut.make_initial(1);
-        aut.make_final(11);
+        aut.add_initial(1);
+        aut.add_final(11);
         aut.add_trans(1, 'a', 2);
         aut.add_trans(1, 'b', 3);
         aut.add_trans(3, 'c', 4);
@@ -157,8 +157,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
 
     SECTION("Correctly make states final and initial") {
         Nfa aut(100);
-        aut.make_initial(0);
-        aut.make_final({ 4, 6 });
+        aut.add_initial(0);
+        aut.add_final({4, 6});
         aut.add_trans(0, epsilon, 2);
         aut.add_trans(0, 'a', 1);
         aut.add_trans(1, epsilon, 3);
@@ -170,27 +170,27 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
         auto segments{ segmentation.get_segments() };
         CHECK(segments.size() == 3);
 
-        CHECK(segments[0].initialstates.size() == 1);
+        CHECK(segments[0].initial_states.size() == 1);
         CHECK(segments[0].has_initial(0));
-        CHECK(segments[0].finalstates.size() == 2);
+        CHECK(segments[0].final_states.size() == 2);
         CHECK(segments[0].has_final(0));
         CHECK(segments[0].has_final(1));
         CHECK(segments[0].get_num_of_trans() == 1);
         CHECK(segments[0].has_trans(0, 'a', 1));
 
-        CHECK(segments[1].initialstates.size() == 2);
+        CHECK(segments[1].initial_states.size() == 2);
         CHECK(segments[1].has_initial(0));
         CHECK(segments[1].has_initial(1));
-        CHECK(segments[1].finalstates.size() == 2);
+        CHECK(segments[1].final_states.size() == 2);
         CHECK(segments[1].has_final(0));
         CHECK(segments[1].has_final(2));
         CHECK(segments[1].get_num_of_trans() == 1);
         CHECK(segments[1].has_trans(1, 'b', 2));
 
-        CHECK(segments[2].initialstates.size() == 2);
+        CHECK(segments[2].initial_states.size() == 2);
         CHECK(segments[2].has_initial(0));
         CHECK(segments[2].has_initial(1));
-        CHECK(segments[2].finalstates.size() == 2);
+        CHECK(segments[2].final_states.size() == 2);
         CHECK(segments[2].has_final(0));
         CHECK(segments[2].has_final(1));
         CHECK(segments[2].get_num_of_trans() == 0);
