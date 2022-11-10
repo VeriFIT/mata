@@ -585,10 +585,6 @@ void Mata::Nfa::make_complete(
     }
 }
 
-void Mata::Nfa::make_complete(Nfa* aut, const Alphabet& alphabet, const State sink_state) {
-    make_complete(*aut, alphabet, sink_state);
-}
-
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 {
     Nfa result;

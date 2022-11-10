@@ -5,8 +5,10 @@
 #include "../3rdparty/catch.hpp"
 
 #include <mata/nfa.hh>
+#include <mata/nfa-plumbing.hh>
 
 using namespace Mata::Nfa;
+using namespace Mata::Nfa::Plumbing;
 using namespace Mata::util;
 using namespace Mata::Parser;
 

@@ -86,11 +86,6 @@ void create_product_state_and_trans(
 namespace Mata {
 namespace Nfa {
 
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
-                  std::unordered_map<std::pair<State,State>, State> *prod_map) {
-    *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
-}
-
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
                  std::unordered_map<std::pair<State,State>, State> *prod_map) {
     Nfa product{}; // Product of the intersection.

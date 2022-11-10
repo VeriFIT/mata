@@ -21,11 +21,6 @@ using namespace Mata::Nfa;
 namespace Mata {
 namespace Nfa {
 
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
-                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
-    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_states_map, rhs_result_states_map);
-}
-
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
     // Compute concatenation of given automata.

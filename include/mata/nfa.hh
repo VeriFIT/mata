@@ -741,32 +741,6 @@ bool is_lang_empty(const Nfa& aut, Run* cex = nullptr);
 
 Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
-inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs)
-{ // {{{
-    *unionAutomaton = uni(lhs, rhs);
-} // uni }}}
-
-/**
- * @brief Compute intersection of two NFAs.
- *
- * Supports epsilon symbols when @p preserve_epsilon is set to true.
- * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
- *  contain ε-transitions. The product preserves the ε-transitions
- *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
- *  an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
- *  a product state `(s, a) -ε-> (p, b)` is created.
- *
- * Automata must share alphabets.
- *
- * @param[out] res Result product NFA of the intersection of @p lhs and @p rhs.
- * @param[in] lhs First NFA to compute intersection for.
- * @param[in] rhs Second NFA to compute intersection for.
- * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
- * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
- */
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
-                  bool preserve_epsilon = false, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
-
 /**
  * @brief Compute intersection of two NFAs.
  *
@@ -792,21 +766,6 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @brief Concatenate two NFAs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
- * @param[out] res Concatenated automaton as a result of the concatenation of @p lhs and @p rhs.
- * @param[in] lhs First automaton to concatenate.
- * @param[in] rhs Second automaton to concatenate.
- * @param[out] lhs_result_states_map Map mapping lhs states to result states.
- * @param[out] rhs_result_states_map Map mapping rhs states to result states.
- * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- */
- // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon()
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
-
-/**
- * @brief Concatenate two NFAs.
- *
- * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
@@ -814,6 +773,7 @@ void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = fa
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
+        // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon()
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
@@ -821,17 +781,6 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
 // TODO: complete().
 void make_complete(
         Nfa&             aut,
-        const Alphabet&  alphabet,
-        State            sink_state);
-
-/**
- * Make the transition relation complete.
- * @param[out] aut Automaton with transition relation to be made complete.
- * @param[in] alphabet Alphabet of the automaton.
- * @param[in] sink_state State to handle as a sink state.
- */
-void make_complete(
-        Nfa*             aut,
         const Alphabet&  alphabet,
         State            sink_state);
 
@@ -845,35 +794,12 @@ Nfa complement(
         const StringMap&  params = {{"algo", "classical"}},
         std::unordered_map<StateSet, State> *subset_map = nullptr);
 
-inline void complement(
-        Nfa*               result,
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params = {{"algo", "classical"}},
-        std::unordered_map<StateSet, State> *subset_map = nullptr)
-{ // {{{
-    *result = complement(aut, alphabet, params, subset_map);
-} // complement }}}
-
 Nfa minimize(const Nfa &aut);
-
-inline void minimize(Nfa* res, const Nfa &aut)
-{ // {{{
-    *res = minimize(aut);
-} // minimize }}}
 
 /// Determinize an automaton
 Nfa determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map = nullptr);
-
-inline void determinize(
-        Nfa*        result,
-        const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map = nullptr)
-{ // {{{
-    *result = determinize(aut, subset_map);
-} // determinize }}}
 
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
@@ -885,29 +811,12 @@ Nfa reduce(
         StateToStateMap *state_map = nullptr,
         const StringMap&  params = {{"algorithm", "simulation"}});
 
-inline void reduce(
-        Nfa* result,
-        const Nfa &aut,
-        StateToStateMap *state_map = nullptr,
-        const StringMap&  params = {{"algorithm", "simulation"}})
-{ // {{{
-    *result = reduce(aut, state_map, params);
-} // reduce }}}
-
 /// Is the language of the automaton universal?
 bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         Run*              cex = nullptr,
         const StringMap&  params = {{"algo", "antichains"}});
-
-inline bool is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params)
-{ // {{{
-    return is_universal(aut, alphabet, nullptr, params);
-} // }}}
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -926,25 +835,6 @@ bool is_incl(
         Run*               cex,
         const Alphabet*    alphabet = nullptr,
         const StringMap&   params = {{"algo", "antichains"}});
-
-/**
- * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
- *
- * @param smaller[in] First automaton to concatenate.
- * @param bigger[in] Second automaton to concatenate.
- * @param alphabet[in] Alphabet of both NFAs to compute with.
- * @param params[in] Optional parameters to control the equivalence check algorithm:
- * - "algo": "naive", "antichains" (Default: "antichains")
- * @return True if @p smaller is included in @p bigger, false otherwise.
- */
-inline bool is_incl(
-        const Nfa&             smaller,
-        const Nfa&             bigger,
-        const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algo", "antichains"}})
-{ // {{{
-    return is_incl(smaller, bigger, nullptr, alphabet, params);
-} // }}}
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -981,18 +871,8 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{
 /// Reverting the automaton
 Nfa revert(const Nfa& aut);
 
-inline void revert(Nfa* result, const Nfa& aut)
-{ // {{{
-    *result = revert(aut);
-} // revert }}}
-
 /// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON)
-{ // {{{
-    *result = remove_epsilon(aut, epsilon);
-} // remove_epsilon }}}
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
 /// one initial state and every state has at most one outgoing transition over
@@ -1570,17 +1450,6 @@ Nfa construct(
     }
     return aut;
 }
-
-/** Loads an automaton from Parsed object */
-template <class ParsedObject>
-void construct(
-        Nfa*                                 result,
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr)
-{ // {{{
-    *result = construct(parsed, symbol_map, state_map);
-} // construct }}}
 
 // CLOSING NAMESPACES AND GUARDS
 } /* Nfa */
