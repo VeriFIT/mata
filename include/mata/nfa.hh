@@ -670,7 +670,6 @@ public:
      *
      * @param[out] result An automaton representing a directed graph.
      */
-     // TODO: Move all pointer functions to special namespace and call from python and optinoally from c++ if user wants to
     void get_digraph(Nfa& result) const;
 
     void print_to_DOT(std::ostream &outputStream) const;
