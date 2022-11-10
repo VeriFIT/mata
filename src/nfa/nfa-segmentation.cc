@@ -115,7 +115,7 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
 void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
 {
     assert(transition.symb == epsilon);
-    assert(segments_raw[current_depth].has_trans(transition));
+    assert(segments_raw[current_depth].has_trans(transition.src, transition.symb, transition.tgt));
 
     segments_raw[current_depth].add_final(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
@@ -127,7 +127,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
     const size_t next_depth = current_depth + 1;
 
     assert(transition.symb == epsilon);
-    assert(segments_raw[next_depth].has_trans(transition));
+    assert(segments_raw[next_depth].has_trans(transition.src, transition.symb, transition.tgt));
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions

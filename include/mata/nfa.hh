@@ -302,9 +302,6 @@ using Moves = Mata::Util::OrdVector<Move>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
 using TransitionRelation = std::vector<Moves>;
 
-
-// TODO: All lists rename to vectors or maybe to Sequences ...
-
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
 
@@ -320,8 +317,8 @@ struct Nfa
      *
      */
     TransitionRelation transition_relation;
-    StateSet initial_states = {}; // TODO: Use initial_states.
-    StateSet final_states = {}; // TODO: Use final_states.
+    StateSet initial_states = {};
+    StateSet final_states = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -341,15 +338,6 @@ public:
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
         : transition_relation(num_of_states), initial_states(initial_states), final_states(final_states),
-          alphabet(alphabet_p) {}
-
-    // TODO: Remove this constructor.
-    /**
-     * @brief Construct a new explicit NFA with already filled transition relation and optionally set initial and final states.
-     */
-    explicit Nfa(const TransitionRelation& transition_relation, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = nullptr)
-        : transition_relation(transition_relation), initial_states(initial_states), final_states(final_states),
           alphabet(alphabet_p) {}
 
     /**
@@ -492,23 +480,6 @@ public:
     }
 
     /**
-     * @brief Reset the underlying NFA to the specified values.
-     *
-     * Clear the underlying NFA and set its members to the passed argument values.
-     *
-     * @param[in] num_of_states A number of states to reset to..
-     * @param[in] initial_states A set of initial states to reset to.
-     * @param[in] final_states A set of final states to reset to.
-     */
-    void reset_nfa(const unsigned long num_of_states, const StateSet& initial_states_p = StateSet{},
-                   const StateSet& final_states_p = StateSet{}) {
-        clear_nfa();
-        increase_size(num_of_states);
-        initial_states = initial_states_p;
-        final_states = final_states_p;
-    }
-
-    /**
      * @brief Get set of symbols used on the transitions in the automaton.
      *
      * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
@@ -613,31 +584,26 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    // TODO: Use only one has_trans version. Perhaps rename to has_transitions.
-    bool has_trans(Trans trans) const
-    {
+    bool has_trans(State src, Symbol symb, State tgt) const
+    { // {{{
         if (transition_relation.empty()) {
             return false;
         }
 
-        const Moves& tl = get_moves_from(trans.src);
+        const Moves& tl = get_moves_from(src);
         if (tl.empty()) {
             return false;
         }
-        auto symbol_transitions{ tl.find(Move{trans.symb} ) };
+        auto symbol_transitions{ tl.find(Move{symb} ) };
         if (symbol_transitions == tl.end()) {
             return false;
         }
 
-        if (symbol_transitions->states_to.find(trans.tgt) == symbol_transitions->states_to.end()) {
+        if (symbol_transitions->states_to.find(tgt) == symbol_transitions->states_to.end()) {
             return false;
         }
 
         return true;
-    }
-    bool has_trans(State src, Symbol symb, State tgt) const
-    { // {{{
-        return this->has_trans({src, symb, tgt});
     } // }}}
 
     /**
@@ -765,31 +731,13 @@ private:
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
 
-
-// TODO: Functions that return word or path could just return a run, the pair of the two.
-// TODO: The have a variant with and a variant without cex.
 /**
  * Check whether is the language of the automaton empty.
  * @param[in] aut Automaton to check.
  * @param[out] cex Counter-example path for a case the language is not empty.
  * @return True if the language is empty, false otherwise.
  */
-bool is_lang_empty(const Nfa& aut, Run* cex);
-
-/**
- * Check whether is the language of the automaton empty.
- * @param[in] aut Automaton to check.
- * @return True if the language is empty, false otherwise.
- */
-bool is_lang_empty(const Nfa& aut);
-
-/**
- * Check whether is the language of the automaton empty.
- * @param[in] aut Automaton to check.
- * @param[out] cex Counter-example word for a case the language is not empty.
- * @return True if the language is empty, false otherwise.
- */
-bool is_lang_empty_cex(const Nfa& aut, Run* cex);
+bool is_lang_empty(const Nfa& aut, Run* cex = nullptr);
 
 Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
@@ -876,8 +824,6 @@ void make_complete(
         const Alphabet&  alphabet,
         State            sink_state);
 
-// TODO: Use is_<xyz> for all checks asking the automaton for some property.
-
 /**
  * Make the transition relation complete.
  * @param[out] aut Automaton with transition relation to be made complete.
@@ -929,7 +875,6 @@ inline void determinize(
     *result = determinize(aut, subset_map);
 } // determinize }}}
 
-// TODO: Move all dispatch functions to a separate namespace.
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});

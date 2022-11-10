@@ -51,7 +51,9 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
             ++result_state_index;
         }
 
-        result = Nfa(lhs.transition_relation, lhs.initial_states);
+        result = Nfa();
+        result.transition_relation = lhs.transition_relation;
+        result.initial_states = lhs.initial_states;
         result.increase_size(result_num_of_states);
 
         // Add epsilon transitions connecting lhs and rhs automata.

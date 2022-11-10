@@ -542,7 +542,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
 		aut.add_trans(3, 'e', 5);
 		aut.add_trans(4, 'c', 8);
 
-		bool is_empty = is_lang_empty_cex(aut, &cex);
+		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
 
 		// check the counterexample

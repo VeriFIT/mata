@@ -824,45 +824,6 @@ Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const StateToStringMap*   state_map)
 {assert(false);}
 
-bool Mata::Nfa::is_lang_empty(const Nfa& aut)
-{ // {{{
-    std::vector<State> worklist(aut.initial_states.begin(), aut.initial_states.end());
-    std::vector<bool> processed(aut.transition_relation.size(), false);
-    for (const auto initial_state: aut.initial_states) {
-        processed[initial_state] = true;
-    }
-    const std::vector<bool> final_states = [&]{
-        std::vector<bool> states(aut.transition_relation.size(), false);
-        for (const auto final_state: aut.final_states) {
-            states[final_state] = true;
-        }
-        return states;
-    }();
-    const bool trans_empty{aut.has_no_transitions() };
-    while (!worklist.empty()) {
-        const State state = worklist.back();
-        worklist.pop_back();
-
-        if (final_states[state]) {
-            return false;
-        }
-        if (trans_empty) {
-            continue;
-        }
-
-        for (const auto& symb_stateset : aut[state]) {
-            for (const auto& tgt_state : symb_stateset.states_to) {
-                if (!processed[tgt_state]) {
-                    worklist.push_back(tgt_state);
-                    processed[tgt_state] = true;
-                }
-            }
-        }
-    }
-
-    return true;
-} // is_lang_empty }}}
-
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
     std::list<State> worklist(
@@ -897,8 +858,8 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
                 }
 
                 std::reverse(cex->path.begin(), cex->path.end());
+                cex->word = get_word_for_path(aut, *cex).first.word;
             }
-
             return false;
         }
 
@@ -929,20 +890,6 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 
     return true;
 } // is_lang_empty }}}
-
-bool Mata::Nfa::is_lang_empty_cex(const Nfa& aut, Run* cex)
-{
-    assert(nullptr != cex);
-
-    Run run = { };
-    bool result = is_lang_empty(aut, &run);
-    if (result) { return true; }
-    bool consistent;
-    tie(*cex, consistent) = get_word_for_path(aut, run);
-    assert(consistent);
-
-    return false;
-}
 
 Nfa Mata::Nfa::minimize(const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
