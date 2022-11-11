@@ -1144,8 +1144,7 @@ Nfa Mata::Nfa::determinize(
     if (aut.has_no_transitions())
         return result;
 
-    //
-    Mata::Util::SynchronizedExistentialIterator<Move> sychronized_iterator;
+    Mata::Util::SynchronizedExistentialIterator<Mata::Util::OrdVector<Move>::const_iterator> synchronized_iterator;
 
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
@@ -1158,13 +1157,14 @@ Nfa Mata::Nfa::determinize(
 
         // add moves of S to the sync ex iterator
         for (State q: S) {
-            sychronized_iterator.push_back(aut.transition_relation[q]);
+            Mata::Util::push_back(synchronized_iterator, aut.transition_relation[q]);
         }
 
-        while (sychronized_iterator.advance()) {
+
+        while (synchronized_iterator.advance()) {
 
             // extract post from the sychronized_iterator iterator
-            std::vector<Mata::Util::OrdVector<Move>::const_iterator> moves = sychronized_iterator.get_current();
+            std::vector<Mata::Util::OrdVector<Move>::const_iterator> moves = synchronized_iterator.get_current();
             Symbol currentSymbol = (*moves.begin())->symbol;
             StateSet T;
             for (auto m: moves){
