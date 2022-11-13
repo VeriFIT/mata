@@ -73,7 +73,7 @@ using Alphabet = Mata::Nfa::Alphabet;
 * In context of an AFA, the transition relation maps a state and a symbol
 * to the positive Boolean formula over states, which is a Boolean formula
 * using states in positive form, conjunctions and disjunctions. Since such
-* a formula can be converted to the DNF, we can represent is as an ordered vector
+* a formula can be converted to the DNF, we can represent it as an ordered vector
 * of nodes. The ordered vector represents a set of disjuncts. Each node corresponds
 * to a single disjunct of a formula in DNF (states connected by conjunctions).
 * 
@@ -99,22 +99,22 @@ struct Trans
 using TransList = std::vector<Trans>;
 using TransRelation = std::vector<TransList>;
 
-/*
-* A tuple (result_nodes, sharing_list). If 'a' is an element of result_nodes, it means that there exists a symbol
-* 'b' such that sharing_list belongs to delta(a, b), where sharing_list is a node (vector of states). 
-*/
+/* A tuple (result_node, precondition). The node result_node is a predecessor
+* of a given node 'N' if the node 'precondition' is its subset. */
 struct InverseResults{
 
-	Node result_nodes{}; 
-	Node sharing_list{};
+	Node result_node{}; 
+	Node precondition{};
 
-	InverseResults() : result_nodes(), sharing_list() { }
-	InverseResults(State state, Node sharing_list) : result_nodes(Node(state)), sharing_list(sharing_list) { }
-	InverseResults(Node result_nodes, Node sharing_list) : result_nodes(result_nodes), sharing_list(sharing_list) { }
+	InverseResults() : result_node(), precondition() { }
+	InverseResults(State state, Node precondition) : result_node(Node(state)), 
+	precondition(precondition) { }
+	InverseResults(Node result_node, Node precondition) : result_node(result_node), 
+	precondition(precondition) { }
 
 	bool operator==(InverseResults rhs) const
 	{ // {{{
-		return sharing_list == rhs.sharing_list && result_nodes == rhs.result_nodes;
+		return precondition == rhs.precondition && result_node == rhs.result_node;
 	} // operator== }}}
 
 	bool operator!=(InverseResults rhs) const
@@ -124,23 +124,30 @@ struct InverseResults{
 
 	bool operator<(InverseResults rhs) const
 	{ // {{{
-		return sharing_list < rhs.sharing_list || (sharing_list == rhs.sharing_list && result_nodes < rhs.result_nodes);
+		return precondition < rhs.precondition || 
+		(precondition == rhs.precondition && result_node < rhs.result_node);
 	} // operator< }}}
 
 }; // struct InverseResults
 
 /*
-* A tuple (symb, vector_of_pointers). Each pointer points to the instance of InverseResults. If &(result_nodes, sharing_list) belongs to the
-* vector_of_pointers, then for each 'a' which is part of result_nodes holds that 'sharing_list' is a member of delta(a, symbol).
+* A tuple (state, symb, inverseResults). The structure inverseResults contains tuples (inverseResult,
+* precondition). If a node is a subset of 'precondition', the 'inverseResult' is a predecessor
+* of the given node which is accessible through the symbol 'symb'. 
+* The state 'state' is always part of all 'preconditions' and it is a minimal element of them.
 */
 struct InverseTrans{
 
+	State state;
 	Symbol symb;    
 	std::vector<InverseResults> inverseResults{};
 
 	InverseTrans() : symb(), inverseResults() { }
 	InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
-	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
+	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) 
+	{ inverseResults.push_back(inverseResults_); }
+	InverseTrans(State state, Symbol symb, InverseResults inverseResults_) : state(state), symb(symb)
+	{ inverseResults.push_back(inverseResults_); }
 
 }; // struct InverseTrans
 
@@ -159,16 +166,17 @@ Mata::Parser::ParsedSection serialize(
 struct Afa
 { // {{{
 private:
-    TransRelation transRelation{};
+    TransRelation transitionrelation{};
     InverseTransRelation inverseTransRelation{};
 
 public:
 
-	Afa() : transRelation(), inverseTransRelation() {}
+	Afa() : transitionrelation(), inverseTransRelation() {}
 
 	explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
 		         const StateSet& final_states = StateSet{})
-		: transRelation(num_of_states), inverseTransRelation(num_of_states), initialstates(initial_states), finalstates(final_states) {}
+		: transitionrelation(num_of_states), inverseTransRelation(num_of_states), 
+		initialstates(initial_states), finalstates(final_states) {}
 
 public:
 
@@ -177,7 +185,7 @@ public:
 
 	State add_new_state(void);
 
-	auto get_num_of_states() const { return transRelation.size(); }
+	auto get_num_of_states() const { return transitionrelation.size(); }
 
 	void add_initial(State state) { this->initialstates.insert(state); }
 	void add_initial(const std::vector<State> vec)
@@ -222,8 +230,6 @@ public:
 		this->add_inverse_trans({src, symb, dst});
 	} // }}}
 
-	Nodes perform_trans (State src, Symbol symb) const;
-
 	std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
 	std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
 
@@ -240,7 +246,7 @@ public:
 	std::vector<Trans> get_trans_from_state(State state) const;
 	Trans get_trans_from_state(State state, Symbol symbol) const;
 
-	bool trans_empty() const {!transRelation.size();};// no transitions
+	bool trans_empty() const {!transitionrelation.size();};// no transitions
 	size_t trans_size() const;/// number of transitions; has linear time complexity
 
 
@@ -252,7 +258,7 @@ public:
 	StateClosedSet post(Node node) const;
 	StateClosedSet post(Nodes nodes) const;
 
-	StateClosedSet post(StateClosedSet closed_set) const {return post(closed_set.antichain());};
+	StateClosedSet post(StateClosedSet closed_set) const;
 
 	StateClosedSet pre(Node node, Symbol symb) const;
 	StateClosedSet pre(State state, Symbol symb) const {return pre(Node(state), symb);};

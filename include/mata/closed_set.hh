@@ -24,6 +24,7 @@
  *
  * Description:
  * In this context, an upward-closed set is a set of sets of elements of type T,
+ * (set of nodes of type T, where a node is a set of elements of type T)
  * where the elements come from the discrete range <min_val; max_val>. If the upward
  * closed set contains a subset A of the range <min_val; max_val>, it also contains
  * all the supersets of A (in context of the discrete range <min_val; max_val>).
@@ -43,20 +44,21 @@
  *
  * It is not possible to:
  *
- * -> choose a custom carrier which is not a discrete range <min_val; max_val> (???)
+ * -> choose a custom carrier which is not a discrete range <min_val; max_val>
  * -> <=- and >=-compare two closed sets of the different types (nonsense)
- * -> remove a node/more nodes from the closed set (nonsense (???))
+ * -> remove a node/more nodes from the closed set (nonsense)
  * -> perform an union over two closed sets of different types or different carriers (nonsense)
  * -> perform an intersection over two closed sets of different types or different carriers (nonsense) 
  * -> compute a complement of a closed set (TODO)
  *
  * Examples:
  *
- * Let us have the carrier {0, 1, 2, 3} and the upward-closed set with the antichain {{0}, {1, 2}}. We can write
- * ↑{{0}, {1, 2}} = {{0}, {0, 1}, {0, 2}, {0, 3}, {0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2}, {1, 2, 3}, {0, 1, 2, 3}}.
+ * Let us have the carrier {0, 1, 2, 3} and the upward-closed set with the antichain 
+ * {{0}, {1, 2}}. We can write↑{{0}, {1, 2}} = {{0}, {0, 1}, {0, 2}, {0, 3}, {0, 1, 2},
+ * {0, 1, 3}, {0, 2, 3}, {1, 2}, {1, 2, 3}, {0, 1, 2, 3}}.
  *
- * Let us have the carrier {0, 1, 2, 3} and the downward-closed set with the antichain {{0}, {1, 2}}. We can write
- * ↓{{0}, {1, 2}} = {{0}, {1, 2}, {1}, {2}, {}}.
+ * Let us have the carrier {0, 1, 2, 3} and the downward-closed set with the antichain 
+ * {{0}, {1, 2}}. We can write ↓{{0}, {1, 2}} = {{0}, {1, 2}, {1}, {2}, {}}.
  *
  *  @author Tomáš Kocourek
  */
@@ -75,12 +77,13 @@ namespace Mata
 // Ordered vector
 template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 
+// A closed set could be upward-closed or downward-closed
 enum ClosedSetType {upward_closed_set, downward_closed_set};
 
 // Closed set
 // contains discrete range borders, its type
 // and the corresponding antichain
-// It is neccessary to be able to evaluate relations operators
+// It is neccessary to be able to evaluate relation operators
 // <, <=, >, >=, ==, != over instances of this datatype T
 template <typename T> 
 struct ClosedSet
@@ -131,33 +134,42 @@ struct ClosedSet
        // operators
        /////////////////////////////////////////////
 
-       // Two closed sets are equivalent iff their type, borders and corresponding antichains are the same
+       // Two closed sets are equivalent iff their type, borders 
+	   // and corresponding antichains are the same
        bool operator==(ClosedSet<T> rhs) const
 	    { // {{{
-		    return type_ == rhs.type && min_val_ == rhs.min_val && max_val_ == rhs.max_val && antichain_ == rhs.antichain;
+		    return type_ == rhs.type && min_val_ == rhs.min_val && 
+			max_val_ == rhs.max_val && antichain_ == rhs.antichain;
 	    } // operator== }}}
 
-       // Two closed sets are not equivalent iff their type, borders or corresponding antichains differ
+       // Two closed sets are not equivalent iff their type, 
+	   // borders or corresponding antichains differ
        bool operator!=(ClosedSet<T> rhs) const
 	    { // {{{
-		    return type_ != rhs.type_ || min_val_ != rhs.min_val_ || max_val_ != rhs.max_val_ || antichain_ != rhs.antichain_;
+		    return type_ != rhs.type_ || min_val_ != rhs.min_val_ ||
+			max_val_ != rhs.max_val_ || antichain_ != rhs.antichain_;
 	    } // operator!= }}}
 
-        // A closed set is considered to be smaller than the other one iff it is a subset of the other one
-        // It is not possible to perform <=-comparisons of accros upward- and downward-closed sets, each argument
-        // has to be upward- or downward-closed set
+        // A closed set is considered to be smaller than the other one iff
+		// it is a subset of the other one
+		// It is not possible to perform <=-comparisons accros upward- and downward-closed
+		// sets, each argument has to be upward- or downward-closed set
         bool operator<=(ClosedSet<T> rhs) const
 	    { // {{{
-            assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
+            assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+			"Types and borders of given closed sets must be the same to perform their <=-comparison.");
             return rhs.contains(antichain_);
 	    } // operator<= }}}
 
-        // A closed set is considered to be bigger than the other one iff it is a superset of the other one
-        // It is not possible to perform <=-comparisons of accros upward- and downward-closed sets, each argument
+        // A closed set is considered to be bigger than the other one iff 
+		// it is a superset of the other one
+        // It is not possible to perform <=-comparisons of accros upward- 
+		// and downward-closed sets, each argument
         // has to be upward- or downward-closed set
         bool operator>=(ClosedSet<T> rhs) const
 	    { // {{{
-            assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
+            assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+			"Types and borders of given closed sets must be the same to perform their <=-comparison.");
             return contains(rhs.antichain);
 	    } // operator<= }}}
 
@@ -167,7 +179,8 @@ struct ClosedSet
             std::string strType = "TYPE: ";
             strType += cs.get_type() == upward_closed_set ? "UPWARD CLOSED" : "DOWNWARD CLOSED";
             strType += "\n";
-            std::string strInterval = "INTERVAL: " + std::to_string(cs.get_min()) + " - " + std::to_string(cs.get_max()) + "\n";
+            std::string strInterval = "INTERVAL: " + std::to_string(cs.get_min()) + 
+			" - " + std::to_string(cs.get_max()) + "\n";
             std::string strValues = "ANTICHAIN: {";
             for(auto node : cs.get_antichain())
             {
@@ -181,11 +194,6 @@ struct ClosedSet
             strValues += "}";
             return os << strType + strInterval + strValues + "\n";
         }
-
-       /////////////////////////////////////////////
-
-       // other methods
-       /////////////////////////////////////////////
 
        bool is_upward_closed(void) const {return type_ == upward_closed_set;};
        bool is_downward_closed(void) const {return type_ == downward_closed_set;};
@@ -254,7 +262,7 @@ bool ClosedSet<T>::contains(Node node) const
 /** This function decides whether a set of sets of elements is a part of the closed set
 * by subset-compraring the input with all elements of the antichain 
 * @brief decides whether the closed set contains a given set of sets of elements
-* @param node a given ordered vector of ordered vectors of elements of the type T
+* @param nodes a given ordered vector of ordered vectors of elements of the type T
 * @return true iff the given ordered vector of ordered vectors belongs to the current closed set
 */
 template <typename T>
@@ -273,7 +281,7 @@ bool ClosedSet<T>::contains(Nodes nodes) const
 /** This function decides whether a given ordered vector of elements of the datatype T
 * belongs to the discrete interval of the current closed set
 * @brief decides whether the given vector respects the borders
-* @param node a given ordered vector elements of the type T which will be inspected
+* @param node a given ordered vector of elements of the type T which will be inspected
 * @return true iff the given ordered vector respects the borders
 */
 template <typename T>
@@ -291,14 +299,16 @@ bool ClosedSet<T>::in_interval(Node node) const
 
 /** Adds a new element to the closed set. If the element is already contained in the closed
 * set, the closed set remains unchanged. Otherwise, the antichain will be recomputed.
-* @brief decides whether the given vector respects the borders
-* @param node a given ordered vector elements of the type T which will be inspected
+* @brief inserts a new element to the closed set
+* @param node a given node which will be added to the closed set
 */
 template <typename T>
 void ClosedSet<T>::insert(Node node)
 {
-    assert(in_interval(node));
+    assert(in_interval(node) && "Each element of the given node has to respect " &&
+	"the carrier of the closed set.");
     // If the closed set is empty, the antichain could be simply changed
+	// by adding the given node as the only node to the antichain
     if(antichain_.empty())
     {
         antichain_.insert(node);
@@ -365,7 +375,8 @@ void ClosedSet<T>::insert(Node node)
 template <typename T>
 ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const
 {
-    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
+    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+	"Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_, antichain_);
     result.insert(rhs.antichain());
     return result;
@@ -379,10 +390,12 @@ ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const
 template <typename T>
 ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const
 {
-    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_);
+    assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
+	"Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_);
 
-    // Iterates through all the tuples from Antichan1 X Antichan2 and creates an union of them
+    // Iterates through all the tuples from Antichan1 X Antichan2 
+	// and creates an union of them
     if(type_ == upward_closed_set)
     {
         for(auto element1 : antichain_)
@@ -394,7 +407,8 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const
         }
     }
 
-    // Iterates through all the tuples from Antichan1 X Antichan2 and creates an intersection of them
+    // Iterates through all the tuples from Antichan1 X Antichan2 
+	// and creates an intersection of them
     if(type_ == downward_closed_set)
     {
         for(auto element1 : antichain_)
