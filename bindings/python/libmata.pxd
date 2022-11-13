@@ -200,7 +200,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
         void trim()
-        void get_one_letter_nfa(CNfa&)
+        void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         StateSet get_useful_states()
         StateSet get_reachable_states()

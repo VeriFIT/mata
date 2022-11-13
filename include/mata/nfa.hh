@@ -650,7 +650,7 @@ public:
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
-    Nfa get_one_letter_nfa(Symbol abstract_symbol = 'x') const;
+    Nfa get_one_letter_aut(Symbol abstract_symbol = 'x') const;
 
     /**
      * Check whether @p symbol is epsilon symbol or not.

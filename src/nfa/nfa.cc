@@ -487,7 +487,7 @@ StateSet Nfa::get_useful_states() const
 {
     if (initial_states.empty() || final_states.empty()) { return StateSet{}; }
 
-    const Nfa digraph{get_one_letter_nfa() }; // Compute reachability on directed graph.
+    const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
     const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
@@ -970,14 +970,14 @@ size_t Nfa::get_num_of_trans() const
     return num_of_transitions;
 }
 
-Nfa Nfa::get_one_letter_nfa(Symbol abstract_symbol) const {
+Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     Nfa digraph{size(), initial_states, final_states};
     collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
 
 void Nfa::get_digraph(Nfa& result) const {
-    result = get_one_letter_nfa();
+    result = get_one_letter_aut();
 }
 
 bool Mata::Nfa::Nfa::has_no_transitions() const

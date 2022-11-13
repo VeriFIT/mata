@@ -523,7 +523,7 @@ cdef class Nfa:
         :return: mata.Nfa: An automaton representing a directed graph.
         """
         cdef Nfa digraph = mata.Nfa()
-        self.thisptr.get().get_one_letter_nfa(dereference(digraph.thisptr.get()))
+        self.thisptr.get().get_one_letter_aut(dereference(digraph.thisptr.get()))
         return digraph
 
     def is_epsilon(self, Symbol symbol) -> bool:

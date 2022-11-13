@@ -2549,13 +2549,13 @@ TEST_CASE("Mata::Nfa::get_num_of_trans()")
     REQUIRE(aut.get_num_of_trans() == 15);
 }
 
-TEST_CASE("Mata::Nfa::get_one_letter_nfa()")
+TEST_CASE("Mata::Nfa::get_one_letter_aut()")
 {
     Nfa aut(100);
     Symbol abstract_symbol{'x'};
     FILL_WITH_AUT_A(aut);
 
-    Nfa digraph{aut.get_one_letter_nfa() };
+    Nfa digraph{aut.get_one_letter_aut() };
 
     REQUIRE(digraph.size() == aut.size());
     REQUIRE(digraph.get_num_of_trans() == 12);
