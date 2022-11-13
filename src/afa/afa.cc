@@ -44,7 +44,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::Trans& trans)
 } // operator<<(ostream, Trans) }}}
 
 /** This function adds a new transition to the automaton. It changes a transition
-* relation. 
+* relation. The transition is added to the transition relation it its current form.
 * @brief adds a new transition
 * @param trans a given transition
 */
@@ -554,7 +554,8 @@ size_t Afa::trans_size() const
 StateClosedSet Afa::get_initial_nodes(void) const
 {
 	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
-	for(State state = 0; state < transitionrelation.size(); ++state)
+	auto transSize = transitionrelation.size();
+	for(State state = 0; state < transSize; ++state)
 	{
 		if(has_initial(state))
 		{
@@ -571,7 +572,8 @@ StateClosedSet Afa::get_initial_nodes(void) const
 StateClosedSet Afa::get_non_initial_nodes(void) const
 {
 	OrdVec<State> subresult{};
-	for(State state = 0; state < transitionrelation.size(); ++state)
+	auto transSize = transitionrelation.size();
+	for(State state = 0; state < transSize; ++state)
 	{
 		if(!has_initial(state))
 		{
@@ -588,7 +590,8 @@ StateClosedSet Afa::get_non_initial_nodes(void) const
 StateClosedSet Afa::get_final_nodes(void) const
 {
 	OrdVec<State> subresult{};
-	for(State state = 0; state < transitionrelation.size(); ++state)
+	auto transSize = transitionrelation.size();
+	for(State state = 0; state < transSize; ++state)
 	{
 		if(has_final(state))
 		{
@@ -605,7 +608,8 @@ StateClosedSet Afa::get_final_nodes(void) const
 StateClosedSet Afa::get_non_final_nodes(void) const
 {
 	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
-	for(State state = 0; state < transitionrelation.size(); ++state)
+	auto transSize = transitionrelation.size();
+	for(State state = 0; state < transSize; ++state)
 	{
 		if(!has_final(state))
 		{
