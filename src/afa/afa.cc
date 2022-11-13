@@ -554,13 +554,9 @@ size_t Afa::trans_size() const
 StateClosedSet Afa::get_initial_nodes(void) const
 {
 	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
-	auto transSize = transitionrelation.size();
-	for(State state = 0; state < transSize; ++state)
+	for(auto state : initialstates)
 	{
-		if(has_initial(state))
-		{
-			result.insert(state);
-		}    
+		result.insert(state);
 	}
 	return result;
 } // get_initial_nodes() }}}
