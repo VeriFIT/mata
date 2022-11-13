@@ -836,6 +836,20 @@ bool is_incl(
         const StringMap&   params = {{"algo", "antichains"}});
 
 /**
+ * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
+ * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * - "algo": "naive", "antichains" (Default: "antichains")
+ */
+inline bool is_incl(
+        const Nfa&             smaller,
+        const Nfa&             bigger,
+        const Alphabet* const  alphabet = nullptr,
+        const StringMap&      params = {{"algo", "antichains"}})
+{ // {{{
+    return is_incl(smaller, bigger, nullptr, alphabet, params);
+} // }}}
+
+/**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
  * @param lhs[in] First automaton to concatenate.

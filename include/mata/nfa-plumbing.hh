@@ -75,21 +75,6 @@ namespace Plumbing {
         return is_universal(aut, alphabet, nullptr, params);
     } // }}}
 
-
-    /**
-     * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
-     * @param params[in] Optional parameters to control the equivalence check algorithm:
-     * - "algo": "naive", "antichains" (Default: "antichains")
-     */
-    inline bool is_incl(
-            const Nfa&             smaller,
-            const Nfa&             bigger,
-            const Alphabet* const  alphabet = nullptr,
-            const StringMap&      params = {{"algo", "antichains"}})
-    { // {{{
-        return is_incl(smaller, bigger, nullptr, alphabet, params);
-    } // }}}
-
     inline void revert(Nfa* result, const Nfa& aut)
     { // {{{
         *result = revert(aut);
