@@ -583,24 +583,6 @@ StateClosedSet Afa::get_non_initial_nodes(void) const
 	return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, subresult);
 } // get_non_initial_nodes() }}}
 
-/** This function returns a downward-closed set of all
-* the nodes which are final
-* @return closed set of final nodes
-*/
-StateClosedSet Afa::get_final_nodes(void) const
-{
-	OrdVec<State> subresult{};
-	auto transSize = transitionrelation.size();
-	for(State state = 0; state < transSize; ++state)
-	{
-		if(has_final(state))
-		{
-			subresult.insert(state);
-		}  
-	}
-	return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, subresult);
-} // get_final_nodes() }}}
-
 /** This function returns an upward-closed set of all
 * the nodes which are non-final
 * @return closed set of non-final nodes
