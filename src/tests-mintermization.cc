@@ -327,4 +327,35 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[4].second.children[1].node.name == "&");
         REQUIRE(res.transitions[5].second.children[1].node.name == "&");
     }
+
+    SECTION("Mintermization AFA difficult")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+
+        std::string file =
+                            "@AFA-bits\n"
+                            "%Initial q11\n"
+                            "%Final !q0 & !q1 & !q2 & !q3 & !q4 & !q5 & !q6 & !q7 & !q8 & !q9 & !q10 & !q11\n"
+                            "q10 (a1 & !a0 & a0 & q9) | (a1 & !a0 & q9 & q10)\n"
+                            "q6 a3\n"
+                            "q8 !a2 | (a3 & !a0 & q8)\n"
+                            "q4 !a0 & q3\n"
+                            "q3 !a0 & q2\n"
+                            "q1 (!a1 & a0) | (!a1 & q1) | (!a0 & a0 & q0) | (!a0 & q0 & q1)\n"
+                            "q11 (!a1 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (!a1 & a0 & a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5) | (!a1 & a0 & a3 & !a0 & a0 & q6) | (!a1 & a0 & a3 & !a0 & q6 & q7) | (!a1 & a0 & a1 & !a0 & a0 & q9) | (!a1 & a0 & a1 & !a0 & q9 & q10) | (!a1 & a4 & !a0 & !a0 & !a0 & a0 & q1 & q2 & q3 & q4) | (!a1 & a4 & !a0 & !a0 & !a0 & q1 & q2 & q3 & q4 & q5) | (!a1 & a3 & !a0 & a0 & q1 & q6) | (!a1 & a3 & !a0 & q1 & q6 & q7) | (!a1 & a1 & !a0 & a0 & q1 & q9) | (!a1 & a1 & !a0 & q1 & q9 & q10) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q2 & q3 & q4) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & q0 & q2 & q3 & q4 & q5) | (!a0 & a0 & a3 & !a0 & a0 & q0 & q6) | (!a0 & a0 & a3 & !a0 & q0 & q6 & q7) | (!a0 & a0 & a1 & !a0 & a0 & q0 & q9) | (!a0 & a0 & a1 & !a0 & q0 & q9 & q10) | (!a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q1 & q2 & q3 & q4) | (!a0 & a4 & !a0 & !a0 & !a0 & q0 & q1 & q2 & q3 & q4 & q5) | (!a0 & a3 & !a0 & a0 & q0 & q1 & q6) | (!a0 & a3 & !a0 & q0 & q1 & q6 & q7) | (!a0 & a1 & !a0 & a0 & q0 & q1 & q9) | (!a0 & a1 & !a0 & q0 & q1 & q9 & q10)\n"
+                            "q7 (a3 & !a0 & a0 & q6) | (a3 & !a0 & q6 & q7)\n"
+                            "q2 !a3\n"
+                            "q9 q8\n"
+                            "q5 (a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5)\n"
+                            "q0 a2\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
+
+        const auto res = mintermization.mintermize(aut);
+    }
 } // mintermization

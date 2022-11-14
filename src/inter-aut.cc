@@ -550,6 +550,13 @@ void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const Formula
     this->transitions.push_back(std::pair<FormulaNode, FormulaGraph>(lhs, graph));
 }
 
+void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& rhs)
+{
+    assert(rhs.is_operand());
+    FormulaGraph graph(rhs);
+    this->transitions.push_back(std::pair<FormulaNode, FormulaGraph>(lhs, graph));
+}
+
 void Mata::IntermediateAut::print_transitions_trees(std::ostream& os) const
 {
     for (const auto& trans : transitions) {

@@ -233,6 +233,7 @@ public:
 
     static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
     void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
+    void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
     void print_transitions_trees(std::ostream&) const;
 };
 

@@ -253,8 +253,10 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
                     const auto str_symbol = std::to_string(symbol);
                     FormulaNode node_symbol(FormulaNode::OPERAND, str_symbol, str_symbol,
                                             Mata::FormulaNode::OperandType::SYMBOL);
-                    assert(ds_pair.second != nullptr);
-                    res.add_transition(trans.first, node_symbol, *ds_pair.second);
+                    if (ds_pair.second != nullptr)
+                        res.add_transition(trans.first, node_symbol, *ds_pair.second);
+                    else // transition without state on the right handed side
+                        res.add_transition(trans.first, node_symbol);
                 }
                 symbol++;
             }
