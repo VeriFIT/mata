@@ -1073,11 +1073,16 @@ Afa Mata::Afa::construct(
 
     for (const auto& trans : inter_aut.transitions)
     {
-        if (trans.second.children.size() != 2)
+        State src_state = get_state_name(trans.first.name);
+        if (trans.second.node.is_operand() && trans.second.node.operand_type == FormulaNode::SYMBOL)
         {
-            // clean up
+            Symbol symbol = alphabet->translate_symb(trans.second.node.name);
+            aut.add_trans(src_state, symbol, Node());
+            continue;
+        }
+        else if (trans.second.children.size() != 2)
+        {
             clean_up();
-
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1087,8 +1092,6 @@ Afa Mata::Afa::construct(
                 throw std::runtime_error("Invalid transition");
             }
         }
-
-        State src_state = get_state_name(trans.first.name);
 
         assert(is_node_operator(trans.second.node, FormulaNode::AND));
         assert(trans.second.children.front().node.is_operand());
