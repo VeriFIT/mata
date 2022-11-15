@@ -330,7 +330,7 @@ cdef class Nfa:
 
         :return: number of states in automaton
         """
-        return self.thisptr.get().get_num_of_states()
+        return self.thisptr.get().states_number()
 
     def add_transition_object(self, Trans tr):
         """Adds transition to automaton
@@ -436,7 +436,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: Move
         """
-        cdef mata.Moves transitions = self.thisptr.get().get_transitions_from(state)
+        cdef mata.Moves transitions = self.thisptr.get().get_moves_from(state)
         cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
 
         cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
@@ -1214,7 +1214,7 @@ cdef class Nfa:
 
         :return: Set of symbols.
         """
-        cdef SymbolSet symbols = self.thisptr.get().get_symbols()
+        cdef SymbolSet symbols = self.thisptr.get().get_used_symbols()
         return {s for s in symbols}
 
     @classmethod
