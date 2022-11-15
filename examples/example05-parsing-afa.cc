@@ -35,12 +35,6 @@ int main(int argc, char *argv[])
 
         if (inter_auts[0].is_afa())
             aut = construct(inter_auts[0]);
-        std::cout << "Initial states \n";
-        for (const auto& s : inter_auts[0].get_enumerated_initials())
-            std::cout << s<< " ";
-        for (const auto& s : aut.initialstates)
-            std::cout << s<< " ";
-        std::cout << '\n';
         std::cout << aut << '\n';
     }
     catch (const std::exception& ex) {
