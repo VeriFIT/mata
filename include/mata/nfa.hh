@@ -777,7 +777,6 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 /// makes the transition relation complete
-// TODO: complete().
 void make_complete(
         Nfa&             aut,
         const Alphabet&  alphabet,
