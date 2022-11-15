@@ -1,19 +1,36 @@
 import os
+import errno
+import shutil
+import platform
 
 from setuptools import setup, Extension
 from Cython.Build import cythonize
+from distutils.command.sdist import sdist as _sdist
 
-project_dir = os.path.abspath(os.path.join("..", ".."))
-include_dir = os.path.join(project_dir, "include")
-source_dir = os.path.join(project_dir, "src")
+if 'microsoft' in platform.uname().release.lower():
+    """Patch for calling the python from WSL. The copystat fails on copied directories"""
+    orig_copyxattr = shutil._copyxattr
+    def patched_copyxattr(src, dst, *, follow_symlinks=True):
+        try:
+            orig_copyxattr(src, dst, follow_symlinks=follow_symlinks)
+        except OSError as ex:
+            if ex.errno != errno.EACCES: raise
+    shutil._copyxattr = patched_copyxattr
 
-third_party_include_dir = os.path.join(project_dir, "3rdparty")
-re2_include_dir = os.path.join(project_dir, "3rdparty", "re2")
-re2_source_dir = os.path.join(project_dir, "3rdparty", "re2")
-simlib_include_dir = os.path.join(project_dir, "3rdparty", "simlib", "include")
-simlib_source_dir = os.path.join(project_dir, "3rdparty", "simlib", "src")
+root_dir = os.path.abspath(os.path.dirname(__file__))
+project_dir = os.path.abspath(os.path.join(os.path.join(root_dir, "..", "..")))
+sdist_dir = os.path.join(os.path.join(root_dir, "mata"))
+src_dir = sdist_dir if os.path.exists(sdist_dir) else project_dir
+mata_include_dir = os.path.join(src_dir, "include")
+mata_source_dir = os.path.join(src_dir, "src")
 
-with open(os.path.join(project_dir, "README.md")) as readme_handle:
+third_party_include_dir = os.path.join(src_dir, "3rdparty")
+re2_include_dir = os.path.join(src_dir, "3rdparty", "re2")
+re2_source_dir = os.path.join(src_dir, "3rdparty", "re2")
+simlib_include_dir = os.path.join(src_dir, "3rdparty", "simlib", "include")
+simlib_source_dir = os.path.join(src_dir, "3rdparty", "simlib", "src")
+
+with open(os.path.join(src_dir, "README.md")) as readme_handle:
     README_MD = readme_handle.read()
 
 
@@ -36,14 +53,50 @@ extensions = [
     Extension(
         "libmata",
         sources=["libmata.pyx"]
-                + get_cpp_sources(source_dir)
+                + get_cpp_sources(mata_source_dir)
                 + get_cpp_sources(re2_source_dir)
                 + get_cpp_sources(simlib_source_dir),
-        include_dirs=[include_dir, third_party_include_dir, re2_include_dir, simlib_include_dir],
+        include_dirs=[mata_include_dir, third_party_include_dir, re2_include_dir, simlib_include_dir],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     ),
 ]
+
+
+def _copy_sources():
+    """Copies sources to specified `mata` folder.
+
+    This is used in `dist` command, to copy sources that will be included in the
+    tar.gz and that it will be able to compile on other systems using pip.
+
+    Inspired by z3 setup.py
+    """
+    shutil.rmtree(sdist_dir, ignore_errors=True)
+    os.mkdir(sdist_dir)
+
+    shutil.copy(os.path.join(project_dir, 'LICENSE'), sdist_dir)
+    shutil.copy(os.path.join(project_dir, 'README.md'), sdist_dir)
+    shutil.copytree(
+        os.path.join(project_dir, 'src'),
+        os.path.join(sdist_dir, 'src'),
+        ignore=shutil.ignore_patterns("*.txt")
+    )
+    shutil.copytree(
+        os.path.join(project_dir, 'include'),
+        os.path.join(sdist_dir, 'include'),
+        ignore=shutil.ignore_patterns("*.txt")
+    )
+    shutil.copytree(
+        os.path.join(project_dir, '3rdparty'),
+        os.path.join(sdist_dir, '3rdparty'),
+        ignore=shutil.ignore_patterns("*.txt")
+    )
+
+
+class sdist(_sdist):
+    def run(self):
+        self.execute(_copy_sources, (), msg="Copying source files")
+        _sdist.run(self)
 
 
 def get_version():
@@ -73,4 +126,5 @@ setup(
     long_description_content_type="text/markdown",
     keywords="automata, finite automata, alternating automata",
     url="https://github.com/verifit/mata",
+    cmdclass={'sdist': sdist}
 )
