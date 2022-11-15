@@ -104,7 +104,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
             if (!lhs.has_final(lhs_state)) {
                 for (const auto& symbol_transitions:
-                        lhs.get_moves_from(lhs_state)) {
+                    lhs.get_moves_from(lhs_state)) {
                     for (const State lhs_state_to: symbol_transitions.states_to) {
                         if (!lhs.has_final(lhs_state_to)) {
                             result.add_trans(lhs_result_states_map_internal[lhs_state],
@@ -140,7 +140,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         // For all lhs final states, copy all their transitions, except for self-loops on final states.
         for (const auto& lhs_final_state: lhs.final_states) {
             for (const auto& transitions_from_lhs_final_state:
-                    lhs.get_moves_from(lhs_final_state)) {
+                lhs.get_moves_from(lhs_final_state)) {
                 for (const auto& lhs_state_to: transitions_from_lhs_final_state.states_to) {
                     if (lhs_state_to != lhs_final_state) { // Self-loops on final states already handled.
                         for (const auto& rhs_initial_state: rhs.initial_states) {
