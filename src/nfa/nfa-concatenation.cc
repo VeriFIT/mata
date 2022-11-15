@@ -28,8 +28,8 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 
     if (lhs.initial_states.empty() || lhs.final_states.empty() || rhs.initial_states.empty()) { return Nfa{}; }
 
-    const unsigned long lhs_states_num{lhs.size() };
-    const unsigned long rhs_states_num{rhs.size() };
+    const unsigned long lhs_states_num{lhs.states_number() };
+    const unsigned long rhs_states_num{rhs.states_number() };
     Nfa result{}; // Concatenated automaton.
     StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
     StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.

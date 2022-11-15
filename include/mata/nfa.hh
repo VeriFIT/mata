@@ -355,11 +355,11 @@ public:
         }
     }
 
-    auto size() const { return transition_relation.size(); }
+    auto states_number() const { return transition_relation.size(); }
 
     void increase_size(size_t size)
     {
-        assert(this->size() <= size);
+        assert(this->states_number() <= size);
         transition_relation.resize(size);
     }
 
@@ -383,7 +383,7 @@ public:
      */
     void add_initial(State state)
     {
-        if (this->size() <= state) {
+        if (this->states_number() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
         }
 
@@ -422,7 +422,7 @@ public:
      */
     void add_final(const State state)
     {
-        if (this->size() <= state) {
+        if (this->states_number() <= state) {
             throw std::runtime_error("Cannot make state final because it is not in automaton");
         }
 
@@ -634,7 +634,7 @@ public:
      */
     const Moves& get_moves_from(const State state_from) const
     {
-        assert(size() >= state_from + 1);
+        assert(states_number() >= state_from + 1);
         return transition_relation[state_from];
     }
 
@@ -1414,7 +1414,7 @@ private:
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-        size_t nfa_num_of_states{nfa.size() };
+        size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto& state_transitions: nfa.transition_relation[state]) {
                 alphabet.update_next_symbol_value(state_transitions.symbol);
