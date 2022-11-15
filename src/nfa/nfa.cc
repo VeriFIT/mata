@@ -687,7 +687,8 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     if (aut.has_no_transitions()) { return true; }
 
-    for (size_t i = 0; i < aut.size(); ++i)
+    const size_t aut_size = aut.size();
+    for (size_t i = 0; i < aut_size; ++i)
     {
         for (const auto& symStates : aut[i])
         {
