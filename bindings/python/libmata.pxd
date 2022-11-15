@@ -189,7 +189,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()
-        size_t size()
+        size_t states_number()
         void increase_size(size_t)
         void increase_size_for_state(State)
         State add_state()
