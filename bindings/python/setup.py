@@ -74,6 +74,7 @@ def _copy_sources():
     shutil.rmtree(sdist_dir, ignore_errors=True)
     os.mkdir(sdist_dir)
 
+    shutil.copy(os.path.join(project_dir, 'VERSION'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'LICENSE'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'README.md'), sdist_dir)
     shutil.copytree(
@@ -101,7 +102,7 @@ class sdist(_sdist):
 
 def get_version():
     """Parses the version of the library from the VERSION file"""
-    version_file = os.path.join("..", "..", "VERSION")
+    version_file = os.path.join(src_dir, "VERSION")
     if os.path.exists(version_file):
         with open(version_file, 'r') as version_handle:
             return version_handle.read().split()[0]
