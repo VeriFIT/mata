@@ -25,11 +25,14 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 
 // MATA headers
 #include <mata/nfa.hh>
 #include <mata/parser.hh>
 #include <mata/util.hh>
+#include <mata/ord_vector.hh>
+#include <mata/closed_set.hh>
 
 namespace Mata
 {
@@ -42,6 +45,11 @@ extern const std::string TYPE_AFA;
 using State = Mata::Nfa::State;
 using Symbol = Mata::Nfa::Symbol;
 
+template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
+
+using Node = OrdVec<State>;
+using Nodes = OrdVec<Node>;
+
 using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
 using StateToStringMap = Mata::Nfa::StateToStringMap;
 using StringToStateMap = Mata::Nfa::StringToStateMap;
@@ -52,24 +60,98 @@ using Word = Mata::Nfa::Word;
 
 using StringDict = Mata::Nfa::StringDict;
 
+using StateSet = OrdVec<State>;
+using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
+
 using Alphabet = Mata::Nfa::Alphabet;
 
-/// A transition
+/*
+* A node is an ordered vector of states of the automaton.
+* A transition consists of a source state, a symbol on the transition 
+* and a vector of nodes (which are the destination of the transition).
+*
+* In context of an AFA, the transition relation maps a state and a symbol
+* to the positive Boolean formula over states, which is a Boolean formula
+* using states in positive form, conjunctions and disjunctions. Since such
+* a formula can be converted to the DNF, we can represent it as an ordered vector
+* of nodes. The ordered vector represents a set of disjuncts. Each node corresponds
+* to a single disjunct of a formula in DNF (states connected by conjunctions).
+* 
+*/
 struct Trans
 {
-	State src;
-  std::string formula;
+	State src; // source state
+	Symbol symb; // transition symbol
+	Nodes dst; // a vector of vectors of states
 
-	Trans() : src(), formula() { }
-	Trans(State src, const std::string& formula) : src(src), formula(formula) { }
+	Trans() : src(), symb(), dst() { }
+	Trans(State src, Symbol symb, Node dst) : src(src), symb(symb), dst(Nodes(dst)) { }
+	Trans(State src, Symbol symb, Nodes dst) : src(src), symb(symb), dst(dst) { }
 
 	bool operator==(const Trans& rhs) const
 	{ // {{{
-		return src == rhs.src && formula == rhs.formula;
+		return src == rhs.src && symb == rhs.symb && dst == rhs.dst ;
 	} // operator== }}}
 	bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
-};
 
+}; // struct Trans
+
+using TransList = std::vector<Trans>;
+using TransRelation = std::vector<TransList>;
+
+/* A tuple (result_node, precondition). The node result_node is a predecessor
+* of a given node 'N' if the node 'precondition' is its subset. */
+struct InverseResults{
+
+	Node result_node{}; 
+	Node precondition{};
+
+	InverseResults() : result_node(), precondition() { }
+	InverseResults(State state, Node precondition) : result_node(Node(state)), 
+	precondition(precondition) { }
+	InverseResults(Node result_node, Node precondition) : result_node(result_node), 
+	precondition(precondition) { }
+
+	bool operator==(InverseResults rhs) const
+	{ // {{{
+		return precondition == rhs.precondition && result_node == rhs.result_node;
+	} // operator== }}}
+
+	bool operator!=(InverseResults rhs) const
+	{ // {{{
+		return !this->operator==(rhs);
+	} // operator!= }}}
+
+	bool operator<(InverseResults rhs) const
+	{ // {{{
+		return precondition < rhs.precondition || 
+		(precondition == rhs.precondition && result_node < rhs.result_node);
+	} // operator< }}}
+
+}; // struct InverseResults
+
+/*
+* A tuple (state, symb, inverseResults). The structure inverseResults contains tuples (inverseResult,
+* precondition). If a node is a subset of 'precondition', the 'inverseResult' is a predecessor
+* of the given node which is accessible through the symbol 'symb'. 
+* The state 'state' is always part of all 'preconditions' and it is a minimal element of them.
+*/
+struct InverseTrans{
+
+	State state;
+	Symbol symb;    
+	std::vector<InverseResults> inverseResults{};
+
+	InverseTrans() : symb(), inverseResults() { }
+	InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
+	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) 
+	{ inverseResults.push_back(inverseResults_); }
+	InverseTrans(State state, Symbol symb, InverseResults inverseResults_) : state(state), symb(symb)
+	{ inverseResults.push_back(inverseResults_); }
+
+}; // struct InverseTrans
+
+using InverseTransRelation = std::vector<std::vector<InverseTrans>>;
 
 struct Afa;
 
@@ -84,15 +166,26 @@ Mata::Parser::ParsedSection serialize(
 struct Afa
 { // {{{
 private:
-
-public: // TODO: make private
-  // TODO: transition relation
-  std::vector<Trans> transitions;
+    TransRelation transitionrelation{};
+    InverseTransRelation inverseTransRelation{};
 
 public:
 
-	std::set<State> initialstates = {};
-	std::set<State> finalstates = {};
+	Afa() : transitionrelation(), inverseTransRelation() {}
+
+	explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+		         const StateSet& final_states = StateSet{})
+		: transitionrelation(num_of_states), inverseTransRelation(num_of_states), 
+		initialstates(initial_states), finalstates(final_states) {}
+
+public:
+
+	StateSet initialstates = {};
+	StateSet finalstates = {};
+
+	State add_new_state(void);
+
+	auto get_num_of_states() const { return transitionrelation.size(); }
 
 	void add_initial(State state) { this->initialstates.insert(state); }
 	void add_initial(const std::vector<State> vec)
@@ -114,20 +207,73 @@ public:
 	} // }}}
 
 	void add_trans(const Trans& trans);
-	void add_trans(State src, const std::string& formula)
+	void add_trans(State src, Symbol symb, State dst)
 	{ // {{{
-		this->add_trans({src, formula});
+		this->add_trans({src, symb, Nodes(Node(dst))});
 	} // }}}
+	void add_trans(State src, Symbol symb, Node dst)
+	{ // {{{
+		this->add_trans({src, symb, Nodes(dst)});
+	} // }}}
+	void add_trans(State src, Symbol symb, Nodes dst)
+	{ // {{{
+		this->add_trans({src, symb, dst});
+	} // }}}
+
+	void add_inverse_trans(const Trans& trans);
+	void add_inverse_trans(State src, Symbol symb, Node dst)
+	{ // {{{
+		this->add_inverse_trans({src, symb, Nodes(dst)});
+	} // }}}
+	void add_inverse_trans(State src, Symbol symb, Nodes dst)
+	{ // {{{
+		this->add_inverse_trans({src, symb, dst});
+	} // }}}
+
+	std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
+	std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
 
 	bool has_trans(const Trans& trans) const;
-	bool has_trans(State src, const std::string& formula) const
+	bool has_trans(State src, Symbol symb, Node dst) const
 	{ // {{{
-		return this->has_trans({src, formula});
+		return this->has_trans({src, symb, Nodes(dst)});
+	} // }}}
+	bool has_trans(State src, Symbol symb, Nodes dst) const
+	{ // {{{
+		return this->has_trans({src, symb, dst});
 	} // }}}
 
-	bool trans_empty() const { /* TODO */ assert(false);};// no transitions
+	std::vector<Trans> get_trans_from_state(State state) const;
+	Trans get_trans_from_state(State state, Symbol symbol) const;
+
+	bool trans_empty() const {!transitionrelation.size();};// no transitions
 	size_t trans_size() const;/// number of transitions; has linear time complexity
 
+
+	StateClosedSet post(State state, Symbol symb) const;
+	StateClosedSet post(Node node, Symbol symb) const;
+	StateClosedSet post(Nodes nodes, Symbol symb) const;
+	StateClosedSet post(StateClosedSet closed_set, Symbol symb) const;
+
+	StateClosedSet post(Node node) const;
+	StateClosedSet post(Nodes nodes) const;
+
+	StateClosedSet post(StateClosedSet closed_set) const;
+
+	StateClosedSet pre(Node node, Symbol symb) const;
+	StateClosedSet pre(State state, Symbol symb) const {return pre(Node(state), symb);};
+	StateClosedSet pre(Nodes nodes, Symbol symb) const;
+	StateClosedSet pre(StateClosedSet closed_set, Symbol symb) const;
+
+	StateClosedSet pre(Node node) const;
+	StateClosedSet pre(Nodes nodes) const;
+
+	StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
+
+	StateClosedSet get_initial_nodes(void) const;
+	StateClosedSet get_non_initial_nodes(void) const;
+	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, finalstates);};
+	StateClosedSet get_non_final_nodes(void) const;
 
 }; // Afa }}}
 
@@ -151,6 +297,13 @@ bool are_state_disjoint(const Afa& lhs, const Afa& rhs);
 /// Is the language of the automaton empty?
 bool is_lang_empty(const Afa& aut, Path* cex = nullptr);
 bool is_lang_empty_cex(const Afa& aut, Word* cex);
+
+bool antichain_concrete_forward_emptiness_test_old(const Afa& aut);
+bool antichain_concrete_backward_emptiness_test_old(const Afa& aut);
+
+bool antichain_concrete_forward_emptiness_test_new(const Afa& aut);
+bool antichain_concrete_backward_emptiness_test_new(const Afa& aut);
+
 
 /// Retrieves the states reachable from initial states
 std::unordered_set<State> get_fwd_reach_states(const Afa& aut);
@@ -358,7 +511,8 @@ struct hash<Mata::Afa::Trans>
 	inline size_t operator()(const Mata::Afa::Trans& trans) const
 	{
 		size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
-		accum = Mata::util::hash_combine(accum, trans.formula);
+		accum = Mata::util::hash_combine(accum, trans.symb);
+		accum = Mata::util::hash_combine(accum, trans.dst);
 		return accum;
 	}
 };
