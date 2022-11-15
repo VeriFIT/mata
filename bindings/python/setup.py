@@ -131,10 +131,10 @@ setup(
     # Requirements from install for pip
     install_requires=[
         'Cython>=0.29.32',
-        'tabulate',
-        'ipython',
-        'pandas',
-        'networkx',
-        'graphviz',
+        'tabulate>=0.8.10',
+        'ipython>=8.5.0',
+        'pandas>=1.5.0',
+        'networkx>=2.8.6',
+        'graphviz>=0.20.1',
     ]
 )
