@@ -817,6 +817,14 @@ bool is_universal(
         Run*              cex = nullptr,
         const StringMap&  params = {{"algo", "antichains"}});
 
+inline bool is_universal(
+        const Nfa&         aut,
+        const Alphabet&    alphabet,
+        const StringMap&  params)
+{ // {{{
+    return is_universal(aut, alphabet, nullptr, params);
+} // }}}
+
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *

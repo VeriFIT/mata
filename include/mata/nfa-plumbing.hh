@@ -67,14 +67,6 @@ namespace Plumbing {
         *result = reduce(aut, state_map, params);
     } // reduce }}}
 
-    inline bool is_universal(
-            const Nfa&         aut,
-            const Alphabet&    alphabet,
-            const StringMap&  params)
-    { // {{{
-        return is_universal(aut, alphabet, nullptr, params);
-    } // }}}
-
     inline void revert(Nfa* result, const Nfa& aut)
     { // {{{
         *result = revert(aut);
