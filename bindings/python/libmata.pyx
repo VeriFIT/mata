@@ -43,6 +43,21 @@ cdef class Run:
         if self.thisptr != NULL:
             del self.thisptr
 
+    @property
+    def word(self):
+        return self.thisptr.word
+
+    @word.setter
+    def word(self, value):
+        self.thisptr.word = value
+
+    @property
+    def path(self):
+        return self.thisptr.path
+
+    @path.setter
+    def path(self, value):
+        self.thisptr.path = value
 
 cdef class Trans:
     """Wrapper over the transitions in NFA."""
@@ -348,7 +363,7 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_trans(src, symb, tgt)
 
-    def has_trans_raw(self, State src, Symbol symb, State tgt):
+    def has_transition(self, State src, Symbol symb, State tgt):
         """Tests if automaton contains transition
 
         :param State src: source state
@@ -1213,7 +1228,7 @@ cdef class Nfa:
     # Helper functions
 
     @classmethod
-    def get_word_for_path(cls, Nfa lhs, Run run):
+    def get_word_for_path(cls, Nfa lhs, path):
         """For a given path (set of states) returns a corresponding word
 
         >>> mata.Nfa.get_word_for_path(lhs, [0, 1, 2])
@@ -1224,10 +1239,10 @@ cdef class Nfa:
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
         cdef pair[CRun, bool] result
-        result = mata.get_word_for_path(dereference(lhs.thisptr.get()), dereference(run.thisptr))
-        run = Run()
-        run.thisptr.word = result.first.word
-        return run, result.second
+        input = Run()
+        input.path = path
+        result = mata.get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
+        return result.first.word, result.second
 
     @classmethod
     def encode_word(cls, string_to_symbol, word):
@@ -1240,14 +1255,11 @@ cdef class Nfa:
         :param word: list of strings representing a encoded word
         :return:
         """
-        run = Run()
-        cdef CRun result
         result = mata.encode_word(
             {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
             [s.encode('utf-8') for s in word]
         )
-        run.thisptr.word = result.word
-        return run
+        return result.word
 
 
 cdef class OnTheFlyAlphabet(Alphabet):

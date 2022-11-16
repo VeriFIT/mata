@@ -177,7 +177,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void remove_trans(CTrans) except +
         void remove_trans(State, Symbol, State) except +
         bool has_trans(State, Symbol, State)
-        bool has_no_transitions()
         bool is_state(State)
         size_t get_num_of_trans()
         StateSet post(StateSet&, Symbol)
