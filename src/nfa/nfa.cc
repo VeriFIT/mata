@@ -977,7 +977,7 @@ Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     return digraph;
 }
 
-void Nfa::get_digraph(Nfa& result) const {
+void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 

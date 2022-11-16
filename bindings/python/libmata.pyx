@@ -25,6 +25,25 @@ cdef Symbol EPSILON = CEPSILON
 def epsilon():
     return EPSILON
 
+cdef class Run:
+    """Wrapper over the run in NFA."""
+    cdef mata.CRun *thisptr
+
+    def __cinit__(self):
+        """Constructor of the transition
+
+        :param State src: source state
+        :param Symbol s: symbol
+        :param State tgt: target state
+        """
+        self.thisptr = new mata.CRun()
+
+    def __dealloc__(self):
+        """Destructor"""
+        if self.thisptr != NULL:
+            del self.thisptr
+
+
 cdef class Trans:
     """Wrapper over the transitions in NFA."""
     cdef mata.CTrans *thisptr
@@ -238,27 +257,6 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_initial(state)
 
-    def remove_initial_states(self, vector[State] states):
-        """Removes states from initial state set of the automaton.
-
-        :param list State states: States to be removed from initial states.
-        """
-        self.thisptr.get().remove_initial(states)
-
-    def reset_initial_state(self, State state):
-        """Resets initial state set of the automaton to the specified state.
-
-        :param State state: State to be made initial.
-        """
-        self.thisptr.get().reset_initial(state)
-
-    def reset_initial_states(self, vector[State] states):
-        """Resets initial state set of the automaton to the specified states.
-
-        :param list states: List of states to be made initial.
-        """
-        self.thisptr.get().reset_initial(states)
-
     def clear_initial(self):
         """Clears initial state set of the automaton."""
         self.thisptr.get().clear_initial()
@@ -291,27 +289,6 @@ cdef class Nfa:
         :param State state: State to be removed from final states.
         """
         self.thisptr.get().remove_final(state)
-
-    def remove_final_states(self, vector[State] states):
-        """Removes states from final state set of the automaton.
-
-        :param list State states: States to be removed from final states.
-        """
-        self.thisptr.get().remove_final(states)
-
-    def reset_final_state(self, State state):
-        """Resets final state set of the automaton to the specified state.
-
-        :param State state: State to be made final.
-        """
-        self.thisptr.get().reset_final(state)
-
-    def reset_final_states(self, vector[State] states):
-        """Resets final state set of the automaton to the specified states.
-
-        :param list states: List of states to be made final.
-        """
-        self.thisptr.get().reset_final(states)
 
     def clear_final(self):
         """Clears final state set of the automaton."""
@@ -371,14 +348,6 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_trans(src, symb, tgt)
 
-    def has_trans(self, Trans tr):
-        """Tests if automaton contains transition
-
-        :param Trans tr: tested transition
-        :return: true if automaton contains transition
-        """
-        return self.thisptr.get().has_trans(dereference(tr.thisptr))
-
     def has_trans_raw(self, State src, Symbol symb, State tgt):
         """Tests if automaton contains transition
 
@@ -388,13 +357,6 @@ cdef class Nfa:
         :return: true if automaton contains transition
         """
         return self.thisptr.get().has_trans(src, symb, tgt)
-
-    def has_no_transitions(self):
-        """Tests if there are no transitions
-
-        :return: true if there are no transitions in automaton
-        """
-        return self.thisptr.get().nothing_in_trans()
 
     def get_num_of_trans(self):
         """Returns number of transitions in automaton
@@ -652,7 +614,7 @@ cdef class Nfa:
 
         :return: set of shortest words accepted by automaton
         """
-        cdef WordSet shortest
+        cdef cset[vector[Symbol]] shortest
         shortest = self.thisptr.get().get_shortest_words()
         result = []
         cdef cset[vector[Symbol]].iterator it = shortest.begin()
@@ -687,7 +649,7 @@ cdef class Nfa:
         :return: deterministic finite automaton, subset map
         """
         result = Nfa()
-        cdef SubsetMap subset_map
+        cdef umap[StateSet, State] subset_map
         mata.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
         return result, subset_map_to_dictionary(subset_map)
 
@@ -759,7 +721,7 @@ cdef class Nfa:
         :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
         """
         result = Nfa()
-        cdef ProductMap c_product_map
+        cdef umap[pair[State, State], State] c_product_map
         mata.intersection(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
             &c_product_map
@@ -885,7 +847,7 @@ cdef class Nfa:
         """
         result = Nfa()
         params = params or {'algo': 'classical'}
-        cdef SubsetMap subset_map
+        cdef umap[StateSet, State] subset_map
         mata.complement(
             result.thisptr.get(),
             dereference(lhs.thisptr.get()),
@@ -1067,36 +1029,17 @@ cdef class Nfa:
         return mata.is_deterministic(dereference(lhs.thisptr.get()))
 
     @classmethod
-    def is_lang_empty_path_counterexample(cls, Nfa lhs):
+    def is_lang_empty(cls, Nfa lhs, Run run = None):
         """Checks if language of automaton lhs is empty, if not, returns path of states as counter
         example.
 
         :param Nfa lhs:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
-        cdef Path path
-        return mata.is_lang_empty(dereference(lhs.thisptr.get()), &path), path
-
-    @classmethod
-    def is_lang_empty(cls, Nfa lhs):
-        """Checks if language of automaton lhs is empty, if not, returns path of states as counter
-        example.
-
-        :param Nfa lhs:
-        :return: true if the lhs is empty, counter example if lhs is not empty
-        """
-        return mata.is_lang_empty(dereference(lhs.thisptr.get()))
-
-
-    @classmethod
-    def is_lang_empty_word_counterexample(cls, Nfa lhs):
-        """Checks if language of automaton lhs is empty, if not, returns word as counter example.
-
-        :param Nfa lhs:
-        :return: true if the lhs is empty, counter example if lhs is not empty
-        """
-        cdef Word word
-        return mata.is_lang_empty_cex(dereference(lhs.thisptr.get()), &word), word
+        if run:
+            return mata.is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
+        else:
+            return mata.is_lang_empty(dereference(lhs.thisptr.get()), NULL)
 
     @classmethod
     def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
@@ -1130,7 +1073,7 @@ cdef class Nfa:
         :param dict params: additional params
         :return: true if lhs is included by rhs, counter example word if not
         """
-        cdef Word word
+        run = Run()
         cdef CAlphabet* c_alphabet = NULL
         if alphabet:
             c_alphabet = alphabet.as_base()
@@ -1138,14 +1081,14 @@ cdef class Nfa:
         result = mata.is_incl(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
-            &word,
+            run.thisptr,
             c_alphabet,
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                 for k, v in params.items()
             }
         )
-        return result, word
+        return result, run
 
     @classmethod
     def is_included(
@@ -1214,7 +1157,7 @@ cdef class Nfa:
 
         :return: Set of symbols.
         """
-        cdef SymbolSet symbols = self.thisptr.get().get_used_symbols()
+        cdef COrdVector[Symbol] symbols = self.thisptr.get().get_used_symbols()
         return {s for s in symbols}
 
     @classmethod
@@ -1238,7 +1181,9 @@ cdef class Nfa:
         :param vector[Symbol] word: tested word
         :return: true if word is in language of automaton lhs
         """
-        return mata.is_in_lang(dereference(lhs.thisptr.get()), <Word> word)
+        run = Run()
+        run.thisptr.word = word
+        return mata.is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
     @classmethod
     def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
@@ -1248,7 +1193,9 @@ cdef class Nfa:
         :param vector[Symbol] word: tested word
         :return: true if any prefix of word is in language of automaton lhs
         """
-        return mata.is_prfx_in_lang(dereference(lhs.thisptr.get()), <Word> word)
+        run = Run()
+        run.thisptr.word = word
+        return mata.is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
     @classmethod
     def accepts_epsilon(cls, Nfa lhs):
@@ -1266,7 +1213,7 @@ cdef class Nfa:
     # Helper functions
 
     @classmethod
-    def get_word_for_path(cls, Nfa lhs, path):
+    def get_word_for_path(cls, Nfa lhs, Run run):
         """For a given path (set of states) returns a corresponding word
 
         >>> mata.Nfa.get_word_for_path(lhs, [0, 1, 2])
@@ -1276,7 +1223,11 @@ cdef class Nfa:
         :param list path: list of states
         :return: pair of word (list of symbols) and true or false, whether the search was successful
         """
-        return mata.get_word_for_path(dereference(lhs.thisptr.get()), path)
+        cdef pair[CRun, bool] result
+        result = mata.get_word_for_path(dereference(lhs.thisptr.get()), dereference(run.thisptr))
+        run = Run()
+        run.thisptr.word = result.first.word
+        return run, result.second
 
     @classmethod
     def encode_word(cls, string_to_symbol, word):
@@ -1289,10 +1240,14 @@ cdef class Nfa:
         :param word: list of strings representing a encoded word
         :return:
         """
-        return mata.encode_word(
+        run = Run()
+        cdef CRun result
+        result = mata.encode_word(
             {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
             [s.encode('utf-8') for s in word]
         )
+        run.thisptr.word = result.word
+        return run
 
 
 cdef class OnTheFlyAlphabet(Alphabet):
@@ -1375,7 +1330,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
         :return: Set of supported symbols.
         """
-        cdef SymbolSet symbols = self.thisptr.get_alphabet_symbols()
+        cdef COrdVector[Symbol] symbols = self.thisptr.get_alphabet_symbols()
         return {s for s in symbols}
 
     cdef mata.CAlphabet* as_base(self):
@@ -1574,10 +1529,10 @@ cdef class BinaryRelation:
         return str(tabulate.tabulate(self.to_matrix()))
 
 
-cdef subset_map_to_dictionary(SubsetMap subset_map):
+cdef subset_map_to_dictionary(umap[StateSet, State] subset_map):
     """Helper function that translates the unordered map to dictionary
 
-    :param SubsetMap subset_map: map of state sets to states
+    :param umap[StateSet, State]: map of state sets to states
     :return: subset_map as dictionary
     """
     result = {}

@@ -267,7 +267,7 @@ private:
     protected:
         IntAlphabetSingleton() = default;
     }; // class IntAlphabetSingleton.
-    
+
     IntAlphabetSingleton& alphabet_instance;
 }; // class IntAlphabet.
 
@@ -670,7 +670,7 @@ public:
      *
      * @param[out] result An automaton representing a directed graph.
      */
-    void get_digraph(Nfa& result) const;
+    void get_one_letter_aut(Nfa& result) const;
 
     void print_to_DOT(std::ostream &outputStream) const;
 
