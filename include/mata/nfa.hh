@@ -724,6 +724,24 @@ public:
         return transition_relation[state];
     } // operator[] }}}
 
+
+    /**
+     * Return all epsilon transitions from epsilon symbol under a given state.
+     * @param[in] state State from which are epsilon transitions checked
+     * @param[in] epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    Moves::const_iterator get_epsilon_transitions(State state, const Symbol epsilon = EPSILON) const;
+
+    /**
+     * Return all epsilon transitions from epsilon symbol under given state transitions.
+     * @param[in] state_transitions State transitions from which are epsilon transitions checked.
+     * @param[in] epsilon User can define his favourite epsilon or used default
+     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
+     * there are no epsilon transitions.
+     */
+    static Moves::const_iterator get_epsilon_transitions(const Moves& state_transitions, const Symbol epsilon = EPSILON);
 private:
 }; // Nfa
 
