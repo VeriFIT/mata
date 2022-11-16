@@ -613,12 +613,12 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     }
 
     bool changed = true;
-    const Move epsilon_symbol_to_find{epsilon };
     while (changed) { // compute the fixpoint
         changed = false;
         for (size_t i=0; i < num_of_states; ++i) {
             const auto& state_transitions{ aut[i] };
-            const auto state_symbol_transitions{ state_transitions.find(epsilon_symbol_to_find) };
+            const auto state_symbol_transitions{
+                state_transitions.find(Move{epsilon}) };
             if (state_symbol_transitions != state_transitions.end()) {
                 StateSet &src_eps_cl = eps_closure[i];
                 for (const State tgt: state_symbol_transitions->states_to) {
