@@ -437,10 +437,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
     SECTION("construct an empty automaton")
     {
         inter_aut.automaton_type = Mata::IntermediateAut::AFA;
-        //REQUIRE(is_lang_empty(aut));
         aut = Mata::Afa::construct(inter_aut);
         REQUIRE(true);
-        //REQUIRE(is_lang_empty(aut));
     }
 
     SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton")

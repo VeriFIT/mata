@@ -424,7 +424,7 @@ bool is_complete(const Afa& aut, const Alphabet& alphabet);
 /** Loads an automaton from Parsed object */
 Afa construct(
 	    const Mata::Parser::ParsedSection&   parsec,
-        Alphabet*                            alphabet,
+	    Alphabet*                            alphabet,
 	    StringToStateMap*                    state_map = nullptr);
 /**
  * Loads automaton from intermediate automaton

@@ -932,7 +932,7 @@ Afa Mata::Afa::construct(
 	StringToStateMap*                    state_map)
 { // {{{
 	assert(nullptr != alphabet);
-    Afa aut;
+	Afa aut;
 
 	if (parsec.type != Mata::Afa::TYPE_AFA) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
