@@ -214,14 +214,14 @@ cdef class Nfa:
 
         :param State state: State to be made initial.
         """
-        self.thisptr.get().add_initial(state)
+        self.thisptr.get().make_initial(state)
 
     def make_initial_states(self, vector[State] states):
         """Makes specified states from the automaton initial.
 
         :param list states: List of states to be made initial.
         """
-        self.thisptr.get().add_initial(states)
+        self.thisptr.get().make_initial(states)
 
     def has_initial_state(self, State st):
         """Tests if automaton contains given state
@@ -268,14 +268,14 @@ cdef class Nfa:
 
         :param State state: State to be made final.
         """
-        self.thisptr.get().add_final(state)
+        self.thisptr.get().make_final(state)
 
     def make_final_states(self, vector[State] states):
         """Makes specified states from the automaton final.
 
         :param vector[State] states: List of states to be made final.
         """
-        self.thisptr.get().add_final(states)
+        self.thisptr.get().make_final(states)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state

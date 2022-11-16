@@ -381,7 +381,7 @@ public:
      * Make @p state initial.
      * @param state State to be added to initial states.
      */
-    void add_initial(State state)
+    void make_initial(State state)
     {
         if (this->states_number() <= state) {
             throw std::runtime_error("Cannot make state initial because it is not in automaton");
@@ -394,9 +394,9 @@ public:
      * Make @p vec of states initial states.
      * @param vec Vector of states to be added to initial states.
      */
-    void add_initial(const std::vector<State>& vec)
+    void make_initial(const std::vector<State>& vec)
     {
-        for (const State& st : vec) { this->add_initial(st); }
+        for (const State& st : vec) { this->make_initial(st); }
     }
 
     bool has_initial(const State &state_to_check) const {return initial_states.count(state_to_check);}
@@ -420,7 +420,7 @@ public:
      * Make @p state final.
      * @param state[in] State to be added to final states.
      */
-    void add_final(const State state)
+    void make_final(const State state)
     {
         if (this->states_number() <= state) {
             throw std::runtime_error("Cannot make state final because it is not in automaton");
@@ -433,9 +433,9 @@ public:
      * Make @p vec of states final states.
      * @param vec[in] Vector of states to be added to final states.
      */
-    void add_final(const std::vector<State>& vec)
+    void make_final(const std::vector<State>& vec)
     {
-        for (const State& st : vec) { this->add_final(st); }
+        for (const State& st : vec) { this->make_final(st); }
     }
 
     bool has_final(const State &state_to_check) const { return final_states.count(state_to_check); }

@@ -94,7 +94,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 
         // Make initial states of the result.
         for (const State lhs_initial_state: lhs.initial_states) {
-            result.add_initial(lhs_result_states_map_internal[lhs_initial_state]);
+            result.make_initial(lhs_result_states_map_internal[lhs_initial_state]);
         }
 
         // Add lhs transitions to the result.
@@ -157,7 +157,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     // Make result final states.
     for (const auto& rhs_final_state: rhs.final_states)
     {
-        result.add_final(rhs_result_states_map_internal[rhs_final_state]);
+        result.make_final(rhs_result_states_map_internal[rhs_final_state]);
     }
 
     // Add rhs transitions to the result.

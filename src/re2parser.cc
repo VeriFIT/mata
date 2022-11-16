@@ -129,7 +129,7 @@ namespace {
               }
             }
 
-            explicit_nfa.add_initial(this->state_cache.state_mapping[start_state][initial_state_index]);
+            explicit_nfa.make_initial(this->state_cache.state_mapping[start_state][initial_state_index]);
             this->state_cache.has_state_incoming_edge[this->state_cache.state_mapping[start_state][initial_state_index]] = true;
 
             // Used for epsilon closure, it contains tuples (state_reachable_by_epsilon_transitions, source_state_of_epsilon_transitions)
@@ -450,7 +450,7 @@ namespace {
                 if (!this->state_cache.has_state_incoming_edge[target_state]) {
                     continue;
                 }
-                nfa.add_final(target_state);
+                nfa.make_final(target_state);
             }
         }
 
@@ -480,7 +480,7 @@ namespace {
                 if (static_cast<int>(renumbered_states[state]) == -1) {
                     renumbered_states[state] = renumbered_explicit_nfa.add_state();
                 }
-                renumbered_explicit_nfa.add_final(renumbered_states[state]);
+                renumbered_explicit_nfa.make_final(renumbered_states[state]);
             }
 
             for (int state = 0; state < program_size; state++) {
@@ -499,7 +499,7 @@ namespace {
             }
 
             for (auto state: input_nfa.initial_states) {
-                renumbered_explicit_nfa.add_initial(renumbered_states[state]);
+                renumbered_explicit_nfa.make_initial(renumbered_states[state]);
             }
 
             return renumbered_explicit_nfa;

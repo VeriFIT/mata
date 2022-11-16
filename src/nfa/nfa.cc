@@ -106,7 +106,7 @@ namespace {
             const State q_class_state = state_map.at(q);
 
             if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial
-                result.add_initial(q_class_state);
+                result.make_initial(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
@@ -141,7 +141,7 @@ namespace {
                 }
 
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
-                    result.add_final(q_class_state);
+                    result.make_final(q_class_state);
                 }
             }
         }
@@ -642,7 +642,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     for (const auto& state_closure_pair : eps_closure) { // for every state
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
-            if (aut.has_final(eps_cl_state)) result.add_final(src_state);
+            if (aut.has_final(eps_cl_state)) result.make_final(src_state);
             for (const auto& symb_set : aut[eps_cl_state]) {
                 if (symb_set.symbol == epsilon) continue;
 
@@ -1040,11 +1040,11 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisInitialState : lhs.initial_states) {
-        unionAutomaton.add_initial(thisStateToUnionState[thisInitialState]);
+        unionAutomaton.make_initial(thisStateToUnionState[thisInitialState]);
     }
 
     for (State thisFinalState : lhs.final_states) {
-        unionAutomaton.add_final(thisStateToUnionState[thisFinalState]);
+        unionAutomaton.make_final(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < lhs.transition_relation.size(); ++thisState) {
@@ -1129,14 +1129,14 @@ Nfa Mata::Nfa::determinize(
 
     const StateSet S0 =  Mata::Util::OrdVector<State>(aut.initial_states.ToVector());
     const State S0id = result.add_state();
-    result.add_initial(S0id);
+    result.make_initial(S0id);
     //for fast detection of a final state in a set.
     std::vector<bool> isFinal(aut.states_number(), false);
     for (const auto &q: aut.final_states) {
         isFinal[q] = true;
     }
     if (contains_final(S0, isFinal)) {
-        result.add_final(S0id);
+        result.make_final(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
@@ -1180,7 +1180,7 @@ Nfa Mata::Nfa::determinize(
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
                 if (contains_final(T, isFinal)) {
-                    result.add_final(Tid);
+                    result.make_final(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
@@ -1597,10 +1597,10 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
                 add_trans(new_initial_state, transitions.symbol, state_to);
             }
         }
-        if (has_final(orig_initial_state)) { add_final(new_initial_state); }
+        if (has_final(orig_initial_state)) { make_final(new_initial_state); }
     }
     clear_initial();
-    add_initial(new_initial_state);
+     make_initial(new_initial_state);
 }
 
 void Nfa::unify_final() {
@@ -1610,8 +1610,8 @@ void Nfa::unify_final() {
         for (const auto& transitions: get_transitions_to(orig_final_state)) {
             add_trans(transitions.src, transitions.symb, new_final_state);
         }
-        if (has_initial(orig_final_state)) { add_initial(new_final_state); }
+        if (has_initial(orig_final_state)) { make_initial(new_final_state); }
     }
     clear_final();
-    add_final(new_final_state);
+    make_final(new_final_state);
 }

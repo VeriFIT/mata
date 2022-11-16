@@ -85,8 +85,8 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
     SECTION("Small automaton with depths")
     {
-        aut.add_initial(1);
-        aut.add_final(8);
+        aut.make_initial(1);
+        aut.make_final(8);
         aut.add_trans(1, epsilon, 2);
         aut.add_trans(2, 'a', 3);
         aut.add_trans(2, 'b', 4);
@@ -111,8 +111,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
     Symbol epsilon{ 'c' };
     SECTION("Large automaton") {
         Nfa aut(100);
-        aut.add_initial(1);
-        aut.add_final(11);
+        aut.make_initial(1);
+        aut.make_final(11);
         aut.add_trans(1, 'a', 2);
         aut.add_trans(1, 'b', 3);
         aut.add_trans(3, 'c', 4);
@@ -157,8 +157,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
 
     SECTION("Correctly make states final and initial") {
         Nfa aut(100);
-        aut.add_initial(0);
-        aut.add_final({4, 6});
+        aut.make_initial(0);
+        aut.make_final({4, 6});
         aut.add_trans(0, epsilon, 2);
         aut.add_trans(0, 'a', 1);
         aut.add_trans(1, epsilon, 3);

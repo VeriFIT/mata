@@ -191,8 +191,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
     Nfa a{6};
-    a.add_initial(0);
-    a.add_final({1, 4, 5});
+    a.make_initial(0);
+    a.make_final({1, 4, 5});
     a.add_trans(0, EPSILON, 1);
     a.add_trans(1, 'a', 1);
     a.add_trans(1, 'b', 1);
@@ -202,8 +202,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     a.add_trans(3, 'a', 5);
 
     Nfa b{10};
-    b.add_initial(0);
-    b.add_final({2, 4, 8, 7});
+    b.make_initial(0);
+    b.make_final({2, 4, 8, 7});
     b.add_trans(0, 'b', 1);
     b.add_trans(0, 'a', 2);
     b.add_trans(2, 'a', 4);
@@ -290,8 +290,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
 {
     Nfa a{6};
-    a.add_initial(0);
-    a.add_final({1, 4, 5});
+    a.make_initial(0);
+    a.make_final({1, 4, 5});
     a.add_trans(0, EPSILON, 1);
     a.add_trans(1, 'a', 1);
     a.add_trans(1, 'b', 1);
@@ -301,8 +301,8 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
     a.add_trans(3, 'a', 5);
 
     Nfa b{10};
-    b.add_initial(0);
-    b.add_final({2, 4, 8, 7});
+    b.make_initial(0);
+    b.make_final({2, 4, 8, 7});
     b.add_trans(0, 'b', 1);
     b.add_trans(0, 'a', 2);
     b.add_trans(2, 'a', 4);

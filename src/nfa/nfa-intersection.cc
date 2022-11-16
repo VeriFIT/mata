@@ -73,7 +73,7 @@ void create_product_state_and_trans(
         pairs_to_process.insert(intersect_state_pair_to);
 
         if (lhs.has_final(lhs_state_to) && rhs.has_final(rhs_state_to)) {
-            product.add_final(intersect_state_to);
+            product.make_final(intersect_state_to);
         }
     } else {
         intersect_state_to = product_map[intersect_state_pair_to];
