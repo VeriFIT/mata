@@ -1,5 +1,6 @@
 include *.pyx
 include *.pxd
+include pyproject.toml
 include mata/LICENSE
 include mata/VERSION
 include mata/README.md
