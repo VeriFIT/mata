@@ -89,7 +89,7 @@ TEST_CASE("Mata::Rrt::Rrt::add_trans()/has_trans()")
   WARN_PRINT("Insufficient testing of Mata::Rrt::Rrt::add_trans()");
 } // }}}
 
-TEST_CASE("Mata::Rrt::Rrt::add_initial()/has_initial()")
+TEST_CASE("Mata::Rrt::Rrt::make_initial()/has_initial()")
 { // {{{
 	Rrt rrt;
 
@@ -99,7 +99,7 @@ TEST_CASE("Mata::Rrt::Rrt::add_initial()/has_initial()")
   REQUIRE(!rrt.has_initial(4));
 } // }}}
 
-TEST_CASE("Mata::Rrt::Rrt::add_final()/has_final()")
+TEST_CASE("Mata::Rrt::Rrt::make_final()/has_final()")
 { // {{{
 	Rrt rrt;
 

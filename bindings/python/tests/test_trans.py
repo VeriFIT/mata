@@ -17,11 +17,11 @@ def test_trans():
     assert lhs == chs
 
 
-def test_transsymbstates():
-    a = mata.TransSymbolStates(0, [0, 1])
-    b = mata.TransSymbolStates(1, [1])
-    c = mata.TransSymbolStates(0, [0])
-    d = mata.TransSymbolStates(1, [])
+def test_move():
+    a = mata.Move(0, [0, 1])
+    b = mata.Move(1, [1])
+    c = mata.Move(0, [0])
+    d = mata.Move(1, [])
     assert a.symbol == 0
     assert a.states_to == [0, 1]
 
@@ -44,15 +44,15 @@ def test_transsymbstates():
 def test_transition_operations(prepare_automaton_a):
     nfa = mata.Nfa(10)
     nfa.add_transition(3, ord('c'), 4)
-    assert nfa.has_trans_raw(3, ord('c'), 4)
+    assert nfa.has_transition(3, ord('c'), 4)
     trans = mata.Trans(4, ord('c'), 5)
     nfa.add_transition_object(trans)
-    assert nfa.has_trans(trans)
+    assert nfa.has_transition(trans.src, trans.symb, trans.tgt)
 
     nfa.remove_trans_raw(3, ord('c'), 4)
-    assert not nfa.has_trans_raw(3, ord('c'), 4)
+    assert not nfa.has_transition(3, ord('c'), 4)
     nfa.remove_trans(trans)
-    assert not nfa.has_trans(trans)
+    assert not nfa.has_transition(trans.src, trans.symb, trans.tgt)
 
     nfa = prepare_automaton_a()
 

@@ -69,7 +69,7 @@ NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = 
  * @return A list of all (non-empty) noodles.
  */
 NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const Nfa& right_automaton,
-                                     bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
+                                     bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -92,7 +92,7 @@ NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const 
  * @return A list of all (non-empty) noodles.
  */
 NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa& right_automaton,
-                                     bool include_empty = false, const StringDict& params = {{"reduce", "false"}});
+                                     bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 } // SegNfa
 } // Nfa
 } // Mata

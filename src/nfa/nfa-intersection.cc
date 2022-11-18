@@ -31,11 +31,12 @@ void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
  * @param[in] pair_to_process Currently processed pair of original states.
  * @param[in] intersection_transition State transitions to add to the product.
  */
-void add_product_transition(Nfa& product, ProductMap& product_map, const StatePair& pair_to_process,
-                            TransSymbolStates& intersection_transition) {
+void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,State>, State>& product_map,
+                            const std::pair<State,State>& pair_to_process,
+                            Move& intersection_transition) {
     if (intersection_transition.states_to.empty()) { return; }
 
-    auto& intersect_state_transitions{ product.transitionrelation[product_map[pair_to_process]] };
+    auto& intersect_state_transitions{ product.transition_relation[product_map[pair_to_process]] };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
     if (symbol_transitions_iter == intersect_state_transitions.end()) {
         intersect_state_transitions.push_back(intersection_transition);
@@ -55,19 +56,19 @@ void add_product_transition(Nfa& product, ProductMap& product_map, const StatePa
  * @param[out] intersect_transitions Transitions of the product state.
  */
 void create_product_state_and_trans(
-        Nfa& product,
-        ProductMap& product_map,
-        const Nfa& lhs,
-        const Nfa& rhs,
-        std::unordered_set<StatePair>& pairs_to_process,
-        const State lhs_state_to,
-        const State rhs_state_to,
-        TransSymbolStates& intersect_transitions
+            Nfa& product,
+            std::unordered_map<std::pair<State,State>, State>& product_map,
+            const Nfa& lhs,
+            const Nfa& rhs,
+            std::unordered_set<std::pair<State,State>>& pairs_to_process,
+            const State lhs_state_to,
+            const State rhs_state_to,
+            Move& intersect_transitions
 ) {
-    const StatePair intersect_state_pair_to(lhs_state_to, rhs_state_to);
+    const std::pair<State,State> intersect_state_pair_to(lhs_state_to, rhs_state_to);
     State intersect_state_to;
     if (product_map.find(intersect_state_pair_to) == product_map.end()) {
-        intersect_state_to = product.add_new_state();
+        intersect_state_to = product.add_state();
         product_map[intersect_state_pair_to] = intersect_state_to;
         pairs_to_process.insert(intersect_state_pair_to);
 
@@ -85,30 +86,27 @@ void create_product_state_and_trans(
 namespace Mata {
 namespace Nfa {
 
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductMap* prod_map) {
-    *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
-}
-
-Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductMap* prod_map) {
+Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
+                 std::unordered_map<std::pair<State,State>, State> *prod_map) {
     Nfa product{}; // Product of the intersection.
     // Product map for the generated intersection mapping original state pairs to new product states.
-    ProductMap product_map{};
-    StatePair pair_to_process{}; // State pair of original states currently being processed.
-    std::unordered_set<StatePair> pairs_to_process{}; // Set of state pairs of original states to process.
+    std::unordered_map<std::pair<State,State>, State> product_map{};
+    std::pair<State,State> pair_to_process{}; // State pair of original states currently being processed.
+    std::unordered_set<std::pair<State,State>> pairs_to_process{}; // Set of state pairs of original states to process.
 
     // Initialize pairs to process with initial state pairs.
-    for (const State lhs_initial_state : lhs.initialstates) {
-        for (const State rhs_initial_state : rhs.initialstates) {
+    for (const State lhs_initial_state : lhs.initial_states) {
+        for (const State rhs_initial_state : rhs.initial_states) {
             // Update product with initial state pairs.
-            const StatePair this_and_other_initial_state_pair(lhs_initial_state, rhs_initial_state);
-            const State new_intersection_state = product.add_new_state();
+            const std::pair<State,State> this_and_other_initial_state_pair(lhs_initial_state, rhs_initial_state);
+            const State new_intersection_state = product.add_state();
 
             product_map[this_and_other_initial_state_pair] = new_intersection_state;
             pairs_to_process.insert(this_and_other_initial_state_pair);
 
-            product.initialstates.push_back(new_intersection_state);
+            product.initial_states.push_back(new_intersection_state);
             if (lhs.has_final(lhs_initial_state) && rhs.has_final(rhs_initial_state)) {
-                product.finalstates.push_back(new_intersection_state);
+                product.final_states.push_back(new_intersection_state);
             }
         }
     }
@@ -117,19 +115,20 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductM
         pair_to_process = *pairs_to_process.cbegin();
         pairs_to_process.erase(pair_to_process);
         // Compute classic product for current state pair.
-        Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<TransSymbolStates>::const_iterator> sync_iterator(2);
-        Mata::Util::push_back(sync_iterator,lhs.transitionrelation[pair_to_process.first]);
-        Mata::Util::push_back(sync_iterator,rhs.transitionrelation[pair_to_process.second]);
+
+        Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<Move>::const_iterator> sync_iterator(2);
+        Mata::Util::push_back(sync_iterator,lhs.transition_relation[pair_to_process.first]);
+        Mata::Util::push_back(sync_iterator,rhs.transition_relation[pair_to_process.second]);
 
         while (sync_iterator.advance()) {
-            std::vector<TransitionList::const_iterator> moves = sync_iterator.get_current();
+            std::vector<Moves::const_iterator> moves = sync_iterator.get_current();
             assert(moves.size() == 2); // One move per state in the pair.
 
             // Compute product for state transitions with same symbols.
             // Find all transitions that have the same symbol for first and the second state in the pair_to_process.
             // Create transition from the pair_to_process to all pairs between states to which first transition goes
             //  and states to which second one goes.
-            TransSymbolStates intersection_transition{ moves[0]->symbol};
+            Move intersection_transition{moves[0]->symbol};
             for (const State this_state_to: moves[0]->states_to)
             {
                 for (const State other_state_to: moves[1]->states_to)
@@ -147,14 +146,14 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductM
             // Add transitions of the current state pair for an epsilon preserving product.
 
             // Check for lhs epsilon transitions.
-            const auto& lhs_state_symbol_transitions{ lhs.transitionrelation[pair_to_process.first] };
+            const auto& lhs_state_symbol_transitions{ lhs.transition_relation[pair_to_process.first] };
             if (!lhs_state_symbol_transitions.empty()) {
                 const auto& lhs_state_last_transitions{ lhs_state_symbol_transitions.back() };
                 if (lhs_state_last_transitions.symbol == EPSILON) {
                     // Compute product for state transitions with lhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition
                     //  goes and states to which second one goes.
-                    TransSymbolStates intersection_transition{EPSILON};
+                    Move intersection_transition{EPSILON};
                     for (const State lhs_state_to: lhs_state_last_transitions.states_to) {
                         create_product_state_and_trans(product, product_map, lhs, rhs, pairs_to_process,
                                                        lhs_state_to, pair_to_process.second,
@@ -165,14 +164,14 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, ProductM
             }
 
             // Check for rhs epsilon transitions in case only rhs has any transitions and add them.
-            const auto& rhs_state_symbol_transitions{ rhs.transitionrelation[pair_to_process.second]};
+            const auto& rhs_state_symbol_transitions{ rhs.transition_relation[pair_to_process.second]};
             if (!rhs_state_symbol_transitions.empty()) {
                 const auto& rhs_state_last_transitions{rhs_state_symbol_transitions.back()};
                 if (rhs_state_last_transitions.symbol == EPSILON) {
                     // Compute product for state transitions with rhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition
                     //  goes and states to which second one goes.
-                    TransSymbolStates intersection_transition{EPSILON};
+                    Move intersection_transition{EPSILON};
                     for (const State rhs_state_to: rhs_state_last_transitions.states_to) {
                         create_product_state_and_trans(product, product_map, lhs, rhs, pairs_to_process,
                                                        pair_to_process.first, rhs_state_to,

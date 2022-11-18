@@ -44,7 +44,7 @@ namespace Algorithms {
     Nfa complement_classical(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            SubsetMap*         subset_map);
+            std::unordered_map<StateSet, State>* subset_map);
 
     /**
      * Complement implemented by determization and making final states which were non final in the original automaton.
@@ -57,8 +57,8 @@ namespace Algorithms {
     Nfa complement_naive(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            const StringDict&  params,
-            SubsetMap*         subset_map);
+            const StringMap&  params,
+            std::unordered_map<StateSet, State>* subset_map);
 
     /**
      * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then
@@ -74,8 +74,8 @@ namespace Algorithms {
             const Nfa&             smaller,
             const Nfa&             bigger,
             const Alphabet* const  alphabet,
-            Word*                  cex,
-            const StringDict&  /* params*/);
+            Run*                   cex,
+            const StringMap&  /* params*/);
 
     /**
      * Inclusion implemented by antichain algorithms.
@@ -91,8 +91,8 @@ namespace Algorithms {
             const Nfa&             smaller,
             const Nfa&             bigger,
             const Alphabet* const  alphabet,
-            Word*                  cex,
-            const StringDict&      params);
+            Run*                   cex,
+            const StringMap&      params);
 
     /**
      * Universality check implemented by checking emptiness of complemented automaton
@@ -104,8 +104,8 @@ namespace Algorithms {
     bool is_universal_naive(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            Word*              cex,
-            const StringDict&  /* params*/);
+            Run*               cex,
+            const StringMap&  /* params*/);
 
     /**
      * Universality checking based on subset construction with antichain.
@@ -118,8 +118,8 @@ namespace Algorithms {
     bool is_universal_antichains(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            Word*              cex,
-            const StringDict&  params);
+            Run*              cex,
+            const StringMap&  params);
 } // Algorithms
 } // Nfa
 }

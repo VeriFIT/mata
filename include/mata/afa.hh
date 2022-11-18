@@ -55,10 +55,10 @@ using StateToStringMap = Mata::Nfa::StateToStringMap;
 using StringToStateMap = Mata::Nfa::StringToStateMap;
 using StringToSymbolMap = Mata::Nfa::StringToSymbolMap;
 
-using Path = Mata::Nfa::Path;
-using Word = Mata::Nfa::Word;
+using Path = Util::OrdVector<State>;
+using Word = Util::OrdVector<Symbol>;
 
-using StringDict = Mata::Nfa::StringDict;
+using StringDict = Mata::Nfa::StringMap;
 
 using StateSet = OrdVec<State>;
 using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
