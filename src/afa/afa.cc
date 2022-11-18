@@ -1093,8 +1093,9 @@ Afa Mata::Afa::construct(
             }
         }
 
-        assert(is_node_operator(trans.second.node, FormulaNode::AND));
-        assert(trans.second.children.front().node.is_operand());
+        assert(is_node_operator(trans.second.node, FormulaNode::AND) ||
+            "Clause of DNF should be conjunction");
+        assert(trans.second.children.front().node.is_operand() || "Node in conjunction should be operand");
         Symbol symbol = alphabet->translate_symb(trans.second.children.front().node.name);
 
         const FormulaGraph* curr_graph = &trans.second.children[1];
@@ -1102,7 +1103,8 @@ Afa Mata::Afa::construct(
         while (is_node_operator(curr_graph->node, FormulaNode::OR))
         {  // Processes each clause separately
             assert(curr_graph->children[1].node.is_operand() ||
-                   is_node_operator(curr_graph->children[1].node, FormulaNode::AND));
+                   is_node_operator(curr_graph->children[1].node, FormulaNode::AND) ||
+                   "Clause should be conjunction");
             // Conjunction is the right son of current node
             aut.add_trans(src_state, symbol,
                           create_node(curr_graph->children[1].collect_node_names()));
@@ -1113,7 +1115,8 @@ Afa Mata::Afa::construct(
 
         // process remaining conjunction
         assert(curr_graph->node.is_operand() ||
-               is_node_operator(curr_graph->node, FormulaNode::AND));
+               is_node_operator(curr_graph->node, FormulaNode::AND) ||
+               "Remaining clause should be conjunction");
         aut.add_trans(src_state, symbol,
                       create_node(curr_graph->collect_node_names()));
     }
