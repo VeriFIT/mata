@@ -1097,25 +1097,25 @@ Afa Mata::Afa::construct(
         assert(trans.second.children.front().node.is_operand());
         Symbol symbol = alphabet->translate_symb(trans.second.children.front().node.name);
 
-        const FormulaGraph* act_graph = &trans.second.children[1];
+        const FormulaGraph* curr_graph = &trans.second.children[1];
 
-        while (is_node_operator(act_graph->node, FormulaNode::OR))
+        while (is_node_operator(curr_graph->node, FormulaNode::OR))
         {  // Processes each clause separately
-            assert(act_graph->children[1].node.is_operand() ||
-                is_node_operator(act_graph->children[1].node, FormulaNode::AND));
+            assert(curr_graph->children[1].node.is_operand() ||
+                   is_node_operator(curr_graph->children[1].node, FormulaNode::AND));
             // Conjunction is the right son of current node
             aut.add_trans(src_state, symbol,
-                          create_node(act_graph->children[1].collect_node_names()));
+                          create_node(curr_graph->children[1].collect_node_names()));
 
             // jump to another clause which is the left son of current node
-            act_graph = &act_graph->children.front();
+            curr_graph = &curr_graph->children.front();
         }
 
         // process remaining conjunction
-        assert(act_graph->node.is_operand() ||
-               is_node_operator(act_graph->node, FormulaNode::AND));
+        assert(curr_graph->node.is_operand() ||
+               is_node_operator(curr_graph->node, FormulaNode::AND));
         aut.add_trans(src_state, symbol,
-                      create_node(act_graph->collect_node_names()));
+                      create_node(curr_graph->collect_node_names()));
     }
 
     // do the dishes and take out garbage
