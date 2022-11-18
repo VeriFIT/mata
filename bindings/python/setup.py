@@ -133,7 +133,7 @@ setup(
         'Cython>=0.29.32',
         'tabulate>=0.8.10',
         'ipython>=7.9.0',
-        'pandas>=1.5.0',
+        'pandas>=1.3.5',
         'networkx>=2.6.3',
         'graphviz>=0.10.1',
     ]
