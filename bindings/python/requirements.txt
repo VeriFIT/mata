@@ -1,6 +1,6 @@
 coverage>=6.4.1
 Cython>=0.29.32
-pytest>=7.1.2
+pytest>=3.6.4
 pytest-cov>=3.0.0
 tabulate>=0.8.10
 ipython>=7.9.0
