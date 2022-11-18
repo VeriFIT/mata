@@ -18,7 +18,7 @@ import graphviz
 import IPython
 import collections
 
-from IPython.display import display, HTML, DisplayObject
+from IPython.display import display, HTML
 
 cdef Symbol EPSILON = CEPSILON
 
