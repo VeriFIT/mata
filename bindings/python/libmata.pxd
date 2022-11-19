@@ -187,7 +187,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void increase_size_for_state(State)
         State add_state()
         void print_to_DOT(ostream)
-        cset[vector[Symbol]] get_shortest_words()
         Moves get_moves_from(State)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
@@ -217,6 +216,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
     # Automata operations
     cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
+    cdef void compute_fw_direct_simulation(const CNfa&)
 
     # Helper functions
     cdef pair[CRun, bool] get_word_for_path(CNfa&, CRun&)
@@ -243,14 +243,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
         StringToSymbolMap add_symbols_from(vector[string])
 
-    cdef cppclass CSegmentation "Mata::Nfa::SegNfa::Segmentation":
-        CSegmentation(CNfa&, Symbol) except +
-
-        ctypedef unsigned EpsilonDepth
-        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
-
-        EpsilonDepthTransitions get_epsilon_depths()
-        AutSequence get_segments()
 
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
@@ -264,7 +256,21 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void minimize(CNfa*, CNfa&)
     cdef void reduce(CNfa*, CNfa&, StateToStateMap*, StringMap&)
 
-cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
+
+cdef extern from "mata/nfa-string-solving.hh" namespace "Mata::Nfa::StringSolving":
+    cdef cset[vector[Symbol]] get_shortest_words(CNfa&)
+
+
+cdef extern from "mata/nfa-string-solving.hh" namespace "Mata::Nfa::StringSolving::SegNfa":
+    cdef cppclass CSegmentation "Mata::Nfa::StringSolving::SegNfa::Segmentation":
+        CSegmentation(CNfa&, Symbol) except +
+
+        ctypedef unsigned EpsilonDepth
+        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
+
+        EpsilonDepthTransitions get_epsilon_depths()
+        AutSequence get_segments()
+
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
 
     cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
@@ -274,7 +280,3 @@ cdef extern from "mata/noodlify.hh" namespace "Mata::Nfa::SegNfa":
 cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
     cdef void create_nfa(CNfa*, string) except +
     cdef void create_nfa(CNfa*, string, bool) except +
-
-
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    cdef void compute_fw_direct_simulation(const CNfa&)
