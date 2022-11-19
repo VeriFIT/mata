@@ -60,8 +60,9 @@ add_library(libmata STATIC
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc
 	nfa/nfa-concatenation.cc
-	nfa/nfa-segmentation.cc
-	nfa/noodlify.cc
+	nfa/string-solving/nfa-noodlification.cc
+	nfa/string-solving/nfa-segmentation.cc
+	nfa/string-solving/nfa-string-solving.cc
 	rra/rrt.cc
 )
 
@@ -79,9 +80,10 @@ add_executable(tests
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc
-	nfa/tests-nfa-segmentation.cc
 	nfa/tests-nfa-intersection.cc
-	nfa/tests-noodlify.cc
+	nfa/string-solving/tests-nfa-noodlification.cc
+	nfa/string-solving/tests-nfa-segmentation.cc
+	nfa/string-solving/tests-nfa-string-solving.cc
 	rra/tests-rrt.cc
 )
 

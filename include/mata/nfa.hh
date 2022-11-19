@@ -102,10 +102,9 @@ public:
     Symbol operator[](const std::string& symb) { return this->translate_symb(symb); }
 
     /**
-     * @brief Get a list of symbols in the alphabet.
+     * @brief Get a set of all symbols in the alphabet.
      *
      * The result does not have to equal the list of symbols in the automaton using this alphabet.
-     * @return // TODO: Finish.
      */
     virtual Util::OrdVector<Symbol> get_alphabet_symbols() const
     { // {{{
@@ -670,13 +669,6 @@ public:
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
-    /**
-     * Get shortest words (regarding their length) of the automaton using BFS.
-     * @return Set of shortest words.
-     */
-     // TODO: Move to string solving.
-    WordSet get_shortest_words() const;
-
     struct const_iterator
     { // {{{
         const Nfa* nfa;
@@ -725,7 +717,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    Moves::const_iterator get_epsilon_transitions(State state, const Symbol epsilon = EPSILON) const;
+    Moves::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -734,7 +726,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static Moves::const_iterator get_epsilon_transitions(const Moves& state_transitions, const Symbol epsilon = EPSILON);
+    static Moves::const_iterator get_epsilon_transitions(const Moves& state_transitions, Symbol epsilon = EPSILON);
 private:
 }; // Nfa
 
@@ -783,7 +775,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-        // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon()
+// TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
@@ -937,223 +929,6 @@ inline Run encode_word(
 	for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
-
-/**
- * Operations on segment automata.
- */
- // TODO: Move all to string solving.
-namespace SegNfa
-{
-/// Segment automaton.
-/// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
-/// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
-/// Segment automaton can have initial states only in the first segment and final states only in the last segment.
-using SegNfa = Nfa;
-
-/**
- * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
- */
-class Segmentation
-{
-public:
-    using EpsilonDepth = unsigned; ///< Depth of ε-transitions.
-    /// Dictionary of lists of ε-transitions grouped by their depth.
-    /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
-    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
-
-    /**
-     * Prepare automaton @p aut for segmentation.
-     * @param[in] aut Segment automaton to make segments for.
-     * @param[in] epsilon Symbol to execute segmentation for.
-     */
-    explicit Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut)
-    {
-        compute_epsilon_depths(); // Map depths to epsilon transitions.
-    }
-
-    /**
-     * Get segmentation depths for ε-transitions.
-     * @return Map of depths to lists of ε-transitions.
-     */
-    const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
-
-    /**
-     * Get segment automata.
-     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
-     * to the right (final states of segment automaton).
-     */
-    const AutSequence& get_segments();
-
-    /**
-     * Get raw segment automata.
-     * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
-     * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
-     */
-    const AutSequence& get_untrimmed_segments();
-
-private:
-    const Symbol epsilon; ///< Symbol for which to execute segmentation.
-    /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
-    const SegNfa& automaton;
-    EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
-    AutSequence segments{}; ///< Segments for @p automaton.
-    AutSequence segments_raw{}; ///< Raw segments for @p automaton.
-
-    /**
-     * Pair of state and its depth.
-     */
-    struct StateDepthPair
-    {
-        State state; ///< State with a depth.
-        EpsilonDepth depth; ///< Depth of a state.
-    };
-
-    /**
-     * Compute epsilon depths with their transitions.
-     */
-    void compute_epsilon_depths();
-
-    /**
-     * Split segment @c automaton into @c segments.
-     */
-    void split_aut_into_segments();
-
-    /**
-     * Propagate changes to the current segment automaton to the next segment automaton.
-     * @param[in] current_depth Current depth.
-     * @param[in] transition Current epsilon transition.
-     */
-    void update_next_segment(size_t current_depth, const Trans& transition);
-
-    /**
-     * Update current segment automaton.
-     * @param[in] current_depth Current depth.
-     * @param[in] transition Current epsilon transition.
-     */
-    void update_current_segment(size_t current_depth, const Trans& transition);
-
-    /**
-     * Initialize map of visited states.
-     * @return Map of visited states.
-     */
-    std::unordered_map<State, bool> initialize_visited_map() const;
-
-    /**
-     * Initialize worklist of states with depths to process.
-     * @return Queue of state and its depth pairs.
-     */
-    std::deque<StateDepthPair> initialize_worklist() const;
-
-    /**
-     * Process pair of state and its depth.
-     * @param[in] state_depth_pair Current state depth pair.
-     * @param[out] worklist Worklist of state and depth pairs to process.
-     */
-    void process_state_depth_pair(const StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
-
-    /**
-     * Add states with non-epsilon transitions to the @p worklist.
-     * @param state_transitions[in] Transitions from current state.
-     * @param depth[in] Current depth.
-     * @param worklist[out] Worklist of state and depth pairs to process.
-     */
-    static void add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
-                                            std::deque<StateDepthPair>& worklist);
-
-    /**
-     * Process epsilon transitions for the current state.
-     * @param[in] state_depth_pair Current state depth pair.
-     * @param[in] state_transitions Transitions from current state.
-     * @param[out] worklist Worklist of state and depth pairs to process.
-     */
-    void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const Move& state_transitions,
-                                    std::deque<StateDepthPair>& worklist);
-
-    /**
-     * @brief Remove inner initial and final states.
-     *
-     * Remove all initial states for all segments but the first one and all final states for all segments but the last one.
-     */
-    void remove_inner_initial_and_final_states();
-}; // Segmentation
-} // SegNfa
-
-/**
- * Class mapping states to the shortest words accepted by languages of the states.
- */
- // TODO: Move to string solving.
-class ShortestWordsMap
-{
-public:
-    /**
-     * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
-     * @param aut Automaton to compute shortest words for.
-     */
-    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
-        insert_initial_lengths();
-        compute();
-    }
-
-    /**
-     * Gets shortest words for the given @p states.
-     * @param[in] states States to map shortest words for.
-     * @return Set of shortest words.
-     */
-    WordSet get_shortest_words_for(const StateSet& states) const;
-
-    /**
-     * Gets shortest words for the given @p state.
-     * @param[in] state State to map shortest words for.
-     * @return Set of shortest words.
-     */
-    WordSet get_shortest_words_for(State state) const;
-
-private:
-    using WordLength = int; ///< A length of a word.
-    /// Pair binding the length of all words in the word set and word set with words of the given length.
-    using LengthWordsPair = std::pair<WordLength, WordSet>;
-    /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
-    std::unordered_map<State, LengthWordsPair> shortest_words_map{};
-    std::set<State> processed{}; ///< Set of already processed states.
-    std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const Nfa reversed_automaton; ///< Reversed input automaton.
-
-    /**
-     * @brief Inserts initial lengths into the shortest words map.
-     *
-     * Inserts initial length of length 0 for final state in the automaton (initial states in the reversed automaton).
-     */
-    void insert_initial_lengths();
-
-    /**
-     * Computes shortest words for all states in the automaton.
-     */
-    void compute();
-
-    /**
-     * Computes shortest words for the given @p state.
-     * @param[in] state State to compute shortest words for.
-     */
-    void compute_for_state(State state);
-
-    /**
-     * Creates default shortest words mapping for yet unprocessed @p state.
-     * @param[in] state State to map default shortest words.
-     * @return Created default shortest words map element for the given @p state.
-     */
-    LengthWordsPair map_default_shortest_words(const State state)
-    {
-        return shortest_words_map.emplace(state, std::make_pair(-1, WordSet{})).first->second;
-    }
-
-    /**
-     * Update words for the current state.
-     * @param[out] act Current state shortest words and length.
-     * @param[in] dst Transition target state shortest words and length.
-     * @param[in] symbol Symbol to update with.
-     */
-    static void update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, Symbol symbol);
-}; // class ShortestWordsMap.
 
 /**
  * An alphabet constructed 'on the fly'.

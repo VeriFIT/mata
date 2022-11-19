@@ -1,4 +1,4 @@
-/* noodlify.cc -- Noodlification of NFAs
+/* nfa-noodlification.cc -- Noodlification of NFAs
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
@@ -15,11 +15,12 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/nfa.hh>
-#include <mata/noodlify.hh>
-#include <mata/util.hh>
+#include "mata/nfa.hh"
+#include <mata/nfa-string-solving.hh>
+#include "mata/util.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Nfa::StringSolving;
 
 namespace
 {
