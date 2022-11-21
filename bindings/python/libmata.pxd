@@ -50,7 +50,7 @@ cdef extern from "simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void get_quotient_projection(ivector&)
 
 
-cdef extern from "mata/ord_vector.hh" namespace "Mata::Util":
+cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
     cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
         COrdVector() except+
         COrdVector(vector[T]) except+
