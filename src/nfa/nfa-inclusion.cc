@@ -137,31 +137,6 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 		for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.transition_relation[smaller_state] after refactoring
 			const Symbol& smaller_symbol = smaller_move.symbol;
 
-            /* THIS SEGFAOUTS ON UBUNTU, DON'T KNOW WHY
-            //The following block of code implements the post using the sync iterator.
-            // It is a mess, very error-prone, touches the iterator of next_minimum of sync. iterator ...
-            // Would be nice to encapsulate this in something as sync. iterator, I don't know how to do it.
-            while (*sync_iterator.next_minimum < smaller_move) {
-                // Giving advance a parameter and allowing it to jump past the smaller_move could be better.
-                if (!sync_iterator.advance())
-                    break;
-            }
-            //
-            StateSet bigger_succ = {};
-            //Now next_minimum may be larger or equal, and they might be no elements in the set that can do the move.
-            //bigger_succ gets filled only if next_minimum is equal to smaller_move and there are elements with that value,
-            //else it stays empty.
-            if(*sync_iterator.next_minimum == smaller_move) {
-                // if the set could do the move, put its post to bigger_secc, else leave it empty
-                if (sync_iterator.advance()) {
-                    std::vector<Iterator> bigger_moves = sync_iterator.get_current();;
-                    for (auto m: bigger_moves) {
-                        bigger_succ = bigger_succ.Union(m->states_to);
-                    }
-                }
-            }
-             */
-
             do {
                 if (sync_iterator.is_synchronized()) {
                     auto current_min = sync_iterator.get_current_minimum();
@@ -215,7 +190,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 // prune data structures and insert succ inside
                 //TODO: this code segfaults with deques instead of lists everywhere :(
-                // (Respectively, works on apple, not on ubuntu. Removal invalidates iterators.)
+                // (Works on apple, not on Ubuntu. Removal invalidates iterators.)
                 // A fix could be removal by moving the last element there and decreasing the size
                 //for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
                 //    auto it = ds->begin();
@@ -236,8 +211,8 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
                     for (size_t it = 0; it < ds->size(); ++it) {
                         if (subsumes(succ, ds->at(it))) {
-                            //removal by replacement with the last and removal of the last
-                            //because calling erase would invalidate iterator it (in deque)
+                            //Removal though replacement by the last element and removal pob_back.
+                            //Because calling erase would invalidate iterator it (in deque).
                             ds->at(it) = ds->back();
                             ds->pop_back();
                         } else {
