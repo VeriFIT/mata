@@ -1709,8 +1709,8 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.add_trans(11, alph["a"], 11);
         bigger.add_trans(11, alph["b"], 11);
 
-//        CHECK(!is_included_antichains(bigger, smaller, &alph, nullptr, params));
-        CHECK(is_included_antichains(smaller, bigger, &alph, nullptr, params));
+        CHECK(!is_included_antichains(bigger, smaller, &alph, nullptr, params));
+//        CHECK(is_included_antichains(smaller, bigger, &alph, nullptr, params));
 
 //        for (const auto& algo : ALGORITHMS) {
 //            params["algo"] = algo;
