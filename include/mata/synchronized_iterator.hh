@@ -175,6 +175,16 @@ namespace Mata {
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
             Iterator next_minimum; // the value we should synchronise on after the first next call of advance().
 
+            bool is_synchronized() {
+                return !currently_synchronized.empty();
+            }
+
+            const Iterator get_current_minimum()
+            {
+                if (currently_synchronized.empty())
+                    throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minium. Don't do that ever again or your nose falls off!");
+                return currently_synchronized[0];
+            }
 
             /* Advances all positions just above current_minimum,
              * that is, to or above next_minimum.
@@ -266,6 +276,7 @@ namespace Mata {
                 if (size > 0) {
                     this->currently_synchronized.reserve(size);
                 }
+                this->currently_synchronized.clear();
             };
         };
 
