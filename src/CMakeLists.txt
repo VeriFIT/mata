@@ -75,7 +75,7 @@ add_executable(tests
 	tests-parser.cc
 	tests-re2parser.cc
 	tests-ord-vector.cc
-	nfa/tests-synchronized_iterator.cc
+	nfa/tests-synchronized-iterator.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc

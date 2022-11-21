@@ -5,7 +5,7 @@
 #ifndef LIBMATA_SYNCHRONIZED_ITERATOR_HH
 #define LIBMATA_SYNCHRONIZED_ITERATOR_HH
 
-#include <mata/ord_vector.hh>
+#include <mata/ord-vector.hh>
 
 namespace Mata {
     namespace Util {
