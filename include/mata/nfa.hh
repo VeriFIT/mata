@@ -280,7 +280,7 @@ Mata::Parser::ParsedSection serialize(
 
 struct Move {
     Symbol symbol{};
-    StateSet states_to;
+    StateSet states_to;//TODO: horrible name - target_states?
 
     Move() = default;
     explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
@@ -399,6 +399,7 @@ public:
         for (const State& st : vec) { this->make_initial(st); }
     }
 
+    // TODO: aaargh, the name should be is_initial, no? And we should probably implement it differently, as a boolean flag, to make this constant time.
     bool has_initial(const State &state_to_check) const {return initial_states.count(state_to_check);}
 
     /**
@@ -561,6 +562,7 @@ public:
      * @param states_to Set of target states.
      */
     void add_trans(State state_from, Symbol symbol, const StateSet& states_to);
+    //TODO: rename all "trans" to "transition". At lest function names.
 
     /**
      * Remove transition.
@@ -853,7 +855,7 @@ inline bool is_universal(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_incl(
+bool is_included(
         const Nfa&         smaller,
         const Nfa&         bigger,
         Run*               cex,
@@ -865,13 +867,13 @@ bool is_incl(
  * @param params[in] Optional parameters to control the equivalence check algorithm:
  * - "algo": "naive", "antichains" (Default: "antichains")
  */
-inline bool is_incl(
+inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
         const StringMap&      params = {{"algo", "antichains"}})
 { // {{{
-    return is_incl(smaller, bigger, nullptr, alphabet, params);
+    return is_included(smaller, bigger, nullptr, alphabet, params);
 } // }}}
 
 /**

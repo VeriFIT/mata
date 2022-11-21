@@ -23,12 +23,12 @@ using namespace Mata::Nfa;
 using namespace Mata::util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool Mata::Nfa::Algorithms::is_incl_naive(
+bool Mata::Nfa::Algorithms::is_included_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
-	const Alphabet* const  alphabet,
+	const Alphabet* const  alphabet, //TODO: this should not be needed, the alphabet should be taken from the input automata
 	Run*                   cex,
-	const StringMap&  /* params*/)
+	const StringMap&  /* params*/) //TODO: this parameter needed?
 { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
@@ -39,23 +39,24 @@ bool Mata::Nfa::Algorithms::is_incl_naive(
 	Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
 
 	return is_lang_empty(nfa_isect, cex);
-} // is_incl_naive }}}
+} // is_included_naive }}}
 
 
 /// language inclusion check using Antichains
-bool Mata::Nfa::Algorithms::is_incl_antichains(
+bool Mata::Nfa::Algorithms::is_included_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
-	const Alphabet* const  alphabet,
+	const Alphabet* const  alphabet, //TODO: this parameter is not used
 	Run*                   cex,
-	const StringMap&      params)
+	const StringMap&      params) //TODO: why is this parameter there?
 { // {{{
+    //TODO: what does this do?
 	(void)params;
 	(void)alphabet;
 
 	using ProdStateType = std::pair<State, StateSet>;
-	using WorklistType = std::list<ProdStateType>;
-	using ProcessedType = std::list<ProdStateType>;
+	using WorklistType = std::deque<ProdStateType>;
+	using ProcessedType = std::deque<ProdStateType>;
 
 	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
 		if (lhs.first != rhs.first) {
@@ -68,6 +69,8 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 			return false;
 		}
 
+        //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
+        //TODO: Try BDDs! What about some abstractions?
 		return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
 			lhs_bigger.begin(), lhs_bigger.end());
 	};
@@ -82,14 +85,14 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
-	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
+    std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
-	// check initial states first
+	// check initial states firs // TODO: this would be done in the main loop as the first thing anyway?
 	for (const auto& state : smaller.initial_states) {
-		if (smaller.has_final(state) &&
-			are_disjoint(bigger.initial_states, bigger.final_states))
+		if (smaller.has_final(state) && //TODO: reimplement initial and final states with vector of bool or make your own vector of bool here
+			are_disjoint(bigger.initial_states, bigger.final_states)) //TODO: make more efficient
 		{
-			if (nullptr != cex) { cex->word.clear(); }
+			if (cex != nullptr) { cex->word.clear(); }
 			return false;
 		}
 
@@ -97,8 +100,13 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 		worklist.push_back(st);
 		processed.push_back(st);
 
-		paths.insert({ st, {st, 0}});
+        if (cex != nullptr)
+		    paths.insert({ st, {st, 0}});
 	}
+
+    //For synchronised iteration over the set of states
+    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
 
 	while (!worklist.empty()) {
 		// get a next product state
@@ -114,20 +122,48 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 		const State& smaller_state = prod_state.first;
 		const StateSet& bigger_set = prod_state.second;
 
-		// process transitions leaving smaller_state
-		for (const auto& post_symb : smaller[smaller_state]) {
-			const Symbol& symb = post_symb.symbol;
+        sync_iterator.reset();
+        for (State q: bigger_set) {
+            Mata::Util::push_back(sync_iterator, bigger.transition_relation[q]);
+        }
 
-			for (const State& smaller_succ : post_symb.states_to) {
-				const StateSet bigger_succ = bigger.post(bigger_set, symb);
+		// process transitions leaving smaller_state
+		for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.transition_relation[smaller_state] after refactoring
+			const Symbol& smaller_symbol = smaller_move.symbol;
+
+            //The following block of code implements the post using the sync iterator.
+            // It is a mess, very error-prone, touches the iterator of next_minimum of sync. iterator ...
+            // Would be nice to encapsulate this in something as sync. iterator, I don't know how to do it.
+            while (*sync_iterator.next_minimum < smaller_move) {
+                // Giving advance a parameter and allowing it to jump past the smaller_move could be better.
+                if (!sync_iterator.advance())
+                    break;
+            }
+            //
+            StateSet bigger_succ = {};
+            //Now next_minimum may be larger or equal, and they might be no elements in the set that can do the move.
+            //bigger_succ gets filled only if next_minimum is equal to smaller_move and there are elements with that value,
+            //else it stays empty.
+            if(*sync_iterator.next_minimum == smaller_move) {
+                // if the set could do the move, put its post to bigger_secc, else leave it empty
+                if (sync_iterator.advance()) {
+                    std::vector<Iterator> bigger_moves = sync_iterator.get_current();;
+                    for (auto m: bigger_moves) {
+                        bigger_succ = bigger_succ.Union(m->states_to);
+                    }
+                }
+            }
+
+			for (const State& smaller_succ : smaller_move.states_to) {
+
 				const ProdStateType succ = {smaller_succ, bigger_succ};
 
 				if (smaller.has_final(smaller_succ) &&
 					are_disjoint(bigger_succ, bigger.final_states))
 				{
-					if (nullptr != cex) {
+					if (cex  != nullptr) {
 						cex->word.clear();
-						cex->word.push_back(symb);
+						cex->word.push_back(smaller_symbol);
 						ProdStateType trav = prod_state;
 						while (paths[trav].first != trav)
 						{ // go back until initial state
@@ -153,7 +189,7 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 				if (is_subsumed) { continue; }
 
 				// prune data structures and insert succ inside
-				for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
+				for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
 					auto it = ds->begin();
 					while (it != ds->end()) {
 						if (subsumes(succ, *it)) {
@@ -170,7 +206,7 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 				}
 
 				// also set that succ was accessed from state
-				paths[succ] = {prod_state, symb};
+				paths[succ] = {prod_state, smaller_symbol};
 			}
 		}
 	}
@@ -179,10 +215,11 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 } // }}}
 
 namespace {
-    using AlgoType = decltype(Algorithms::is_incl_naive)*;
+    using AlgoType = decltype(Algorithms::is_included_naive)*;
 
     bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringMap &params,
                              const AlgoType &algo) {
+        //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr, params)) {
             if (algo(rhs, lhs, alphabet, nullptr, params)) {
                 return true;
@@ -199,12 +236,12 @@ namespace {
                                      "received: " + std::to_string(params));
         }
 
-        decltype(Algorithms::is_incl_naive) *algo;
+        decltype(Algorithms::is_included_naive) *algo;
         const std::string &str_algo = params.at("algo");
         if ("naive" == str_algo) {
-            algo = Algorithms::is_incl_naive;
+            algo = Algorithms::is_included_naive;
         } else if ("antichains" == str_algo) {
-            algo = Algorithms::is_incl_antichains;
+            algo = Algorithms::is_included_antichains;
         } else {
             throw std::runtime_error(std::to_string(__func__) +
                                      " received an unknown value of the \"algo\" key: " + str_algo);
@@ -216,7 +253,7 @@ namespace {
 }
 
 // The dispatching method that calls the correct one based on parameters
-bool Mata::Nfa::is_incl(
+bool Mata::Nfa::is_included(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
     Run*                   cex,
@@ -225,10 +262,11 @@ bool Mata::Nfa::is_incl(
 { // {{{
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 	return algo(smaller, bigger, alphabet, cex, params);
-} // is_incl }}}
+} // is_included }}}
 
 bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
 {
+    //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
     if (params.at("algo") == "naive") {

@@ -173,7 +173,7 @@ namespace Mata {
         public:
 
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
-            Iterator next_minimum;
+            Iterator next_minimum; // the value we should synchronise on after the first next call of advance().
 
 
             /* Advances all positions just above current_minimum,
@@ -245,8 +245,8 @@ namespace Mata {
                 if (this->positions.empty())
                     this->next_minimum = begin;
 
-                    // If the first position is of the new vector is smaller then minimum,
-                    // update minimum.
+                // If the first position is of the new vector is smaller than minimum,
+                // update minimum.
                 else if (*this->next_minimum > *begin)
                     this->next_minimum = begin;
 

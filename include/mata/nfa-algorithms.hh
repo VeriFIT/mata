@@ -70,7 +70,7 @@ namespace Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_incl_naive(
+    bool is_included_naive(
             const Nfa&             smaller,
             const Nfa&             bigger,
             const Alphabet* const  alphabet,
@@ -87,7 +87,7 @@ namespace Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_incl_antichains(
+    bool is_included_antichains(
             const Nfa&             smaller,
             const Nfa&             bigger,
             const Alphabet* const  alphabet,

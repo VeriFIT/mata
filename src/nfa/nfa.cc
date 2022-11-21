@@ -1177,10 +1177,10 @@ Nfa Mata::Nfa::determinize(
         }
 
         // add moves of S to the sync ex iterator
+        // TODO: shouldn't we also reset first?
         for (State q: S) {
             Mata::Util::push_back(synchronized_iterator, aut.transition_relation[q]);
         }
-
 
         while (synchronized_iterator.advance()) {
 
