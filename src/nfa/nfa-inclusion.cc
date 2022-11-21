@@ -43,6 +43,7 @@ bool Mata::Nfa::Algorithms::is_included_naive(
 
 
 /// language inclusion check using Antichains
+// TODO, what about to construct the separator from this?
 bool Mata::Nfa::Algorithms::is_included_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
@@ -58,6 +59,11 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 	using WorklistType = std::deque<ProdStateType>;
 	using ProcessedType = std::deque<ProdStateType>;
 
+    //TODO: This is used in a container (a deque) of pairs, where every new pair means iterating through the entire list,
+    // and testing subsumption with everybody.
+    // Rewrite this as a deque (vector?) indexed by the first component (state) of vectors of the second components.
+    // We will go to the vector of the first component and test subsumption of the second components there.
+    // It may need some more fiddling if we still want to implement pure dfs/bfs however.
 	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
 		if (lhs.first != rhs.first) {
 			return false;
@@ -229,7 +235,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
                     for (size_t it = 0; it < ds->size(); ++it) {
-                        if (subsumes(succ, (*ds)[it])) {
+                        if (subsumes(succ, ds->at(it))) {
+                            //removal by replacement with the last and removal of the last
+                            //because calling erase would invalidate iterator it (in deque)
                             ds->at(it) = ds->back();
                             ds->pop_back();
                         } else {
