@@ -1709,23 +1709,23 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.add_trans(11, alph["a"], 11);
         bigger.add_trans(11, alph["b"], 11);
 
-        CHECK(!is_included_antichains(bigger, smaller, &alph, nullptr, params));
-//        CHECK(is_included_antichains(smaller, bigger, &alph, nullptr, params));
+        CHECK(!is_included_antichains(bigger, smaller, &alph, nullptr, params)); //TOHLE SPADLO!
+        CHECK(is_included_antichains(smaller, bigger, &alph, nullptr, params));
 
-//        for (const auto& algo : ALGORITHMS) {
-//            params["algo"] = algo;
-//
-//            //TODO:what about we test the plumbing versions primarily?
-//            // Debugging with the dispatcher is annoying.
-//
-// //           CHECK(!are_equivalent(smaller, bigger, &alph, params));
-//            CHECK(!are_equivalent(smaller, bigger, params));
-//            CHECK(!are_equivalent(smaller, bigger));
-//
-//            CHECK(!are_equivalent(bigger, smaller, &alph, params));
-//            CHECK(!are_equivalent(bigger, smaller, params));
-//            CHECK(!are_equivalent(bigger, smaller));
-//        }
+        for (const auto& algo : ALGORITHMS) {
+            params["algo"] = algo;
+
+            //TODO:what about we test the plumbing versions primarily?
+            // Debugging with the dispatcher is annoying.
+
+            CHECK(!are_equivalent(smaller, bigger, &alph, params));
+            CHECK(!are_equivalent(smaller, bigger, params));
+            CHECK(!are_equivalent(smaller, bigger));
+
+            CHECK(!are_equivalent(bigger, smaller, &alph, params));
+            CHECK(!are_equivalent(bigger, smaller, params));
+            CHECK(!are_equivalent(bigger, smaller));
+        }
     }
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")

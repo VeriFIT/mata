@@ -55,8 +55,8 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 	(void)alphabet;
 
 	using ProdStateType = std::pair<State, StateSet>;
-	using WorklistType = std::deque<ProdStateType>;
-	using ProcessedType = std::deque<ProdStateType>;
+	using WorklistType = std::list<ProdStateType>;
+	using ProcessedType = std::list<ProdStateType>;
 
 	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
 		if (lhs.first != rhs.first) {
@@ -208,7 +208,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 				if (is_subsumed) { continue; }
 
 				// prune data structures and insert succ inside
-				for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
+				for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
 					auto it = ds->begin();
 					while (it != ds->end()) {
 						if (subsumes(succ, *it)) {
