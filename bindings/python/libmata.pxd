@@ -207,7 +207,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef bool is_deterministic(CNfa&)
     cdef bool is_lang_empty(CNfa&, CRun*)
     cdef bool is_universal(CNfa&, CAlphabet&, StringMap&) except +
-    cdef bool is_incl(CNfa&, CNfa&, CAlphabet*, StringMap&)
+    cdef bool is_included(CNfa&, CNfa&, CAlphabet*, StringMap&)
     cdef bool is_included(CNfa&, CNfa&, CRun*, CAlphabet*, StringMap&) except +
     cdef bool are_equivalent(CNfa&, CNfa&, CAlphabet*, StringMap&)
     cdef bool are_equivalent(CNfa&, CNfa&, StringMap&)
