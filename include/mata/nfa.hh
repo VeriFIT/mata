@@ -34,7 +34,7 @@
 #include <mata/ord_vector.hh>
 #include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
-#include <mata/synchronized_iterator.hh>
+#include <mata/synchronized-iterator.hh>
 
 namespace Mata
 {
