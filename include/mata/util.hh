@@ -520,6 +520,7 @@ public:
     }
 
     const bool& operator[](Number n) const
+    //Mrkev
     {
         if (n>predicate.size())
             return false;
