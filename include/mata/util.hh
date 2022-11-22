@@ -29,7 +29,7 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
-#include <mata/ord_vector.hh>
+#include <mata/ord-vector.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\

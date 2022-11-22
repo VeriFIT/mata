@@ -25,7 +25,7 @@
 #include <mata/afa.hh>
 #include <mata/nfa.hh>
 #include <mata/util.hh>
-#include <mata/closed_set.hh>
+#include <mata/closed-set.hh>
 
 using std::tie;
 

@@ -31,8 +31,8 @@
 #include <mata/nfa.hh>
 #include <mata/parser.hh>
 #include <mata/util.hh>
-#include <mata/ord_vector.hh>
-#include <mata/closed_set.hh>
+#include <mata/ord-vector.hh>
+#include <mata/closed-set.hh>
 
 namespace Mata
 {
