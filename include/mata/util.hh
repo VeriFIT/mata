@@ -513,17 +513,18 @@ private:
 
 public:
     bool operator[](Number n) {
-        if (n>predicate.size())
-            return false;
-        else
-            return predicate[n];
-    }
-    const bool& operator[](Number n) const
-    {
         while (predicate.size() < n)
             predicate.push_back(false);
 
         return predicate[n];
+    }
+
+    const bool& operator[](Number n) const
+    {
+        if (n>predicate.size())
+            return false;
+        else
+            return predicate[n];
     }
 
     void reset(bool value = false) {
