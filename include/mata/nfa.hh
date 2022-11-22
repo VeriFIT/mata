@@ -278,24 +278,221 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 
-struct Move {
-    Symbol symbol{};
-    StateSet states_to;
+////////////////////////////////////////////////////////////////////////////////////
+////// EXPERIMENT WITH THE CLASSES
+///////////////////////////////////////////////////////////////////////////////////
 
-    Move() = default;
-    explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
-    Move(Symbol symbolOnTransition, State states_to) :
-            symbol(symbolOnTransition), states_to{states_to} {}
-    Move(Symbol symbolOnTransition, const StateSet& states_to) :
-            symbol(symbolOnTransition), states_to(states_to) {}
+        class MoveIterator {
 
-    inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
-    inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
-    inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
-    inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
-};
+        };
+//        template<typename Number> class NumberSet {
+//        private:
+//            std::vector<bool> predicate;
+//
+//        public:
+//            bool in(const Number n) {
+//                if (n>predicate.size())
+//                    return false;
+//                else
+//                    return predicate[n];
+//            }
+//
+//            void add(const Number n)
+//            {
+//                while (predicate.size() < n)
+//                    predicate.push_back(false);
+//
+//                predicate[n]=true;
+//            }
+//
+//            void add(const std::vector<Number> &vec) {
+//                for (Number n: vec)
+//                    add(n);
+//            }
+//
+//            void remove(const Number n)
+//            {
+//                if (predicate.size() < n)
+//                    return;
+//                else
+//                    predicate[n]=true;
+//            }
+//
+//            void remove(const std::vector<Number> &vec) {
+//                for (Number n: vec)
+//                    remove(n);
+//            }
+//
+//            std::vector<Number> elements(bool value=true) {
+//                std::vector<bool> result = {};
+//                //should we have a member vector (or deque) for this, with reserved size?
+//                for (Number n = 0,size = predicate.size(); n < size; ++n) {
+//                    if (predicate[n])
+//                        result.push_back(n);
+//                }
+//                return result;
+//            }
+//
+//            Number size(bool value = true) {
+//                Number cnt = 0;
+//                for (Number n = 0,_size = predicate.size(); n < _size; ++n) {
+//                    if (predicate[n] == value)
+//                        ++cnt;
+//                }
+//                return cnt;
+//            }
+//
+//            NumberSet(Number size = 0) {
+//                predicate.assign(size,false);
+//            }
+//
+//            void clear() {
+//                predicate.clear();
+//            }
+//        };
+
+// Class for a unary predicate over numbers, aka a set of numbers.
+// The methods names sometimes view it as a set, sometimes as a predicate.
+// that uses a bit-vector as the primary data structure
+        template<typename Number> class UnaryPredicate {
+// bells and whistles may be added, such as a vector/deque of elements ...
+        private:
+            std::vector<bool> predicate;
+
+        public:
+            UnaryPredicate(Number size = 0, Number value = false) {
+                predicate.assign(size,value);
+            }
+
+            bool operator[](Number n) {
+                while (predicate.size() < n)
+                    predicate.push_back(false);
+
+                return predicate[n];
+            }
+
+            const bool& operator[](Number n) const
+            {
+                if (n>predicate.size())
+                    return false;
+                else
+                    return predicate[n];
+            }
+
+            void set(bool value = false,Number max = 0) {
+                for (Number n=0,size = predicate.size(); n < size; ++n)
+                    predicate[n]=value;
+            }
+
+            void set(const std::vector<Number> &vec,bool value = true) {
+                for (Number n: vec)
+                    predicate[n] = value;
+            }
+
+            std::vector<Number> elements(bool value=true) {
+                std::vector<bool> result = {};
+                //should we have a member vector (or deque) for this, with reserved size?
+                for (Number n = 0,size = predicate.size(); n < size; ++n) {
+                    if (predicate[n])
+                        result.push_back(n);
+                }
+                return result;
+            }
+
+            Number cnt_elements(bool value = true) {
+                Number cnt = 0;
+                for (Number n = 0,size = predicate.size(); n < size; ++n) {
+                    if (predicate[n] == value)
+                        ++cnt;
+                }
+                return cnt;
+            }
+
+            size_t size() {
+                return predicate.size();
+            }
+
+            void clear() {
+                predicate.clear();
+            }
+
+            void reserve(Number n) {
+                predicate.reserve(n);
+            }
+        };
+
+
+//class Move {
+        struct Move {
+//private:
+            StateSet states_to;//TODO: horrible name - target_states /targets ?
+
+//public:
+            Symbol symbol{};
+
+            Move() = default;
+            explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
+            Move(Symbol symbolOnTransition, State states_to) :
+                    symbol(symbolOnTransition), states_to{states_to} {}
+            Move(Symbol symbolOnTransition, const StateSet& states_to) :
+                    symbol(symbolOnTransition), states_to(states_to) {}
+
+            inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
+            inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
+            inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
+            inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+            inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
+            inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
+
+            //new things:
+            MoveIterator begin();
+            MoveIterator end();
+            Move & epsilon_target();
+            //or another way of accessing epsilon, maybe MoveIterator epsilon(); or --end();...
+            void reserve(); // ?
+            void clear();
+            void assign(std::vector<Move> vec);
+            void assign(Util::OrdVector<Move> ov);
+            void push_back(const Move & move);
+            void insert(const Move & move);
+            void remove(const Symbol);
+        };
+
+
+        class PostIterator {
+        private:
+            Mata::Util::OrdVector<Move>::const_iterator iterator;
+        public:
+
+        };
+
+        class Post {
+        private:
+            Mata::Util::OrdVector<Move> moves;
+        public:
+            PostIterator begin();
+            PostIterator end();
+            Move & epsilon();
+            void reserve();
+            void push_back(const Move & move);
+            void insert(const Move & move);
+        };
+
+        class TransitionRelationCl {
+        private:
+            std::vector<Post> post;
+            State max_state;
+        public:
+            void reserve();
+            Post & operator[](State q);
+            void rename_states(const std::vector<State> & renaming);
+            std::vector<State> defragment();
+        };
+
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
 using Moves = Mata::Util::OrdVector<Move>;
