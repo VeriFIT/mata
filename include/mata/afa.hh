@@ -31,8 +31,8 @@
 #include <mata/nfa.hh>
 #include <mata/parser.hh>
 #include <mata/util.hh>
-#include <mata/ord_vector.hh>
-#include <mata/closed_set.hh>
+#include <mata/ord-vector.hh>
+#include <mata/closed-set.hh>
 
 namespace Mata
 {
@@ -422,40 +422,68 @@ bool is_deterministic(const Afa& aut);
 bool is_complete(const Afa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
-void construct(
-	Afa*                                 aut,
-	const Mata::Parser::ParsedSection&  parsec,
-	StringToSymbolMap*                   symbol_map = nullptr,
-	StringToStateMap*                    state_map = nullptr);
+Afa construct(
+	    const Mata::Parser::ParsedSection&   parsec,
+	    Alphabet*                            alphabet,
+	    StringToStateMap*                    state_map = nullptr);
+/**
+ * Loads automaton from intermediate automaton
+ */
+Afa construct(
+        const Mata::IntermediateAut&         inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map = nullptr);
+
+/**
+ * Loads automaton from parsed object (either ParsedSection or Intermediate automaton.
+ * If user does not provide symbol map or state map, it allocates its own ones.
+ */
+template <class ParsedObject>
+Afa construct(
+        const ParsedObject&                  parsed,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr)
+{ // {{{
+    Afa aut;
+
+    bool remove_symbol_map = false;
+    if (nullptr == symbol_map)
+    {
+        symbol_map = new StringToSymbolMap();
+        remove_symbol_map = true;
+    }
+
+    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+
+    Mata::Nfa::OnTheFlyAlphabet alphabet(*symbol_map);
+
+    try
+    {
+        aut = Mata::Afa::construct(parsed, &alphabet, state_map);
+    }
+    catch (std::exception&)
+    {
+        release_res();
+        throw;
+    }
+
+    release_res();
+    if (!remove_symbol_map) {
+        *symbol_map = alphabet.get_symbol_map();
+    }
+    return aut;
+}
 
 /** Loads an automaton from Parsed object */
-inline Afa construct(
-	const Mata::Parser::ParsedSection&  parsec,
-	StringToSymbolMap*                   symbol_map = nullptr,
-	StringToStateMap*                    state_map = nullptr)
+template <class ParsedObject>
+void construct(
+        Afa*                                 result,
+        const ParsedObject&                  parsed,
+        StringToSymbolMap*                   symbol_map = nullptr,
+        StringToStateMap*                    state_map = nullptr)
 { // {{{
-	Afa result;
-	construct(&result, parsec, symbol_map, state_map);
-	return result;
+    *result = construct(parsed, symbol_map, state_map);
 } // construct }}}
-
-/** Loads an automaton from Parsed object */
-void construct(
-	Afa*                                 aut,
-	const Mata::Parser::ParsedSection&  parsec,
-	Alphabet*                            alphabet,
-	StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
-inline Afa construct(
-	const Mata::Parser::ParsedSection&  parsec,
-	Alphabet*                            alphabet,
-	StringToStateMap*                    state_map = nullptr)
-{ // {{{
-	Afa result;
-	construct(&result, parsec, alphabet, state_map);
-	return result;
-} // construct(Alphabet) }}}
 
 /**
  * @brief  Obtains a word corresponding to a path in an automaton (or sets a flag)

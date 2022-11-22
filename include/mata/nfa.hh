@@ -31,7 +31,7 @@
 // MATA headers
 #include <mata/parser.hh>
 #include <mata/util.hh>
-#include <mata/ord_vector.hh>
+#include <mata/ord-vector.hh>
 #include <mata/inter-aut.hh>
 #include <simlib/util/binary_relation.hh>
 #include <mata/synchronized-iterator.hh>

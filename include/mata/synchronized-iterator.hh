@@ -5,7 +5,8 @@
 #ifndef LIBMATA_SYNCHRONIZED_ITERATOR_HH
 #define LIBMATA_SYNCHRONIZED_ITERATOR_HH
 
-#include <mata/ord_vector.hh>
+
+#include <mata/ord-vector.hh>
 
 namespace Mata {
     namespace Util {
@@ -173,6 +174,7 @@ namespace Mata {
         public:
 
             std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
+
             Iterator next_minimum; // the value we should synchronise on after the first next call of advance().
 
             bool is_synchronized() {
@@ -185,6 +187,7 @@ namespace Mata {
                     throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minium. Don't do that ever again or your nose falls off!");
                 return currently_synchronized[0];
             }
+
 
             /* Advances all positions just above current_minimum,
              * that is, to or above next_minimum.
@@ -255,6 +258,7 @@ namespace Mata {
                 if (this->positions.empty())
                     this->next_minimum = begin;
 
+
                 // If the first position is of the new vector is smaller than minimum,
                 // update minimum.
                 else if (*this->next_minimum > *begin)
@@ -276,7 +280,9 @@ namespace Mata {
                 if (size > 0) {
                     this->currently_synchronized.reserve(size);
                 }
+
                 this->currently_synchronized.clear();
+
             };
         };
 
