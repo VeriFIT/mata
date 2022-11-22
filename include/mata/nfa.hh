@@ -42,18 +42,6 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-/*TODO: Generally, there are
- * 1) many and messy type names
- * 2) a lot of stuff in general
- * 3) method/function names are sometimes weird and not systematic too
- * This is a proposal to, firstly, reduce and systematize
- * type names,
- * function / method names.
- * Secondly,
- * maybe we organize automaton a bit more, by
- * making transition relation a class,
- * some other things as well ...?
- * */
 
 using State = unsigned long;
 using Symbol = unsigned long;
@@ -280,10 +268,9 @@ Mata::Parser::ParsedSection serialize(
 	const SymbolToStringMap*  symbol_map = nullptr,
 	const StateToStringMap*   state_map = nullptr);
 
-
 struct Move {
     Symbol symbol{};
-    StateSet states_to;//TODO: horrible name - target_states?
+    StateSet states_to;//TODO: horrible name - target_states /targets ?
 
     Move() = default;
     explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
@@ -301,12 +288,12 @@ struct Move {
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using Moves = Mata::Util::OrdVector<Move>;
+        using Moves = Mata::Util::OrdVector<Move>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
-using TransitionRelation = std::vector<Moves>;
+        using TransitionRelation = std::vector<Moves>;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = limits.maxSymbol;
+        constexpr Symbol EPSILON = limits.maxSymbol;
 
 /**
  * A struct representing an NFA.
