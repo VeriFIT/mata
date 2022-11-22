@@ -926,14 +926,13 @@ void Mata::Afa::minimize(
 } // minimize }}}
 
 
-void Mata::Afa::construct(
-	Afa*                                 aut,
+Afa Mata::Afa::construct(
 	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map)
 { // {{{
-	assert(nullptr != aut);
 	assert(nullptr != alphabet);
+	Afa aut;
 
 	if (parsec.type != Mata::Afa::TYPE_AFA) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
@@ -965,7 +964,7 @@ void Mata::Afa::construct(
 	if (parsec.dict.end() != it) {
 		for (const auto& str : it->second) {
 			State state = get_state_name(str);
-			aut->initialstates.insert(state);
+			aut.initialstates.insert(state);
 		}
 	}
 
@@ -974,7 +973,7 @@ void Mata::Afa::construct(
 	if (parsec.dict.end() != it) {
 		for (const auto& str : it->second) {
 			State state = get_state_name(str);
-			aut->finalstates.insert(state);
+			aut.finalstates.insert(state);
 		}
 	}
 
@@ -1003,41 +1002,130 @@ void Mata::Afa::construct(
 
 	// do the dishes and take out garbage
 	clean_up();
+
+    return aut;
 } // construct }}}
 
-
-void Mata::Afa::construct(
-	Afa*                                 aut,
-	const Mata::Parser::ParsedSection&  parsec,
-	StringToSymbolMap*                   symbol_map,
-	StringToStateMap*                    state_map)
+Afa Mata::Afa::construct(
+        const Mata::IntermediateAut&         inter_aut,
+        Alphabet*                            alphabet,
+        StringToStateMap*                    state_map)
 { // {{{
-	assert(nullptr != aut);
+    Afa aut;
+    assert(nullptr != alphabet);
 
-	bool remove_symbol_map = false;
-	if (nullptr == symbol_map)
-	{
-		symbol_map = new StringToSymbolMap();
-		remove_symbol_map = true;
-	}
+    if (!inter_aut.is_afa()) {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
+                                 Mata::Afa::TYPE_AFA + "\"");
+    }
 
-	auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+    bool remove_state_map = false;
+    if (nullptr == state_map) {
+        state_map = new StringToStateMap();
+        remove_state_map = true;
+    }
 
-  Mata::Nfa::OnTheFlyAlphabet alphabet(*symbol_map);
+    // a lambda for translating state names to identifiers
+    auto get_state_name = [&state_map, &aut](const std::string& str) {
+        if (!state_map->count(str)) {
+            State state = aut.add_new_state();
+            state_map->insert({str, state});
+            return state;
+        } else {
+            return (*state_map)[str];
+        }
+    };
 
-	try
-	{
-		construct(aut, parsec, &alphabet, state_map);
-	}
-	catch (std::exception&)
-	{
-		release_res();
-		throw;
-	}
+    // a lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) { delete state_map; }
+    };
 
-	release_res();
-} // construct(StringToSymbolMap) }}}
+    // lambda returning true if node is operator of given type
+    auto is_node_operator =
+            [](const FormulaNode& node, FormulaNode::OperatorType type) -> bool {
+        return node.is_operator() && node.operator_type == type;
+    };
 
+    // lambda creates Node from set of strings which are state names
+    auto create_node = [get_state_name](
+            const std::unordered_set<std::string>& states_names) -> Node {
+        Node tgt_node;
+        for (const std::string& s : states_names)
+        {
+            tgt_node.insert(get_state_name(s));
+        }
+
+        return tgt_node;
+    };
+
+    for (const auto& str : inter_aut.initial_formula.collect_node_names())
+    {
+        State state = get_state_name(str);
+        aut.initialstates.insert(state);
+    }
+
+    for (const auto& str : inter_aut.final_formula.collect_node_names())
+    {
+        State state = get_state_name(str);
+        aut.finalstates.insert(state);
+    }
+
+    for (const auto& trans : inter_aut.transitions)
+    {
+        State src_state = get_state_name(trans.first.name);
+        if (trans.second.node.is_operand() && trans.second.node.operand_type == FormulaNode::SYMBOL)
+        {
+            Symbol symbol = alphabet->translate_symb(trans.second.node.name);
+            aut.add_trans(src_state, symbol, Node());
+            continue;
+        }
+        else if (trans.second.children.size() != 2)
+        {
+            clean_up();
+            if (trans.second.children.size() == 1)
+            {
+                throw std::runtime_error("Epsilon transitions not supported");
+            }
+            else
+            {
+                throw std::runtime_error("Invalid transition");
+            }
+        }
+
+        assert(is_node_operator(trans.second.node, FormulaNode::AND) ||
+            "Clause of DNF should be conjunction");
+        assert(trans.second.children.front().node.is_operand() || "Node in conjunction should be operand");
+        Symbol symbol = alphabet->translate_symb(trans.second.children.front().node.name);
+
+        const FormulaGraph* curr_graph = &trans.second.children[1];
+
+        while (is_node_operator(curr_graph->node, FormulaNode::OR))
+        {  // Processes each clause separately
+            assert(curr_graph->children[1].node.is_operand() ||
+                   is_node_operator(curr_graph->children[1].node, FormulaNode::AND) ||
+                   "Clause should be conjunction");
+            // Conjunction is the right son of current node
+            aut.add_trans(src_state, symbol,
+                          create_node(curr_graph->children[1].collect_node_names()));
+
+            // jump to another clause which is the left son of current node
+            curr_graph = &curr_graph->children.front();
+        }
+
+        // process remaining conjunction
+        assert(curr_graph->node.is_operand() ||
+               is_node_operator(curr_graph->node, FormulaNode::AND) ||
+               "Remaining clause should be conjunction");
+        aut.add_trans(src_state, symbol,
+                      create_node(curr_graph->collect_node_names()));
+    }
+
+    // do the dishes and take out garbage
+    clean_up();
+
+    return aut;
+} // construct }}}
 
 bool Mata::Afa::is_in_lang(const Afa& aut, const Word& word)
 { // {{{
