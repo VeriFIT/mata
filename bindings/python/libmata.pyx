@@ -1093,7 +1093,7 @@ cdef class Nfa:
         if alphabet:
             c_alphabet = alphabet.as_base()
         params = params or {'algo': 'antichains'}
-        result = mata.is_incl(
+        result = mata.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
             run.thisptr,
