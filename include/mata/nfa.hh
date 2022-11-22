@@ -282,9 +282,6 @@ Mata::Parser::ParsedSection serialize(
 ////// EXPERIMENT WITH THE CLASSES
 ///////////////////////////////////////////////////////////////////////////////////
 
-        class MoveIterator {
-
-        };
 //        template<typename Number> class NumberSet {
 //        private:
 //            std::vector<bool> predicate;
@@ -421,6 +418,22 @@ Mata::Parser::ParsedSection serialize(
             }
         };
 
+        class MoveIterator {
+
+            // Iterator tags ... needed?
+
+            // Iterator constructors ...
+
+            State & operator*() const;
+            State operator->();
+
+            MoveIterator& operator++();
+
+            MoveIterator& operator--(); //maybe we want too?
+
+            friend bool operator== (const MoveIterator& a, const MoveIterator& b);
+            friend bool operator!= (const MoveIterator& a, const MoveIterator& b);
+        };
 
 //class Move {
         struct Move {
@@ -455,7 +468,8 @@ Mata::Parser::ParsedSection serialize(
             void assign(Util::OrdVector<Move> ov);
             void push_back(const Move & move);
             void insert(const Move & move);
-            void remove(const Symbol);
+            void remove(const Symbol);//or erase
+            void erase(MoveIterator it);
         };
 
 
