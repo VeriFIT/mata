@@ -19,6 +19,7 @@
 #ifndef _MATA_UTIL_HH_
 #define _MATA_UTIL_HH_
 
+#include <bitset>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -428,11 +429,138 @@ struct TuplePrinter
     }
 };
 
+
 template<class Tuple>
 struct TuplePrinter<Tuple, 1> {
     static std::string print(const Tuple& t)
     {
         return std::to_string(std::get<0>(t));
+    }
+};
+/* Class to be used for properties of states - initial and final states, visited tags in explorations ...
+ * */
+    template<typename Number> class NumberSet {
+// bells and whistles may be added, such as a vector/deque of elements ...
+    private:
+        std::vector<bool> predicate;
+
+    public:
+        bool in(const Number n) {
+            if (n>predicate.size())
+                return false;
+            else
+                return predicate[n];
+        }
+
+        void add(const Number n)
+        {
+            while (predicate.size() < n)
+                predicate.push_back(false);
+
+            predicate[n]=true;
+        }
+
+        void add(const std::vector<Number> &vec) {
+            for (Number n: vec)
+                add(n);
+        }
+
+        void remove(const Number n)
+        {
+            if (predicate.size() < n)
+                return;
+            else
+                predicate[n]=true;
+        }
+
+        void remove(const std::vector<Number> &vec) {
+            for (Number n: vec)
+                remove(n);
+        }
+
+        std::vector<Number> elements(bool value=true) {
+            std::vector<bool> result = {};
+            //should we have a member vector (or deque) for this, with reserved size?
+            for (Number n = 0,size = predicate.size(); n < size; ++n) {
+                if (predicate[n])
+                    result.push_back(n);
+            }
+            return result;
+        }
+
+        Number size(bool value = true) {
+            Number cnt = 0;
+            for (Number n = 0,_size = predicate.size(); n < _size; ++n) {
+                if (predicate[n] == value)
+                    ++cnt;
+            }
+            return cnt;
+        }
+
+        NumberSet(Number size = 0) {
+            predicate.assign(size,false);
+        }
+
+        void clear() {
+            predicate.clear();
+        }
+    };
+
+template<typename Number> class UnaryPredicate {
+// bells and whistles may be added, such as a vector/deque of elements ...
+private:
+    std::vector<bool> predicate;
+
+public:
+    bool operator[](Number n) {
+        if (n>predicate.size())
+            return false;
+        else
+            return predicate[n];
+    }
+    const bool& operator[](Number n) const
+    {
+        while (predicate.size() < n)
+            predicate.push_back(false);
+
+        return predicate[n];
+    }
+
+    void reset(bool value = false) {
+        for (Number n=0,size = predicate.size(); n < size; ++n)
+            predicate[n]=value;
+    }
+
+    std::vector<Number> get(bool value=true) {
+        std::vector<bool> result = {};
+        //should we have a member vector (or deque) for this, with reserved size?
+        for (Number n = 0,size = predicate.size(); n < size; ++n) {
+            if (predicate[n])
+                result.push_back(n);
+        }
+        return result;
+    }
+
+    Number count(bool value = true) {
+        Number cnt = 0;
+        for (Number n = 0,size = predicate.size(); n < size; ++n) {
+            if (predicate[n] == value)
+                ++cnt;
+        }
+        return cnt;
+    }
+
+    void set(const std::vector<Number> &vec,bool value = true) {
+        for (Number n: vec)
+            predicate[n] = value;
+    }
+
+    UnaryPredicate(Number size = 0) {
+        predicate.assign(size,false);
+    }
+
+    void clear() {
+        predicate.clear();
     }
 };
 

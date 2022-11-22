@@ -93,7 +93,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 	// 'paths[s] == s' means that 's' is an initial state
     std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
-	// check initial states firs // TODO: this would be done in the main loop as the first thing anyway?
+	// check initial states first // TODO: this would be done in the main loop as the first thing anyway?
 	for (const auto& state : smaller.initial_states) {
 		if (smaller.has_final(state) && //TODO: reimplement initial and final states with vector of bool or make your own vector of bool here
 			are_disjoint(bigger.initial_states, bigger.final_states)) //TODO: make more efficient
@@ -148,7 +148,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
             StateSet bigger_succ = {};
             if(*sync_iterator.get_current_minimum() == smaller_move) {
-                std::vector<Iterator> bigger_moves = sync_iterator.get_current();;
+                std::vector<Iterator> bigger_moves = sync_iterator.get_current();
                 for (auto m: bigger_moves) {
                     bigger_succ = bigger_succ.Union(m->states_to);
                 }
@@ -213,7 +213,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                         if (subsumes(succ, ds->at(it))) {
                             //Removal though replacement by the last element and removal pob_back.
                             //Because calling erase would invalidate iterator it (in deque).
-                            ds->at(it) = ds->back();
+                            ds->at(it) = ds->back(); //does it coppy stuff?
                             ds->pop_back();
                         } else {
                             ++it;

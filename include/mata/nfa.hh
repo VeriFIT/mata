@@ -70,6 +70,9 @@ struct Run {
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
+
+
+
 /*
  *TODO:
  * Remove documentation/comments which does not add anything interesting?
@@ -317,6 +320,9 @@ struct Nfa
      *
      */
     TransitionRelation transition_relation;
+    //Automaton could have this instead of the curent initial and final states:
+    //util::UnaryPredicate<State> initial = {};
+    //util::UnaryPredicate<State> final = {};
     StateSet initial_states = {};
     StateSet final_states = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
@@ -357,6 +363,8 @@ public:
 
     auto states_number() const { return transition_relation.size(); }
 
+    //TODO: why this? Maybe we could have add_state(int state)
+    //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
     void increase_size(size_t size)
     {
         assert(this->states_number() <= size);
