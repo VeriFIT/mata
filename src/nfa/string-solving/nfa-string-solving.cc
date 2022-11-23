@@ -26,7 +26,7 @@ namespace {
  * @param[in] epsilon_depths Computed list of epsilon transitions for each depth.
  * @return Number of permutations.
  */
-    size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitions& epsilon_depths)
+size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitions& epsilon_depths)
     {
         size_t num_of_permutations{ 1 };
         for (const auto& segment: epsilon_depths)
