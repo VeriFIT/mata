@@ -58,16 +58,12 @@ struct Run {
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
-
-
-
 /*
  *TODO:
  * Remove documentation/comments which does not add anything interesting?
  * Ie comments of the form "@param final_states: this is the set of final_states".
  * Do not try to fill empty doxygen spaces.
  * */
-
 
 using StateToStringMap = std::unordered_map<State, std::string>;
 // using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
@@ -288,12 +284,12 @@ struct Move {
 };
 
 /// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-        using Moves = Mata::Util::OrdVector<Move>;
+using Moves = Mata::Util::OrdVector<Move>;
 /// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
-        using TransitionRelation = std::vector<Moves>;
+using TransitionRelation = std::vector<Moves>;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-        constexpr Symbol EPSILON = limits.maxSymbol;
+constexpr Symbol EPSILON = limits.maxSymbol;
 
 /**
  * A struct representing an NFA.

@@ -15,11 +15,9 @@
  * GNU General Public License for more details.
  */
 
-
 #ifndef _MATA_UTIL_HH_
 #define _MATA_UTIL_HH_
 
-#include <bitset>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -437,7 +435,6 @@ struct TuplePrinter<Tuple, 1> {
         return std::to_string(std::get<0>(t));
     }
 };
-
 
 }
 }

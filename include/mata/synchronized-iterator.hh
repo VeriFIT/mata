@@ -5,7 +5,6 @@
 #ifndef LIBMATA_SYNCHRONIZED_ITERATOR_HH
 #define LIBMATA_SYNCHRONIZED_ITERATOR_HH
 
-
 #include <mata/ord-vector.hh>
 
 namespace Mata {
@@ -184,7 +183,7 @@ namespace Mata {
             const Iterator get_current_minimum()
             {
                 if (currently_synchronized.empty())
-                    throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minium. Don't do that ever again or your nose falls off!");
+                    throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minimum. Don't do that ever again or your nose falls off!");
                 return currently_synchronized[0];
             }
 
