@@ -24,11 +24,11 @@ using namespace Mata::util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool Mata::Nfa::Algorithms::is_incl_naive(
-	const Nfa&             smaller,
-	const Nfa&             bigger,
-	const Alphabet* const  alphabet,
-	Run*                   cex,
-	const StringMap&  /* params*/)
+    const Nfa&             smaller,
+    const Nfa&             bigger,
+    const Alphabet* const  alphabet,
+    Run*                   cex,
+    const StringMap&  /* params*/)
 { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
@@ -36,146 +36,146 @@ bool Mata::Nfa::Algorithms::is_incl_naive(
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
-	Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
+    Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
 
-	return is_lang_empty(nfa_isect, cex);
+    return is_lang_empty(nfa_isect, cex);
 } // is_incl_naive }}}
 
 
 /// language inclusion check using Antichains
 bool Mata::Nfa::Algorithms::is_incl_antichains(
-	const Nfa&             smaller,
-	const Nfa&             bigger,
-	const Alphabet* const  alphabet,
-	Run*                   cex,
-	const StringMap&      params)
+    const Nfa&             smaller,
+    const Nfa&             bigger,
+    const Alphabet* const  alphabet,
+    Run*                   cex,
+    const StringMap&      params)
 { // {{{
-	(void)params;
-	(void)alphabet;
+    (void)params;
+    (void)alphabet;
 
-	using ProdStateType = std::pair<State, StateSet>;
-	using WorklistType = std::list<ProdStateType>;
-	using ProcessedType = std::list<ProdStateType>;
+    using ProdStateType = std::pair<State, StateSet>;
+    using WorklistType = std::list<ProdStateType>;
+    using ProcessedType = std::list<ProdStateType>;
 
-	auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
-		if (lhs.first != rhs.first) {
-			return false;
-		}
+    auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
+        if (lhs.first != rhs.first) {
+            return false;
+        }
 
-		const StateSet& lhs_bigger = lhs.second;
-		const StateSet& rhs_bigger = rhs.second;
-		if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
-			return false;
-		}
+        const StateSet& lhs_bigger = lhs.second;
+        const StateSet& rhs_bigger = rhs.second;
+        if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
+            return false;
+        }
 
-		return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
-			lhs_bigger.begin(), lhs_bigger.end());
-	};
+        return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
+            lhs_bigger.begin(), lhs_bigger.end());
+    };
 
-	// process parameters
-	// TODO: set correctly!!!!
-	bool is_dfs = true;
+    // process parameters
+    // TODO: set correctly!!!!
+    bool is_dfs = true;
 
-	// initialize
-	WorklistType worklist = { };
-	ProcessedType processed = { };
+    // initialize
+    WorklistType worklist = { };
+    ProcessedType processed = { };
 
-	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
-	// 'paths[s] == s' means that 's' is an initial state
-	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
+    // 'paths[s] == t' denotes that state 's' was accessed from state 't',
+    // 'paths[s] == s' means that 's' is an initial state
+    std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
-	// check initial states first
-	for (const auto& state : smaller.initial_states) {
-		if (smaller.has_final(state) &&
-			are_disjoint(bigger.initial_states, bigger.final_states))
-		{
-			if (nullptr != cex) { cex->word.clear(); }
-			return false;
-		}
+    // check initial states first
+    for (const auto& state : smaller.initial_states) {
+        if (smaller.has_final(state) &&
+            are_disjoint(bigger.initial_states, bigger.final_states))
+        {
+            if (nullptr != cex) { cex->word.clear(); }
+            return false;
+        }
 
-		const ProdStateType st = std::make_pair(state, bigger.initial_states);
-		worklist.push_back(st);
-		processed.push_back(st);
+        const ProdStateType st = std::make_pair(state, bigger.initial_states);
+        worklist.push_back(st);
+        processed.push_back(st);
 
-		paths.insert({ st, {st, 0}});
-	}
+        paths.insert({ st, {st, 0}});
+    }
 
-	while (!worklist.empty()) {
-		// get a next product state
-		ProdStateType prod_state;
-		if (is_dfs) {
-			prod_state = *worklist.rbegin();
-			worklist.pop_back();
-		} else { // BFS
-			prod_state = *worklist.begin();
-			worklist.pop_front();
-		}
+    while (!worklist.empty()) {
+        // get a next product state
+        ProdStateType prod_state;
+        if (is_dfs) {
+            prod_state = *worklist.rbegin();
+            worklist.pop_back();
+        } else { // BFS
+            prod_state = *worklist.begin();
+            worklist.pop_front();
+        }
 
-		const State& smaller_state = prod_state.first;
-		const StateSet& bigger_set = prod_state.second;
+        const State& smaller_state = prod_state.first;
+        const StateSet& bigger_set = prod_state.second;
 
-		// process transitions leaving smaller_state
-		for (const auto& post_symb : smaller[smaller_state]) {
-			const Symbol& symb = post_symb.symbol;
+        // process transitions leaving smaller_state
+        for (const auto& post_symb : smaller[smaller_state]) {
+            const Symbol& symb = post_symb.symbol;
 
-			for (const State& smaller_succ : post_symb.states_to) {
-				const StateSet bigger_succ = bigger.post(bigger_set, symb);
-				const ProdStateType succ = {smaller_succ, bigger_succ};
+            for (const State& smaller_succ : post_symb.states_to) {
+                const StateSet bigger_succ = bigger.post(bigger_set, symb);
+                const ProdStateType succ = {smaller_succ, bigger_succ};
 
-				if (smaller.has_final(smaller_succ) &&
-					are_disjoint(bigger_succ, bigger.final_states))
-				{
-					if (nullptr != cex) {
-						cex->word.clear();
-						cex->word.push_back(symb);
-						ProdStateType trav = prod_state;
-						while (paths[trav].first != trav)
-						{ // go back until initial state
-							cex->word.push_back(paths[trav].second);
-							trav = paths[trav].first;
-						}
+                if (smaller.has_final(smaller_succ) &&
+                    are_disjoint(bigger_succ, bigger.final_states))
+                {
+                    if (nullptr != cex) {
+                        cex->word.clear();
+                        cex->word.push_back(symb);
+                        ProdStateType trav = prod_state;
+                        while (paths[trav].first != trav)
+                        { // go back until initial state
+                            cex->word.push_back(paths[trav].second);
+                            trav = paths[trav].first;
+                        }
 
-						std::reverse(cex->word.begin(), cex->word.end());
-					}
+                        std::reverse(cex->word.begin(), cex->word.end());
+                    }
 
-					return false;
-				}
+                    return false;
+                }
 
-				bool is_subsumed = false;
-				for (const auto& anti_state : processed)
-				{ // trying to find a smaller state in processed
-					if (subsumes(anti_state, succ)) {
-						is_subsumed = true;
-						break;
-					}
-				}
+                bool is_subsumed = false;
+                for (const auto& anti_state : processed)
+                { // trying to find a smaller state in processed
+                    if (subsumes(anti_state, succ)) {
+                        is_subsumed = true;
+                        break;
+                    }
+                }
 
-				if (is_subsumed) { continue; }
+                if (is_subsumed) { continue; }
 
-				// prune data structures and insert succ inside
-				for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
-					auto it = ds->begin();
-					while (it != ds->end()) {
-						if (subsumes(succ, *it)) {
-							auto to_remove = it;
-							++it;
-							ds->erase(to_remove);
-						} else {
-							++it;
-						}
-					}
+                // prune data structures and insert succ inside
+                for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
+                    auto it = ds->begin();
+                    while (it != ds->end()) {
+                        if (subsumes(succ, *it)) {
+                            auto to_remove = it;
+                            ++it;
+                            ds->erase(to_remove);
+                        } else {
+                            ++it;
+                        }
+                    }
 
-					// TODO: set pushing strategy
-					ds->push_back(succ);
-				}
+                    // TODO: set pushing strategy
+                    ds->push_back(succ);
+                }
 
-				// also set that succ was accessed from state
-				paths[succ] = {prod_state, symb};
-			}
-		}
-	}
+                // also set that succ was accessed from state
+                paths[succ] = {prod_state, symb};
+            }
+        }
+    }
 
-	return true;
+    return true;
 } // }}}
 
 namespace {
@@ -217,14 +217,14 @@ namespace {
 
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_incl(
-	const Nfa&             smaller,
-	const Nfa&             bigger,
+    const Nfa&             smaller,
+    const Nfa&             bigger,
     Run*                   cex,
-	const Alphabet* const  alphabet,
-	const StringMap&      params)
+    const Alphabet* const  alphabet,
+    const StringMap&      params)
 { // {{{
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
-	return algo(smaller, bigger, alphabet, cex, params);
+    return algo(smaller, bigger, alphabet, cex, params);
 } // is_incl }}}
 
 bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
