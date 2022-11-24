@@ -412,7 +412,7 @@ public:   // Public data types
         class Post : IterableContainerWrapper<Mata::Util::OrdVector<Move>,Move> {
         };
 
-        class TransitionRelationCl {
+        class Delta {
         private:
             std::vector<Post> post;
             State max_state;
