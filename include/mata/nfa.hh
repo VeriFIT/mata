@@ -42,18 +42,6 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-/*TODO: Generally, there are
- * 1) many and messy type names
- * 2) a lot of stuff in general
- * 3) method/function names are sometimes weird and not systematic too
- * This is a proposal to, firstly, reduce and systematize
- * type names,
- * function / method names.
- * Secondly,
- * maybe we organize automaton a bit more, by
- * making transition relation a class,
- * some other things as well ...?
- * */
 
 using State = unsigned long;
 using Symbol = unsigned long;
@@ -76,7 +64,6 @@ using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
  * Ie comments of the form "@param final_states: this is the set of final_states".
  * Do not try to fill empty doxygen spaces.
  * */
-
 
 using StateToStringMap = std::unordered_map<State, std::string>;
 // using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
@@ -277,10 +264,9 @@ Mata::Parser::ParsedSection serialize(
 	const SymbolToStringMap*  symbol_map = nullptr,
 	const StateToStringMap*   state_map = nullptr);
 
-
 struct Move {
     Symbol symbol{};
-    StateSet states_to;
+    StateSet states_to;//TODO: horrible name - target_states /targets ?
 
     Move() = default;
     explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
@@ -317,6 +303,9 @@ struct Nfa
      *
      */
     TransitionRelation transition_relation;
+    //Automaton could have this instead of the curent initial and final states:
+    //util::UnaryPredicate<State> initial = {};
+    //util::UnaryPredicate<State> final = {};
     StateSet initial_states = {};
     StateSet final_states = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
@@ -357,6 +346,8 @@ public:
 
     auto states_number() const { return transition_relation.size(); }
 
+    //TODO: why this? Maybe we could have add_state(int state)
+    //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
     void increase_size(size_t size)
     {
         assert(this->states_number() <= size);
@@ -399,6 +390,7 @@ public:
         for (const State& st : vec) { this->make_initial(st); }
     }
 
+    // TODO: aaargh, the name should be is_initial, no? And we should probably implement it differently, as a boolean flag, to make this constant time.
     bool has_initial(const State &state_to_check) const {return initial_states.count(state_to_check);}
 
     /**
@@ -561,6 +553,7 @@ public:
      * @param states_to Set of target states.
      */
     void add_trans(State state_from, Symbol symbol, const StateSet& states_to);
+    //TODO: rename all "trans" to "transition". At lest function names.
 
     /**
      * Remove transition.
@@ -853,7 +846,7 @@ inline bool is_universal(
  * - "algo": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_incl(
+bool is_included(
         const Nfa&         smaller,
         const Nfa&         bigger,
         Run*               cex,
@@ -865,13 +858,13 @@ bool is_incl(
  * @param params[in] Optional parameters to control the equivalence check algorithm:
  * - "algo": "naive", "antichains" (Default: "antichains")
  */
-inline bool is_incl(
+inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
         const StringMap&      params = {{"algo", "antichains"}})
 { // {{{
-    return is_incl(smaller, bigger, nullptr, alphabet, params);
+    return is_included(smaller, bigger, nullptr, alphabet, params);
 } // }}}
 
 /**

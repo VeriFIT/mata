@@ -55,7 +55,7 @@ add_library(libmata STATIC
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
-	nfa/nfa-incl.cc
+        nfa/nfa-inclusion.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc

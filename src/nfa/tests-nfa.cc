@@ -6,7 +6,9 @@
 
 #include <mata/nfa.hh>
 #include <mata/nfa-plumbing.hh>
+#include <mata/nfa-algorithms.hh>
 
+using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::util;
@@ -58,6 +60,7 @@ using Word = std::vector<Symbol>;
 
 template<class T> void unused(const T &) {}
 
+//TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
 bool nothing_in_trans(const Nfa& nfa)
 {
     return std::all_of(nfa.transition_relation.begin(), nfa.transition_relation.end(),
@@ -331,8 +334,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringMap params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, &alph, params));
-		REQUIRE(is_incl(b, res, &alph, params));
+		REQUIRE(is_included(a, res, &alph, params));
+		REQUIRE(is_included(b, res, &alph, params));
 	}
 
 	SECTION("Union of automata with some transitions but without a final state")
@@ -347,8 +350,8 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		StringMap params;
 		params["algo"] = "antichains";
 
-		REQUIRE(is_incl(a, res, &alph, params));
-		REQUIRE(is_incl(res, a, &alph, params));
+		REQUIRE(is_included(a, res, &alph, params));
+		REQUIRE(is_included(res, a, &alph, params));
 
 		WARN_PRINT("Insufficient testing of Mata::Nfa::union_norename()");
 	}
@@ -1425,7 +1428,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	}
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_incl()")
+TEST_CASE("Mata::Nfa::is_included()")
 { // {{{
 	Nfa smaller(10);
 	Nfa bigger(16);
@@ -1443,11 +1446,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &alph, params);
-			CHECK(is_included);
+			bool is_incl = is_included(smaller, bigger, &alph, params);
+			CHECK(is_incl);
 
-            is_included = is_incl(bigger, smaller, &alph, params);
-            CHECK(is_included);
+            is_incl = is_included(bigger, smaller, &alph, params);
+            CHECK(is_incl);
 		}
 	}
 
@@ -1459,11 +1462,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
-            CHECK(is_included);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+            CHECK(is_incl);
 
-            is_included = is_incl(bigger, smaller, &cex, &alph, params);
-            CHECK(!is_included);
+            is_incl = is_included(bigger, smaller, &cex, &alph, params);
+            CHECK(!is_incl);
 		}
 	}
 
@@ -1477,11 +1480,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
-            CHECK(is_included);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+            CHECK(is_incl);
 
-            is_included = is_incl(bigger, smaller, &cex, &alph, params);
-            CHECK(is_included);
+            is_incl = is_included(bigger, smaller, &cex, &alph, params);
+            CHECK(is_incl);
 		}
 	}
 
@@ -1493,14 +1496,14 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-			REQUIRE(!is_included);
+			REQUIRE(!is_incl);
 			REQUIRE(cex.word == Word{});
 
-            is_included = is_incl(bigger, smaller, &cex, &alph, params);
+            is_incl = is_included(bigger, smaller, &cex, &alph, params);
             REQUIRE(cex.word == Word{});
-            REQUIRE(is_included);
+            REQUIRE(is_incl);
 		}
 	}
 
@@ -1519,11 +1522,11 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &alph, params);
-			REQUIRE(is_included);
+			bool is_incl = is_included(smaller, bigger, &alph, params);
+			REQUIRE(is_incl);
 
-            is_included = is_incl(bigger, smaller, &alph, params);
-            REQUIRE(!is_included);
+            is_incl = is_included(bigger, smaller, &alph, params);
+            REQUIRE(!is_incl);
 		}
 	}
 
@@ -1543,15 +1546,15 @@ TEST_CASE("Mata::Nfa::is_incl()")
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
 
-			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-			REQUIRE(!is_included);
+			REQUIRE(!is_incl);
 			REQUIRE((
 				cex.word == Word{alph["a"], alph["b"]} ||
 				cex.word == Word{alph["b"], alph["a"]}));
 
-            is_included = is_incl(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_included);
+            is_incl = is_included(bigger, smaller, &cex, &alph, params);
+            REQUIRE(is_incl);
             REQUIRE((
                 cex.word == Word{alph["a"], alph["b"]} ||
                 cex.word == Word{alph["b"], alph["a"]}));
@@ -1582,8 +1585,8 @@ TEST_CASE("Mata::Nfa::is_incl()")
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
-			bool is_included = is_incl(smaller, bigger, &cex, &alph, params);
-			REQUIRE(!is_included);
+			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+			REQUIRE(!is_incl);
 
 			REQUIRE(cex.word.size() == 4);
 			REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
@@ -1592,8 +1595,8 @@ TEST_CASE("Mata::Nfa::is_incl()")
 			REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
 			REQUIRE(cex.word[2] != cex.word[3]);
 
-            is_included = is_incl(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_included);
+            is_incl = is_included(bigger, smaller, &cex, &alph, params);
+            REQUIRE(is_incl);
 
             REQUIRE(cex.word.size() == 4);
             REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
@@ -1608,9 +1611,9 @@ TEST_CASE("Mata::Nfa::is_incl()")
 	{
         OnTheFlyAlphabet alph{};
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
+		CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
 			Catch::Contains("requires setting the \"algo\" key"));
-        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
+        CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
 
 	SECTION("wrong parameters 2")
@@ -1618,9 +1621,9 @@ TEST_CASE("Mata::Nfa::is_incl()")
         OnTheFlyAlphabet alph{};
 		params["algo"] = "foo";
 
-		CHECK_THROWS_WITH(is_incl(smaller, bigger, &alph, params),
+		CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
 			Catch::Contains("received an unknown value"));
-        CHECK_NOTHROW(is_incl(smaller, bigger, &alph));
+        CHECK_NOTHROW(is_included(smaller, bigger, &alph));
 	}
 } // }}}
 
@@ -1696,10 +1699,10 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("a* + b* == (a+b)*")
     {
         OnTheFlyAlphabet alph{"a", "b"};
-        smaller.initial_states = {1, 2};
-        smaller.final_states = {1, 2};
-        smaller.add_trans(1, alph["a"], 1);
-        smaller.add_trans(2, alph["b"], 2);
+        smaller.initial_states = {0, 1};
+        smaller.final_states = {0, 1};
+        smaller.add_trans(0, alph["a"], 0);
+        smaller.add_trans(1, alph["b"], 1);
 
         bigger.initial_states = {11};
         bigger.final_states = {11};
@@ -1708,6 +1711,9 @@ TEST_CASE("Mata::Nfa::are_equivalent")
 
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
+
+            //TODO:what about we test the plumbing versions primarily?
+            // Debugging with the dispatcher is annoying.
 
             CHECK(!are_equivalent(smaller, bigger, &alph, params));
             CHECK(!are_equivalent(smaller, bigger, params));
