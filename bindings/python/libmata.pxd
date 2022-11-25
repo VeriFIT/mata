@@ -257,12 +257,12 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void reduce(CNfa*, CNfa&, StateToStateMap*, StringMap&)
 
 
-cdef extern from "mata/nfa-string-solving.hh" namespace "Mata::Nfa::StringSolving":
+cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":
     cdef cset[vector[Symbol]] get_shortest_words(CNfa&)
 
 
-cdef extern from "mata/nfa-string-solving.hh" namespace "Mata::Nfa::StringSolving::SegNfa":
-    cdef cppclass CSegmentation "Mata::Nfa::StringSolving::SegNfa::Segmentation":
+cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
+    cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
         CSegmentation(CNfa&, Symbol) except +
 
         ctypedef unsigned EpsilonDepth

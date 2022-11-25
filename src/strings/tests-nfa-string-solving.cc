@@ -1,4 +1,4 @@
-/* tests-nfa-string-solving.cc -- Tests for string solving operations.
+/* tests-nfa-strings.cc -- Tests for string solving operations.
  *
  * Copyright (c) 2022 David Chocholatý <chocholaty.david@protonmail.com>
  *
@@ -20,11 +20,11 @@
 #include "catch.hpp"
 
 #include "mata/nfa.hh"
-#include "mata/nfa-string-solving.hh"
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
-using namespace Mata::Nfa::StringSolving;
-using namespace Mata::Nfa::StringSolving::SegNfa;
+using namespace Mata::Strings;
+using namespace Mata::Strings::SegNfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
 

@@ -11,7 +11,7 @@
 
 using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
-using namespace Mata::Nfa::StringSolving;
+using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::util;
 using namespace Mata::Parser;

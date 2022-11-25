@@ -1,4 +1,4 @@
-/* nfa-string-solving.cc -- Operations on NFAs for string solving.
+/* nfa-strings.cc -- Operations on NFAs for string solving.
  *
  * Copyright (c) 2022 David Chocholatý <chocholaty.david@protonmail.com>
  *
@@ -15,10 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/nfa-string-solving.hh"
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
-using namespace Mata::Nfa::StringSolving;
+using namespace Mata::Strings;
 
 namespace {
 /**
@@ -38,10 +38,10 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 
 } // namespace
 
-WordSet StringSolving::get_shortest_words(const Nfa& nfa) {
+WordSet Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return StringSolving::ShortestWordsMap{ nfa }.get_shortest_words_for(nfa.initial_states);
+    return Strings::ShortestWordsMap{ nfa }.get_shortest_words_for(nfa.initial_states);
 }
 
 WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const

@@ -1,4 +1,4 @@
-/* nfa-string-solving.hh -- Operations on NFAs for string solving.
+/* nfa-strings.hh -- Operations on NFAs for string solving.
  *
  * Copyright (c) 2022 David Chocholatý <chocholaty.david@protonmail.com>
  *
@@ -22,9 +22,12 @@
 
 #include <mata/nfa.hh>
 
+namespace {
+    using namespace Mata::Nfa;
+}
+
 namespace Mata {
-namespace Nfa {
-namespace StringSolving {
+namespace Strings {
     /**
      * Class mapping states to the shortest words accepted by languages of the states.
      */
@@ -34,7 +37,7 @@ namespace StringSolving {
          * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
          * @param aut Automaton to compute shortest words for.
          */
-        explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
+        explicit ShortestWordsMap(const Nfa::Nfa& aut) : reversed_automaton(revert(aut)) {
             insert_initial_lengths();
             compute();
         }
@@ -61,7 +64,7 @@ namespace StringSolving {
         std::unordered_map<State, LengthWordsPair> shortest_words_map{};
         std::set<State> processed{}; ///< Set of already processed states.
         std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-        const Nfa reversed_automaton; ///< Reversed input automaton.
+        const Nfa::Nfa reversed_automaton; ///< Reversed input automaton.
 
         /**
          * @brief Inserts initial lengths into the shortest words map.
@@ -103,7 +106,7 @@ namespace StringSolving {
      * Get shortest words (regarding their length) of the automaton using BFS.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words(const Nfa& nfa);
+    WordSet get_shortest_words(const Nfa::Nfa& nfa);
 
 /**
  * Operations on segment automata.
@@ -113,7 +116,7 @@ namespace SegNfa {
     /// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
     /// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
     /// Segment automaton can have initial states only in the first segment and final states only in the last segment.
-    using SegNfa = Nfa;
+    using SegNfa = Nfa::Nfa;
 
     /**
     * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
@@ -278,7 +281,7 @@ namespace SegNfa {
      *                 minimization before noodlification.
      * @return A list of all (non-empty) noodles.
      */
-    NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const Nfa& right_automaton,
+    NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const Nfa::Nfa& right_automaton,
                                          bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 
     /**
@@ -301,12 +304,11 @@ namespace SegNfa {
      *                 minimization before noodlification.
      * @return A list of all (non-empty) noodles.
      */
-    NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa& right_automaton,
+    NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
                                          bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 } // Namespace SegNfa.
 
-} // Namespace StringSolving.
-} // Namespace Nfa.
+} // Namespace Strings.
 } // Namespace Mata.
 
 #endif // MATA_NFA_STRING_SOLVING_HH_.
