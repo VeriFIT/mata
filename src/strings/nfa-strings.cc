@@ -20,24 +20,6 @@
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 
-namespace {
-/**
- * Get a number of permutations for computed epsilon depths.
- * @param[in] epsilon_depths Computed list of epsilon transitions for each depth.
- * @return Number of permutations.
- */
-size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitions& epsilon_depths)
-    {
-        size_t num_of_permutations{ 1 };
-        for (const auto& segment: epsilon_depths)
-        {
-            num_of_permutations *= segment.second.size();
-        }
-        return num_of_permutations;
-    }
-
-} // namespace
-
 WordSet Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
