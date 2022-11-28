@@ -366,7 +366,7 @@ def test_concatenate():
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, ord('a'), 2)
 
-    shortest_words = result.get_shortest_words()
+    shortest_words = mata.Nfa.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
@@ -664,7 +664,7 @@ def test_to_str():
 
 def test_shortest(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
-    shortest = lhs.get_shortest_words()
+    shortest = mata.Nfa.get_shortest_words(lhs)
     assert shortest == [[1, 1]]
 
 
@@ -689,7 +689,7 @@ def test_trim(prepare_automaton_a):
     assert len(nfa.initial_states) == len(old_nfa.initial_states)
     assert len(nfa.final_states) == len(old_nfa.final_states)
 
-    for word in old_nfa.get_shortest_words():
+    for word in mata.Nfa.get_shortest_words(old_nfa):
         assert mata.Nfa.is_in_lang(nfa, word)
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.

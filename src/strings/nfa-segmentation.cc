@@ -15,9 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/nfa.hh>
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_depth_pair,
                                                     std::deque<StateDepthPair>& worklist)

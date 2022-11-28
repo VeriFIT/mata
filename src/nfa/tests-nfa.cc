@@ -6,10 +6,12 @@
 
 #include <mata/nfa.hh>
 #include <mata/nfa-plumbing.hh>
+#include <mata/nfa-strings.hh>
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::util;
 using namespace Mata::Parser;
@@ -2259,137 +2261,6 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::get_shortest_words()")
-{
-    Nfa aut('q' + 1);
-
-    SECTION("Automaton B")
-    {
-        FILL_WITH_AUT_B(aut);
-        Word word{};
-        word.push_back('b');
-        word.push_back('a');
-        WordSet expected{word};
-        Word word2{};
-        word2.push_back('a');
-        word2.push_back('a');
-        expected.insert(expected.begin(), word2);
-        REQUIRE(aut.get_shortest_words() == expected);
-
-        SECTION("Additional initial state with longer words")
-        {
-            aut.initial_states.push_back(8);
-            REQUIRE(aut.get_shortest_words() == expected);
-        }
-
-        SECTION("Change initial state")
-        {
-			aut.initial_states.clear();
-            aut.initial_states.push_back(8);
-
-            word.clear();
-            word.push_back('b');
-            word.push_back('b');
-            word.push_back('a');
-            expected = WordSet{word};
-            word2.clear();
-            word2.push_back('b');
-            word2.push_back('a');
-            word2.push_back('a');
-            expected.insert(expected.begin(), word2);
-
-            REQUIRE(aut.get_shortest_words() == expected);
-        }
-    }
-
-    SECTION("Empty automaton")
-    {
-        REQUIRE(aut.get_shortest_words().empty());
-    }
-
-    SECTION("One-state automaton accepting an empty language")
-    {
-        aut.make_initial(0);
-        REQUIRE(aut.get_shortest_words().empty());
-        aut.make_final(1);
-        REQUIRE(aut.get_shortest_words().empty());
-        aut.make_final(0);
-        REQUIRE(aut.get_shortest_words() == WordSet{Word{}});
-    }
-
-    SECTION("Automaton A")
-    {
-        FILL_WITH_AUT_A(aut);
-        Word word{};
-        word.push_back('b');
-        word.push_back('a');
-        std::set<Word> expected{word};
-        Word word2{};
-        word2.push_back('a');
-        word2.push_back('a');
-        expected.insert(expected.begin(), word2);
-        REQUIRE(aut.get_shortest_words() == expected);
-    }
-
-    SECTION("Single transition automaton")
-    {
-        aut.initial_states = {1 };
-        aut.final_states = {2 };
-        aut.add_trans(1, 'a', 2);
-
-        REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{'a'}});
-    }
-
-    SECTION("Single state automaton")
-    {
-        aut.initial_states = {1 };
-        aut.final_states = {1 };
-        aut.add_trans(1, 'a', 1);
-
-        REQUIRE(aut.get_shortest_words() == std::set<Word>{Word{}});
-    }
-
-    SECTION("Require FIFO queue")
-    {
-        aut.initial_states = {1 };
-        aut.final_states = {4 };
-        aut.add_trans(1, 'a', 5);
-        aut.add_trans(5, 'c', 4);
-        aut.add_trans(1, 'a', 2);
-        aut.add_trans(2, 'b', 3);
-        aut.add_trans(3, 'b', 4);
-
-        Word word{};
-        word.push_back('a');
-        word.push_back('c');
-        std::set<Word> expected{word};
-
-        // LIFO queue would return as shortest words string "abb", which would be incorrect.
-        REQUIRE(aut.get_shortest_words() == expected);
-    }
-}
-
-TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
-    Nfa aut('q' + 1);
-    FILL_WITH_AUT_B(aut);
-    aut.initial_states.clear();
-    aut.initial_states.push_back(8);
-    Word word{};
-    word.push_back('b');
-    word.push_back('b');
-    word.push_back('a');
-    WordSet expected{ word };
-    Word word2{};
-    word2.push_back('b');
-    word2.push_back('a');
-    word2.push_back('a');
-    expected.insert(expected.begin(), word2);
-
-    for (size_t n{}; n < 100000; ++n) {
-        aut.get_shortest_words();
-    }
-}
-
 TEST_CASE("Mata::Nfa::remove_final()")
 {
     Nfa aut('q' + 1);
@@ -2677,7 +2548,7 @@ TEST_CASE("Mata::Nfa::trim()")
     CHECK(aut.initial_states.size() == old_aut.initial_states.size());
     CHECK(aut.final_states.size() == old_aut.final_states.size());
     CHECK(aut.states_number() == 4);
-    for (const Word& word: old_aut.get_shortest_words())
+    for (const Word& word: get_shortest_words(old_aut))
     {
         CHECK(is_in_lang(aut, Run{word,{}}));
     }
