@@ -276,16 +276,174 @@ struct Move {
 
     inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
     inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
     inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
+    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
+    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+
+    StateSet::iterator begin() { return states_to.begin(); }
+    StateSet::iterator end() { return states_to.end(); }
+
+    StateSet::const_iterator cbegin() const  { return states_to.cbegin(); }
+    StateSet::const_iterator cend() const { return states_to.cend(); }
 };
 
-/// List of transitions from a certain state. Each element holds transitions with a certain symbol.
-using Moves = Mata::Util::OrdVector<Move>;
-/// Transition relation for an NFA. Each index 'i' to the vector represents a state 'i' in the automaton.
-using TransitionRelation = std::vector<Moves>;
+struct Post : private Util::OrdVector<Move> {
+    struct iterator : private Util::OrdVector<Move>::iterator {
+        iterator(Util::OrdVector<Move>::iterator it) : Util::OrdVector<Move>::iterator(it) {};
+
+        reference operator*() const { return Util::OrdVector<Move>::iterator::operator*(); }
+        pointer operator->() { return Util::OrdVector<Move>::iterator::operator->(); }
+
+        // Prefix increment
+        iterator& operator++() { Util::OrdVector<Move>::iterator::operator++(); return *this; }
+
+        // Postfix increment
+        iterator operator++(int x) { return Util::OrdVector<Move>::iterator::operator++(x);}
+
+        friend bool operator== (const iterator& a, const iterator& b)
+        {
+            return Util::OrdVector<Move>::iterator(a) == Util::OrdVector<Move>::iterator(b);
+        };
+
+        friend bool operator!= (const iterator& a, const iterator& b)
+        {
+            return Util::OrdVector<Move>::iterator(a) != Util::OrdVector<Move>::iterator(b);
+        };
+    };
+
+    struct iterator begin() { return iterator(Util::OrdVector<Move>::begin()); }
+    struct iterator end() { return iterator(Util::OrdVector<Move>::end()); }
+
+    Post() = default;
+
+    void insert(Move& m)
+    {
+        this->push_back(m);
+    }
+
+    Move& operator[](Symbol s)
+    {
+        const iterator item = this->find(Move(s));
+        if (item == this->end())
+            throw std::runtime_error("Move not found");
+
+        return *item;
+    }
+
+    bool empty() const { return Util::OrdVector<Move>::empty(); }
+    size_t size() const { return Util::OrdVector<Move>::size(); }
+};
+
+struct Delta {
+private:
+    std::vector<Post> post;
+
+public:
+    Delta() : post{} {}
+    Delta(size_t n) : post(n) {}
+
+    void reserve(size_t n) { post.reserve(n); };
+
+    Post & operator[] (State q)
+    {
+        assert(post.size() <= q && "There is not transition for given state");
+        return post[q];
+    };
+
+    const Post & operator[] (State q) const
+    {
+        assert(post.size() <= q && "There is not transition for given state");
+        return post[q];
+    };
+
+    size_t size() const { return post.size(); }
+    bool empty() const { return post.empty(); }
+    void resize(size_t n) { post.resize(n); }
+    void clear() { post.clear(); }
+
+    // void rename_states(const std::vector<State> & renaming);
+    void defragment()
+    {
+        size_t last_empty = 0;
+        for (size_t i = 0; i < post.size(); ++i) {
+            if (post.at(i).empty() == 0) {
+                last_empty = i;
+                continue;
+            } else if (last_empty < i)
+                post[last_empty] = post[i];
+            last_empty = i + 1;
+        }
+
+        if (last_empty < post.size())
+            post.resize(last_empty);
+    }
+
+    struct iterator {
+    private:
+        std::vector<Post>& post;
+        size_t actual_state;
+        Post::iterator post_iterator;
+        StateSet::iterator targets_position;
+
+    public:
+        iterator(std::vector<Post>& post_p) : post(post_p), actual_state(0), post_iterator(post[0].begin()),
+            targets_position(post_iterator->states_to.begin()) {};
+
+        iterator(std::vector<Post>& post_p, size_t as, Post::iterator pi, StateSet::iterator ti) : post(post_p),
+            actual_state(as), post_iterator(pi), targets_position(ti) {};
+
+        Trans operator*() const
+        {
+            return Trans(actual_state, (*post_iterator).symbol, *targets_position);
+        }
+
+        // Prefix increment
+        iterator& operator++() {
+            targets_position++;
+            if (targets_position != post_iterator->states_to.end())
+                return *this;
+
+            post_iterator++;
+            if (post_iterator != post[actual_state].end())
+                return *this;
+
+            actual_state++;
+            return *this;
+        }
+
+        // Postfix increment
+        iterator operator++(int)
+        {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        friend bool operator== (const iterator& a, const iterator& b)
+        {
+            return a.actual_state == b.actual_state && a.post_iterator == b.post_iterator
+                && a.targets_position == b.targets_position;
+        }
+
+        friend bool operator!= (const iterator& a, const iterator& b)
+        {
+            return a.actual_state != b.actual_state && a.post_iterator != b.post_iterator
+                   && a.targets_position != b.targets_position;
+        };
+    };
+
+    iterator begin()
+    {
+        return iterator(post);
+    }
+
+    iterator end()
+    {
+        Post& last_post = post[post.size()-1];
+        return iterator(post, post.size(), last_post.end(), last_post[last_post.size()-1].states_to.end());
+    }
+};
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = limits.maxSymbol;
@@ -301,7 +459,7 @@ struct Nfa
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      */
-    TransitionRelation transition_relation;
+    Delta transition_relation;
     //Automaton could have this instead of the curent initial and final states:
     //util::UnaryPredicate<State> initial = {};
     //util::UnaryPredicate<State> final = {};
@@ -338,8 +496,8 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        for (auto& state_transitions: transition_relation) {
-            state_transitions.clear();
+        for (size_t i = 0; i < transition_relation.size(); ++i) {
+            transition_relation[i] = Post();
         }
     }
 
@@ -582,7 +740,7 @@ public:
             return false;
         }
 
-        const Moves& tl = get_moves_from(src);
+        const Post& tl = get_moves_from(src);
         if (tl.empty()) {
             return false;
         }
@@ -624,7 +782,7 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const Moves& get_moves_from(const State state_from) const
+    const Post& get_moves_from(const State state_from) const
     {
         assert(states_number() >= state_from + 1);
         return transition_relation[state_from];
@@ -673,7 +831,7 @@ public:
     { // {{{
         const Nfa* nfa;
         size_t trIt;
-        Moves::const_iterator tlIt;
+        Post::const_iterator tlIt;
         StateSet::const_iterator ssIt;
         Trans trans;
         bool is_end = { false };
@@ -702,7 +860,7 @@ public:
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
 
-    const Moves& operator[](State state) const
+    const Post& operator[](State state) const
     { // {{{
         assert(state < transition_relation.size());
 
@@ -717,7 +875,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    Moves::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
+    Post::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -726,7 +884,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static Moves::const_iterator get_epsilon_transitions(const Moves& state_transitions, Symbol epsilon = EPSILON);
+    static Post::const_iterator get_epsilon_transitions(const Post& state_transitions, Symbol epsilon = EPSILON);
 private:
 }; // Nfa
 
@@ -1201,7 +1359,7 @@ private:
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
-            for (const auto& state_transitions: nfa.transition_relation[state]) {
+            for (auto state_transitions: nfa.transition_relation) {
                 alphabet.update_next_symbol_value(state_transitions.symbol);
                 alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
             }
