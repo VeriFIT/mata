@@ -289,33 +289,19 @@ struct Move {
 };
 
 struct Post : private Util::OrdVector<Move> {
-    struct iterator : private Util::OrdVector<Move>::iterator {
-        iterator(Util::OrdVector<Move>::iterator it) : Util::OrdVector<Move>::iterator(it) {};
+    using iterator = Util::OrdVector<Move>::iterator;
+    using const_iterator = Util::OrdVector<Move>::const_iterator;
 
-        reference operator*() const { return Util::OrdVector<Move>::iterator::operator*(); }
-        pointer operator->() { return Util::OrdVector<Move>::iterator::operator->(); }
+    iterator begin() { return Util::OrdVector<Move>::begin(); }
+    iterator end() { return Util::OrdVector<Move>::end(); }
 
-        // Prefix increment
-        iterator& operator++() { Util::OrdVector<Move>::iterator::operator++(); return *this; }
-
-        // Postfix increment
-        iterator operator++(int x) { return Util::OrdVector<Move>::iterator::operator++(x);}
-
-        friend bool operator== (const iterator& a, const iterator& b)
-        {
-            return Util::OrdVector<Move>::iterator(a) == Util::OrdVector<Move>::iterator(b);
-        };
-
-        friend bool operator!= (const iterator& a, const iterator& b)
-        {
-            return Util::OrdVector<Move>::iterator(a) != Util::OrdVector<Move>::iterator(b);
-        };
-    };
-
-    struct iterator begin() { return iterator(Util::OrdVector<Move>::begin()); }
-    struct iterator end() { return iterator(Util::OrdVector<Move>::end()); }
+    const_iterator cbegin() const { return Util::OrdVector<Move>::cbegin(); }
+    const_iterator cend() const { return Util::OrdVector<Move>::cend(); }
 
     Post() = default;
+
+    const_iterator find(const Move& m) const { return Util::OrdVector<Move>::find(m);}
+    iterator find(const Move& m) { return Util::OrdVector<Move>::find(m);}
 
     void insert(Move& m)
     {
@@ -357,10 +343,10 @@ public:
         return post[q];
     };
 
-    size_t size() const { return post.size(); }
+    void clear() { post.clear(); }
     bool empty() const { return post.empty(); }
     void resize(size_t n) { post.resize(n); }
-    void clear() { post.clear(); }
+    size_t size() const { return post.size(); }
 
     // void rename_states(const std::vector<State> & renaming);
     void defragment()
@@ -745,7 +731,7 @@ public:
             return false;
         }
         auto symbol_transitions{ tl.find(Move{symb} ) };
-        if (symbol_transitions == tl.end()) {
+        if (symbol_transitions == tl.cend()) {
             return false;
         }
 
@@ -1359,7 +1345,7 @@ private:
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
-            for (auto state_transitions: nfa.transition_relation) {
+            for (const auto state_transitions: nfa.transition_relation) {
                 alphabet.update_next_symbol_value(state_transitions.symbol);
                 alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
             }
