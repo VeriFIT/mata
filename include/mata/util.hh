@@ -59,8 +59,130 @@ extern unsigned LOG_VERBOSITY;
 
 namespace util
 {
+    template <typename Number>
+    class NumberPredicate {
+    private:
+        std::vector<bool> predicate = {};
+        std::vector<Number> elements = {};
+        bool elements_exact = false;
+        bool elements_watched = true;
+        //Number _size; could be somewhat useful
 
-/** Are two sets disjoint? */
+        void prune_elements() {
+            Number new_pos = 0;
+            for (Number orig_pos = 0; orig_pos < elements.size(); ++orig_pos) {
+                if (predicate[elements[orig_pos]]) {
+                    elements[new_pos] = elements[orig_pos];
+                    ++new_pos;
+                }
+            }
+            elements.resize(new_pos);
+            elements_exact = true;
+        }
+
+        void compute_elements() {
+            elements.clear();
+            for (Number q = 0; q < predicate.size(); ++q) {
+                if (predicate[q])
+                    elements.push_back(q);
+            }
+        }
+
+    public:
+        NumberPredicate(bool watch_elements = false) : elements_watched(watch_elements) {};
+
+        void add(Number q) {
+            while (predicate.size() <= q)
+                predicate.push_back(false);
+            if (elements_watched) {
+                Number q_was_there = predicate[q];
+                predicate[q] = true;
+                if (!q_was_there)
+                    elements.push_back(q);
+            } else {
+                predicate[q] = true;
+            }
+        }
+
+        void remove(Number q) {
+            if (q < predicate.size() && predicate[q]) {
+                predicate[q] = false;
+                if (elements_watched) {
+                    elements_exact = false;
+                }
+            }
+        }
+
+        void add(const std::vector<Number> &elems) {
+            for (Number q: elems)
+                add(q);
+        }
+
+        void remove(const std::vector<Number> &elems) {
+            for (Number q: elems)
+                remove(q);
+        }
+
+        void watch_elements() {
+            if (!elements_watched) {
+                compute_elements();
+                elements_watched = true;
+                elements_exact = true;
+            }
+        }
+
+        void dont_watch_elements() {
+            elements_exact = false;
+            elements_watched = false;
+        }
+
+        const std::vector<Number>& get_elements() {
+            if (!elements_watched)
+                compute_elements();
+            else if (!elements_exact) {
+                prune_elements();
+            }
+            return elements;
+        }
+
+        bool operator[](Number q) const {
+            if (q < predicate.size())
+                return predicate[q];
+            else
+                return false;
+        }
+
+        Number size() {
+            if (elements_watched) {
+                if (!elements_exact)
+                    prune_elements();
+                return elements.size();
+            } else {
+                Number cnt = 0;
+                for (Number q = 0; q < predicate.size(); ++q) {
+                    if (predicate[q])
+                        cnt++;
+                }
+                return cnt;
+            }
+        }
+
+        void clear() {
+            predicate.clear();
+            elements.clear();
+        }
+
+        void reserve(Number n) {
+            predicate.reserve(n);
+            elements.reserve(n);
+        }
+    };
+
+
+
+
+
+    /** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 { // {{{

@@ -42,19 +42,6 @@ namespace Nfa
 {
 extern const std::string TYPE_NFA;
 
-/*TODO: Generally, there are
- * 1) many and messy type names
- * 2) a lot of stuff in general
- * 3) method/function names are sometimes weird and not systematic too
- * This is a proposal to, firstly, reduce and systematize
- * type names,
- * function / method names.
- * Secondly,
- * maybe we organize automaton a bit more, by
- * making transition relation a class,
- * some other things as well ...?
- * */
-
 using State = unsigned long;
 using Symbol = unsigned long;
 
@@ -69,14 +56,6 @@ struct Run {
 
 using StringToStateMap = std::unordered_map<std::string, State>;
 using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
-
-/*
- *TODO:
- * Remove documentation/comments which does not add anything interesting?
- * Ie comments of the form "@param final_states: this is the set of final_states".
- * Do not try to fill empty doxygen spaces.
- * */
-
 
 using StateToStringMap = std::unordered_map<State, std::string>;
 // using StateToPostMap = StateMap<PostSymb>; ///< Transitions.
@@ -319,6 +298,8 @@ struct Nfa
     TransitionRelation transition_relation;
     StateSet initial_states = {};
     StateSet final_states = {};
+    util::NumberPredicate<State> initial;
+    util::NumberPredicate<State> final;
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
