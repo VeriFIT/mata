@@ -1,3 +1,4 @@
+//TODO: rename to intermediate_afa / afa-intermediate, or something like that.
 /*
  * inter-aut.hh -- intermediate representation of automata.
  * It represents automaton after parsing and before translation to particular automaton.

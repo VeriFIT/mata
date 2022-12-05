@@ -15,14 +15,15 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/nfa.hh>
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_depth_pair,
                                                     std::deque<StateDepthPair>& worklist)
 {
-    auto outgoing_transitions{ automaton.get_transitions_from(state_depth_pair.state) };
+    auto outgoing_transitions{automaton.get_moves_from(state_depth_pair.state) };
     for (const auto& state_transitions: outgoing_transitions)
     {
         if (state_transitions.symbol == epsilon)
@@ -37,7 +38,7 @@ void SegNfa::Segmentation::process_state_depth_pair(const StateDepthPair& state_
 }
 
 void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& state_depth_pair,
-                                                      const TransSymbolStates& state_transitions,
+                                                      const Move& state_transitions,
                                                       std::deque<StateDepthPair>& worklist)
 {
     epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
@@ -50,7 +51,7 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthPair& stat
     }
 }
 
-void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& state_transitions, EpsilonDepth depth,
+void SegNfa::Segmentation::add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
                                                        std::deque<StateDepthPair>& worklist)
 {
     for (State target_state: state_transitions.states_to)
@@ -62,17 +63,17 @@ void SegNfa::Segmentation::add_transitions_to_worklist(const TransSymbolStates& 
 std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initialize_worklist() const
 {
     std::deque<StateDepthPair> worklist{};
-    for (State state: automaton.initialstates)
+    for (State state: automaton.initial_states)
     {
         worklist.push_back(StateDepthPair{ state, 0 });
     }
     return worklist;
 }
 
-StateMap<bool> SegNfa::Segmentation::initialize_visited_map() const
+std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() const
 {
-    StateMap<bool> visited{};
-    const size_t state_num = automaton.get_num_of_states();
+    std::unordered_map<State, bool> visited{};
+    const size_t state_num = automaton.states_number();
     for (State state{ 0 }; state < state_num; ++state)
     {
         visited[state] = false;
@@ -115,7 +116,7 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
 void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
 {
     assert(transition.symb == epsilon);
-    assert(segments_raw[current_depth].has_trans(transition));
+    assert(segments_raw[current_depth].has_trans(transition.src, transition.symb, transition.tgt));
 
     segments_raw[current_depth].make_final(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
@@ -127,7 +128,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
     const size_t next_depth = current_depth + 1;
 
     assert(transition.symb == epsilon);
-    assert(segments_raw[next_depth].has_trans(transition));
+    assert(segments_raw[next_depth].has_trans(transition.src, transition.symb, transition.tgt));
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
@@ -153,7 +154,7 @@ const AutSequence& SegNfa::Segmentation::get_untrimmed_segments()
 
 void SegNfa::Segmentation::compute_epsilon_depths()
 {
-    StateMap<bool> visited{ initialize_visited_map() };
+    std::unordered_map<State, bool> visited{ initialize_visited_map() };
     std::deque<StateDepthPair> worklist{ initialize_worklist() };
 
     while (!worklist.empty())

@@ -126,8 +126,8 @@ int main() {
 You can set the initial and final states directly using the initializers.
 
 ```cpp
-    aut.initialstates = {0, 1};
-    aut.finalstates = {2, 3};
+    aut.initial_states = {0, 1};
+    aut.final_states = {2, 3};
 ```
 
 Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:
@@ -226,6 +226,10 @@ performance fixes or refactoring.
       please contact us directly, instead of using issue tracker.
       We value your effort to improve the security and privacy of this project!
   - Project documentation: <https://verifit.github.io/mata>
+  - Jupyter notebooks demonstrating `mata` usage: <https://github.com/VeriFIT/mata/tree/devel/examples/notebooks>
+    - [Example 01: WS1S Logic](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-01-ws1s-formulae.ipynb)
+    - [Example 02: ReDoS Attacks](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-02-redos-attacks.ipynb)
+    - [Example 03: Exploring Maze](https://github.com/VeriFIT/mata/tree/devel/examples/notebooks/example-03-exploring-maze.ipynb)
 
 Also, check out our research group focusing on program analysis, static and dynamic analysis,
 formal methods, verification and many more: 

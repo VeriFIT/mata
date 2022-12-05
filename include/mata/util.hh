@@ -15,7 +15,6 @@
  * GNU General Public License for more details.
  */
 
-
 #ifndef _MATA_UTIL_HH_
 #define _MATA_UTIL_HH_
 
@@ -29,7 +28,7 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
-#include <mata/ord_vector.hh>
+#include <mata/ord-vector.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -427,6 +426,7 @@ struct TuplePrinter
 			return res + ", " + std::to_string(std::get<N-1>(t));
     }
 };
+
 
 template<class Tuple>
 struct TuplePrinter<Tuple, 1> {

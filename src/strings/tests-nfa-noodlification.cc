@@ -2,12 +2,13 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include "catch.hpp"
 
-#include <mata/nfa.hh>
-#include <mata/noodlify.hh>
+#include "mata/nfa.hh"
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 using namespace Mata::util;
 using namespace Mata::Parser;
 
@@ -71,18 +72,18 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
         auto result{ SegNfa::noodlify(aut, 'c') };
         REQUIRE(result.size() == 1);
         REQUIRE(result[0].size() == 1);
-        CHECK(equivalence_check(*result[0][0], noodle));
+        CHECK(are_equivalent(*result[0][0], noodle));
 
         auto result_segments{ SegNfa::noodlify_for_equation({ aut } , aut) };
         REQUIRE(result_segments.size() == 1);
         REQUIRE(result_segments[0].size() == 1);
-        CHECK(equivalence_check(*result_segments[0][0], noodle));
+        CHECK(are_equivalent(*result_segments[0][0], noodle));
     }
 
     SECTION("1-2-3 epsilon transitions")
     {
         aut.make_initial(0);
-        aut.make_final({ 4, 5, 6, 7 });
+        aut.make_final({4, 5, 6, 7});
         aut.add_trans(0, 'e', 1);
         aut.add_trans(1, 'e', 2);
         aut.add_trans(1, 'e', 3);
@@ -98,8 +99,8 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
 
     SECTION("6-5-6 epsilon transitions")
     {
-        aut.make_initial({ 0, 1, 2 });
-        aut.make_final({ 11, 12, 13, 14, 15, 16 });
+        aut.make_initial({0, 1, 2});
+        aut.make_final({11, 12, 13, 14, 15, 16});
         aut.add_trans(0, 'e', 3);
         aut.add_trans(0, 'e', 4);
         aut.add_trans(0, 'e', 5);
@@ -190,7 +191,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         noodle.make_final(1);
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right) };
         REQUIRE(result.size() == 1);
-        //CHECK(equivalence_check(result[0], noodle));
+        //CHECK(are_equivalent(result[0], noodle));
     }
 
     SECTION("Larger automata") {
@@ -216,7 +217,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         noodle.add_trans(2, 'b', 3);
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right_side) };
         REQUIRE(result.size() == 1);
-        //CHECK(equivalence_check(result[0], noodle));
+        //CHECK(are_equivalent(result[0], noodle));
     }
 
     SECTION("Single noodle") {
@@ -254,13 +255,13 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         auto result{ SegNfa::noodlify_for_equation({ left }, right_side) };
         REQUIRE(result.size() == 1);
         REQUIRE(result[0].size() == 1);
-        CHECK(equivalence_check(*result[0][0], left));
+        CHECK(are_equivalent(*result[0][0], left));
     }
 
     SECTION("Larger automata with separate noodles") {
         Nfa left1{ 3};
         left1.make_initial(0);
-        left1.make_final({ 1, 2 });
+        left1.make_final({1, 2});
         left1.add_trans(0, 'a', 1);
         left1.add_trans(0, 'b', 2);
         Nfa left2{ 2};
@@ -299,7 +300,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             right_side.add_trans(0, 'b', 4);
             right_side.add_trans(4, 'a', 5);
             right_side.add_trans(5, 'b', 6);
-            right_side.make_final({ 3, 6 });
+            right_side.make_final({3, 6});
 
             Nfa noodle2_segment1{ 2 };
             noodle2_segment1.make_initial(0);
@@ -324,13 +325,13 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 2);
 
-            CHECK(equivalence_check(*result[0][0], *expected[0][0]));
-            CHECK(equivalence_check(*result[0][1], *expected[0][1]));
-            CHECK(equivalence_check(*result[0][2], *expected[0][2]));
+            CHECK(are_equivalent(*result[0][0], *expected[0][0]));
+            CHECK(are_equivalent(*result[0][1], *expected[0][1]));
+            CHECK(are_equivalent(*result[0][2], *expected[0][2]));
 
-            CHECK(equivalence_check(*result[1][0], *expected[1][0]));
-            CHECK(equivalence_check(*result[1][1], *expected[1][1]));
-            CHECK(equivalence_check(*result[1][2], *expected[1][2]));
+            CHECK(are_equivalent(*result[1][0], *expected[1][0]));
+            CHECK(are_equivalent(*result[1][1], *expected[1][1]));
+            CHECK(are_equivalent(*result[1][2], *expected[1][2]));
         }
 
         SECTION("Partial intersection") {
@@ -346,9 +347,9 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
 
             auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 1);
-            CHECK(equivalence_check(*result[0][0], *noodle1_segments[0]));
-            CHECK(equivalence_check(*result[0][1], *noodle1_segments[1]));
-            CHECK(equivalence_check(*result[0][2], *noodle1_segments[2]));
+            CHECK(are_equivalent(*result[0][0], *noodle1_segments[0]));
+            CHECK(are_equivalent(*result[0][1], *noodle1_segments[1]));
+            CHECK(are_equivalent(*result[0][2], *noodle1_segments[2]));
         }
     }
 }
@@ -356,7 +357,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
 TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
     Nfa left1{ 3};
     left1.make_initial(0);
-    left1.make_final({ 1, 2 });
+    left1.make_final({1, 2});
     left1.add_trans(0, 'a', 1);
     left1.add_trans(0, 'b', 2);
     Nfa left2{ 2};
@@ -376,7 +377,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
     right_side.add_trans(0, 'b', 4);
     right_side.add_trans(4, 'a', 5);
     right_side.add_trans(5, 'b', 6);
-    right_side.make_final({ 3, 6 });
+    right_side.make_final({3, 6});
 
     AutPtrSequence left_side{ &left1, &left2, &left3 };
     for (size_t i{}; i < 10000; ++i) {

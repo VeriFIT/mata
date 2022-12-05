@@ -1,5 +1,7 @@
 name: Release
 
+permissions: write-all
+
 on:
   pull_request:
     types:
@@ -40,6 +42,7 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
 
       - name: Tag the new version
         uses: phish108/autotag-action@1.1.51
@@ -78,3 +81,75 @@ jobs:
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           folder: doc/_build/html
+
+  build-and-deploy-to-pypi:
+    needs: release
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Infer the new version (without tagging)
+        id: tagger
+        uses: phish108/autotag-action@1.1.51
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          release-branch: devel
+          bump: minor
+          dry-run: 'TRUE'
+
+      - name: Set the new version to file without commiting (since the GA is done wrt old version)
+        run: |
+          echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Python Dependencies
+        run: |
+          # Install and upgrade pip
+          python3 -m pip install --upgrade pip
+          # Install dependencies for build and deploy
+          python3 -m pip install setuptools wheel twine
+
+      - name: Install Python Dependencies
+        run: |
+          make -C bindings/python init
+
+      - name: Install Unix dependencies
+        run: |
+          sudo apt-get -qq update 
+          sudo apt-get -qq install -y graphviz graphviz-dev
+
+      - name: Verify that the Binding can be installed
+        run: |
+          make -C bindings/python install
+
+      - name: Verify tests tests
+        run: |
+          make -C bindings/python test
+
+      - name: Build python release distribution package
+        run: |
+          make -C bindings/python pypi-release
+
+      - name: Upload to TestPypi
+        run: |
+          python3 -m twine upload bindings/python/dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
+          TWINE_REPOSITORY: testpypi
+
+      - name: Upload to Pypi
+        run: |
+          python3 -m twine upload bindings/python/dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}

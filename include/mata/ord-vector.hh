@@ -68,14 +68,12 @@ template
 class Mata::Util::OrdVector
 {
 private:  // Private data types
-
-	typedef std::vector<Key> VectorType;
+	using VectorType = std::vector<Key>;
 
 public:   // Public data types
-
-	typedef typename VectorType::iterator iterator;
-	typedef typename VectorType::const_iterator const_iterator;
-	typedef typename VectorType::const_reference const_reference;
+	using iterator = typename VectorType::iterator ;
+	using const_iterator = typename VectorType::const_iterator;
+	using const_reference = typename VectorType::const_reference;
 
 private:  // Private data members
 

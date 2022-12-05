@@ -1,4 +1,4 @@
-/* noodlify.cc -- Noodlification of NFAs
+/* nfa-noodlification.cc -- Noodlification of NFAs
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
@@ -15,14 +15,14 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/nfa.hh>
-#include <mata/noodlify.hh>
-#include <mata/util.hh>
+#include "mata/nfa.hh"
+#include "mata/nfa-strings.hh"
+#include "mata/util.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 
-namespace
-{
+namespace {
 
 /**
  * Get a number of permutations for computed epsilon depths.
@@ -46,57 +46,57 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
-        std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
+        std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
-        if (segment->get_num_of_states() > 0 || include_empty) {
+        if (segment->states_number() > 0 || include_empty) {
             return {{ segment }};
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.get_num_of_states(); // get some State not used in aut
+    State unused_state = aut.states_number(); // get some State not used in aut
 
     // segments_one_initial_final[init, final] is the pointer to automaton created from one of
     // the segments such that init and final are one of the initial and final states of the segment
-    // and the created automaton takes this segment, sets initialstates={init}, finalstates={final}
+    // and the created automaton takes this segment, sets initial_states={init}, final_states={final}
     // and trims it; also segments_one_initial_final[unused_state, final] is used for the first
     // segment (where we always want all initial states, only final state changes) and
     // segments_one_initial_final[init, unused_state] is similarly for the last segment
     // TODO: should we use unordered_map? then we need hash
-    std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
 
     // TODO this could probably be written better
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
-            for (const State final_state: iter->finalstates) {
-                SharedPtrAut segment_one_final = std::make_shared<Nfa>(*iter);
-                segment_one_final->finalstates = { final_state };
+            for (const State final_state: iter->final_states) {
+                SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
+                segment_one_final->final_states = {final_state };
                 segment_one_final->trim();
 
-                if (segment_one_final->get_num_of_states() > 0 || include_empty) {
+                if (segment_one_final->states_number() > 0 || include_empty) {
                     segments_one_initial_final[std::make_pair(unused_state, final_state)] = segment_one_final;
                 }
             }
         } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
-            for (const State init_state: iter->initialstates) {
-                SharedPtrAut segment_one_init = std::make_shared<Nfa>(*iter);
-                segment_one_init->initialstates = { init_state };
+            for (const State init_state: iter->initial_states) {
+                SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
+                segment_one_init->initial_states = {init_state };
                 segment_one_init->trim();
 
-                if (segment_one_init->get_num_of_states() > 0 || include_empty) {
+                if (segment_one_init->states_number() > 0 || include_empty) {
                     segments_one_initial_final[std::make_pair(init_state, unused_state)] = segment_one_init;
                 }
             }
         } else { // the segments in-between
-            for (const State init_state: iter->initialstates) {
-                for (const State final_state: iter->finalstates) {
-                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa>(*iter);
-                    segment_one_init_final->initialstates = { init_state };
-                    segment_one_init_final->finalstates = { final_state };
+            for (const State init_state: iter->initial_states) {
+                for (const State final_state: iter->final_states) {
+                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
+                    segment_one_init_final->initial_states = {init_state };
+                    segment_one_init_final->final_states = {final_state };
                     segment_one_init_final->trim();
 
-                    if (segment_one_init_final->get_num_of_states() > 0 || include_empty) {
+                    if (segment_one_init_final->states_number() > 0 || include_empty) {
                         segments_one_initial_final[std::make_pair(init_state, final_state)] = segment_one_init_final;
                     }
                 }
@@ -163,8 +163,8 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const Nfa& right_automaton,
-                                                     bool include_empty, const StringDict& params) {
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const Nfa::Nfa& right_automaton,
+                                                     bool include_empty, const StringMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
     for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
@@ -175,18 +175,15 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
 
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
-    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
-    alphabet.add_symbols_from(right_automaton);
-    const Symbol epsilon{ alphabet.get_next_value() };
-
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_left_side{ *left_automata_begin };
+    Nfa::Nfa concatenated_left_side{ *left_automata_begin };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
          ++next_left_automaton_it) {
-        concatenated_left_side = concatenate_over_epsilon(concatenated_left_side, *next_left_automaton_it, epsilon);
+        concatenated_left_side = concatenate(concatenated_left_side, *next_left_automaton_it, EPSILON);
     }
 
-    auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };
+    auto product_pres_eps_trans{
+            intersection(concatenated_left_side, right_automaton, true) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
@@ -202,11 +199,11 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, epsilon, include_empty);
+    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa& right_automaton,
-                                                     bool include_empty, const StringDict& params) {
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
+                                                     bool include_empty, const StringMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
 
@@ -227,18 +224,15 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 
     if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
 
-    auto alphabet{ EnumAlphabet::from_nfas(left_automata) };
-    alphabet.add_symbols_from(right_automaton);
-    const Symbol epsilon{ alphabet.get_next_value() };
-
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_left_side{ *(*left_automata_begin) };
+    Nfa::Nfa concatenated_left_side{ *(*left_automata_begin) };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
          ++next_left_automaton_it) {
-        concatenated_left_side = concatenate_over_epsilon(concatenated_left_side, *(*next_left_automaton_it), epsilon);
+        concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), EPSILON);
     }
 
-    auto product_pres_eps_trans{intersection_over_epsilon(concatenated_left_side, right_automaton, epsilon) };
+    auto product_pres_eps_trans{
+            intersection(concatenated_left_side, right_automaton, true) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
@@ -253,6 +247,5 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify(product_pres_eps_trans, epsilon, include_empty);
+    return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
-

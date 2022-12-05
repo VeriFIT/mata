@@ -17,38 +17,30 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::util;
 
-namespace {
-
 /// naive universality check (complementation + emptiness)
-bool is_universal_naive(
+bool Mata::Nfa::Algorithms::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  /* params*/)
+	Run*               cex,
+	const StringMap&  /* params*/)
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
 
-	bool result;
-	if (nullptr == cex) {
-		result = is_lang_empty(cmpl);
-	} else {
-		result = is_lang_empty_cex(cmpl, cex);
-	}
-
-	return result;
+	return is_lang_empty(cmpl, cex);
 } // is_universal_naive }}}
 
 
 /// universality check using Antichains
-bool is_universal_antichains(
+bool Mata::Nfa::Algorithms::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	Run*               cex,
+	const StringMap&  params)
 { // {{{
 	(void)params;
 
@@ -68,20 +60,20 @@ bool is_universal_antichains(
 	bool is_dfs = true;
 
 	// check the initial state
-	if (are_disjoint(aut.initialstates, aut.finalstates)) {
-		if (nullptr != cex) { cex->clear(); }
+	if (are_disjoint(aut.initial_states, aut.final_states)) {
+		if (nullptr != cex) { cex->word.clear(); }
 		return false;
 	}
 
 	// initialize
-	WorklistType worklist = { aut.initialstates };
-	ProcessedType processed = { aut.initialstates };
-	std::list<Symbol> alph_symbols = alphabet.get_symbols();
+	WorklistType worklist = { aut.initial_states };
+	ProcessedType processed = { aut.initial_states };
+	Mata::Util::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
 	std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-		{ {aut.initialstates, {aut.initialstates, 0}} };
+		{ {aut.initial_states, {aut.initial_states, 0}} };
 
 	while (!worklist.empty()) {
 		// get a next state
@@ -97,18 +89,18 @@ bool is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols) {
 			StateSet succ = aut.post(state, symb);
-			if (are_disjoint(succ, aut.finalstates)) {
+			if (are_disjoint(succ, aut.final_states)) {
 				if (nullptr != cex) {
-					cex->clear();
-					cex->push_back(symb);
+					cex->word.clear();
+					cex->word.push_back(symb);
 					StateSet trav = state;
 					while (paths[trav].first != trav)
 					{ // go back until initial state
-						cex->push_back(paths[trav].second);
+						cex->word.push_back(paths[trav].second);
 						trav = paths[trav].first;
 					}
 
-					std::reverse(cex->begin(), cex->end());
+					std::reverse(cex->word.begin(), cex->word.end());
 				}
 
 				return false;
@@ -150,19 +142,16 @@ bool is_universal_antichains(
 	return true;
 } // }}}
 
-} // namespace
-
-
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_universal(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Word*              cex,
-	const StringDict&  params)
+	Run*               cex,
+	const StringMap&  params)
 { // {{{
 
 	// setting the default algorithm
-	decltype(is_universal_naive)* algo = is_universal_naive;
+	decltype(Algorithms::is_universal_naive)* algo = Algorithms::is_universal_naive;
 	if (!haskey(params, "algo")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
@@ -172,7 +161,7 @@ bool Mata::Nfa::is_universal(
 	const std::string& str_algo = params.at("algo");
 	if ("naive" == str_algo) { /* default */ }
 	else if ("antichains" == str_algo) {
-		algo = is_universal_antichains;
+		algo = Algorithms::is_universal_antichains;
 	} else {
 		throw std::runtime_error(std::to_string(__func__) +
 			" received an unknown value of the \"algo\" key: " + str_algo);

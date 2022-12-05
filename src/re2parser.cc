@@ -466,39 +466,39 @@ namespace {
             std::vector<unsigned long> renumbered_states(program_size, -1);
             Mata::Nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
             for (int state = 0; state < program_size; state++) {
-                const auto& transition_list = input_nfa.get_transitions_from(state);
+                const auto& transition_list = input_nfa.get_moves_from(state);
                 // If the transition list is empty, the state is not used
                 if (transition_list.empty()) {
                     continue;
                 } else {
                     // addNewState returns next unused state of the new NFA, so we map it to the original state
-                    renumbered_states[state] = renumbered_explicit_nfa.add_new_state();
+                    renumbered_states[state] = renumbered_explicit_nfa.add_state();
                 }
             }
 
-            for (auto state: input_nfa.finalstates) {
+            for (auto state: input_nfa.final_states) {
                 if (static_cast<int>(renumbered_states[state]) == -1) {
-                    renumbered_states[state] = renumbered_explicit_nfa.add_new_state();
+                    renumbered_states[state] = renumbered_explicit_nfa.add_state();
                 }
                 renumbered_explicit_nfa.make_final(renumbered_states[state]);
             }
 
             for (int state = 0; state < program_size; state++) {
-                const auto& transition_list = input_nfa.get_transitions_from(state);
+                const auto& transition_list = input_nfa.get_moves_from(state);
                 for (const auto& transition: transition_list) {
                     for (auto stateTo: transition.states_to) {
                         if (static_cast<int>(renumbered_states[stateTo]) == -1) {
-                            renumbered_states[stateTo] = renumbered_explicit_nfa.add_new_state();
+                            renumbered_states[stateTo] = renumbered_explicit_nfa.add_state();
                         }
-                        assert(renumbered_states[state] <= renumbered_explicit_nfa.get_num_of_states());
-                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.get_num_of_states());
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.states_number());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.states_number());
                         renumbered_explicit_nfa.add_trans(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }
                 }
             }
 
-            for (auto state: input_nfa.initialstates) {
+            for (auto state: input_nfa.initial_states) {
                 renumbered_explicit_nfa.make_initial(renumbered_states[state]);
             }
 

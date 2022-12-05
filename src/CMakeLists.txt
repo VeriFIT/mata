@@ -57,13 +57,14 @@ add_library(libmata STATIC
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
-	nfa/nfa-incl.cc
+        nfa/nfa-inclusion.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc
 	nfa/nfa-concatenation.cc
-	nfa/nfa-segmentation.cc
-	nfa/noodlify.cc
+	strings/nfa-noodlification.cc
+	strings/nfa-segmentation.cc
+	strings/nfa-strings.cc
 	rra/rrt.cc
 )
 
@@ -78,12 +79,14 @@ add_executable(tests
 	tests-parser.cc
 	tests-re2parser.cc
 	tests-ord-vector.cc
+	nfa/tests-synchronized-iterator.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc
-	nfa/tests-nfa-segmentation.cc
 	nfa/tests-nfa-intersection.cc
-	nfa/tests-noodlify.cc
+	strings/tests-nfa-noodlification.cc
+	strings/tests-nfa-segmentation.cc
+	strings/tests-nfa-string-solving.cc
 	rra/tests-rrt.cc
 )
 

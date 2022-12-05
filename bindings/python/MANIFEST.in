@@ -1,3 +1,9 @@
-recursive-include ../../include *
 include *.pyx
 include *.pxd
+include pyproject.toml
+include mata/LICENSE
+include mata/VERSION
+include mata/README.md
+recursive-include mata/src *
+recursive-include mata/include *
+recursive-include mata/3rdparty *

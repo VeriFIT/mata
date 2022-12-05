@@ -1,7 +1,7 @@
 __author__ = 'Tomas Fiedor'
 
 import pytest
-import mata
+import libmata as mata
 
 
 def test_regex():
@@ -26,7 +26,7 @@ def test_stars_concatenation():
     expected = mata.Nfa(2)
     expected.make_initial_state(0)
     expected.make_final_states([0, 1])
-    expected.add_trans_raw(0, ord('c'), 0)
-    expected.add_trans_raw(0, ord('a'), 1)
-    expected.add_trans_raw(1, ord('a'), 1)
+    expected.add_transition(0, ord('c'), 0)
+    expected.add_transition(0, ord('a'), 1)
+    expected.add_transition(1, ord('a'), 1)
     assert mata.Nfa.equivalence_check(aut, expected)

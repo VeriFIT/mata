@@ -1,7 +1,7 @@
 """Basic tests for utility package and sanity checks"""
 
 import pytest
-import mata
+import libmata as mata
 import os
 
 __author__ = 'Tomas Fiedor'
@@ -125,7 +125,8 @@ def test_making_initial_and_final_states():
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
-    nfa.remove_initial_states([1, 2])
+    nfa.remove_initial_state(1)
+    nfa.remove_initial_state(2)
     assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(3)
     assert len(nfa.final_states) == 3
@@ -134,42 +135,16 @@ def test_making_initial_and_final_states():
     assert nfa.has_final_state(2)
     assert nfa.has_final_state(3)
 
-    nfa.remove_final_states([1, 2])
+    nfa.remove_final_state(1)
+    nfa.remove_final_state(2)
     assert len(nfa.initial_states) == 1
     assert nfa.has_initial_state(3)
     assert len(nfa.final_states) == 1
     assert nfa.has_final_state(3)
 
-    nfa.reset_initial_state(4)
-    assert len(nfa.initial_states) == 1
-    assert nfa.has_initial_state(4)
-    assert len(nfa.final_states) == 1
-    assert nfa.has_final_state(3)
-
-    nfa.reset_final_state(4)
-    assert len(nfa.initial_states) == 1
-    assert nfa.has_initial_state(4)
-    assert len(nfa.final_states) == 1
-    assert nfa.has_final_state(4)
-
-    nfa.reset_initial_states([5, 6])
-    assert len(nfa.initial_states) == 2
-    assert nfa.has_initial_state(5)
-    assert nfa.has_initial_state(6)
-    assert len(nfa.final_states) == 1
-    assert nfa.has_final_state(4)
-
-    nfa.reset_initial_states([5, 6])
-    assert len(nfa.initial_states) == 2
-    assert nfa.has_initial_state(5)
-    assert nfa.has_initial_state(6)
-    assert len(nfa.final_states) == 1
-    assert nfa.has_final_state(4)
-
     nfa.clear_initial()
     assert len(nfa.initial_states) == 0
     assert len(nfa.final_states) == 1
-    assert nfa.has_final_state(4)
 
     nfa.clear_final()
     assert len(nfa.initial_states) == 0
@@ -185,24 +160,23 @@ def test_transitions():
     t4 = mata.Trans(2, 2, 2)
 
     # Test adding transition
-    assert lhs.trans_empty()
     assert lhs.get_num_of_trans() == 0
-    lhs.add_trans(t1)
-    assert not lhs.trans_empty()
-    assert lhs.has_trans(t1)
+    lhs.add_transition_object(t1)
+    assert lhs.get_num_of_trans() != 0
+    assert lhs.has_transition(t1.src, t1.symb, t1.tgt)
 
-    lhs.add_trans(t2)
-    assert lhs.has_trans(t2)
+    lhs.add_transition_object(t2)
+    assert lhs.has_transition(t2.src, t2.symb, t2.tgt)
 
     # Test adding add-hoc transition
-    lhs.add_trans_raw(1, 1, 1)
-    assert lhs.has_trans(t3)
-    assert not lhs.has_trans_raw(2, 2, 2)
-    lhs.add_trans(t4)
-    assert lhs.has_trans_raw(2, 2, 2)
+    lhs.add_transition(1, 1, 1)
+    assert lhs.has_transition(t3.src, t3.symb, t3.tgt)
+    assert not lhs.has_transition(2, 2, 2)
+    lhs.add_transition_object(t4)
+    assert lhs.has_transition(2, 2, 2)
 
     # Test that transitions are not duplicated
-    lhs.add_trans_raw(1, 1, 1)
+    lhs.add_transition(1, 1, 1)
 
     assert [t for t in lhs.iterate()] == [t1, t2, t3, t4]
 
@@ -213,12 +187,12 @@ def test_post(binary_alphabet):
     """
     lhs = mata.Nfa(3)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 1)
-    lhs.add_trans_raw(1, 1, 2)
-    lhs.add_trans_raw(0, 1, 2)
-    lhs.add_trans_raw(1, 0, 0)
-    lhs.add_trans_raw(2, 1, 2)
-    lhs.add_trans_raw(2, 0, 2)
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 1, 2)
+    lhs.add_transition(0, 1, 2)
+    lhs.add_transition(1, 0, 0)
+    lhs.add_transition(2, 1, 2)
+    lhs.add_transition(2, 0, 2)
     lhs.make_final_state(2)
 
     assert lhs.post_of({0}, 0) == {1}
@@ -272,15 +246,20 @@ def test_encode_word():
 
 
 def test_language_emptiness(fa_one_divisible_by_two):
-    assert mata.Nfa.is_lang_empty_path_counterexample(fa_one_divisible_by_two) == (False, [0, 1, 2])
-    assert mata.Nfa.is_lang_empty_word_counterexample(fa_one_divisible_by_two) == (False, [1, 1])
+    cex = mata.Run()
+    assert not mata.Nfa.is_lang_empty(fa_one_divisible_by_two, cex)
+    assert cex.path == [0, 1, 2]
+    assert cex.word == [1, 1]
 
     lhs = mata.Nfa(4)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 1)
-    lhs.add_trans_raw(1, 0, 2)
-    lhs.add_trans_raw(2, 0, 3)
-    assert mata.Nfa.is_lang_empty_word_counterexample(lhs) == (True, [])
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 0, 2)
+    lhs.add_transition(2, 0, 3)
+    cex = mata.Run()
+    assert mata.Nfa.is_lang_empty(lhs, cex)
+    assert cex.word == []
+    assert cex.path == []
 
 
 def test_universality(fa_one_divisible_by_two):
@@ -291,8 +270,8 @@ def test_universality(fa_one_divisible_by_two):
 
     l = mata.Nfa(1)
     l.make_initial_state(0)
-    l.add_trans_raw(0, 0, 0)
-    l.add_trans_raw(0, 1, 0)
+    l.add_transition(0, 0, 0)
+    l.add_transition(0, 1, 0)
     l.make_final_state(0)
     assert mata.Nfa.is_universal(l, alph) == True
 
@@ -305,17 +284,17 @@ def test_inclusion(
     alph.translate_symbol("b")
     result, cex = mata.Nfa.is_included_with_cex(fa_one_divisible_by_two, fa_one_divisible_by_four, alph)
     assert not result
-    assert cex == [1, 1]
+    assert cex.word == [1, 1]
     result, cex = mata.Nfa.is_included_with_cex(fa_one_divisible_by_two, fa_one_divisible_by_four)
     assert not result
-    assert cex == [1, 1]
+    assert cex.word == [1, 1]
 
     result, cex = mata.Nfa.is_included_with_cex(fa_one_divisible_by_four, fa_one_divisible_by_two, alph)
     assert result
-    assert cex == []
+    assert cex.word == []
     result, cex = mata.Nfa.is_included_with_cex(fa_one_divisible_by_four, fa_one_divisible_by_two)
     assert result
-    assert cex == []
+    assert cex.word == []
 
     assert mata.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_two, alph)
     assert mata.Nfa.is_included(fa_one_divisible_by_eight, fa_one_divisible_by_four, alph)
@@ -329,42 +308,42 @@ def test_inclusion(
     # Test equivalence of two NFAs.
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = ["a", "b"]
+    symbol_map = {"a": ord("a"), "b": ord("b")}
     smaller.make_initial_state(1)
     smaller.make_final_state(1)
-    smaller.add_trans_raw(1, ord('a'), 1)
-    smaller.add_trans_raw(1, ord('b'), 1)
+    smaller.add_transition(1, ord('a'), 1)
+    smaller.add_transition(1, ord('b'), 1)
 
     bigger.make_initial_state(11)
     bigger.make_final_states([11, 12, 13, 14, 15])
 
-    bigger.add_trans_raw(11, ord('a'), 12)
-    bigger.add_trans_raw(11, ord('b'), 12)
-    bigger.add_trans_raw(12, ord('a'), 13)
-    bigger.add_trans_raw(12, ord('b'), 13)
+    bigger.add_transition(11, ord('a'), 12)
+    bigger.add_transition(11, ord('b'), 12)
+    bigger.add_transition(12, ord('a'), 13)
+    bigger.add_transition(12, ord('b'), 13)
 
-    bigger.add_trans_raw(13, ord('a'), 14)
-    bigger.add_trans_raw(14, ord('a'), 14)
+    bigger.add_transition(13, ord('a'), 14)
+    bigger.add_transition(14, ord('a'), 14)
 
-    bigger.add_trans_raw(13, ord('b'), 15)
-    bigger.add_trans_raw(15, ord('b'), 15)
+    bigger.add_transition(13, ord('b'), 15)
+    bigger.add_transition(15, ord('b'), 15)
 
-    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(smaller, bigger)
-    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert not mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert not mata.Nfa.equivalence_check(bigger, smaller)
 
     smaller = mata.Nfa(10)
     bigger = mata.Nfa(16)
-    alph = []
+    symbol_map = {}
     smaller.initial_states = [1]
     smaller.final_states = [1]
     bigger.initial_states = [11]
     bigger.final_states = [11]
 
-    assert mata.Nfa.equivalence_check(smaller, bigger, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(smaller, bigger, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(smaller, bigger)
-    assert mata.Nfa.equivalence_check(bigger, smaller, mata.EnumAlphabet(alph))
+    assert mata.Nfa.equivalence_check(bigger, smaller, mata.OnTheFlyAlphabet.from_symbol_map(symbol_map))
     assert mata.Nfa.equivalence_check(bigger, smaller)
 
 
@@ -372,24 +351,42 @@ def test_concatenate():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
     lhs.make_final_state(1)
-    lhs.add_trans_raw(0, ord('b'), 1)
+    lhs.add_transition(0, ord('b'), 1)
 
     rhs = mata.Nfa(2)
     rhs.make_initial_state(0)
     rhs.make_final_state(1)
-    rhs.add_trans_raw(0, ord('a'), 1)
+    rhs.add_transition(0, ord('a'), 1)
 
     result = mata.Nfa.concatenate(lhs, rhs)
 
     assert result.has_initial_state(0)
     assert result.has_final_state(2)
     assert result.get_num_of_states() == 3
-    assert result.has_trans_raw(0, ord('b'), 1)
-    assert result.has_trans_raw(1, ord('a'), 2)
+    assert result.has_transition(0, ord('b'), 1)
+    assert result.has_transition(1, ord('a'), 2)
 
-    shortest_words = result.get_shortest_words()
+    shortest_words = mata.Nfa.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
+
+    result = mata.Nfa.concatenate(lhs, rhs, True)
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_transition(0, ord('b'), 1)
+    assert result.has_transition(1, mata.epsilon(), 2)
+    assert result.has_transition(2, ord('a'), 3)
+
+    result, lhs_map, rhs_map = mata.Nfa.concatenate_with_result_state_maps(lhs, rhs, True)
+    assert result.has_initial_state(0)
+    assert result.has_final_state(3)
+    assert result.get_num_of_states() == 4
+    assert result.has_transition(0, ord('b'), 1)
+    assert result.has_transition(1, mata.epsilon(), 2)
+    assert result.has_transition(2, ord('a'), 3)
+    assert lhs_map == {}
+    assert rhs_map == {0: 2, 1: 3}
 
 
 def test_completeness(
@@ -404,14 +401,14 @@ def test_completeness(
 
     l = mata.Nfa(1)
     l.make_initial_state(0)
-    l.add_trans_raw(0, 0, 0)
+    l.add_transition(0, 0, 0)
     assert not mata.Nfa.is_complete(l, alph)
-    l.add_trans_raw(0, 1, 0)
+    l.add_transition(0, 1, 0)
     assert mata.Nfa.is_complete(l, alph)
 
     r = mata.Nfa(1)
     r.make_initial_state(0)
-    r.add_trans_raw(0, 0, 0)
+    r.add_transition(0, 0, 0)
     assert not mata.Nfa.is_complete(r, alph)
     mata.Nfa.make_complete(r, 1, alph)
     assert mata.Nfa.is_complete(r, alph)
@@ -429,8 +426,8 @@ def test_in_language(
 
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
     assert not mata.Nfa.accepts_epsilon(lhs)
     lhs.make_final_state(1)
     assert not mata.Nfa.accepts_epsilon(lhs)
@@ -484,29 +481,29 @@ def test_intersection_preserving_epsilon_transitions():
     a = mata.Nfa(6)
     a.make_initial_state(0)
     a.make_final_states([1, 4, 5])
-    a.add_trans_raw(0, epsilon, 1)
-    a.add_trans_raw(1, ord('a'), 1)
-    a.add_trans_raw(1, ord('b'), 1)
-    a.add_trans_raw(1, ord('c'), 2)
-    a.add_trans_raw(2, ord('b'), 4)
-    a.add_trans_raw(2, epsilon, 3)
-    a.add_trans_raw(3, ord('a'), 5)
+    a.add_transition(0, mata.epsilon(), 1)
+    a.add_transition(1, ord('a'), 1)
+    a.add_transition(1, ord('b'), 1)
+    a.add_transition(1, ord('c'), 2)
+    a.add_transition(2, ord('b'), 4)
+    a.add_transition(2, mata.epsilon(), 3)
+    a.add_transition(3, ord('a'), 5)
 
     b = mata.Nfa(10)
     b.make_initial_state(0)
     b.make_final_states([2, 4, 8, 7])
-    b.add_trans_raw(0, ord('b'), 1)
-    b.add_trans_raw(0, ord('a'), 2)
-    b.add_trans_raw(2, ord('a'), 4)
-    b.add_trans_raw(2, epsilon, 3)
-    b.add_trans_raw(3, ord('b'), 4)
-    b.add_trans_raw(0, ord('c'), 5)
-    b.add_trans_raw(5, ord('a'), 8)
-    b.add_trans_raw(5, epsilon, 6)
-    b.add_trans_raw(6, ord('a'), 9)
-    b.add_trans_raw(6, ord('b'), 7)
+    b.add_transition(0, ord('b'), 1)
+    b.add_transition(0, ord('a'), 2)
+    b.add_transition(2, ord('a'), 4)
+    b.add_transition(2, mata.epsilon(), 3)
+    b.add_transition(3, ord('b'), 4)
+    b.add_transition(0, ord('c'), 5)
+    b.add_transition(5, ord('a'), 8)
+    b.add_transition(5, mata.epsilon(), 6)
+    b.add_transition(6, ord('a'), 9)
+    b.add_transition(6, ord('b'), 7)
 
-    result, product_map = mata.Nfa.intersection_pres_eps_trans_with_prod_map(a, b, epsilon)
+    result, product_map = mata.Nfa.intersection_with_product_map(a, b, True)
 
     # Check states.
     assert result.get_num_of_states() == 13
@@ -535,39 +532,39 @@ def test_intersection_preserving_epsilon_transitions():
     # Check transitions.
     assert result.get_num_of_trans() == 15
 
-    assert result.has_trans_raw(product_map[(0, 0)], epsilon, product_map[(1, 0)])
+    assert result.has_transition(product_map[(0, 0)], mata.epsilon(), product_map[(1, 0)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
 
-    assert result.has_trans_raw(product_map[(1, 0)], ord('b'), product_map[(1, 1)])
-    assert result.has_trans_raw(product_map[(1, 0)], ord('a'), product_map[(1, 2)])
-    assert result.has_trans_raw(product_map[(1, 0)], ord('c'), product_map[(2, 5)])
+    assert result.has_transition(product_map[(1, 0)], ord('b'), product_map[(1, 1)])
+    assert result.has_transition(product_map[(1, 0)], ord('a'), product_map[(1, 2)])
+    assert result.has_transition(product_map[(1, 0)], ord('c'), product_map[(2, 5)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 0)])) == 3
 
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 1)])) == 0
 
-    assert result.has_trans_raw(product_map[(1, 2)], epsilon, product_map[(1, 3)])
-    assert result.has_trans_raw(product_map[(1, 2)], ord('a'), product_map[(1, 4)])
+    assert result.has_transition(product_map[(1, 2)], mata.epsilon(), product_map[(1, 3)])
+    assert result.has_transition(product_map[(1, 2)], ord('a'), product_map[(1, 4)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 2)])) == 2
 
-    assert result.has_trans_raw(product_map[(1, 3)], ord('b'), product_map[(1, 4)])
+    assert result.has_transition(product_map[(1, 3)], ord('b'), product_map[(1, 4)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 3)])) == 1
 
     assert len(result.get_trans_from_state_as_sequence(product_map[(1, 4)])) == 0
 
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 5)])
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(2, 6)])
-    assert result.has_trans_raw(product_map[(2, 5)], epsilon, product_map[(3, 6)])
+    assert result.has_transition(product_map[(2, 5)], mata.epsilon(), product_map[(3, 5)])
+    assert result.has_transition(product_map[(2, 5)], mata.epsilon(), product_map[(2, 6)])
+    assert result.has_transition(product_map[(2, 5)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(2, 5)])) == 3
 
-    assert result.has_trans_raw(product_map[(3, 5)], ord('a'), product_map[(5, 8)])
-    assert result.has_trans_raw(product_map[(3, 5)], epsilon, product_map[(3, 6)])
+    assert result.has_transition(product_map[(3, 5)], ord('a'), product_map[(5, 8)])
+    assert result.has_transition(product_map[(3, 5)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(3, 5)])) == 2
 
-    assert result.has_trans_raw(product_map[(2, 6)], ord('b'), product_map[(4, 7)])
-    assert result.has_trans_raw(product_map[(2, 6)], epsilon, product_map[(3, 6)])
+    assert result.has_transition(product_map[(2, 6)], ord('b'), product_map[(4, 7)])
+    assert result.has_transition(product_map[(2, 6)], mata.epsilon(), product_map[(3, 6)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(2, 6)])) == 2
 
-    assert result.has_trans_raw(product_map[(3, 6)], ord('a'), product_map[(5, 9)])
+    assert result.has_transition(product_map[(3, 6)], ord('a'), product_map[(5, 9)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(3, 6)])) == 1
 
     assert len(result.get_trans_from_state_as_sequence(product_map[(4, 7)])) == 0
@@ -594,8 +591,8 @@ def test_complement(
 def test_revert():
     lhs = mata.Nfa(3)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 1)
-    lhs.add_trans_raw(1, 1, 2)
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 1, 2)
     lhs.make_final_state(2)
     assert mata.Nfa.is_in_lang(lhs, [0, 1])
     assert not mata.Nfa.is_in_lang(lhs, [1, 0])
@@ -608,15 +605,15 @@ def test_revert():
 def test_removing_epsilon():
     lhs = mata.Nfa(3)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 1)
-    lhs.add_trans_raw(1, 1, 2)
-    lhs.add_trans_raw(0, 2, 2)
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 1, 2)
+    lhs.add_transition(0, 2, 2)
     lhs.make_final_state(2)
 
     rhs = mata.Nfa.remove_epsilon(lhs, 2)
-    assert rhs.has_trans_raw(0, 0, 1)
-    assert rhs.has_trans_raw(1, 1, 2)
-    assert not rhs.has_trans_raw(0, 2, 2)
+    assert rhs.has_transition(0, 0, 1)
+    assert rhs.has_transition(1, 1, 2)
+    assert not rhs.has_transition(0, 2, 2)
 
 
 def test_minimize(
@@ -632,9 +629,9 @@ def test_minimize(
     lhs = mata.Nfa(11)
     lhs.make_initial_state(0)
     for i in range(0, 10):
-        lhs.add_trans_raw(i, 0, i + 1)
+        lhs.add_transition(i, 0, i + 1)
         lhs.make_final_state(i)
-    lhs.add_trans_raw(10, 0, 10)
+    lhs.add_transition(10, 0, 10)
     lhs.make_final_state(10)
     assert lhs.get_num_of_trans() == 11
 
@@ -659,24 +656,24 @@ def test_to_str():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
     lhs.make_final_state(1)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
     expected = "initial_states: [0]\nfinal_states: [1]\ntransitions:\n0-[0]→0\n0-[1]→1\n"
     assert str(lhs) == expected
 
 
 def test_shortest(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
-    shortest = lhs.get_shortest_words()
+    shortest = mata.Nfa.get_shortest_words(lhs)
     assert shortest == [[1, 1]]
 
 
 def test_get_trans(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     t = lhs.get_transitions_from_state(0)
-    assert sorted(t) == sorted([mata.TransSymbolStates(0, [0]), mata.TransSymbolStates(1, [1])])
+    assert sorted(t) == sorted([mata.Move(0, [0]), mata.Move(1, [1])])
     tt = lhs.get_transitions_from_state(1)
-    assert sorted(tt) == sorted([mata.TransSymbolStates(0, [1]), mata.TransSymbolStates(1, [2])])
+    assert sorted(tt) == sorted([mata.Move(0, [1]), mata.Move(1, [2])])
 
 
 def test_trim(prepare_automaton_a):
@@ -692,12 +689,12 @@ def test_trim(prepare_automaton_a):
     assert len(nfa.initial_states) == len(old_nfa.initial_states)
     assert len(nfa.final_states) == len(old_nfa.final_states)
 
-    for word in old_nfa.get_shortest_words():
+    for word in mata.Nfa.get_shortest_words(old_nfa):
         assert mata.Nfa.is_in_lang(nfa, word)
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()
-    assert nfa.trans_empty()
+    assert nfa.get_num_of_trans() == 0
     assert nfa.get_num_of_states() == 0
 
 
@@ -711,11 +708,11 @@ def test_get_digraph(prepare_automaton_a):
 
     assert digraph.get_num_of_states() == nfa.get_num_of_states()
     assert digraph.get_num_of_trans() == 12
-    assert digraph.has_trans_raw(1, abstract_symbol, 10)
-    assert digraph.has_trans_raw(10, abstract_symbol, 7)
-    assert not digraph.has_trans_raw(10, ord('a'), 7)
-    assert not digraph.has_trans_raw(10, ord('b'), 7)
-    assert not digraph.has_trans_raw(10, ord('c'), 7)
+    assert digraph.has_transition(1, abstract_symbol, 10)
+    assert digraph.has_transition(10, abstract_symbol, 7)
+    assert not digraph.has_transition(10, ord('a'), 7)
+    assert not digraph.has_transition(10, ord('b'), 7)
+    assert not digraph.has_transition(10, ord('c'), 7)
 
 
 def test_simulation(fa_one_divisible_by_four):
@@ -901,13 +898,13 @@ def test_segmentation(prepare_automaton_a):
     nfa = mata.Nfa(ord('q') + 1)
     nfa.make_initial_state(1)
     nfa.make_final_state(8)
-    nfa.add_trans_raw(1, epsilon, 2)
-    nfa.add_trans_raw(2, ord('a'), 3)
-    nfa.add_trans_raw(2, ord('b'), 4)
-    nfa.add_trans_raw(3, ord('b'), 6)
-    nfa.add_trans_raw(4, ord('a'), 6)
-    nfa.add_trans_raw(6, epsilon, 7)
-    nfa.add_trans_raw(7, epsilon, 8)
+    nfa.add_transition(1, epsilon, 2)
+    nfa.add_transition(2, ord('a'), 3)
+    nfa.add_transition(2, ord('b'), 4)
+    nfa.add_transition(3, ord('b'), 6)
+    nfa.add_transition(4, ord('a'), 6)
+    nfa.add_transition(6, epsilon, 7)
+    nfa.add_transition(7, epsilon, 8)
 
     segmentation = mata.Segmentation(nfa, epsilon)
     epsilon_depths = segmentation.get_epsilon_depths()
@@ -929,7 +926,7 @@ def test_reduce():
 
     # Test the reduction of an empty automaton.
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
-    assert result.trans_empty()
+    assert result.get_num_of_trans() == 0
     assert len(result.initial_states) == 0
     assert len(result.final_states) == 0
 
@@ -938,7 +935,7 @@ def test_reduce():
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
-    assert result.trans_empty()
+    assert result.get_num_of_trans() == 0
     assert result.get_num_of_states() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
@@ -949,21 +946,21 @@ def test_reduce():
     nfa.resize(10)
     nfa.initial_states = {1, 2}
     nfa.final_states = {3, 9}
-    nfa.add_trans_raw(1, ord('a'), 2)
-    nfa.add_trans_raw(1, ord('a'), 3)
-    nfa.add_trans_raw(1, ord('b'), 4)
-    nfa.add_trans_raw(2, ord('a'), 2)
-    nfa.add_trans_raw(2, ord('b'), 2)
-    nfa.add_trans_raw(2, ord('a'), 3)
-    nfa.add_trans_raw(2, ord('b'), 4)
-    nfa.add_trans_raw(3, ord('b'), 4)
-    nfa.add_trans_raw(3, ord('c'), 7)
-    nfa.add_trans_raw(3, ord('b'), 2)
-    nfa.add_trans_raw(5, ord('c'), 3)
-    nfa.add_trans_raw(7, ord('a'), 8)
-    nfa.add_trans_raw(9, ord('b'), 2)
-    nfa.add_trans_raw(9, ord('c'), 0)
-    nfa.add_trans_raw(0, ord('a'), 4)
+    nfa.add_transition(1, ord('a'), 2)
+    nfa.add_transition(1, ord('a'), 3)
+    nfa.add_transition(1, ord('b'), 4)
+    nfa.add_transition(2, ord('a'), 2)
+    nfa.add_transition(2, ord('b'), 2)
+    nfa.add_transition(2, ord('a'), 3)
+    nfa.add_transition(2, ord('b'), 4)
+    nfa.add_transition(3, ord('b'), 4)
+    nfa.add_transition(3, ord('c'), 7)
+    nfa.add_transition(3, ord('b'), 2)
+    nfa.add_transition(5, ord('c'), 3)
+    nfa.add_transition(7, ord('a'), 8)
+    nfa.add_transition(9, ord('b'), 2)
+    nfa.add_transition(9, ord('c'), 0)
+    nfa.add_transition(0, ord('a'), 4)
 
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
     assert result.get_num_of_states() == 6
@@ -971,14 +968,14 @@ def test_reduce():
     assert result.has_initial_state(state_map[2])
     assert result.has_final_state(state_map[9])
     assert result.has_final_state(state_map[3])
-    assert result.has_trans_raw(state_map[9], ord('c'), state_map[0])
-    assert result.has_trans_raw(state_map[9], ord('c'), state_map[7])
-    assert result.has_trans_raw(state_map[3], ord('c'), state_map[0])
-    assert result.has_trans_raw(state_map[0], ord('a'), state_map[8])
-    assert result.has_trans_raw(state_map[7], ord('a'), state_map[4])
-    assert result.has_trans_raw(state_map[1], ord('a'), state_map[3])
-    assert not result.has_trans_raw(state_map[3], ord('b'), state_map[4])
-    assert result.has_trans_raw(state_map[2], ord('a'), state_map[2])
+    assert result.has_transition(state_map[9], ord('c'), state_map[0])
+    assert result.has_transition(state_map[9], ord('c'), state_map[7])
+    assert result.has_transition(state_map[3], ord('c'), state_map[0])
+    assert result.has_transition(state_map[0], ord('a'), state_map[8])
+    assert result.has_transition(state_map[7], ord('a'), state_map[4])
+    assert result.has_transition(state_map[1], ord('a'), state_map[3])
+    assert not result.has_transition(state_map[3], ord('b'), state_map[4])
+    assert result.has_transition(state_map[2], ord('a'), state_map[2])
 
 
 def test_noodlify():
@@ -986,57 +983,57 @@ def test_noodlify():
     left1 = mata.Nfa(3)
     left1.make_initial_state(0)
     left1.make_final_states([1, 2])
-    left1.add_trans_raw(0, ord('a'), 1)
-    left1.add_trans_raw(0, ord('b'), 2)
+    left1.add_transition(0, ord('a'), 1)
+    left1.add_transition(0, ord('b'), 2)
 
     left2 = mata.Nfa(2)
     left2.make_initial_state(0)
     left2.make_final_state(1)
-    left2.add_trans_raw(0, ord('a'), 1)
+    left2.add_transition(0, ord('a'), 1)
 
     left3 = mata.Nfa(2)
     left3.make_initial_state(0)
     left3.make_final_state(1)
-    left3.add_trans_raw(0, ord('b'), 1)
+    left3.add_transition(0, ord('b'), 1)
 
     noodle1_segment1 = mata.Nfa(2)
     noodle1_segment1.make_initial_state(0)
     noodle1_segment1.make_final_state(1)
-    noodle1_segment1.add_trans_raw(0, ord('a'), 1)
+    noodle1_segment1.add_transition(0, ord('a'), 1)
 
     noodle1_segment2 = mata.Nfa(2)
     noodle1_segment2.make_initial_state(0)
     noodle1_segment2.make_final_state(1)
-    noodle1_segment2.add_trans_raw(0, ord('a'), 1)
+    noodle1_segment2.add_transition(0, ord('a'), 1)
 
     noodle1_segment3 = mata.Nfa(2)
     noodle1_segment3.make_initial_state(0)
     noodle1_segment3.make_final_state(1)
-    noodle1_segment3.add_trans_raw(0, ord('b'), 1)
+    noodle1_segment3.add_transition(0, ord('b'), 1)
 
     noodle2_segment1 = mata.Nfa(2)
     noodle2_segment1.make_initial_state(0)
     noodle2_segment1.make_final_state(1)
-    noodle2_segment1.add_trans_raw(0, ord('b'), 1)
+    noodle2_segment1.add_transition(0, ord('b'), 1)
 
     noodle2_segment2 = mata.Nfa(2)
     noodle2_segment2.make_initial_state(0)
     noodle2_segment2.make_final_state(1)
-    noodle2_segment2.add_trans_raw(0, ord('a'), 1)
+    noodle2_segment2.add_transition(0, ord('a'), 1)
 
     noodle2_segment3 = mata.Nfa(2)
     noodle2_segment3.make_initial_state(0)
     noodle2_segment3.make_final_state(1)
-    noodle2_segment3.add_trans_raw(0, ord('b'), 1)
+    noodle2_segment3.add_transition(0, ord('b'), 1)
 
     right_side = mata.Nfa(7)
     right_side.make_initial_state(0)
-    right_side.add_trans_raw(0, ord('a'), 1)
-    right_side.add_trans_raw(1, ord('a'), 2)
-    right_side.add_trans_raw(2, ord('b'), 3)
-    right_side.add_trans_raw(0, ord('b'), 4)
-    right_side.add_trans_raw(4, ord('a'), 5)
-    right_side.add_trans_raw(5, ord('b'), 6)
+    right_side.add_transition(0, ord('a'), 1)
+    right_side.add_transition(1, ord('a'), 2)
+    right_side.add_transition(2, ord('b'), 3)
+    right_side.add_transition(0, ord('b'), 4)
+    right_side.add_transition(4, ord('a'), 5)
+    right_side.add_transition(5, ord('b'), 6)
     right_side.make_final_states([3, 6])
 
     left_side: list[Nfa] = [left1, left2, left3]
@@ -1055,7 +1052,39 @@ def test_unify():
     nfa = mata.Nfa(10)
     nfa.make_initial_state(0)
     nfa.make_initial_state(1)
-    nfa.add_trans_raw(0, 1, 2)
+    nfa.add_transition(0, 1, 2)
     nfa.unify_initial()
     assert nfa.has_initial_state(10)
-    assert nfa.has_trans_raw(10, 1, 2)
+    assert nfa.has_transition(10, 1, 2)
+
+
+def test_get_epsilon_transitions():
+    nfa = mata.Nfa(10)
+    nfa.make_initial_state(0)
+    nfa.make_final_state(1)
+
+    nfa.add_transition(1, 1, 2)
+    nfa.add_transition(1, 2, 2)
+    nfa.add_transition(1, mata.epsilon(), 2)
+    nfa.add_transition(1, mata.epsilon(), 3)
+    epsilon_transitions = nfa.get_epsilon_transitions(1)
+    assert epsilon_transitions.symbol == mata.epsilon()
+    assert epsilon_transitions.states_to == [2, 3]
+
+    nfa.add_transition(0, 1, 2)
+    nfa.add_transition(0, 2, 2)
+    nfa.add_transition(0, 8, 5)
+    nfa.add_transition(0, 8, 6)
+    epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
+    assert epsilon_transitions.symbol == 8
+    assert epsilon_transitions.states_to == [5, 6]
+
+    assert nfa.get_epsilon_transitions(5) is None
+
+
+def test_is_epsilon():
+    nfa = mata.Nfa()
+    assert nfa.is_epsilon(mata.epsilon())
+    assert not nfa.is_epsilon(0)
+
+    # TODO: Add checks for user-specified epsilons when user-specified epsilons are implemented.

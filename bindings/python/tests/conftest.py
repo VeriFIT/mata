@@ -3,7 +3,7 @@
 import os
 import shutil
 import pytest
-import mata
+import libmata as mata
 
 __author__ = 'Tomas Fiedor'
 
@@ -21,8 +21,8 @@ def cleandir():
 def dfa_one_state_uni():
     lhs = mata.Nfa(1)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 0)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 0)
     lhs.make_final_state(0)
     yield lhs
 
@@ -31,8 +31,8 @@ def dfa_one_state_uni():
 def dfa_one_state_empty():
     lhs = mata.Nfa(1)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 0)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 0)
     yield lhs
 
 
@@ -40,11 +40,11 @@ def dfa_one_state_empty():
 def nfa_two_states_uni():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 0)
-    lhs.add_trans_raw(0, 0, 1)
-    lhs.add_trans_raw(1, 0, 1)
-    lhs.add_trans_raw(1, 1, 1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 0)
+    lhs.add_transition(0, 0, 1)
+    lhs.add_transition(1, 0, 1)
+    lhs.add_transition(1, 1, 1)
     lhs.make_final_state(1)
     yield lhs
 
@@ -56,11 +56,11 @@ def divisible_by(k: int):
     assert k > 1
     lhs = mata.Nfa(k+1)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
+    lhs.add_transition(0, 0, 0)
     for i in range(1, k + 1):
-        lhs.add_trans_raw(i - 1, 1, i)
-        lhs.add_trans_raw(i, 0, i)
-    lhs.add_trans_raw(k, 1, 1)
+        lhs.add_transition(i - 1, 1, i)
+        lhs.add_transition(i, 0, i)
+    lhs.add_transition(k, 1, 1)
     lhs.make_final_state(k)
     return lhs
 
@@ -84,10 +84,10 @@ def fa_one_divisible_by_eight():
 def fa_odd_ones():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 1)
-    lhs.add_trans_raw(1, 1, 0)
-    lhs.add_trans_raw(1, 0, 1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+    lhs.add_transition(1, 1, 0)
+    lhs.add_transition(1, 0, 1)
     lhs.make_final_state(1)
 
 
@@ -95,10 +95,10 @@ def fa_odd_ones():
 def fa_even_ones():
     lhs = mata.Nfa(2)
     lhs.make_initial_state(0)
-    lhs.add_trans_raw(0, 0, 0)
-    lhs.add_trans_raw(0, 1, 1)
-    lhs.add_trans_raw(1, 1, 0)
-    lhs.add_trans_raw(1, 0, 1)
+    lhs.add_transition(0, 0, 0)
+    lhs.add_transition(0, 1, 1)
+    lhs.add_transition(1, 1, 0)
+    lhs.add_transition(1, 0, 1)
     lhs.make_final_state(0)
 
 
@@ -120,21 +120,21 @@ def prepare_automaton_a():
         nfa = mata.Nfa(100)
         nfa.make_initial_states([1, 3])
         nfa.make_final_state(5)
-        nfa.add_trans_raw(1, ord('a'), 3)
-        nfa.add_trans_raw(1, ord('a'), 10)
-        nfa.add_trans_raw(1, ord('b'), 7)
-        nfa.add_trans_raw(3, ord('a'), 7)
-        nfa.add_trans_raw(3, ord('b'), 9)
-        nfa.add_trans_raw(9, ord('a'), 9)
-        nfa.add_trans_raw(7, ord('b'), 1)
-        nfa.add_trans_raw(7, ord('a'), 3)
-        nfa.add_trans_raw(7, ord('c'), 3)
-        nfa.add_trans_raw(10, ord('a'), 7)
-        nfa.add_trans_raw(10, ord('b'), 7)
-        nfa.add_trans_raw(10, ord('c'), 7)
-        nfa.add_trans_raw(7, ord('a'), 5)
-        nfa.add_trans_raw(5, ord('a'), 5)
-        nfa.add_trans_raw(5, ord('c'), 9)
+        nfa.add_transition(1, ord('a'), 3)
+        nfa.add_transition(1, ord('a'), 10)
+        nfa.add_transition(1, ord('b'), 7)
+        nfa.add_transition(3, ord('a'), 7)
+        nfa.add_transition(3, ord('b'), 9)
+        nfa.add_transition(9, ord('a'), 9)
+        nfa.add_transition(7, ord('b'), 1)
+        nfa.add_transition(7, ord('a'), 3)
+        nfa.add_transition(7, ord('c'), 3)
+        nfa.add_transition(10, ord('a'), 7)
+        nfa.add_transition(10, ord('b'), 7)
+        nfa.add_transition(10, ord('c'), 7)
+        nfa.add_transition(7, ord('a'), 5)
+        nfa.add_transition(5, ord('a'), 5)
+        nfa.add_transition(5, ord('c'), 9)
         return nfa
 
     return _prepare_automaton_a
@@ -150,18 +150,18 @@ def prepare_automaton_b():
         nfa = mata.Nfa(100)
         nfa.make_initial_states([4])
         nfa.make_final_states([2, 12])
-        nfa.add_trans_raw(4, ord('c'), 8)
-        nfa.add_trans_raw(4, ord('a'), 8)
-        nfa.add_trans_raw(8, ord('b'), 4)
-        nfa.add_trans_raw(4, ord('a'), 6)
-        nfa.add_trans_raw(4, ord('b'), 6)
-        nfa.add_trans_raw(6, ord('a'), 2)
-        nfa.add_trans_raw(2, ord('b'), 2)
-        nfa.add_trans_raw(2, ord('a'), 0)
-        nfa.add_trans_raw(0, ord('a'), 2)
-        nfa.add_trans_raw(2, ord('c'), 12)
-        nfa.add_trans_raw(12, ord('a'), 14)
-        nfa.add_trans_raw(14, ord('b'), 12)
+        nfa.add_transition(4, ord('c'), 8)
+        nfa.add_transition(4, ord('a'), 8)
+        nfa.add_transition(8, ord('b'), 4)
+        nfa.add_transition(4, ord('a'), 6)
+        nfa.add_transition(4, ord('b'), 6)
+        nfa.add_transition(6, ord('a'), 2)
+        nfa.add_transition(2, ord('b'), 2)
+        nfa.add_transition(2, ord('a'), 0)
+        nfa.add_transition(0, ord('a'), 2)
+        nfa.add_transition(2, ord('c'), 12)
+        nfa.add_transition(12, ord('a'), 14)
+        nfa.add_transition(14, ord('b'), 12)
         return nfa
 
     return _prepare_automaton_b
