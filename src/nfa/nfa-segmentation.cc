@@ -62,7 +62,7 @@ void SegNfa::Segmentation::add_transitions_to_worklist(const Move& state_transit
 std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initialize_worklist() const
 {
     std::deque<StateDepthPair> worklist{};
-    for (State state: automaton.initial_states)
+    for (State state: automaton.initial)
     {
         worklist.push_back(StateDepthPair{ state, 0 });
     }
@@ -104,10 +104,10 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
     const auto segments_end{ segments_raw.end() };
     for (auto iter{ segments_begin }; iter != segments_end; ++iter) {
         if (iter != segments_begin) {
-            iter->clear_initial();
+            iter->initial.clear();
         }
         if (iter + 1 != segments_end) {
-            iter->clear_final();
+            iter->final.clear();
         }
     }
 }
@@ -117,7 +117,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     assert(transition.symb == epsilon);
     assert(segments_raw[current_depth].has_trans(transition.src, transition.symb, transition.tgt));
 
-    segments_raw[current_depth].make_final(transition.src);
+    segments_raw[current_depth].final.add(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
     segments_raw[current_depth].remove_trans(transition);
 }
@@ -131,7 +131,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
-    segments_raw[next_depth].make_initial(transition.tgt);
+    segments_raw[next_depth].initial.add(transition.tgt);
 }
 
 const AutSequence& SegNfa::Segmentation::get_segments()

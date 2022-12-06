@@ -46,6 +46,7 @@ using State = unsigned long;
 using Symbol = unsigned long;
 
 using StateSet = Mata::Util::OrdVector<State>;
+
 template<typename T> using Set = Mata::Util::OrdVector<T>;
 
 using WordSet = std::set<std::vector<Symbol>>;
@@ -138,7 +139,7 @@ protected:
 
 // const PostSymb EMPTY_POST{};
 
-static constexpr struct Limits {
+static constexpr struct Limits {//TODO: still needed?
     State maxState = std::numeric_limits<State>::max();
     State minState = std::numeric_limits<State>::min();
     Symbol maxSymbol = std::numeric_limits<Symbol>::max();
@@ -170,6 +171,7 @@ using TransSequence = std::vector<Trans>; ///< Set of transitions.
 
 struct Nfa; ///< A non-deterministic finite automaton.
 
+//TODO: Kill these types names? Some of them?
 template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
 using AutSequence = Sequence<Nfa>; ///< A sequence of non-deterministic finite automata.
 
@@ -185,8 +187,10 @@ template<typename T> using ConstPtrSequence = Sequence<T* const>; ///< A sequenc
 using AutConstPtrSequence = ConstPtrSequence<Nfa>; ///< A sequence of const pointers to non-deterministic finite automata.
 using ConstAutConstPtrSequence = ConstPtrSequence<const Nfa>; ///< A sequence of const pointers to const non-deterministic finite automata.
 
+// TODO: why introduce this type name?
 using SharedPtrAut = std::shared_ptr<Nfa>; ///< A shared pointer to NFA.
 
+//TODO: move alphabets to their own .h file
 /**
 * Direct alphabet (also identity alphabet or integer alphabet) using integers as symbols.
 *
@@ -296,10 +300,10 @@ struct Nfa
      *
      */
     TransitionRelation transition_relation;
-    StateSet initial_states = {};
-    StateSet final_states = {};
-    util::NumberPredicate<State> initial;
-    util::NumberPredicate<State> final;
+    Util::NumPredicate<State> initial = {};
+    Util::NumPredicate<State> final = {};
+    //StateSet initial = {};
+    //StateSet final = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -311,14 +315,14 @@ struct Nfa
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    Nfa() : transition_relation(), initial_states(), final_states() {}
+    Nfa() : transition_relation(), initial(), final() {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
-        : transition_relation(num_of_states), initial_states(initial_states), final_states(final_states),
+        : transition_relation(num_of_states), initial(initial_states), final(final_states),
           alphabet(alphabet_p) {}
 
     /**
@@ -354,84 +358,6 @@ public:
     }
 
     /**
-     * Clear initial states set.
-     */
-    void clear_initial() { initial_states.clear(); }
-
-    /**
-     * Make @p state initial.
-     * @param state State to be added to initial states.
-     */
-    void make_initial(State state)
-    {
-        if (this->states_number() <= state) {
-            throw std::runtime_error("Cannot make state initial because it is not in automaton");
-        }
-
-        this->initial_states.insert(state);
-    }
-
-    /**
-     * Make @p vec of states initial states.
-     * @param vec Vector of states to be added to initial states.
-     */
-    void make_initial(const std::vector<State>& vec)
-    {
-        for (const State& st : vec) { this->make_initial(st); }
-    }
-
-    bool has_initial(const State &state_to_check) const {return initial_states.count(state_to_check);}
-
-    /**
-     * Remove @p state from initial states.
-     * @param state[in] State to be removed from initial states.
-     */
-    void remove_initial(State state)
-    {
-        assert(has_initial(state));
-        this->initial_states.remove(state);
-    }
-
-    /**
-     * Clear final states set.
-     */
-    void clear_final() { final_states.clear(); }
-
-    /**
-     * Make @p state final.
-     * @param state[in] State to be added to final states.
-     */
-    void make_final(const State state)
-    {
-        if (this->states_number() <= state) {
-            throw std::runtime_error("Cannot make state final because it is not in automaton");
-        }
-
-        this->final_states.insert(state);
-    }
-
-    /**
-     * Make @p vec of states final states.
-     * @param vec[in] Vector of states to be added to final states.
-     */
-    void make_final(const std::vector<State>& vec)
-    {
-        for (const State& st : vec) { this->make_final(st); }
-    }
-
-    bool has_final(const State &state_to_check) const { return final_states.count(state_to_check); }
-
-    /**
-     * Remove @p state from final states.
-     * @param state[in] State to be removed from final states.
-     */
-    void remove_final(State state)
-    {
-        assert(has_final(state));
-        this->final_states.remove(state);
-    }
-
-    /**
      * Add a new state to the automaton.
      * @return The newly created state.
      */
@@ -456,8 +382,8 @@ public:
      */
     void clear_nfa() {
         transition_relation.clear();
-        clear_initial();
-        clear_final();
+        initial.clear();
+        final.clear();
     }
 
     /**
@@ -490,7 +416,8 @@ public:
      * Useful states are reachable and terminating states.
      * @return Set of useful states.
      */
-    StateSet get_useful_states() const;
+    //StateSet get_useful_states() const;
+    StateSet get_useful_states();
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -896,7 +823,8 @@ Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
 /// one initial state and every state has at most one outgoing transition over
 /// every symbol.  Checks the whole automaton, not only the reachable part
-bool is_deterministic(const Nfa& aut);
+//bool is_deterministic(const Nfa& aut);
+bool is_deterministic(Nfa& aut);
 
 /// Test for automaton completeness wrt an alphabet.  An automaton is complete
 /// if every reachable state has at least one outgoing transition over every
@@ -1482,8 +1410,8 @@ struct hash<Mata::Nfa::Trans>
 	inline size_t operator()(const Mata::Nfa::Trans& trans) const
 	{
 		size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
-		accum = Mata::util::hash_combine(accum, trans.symb);
-		accum = Mata::util::hash_combine(accum, trans.tgt);
+		accum = Mata::Util::hash_combine(accum, trans.symb);
+		accum = Mata::Util::hash_combine(accum, trans.tgt);
 		return accum;
 	}
 };

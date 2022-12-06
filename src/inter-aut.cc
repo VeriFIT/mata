@@ -31,7 +31,7 @@ namespace
 
     bool is_logical_operator(char ch)
     {
-        return (Mata::util::haskey(std::set<char>{'&', '|', '!'}, ch));
+        return (Mata::Util::haskey(std::set<char>{'&', '|', '!'}, ch));
     }
 
     Mata::IntermediateAut::Naming get_naming_type(const std::string &key)

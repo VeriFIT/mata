@@ -7,6 +7,7 @@
  *    File with the OrdVector class.
  *
  *****************************************************************************/
+#pragma once
 
 #ifndef _MATA_ORD_VECTOR_HH_
 #define _MATA_ORD_VECTOR_HH_
@@ -16,15 +17,33 @@
 #include <algorithm>
 #include <cassert>
 
+#include <mata/number_predicate.hh>
+
 // insert the class into proper namespace
 namespace Mata
 {
 	namespace Util
 	{
+        template <class Number> class NumPredicate;
+
 		template <
 			class Key
 		>
 		class OrdVector;
+
+        template <class Key>
+        bool is_sorted(std::vector<Key> vec)
+        {
+            for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
+            {	// check that the vector is sorted
+                if (!(*(itVec - 1) < *itVec))
+                {	// in case there is an unordered pair (or there is one element twice)
+                    return false;
+                }
+            }
+
+            return true;
+        }
 	}
 }
 
@@ -50,7 +69,9 @@ namespace
         // return the string
         return oss.str();
     }
+
 }
+
 
 /**
  * @brief  Implementation of a set using ordered vector
@@ -84,16 +105,8 @@ private:  // Private methods
 
 	bool vectorIsSorted() const
 	{
-		for (auto itVec = vec_.cbegin() + 1; itVec < vec_.cend(); ++itVec)
-		{	// check that the vector is sorted
-			if (!(*(itVec - 1) < *itVec))
-			{	// in case there is an unordered pair (or there is one element twice)
-				return false;
-			}
-		}
-
-		return true;
-	}
+        return(Mata::Util::is_sorted(vec_));
+    }
 
 
 public:   // Public methods
@@ -108,7 +121,9 @@ public:   // Public methods
 	explicit OrdVector(const VectorType& vec) :
 		vec_(vec)
 	{
-		// sort
+        //if (vectorIsSorted()) return;//probably useless
+
+        // sort
 		std::sort(vec_.begin(), vec_.end());
 
 		// remove duplicates
@@ -154,6 +169,9 @@ public:   // Public methods
 		// Assertions
 		assert(vectorIsSorted());
 	}
+
+    OrdVector(const NumPredicate<Key>& p) : OrdVector(p.get_elements()) {};
+
 
 	template <class InputIterator>
 	OrdVector(InputIterator first, InputIterator last) :

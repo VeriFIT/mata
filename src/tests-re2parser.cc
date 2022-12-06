@@ -19,7 +19,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
     SECTION("Empty expression")
     {
         Mata::RE2Parser::create_nfa(&aut, "");
-        REQUIRE(aut.final_states.size() == aut.initial_states.size());
+        REQUIRE(aut.final.size() == aut.initial.size());
         REQUIRE(aut.has_no_transitions());
         REQUIRE(!is_lang_empty(aut));
         REQUIRE(is_in_lang(aut, Word{}));
@@ -89,8 +89,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
 
     SECTION("Additional parenthesis") {
         Nfa expected{2};
-        expected.make_initial(0);
-        expected.make_final(1);
+        expected.initial.add(0);
+        expected.final.add(1);
         expected.add_trans(0, 'a', 0);
         expected.add_trans(0, 'b', 1);
 
@@ -967,8 +967,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
 
     SECTION("Star iteration") {
         Nfa expected{2};
-        expected.make_initial(0);
-        expected.make_final({0, 1});
+        expected.initial.add(0);
+        expected.final.add({0, 1});
         expected.add_trans(0, 'c', 0);
         expected.add_trans(0, 'a', 1);
         expected.add_trans(1, 'a', 1);
@@ -1073,8 +1073,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1097,8 +1097,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1121,8 +1121,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1145,8 +1145,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1169,8 +1169,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1193,8 +1193,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);
@@ -1217,8 +1217,8 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.make_initial(0);
-            expected_plus_iteration.make_final(2);
+            expected_plus_iteration.initial.add(0);
+            expected_plus_iteration.final.add(2);
             expected_plus_iteration.add_trans(0, 'c', 1);
             expected_plus_iteration.add_trans(1, 'c', 1);
             expected_plus_iteration.add_trans(1, 'a', 2);

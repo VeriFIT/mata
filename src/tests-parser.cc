@@ -22,7 +22,7 @@
 #include <mata/util.hh>
 
 using namespace Mata::Parser;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 
 TEST_CASE("correct use of Mata::Parser::parse_mf_section()")

@@ -20,7 +20,7 @@
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool Mata::Nfa::Algorithms::is_incl_naive(
@@ -85,15 +85,16 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 	std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
 	// check initial states first
-	for (const auto& state : smaller.initial_states) {
-		if (smaller.has_final(state) &&
-			are_disjoint(bigger.initial_states, bigger.final_states))
+	for (const auto& state : smaller.initial) {
+		if (smaller.final[state] &&
+			are_disjoint(bigger.initial, bigger.final))
 		{
 			if (nullptr != cex) { cex->word.clear(); }
 			return false;
 		}
 
-		const ProdStateType st = std::make_pair(state, bigger.initial_states);
+		//const ProdStateType st = std::make_pair(state, bigger.initial);
+        const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
 		worklist.push_back(st);
 		processed.push_back(st);
 
@@ -122,8 +123,8 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 				const StateSet bigger_succ = bigger.post(bigger_set, symb);
 				const ProdStateType succ = {smaller_succ, bigger_succ};
 
-				if (smaller.has_final(smaller_succ) &&
-					are_disjoint(bigger_succ, bigger.final_states))
+				if (smaller.final[smaller_succ] &&
+					are_disjoint(bigger_succ, bigger.final))
 				{
 					if (nullptr != cex) {
 						cex->word.clear();

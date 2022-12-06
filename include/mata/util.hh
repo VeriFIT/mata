@@ -30,6 +30,7 @@
 #include <unordered_map>
 #include <vector>
 #include <mata/ord-vector.hh>
+#include <mata/number_predicate.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -57,129 +58,21 @@ namespace Mata
 /// log verbosity
 extern unsigned LOG_VERBOSITY;
 
-namespace util
+namespace Util
 {
+
     template <typename Number>
-    class NumberPredicate {
-    private:
-        std::vector<bool> predicate = {};
-        std::vector<Number> elements = {};
-        bool elements_exact = false;
-        bool elements_watched = true;
-        //Number _size; could be somewhat useful
+    bool are_disjoint(NumPredicate<Number> one, NumPredicate<Number> two) {
+        return one.are_disjoint(two);
+    }
 
-        void prune_elements() {
-            Number new_pos = 0;
-            for (Number orig_pos = 0; orig_pos < elements.size(); ++orig_pos) {
-                if (predicate[elements[orig_pos]]) {
-                    elements[new_pos] = elements[orig_pos];
-                    ++new_pos;
-                }
-            }
-            elements.resize(new_pos);
-            elements_exact = true;
-        }
-
-        void compute_elements() {
-            elements.clear();
-            for (Number q = 0; q < predicate.size(); ++q) {
-                if (predicate[q])
-                    elements.push_back(q);
-            }
-        }
-
-    public:
-        NumberPredicate(bool watch_elements = false) : elements_watched(watch_elements) {};
-
-        void add(Number q) {
-            while (predicate.size() <= q)
-                predicate.push_back(false);
-            if (elements_watched) {
-                Number q_was_there = predicate[q];
-                predicate[q] = true;
-                if (!q_was_there)
-                    elements.push_back(q);
-            } else {
-                predicate[q] = true;
-            }
-        }
-
-        void remove(Number q) {
-            if (q < predicate.size() && predicate[q]) {
-                predicate[q] = false;
-                if (elements_watched) {
-                    elements_exact = false;
-                }
-            }
-        }
-
-        void add(const std::vector<Number> &elems) {
-            for (Number q: elems)
-                add(q);
-        }
-
-        void remove(const std::vector<Number> &elems) {
-            for (Number q: elems)
-                remove(q);
-        }
-
-        void watch_elements() {
-            if (!elements_watched) {
-                compute_elements();
-                elements_watched = true;
-                elements_exact = true;
-            }
-        }
-
-        void dont_watch_elements() {
-            elements_exact = false;
-            elements_watched = false;
-        }
-
-        const std::vector<Number>& get_elements() {
-            if (!elements_watched)
-                compute_elements();
-            else if (!elements_exact) {
-                prune_elements();
-            }
-            return elements;
-        }
-
-        bool operator[](Number q) const {
-            if (q < predicate.size())
-                return predicate[q];
-            else
+    template <typename Number>
+    bool are_disjoint(Mata::Util::OrdVector<Number> one, NumPredicate<Number> two) {
+        for (auto q: one)
+            if (two[q])
                 return false;
-        }
-
-        Number size() {
-            if (elements_watched) {
-                if (!elements_exact)
-                    prune_elements();
-                return elements.size();
-            } else {
-                Number cnt = 0;
-                for (Number q = 0; q < predicate.size(); ++q) {
-                    if (predicate[q])
-                        cnt++;
-                }
-                return cnt;
-            }
-        }
-
-        void clear() {
-            predicate.clear();
-            elements.clear();
-        }
-
-        void reserve(Number n) {
-            predicate.reserve(n);
-            elements.reserve(n);
-        }
-    };
-
-
-
+        return true;
+    }
 
 
     /** Are two sets disjoint? */
@@ -304,7 +197,7 @@ struct hash<std::pair<A,B>>
 	inline size_t operator()(const std::pair<A,B>& k) const
 	{ // {{{
 		size_t accum = std::hash<A>{}(k.first);
-		return Mata::util::hash_combine(accum, k.second);
+		return Mata::Util::hash_combine(accum, k.second);
 	} // operator() }}}
 };
 
@@ -316,7 +209,7 @@ struct hash<std::set<A>>
 {
 	inline size_t operator()(const std::set<A>& cont) const
 	{ // {{{
-		return Mata::util::hash_range(cont.begin(), cont.end());
+		return Mata::Util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -328,7 +221,7 @@ struct hash<std::vector<A>>
 {
 	inline size_t operator()(const std::vector<A>& cont) const
 	{ // {{{
-		return Mata::util::hash_range(cont.begin(), cont.end());
+		return Mata::Util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -508,7 +401,7 @@ template <class... Ts>
 std::string to_string(const std::tuple<Ts...>& tup)
 { // {{{
 	std::string str = "<";
-  str += Mata::util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
+  str += Mata::Util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
 	str += ">";
 
 	return str;
