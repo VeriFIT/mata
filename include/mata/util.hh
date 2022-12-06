@@ -30,7 +30,7 @@
 #include <unordered_map>
 #include <vector>
 #include <mata/ord-vector.hh>
-#include <mata/number_predicate.hh>
+#include <mata/number-predicate.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\

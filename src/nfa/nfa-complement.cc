@@ -52,6 +52,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	result.final = { };
 	assert(result.initial.size() == 1);
 
+    //TODO: rewrite this, work with final states properly, after martin introduces classes for trel
 	auto make_final_if_not_in_old = [&](const State& state) {
         //if (!haskey(old_fs, state))
 		if (!old_fs[state])
@@ -88,6 +89,7 @@ Nfa Mata::Nfa::Algorithms::complement_naive(
     return result;
 }
 
+//TODO: rewrite this, work with final states properly, after martin introduces classes for trans. rel.
 void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 

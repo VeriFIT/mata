@@ -2,10 +2,10 @@
 // Created by Lukáš Holík on 29.10.2022.
 //
 
-#include "../3rdparty/catch.hpp"
+#include "catch.hpp"
 
-#include <mata/util.hh>
-#include <mata/synchronized-iterator.hh>
+#include "mata/util.hh"
+#include "mata/synchronized-iterator.hh"
 
 using namespace Mata::Util;
 

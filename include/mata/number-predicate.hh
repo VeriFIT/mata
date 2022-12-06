@@ -178,35 +178,26 @@ namespace Mata {
                     remove(q);
             }
 
-            //void complement(Number domain_size) {
-            //    predicate.resize(domain_size);
-            //    elements.clear();
-            //    for (size_t q = 0; q < domain_size; ++q)
-            //        predicate[q] = !predicate[q];
-            //}
+            //TODO: add tests when starting to use this
+            void complement(Number domain_size) {
+                Number old_domain_size = predicate.size();
+                predicate.reserve(domain_size);
+                Number to_flip = min(domain_size,old_domain_size);
+                for (Number q = 0; q < to_flip; ++q) {
+                     predicate[q] = !predicate[q];
+                }
+                if (domain_size > old_domain_size)
+                    for (Number q = old_domain_size; q < domain_size; ++q) {
+                        predicate.push_back(true);
+                    }
+                if (elements_watched) {
+                    compute_elements();
+                }
+            }
 
-            //void complement() {
-            //    complement(predicate.size());
-            //}
-
-            // class const_iterator {
-            // private:
-            //     typename std::vector<Number>::const_iterator it;
-
-            //     inline const_iterator& operator++()
-            //     {
-            //         ++it;
-            //     };
-
-            //     inline bool operator!=(const const_iterator& other) const
-            //     {
-
-            //     };
-
-            //     Number operator*() const
-            //     {
-            //     };
-            // };
+            void complement() {
+                complement(predicate.size());
+            }
 
             inline const_iterator begin() const {
                 update_elements();

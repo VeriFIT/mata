@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include <mata/number_predicate.hh>
+#include <mata/number-predicate.hh>
 
 // insert the class into proper namespace
 namespace Mata
