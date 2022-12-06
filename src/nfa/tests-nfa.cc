@@ -65,8 +65,12 @@ template<class T> void unused(const T &) {}
 //TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
 bool nothing_in_trans(const Nfa& nfa)
 {
-    return std::all_of(nfa.transition_relation.begin(), nfa.transition_relation.end(),
-                       [](const auto& trans) {return trans.size() == 0;});
+    bool all_empty = true;
+    for (size_t i = 0; i < nfa.transition_relation.size(); ++i) {
+        all_empty &= nfa.transition_relation[i].empty();
+    }
+
+    return all_empty;
 }
 
 /*
@@ -194,13 +198,11 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 		REQUIRE(it == jt);
 		REQUIRE((jt != aut.transition_relation.begin() && jt != aut.transition_relation.end()));
 
-        jt = aut.transition_relation.begin() + state_num - 1;
-		++jt;
+        jt = aut.transition_relation.end();
 		REQUIRE(it != jt);
 		REQUIRE((jt != aut.transition_relation.begin() && jt == aut.transition_relation.end()));
 
-        it = aut.transition_relation.begin() + state_num - 1;
-		++it;
+        it = aut.transition_relation.end();
 		REQUIRE(it == jt);
 		REQUIRE((it != aut.transition_relation.begin() && it == aut.transition_relation.end()));
 	}
