@@ -361,9 +361,9 @@ void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
 
     auto& state_transitions{transition_relation[state_from] };
 
-    if (state_transitions.ToVector().empty()) {
+    if (state_transitions.empty()) {
         state_transitions.push_back({ symbol, state_to});
-    } else if (state_transitions.ToVector().back().symbol < symbol) {
+    } else if (state_transitions.back().symbol < symbol) {
         state_transitions.push_back({ symbol, state_to});
     } else {
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
@@ -390,9 +390,9 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
     }
 
     auto& state_transitions{transition_relation[state_from] };
-    if (state_transitions.ToVector().empty()) {
+    if (state_transitions.empty()) {
         state_transitions.push_back({ symbol, states_to });
-    } else if (state_transitions.ToVector().back().symbol < symbol) {
+    } else if (state_transitions.back().symbol < symbol) {
         state_transitions.push_back({ symbol, states_to });
     } else {
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
@@ -410,11 +410,11 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
 
 void Nfa::remove_trans(State src, Symbol symb, State tgt) {
     auto& state_transitions{transition_relation[src] };
-    if (state_transitions.ToVector().empty()) {
+    if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
-    } else if (state_transitions.ToVector().back().symbol < symb) {
+    } else if (state_transitions.back().symbol < symb) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
@@ -955,10 +955,7 @@ size_t Nfa::get_num_of_trans() const
 
     for (const auto& state_transitions: transition_relation)
     {
-        for (const auto& symbol_transitions: state_transitions)
-        {
-            num_of_transitions += symbol_transitions.states_to.size();
-        }
+        ++num_of_transitions;
     }
 
     return num_of_transitions;
@@ -978,16 +975,7 @@ bool Mata::Nfa::Nfa::has_no_transitions() const
 {
     for (const auto &state_transitions: transition_relation)
     {
-        if (!state_transitions.empty())
-        {
-            for (const auto &symbol_state_transitions: state_transitions)
-            {
-                if (!symbol_state_transitions.states_to.empty())
-                {
-                    return false;
-                }
-            }
-        }
+        return false;
     }
 
     return true;
@@ -1024,12 +1012,12 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
-Moves::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
+Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
     return get_epsilon_transitions(get_moves_from(state), epsilon);
 }
 
-Moves::const_iterator Nfa::Nfa::get_epsilon_transitions(const Moves& state_transitions, const Symbol epsilon) {
+Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const Post& state_transitions, const Symbol epsilon) {
     if (!state_transitions.empty()) {
         if (epsilon == EPSILON) {
             const auto& back = state_transitions.back();
@@ -1378,9 +1366,12 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     assert(nullptr != nfa);
 
     const_iterator result;
-    if (std::all_of(nfa->transition_relation.begin(), nfa->transition_relation.end(),
-                    [](const auto& trans) {return trans.size() == 0;}))
-    {
+
+    bool all_empty = true;
+    for (size_t i = 0; i < nfa->transition_relation.size(); ++i) {
+        all_empty &= nfa->transition_relation[i].empty();
+    }
+    if (all_empty) {
         result.is_end = true;
         return result;
     }
@@ -1419,7 +1410,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of state set
     ++(this->tlIt);
-    const Moves& tlist = this->nfa->get_moves_from(this->trIt);
+    const Post& tlist = this->nfa->get_moves_from(this->trIt);
     assert(!tlist.empty());
     if (this->tlIt != tlist.end())
     {
@@ -1431,8 +1422,12 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of transition list
     ++this->trIt;
-    assert(!std::all_of(this->nfa->transition_relation.begin(), this->nfa->transition_relation.end(),
-                        [](const auto& trans) {return trans.size() == 0;}));
+    bool any_nonempty = false;
+    for (size_t i = 0; i < this->nfa->transition_relation.size() && !any_nonempty; ++i) {
+        any_nonempty = !this->nfa->transition_relation[i].empty();
+    }
+    assert(any_nonempty);
+
     while (this->trIt < this->nfa->transition_relation.size() &&
             this->nfa->get_moves_from(this->trIt).empty())
     {
@@ -1474,10 +1469,8 @@ std::ostream &std::operator<<(std::ostream &os, const Alphabet& alphabet) {
 
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
      Util::OrdVector<Symbol>  symbols{};
-     for (const auto& state_transitions: transition_relation) {
-         for (const auto& symbol_transitions: state_transitions) {
-             symbols.insert(symbol_transitions.symbol);
-         }
+     for (const auto& transition: transition_relation) {
+        symbols.insert(transition.symb);
      }
      return symbols;
  }

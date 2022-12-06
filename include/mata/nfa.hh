@@ -293,7 +293,9 @@ struct Post : private Util::OrdVector<Move> {
     using const_iterator = Util::OrdVector<Move>::const_iterator;
 
     iterator begin() { return Util::OrdVector<Move>::begin(); }
+    const_iterator begin() const { return Util::OrdVector<Move>::begin(); }
     iterator end() { return Util::OrdVector<Move>::end(); }
+    const_iterator end() const { return Util::OrdVector<Move>::end(); }
 
     const_iterator cbegin() const { return Util::OrdVector<Move>::cbegin(); }
     const_iterator cend() const { return Util::OrdVector<Move>::cend(); }
@@ -303,10 +305,7 @@ struct Post : private Util::OrdVector<Move> {
     const_iterator find(const Move& m) const { return Util::OrdVector<Move>::find(m);}
     iterator find(const Move& m) { return Util::OrdVector<Move>::find(m);}
 
-    void insert(Move& m)
-    {
-        this->push_back(m);
-    }
+    void insert(const Move& m) { Util::OrdVector<Move>::insert(m); }
 
     Move& operator[](Symbol s)
     {
@@ -316,6 +315,16 @@ struct Post : private Util::OrdVector<Move> {
 
         return *item;
     }
+
+    const Move& operator[](Symbol s) const
+    {
+        return this->operator[](s);
+    }
+
+    const Move& back() const { return Util::OrdVector<Move>::back(); }
+
+    void push_back(const Move& m) { Util::OrdVector<Move>::push_back(m); }
+    void remove(const Move& m) { Util::OrdVector<Move>::remove(m); }
 
     bool empty() const { return Util::OrdVector<Move>::empty(); }
     size_t size() const { return Util::OrdVector<Move>::size(); }
@@ -333,15 +342,17 @@ public:
 
     Post & operator[] (State q)
     {
-        assert(post.size() <= q && "There is not transition for given state");
+        assert(q < post.size() && "There is not transition for given state");
         return post[q];
     };
 
     const Post & operator[] (State q) const
     {
-        assert(post.size() <= q && "There is not transition for given state");
+        assert(q < post.size() && "There is not transition for given state");
         return post[q];
     };
+
+    void emplace_back() { post.emplace_back(); }
 
     void clear() { post.clear(); }
     bool empty() const { return post.empty(); }
@@ -365,19 +376,28 @@ public:
             post.resize(last_empty);
     }
 
-    struct iterator {
+    struct const_iterator {
     private:
-        std::vector<Post>& post;
+        const std::vector<Post>& post;
         size_t actual_state;
-        Post::iterator post_iterator;
-        StateSet::iterator targets_position;
+        Post::const_iterator post_iterator;
+        StateSet::const_iterator targets_position;
 
     public:
-        iterator(std::vector<Post>& post_p) : post(post_p), actual_state(0), post_iterator(post[0].begin()),
-            targets_position(post_iterator->states_to.begin()) {};
+        explicit const_iterator(const std::vector<Post>& post_p) :
+            post(post_p), actual_state(0), post_iterator(post[0].cbegin())
+        {
+            if (post_p.begin() == post_p.end()) {
+                return;
+            }
+            if (post_iterator != post[0].cend()) {
+                targets_position = post_iterator->states_to.begin();
+            }
+        }
 
-        iterator(std::vector<Post>& post_p, size_t as, Post::iterator pi, StateSet::iterator ti) : post(post_p),
-            actual_state(as), post_iterator(pi), targets_position(ti) {};
+        const_iterator(const std::vector<Post>& post_p, size_t as,
+                       Post::const_iterator pi, StateSet::const_iterator ti) :
+            post(post_p), actual_state(as), post_iterator(pi), targets_position(ti) {};
 
         Trans operator*() const
         {
@@ -385,13 +405,23 @@ public:
         }
 
         // Prefix increment
-        iterator& operator++() {
+        const_iterator& operator++()
+        {
+            if (post.begin() == post.end()) {
+                return *this;
+            }
+
+            if (post_iterator == post[actual_state].cend()) {
+                actual_state++;
+                return *this;
+            }
+
             targets_position++;
             if (targets_position != post_iterator->states_to.end())
                 return *this;
 
             post_iterator++;
-            if (post_iterator != post[actual_state].end())
+            if (post_iterator != post[actual_state].cend())
                 return *this;
 
             actual_state++;
@@ -399,35 +429,52 @@ public:
         }
 
         // Postfix increment
-        iterator operator++(int)
+        const_iterator operator++(int)
         {
-            iterator tmp = *this;
+            const_iterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        friend bool operator== (const iterator& a, const iterator& b)
+        void operator=(const const_iterator& x)
+        {
+            this->post_iterator = x.post_iterator;
+            this->targets_position = x.targets_position;
+            this->actual_state = x.actual_state;
+        }
+
+        friend bool operator== (const const_iterator& a, const const_iterator& b)
         {
             return a.actual_state == b.actual_state && a.post_iterator == b.post_iterator
                 && a.targets_position == b.targets_position;
         }
 
-        friend bool operator!= (const iterator& a, const iterator& b)
+        friend bool operator!= (const const_iterator& a, const const_iterator& b)
         {
             return a.actual_state != b.actual_state && a.post_iterator != b.post_iterator
                    && a.targets_position != b.targets_position;
         };
     };
 
-    iterator begin()
+    struct const_iterator cbegin() const
     {
-        return iterator(post);
+        return const_iterator(post);
     }
 
-    iterator end()
+    struct const_iterator cend() const
     {
-        Post& last_post = post[post.size()-1];
-        return iterator(post, post.size(), last_post.end(), last_post[last_post.size()-1].states_to.end());
+        const Post& last_post = post[post.size()-1];
+        return const_iterator(post, post.size(), last_post.cend(), last_post[last_post.size()-1].states_to.cend());
+    }
+
+    struct const_iterator begin() const
+    {
+        return cbegin();
+    }
+
+    struct const_iterator end() const
+    {
+        return cend();
     }
 };
 
@@ -812,36 +859,6 @@ public:
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
-
-    struct const_iterator
-    { // {{{
-        const Nfa* nfa;
-        size_t trIt;
-        Post::const_iterator tlIt;
-        StateSet::const_iterator ssIt;
-        Trans trans;
-        bool is_end = { false };
-
-        const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
-        static const_iterator for_begin(const Nfa* nfa);
-        static const_iterator for_end(const Nfa* nfa);
-
-        void refresh_trans()
-        { // {{{
-            this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
-        } // }}}
-
-        const Trans& operator*() const { return this->trans; }
-
-        bool operator==(const const_iterator& rhs) const
-        { // {{{
-            if (this->is_end && rhs.is_end) { return true; }
-            if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
-            return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
-        } // }}}
-        bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
-        const_iterator& operator++();
-    }; // }}}
 
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
@@ -1346,8 +1363,8 @@ private:
         size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto state_transitions: nfa.transition_relation) {
-                alphabet.update_next_symbol_value(state_transitions.symbol);
-                alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+                alphabet.update_next_symbol_value(state_transitions.symb);
+                alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
             }
         }
     }
