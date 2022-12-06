@@ -121,7 +121,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
         Mata::Util::push_back(sync_iterator,rhs.transition_relation[pair_to_process.second]);
 
         while (sync_iterator.advance()) {
-            std::vector<Moves::const_iterator> moves = sync_iterator.get_current();
+            std::vector<Post::const_iterator> moves = sync_iterator.get_current();
             assert(moves.size() == 2); // One move per state in the pair.
 
             // Compute product for state transitions with same symbols.
