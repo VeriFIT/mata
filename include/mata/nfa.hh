@@ -318,7 +318,11 @@ struct Post : private Util::OrdVector<Move> {
 
     const Move& operator[](Symbol s) const
     {
-        return this->operator[](s);
+        const auto item = this->find(Move(s));
+        if (item == this->end())
+            throw std::runtime_error("Move not found");
+
+        return *item;
     }
 
     const Move& back() const { return Util::OrdVector<Move>::back(); }
@@ -382,22 +386,28 @@ public:
         size_t actual_state;
         Post::const_iterator post_iterator;
         StateSet::const_iterator targets_position;
+        bool is_end;
 
     public:
-        explicit const_iterator(const std::vector<Post>& post_p) :
-            post(post_p), actual_state(0), post_iterator(post[0].cbegin())
+        explicit const_iterator(const std::vector<Post>& post_p, bool ise = false) :
+            post(post_p), actual_state(0), is_end(ise)
         {
-            if (post_p.begin() == post_p.end()) {
-                return;
+            for (size_t i = 0; i < post.size(); ++i) {
+                if (!post[i].empty()) {
+                    actual_state = i;
+                    post_iterator = post[i].begin();
+                    targets_position = post_iterator->states_to.begin();
+                    return;
+                }
             }
-            if (post_iterator != post[0].cend()) {
-                targets_position = post_iterator->states_to.begin();
-            }
+
+            // no transition found, an empty post
+            is_end = true;
         }
 
         const_iterator(const std::vector<Post>& post_p, size_t as,
-                       Post::const_iterator pi, StateSet::const_iterator ti) :
-            post(post_p), actual_state(as), post_iterator(pi), targets_position(ti) {};
+                       Post::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
+            post(post_p), actual_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
 
         Trans operator*() const
         {
@@ -407,24 +417,28 @@ public:
         // Prefix increment
         const_iterator& operator++()
         {
-            if (post.begin() == post.end()) {
-                return *this;
-            }
-
-            if (post_iterator == post[actual_state].cend()) {
-                actual_state++;
-                return *this;
-            }
+            assert(post.begin() != post.end());
 
             targets_position++;
             if (targets_position != post_iterator->states_to.end())
                 return *this;
 
             post_iterator++;
-            if (post_iterator != post[actual_state].cend())
+            if (post_iterator != post[actual_state].cend()) {
+                targets_position = post_iterator->states_to.begin();
                 return *this;
+            }
 
-            actual_state++;
+            while (actual_state < post.size() && post[actual_state].empty()) // skip empty posts
+                actual_state++;
+
+            if (actual_state >= post.size())
+                is_end = true;
+            else {
+                post_iterator = post[actual_state].begin();
+                targets_position = post_iterator->states_to.begin();
+            }
+
             return *this;
         }
 
@@ -441,19 +455,21 @@ public:
             this->post_iterator = x.post_iterator;
             this->targets_position = x.targets_position;
             this->actual_state = x.actual_state;
+            this->is_end = x.is_end;
         }
 
         friend bool operator== (const const_iterator& a, const const_iterator& b)
         {
-            return a.actual_state == b.actual_state && a.post_iterator == b.post_iterator
-                && a.targets_position == b.targets_position;
+            if (a.is_end && b.is_end)
+                return true;
+            else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end))
+                return false;
+            else
+                return a.actual_state == b.actual_state && a.post_iterator == b.post_iterator
+                    && a.targets_position == b.targets_position;
         }
 
-        friend bool operator!= (const const_iterator& a, const const_iterator& b)
-        {
-            return a.actual_state != b.actual_state && a.post_iterator != b.post_iterator
-                   && a.targets_position != b.targets_position;
-        };
+        friend bool operator!= (const const_iterator& a, const const_iterator& b) { return !(a == b); };
     };
 
     struct const_iterator cbegin() const
@@ -463,8 +479,7 @@ public:
 
     struct const_iterator cend() const
     {
-        const Post& last_post = post[post.size()-1];
-        return const_iterator(post, post.size(), last_post.cend(), last_post[last_post.size()-1].states_to.cend());
+        return const_iterator(post, true);
     }
 
     struct const_iterator begin() const
