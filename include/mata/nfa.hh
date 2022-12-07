@@ -429,6 +429,7 @@ public:
                 return *this;
             }
 
+            actual_state++;
             while (actual_state < post.size() && post[actual_state].empty()) // skip empty posts
                 actual_state++;
 
