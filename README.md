@@ -130,7 +130,7 @@ You can set the initial and final states directly using the initializers.
     aut.final_states = {2, 3};
 ```
 
-Further, you can add transitions in form of tripple `(state_from, symbol, states_to`:
+Further, you can add transitions in form of tripple `(state_from, symbol, targets`:
 
 ```cpp
     aut.add_trans(0, 0, 2);

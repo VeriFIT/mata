@@ -133,18 +133,18 @@ cdef class Move:
         self.thisptr.symbol = value
 
     @property
-    def states_to(self):
-        cdef vector[State] states_as_vector = self.thisptr.states_to.ToVector()
+    def targets(self):
+        cdef vector[State] states_as_vector = self.thisptr.targets.ToVector()
         return [s for s in states_as_vector]
 
-    @states_to.setter
-    def states_to(self, value):
-        cdef StateSet states_to = StateSet(value)
-        self.thisptr.states_to = states_to
+    @targets.setter
+    def targets(self, value):
+        cdef StateSet targets = StateSet(value)
+        self.thisptr.targets = targets
 
     def __cinit__(self, Symbol symbol, vector[State] states):
-        cdef StateSet states_to = StateSet(states)
-        self.thisptr = new mata.CTransSymbolStates(symbol, states_to)
+        cdef StateSet targets = StateSet(states)
+        self.thisptr = new mata.CTransSymbolStates(symbol, targets)
 
     def __dealloc__(self):
         if self.thisptr != NULL:
@@ -163,13 +163,13 @@ cdef class Move:
         return dereference(self.thisptr) >= dereference(other.thisptr)
 
     def __eq__(self, Move other):
-        return self.symbol == other.symbol and self.states_to == other.states_to
+        return self.symbol == other.symbol and self.targets == other.targets
 
     def __neq__(self, Move other):
-        return self.symbol != other.symbol or self.states_to != other.states_to
+        return self.symbol != other.symbol or self.targets != other.targets
 
     def __str__(self):
-        trans = "{" + ",".join(map(str, self.states_to)) + "}"
+        trans = "{" + ",".join(map(str, self.targets)) + "}"
         return f"[{self.symbol}]\u2192{trans}"
 
     def __repr__(self):
@@ -422,7 +422,7 @@ cdef class Nfa:
         while it != end:
             t = Move(
                 dereference(it).symbol,
-                dereference(it).states_to.ToVector()
+                dereference(it).targets.ToVector()
             )
             postinc(it)
             transsymbols.append(t)
@@ -954,7 +954,7 @@ cdef class Nfa:
             return None
 
         cdef CTransSymbolStates epsilon_transitions = dereference(c_epsilon_transitions_iter)
-        return Move(epsilon_transitions.symbol, epsilon_transitions.states_to.ToVector())
+        return Move(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
     @classmethod

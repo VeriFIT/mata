@@ -265,14 +265,14 @@ Mata::Parser::ParsedSection serialize(
 
 struct Move {
     Symbol symbol{};
-    StateSet states_to;//TODO: horrible name - target_states /targets ?
+    StateSet targets;
 
     Move() = default;
-    explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), states_to() {}
+    explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), targets() {}
     Move(Symbol symbolOnTransition, State states_to) :
-            symbol(symbolOnTransition), states_to{states_to} {}
+            symbol(symbolOnTransition), targets{states_to} {}
     Move(Symbol symbolOnTransition, const StateSet& states_to) :
-            symbol(symbolOnTransition), states_to(states_to) {}
+            symbol(symbolOnTransition), targets(states_to) {}
 
     inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
@@ -281,11 +281,11 @@ struct Move {
     inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
     inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
 
-    StateSet::iterator begin() { return states_to.begin(); }
-    StateSet::iterator end() { return states_to.end(); }
+    StateSet::iterator begin() { return targets.begin(); }
+    StateSet::iterator end() { return targets.end(); }
 
-    StateSet::const_iterator cbegin() const  { return states_to.cbegin(); }
-    StateSet::const_iterator cend() const { return states_to.cend(); }
+    StateSet::const_iterator cbegin() const  { return targets.cbegin(); }
+    StateSet::const_iterator cend() const { return targets.cend(); }
 };
 
 struct Post : private Util::OrdVector<Move> {
@@ -396,7 +396,7 @@ public:
                 if (!post[i].empty()) {
                     actual_state = i;
                     post_iterator = post[i].begin();
-                    targets_position = post_iterator->states_to.begin();
+                    targets_position = post_iterator->targets.begin();
                     return;
                 }
             }
@@ -420,12 +420,12 @@ public:
             assert(post.begin() != post.end());
 
             targets_position++;
-            if (targets_position != post_iterator->states_to.end())
+            if (targets_position != post_iterator->targets.end())
                 return *this;
 
             post_iterator++;
             if (post_iterator != post[actual_state].cend()) {
-                targets_position = post_iterator->states_to.begin();
+                targets_position = post_iterator->targets.begin();
                 return *this;
             }
 
@@ -437,7 +437,7 @@ public:
                 is_end = true;
             else {
                 post_iterator = post[actual_state].begin();
-                targets_position = post_iterator->states_to.begin();
+                targets_position = post_iterator->targets.begin();
             }
 
             return *this;
@@ -753,7 +753,7 @@ public:
     void add_trans(const Trans& trans) { add_trans(trans.src, trans.symb, trans.tgt); }
 
     /**
-     * Add transitions from @p state_from with @p symbol to @p states_to to automaton.
+     * Add transitions from @p state_from with @p symbol to @p targets to automaton.
      * @param state_from Source state.
      * @param symbol Symbol on transitions.
      * @param states_to Set of target states.
@@ -798,7 +798,7 @@ public:
             return false;
         }
 
-        if (symbol_transitions->states_to.find(tgt) == symbol_transitions->states_to.end()) {
+        if (symbol_transitions->targets.find(tgt) == symbol_transitions->targets.end()) {
             return false;
         }
 

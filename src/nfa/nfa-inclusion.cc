@@ -151,11 +151,11 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
             if(*sync_iterator.get_current_minimum() == smaller_move) {
                 std::vector<Iterator> bigger_moves = sync_iterator.get_current();
                 for (auto m: bigger_moves) {
-                    bigger_succ = bigger_succ.Union(m->states_to);
+                    bigger_succ = bigger_succ.Union(m->targets);
                 }
             }
 
-            for (const State& smaller_succ : smaller_move.states_to) {
+            for (const State& smaller_succ : smaller_move.targets) {
 
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 

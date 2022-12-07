@@ -123,7 +123,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef cppclass CTransSymbolStates "Mata::Nfa::Move":
         # Public Attributes
         Symbol symbol
-        StateSet states_to
+        StateSet targets
 
         # Constructors
         CTransSymbolStates() except +
