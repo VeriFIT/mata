@@ -109,7 +109,7 @@ public:
 
     /**
      * Methods mintermizes given automaton which has bitvector alphabet.
-     * It transforms its transition to BDDs, then build a minterm tree over the BDDs
+     * It transforms its transitions to BDDs, then build a minterm tree over the BDDs
      * and finally transforms automaton to explicit one.
      * @param aut Automaton to be mintermized.
      * @return Mintermized automaton
