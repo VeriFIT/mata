@@ -23,11 +23,11 @@ namespace
 {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
     {
-        std::vector<const Mata::FormulaGraph *> todo{node};
-        while (!todo.empty()) {
-            const auto act_node = todo.back();
+        std::vector<const Mata::FormulaGraph *> worklist{node};
+        while (!worklist.empty()) {
+            const auto act_node = worklist.back();
             assert(act_node != nullptr);
-            todo.pop_back();
+            worklist.pop_back();
             if (act_node->children.size() != 2)
                 continue;
 
@@ -45,7 +45,7 @@ namespace
                 return &act_node->children.front(); // a1 & q1
             else {
                 for (const Mata::FormulaGraph& child : act_node->children) {
-                    todo.push_back(&child);
+                    worklist.push_back(&child);
                 }
             }
         }
