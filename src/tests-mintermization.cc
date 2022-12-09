@@ -43,7 +43,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].first.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-        const BDD bdd = mintermization.graph_to_bdd(aut.transitions[0].second.children[0]);
+        const BDD bdd = mintermization.nfa_graph_to_bdd(aut.transitions[0].second.children[0]);
         REQUIRE(bdd.nodeCount() == 2);
     }
 
@@ -62,7 +62,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const BDD bdd = mintermization.graph_to_bdd(aut.transitions[0].second.children[0]);
+        const BDD bdd = mintermization.nfa_graph_to_bdd(aut.transitions[0].second.children[0]);
         REQUIRE(bdd.nodeCount() == 3);
     }
 
@@ -82,7 +82,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
         std::cout << "Starting mintermization\n";
-        const BDD bdd = mintermization.graph_to_bdd(aut.transitions[0].second.children[0]);
+        const BDD bdd = mintermization.nfa_graph_to_bdd(aut.transitions[0].second.children[0]);
         REQUIRE(bdd.nodeCount() == 4);
         int inputs[] = {0,0,0,0};
         REQUIRE(bdd.Eval(inputs).IsOne());
@@ -113,8 +113,8 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
         std::vector<BDD> bdds;
-        bdds.push_back(mintermization.graph_to_bdd(aut.transitions[0].second.children[0]));
-        bdds.push_back(mintermization.graph_to_bdd(aut.transitions[1].second.children[0]));
+        bdds.push_back(mintermization.nfa_graph_to_bdd(aut.transitions[0].second.children[0]));
+        bdds.push_back(mintermization.nfa_graph_to_bdd(aut.transitions[1].second.children[0]));
         std::vector<BDD> res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 4);
     }
@@ -136,8 +136,8 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
         std::vector<BDD> bdds;
-        bdds.push_back(mintermization.graph_to_bdd(aut.transitions[0].second.children[0]));
-        bdds.push_back(mintermization.graph_to_bdd(aut.transitions[1].second.children[0]));
+        bdds.push_back(mintermization.nfa_graph_to_bdd(aut.transitions[0].second.children[0]));
+        bdds.push_back(mintermization.nfa_graph_to_bdd(aut.transitions[1].second.children[0]));
         std::vector<BDD> res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 3);
     }

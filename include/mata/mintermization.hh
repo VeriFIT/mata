@@ -96,7 +96,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    const BDD graph_to_bdd(const FormulaGraph& graph);
+    const BDD nfa_graph_to_bdd(const FormulaGraph& graph);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
@@ -105,7 +105,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    const OptionalBdd graph_to_bdd_generalized(const FormulaGraph& graph);
+    const OptionalBdd afa_graph_to_bdd(const FormulaGraph& graph);
 
     /**
      * Methods mintermizes given automaton which has bitvector alphabet.
