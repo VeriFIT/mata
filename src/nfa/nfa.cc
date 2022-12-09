@@ -682,8 +682,7 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     return result;
 }
 
-//bool Mata::Nfa::is_deterministic(const Nfa& aut)
-bool Mata::Nfa::is_deterministic(Nfa& aut)
+bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initial.size() != 1) { return false; }
 

@@ -96,7 +96,6 @@ void Mata::Nfa::complement_in_place(Nfa& aut) {
     const size_t size = aut.transition_relation.size();
     for (State q = 0; q < size; ++q) {
         if (!aut.final[q]) {
-        //if (aut.final.count(q) == 0) {
             newFinalStates.insert(q);
         }
     }

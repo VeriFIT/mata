@@ -26,7 +26,7 @@ using namespace Mata::Util;
 bool Mata::Nfa::Algorithms::is_included_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
-	const Alphabet* const  alphabet,
+	const Alphabet* const  alphabet,//TODO: this should not be needed, likewise for equivalence
 	Run*                   cex,
 	const StringMap&  /* params*/)
 { // {{{
