@@ -224,7 +224,8 @@ void Mata::Mintermization::minterms_to_aut(Mata::IntermediateAut& res, const Mat
         const auto &symbol_part = trans.second.children[0];
 
         size_t symbol = 0;
-        assert(trans_to_bddvar.count(&symbol_part));
+        if(trans_to_bddvar.count(&symbol_part) == 0)
+            continue; // Transition had zero bdd so it was not added to map
         const BDD &bdd = trans_to_bddvar[&symbol_part];
 
         for (const auto &minterm: minterms) {
