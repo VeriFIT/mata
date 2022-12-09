@@ -234,7 +234,7 @@ namespace Mata {
                 return elements;
             }
 
-            bool are_disjoint(NumPredicate<Number> &other) {
+            bool are_disjoint(const NumPredicate<Number> &other) const {
                 for (auto q: *this)
                     if (other[q])
                         return false;
