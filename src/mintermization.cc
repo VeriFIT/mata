@@ -62,7 +62,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &a
         // Foreach transition create a BDD
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert(symbol_part.node.is_operator()); // beginning of symbol part of transition
-        const BDD bdd = nfa_graph_to_bdd(symbol_part);
+        const BDD bdd = graph_to_bdd_nfa(symbol_part);
         if (bdd.IsZero())
             continue;
         bdds.push_back(bdd);
@@ -110,7 +110,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
         // Foreach disjunct create a BDD
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
-            const auto bdd = afa_graph_to_bdd(*ds_pair.first);
+            const auto bdd = graph_to_bdd_afa(*ds_pair.first);
             assert(bdd.type == OptionalBdd::BDD_E);
             if (bdd.val.IsZero())
                 continue;
@@ -146,7 +146,7 @@ std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& 
     return stack;
 }
 
-const Mata::Mintermization::OptionalBdd Mata::Mintermization::afa_graph_to_bdd(const FormulaGraph &graph)
+const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
@@ -163,17 +163,17 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::afa_graph_to_bdd(c
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::AND) {
             assert(graph.children.size() == 2);
-            const OptionalBdd op1 = afa_graph_to_bdd(graph.children[0]);
-            const OptionalBdd op2 = afa_graph_to_bdd(graph.children[1]);
+            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
+            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
             return op1 * op2;
         } else if (node.operator_type == FormulaNode::OR) {
             assert(graph.children.size() == 2);
-            const OptionalBdd op1 = afa_graph_to_bdd(graph.children[0]);
-            const OptionalBdd op2 = afa_graph_to_bdd(graph.children[1]);
+            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
+            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
             return op1 + op2;
         } else if (node.operator_type == FormulaNode::NEG) {
             assert(graph.children.size() == 1);
-            const OptionalBdd op1 = afa_graph_to_bdd(graph.children[0]);
+            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
             return !op1;
         } else
             assert(false && "Unknown type of operation. It should conjunction, disjunction, or negation.");
@@ -182,7 +182,7 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::afa_graph_to_bdd(c
     assert(false);
 }
 
-const BDD Mata::Mintermization::nfa_graph_to_bdd(const FormulaGraph &graph)
+const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
@@ -197,17 +197,17 @@ const BDD Mata::Mintermization::nfa_graph_to_bdd(const FormulaGraph &graph)
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::AND) {
             assert(graph.children.size() == 2);
-            const BDD op1 = nfa_graph_to_bdd(graph.children[0]);
-            const BDD op2 = nfa_graph_to_bdd(graph.children[1]);
+            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
+            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
             return op1 * op2;
         } else if (node.operator_type == FormulaNode::OR) {
             assert(graph.children.size() == 2);
-            const BDD op1 = nfa_graph_to_bdd(graph.children[0]);
-            const BDD op2 = nfa_graph_to_bdd(graph.children[1]);
+            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
+            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
             return op1 + op2;
         } else if (node.operator_type == FormulaNode::NEG) {
             assert(graph.children.size() == 1);
-            const BDD op1 = nfa_graph_to_bdd(graph.children[0]);
+            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
             return !op1;
         } else
             assert(false);
