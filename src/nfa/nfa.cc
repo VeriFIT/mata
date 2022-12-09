@@ -810,14 +810,6 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
     return !are_disjoint(cur, aut.final);
 }
 
-WordSet Mata::Nfa::Nfa::get_shortest_words() const
-{
-    // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
-    // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    //return ShortestWordsMap{ *this }.get_shortest_words_for(this->initial);
-    return ShortestWordsMap{ *this }.get_shortest_words_for(StateSet(this->initial));
-}
-
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const Nfa&                aut,
@@ -1168,7 +1160,8 @@ Nfa Mata::Nfa::determinize(
     if (aut.has_no_transitions())
         return result;
 
-    Mata::Util::SynchronizedExistentialIterator<Mata::Util::OrdVector<Move>::const_iterator> synchronized_iterator;
+    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    Mata::Util::SynchronizedExistentialIterator<Iterator> synchronized_iterator;
 
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
@@ -1180,15 +1173,15 @@ Nfa Mata::Nfa::determinize(
         }
 
         // add moves of S to the sync ex iterator
+        // TODO: shouldn't we also reset first?
         for (State q: S) {
             Mata::Util::push_back(synchronized_iterator, aut.transition_relation[q]);
         }
 
-
         while (synchronized_iterator.advance()) {
 
             // extract post from the sychronized_iterator iterator
-            std::vector<Mata::Util::OrdVector<Move>::const_iterator> moves = synchronized_iterator.get_current();
+            std::vector<Iterator> moves = synchronized_iterator.get_current();
             Symbol currentSymbol = (*moves.begin())->symbol;
             StateSet T;
             for (auto m: moves){
@@ -1479,127 +1472,6 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
 
 std::ostream &std::operator<<(std::ostream &os, const Alphabet& alphabet) {
     return os << std::to_string(alphabet);
-}
-
-WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
-{
-    WordSet result{};
-
-    if (!shortest_words_map.empty())
-    {
-        WordLength shortest_words_length{-1};
-
-        for (const State state: states)
-        {
-            const auto& current_shortest_words_map{shortest_words_map.find(state)};
-            if (current_shortest_words_map == shortest_words_map.end()) {
-                continue;
-            }
-
-            const auto& state_shortest_words_map{current_shortest_words_map->second};
-            if (result.empty() || state_shortest_words_map.first < shortest_words_length) // Find a new set of the shortest words.
-            {
-                result = state_shortest_words_map.second;
-                shortest_words_length = state_shortest_words_map.first;
-            }
-            else if (state_shortest_words_map.first == shortest_words_length)
-            {
-                // Append the shortest words from other state of the same length to the already found set of the shortest words.
-                result.insert(state_shortest_words_map.second.begin(),
-                              state_shortest_words_map.second.end());
-            }
-        }
-
-    }
-
-    return result;
-}
-
-WordSet ShortestWordsMap::get_shortest_words_for(State state) const
-{
-     return get_shortest_words_for(StateSet{ state });
-}
-
-void Mata::Nfa::ShortestWordsMap::insert_initial_lengths()
-{
-    //const auto initial{ reversed_automaton.initial };
-    auto initial_states{ reversed_automaton.initial };
-    if (!initial_states.empty())
-    {
-        for (const State state: initial_states)
-        {
-            shortest_words_map.insert(std::make_pair(state, std::make_pair(0,
-                                                                           WordSet{ std::vector<Symbol>{} })));
-        }
-
-        const auto initial_states_begin{ initial_states.begin() };
-        const auto initial_states_end{ initial_states.end() };
-        processed.insert(initial_states_begin, initial_states_end);
-        fifo_queue.insert(fifo_queue.end(), initial_states_begin,
-                          initial_states_end);
-    }
-}
-
-void ShortestWordsMap::compute()
-{
-    State state{};
-    while (!fifo_queue.empty())
-    {
-        state = fifo_queue.front();
-        fifo_queue.pop_front();
-
-        // Compute the shortest words for the current state.
-        compute_for_state(state);
-    }
-}
-
-void ShortestWordsMap::compute_for_state(const State state)
-{
-    const LengthWordsPair& dst{ map_default_shortest_words(state) };
-    const WordLength dst_length_plus_one{ dst.first + 1 };
-    LengthWordsPair act;
-
-    for (const Move& transition: reversed_automaton.get_moves_from(state))
-    {
-        for (const State state_to: transition.states_to)
-        {
-            const LengthWordsPair& orig{ map_default_shortest_words(state_to) };
-            act = orig;
-
-            if ((act.first == -1) || (dst_length_plus_one < act.first))
-            {
-                // Found new shortest words after appending transition symbols.
-                act.second.clear();
-                update_current_words(act, dst, transition.symbol);
-            }
-            else if (dst_length_plus_one == act.first)
-            {
-                // Append transition symbol to increase length of the shortest words.
-                update_current_words(act, dst, transition.symbol);
-            }
-
-            if (orig.second != act.second)
-            {
-                shortest_words_map[state_to] = act;
-            }
-
-            if (processed.find(state_to) == processed.end())
-            {
-                processed.insert(state_to);
-                fifo_queue.push_back(state_to);
-            }
-        }
-    }
-}
-
-void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
-{
-    for (auto word : dst.second)
-    {
-        word.insert(word.begin(), symbol);
-        act.second.insert(word);
-    }
-    act.first = dst.first + 1;
 }
 
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {

@@ -15,7 +15,6 @@
  * GNU General Public License for more details.
  */
 
-
 #ifndef _MATA_UTIL_HH_
 #define _MATA_UTIL_HH_
 
@@ -442,6 +441,7 @@ struct TuplePrinter
 			return res + ", " + std::to_string(std::get<N-1>(t));
     }
 };
+
 
 template<class Tuple>
 struct TuplePrinter<Tuple, 1> {

@@ -23,7 +23,7 @@ using namespace Mata::Nfa;
 using namespace Mata::Util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool Mata::Nfa::Algorithms::is_incl_naive(
+bool Mata::Nfa::Algorithms::is_included_naive(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -43,7 +43,7 @@ bool Mata::Nfa::Algorithms::is_incl_naive(
 
 
 /// language inclusion check using Antichains
-bool Mata::Nfa::Algorithms::is_incl_antichains(
+bool Mata::Nfa::Algorithms::is_included_antichains(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
 	const Alphabet* const  alphabet,
@@ -180,7 +180,7 @@ bool Mata::Nfa::Algorithms::is_incl_antichains(
 } // }}}
 
 namespace {
-    using AlgoType = decltype(Algorithms::is_incl_naive)*;
+    using AlgoType = decltype(Algorithms::is_included_naive)*;
 
     bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringMap &params,
                              const AlgoType &algo) {
@@ -200,12 +200,12 @@ namespace {
                                      "received: " + std::to_string(params));
         }
 
-        decltype(Algorithms::is_incl_naive) *algo;
+        decltype(Algorithms::is_included_naive) *algo;
         const std::string &str_algo = params.at("algo");
         if ("naive" == str_algo) {
-            algo = Algorithms::is_incl_naive;
+            algo = Algorithms::is_included_naive;
         } else if ("antichains" == str_algo) {
-            algo = Algorithms::is_incl_antichains;
+            algo = Algorithms::is_included_antichains;
         } else {
             throw std::runtime_error(std::to_string(__func__) +
                                      " received an unknown value of the \"algo\" key: " + str_algo);
@@ -217,7 +217,7 @@ namespace {
 }
 
 // The dispatching method that calls the correct one based on parameters
-bool Mata::Nfa::is_incl(
+bool Mata::Nfa::is_included(
 	const Nfa&             smaller,
 	const Nfa&             bigger,
     Run*                   cex,

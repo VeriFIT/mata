@@ -18,11 +18,13 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include "catch.hpp"
 
-#include <mata/nfa.hh>
+#include "mata/nfa.hh"
+#include "mata/nfa-strings.hh"
 
 using namespace Mata::Nfa;
+using namespace Mata::Strings;
 using namespace Mata::util;
 using namespace Mata::Parser;
 

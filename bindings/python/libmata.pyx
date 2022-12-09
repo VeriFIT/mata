@@ -624,22 +624,6 @@ cdef class Nfa:
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
-    def get_shortest_words(self):
-        """Returns set of shortest words accepted by automaton
-
-        :return: set of shortest words accepted by automaton
-        """
-        cdef cset[vector[Symbol]] shortest
-        shortest = self.thisptr.get().get_shortest_words()
-        result = []
-        cdef cset[vector[Symbol]].iterator it = shortest.begin()
-        cdef cset[vector[Symbol]].iterator end = shortest.end()
-        while it != end:
-            short = dereference(it)
-            result.append(short)
-            postinc(it)
-        return result
-
     # External Constructors
     @classmethod
     def from_regex(cls, regex, encoding='utf-8'):
@@ -806,6 +790,20 @@ cdef class Nfa:
             noodle_segments.append(noodle)
 
         return noodle_segments
+
+    @classmethod
+    def get_shortest_words(cls, Nfa nfa):
+        """Returns set of the shortest words accepted by the automaton."""
+        cdef cset[vector[Symbol]] shortest
+        shortest = mata.get_shortest_words(dereference(nfa.thisptr.get()))
+        result = []
+        cdef cset[vector[Symbol]].iterator it = shortest.begin()
+        cdef cset[vector[Symbol]].iterator end = shortest.end()
+        while it != end:
+            short = dereference(it)
+            result.append(short)
+            postinc(it)
+        return result
 
     @classmethod
     def noodlify_for_equation(cls, left_side_automata: list, Nfa right_side_automaton, include_empty = False, params = None):
@@ -1093,7 +1091,7 @@ cdef class Nfa:
         if alphabet:
             c_alphabet = alphabet.as_base()
         params = params or {'algo': 'antichains'}
-        result = mata.is_incl(
+        result = mata.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
             run.thisptr,
@@ -1121,7 +1119,7 @@ cdef class Nfa:
         if alphabet:
             c_alphabet = alphabet.as_base()
         params = params or {'algo': 'antichains'}
-        result = mata.is_incl(
+        result = mata.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
             NULL,
@@ -1697,6 +1695,7 @@ cdef class Segmentation:
             segments.append(segment)
 
         return segments
+
 
 def plot(
         *automata: Nfa,

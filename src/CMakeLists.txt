@@ -60,8 +60,9 @@ add_library(libmata STATIC
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc
 	nfa/nfa-concatenation.cc
-	nfa/nfa-segmentation.cc
-	nfa/noodlify.cc
+	strings/nfa-noodlification.cc
+	strings/nfa-segmentation.cc
+	strings/nfa-strings.cc
 	rra/rrt.cc
 		../include/mata/number-predicate.hh tests-number-predicate.cc)
 
@@ -80,9 +81,10 @@ add_executable(tests
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc
-	nfa/tests-nfa-segmentation.cc
 	nfa/tests-nfa-intersection.cc
-	nfa/tests-noodlify.cc
+	strings/tests-nfa-noodlification.cc
+	strings/tests-nfa-segmentation.cc
+	strings/tests-nfa-string-solving.cc
 	rra/tests-rrt.cc
 )
 
