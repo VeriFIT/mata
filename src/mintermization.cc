@@ -125,6 +125,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
 std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& bdds)
 {
     std::vector<BDD> stack;
+    // we start mintermization with first bdd and its negation
     stack.push_back(bdds.front());
     stack.push_back(!bdds.front());
 
