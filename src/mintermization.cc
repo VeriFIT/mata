@@ -170,7 +170,7 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_gener
             const OptionalBdd op1 = graph_to_bdd_generalized(graph.children[0]);
             return !op1;
         } else
-            assert(false);
+            assert(false && "Unknown type of operation. It should conjunction, disjunction, or negation.");
     }
 
     assert(false);
