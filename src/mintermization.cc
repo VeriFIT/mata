@@ -259,7 +259,7 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
                     else // transition without state on the right handed side
                         res.add_transition(trans.first, node_symbol);
                 }
-                symbol++;
+                ++symbol;
             }
         }
     }
