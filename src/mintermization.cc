@@ -108,8 +108,10 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
             const auto bdd = graph_to_bdd_generalized(*ds_pair.first);
-            trans_to_bddvar[ds_pair.first] = bdd.val;
             assert(bdd.type == OptionalBdd::BDD_E);
+            if (bdd.val.IsZero())
+                continue;
+            trans_to_bddvar[ds_pair.first] = bdd.val;
             bdds.push_back(bdd.val);
         }
     }
@@ -242,7 +244,8 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
             // for each t=(q1,s,q2)
             const auto disjunct = ds_pair.first;
 
-            assert(trans_to_bddvar.count(disjunct));
+            if (!trans_to_bddvar.count(disjunct))
+                continue; // Transition had zero bdd so it was not added to map
             const BDD &bdd = trans_to_bddvar[disjunct];
 
             size_t symbol = 0;
