@@ -123,7 +123,8 @@ std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& 
     stack.push_back(bdds.front());
     stack.push_back(!bdds.front());
 
-    for (size_t i = 1; i < bdds.size(); ++i) {
+    const size_t bdds_size = bdds.size();
+    for (size_t i = 1; i < bdds_size; ++i) {
         std::vector<BDD> next;
         for (const auto& minterm : stack) {
             BDD b = minterm * bdds[i];
