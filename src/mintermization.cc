@@ -54,7 +54,7 @@ namespace
     }
 }
 
-std::vector<BDD> Mata::Mintermization::trans_to_bdd(const IntermediateAut &aut)
+std::vector<BDD> Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
 {
     std::vector<BDD> bdds;
 
@@ -278,7 +278,7 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
         throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
     }
 
-    std::vector<BDD> bdds = aut.is_nfa() ? trans_to_bdd(aut) : trans_to_bdd_afa(aut);
+    std::vector<BDD> bdds = aut.is_nfa() ? trans_to_bdd_nfa(aut) : trans_to_bdd_afa(aut);
 
     assert(aut.transitions.empty() || !bdds.empty());
 

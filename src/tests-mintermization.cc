@@ -23,7 +23,7 @@
 
 using namespace Mata::Parser;
 
-TEST_CASE("Mata::Mintermization::trans_to_bdd")
+TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
 {
     Parsed parsed;
     Mata::Mintermization mintermization{};

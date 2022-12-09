@@ -79,7 +79,7 @@ private: // private data members
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
 
 private:
-    std::vector<BDD> trans_to_bdd(const IntermediateAut& aut);
+    std::vector<BDD> trans_to_bdd_nfa(const IntermediateAut& aut);
     std::vector<BDD> trans_to_bdd_afa(const IntermediateAut& aut);
 
 public:
