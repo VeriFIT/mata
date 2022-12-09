@@ -109,7 +109,7 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
             // create bdd for the whole disjunct
             const auto bdd = graph_to_bdd_generalized(*ds_pair.first);
             trans_to_bddvar[ds_pair.first] = bdd.val;
-            assert(bdd.type == BddOrNothing::BDD_E);
+            assert(bdd.type == OptionalBdd::BDD_E);
             bdds.push_back(bdd.val);
         }
     }
@@ -139,34 +139,34 @@ std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& 
     return stack;
 }
 
-const Mata::Mintermization::BddOrNothing Mata::Mintermization::graph_to_bdd_generalized(const FormulaGraph &graph)
+const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_generalized(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
     if (node.is_operand()) {
         if (node.is_state())
-            return BddOrNothing(BddOrNothing::NOTHING_E);
+            return OptionalBdd(OptionalBdd::NOTHING_E);
         if (symbol_to_bddvar.count(node.name)) {
-            return BddOrNothing(symbol_to_bddvar.at(node.name));
+            return OptionalBdd(symbol_to_bddvar.at(node.name));
         } else {
             BDD res = bdd_mng.bddVar();
             symbol_to_bddvar[node.name] = res;
-            return BddOrNothing(res);
+            return OptionalBdd(res);
         }
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::AND) {
             assert(graph.children.size() == 2);
-            const BddOrNothing op1 = graph_to_bdd_generalized(graph.children[0]);
-            const BddOrNothing op2 = graph_to_bdd_generalized(graph.children[1]);
+            const OptionalBdd op1 = graph_to_bdd_generalized(graph.children[0]);
+            const OptionalBdd op2 = graph_to_bdd_generalized(graph.children[1]);
             return op1 * op2;
         } else if (node.operator_type == FormulaNode::OR) {
             assert(graph.children.size() == 2);
-            const BddOrNothing op1 = graph_to_bdd_generalized(graph.children[0]);
-            const BddOrNothing op2 = graph_to_bdd_generalized(graph.children[1]);
+            const OptionalBdd op1 = graph_to_bdd_generalized(graph.children[0]);
+            const OptionalBdd op2 = graph_to_bdd_generalized(graph.children[1]);
             return op1 + op2;
         } else if (node.operator_type == FormulaNode::NEG) {
             assert(graph.children.size() == 1);
-            const BddOrNothing op1 = graph_to_bdd_generalized(graph.children[0]);
+            const OptionalBdd op1 = graph_to_bdd_generalized(graph.children[0]);
             return !op1;
         } else
             assert(false);

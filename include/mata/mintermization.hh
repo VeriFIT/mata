@@ -30,43 +30,43 @@ namespace Mata
 class Mintermization
 {
 private: // data types
-    struct BddOrNothing
+    struct OptionalBdd
     {
         enum TYPE {NOTHING_E, BDD_E};
 
         TYPE type;
         BDD val;
 
-        explicit BddOrNothing(TYPE t) : type(t) {}
-        explicit BddOrNothing(const BDD& bdd) : type(BDD_E), val(bdd) {}
-        BddOrNothing(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
+        explicit OptionalBdd(TYPE t) : type(t) {}
+        explicit OptionalBdd(const BDD& bdd) : type(BDD_E), val(bdd) {}
+        OptionalBdd(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
 
-        BddOrNothing operator*(const BddOrNothing& b) const
+        OptionalBdd operator*(const OptionalBdd& b) const
         {
             if (this->type == NOTHING_E)
                 return b;
             else if (b.type == NOTHING_E)
                 return *this;
             else
-                return BddOrNothing{BDD_E, this->val * b.val};
+                return OptionalBdd{BDD_E, this->val * b.val};
         }
 
-        BddOrNothing operator+(const BddOrNothing& b) const
+        OptionalBdd operator+(const OptionalBdd& b) const
         {
             if (this->type == NOTHING_E)
                 return b;
             else if (b.type == NOTHING_E)
                 return *this;
             else
-                return BddOrNothing{BDD_E, this->val + b.val};
+                return OptionalBdd{BDD_E, this->val + b.val};
         }
 
-        BddOrNothing operator!() const
+        OptionalBdd operator!() const
         {
             if (this->type == NOTHING_E)
-                return BddOrNothing(NOTHING_E);
+                return OptionalBdd(NOTHING_E);
             else
-                return BddOrNothing{BDD_E, !this->val};
+                return OptionalBdd{BDD_E, !this->val};
         }
     };
 
@@ -105,7 +105,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    const BddOrNothing graph_to_bdd_generalized(const FormulaGraph& graph);
+    const OptionalBdd graph_to_bdd_generalized(const FormulaGraph& graph);
 
     /**
      * Methods mintermizes given automaton which has bitvector alphabet.
