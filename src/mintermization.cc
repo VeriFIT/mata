@@ -62,8 +62,11 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd(const IntermediateAut &aut)
         // Foreach transition create a BDD
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert(symbol_part.node.is_operator()); // beginning of symbol part of transition
-        bdds.push_back(graph_to_bdd(symbol_part));
-        trans_to_bddvar[&symbol_part] = bdds.back();
+        const BDD bdd = graph_to_bdd(symbol_part);
+        if (bdd.IsZero())
+            continue;
+        bdds.push_back(bdd);
+        trans_to_bddvar[&symbol_part] = bdd;
     }
 
     return bdds;
