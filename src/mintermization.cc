@@ -273,8 +273,8 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
 
 Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateAut& aut)
 {
-    if (!aut.is_nfa() && !aut.is_afa() || aut.alphabet_type != IntermediateAut::BITVECTOR) {
-        throw std::runtime_error("We currently support mintermization only for NFA with bitvectors");
+    if ((!aut.is_nfa() && !aut.is_afa()) || aut.alphabet_type != IntermediateAut::BITVECTOR) {
+        throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
     }
 
     std::vector<BDD> bdds = aut.is_nfa() ? trans_to_bdd(aut) : trans_to_bdd_afa(aut);
