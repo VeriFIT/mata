@@ -178,11 +178,10 @@ namespace Mata {
                     remove(q);
             }
 
-            //TODO: add tests when starting to use this
             void complement(Number domain_size) {
                 Number old_domain_size = predicate.size();
                 predicate.reserve(domain_size);
-                Number to_flip = min(domain_size,old_domain_size);
+                Number to_flip = std::min(domain_size,old_domain_size);
                 for (Number q = 0; q < to_flip; ++q) {
                      predicate[q] = !predicate[q];
                 }
@@ -190,13 +189,13 @@ namespace Mata {
                     for (Number q = old_domain_size; q < domain_size; ++q) {
                         predicate.push_back(true);
                     }
+                else if (domain_size < old_domain_size)
+                    for (Number q = domain_size; q < old_domain_size; ++q) {
+                        predicate[q]=false;
+                    }
                 if (elements_watched) {
                     compute_elements();
                 }
-            }
-
-            void complement() {
-                complement(predicate.size());
             }
 
             inline const_iterator begin() const {
