@@ -481,8 +481,7 @@ Nfa Nfa::get_trimmed_automaton() {
     return create_trimmed_aut(*this, original_to_new_states_map);
 }
 
-//StateSet Nfa::get_useful_states() const
-StateSet Nfa::get_useful_states()
+StateSet Nfa::get_useful_states() const
 {
     if (initial.empty() || final.empty()) { return StateSet{}; }
 
