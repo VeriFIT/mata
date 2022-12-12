@@ -47,7 +47,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         }
 
         result = Nfa();
-        result.transition_relation = lhs.transition_relation;
+        result.delta = lhs.delta;
         result.initial_states = lhs.initial_states;
         result.increase_size(result_num_of_states);
 

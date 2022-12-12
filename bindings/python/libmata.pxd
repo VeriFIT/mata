@@ -149,7 +149,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Attributes
         StateSet initial_states
         StateSet final_states
-        TransitionRelation transition_relation
+        TransitionRelation delta
         umap[string, void*] attributes
         CAlphabet* alphabet
 

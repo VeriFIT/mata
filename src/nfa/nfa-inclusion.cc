@@ -131,11 +131,11 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
         sync_iterator.reset();
         for (State q: bigger_set) {
-            Mata::Util::push_back(sync_iterator, bigger.transition_relation[q]);
+            Mata::Util::push_back(sync_iterator, bigger.delta[q]);
         }
 
         // process transitions leaving smaller_state
-        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.transition_relation[smaller_state] after refactoring
+        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.delta[smaller_state] after refactoring
             const Symbol& smaller_symbol = smaller_move.symbol;
 
             do {

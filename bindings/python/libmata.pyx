@@ -1690,7 +1690,7 @@ cdef class Segmentation:
             segment = Nfa(c_segment.states_number())
             segment.thisptr.get().initial_states = c_segment.initial_states
             segment.thisptr.get().final_states = c_segment.final_states
-            segment.thisptr.get().transition_relation = c_segment.transition_relation
+            segment.thisptr.get().delta = c_segment.delta
 
             segments.append(segment)
 

@@ -137,7 +137,7 @@ namespace {
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
                     // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.transition_relation[q_class_state].push_back(Move(q_trans.symbol, representatives_class_states));
+                    result.delta[q_class_state].push_back(Move(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -170,7 +170,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const auto& state_transitions: nfa.transition_relation[state])
+            for (const auto& state_transitions: nfa.delta[state])
             {
                 for (const State target_state: state_transitions.targets)
                 {
@@ -208,7 +208,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const auto& state_transitions: nfa.transition_relation[state]) {
+            for (const auto& state_transitions: nfa.delta[state]) {
                 for (const State target_state: state_transitions.targets) {
                     if (states_to_consider[target_state] && !reachable[target_state]) {
                         worklist.push_back(target_state);
@@ -232,7 +232,7 @@ namespace {
         for (const auto& original_state_mapping: original_to_new_states_map)
         {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
-            for (const auto& state_transitions_with_symbol: nfa.transition_relation[original_state_mapping.first])
+            for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
             {
                 Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
@@ -245,7 +245,7 @@ namespace {
                     }
                 }
                 if (!new_state_trans_with_symbol.targets.empty()) {
-                    trimmed_aut.transition_relation[original_state_mapping.second].push_back(new_state_trans_with_symbol);
+                    trimmed_aut.delta[original_state_mapping.second].push_back(new_state_trans_with_symbol);
                 }
             }
         }
@@ -290,7 +290,7 @@ namespace {
     void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
         const State num_of_states{nfa.states_number() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
-            for (const auto& symbol_transitions: nfa.transition_relation[src_state]) {
+            for (const auto& symbol_transitions: nfa.delta[src_state]) {
                 for (const State tgt_state: symbol_transitions.targets) {
                     // Directly try to add the transition. Finding out whether the transition is already in the digraph
                     //  only iterates through transition relation again.
@@ -337,7 +337,7 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms)
 void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
     size_t aut_num_of_states{nfa.states_number() };
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const auto& state_transitions: nfa.transition_relation[state]) {
+        for (const auto& state_transitions: nfa.delta[state]) {
             update_next_symbol_value(state_transitions.symbol);
             try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
         }
@@ -359,7 +359,7 @@ void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
         throw std::out_of_range(std::to_string(state_from) + " or " + std::to_string(state_to) + " is not a state.");
     }
 
-    auto& state_transitions{transition_relation[state_from] };
+    auto& state_transitions{delta[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.push_back({ symbol, state_to});
@@ -389,7 +389,7 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
         }
     }
 
-    auto& state_transitions{transition_relation[state_from] };
+    auto& state_transitions{delta[state_from] };
     if (state_transitions.empty()) {
         state_transitions.push_back({ symbol, states_to });
     } else if (state_transitions.back().symbol < symbol) {
@@ -409,7 +409,7 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
 }
 
 void Nfa::remove_trans(State src, Symbol symb, State tgt) {
-    auto& state_transitions{transition_relation[src] };
+    auto& state_transitions{delta[src] };
     if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -427,15 +427,15 @@ void Nfa::remove_trans(State src, Symbol symb, State tgt) {
         } else {
             symbol_transitions->targets.remove(tgt);
             if (symbol_transitions->targets.empty()) {
-                transition_relation[src].remove(*symbol_transitions);
+                delta[src].remove(*symbol_transitions);
             }
         }
     }
 }
 
 State Nfa::add_state() {
-    transition_relation.emplace_back();
-    return transition_relation.size() - 1;
+    delta.emplace_back();
+    return delta.size() - 1;
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -512,9 +512,9 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     lhs_states.insert(lhs.initial_states.begin(), lhs.initial_states.end());
     lhs_states.insert(lhs.final_states.begin(), lhs.final_states.end());
 
-    for (size_t i = 0; i < lhs.transition_relation.size(); i++) {
+    for (size_t i = 0; i < lhs.delta.size(); i++) {
         lhs_states.insert(i);
-        for (const auto& symStates : lhs.transition_relation[i])
+        for (const auto& symStates : lhs.delta[i])
         {
             lhs_states.insert(symStates.targets.begin(), symStates.targets.end());
         }
@@ -529,10 +529,10 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
         if (haskey(lhs_states, rhs_st)) { return false; }
     }
 
-    for (size_t i = 0; i < lhs.transition_relation.size(); i++) {
+    for (size_t i = 0; i < lhs.delta.size(); i++) {
         if (haskey(lhs_states, i))
             return false;
-        for (const auto& symState : lhs.transition_relation[i]) {
+        for (const auto& symState : lhs.delta[i]) {
             for (const auto& rhState : symState.targets) {
                 if (haskey(lhs_states,rhState)) {
                     return false;
@@ -668,7 +668,7 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     result.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
-        for (const Move &transition: aut.transition_relation[sourceState]) {
+        for (const Move &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
                 result.add_trans(targetState, transition.symbol, sourceState);
             }
@@ -755,7 +755,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
 
         if (!aut.has_no_transitions())
         {
-            for (const auto &symbolMap: aut.transition_relation[cur]) {
+            for (const auto &symbolMap: aut.delta[cur]) {
                 for (State st: symbolMap.targets) {
                     if (st == newSt) {
                         word.word.push_back(symbolMap.symbol);
@@ -897,8 +897,8 @@ void Nfa::print_to_DOT(std::ostream &outputStream) const {
         outputStream << finalState << " [shape=doublecircle];" << std::endl;
     }
 
-    for (State s = 0; s != transition_relation.size(); ++s) {
-        for (const Move &t: transition_relation[s]) {
+    for (State s = 0; s != delta.size(); ++s) {
+        for (const Move &t: delta[s]) {
             outputStream << s << " -> {";
             for (State sTo: t.targets) {
                 outputStream << sTo << " ";
@@ -919,9 +919,9 @@ TransSequence Nfa::get_trans_as_sequence() const
 {
     TransSequence trans_sequence{};
 
-    for (State state_from{ 0 }; state_from < transition_relation.size(); ++state_from)
+    for (State state_from{ 0 }; state_from < delta.size(); ++state_from)
     {
-        for (const auto& transition_from_state: transition_relation[state_from])
+        for (const auto& transition_from_state: delta[state_from])
         {
             for (State state_to: transition_from_state.targets)
             {
@@ -937,7 +937,7 @@ TransSequence Nfa::get_trans_from_as_sequence(State state_from) const
 {
     TransSequence trans_sequence{};
 
-    for (const auto& transition_from_state: transition_relation[state_from])
+    for (const auto& transition_from_state: delta[state_from])
     {
         for (State state_to: transition_from_state.targets)
         {
@@ -953,7 +953,7 @@ size_t Nfa::get_num_of_trans() const
 {
     size_t num_of_transitions{};
 
-    for (const auto& state_transitions: transition_relation)
+    for (const auto& state_transitions: delta)
     {
         ++num_of_transitions;
     }
@@ -973,7 +973,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 
 bool Mata::Nfa::Nfa::has_no_transitions() const
 {
-    for (const auto &state_transitions: transition_relation)
+    for (const auto &state_transitions: delta)
     {
         return false;
     }
@@ -985,7 +985,7 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
     const size_t num_of_states{states_number() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const auto& symbol_transitions: transition_relation[state_from]) {
+        for (const auto& symbol_transitions: delta[state_from]) {
             const auto& symbol_states_to{ symbol_transitions.targets };
             const auto target_state{ symbol_states_to.find(state_to) };
             if (target_state != symbol_states_to.end()) {
@@ -1003,7 +1003,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     }
 
     for (const auto state : states) {
-        const auto& state_transitions{transition_relation[state] };
+        const auto& state_transitions{delta[state] };
         const auto state_symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (state_symbol_transitions != state_transitions.end()) {
             res.insert(state_symbol_transitions->targets);
@@ -1036,7 +1036,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
     StateToStateMap thisStateToUnionState;
-    for (State thisState = 0; thisState < lhs.transition_relation.size(); ++thisState) {
+    for (State thisState = 0; thisState < lhs.delta.size(); ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton.add_state();
     }
 
@@ -1048,9 +1048,9 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
         unionAutomaton.make_final(thisStateToUnionState[thisFinalState]);
     }
 
-    for (State thisState = 0; thisState < lhs.transition_relation.size(); ++thisState) {
+    for (State thisState = 0; thisState < lhs.delta.size(); ++thisState) {
         State unionState = thisStateToUnionState[thisState];
-        for (const Move &transitionFromThisState : lhs.transition_relation[thisState]) {
+        for (const Move &transitionFromThisState : lhs.delta[thisState]) {
 
             Move transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
 
@@ -1058,7 +1058,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
                 transitionFromUnionState.targets.insert(thisStateToUnionState[stateTo]);
             }
 
-            unionAutomaton.transition_relation[unionState].push_back(transitionFromUnionState);
+            unionAutomaton.delta[unionState].push_back(transitionFromUnionState);
         }
     }
 
@@ -1161,7 +1161,7 @@ Nfa Mata::Nfa::determinize(
         // add moves of S to the sync ex iterator
         // TODO: shouldn't we also reset first?
         for (State q: S) {
-            Mata::Util::push_back(synchronized_iterator, aut.transition_relation[q]);
+            Mata::Util::push_back(synchronized_iterator, aut.delta[q]);
         }
 
         while (synchronized_iterator.advance()) {
@@ -1186,7 +1186,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.transition_relation[Sid].push_back(Move(currentSymbol, Tid));
+            result.delta[Sid].push_back(Move(currentSymbol, Tid));
         }
     }
 
@@ -1368,8 +1368,8 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     const_iterator result;
 
     bool all_empty = true;
-    for (size_t i = 0; i < nfa->transition_relation.size(); ++i) {
-        all_empty &= nfa->transition_relation[i].empty();
+    for (size_t i = 0; i < nfa->delta.size(); ++i) {
+        all_empty &= nfa->delta[i].empty();
     }
     if (all_empty) {
         result.is_end = true;
@@ -1423,18 +1423,18 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     // out of transition list
     ++this->trIt;
     bool any_nonempty = false;
-    for (size_t i = 0; i < this->nfa->transition_relation.size() && !any_nonempty; ++i) {
-        any_nonempty = !this->nfa->transition_relation[i].empty();
+    for (size_t i = 0; i < this->nfa->delta.size() && !any_nonempty; ++i) {
+        any_nonempty = !this->nfa->delta[i].empty();
     }
     assert(any_nonempty);
 
-    while (this->trIt < this->nfa->transition_relation.size() &&
-            this->nfa->get_moves_from(this->trIt).empty())
+    while (this->trIt < this->nfa->delta.size() &&
+           this->nfa->get_moves_from(this->trIt).empty())
     {
         ++this->trIt;
     }
 
-    if (this->trIt < this->nfa->transition_relation.size())
+    if (this->trIt < this->nfa->delta.size())
     {
         this->tlIt = this->nfa->get_moves_from(this->trIt).begin();
         assert(!this->nfa->get_moves_from(this->trIt).empty());
@@ -1469,7 +1469,7 @@ std::ostream &std::operator<<(std::ostream &os, const Alphabet& alphabet) {
 
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
      Util::OrdVector<Symbol>  symbols{};
-     for (const auto& transition: transition_relation) {
+     for (const auto& transition: delta) {
         symbols.insert(transition.symb);
      }
      return symbols;

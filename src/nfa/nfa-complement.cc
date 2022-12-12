@@ -89,7 +89,7 @@ Nfa Mata::Nfa::Algorithms::complement_naive(
 void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 
-    const size_t size = aut.transition_relation.size();
+    const size_t size = aut.delta.size();
     for (State q = 0; q < size; ++q) {
         if (aut.final_states.count(q) == 0) {
             newFinalStates.insert(q);

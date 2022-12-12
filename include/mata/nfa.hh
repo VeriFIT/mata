@@ -553,12 +553,12 @@ constexpr Symbol EPSILON = limits.maxSymbol;
 struct Nfa
 {
     /**
-     * @brief For state q, transition_relation[q] keeps the list of transitions ordered by symbols.
+     * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
      *
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      */
-    Delta transition_relation;
+    Delta delta;
     //Automaton could have this instead of the curent initial and final states:
     //util::UnaryPredicate<State> initial = {};
     //util::UnaryPredicate<State> final = {};
@@ -575,14 +575,14 @@ struct Nfa
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    Nfa() : transition_relation(), initial_states(), final_states() {}
+    Nfa() : delta(), initial_states(), final_states() {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
-        : transition_relation(num_of_states), initial_states(initial_states), final_states(final_states),
+        : delta(num_of_states), initial_states(initial_states), final_states(final_states),
           alphabet(alphabet_p) {}
 
     /**
@@ -595,19 +595,19 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        for (size_t i = 0; i < transition_relation.size(); ++i) {
-            transition_relation[i] = Post();
+        for (size_t i = 0; i < delta.size(); ++i) {
+            delta[i] = Post();
         }
     }
 
-    auto states_number() const { return transition_relation.size(); }
+    auto states_number() const { return delta.size(); }
 
     //TODO: why this? Maybe we could have add_state(int state)
     //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
     void increase_size(size_t size)
     {
         assert(this->states_number() <= size);
-        transition_relation.resize(size);
+        delta.resize(size);
     }
 
     /**
@@ -714,7 +714,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check < transition_relation.size(); }
+    bool is_state(const State &state_to_check) const { return state_to_check < delta.size(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -722,7 +722,7 @@ public:
      * The whole NFA is cleared, each member is set to its zero value.
      */
     void clear_nfa() {
-        transition_relation.clear();
+        delta.clear();
         clear_initial();
         clear_final();
     }
@@ -835,7 +835,7 @@ public:
 
     bool has_trans(State src, Symbol symb, State tgt) const
     { // {{{
-        if (transition_relation.empty()) {
+        if (delta.empty()) {
             return false;
         }
 
@@ -884,7 +884,7 @@ public:
     const Post& get_moves_from(const State state_from) const
     {
         assert(states_number() >= state_from + 1);
-        return transition_relation[state_from];
+        return delta[state_from];
     }
 
     /**
@@ -961,9 +961,9 @@ public:
 
     const Post& operator[](State state) const
     { // {{{
-        assert(state < transition_relation.size());
+        assert(state < delta.size());
 
-        return transition_relation[state];
+        return delta[state];
     } // operator[] }}}
 
 
@@ -989,7 +989,7 @@ public:
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
      */
-    void defragment() { transition_relation.defragment();}
+    void defragment() { delta.defragment();}
 }; // Nfa
 
 /// Do the automata have disjoint sets of states?
@@ -1463,7 +1463,7 @@ private:
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
-            for (const auto state_transitions: nfa.transition_relation) {
+            for (const auto state_transitions: nfa.delta) {
                 alphabet.update_next_symbol_value(state_transitions.symb);
                 alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
             }

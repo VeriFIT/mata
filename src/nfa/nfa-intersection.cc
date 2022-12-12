@@ -36,7 +36,7 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
                             Move& intersection_transition) {
     if (intersection_transition.targets.empty()) { return; }
 
-    auto& intersect_state_transitions{ product.transition_relation[product_map[pair_to_process]] };
+    auto& intersect_state_transitions{ product.delta[product_map[pair_to_process]] };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
     if (symbol_transitions_iter == intersect_state_transitions.end()) {
         intersect_state_transitions.push_back(intersection_transition);
@@ -117,8 +117,8 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
         // Compute classic product for current state pair.
 
         Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<Move>::const_iterator> sync_iterator(2);
-        Mata::Util::push_back(sync_iterator,lhs.transition_relation[pair_to_process.first]);
-        Mata::Util::push_back(sync_iterator,rhs.transition_relation[pair_to_process.second]);
+        Mata::Util::push_back(sync_iterator,lhs.delta[pair_to_process.first]);
+        Mata::Util::push_back(sync_iterator,rhs.delta[pair_to_process.second]);
 
         while (sync_iterator.advance()) {
             std::vector<Post::const_iterator> moves = sync_iterator.get_current();
@@ -146,7 +146,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             // Add transitions of the current state pair for an epsilon preserving product.
 
             // Check for lhs epsilon transitions.
-            const auto& lhs_state_symbol_transitions{ lhs.transition_relation[pair_to_process.first] };
+            const auto& lhs_state_symbol_transitions{ lhs.delta[pair_to_process.first] };
             if (!lhs_state_symbol_transitions.empty()) {
                 const auto& lhs_state_last_transitions{ lhs_state_symbol_transitions.back() };
                 if (lhs_state_last_transitions.symbol == EPSILON) {
@@ -164,7 +164,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             }
 
             // Check for rhs epsilon transitions in case only rhs has any transitions and add them.
-            const auto& rhs_state_symbol_transitions{ rhs.transition_relation[pair_to_process.second]};
+            const auto& rhs_state_symbol_transitions{ rhs.delta[pair_to_process.second]};
             if (!rhs_state_symbol_transitions.empty()) {
                 const auto& rhs_state_last_transitions{rhs_state_symbol_transitions.back()};
                 if (rhs_state_last_transitions.symbol == EPSILON) {

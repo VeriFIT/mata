@@ -66,8 +66,8 @@ template<class T> void unused(const T &) {}
 bool nothing_in_trans(const Nfa& nfa)
 {
     bool all_empty = true;
-    for (size_t i = 0; i < nfa.transition_relation.size(); ++i) {
-        all_empty &= nfa.transition_relation[i].empty();
+    for (size_t i = 0; i < nfa.delta.size(); ++i) {
+        all_empty &= nfa.delta[i].empty();
     }
 
     return all_empty;
@@ -186,25 +186,25 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 	{
 		aut.add_trans('q', 'a', 'r');
 		aut.add_trans('q', 'b', 'r');
-		auto it = aut.transition_relation.begin();
-		auto jt = aut.transition_relation.begin();
+		auto it = aut.delta.begin();
+		auto jt = aut.delta.begin();
 		REQUIRE(it == jt);
 		++it;
 		REQUIRE(it != jt);
-		REQUIRE((it != aut.transition_relation.begin() && it != aut.transition_relation.end()));
-		REQUIRE(jt == aut.transition_relation.begin());
+		REQUIRE((it != aut.delta.begin() && it != aut.delta.end()));
+		REQUIRE(jt == aut.delta.begin());
 
 		++jt;
 		REQUIRE(it == jt);
-		REQUIRE((jt != aut.transition_relation.begin() && jt != aut.transition_relation.end()));
+		REQUIRE((jt != aut.delta.begin() && jt != aut.delta.end()));
 
-        jt = aut.transition_relation.end();
+        jt = aut.delta.end();
 		REQUIRE(it != jt);
-		REQUIRE((jt != aut.transition_relation.begin() && jt == aut.transition_relation.end()));
+		REQUIRE((jt != aut.delta.begin() && jt == aut.delta.end()));
 
-        it = aut.transition_relation.end();
+        it = aut.delta.end();
 		REQUIRE(it == jt);
-		REQUIRE((it != aut.transition_relation.begin() && it == aut.transition_relation.end()));
+		REQUIRE((it != aut.delta.begin() && it == aut.delta.end()));
 	}
 } // }}}
 
@@ -2307,27 +2307,27 @@ TEST_CASE("Mata::Nfa::remove_trans()")
             REQUIRE(aut.has_trans(6, 'a', 2));
             aut.remove_trans(6, 'a', 2);
             REQUIRE(!aut.has_trans(6, 'a', 2));
-            REQUIRE(aut.transition_relation[6].empty());
+            REQUIRE(aut.delta[6].empty());
 
             REQUIRE(aut.has_trans(4, 'a', 8));
             REQUIRE(aut.has_trans(4, 'c', 8));
             REQUIRE(aut.has_trans(4, 'a', 6));
             REQUIRE(aut.has_trans(4, 'b', 6));
-            REQUIRE(aut.transition_relation[4].size() == 3);
+            REQUIRE(aut.delta[4].size() == 3);
             aut.remove_trans(4, 'a', 6);
             REQUIRE(!aut.has_trans(4, 'a', 6));
             REQUIRE(aut.has_trans(4, 'b', 6));
-            REQUIRE(aut.transition_relation[4].size() == 3);
+            REQUIRE(aut.delta[4].size() == 3);
 
             aut.remove_trans(4, 'a', 8);
             REQUIRE(!aut.has_trans(4, 'a', 8));
             REQUIRE(aut.has_trans(4, 'c', 8));
-            REQUIRE(aut.transition_relation[4].size() == 2);
+            REQUIRE(aut.delta[4].size() == 2);
 
             aut.remove_trans(4, 'c', 8);
             REQUIRE(!aut.has_trans(4, 'a', 8));
             REQUIRE(!aut.has_trans(4, 'c', 8));
-            REQUIRE(aut.transition_relation[4].size() == 1);
+            REQUIRE(aut.delta[4].size() == 1);
         }
     }
 }
@@ -2745,11 +2745,11 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(5) == aut.get_moves_from(5).end());
     CHECK(aut.get_epsilon_transitions(19) == aut.get_moves_from(19).end());
 
-    auto state_transitions{ aut.transition_relation[0] };
+    auto state_transitions{ aut.delta[0] };
     state_eps_trans = aut.get_epsilon_transitions(state_transitions);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
-    state_transitions = aut.transition_relation[3];
+    state_transitions = aut.delta[3];
     state_eps_trans = aut.get_epsilon_transitions(state_transitions);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
