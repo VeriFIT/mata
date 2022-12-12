@@ -170,6 +170,8 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
+    virtual ~OrdVector() = default;
+
     /**
      * Create OrdVector with reserved @p capacity.
      * @param[in] capacity Capacity of OrdVector to reserve.
@@ -205,7 +207,7 @@ public:   // Public methods
     }
 
 
-	void insert(const Key& x)
+    virtual void insert(const Key& x)
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -265,7 +267,7 @@ public:   // Public methods
 	}
 
 
-    void push_back(const Key& k)
+    virtual void push_back(const Key& k)
     {
         assert(vec_.empty() || vec_.at(vec_.size()-1) < k);
 
@@ -281,7 +283,7 @@ public:   // Public methods
 	}
 
 
-	inline size_t size() const
+    virtual inline size_t size() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -396,7 +398,7 @@ public:   // Public methods
 		return result;
 	}
 
-	const_iterator find(const Key& key) const
+    virtual const_iterator find(const Key& key) const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -425,7 +427,7 @@ public:   // Public methods
 		return end();
 	}
 
-    iterator find(const Key& key)
+    virtual iterator find(const Key& key)
     {
         // Assertions
         assert(vectorIsSorted());
@@ -460,7 +462,7 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-	inline bool empty() const
+    virtual inline bool empty() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -468,7 +470,7 @@ public:   // Public methods
 		return vec_.empty();
 	}
 
-	inline const_reference back() const
+    virtual inline const_reference back() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -476,7 +478,7 @@ public:   // Public methods
 		return vec_.back();
 	}
 
-	inline const_iterator begin() const
+    virtual inline const_iterator begin() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -484,7 +486,7 @@ public:   // Public methods
 		return vec_.begin();
 	}
 
-	inline const_iterator end() const
+    virtual inline const_iterator end() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -493,7 +495,7 @@ public:   // Public methods
 	}
 
 
-    inline iterator begin()
+    virtual inline iterator begin()
     {
         // Assertions
         assert(vectorIsSorted());
@@ -501,7 +503,7 @@ public:   // Public methods
         return vec_.begin();
     }
 
-    inline iterator end()
+    virtual inline iterator end()
     {
         // Assertions
         assert(vectorIsSorted());
@@ -509,7 +511,7 @@ public:   // Public methods
         return vec_.end();
     }
 
-	inline const_iterator cbegin() const
+	virtual inline const_iterator cbegin() const
 	{
 		// Assertions
 		assert(vectorIsSorted());
@@ -517,7 +519,7 @@ public:   // Public methods
 		return begin();
 	}
 
-	inline const_iterator cend() const
+	virtual inline const_iterator cend() const
 	{
 		// Assertions
 		assert(vectorIsSorted());

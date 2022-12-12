@@ -300,20 +300,22 @@ struct Post : private Util::OrdVector<Move> {
     using iterator = Util::OrdVector<Move>::iterator;
     using const_iterator = Util::OrdVector<Move>::const_iterator;
 
-    iterator begin() { return Util::OrdVector<Move>::begin(); }
-    const_iterator begin() const { return Util::OrdVector<Move>::begin(); }
-    iterator end() { return Util::OrdVector<Move>::end(); }
-    const_iterator end() const { return Util::OrdVector<Move>::end(); }
+    iterator begin() override { return Util::OrdVector<Move>::begin(); }
+    const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
+    iterator end() override { return Util::OrdVector<Move>::end(); }
+    const_iterator end() const override { return Util::OrdVector<Move>::end(); }
 
-    const_iterator cbegin() const { return Util::OrdVector<Move>::cbegin(); }
-    const_iterator cend() const { return Util::OrdVector<Move>::cend(); }
+    const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
+    const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
 
     Post() = default;
 
-    const_iterator find(const Move& m) const { return Util::OrdVector<Move>::find(m);}
-    iterator find(const Move& m) { return Util::OrdVector<Move>::find(m);}
+    virtual ~Post() = default;
 
-    void insert(const Move& m) { Util::OrdVector<Move>::insert(m); }
+    const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
+    iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
+
+    void insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
 
     Move& operator[](Symbol s)
     {
@@ -333,13 +335,13 @@ struct Post : private Util::OrdVector<Move> {
         return *item;
     }
 
-    const Move& back() const { return Util::OrdVector<Move>::back(); }
+    const Move& back() const override { return Util::OrdVector<Move>::back(); }
 
-    void push_back(const Move& m) { Util::OrdVector<Move>::push_back(m); }
-    void remove(const Move& m) { Util::OrdVector<Move>::remove(m); }
+    void push_back(const Move& m) override{ Util::OrdVector<Move>::push_back(m); }
+    void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
-    bool empty() const { return Util::OrdVector<Move>::empty(); }
-    size_t size() const { return Util::OrdVector<Move>::size(); }
+    bool empty() const override{ return Util::OrdVector<Move>::empty(); }
+    size_t size() const override { return Util::OrdVector<Move>::size(); }
 };
 
 /**
