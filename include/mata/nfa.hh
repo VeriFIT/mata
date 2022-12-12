@@ -354,7 +354,7 @@ private:
 
 public:
     Delta() : post{} {}
-    Delta(size_t n) : post(n) {}
+    explicit Delta(size_t n) : post(n) {}
 
     void reserve(size_t n) { post.reserve(n); };
 
@@ -459,9 +459,11 @@ public:
                        Post::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
             post(post_p), actual_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
 
+        const_iterator(const const_iterator& other) = default;
+
         Trans operator*() const
         {
-            return Trans(actual_state, (*post_iterator).symbol, *targets_position);
+            return Trans{actual_state, (*post_iterator).symbol, *targets_position};
         }
 
         // Prefix increment
@@ -494,19 +496,21 @@ public:
         }
 
         // Postfix increment
-        const_iterator operator++(int)
+        const const_iterator operator++(int)
         {
-            const_iterator tmp = *this;
+            const const_iterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        void operator=(const const_iterator& x)
+        const_iterator& operator=(const const_iterator& x)
         {
             this->post_iterator = x.post_iterator;
             this->targets_position = x.targets_position;
             this->actual_state = x.actual_state;
             this->is_end = x.is_end;
+
+            return *this;
         }
 
         friend bool operator== (const const_iterator& a, const const_iterator& b)
