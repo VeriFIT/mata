@@ -82,6 +82,12 @@ public:
 
     bool is_leftpar() const { return type == Type::LEFT_PARENTHESIS; }
 
+    bool is_state() const { return operand_type == OperandType::STATE; }
+
+    bool is_symbol() const { return operand_type == OperandType::SYMBOL; }
+
+    bool is_and() const { return type == OPERATOR && operator_type == AND; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
@@ -93,7 +99,10 @@ public:
                                        operand_type(operand) {}
 
     FormulaNode(Type t, std::string raw) : type(t), raw(raw), name(raw), operator_type(NOT_OPERATOR),
-                                           operand_type(NOT_OPERAND) {}
+                                        operand_type(NOT_OPERAND) {}
+
+    FormulaNode(const FormulaNode& n) : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type),
+                                        operand_type(n.operand_type) {}
 };
 
 /**
@@ -110,8 +119,10 @@ struct FormulaGraph
 
     FormulaGraph() : node(), children() {}
     FormulaGraph(FormulaNode n) : node(n), children() {}
+    FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
 
     std::unordered_set<std::string> collect_node_names() const;
+    void print_tree(std::ostream& os) const;
 };
 
 /**
@@ -187,6 +198,15 @@ public:
     struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
 
     /**
+     * Returns symbolic part of transition. That may be just a symbol or bitvector formula.
+     * This function is supported only for NFA where transitions have a rhs state at the end of right
+     * handed side of transition.
+     * @param transition Transition from which symbol is returned
+     * @return Graph representing symbol. It maybe just an explicit symbol or graph representing bitvector formula
+     */
+    const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& trans) const;
+
+    /**
      * A method for building a vector of IntermediateAut for a parsed input.
      * For each section in input is created one IntermediateAut.
      * It parses basic information about type of automata, its naming conventions etc.
@@ -208,6 +228,13 @@ public:
 
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
+
+    size_t get_number_of_disjuncts() const;
+
+    static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
+    void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
+    void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
+    void print_transitions_trees(std::ostream&) const;
 };
 
 } /* Mata */

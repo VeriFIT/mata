@@ -44,6 +44,7 @@ endif()
 
 include_directories(../include)
 include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
+include_directories(../3rdparty/cudd/cudd)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
@@ -52,6 +53,7 @@ add_library(libmata STATIC
 	afa/afa.cc
 	config.cc
 	inter-aut.cc
+	mintermization.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
@@ -73,6 +75,7 @@ set_target_properties(libmata PROPERTIES
 
 add_executable(tests
 	tests-main.cc
+	tests-mintermization.cc
 	tests-parser.cc
 	tests-re2parser.cc
 	tests-ord-vector.cc
@@ -91,8 +94,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-target_link_libraries(libmata simlib)
-target_link_libraries(tests libmata re2 simlib)
+add_dependencies(libmata cudd_library)
+target_link_libraries(libmata simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
+target_link_libraries(tests libmata re2 simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(
