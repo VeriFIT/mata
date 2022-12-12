@@ -2760,5 +2760,27 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
     state_transitions = aut.get_moves_from(19);
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+}
 
+TEST_CASE("Mata::Nfa::Nfa::defragment()") {
+    Nfa aut{6};
+    aut.add_trans(0, 42, 2);
+    aut.add_trans(0, 42, 1);
+    aut.add_trans(1, 42, 3);
+    aut.add_trans(1, 42, 2);
+    aut.add_trans(2, 42, 3);
+    aut.add_trans(4, 42, 2);
+    aut.add_trans(4, 42, 1);
+    aut.add_trans(5, 42, 4);
+    CHECK(aut.states_number() == 6);
+    CHECK(aut.has_trans(1,42,3));
+    aut.defragment();
+    CHECK(aut.states_number() == 5);
+    CHECK(aut.has_trans(1,42,5));
+    CHECK(aut.has_trans(4,42,3)); // previously (5,42,4)
+    aut.defragment();
+    CHECK(aut.states_number() == 5);
+    // transitions has not been changed
+    CHECK(aut.has_trans(1,42,5));
+    CHECK(aut.has_trans(4,42,3));
 }

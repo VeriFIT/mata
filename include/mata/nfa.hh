@@ -263,6 +263,9 @@ Mata::Parser::ParsedSection serialize(
 	const SymbolToStringMap*  symbol_map = nullptr,
 	const StateToStringMap*   state_map = nullptr);
 
+/**
+ * Structure represents a move which is symbol and set of right-handed states of transitions.
+ */
 struct Move {
     Symbol symbol{};
     StateSet targets;
@@ -288,6 +291,11 @@ struct Move {
     StateSet::const_iterator cend() const { return targets.cend(); }
 };
 
+/**
+ * Post is a data structure representing possible transitions over different symbols.
+ * It is an ordered vector containing possible Moves (i.e., pair of symbol and target states.
+ * Vector is ordered by symbols which are numbers.
+ */
 struct Post : private Util::OrdVector<Move> {
     using iterator = Util::OrdVector<Move>::iterator;
     using const_iterator = Util::OrdVector<Move>::const_iterator;
@@ -334,6 +342,12 @@ struct Post : private Util::OrdVector<Move> {
     size_t size() const { return Util::OrdVector<Move>::size(); }
 };
 
+/**
+ * Delta is a data structure for representing transition relation.
+ * Its underlying data strucute is vector of Post structures.
+ * Each index of vector corresponds to one state, that is a number of
+ * state is an index to the vector of Posts.
+ */
 struct Delta {
 private:
     std::vector<Post> post;
@@ -363,23 +377,59 @@ public:
     void resize(size_t n) { post.resize(n); }
     size_t size() const { return post.size(); }
 
-    // void rename_states(const std::vector<State> & renaming);
-    void defragment()
+    /**
+     * Function removes empty indicies in transition vector and renames states accordingly
+     * @return Renaming of state where on index defined by old state number is a new number of the same state
+     */
+    std::vector<State> defragment()
     {
+        std::vector<State> renaming(this->post.size());
+        std::vector<State> removed{};
+
         size_t last_empty = 0;
         for (size_t i = 0; i < post.size(); ++i) {
-            if (post.at(i).empty() == 0) {
+            if (post.at(i).empty()) {
                 last_empty = i;
-                continue;
-            } else if (last_empty < i)
+                removed.push_back(i);
+            } else if (last_empty < i) {
                 post[last_empty] = post[i];
-            last_empty = i + 1;
+                renaming[i] = last_empty;
+                last_empty = i;
+            } else { // there was no empty space, last_empty is synchronized with i
+                renaming[i] = i; // nothing changed, no renaming needed
+                last_empty += 1;
+            }
         }
 
-        if (last_empty < post.size())
-            post.resize(last_empty);
+        if (!removed.empty())
+            post.resize(post.size() - removed.size());
+        else // no further renaming is needed, nothing has been done
+            return renaming;
+
+        for (size_t i = 0; i < removed.size(); ++i) {
+            renaming[removed[i]] = post.size()+i;
+        }
+
+        // rename states according to reindexing done above
+        for (Post& p : this->post) {
+            for (Move& m : p) {
+                StateSet new_targets{};
+                for (State i = 0; i < renaming.size(); ++i) {
+                    if (m.targets.count(i)) {
+                        m.targets.remove(i);
+                        new_targets.insert(renaming[i]);
+                    }
+                }
+                m.targets.insert(new_targets);
+            }
+        }
+
+        return renaming;
     }
 
+    /**
+     * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
+     */
     struct const_iterator {
     private:
         const std::vector<Post>& post;
@@ -419,17 +469,17 @@ public:
         {
             assert(post.begin() != post.end());
 
-            targets_position++;
+            ++targets_position;
             if (targets_position != post_iterator->targets.end())
                 return *this;
 
-            post_iterator++;
+            ++post_iterator;
             if (post_iterator != post[actual_state].cend()) {
                 targets_position = post_iterator->targets.begin();
                 return *this;
             }
 
-            actual_state++;
+            ++actual_state;
             while (actual_state < post.size() && post[actual_state].empty()) // skip empty posts
                 actual_state++;
 
@@ -934,7 +984,12 @@ public:
      * there are no epsilon transitions.
      */
     static Post::const_iterator get_epsilon_transitions(const Post& state_transitions, Symbol epsilon = EPSILON);
-private:
+
+    /**
+     * Method defragments transition relation. It eventually clears empty space in vector
+     * containing transitions and decreases size.
+     */
+    void defragment() { transition_relation.defragment();}
 }; // Nfa
 
 /// Do the automata have disjoint sets of states?
