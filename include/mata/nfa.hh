@@ -988,6 +988,7 @@ public:
     /**
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
+     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states
      */
     void defragment() { delta.defragment();}
 }; // Nfa
