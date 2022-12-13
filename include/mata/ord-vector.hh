@@ -7,7 +7,6 @@
  *    File with the OrdVector class.
  *
  *****************************************************************************/
-#pragma once
 
 #ifndef _MATA_ORD_VECTOR_HH_
 #define _MATA_ORD_VECTOR_HH_

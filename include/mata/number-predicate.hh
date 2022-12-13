@@ -2,8 +2,6 @@
 // Created by Lukáš Holík on 06.12.2022.
 //
 
-#pragma once
-
 #ifndef LIBMATA_NUMBER_PREDICATE_HH
 #define LIBMATA_NUMBER_PREDICATE_HH
 
@@ -92,8 +90,7 @@ namespace Mata {
 
             NumPredicate(std::vector <Number> list, bool watch_elements = true) : elements_watched(watch_elements),
                                                                                   elements_exact(true) {
-                for (auto q: list)
-                    add(q);
+                add(list);
             }
 
             NumPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : elements_watched(watch_elements),
@@ -111,6 +108,9 @@ namespace Mata {
                 }
             }
 
+            /*
+             * Note that it extends predicate if q is out of its curren domain.
+             */
             void add(Number q) {
                 if (predicate.size() <= q)
                     predicate.resize(q+1,false);
