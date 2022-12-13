@@ -975,12 +975,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 
 bool Mata::Nfa::Nfa::has_no_transitions() const
 {
-    for (const auto &state_transitions: delta)
-    {
-        return false;
-    }
-
-    return true;
+    return delta.begin() == delta.end();
 }
 
 TransSequence Nfa::get_transitions_to(State state_to) const {
