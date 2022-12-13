@@ -272,7 +272,7 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
     return mintermize(std::vector<const Mata::IntermediateAut *> {&aut})[0];
 }
 
-std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<const Mata::IntermediateAut *> auts)
+std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<const Mata::IntermediateAut *> &auts)
 {
     for (const Mata::IntermediateAut *aut : auts) {
         if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::BITVECTOR) {
@@ -302,7 +302,7 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
     return res;
 }
 
-std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<Mata::IntermediateAut> auts) {
+std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<Mata::IntermediateAut> &auts) {
     std::vector<const Mata::IntermediateAut *> auts_pointers;
     for (const Mata::IntermediateAut &aut : auts) {
         auts_pointers.push_back(&aut);

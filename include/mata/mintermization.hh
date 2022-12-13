@@ -124,8 +124,8 @@ public:
      * @param auts Automata to be mintermized.
      * @return Mintermized automata corresponding to the input autamata
      */
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<const Mata::IntermediateAut *> auts);
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<Mata::IntermediateAut> auts);
+    std::vector<Mata::IntermediateAut> mintermize(const std::vector<const Mata::IntermediateAut *> &auts);
+    std::vector<Mata::IntermediateAut> mintermize(const std::vector<Mata::IntermediateAut> &auts);
 
     /**
      * The method performs the mintermization over @aut with given @minterms.
