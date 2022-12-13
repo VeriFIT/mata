@@ -409,7 +409,8 @@ public:
         else // no further renaming is needed, nothing has been done
             return renaming;
 
-        for (size_t i = 0; i < removed.size(); ++i) {
+        const size_t removed_size = removed.size();
+        for (size_t i = 0; i < removed_size; ++i) {
             renaming[removed[i]] = post.size()+i;
         }
 
