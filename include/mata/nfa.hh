@@ -346,7 +346,7 @@ struct Post : private Util::OrdVector<Move> {
 
 /**
  * Delta is a data structure for representing transition relation.
- * Its underlying data strucute is vector of Post structures.
+ * Its underlying data structure is vector of Post structures.
  * Each index of vector corresponds to one state, that is a number of
  * state is an index to the vector of Posts.
  */
