@@ -1365,11 +1365,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 
     const_iterator result;
 
-    bool all_empty = true;
-    for (size_t i = 0; i < nfa->delta.size(); ++i) {
-        all_empty &= nfa->delta[i].empty();
-    }
-    if (all_empty) {
+    if (nfa->delta.begin() == nfa->delta.end()) {
         result.is_end = true;
         return result;
     }
@@ -1420,11 +1416,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of transition list
     ++this->trIt;
-    bool any_nonempty = false;
-    for (size_t i = 0; i < this->nfa->delta.size() && !any_nonempty; ++i) {
-        any_nonempty = !this->nfa->delta[i].empty();
-    }
-    assert(any_nonempty);
+    assert(this->nfa->delta.begin() != this->nfa->delta.end());
 
     while (this->trIt < this->nfa->delta.size() &&
            this->nfa->get_moves_from(this->trIt).empty())
