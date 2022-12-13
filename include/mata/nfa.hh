@@ -381,7 +381,7 @@ public:
 
     /**
      * Function removes empty indices in transition vector and renames states accordingly
-     * @return Renaming of state where on index defined by old state number is a new number of the same state
+     * @return Renaming of states where on index defined by old state number is a new number of the same state
      */
     std::vector<State> defragment()
     {
