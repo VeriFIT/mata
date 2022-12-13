@@ -389,7 +389,8 @@ public:
         std::vector<State> removed{};
 
         size_t last_empty = 0;
-        for (size_t i = 0; i < post.size(); ++i) {
+        const size_t post_size = post.size();
+        for (size_t i = 0; i < post_size; ++i) {
             if (post.at(i).empty()) {
                 last_empty = i;
                 removed.push_back(i);
@@ -416,7 +417,8 @@ public:
         for (Post& p : this->post) {
             for (Move& m : p) {
                 StateSet new_targets{};
-                for (State i = 0; i < renaming.size(); ++i) {
+                const size_t renaming_size = renaming.size();
+                for (State i = 0; i < renaming_size; ++i) {
                     if (m.targets.count(i)) {
                         m.targets.remove(i);
                         new_targets.insert(renaming[i]);
@@ -444,7 +446,8 @@ public:
         explicit const_iterator(const std::vector<Post>& post_p, bool ise = false) :
             post(post_p), actual_state(0), is_end(ise)
         {
-            for (size_t i = 0; i < post.size(); ++i) {
+            const size_t post_size = post.size();
+            for (size_t i = 0; i < post_size; ++i) {
                 if (!post[i].empty()) {
                     actual_state = i;
                     post_iterator = post[i].begin();
@@ -601,7 +604,8 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        for (size_t i = 0; i < delta.size(); ++i) {
+        const size_t delta_size = delta.size();
+        for (size_t i = 0; i < delta_size; ++i) {
             delta[i] = Post();
         }
     }

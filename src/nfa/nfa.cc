@@ -512,7 +512,8 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     lhs_states.insert(lhs.initial_states.begin(), lhs.initial_states.end());
     lhs_states.insert(lhs.final_states.begin(), lhs.final_states.end());
 
-    for (size_t i = 0; i < lhs.delta.size(); i++) {
+    const size_t delta_size = lhs.delta.size();
+    for (size_t i = 0; i < delta_size; i++) {
         lhs_states.insert(i);
         for (const auto& symStates : lhs.delta[i])
         {
@@ -897,7 +898,8 @@ void Nfa::print_to_DOT(std::ostream &outputStream) const {
         outputStream << finalState << " [shape=doublecircle];" << std::endl;
     }
 
-    for (State s = 0; s != delta.size(); ++s) {
+    const size_t delta_size = delta.size();
+    for (State s = 0; s != delta_size; ++s) {
         for (const Move &t: delta[s]) {
             outputStream << s << " -> {";
             for (State sTo: t.targets) {
@@ -1036,7 +1038,8 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
     StateToStateMap thisStateToUnionState;
-    for (State thisState = 0; thisState < lhs.delta.size(); ++thisState) {
+    const size_t delta_size = lhs.delta.size();
+    for (State thisState = 0; thisState < delta_size; ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton.add_state();
     }
 
@@ -1048,7 +1051,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
         unionAutomaton.make_final(thisStateToUnionState[thisFinalState]);
     }
 
-    for (State thisState = 0; thisState < lhs.delta.size(); ++thisState) {
+    for (State thisState = 0; thisState < delta_size; ++thisState) {
         State unionState = thisStateToUnionState[thisState];
         for (const Move &transitionFromThisState : lhs.delta[thisState]) {
 
