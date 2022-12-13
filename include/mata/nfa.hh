@@ -380,7 +380,7 @@ public:
     size_t size() const { return post.size(); }
 
     /**
-     * Function removes empty indicies in transition vector and renames states accordingly
+     * Function removes empty indices in transition vector and renames states accordingly
      * @return Renaming of state where on index defined by old state number is a new number of the same state
      */
     std::vector<State> defragment()
