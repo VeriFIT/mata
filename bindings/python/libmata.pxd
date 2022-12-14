@@ -88,13 +88,35 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringMap
-    ctypedef COrdVector[CTransSymbolStates] Moves
-    ctypedef vector[Moves] TransitionRelation
     ctypedef vector[CNfa] AutSequence
     ctypedef vector[CNfa*] AutPtrSequence
     ctypedef vector[const CNfa*] ConstAutPtrSequence
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
+
+    cdef cppclass CPost "Mata::Nfa::Post":
+        void insert(CMove&)
+        CMove& operator[](Symbol)
+        CMove& back()
+        void push_back(CMove&)
+        void remove(CMove&)
+        bool empty()
+        size_t size()
+        vector[CMove] ToVector()
+        COrdVector[CMove].const_iterator cbegin()
+        COrdVector[CMove].const_iterator cend()
+
+    cdef cppclass CDelta "Mata::Nfa::Delta":
+        vector[CPost] post
+
+        void reserve(size_t)
+        CPost& operator[](State)
+        void emplace_back()
+        void clear()
+        bool empty()
+        void resize(size_t)
+        size_t size()
+        void defragment()
 
     cdef cppclass CRun "Mata::Nfa::Run":
         # Public Attributes
@@ -120,21 +142,21 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
     ctypedef vector[CTrans] TransitionSequence
 
-    cdef cppclass CTransSymbolStates "Mata::Nfa::Move":
+    cdef cppclass CMove "Mata::Nfa::Move":
         # Public Attributes
         Symbol symbol
         StateSet targets
 
         # Constructors
-        CTransSymbolStates() except +
-        CTransSymbolStates(Symbol) except +
-        CTransSymbolStates(Symbol, State) except +
-        CTransSymbolStates(Symbol, StateSet) except +
+        CMove() except +
+        CMove(Symbol) except +
+        CMove(Symbol, State) except +
+        CMove(Symbol, StateSet) except +
 
-        bool operator<(CTransSymbolStates)
-        bool operator<=(CTransSymbolStates)
-        bool operator>(CTransSymbolStates)
-        bool operator>=(CTransSymbolStates)
+        bool operator<(CMove)
+        bool operator<=(CMove)
+        bool operator>(CMove)
+        bool operator>=(CMove)
 
     cdef cppclass CNfa "Mata::Nfa::Nfa":
         # Nested iterator
@@ -149,7 +171,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Attributes
         StateSet initial_states
         StateSet final_states
-        TransitionRelation delta
+        CDelta delta
         umap[string, void*] attributes
         CAlphabet* alphabet
 
@@ -187,7 +209,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void increase_size_for_state(State)
         State add_state()
         void print_to_DOT(ostream)
-        Moves get_moves_from(State)
+        CPost get_moves_from(State)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
@@ -198,8 +220,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
-        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CTransSymbolStates].const_iterator get_epsilon_transitions(Moves& state_transitions, Symbol epsilon)
+        COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
+        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& state_transitions, Symbol epsilon)
 
 
     # Automata tests

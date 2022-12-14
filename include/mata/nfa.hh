@@ -342,6 +342,11 @@ struct Post : private Util::OrdVector<Move> {
 
     bool empty() const override{ return Util::OrdVector<Move>::empty(); }
     size_t size() const override { return Util::OrdVector<Move>::size(); }
+
+	const std::vector<Move>& ToVector() const
+	{
+		return Util::OrdVector<Move>::ToVector();
+	}
 };
 
 /**
