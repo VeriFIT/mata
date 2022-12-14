@@ -59,7 +59,7 @@ namespace Mata {
              */
             void compute_elements() const {
                 elements.clear();
-                for (Number q = 0; q < predicate.size(); ++q) {
+                for (Number q = 0, size=predicate.size(); q < size; ++q) {
                     if (predicate[q])
                         elements.push_back(q);
                 }
@@ -112,7 +112,7 @@ namespace Mata {
              * Note that it extends predicate if q is out of its curren domain.
              */
             void add(Number q) {
-                if (predicate.rize() <= q)
+                if (predicate.size() <= q)
                     predicate.resize(q+1,false);
                 if (elements_watched) {
                     Number q_was_there = predicate[q];
@@ -178,7 +178,7 @@ namespace Mata {
                     return elements.size();
                 } else {
                     Number cnt = 0;
-                    for (Number q = 0; q < predicate.size(); ++q) {
+                    for (Number q = 0, size = predicate.size(); q < size; ++q) {
                         if (predicate[q])
                             cnt++;
                     }
@@ -191,10 +191,10 @@ namespace Mata {
              */
             void clear() {
                 if (elements_watched)
-                    for (size_t i = 0; i < elements.size(); i++)
+                    for (size_t i = 0, size = elements.size(); i < size; i++)
                         predicate[elements[i]] = false;
                 else
-                    for (size_t i = 0; i < predicate.size(); i++)
+                    for (size_t i = 0, size = predicate.size(); i < size; i++)
                         predicate[i] = false;
                 elements.clear();
                 elements_exact = true;
