@@ -4,8 +4,8 @@
 
 #include "catch.hpp"
 
-#include "mata/util.hh"
-#include "mata/synchronized-iterator.hh"
+#include <mata/util.hh>
+#include <mata/synchronized-iterator.hh>
 
 using namespace Mata::Util;
 
