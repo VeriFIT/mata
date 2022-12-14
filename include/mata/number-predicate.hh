@@ -40,7 +40,7 @@ namespace Mata {
             using const_iterator = typename std::vector<Number>::const_iterator;
 
             /**
-             * assuming that elements contain a superset of the true elements, we prune them (in situ)
+             * assuming that elements contain a superset of the true elements, prune them (in situ)
              */
             void prune_elements() const {
                 Number new_pos = 0;
@@ -55,7 +55,7 @@ namespace Mata {
             }
 
             /**
-             * assuming nothing, we compute the true elements by going through the entire bool array
+             * assuming nothing, compute the true elements from scratch
              */
             void compute_elements() const {
                 elements.clear();
@@ -67,7 +67,7 @@ namespace Mata {
             }
 
             /**
-             * calls pruning_elements or compute_elements based on the state of the indicator variables
+             * calls prune_elements or compute_elements based on the state of the indicator variables
              */
             void update_elements() const {
                 if (!elements_exact) {
@@ -112,7 +112,7 @@ namespace Mata {
              * Note that it extends predicate if q is out of its curren domain.
              */
             void add(Number q) {
-                if (predicate.size() <= q)
+                if (predicate.rize() <= q)
                     predicate.resize(q+1,false);
                 if (elements_watched) {
                     Number q_was_there = predicate[q];
