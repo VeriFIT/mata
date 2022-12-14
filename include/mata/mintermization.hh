@@ -77,10 +77,11 @@ private: // private data members
     std::unordered_map<std::string, BDD> symbol_to_bddvar;
     std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
+    std::vector<BDD> bdds; // bdds created from transitions
 
 private:
-    std::vector<BDD> trans_to_bdd_nfa(const IntermediateAut& aut);
-    std::vector<BDD> trans_to_bdd_afa(const IntermediateAut& aut);
+    void trans_to_bdd_nfa(const IntermediateAut& aut);
+    void trans_to_bdd_afa(const IntermediateAut& aut);
 
 public:
     /**
@@ -108,7 +109,7 @@ public:
     const OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
 
     /**
-     * Methods mintermizes given automaton which has bitvector alphabet.
+     * Method mintermizes given automaton which has bitvector alphabet.
      * It transforms its transitions to BDDs, then build a minterm tree over the BDDs
      * and finally transforms automaton to explicit one.
      * @param aut Automaton to be mintermized.
@@ -117,13 +118,23 @@ public:
     Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
 
     /**
+     * Methods mintermize given automata which have bitvector alphabet.
+     * It transforms transitions of all automata to BDDs, then build a minterm tree over the BDDs
+     * and finally transforms automata to explicit one (sharing the same minterms).
+     * @param auts Automata to be mintermized.
+     * @return Mintermized automata corresponding to the input autamata
+     */
+    std::vector<Mata::IntermediateAut> mintermize(const std::vector<const Mata::IntermediateAut *> &auts);
+    std::vector<Mata::IntermediateAut> mintermize(const std::vector<Mata::IntermediateAut> &auts);
+
+    /**
      * The method performs the mintermization over @aut with given @minterms.
      * It is method specialized for NFA.
      * @param res The resulting mintermized automaton
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
+    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
 
     /**
      * The method for mintermization of alternating finite automaton using

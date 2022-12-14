@@ -81,7 +81,6 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::cout << "Starting mintermization\n";
         const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(bdd.nodeCount() == 4);
         int inputs[] = {0,0,0,0};
@@ -237,7 +236,6 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
 
         const auto res = mintermization.mintermize(aut);
-        std::cout << res << '\n';
         REQUIRE(res.transitions.size() == 26);
         REQUIRE(res.transitions[0].first.name == "1");
         REQUIRE(res.transitions[1].first.name == "1");
@@ -357,5 +355,52 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
 
         const auto res = mintermization.mintermize(aut);
+    }
+
+    SECTION("Mintermization NFA multiple")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+
+        std::string file =
+                "@NFA-bits\n"
+                "%States-enum q r s t\n"
+                "%Alphabet-auto\n"
+                "%Initial q\n"
+                "%Final q | r\n"
+                "q (a1 | a2) r\n"
+                "s (a3 & a4) t\n"
+                "@NFA-bits\n"
+                "%States-enum q r\n"
+                "%Alphabet-auto\n"
+                "%Initial q\n"
+                "%Final q | r\n"
+                "q (a1 & a4) r\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+
+        const auto res = mintermization.mintermize(auts);
+        REQUIRE(res.size() == 2);
+        REQUIRE(res[0].transitions.size() == 7);
+        REQUIRE(res[0].transitions[0].first.name == "q");
+        REQUIRE(res[0].transitions[1].first.name == "q");
+        REQUIRE(res[0].transitions[2].first.name == "q");
+        REQUIRE(res[0].transitions[3].first.name == "q");
+        REQUIRE(res[0].transitions[4].first.name == "s");
+        REQUIRE(res[0].transitions[5].first.name == "s");
+        REQUIRE(res[0].transitions[6].first.name == "s");
+        REQUIRE(res[0].transitions[0].second.children[1].node.name == "r");
+        REQUIRE(res[0].transitions[1].second.children[1].node.name == "r");
+        REQUIRE(res[0].transitions[2].second.children[1].node.name == "r");
+        REQUIRE(res[0].transitions[3].second.children[1].node.name == "r");
+        REQUIRE(res[0].transitions[4].second.children[1].node.name == "t");
+        REQUIRE(res[0].transitions[5].second.children[1].node.name == "t");
+        REQUIRE(res[0].transitions[6].second.children[1].node.name == "t");
+        REQUIRE(res[1].transitions.size() == 2);
+        REQUIRE(res[1].transitions[0].first.name == "q");
+        REQUIRE(res[1].transitions[1].first.name == "q");
+        REQUIRE(res[1].transitions[0].second.children[1].node.name == "r");
+        REQUIRE(res[1].transitions[1].second.children[1].node.name == "r");
     }
 } // mintermization
