@@ -289,6 +289,26 @@ struct Move {
 
     StateSet::const_iterator cbegin() const  { return targets.cbegin(); }
     StateSet::const_iterator cend() const { return targets.cend(); }
+
+    size_t count(State s) const { return targets.count(s); }
+    bool empty() const { return targets.empty(); }
+    size_t size() const { return targets.size(); }
+
+    void insert(State s)
+    {
+        if (targets.find(s) == targets.end()) {
+            targets.insert(s);
+        }
+    }
+
+    void insert(StateSet states)
+    {
+        for (State s : states) {
+            insert(s);
+        }
+    }
+
+    void remove(State s) { targets.remove(s); }
 };
 
 /**
@@ -406,12 +426,12 @@ public:
                 StateSet new_targets{};
                 const size_t renaming_size = renaming.size();
                 for (State i = 0; i < renaming_size; ++i) {
-                    if (m.targets.count(i)) {
-                        m.targets.remove(i);
+                    if (m.count(i)) {
+                        m.remove(i);
                         new_targets.insert(renaming[i]);
                     }
                 }
-                m.targets.insert(new_targets);
+                m.insert(new_targets);
             }
         }
 

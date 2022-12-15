@@ -20,10 +20,6 @@ using namespace Mata::Nfa;
 
 namespace {
 
-void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
-    receivingSet.insert(addedSet);
-}
-
 /**
  * Add transition to the product.
  * @param[out] product Created product automaton.
@@ -34,7 +30,7 @@ void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
 void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,State>, State>& product_map,
                             const std::pair<State,State>& pair_to_process,
                             Move& intersection_transition) {
-    if (intersection_transition.targets.empty()) { return; }
+    if (intersection_transition.empty()) { return; }
 
     auto& intersect_state_transitions{ product.delta[product_map[pair_to_process]] };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
@@ -42,7 +38,7 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
         intersect_state_transitions.insert(intersection_transition);
     } else {
         // Product already has some target states for the given symbol from the current product state.
-        union_to_left(symbol_transitions_iter->targets, intersection_transition.targets);
+        symbol_transitions_iter->insert(intersection_transition.targets);
     }
 }
 
@@ -78,7 +74,7 @@ void create_product_state_and_trans(
     } else {
         intersect_state_to = product_map[intersect_state_pair_to];
     }
-    intersect_transitions.targets.insert(intersect_state_to);
+    intersect_transitions.insert(intersect_state_to);
 }
 
 } // Anonymous namespace.

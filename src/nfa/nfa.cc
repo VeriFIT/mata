@@ -48,10 +48,6 @@ namespace {
         return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
     }
 
-    void union_to_left(StateSet &receivingSet, const StateSet &addedSet) {
-        receivingSet.insert(addedSet);
-    }
-
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
@@ -241,10 +237,10 @@ namespace {
                     if (iter_to_new_state_to != original_to_new_states_map.end())
                     {
                         // We can push here, because we assume that new states follow the ordering of original states.
-                        new_state_trans_with_symbol.targets.insert(iter_to_new_state_to->second);
+                        new_state_trans_with_symbol.insert(iter_to_new_state_to->second);
                     }
                 }
-                if (!new_state_trans_with_symbol.targets.empty()) {
+                if (!new_state_trans_with_symbol.empty()) {
                     trimmed_aut.delta[original_state_mapping.second].insert(new_state_trans_with_symbol);
                 }
             }
@@ -369,7 +365,7 @@ void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from stateFrom.
-            symbol_transitions->targets.insert(state_to);
+            symbol_transitions->insert(state_to);
         } else {
             // Add transition to a new Move struct with symbolOnTransition yet unused on transitions from stateFrom.
             const Move new_symbol_transitions{symbol, state_to };
@@ -398,7 +394,7 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transitions with symbol already used on transitions from state_from.
-            union_to_left(symbol_transitions->targets, states_to);
+            symbol_transitions->insert(states_to);
             return;
         } else {
             // Add transitions to a new Move struct with symbol yet unused on transitions from state_from.
@@ -425,8 +421,8 @@ void Nfa::remove_trans(State src, Symbol symb, State tgt) {
                     "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                     std::to_string(tgt) + "] does not exist.");
         } else {
-            symbol_transitions->targets.remove(tgt);
-            if (symbol_transitions->targets.empty()) {
+            symbol_transitions->remove(tgt);
+            if (symbol_transitions->empty()) {
                 delta[src].remove(*symbol_transitions);
             }
         }
@@ -693,7 +689,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
     {
         for (const auto& symStates : aut[i])
         {
-            if (symStates.targets.size() != 1) { return false; }
+            if (symStates.size() != 1) { return false; }
         }
     }
 
@@ -725,8 +721,7 @@ bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
                                              ": encountered a symbol that is not in the provided alphabet");
                 }
 
-                const StateSet &stateset = symb_stateset.targets;
-                for (const auto &tgt_state: stateset) {
+                for (const auto &tgt_state: symb_stateset.targets) {
                     bool inserted;
                     tie(std::ignore, inserted) = processed.insert(tgt_state);
                     if (inserted) { worklist.push_back(tgt_state); }
@@ -859,8 +854,7 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 
         for (const auto& symb_stateset : aut[state])
         {
-            const StateSet& stateset = symb_stateset.targets;
-            for (const auto& tgt_state : stateset)
+            for (const auto& tgt_state : symb_stateset.targets)
             {
                 bool inserted;
                 tie(std::ignore, inserted) = processed.insert(tgt_state);
@@ -1053,7 +1047,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
             Move transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
 
             for (State stateTo : transitionFromThisState.targets) {
-                transitionFromUnionState.targets.insert(thisStateToUnionState[stateTo]);
+                transitionFromUnionState.insert(thisStateToUnionState[stateTo]);
             }
 
             unionAutomaton.delta[unionState].insert(transitionFromUnionState);
@@ -1374,7 +1368,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     result.trIt = 0;
     assert(!nfa->get_moves_from(0).empty());
     result.tlIt = nfa->get_moves_from(0).begin();
-    assert(!nfa->get_moves_from(0).begin()->targets.empty());
+    assert(!nfa->get_moves_from(0).begin()->empty());
     result.ssIt = result.tlIt->targets.begin();
 
     result.refresh_trans();
