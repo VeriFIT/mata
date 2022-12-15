@@ -20,22 +20,22 @@ namespace Mata {
          * To keep constant test and set, new elements are pushed back to the vector but remove does not modify the vector.
          * Hence, after a remove, the vector contains a superset of the true elements.
          * Superset is still useful, to iterate through true elements, iterate through the vector and test membership in the bool array.
-         * elements_watched indicates that elements are tracked in the vector of elements as described above.
-         * elements_exact indicates that the vector of elements contains the exact set of true elements.
+         * watching_elements indicates that elements are tracked in the vector of elements as described above.
+         * elements_are_exact indicates that the vector of elements contains the exact set of true elements.
          * INVARIANT:
-         *  elements_watched -> elements contains a superset of the true elements
-         *  elements_exact -> elements contain exactly the true elements
+         *  watching_elements -> elements contains a superset of the true elements
+         *  elements_are_exact -> elements contain exactly the true elements
          */
         template <class Number> class OrdVector;
 
         template<typename Number>
-        class NumPredicate {
+        class NumberPredicate {
         private:
             mutable std::vector<bool> predicate = {};
             mutable std::vector <Number> elements = {};
-            mutable bool elements_exact = true;
-            mutable bool elements_watched = true;
-            //TODO: if it is never used with elements_watched = false, then we remove that and simplify.
+            mutable bool elements_are_exact = true;
+            mutable bool watching_elements = true;
+            //TODO: if it is never used with watching_elements = false, then we can remove that and simplify.
 
             using const_iterator = typename std::vector<Number>::const_iterator;
 
@@ -51,7 +51,7 @@ namespace Mata {
                     }
                 }
                 elements.resize(new_pos);
-                elements_exact = true;
+                elements_are_exact = true;
             }
 
             /**
@@ -63,15 +63,15 @@ namespace Mata {
                     if (predicate[q])
                         elements.push_back(q);
                 }
-                elements_exact = true;
+                elements_are_exact = true;
             }
 
             /**
              * calls prune_elements or compute_elements based on the state of the indicator variables
              */
             void update_elements() const {
-                if (!elements_exact) {
-                    if (!elements_watched) {
+                if (!elements_are_exact) {
+                    if (!watching_elements) {
                         compute_elements();
                     } else {
                         prune_elements();
@@ -80,27 +80,27 @@ namespace Mata {
             }
 
         public:
-            NumPredicate(bool watch_elements = true) : elements_watched(watch_elements), elements_exact(true) {};
+            NumberPredicate(bool watch_elements = true) : watching_elements(watch_elements), elements_are_exact(true) {};
 
-            NumPredicate(std::initializer_list <Number> list, bool watch_elements = true) : elements_watched(
-                    watch_elements), elements_exact(true) {
+            NumberPredicate(std::initializer_list <Number> list, bool watch_elements = true) : watching_elements(
+                    watch_elements), elements_are_exact(true) {
                 for (auto q: list)
                     add(q);
             }
 
-            NumPredicate(std::vector <Number> list, bool watch_elements = true) : elements_watched(watch_elements),
-                                                                                  elements_exact(true) {
+            NumberPredicate(std::vector <Number> list, bool watch_elements = true) : watching_elements(watch_elements),
+                                                                                     elements_are_exact(true) {
                 add(list);
             }
 
-            NumPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : elements_watched(watch_elements),
-                                                                                          elements_exact(true) {
+            NumberPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : watching_elements(watch_elements),
+                                                                                             elements_are_exact(true) {
                 for (auto q: vec)
                     add(q);
             }
 
             template <class InputIterator>
-            NumPredicate(InputIterator first, InputIterator last)
+            NumberPredicate(InputIterator first, InputIterator last)
             {
                 while (first < last) {
                     add(*first);
@@ -114,7 +114,7 @@ namespace Mata {
             void add(Number q) {
                 if (predicate.size() <= q)
                     predicate.resize(q+1,false);
-                if (elements_watched) {
+                if (watching_elements) {
                     Number q_was_there = predicate[q];
                     predicate[q] = true;
                     if (!q_was_there) {
@@ -122,12 +122,12 @@ namespace Mata {
                     }
                 } else {
                     predicate[q] = true;
-                    elements_exact = false;
+                    elements_are_exact = false;
                 }
             }
 
             void remove(Number q) {
-                elements_exact = false;
+                elements_are_exact = false;
                 if (q < predicate.size() && predicate[q]) {
                     predicate[q] = false;
                 }
@@ -147,14 +147,14 @@ namespace Mata {
              * start watching elements (might require updating them to establish the invariant)
              */
             void watch_elements() {
-                if (!elements_watched) {
+                if (!watching_elements) {
                     update_elements();
-                    elements_watched = true;
+                    watching_elements = true;
                 }
             }
 
             void dont_watch_elements() {
-                elements_watched = false;
+                watching_elements = false;
             }
 
             /**
@@ -171,9 +171,9 @@ namespace Mata {
              * This is the number of the true elements, not the size of any data structure.
              */
             Number size() const {
-                if (elements_exact)
+                if (elements_are_exact)
                     return elements.size();
-                if (elements_watched) {
+                if (watching_elements) {
                     prune_elements();
                     return elements.size();
                 } else {
@@ -190,19 +190,19 @@ namespace Mata {
              * clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
              */
             void clear() {
-                if (elements_watched)
+                if (watching_elements)
                     for (size_t i = 0, size = elements.size(); i < size; i++)
                         predicate[elements[i]] = false;
                 else
                     for (size_t i = 0, size = predicate.size(); i < size; i++)
                         predicate[i] = false;
                 elements.clear();
-                elements_exact = true;
+                elements_are_exact = true;
             }
 
             void reserve(Number n) {
                 predicate.reserve(n);
-                if (elements_watched) {
+                if (watching_elements) {
                     elements.reserve(n);
                 }
             }
@@ -233,7 +233,7 @@ namespace Mata {
                     for (Number q = domain_size; q < old_domain_size; ++q) {
                         predicate[q]=false;
                     }
-                if (elements_watched) {
+                if (watching_elements) {
                     compute_elements();
                 }
             }
@@ -276,7 +276,7 @@ namespace Mata {
                 return elements;
             }
 
-            bool are_disjoint(const NumPredicate<Number> &other) const {
+            bool are_disjoint(const NumberPredicate<Number> &other) const {
                 for (auto q: *this)
                     if (other[q])
                         return false;
