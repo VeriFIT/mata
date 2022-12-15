@@ -323,24 +323,6 @@ struct Post : private Util::OrdVector<Move> {
             Util::OrdVector<Move>::insert(m);
     }
 
-    Move& operator[](Symbol s)
-    {
-        const iterator item = this->find(Move(s));
-        if (item == this->end())
-            throw std::runtime_error("Move not found");
-
-        return *item;
-    }
-
-    const Move& operator[](Symbol s) const
-    {
-        const auto item = this->find(Move(s));
-        if (item == this->end())
-            throw std::runtime_error("Move not found");
-
-        return *item;
-    }
-
     const Move& back() const override { return Util::OrdVector<Move>::back(); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
