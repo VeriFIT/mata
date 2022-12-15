@@ -80,21 +80,18 @@ namespace Mata {
             }
 
         public:
-            NumberPredicate(bool watch_elements = true) : watching_elements(watch_elements), elements_are_exact(true) {};
+            NumberPredicate(bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {};
 
-            NumberPredicate(std::initializer_list <Number> list, bool watch_elements = true) : watching_elements(
-                    watch_elements), elements_are_exact(true) {
+            NumberPredicate(std::initializer_list <Number> list, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
                 for (auto q: list)
                     add(q);
             }
 
-            NumberPredicate(std::vector <Number> list, bool watch_elements = true) : watching_elements(watch_elements),
-                                                                                     elements_are_exact(true) {
+            NumberPredicate(std::vector <Number> list, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
                 add(list);
             }
 
-            NumberPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : watching_elements(watch_elements),
-                                                                                             elements_are_exact(true) {
+            NumberPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
                 for (auto q: vec)
                     add(q);
             }
@@ -194,8 +191,11 @@ namespace Mata {
                     for (size_t i = 0, size = elements.size(); i < size; i++)
                         predicate[elements[i]] = false;
                 else
-                    for (size_t i = 0, size = predicate.size(); i < size; i++)
-                        predicate[i] = false;
+                    //for (size_t i = 0, size = predicate.size(); i < size; i++)
+                    //    predicate[i] = false;
+                    // Vysvetlete mi, co dela to && nize a zaplatim obed.
+                    for (auto && i : predicate)
+                        i = false;
                 elements.clear();
                 elements_are_exact = true;
             }
@@ -277,6 +277,7 @@ namespace Mata {
             }
 
             bool are_disjoint(const NumberPredicate<Number> &other) const {
+                //return std::all_of(begin(),end(),[&other](Number x) {return !other[x];});//Vau!
                 for (auto q: *this)
                     if (other[q])
                         return false;
