@@ -92,14 +92,14 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         SECTION("Additional initial state with longer words")
         {
-            aut.initial_states.push_back(8);
+            aut.initial_states.insert(8);
             REQUIRE(get_shortest_words(aut) == expected);
         }
 
         SECTION("Change initial state")
         {
             aut.initial_states.clear();
-            aut.initial_states.push_back(8);
+            aut.initial_states.insert(8);
 
             word.clear();
             word.push_back('b');
@@ -187,7 +187,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
     Nfa aut('q' + 1);
     FILL_WITH_AUT_B(aut);
     aut.initial_states.clear();
-    aut.initial_states.push_back(8);
+    aut.initial_states.insert(8);
     Word word{};
     word.push_back('b');
     word.push_back('b');

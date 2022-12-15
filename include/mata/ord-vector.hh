@@ -266,14 +266,6 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
-
-    virtual void push_back(const Key& k)
-    {
-        assert(vec_.empty() || vec_.at(vec_.size()-1) < k);
-
-        vec_.push_back(k);
-    }
-
 	inline void clear()
 	{
 		// Assertions

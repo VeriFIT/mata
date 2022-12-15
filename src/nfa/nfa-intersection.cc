@@ -104,9 +104,9 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             product_map[this_and_other_initial_state_pair] = new_intersection_state;
             pairs_to_process.insert(this_and_other_initial_state_pair);
 
-            product.initial_states.push_back(new_intersection_state);
+            product.initial_states.insert(new_intersection_state);
             if (lhs.has_final(lhs_initial_state) && rhs.has_final(rhs_initial_state)) {
-                product.final_states.push_back(new_intersection_state);
+                product.final_states.insert(new_intersection_state);
             }
         }
     }

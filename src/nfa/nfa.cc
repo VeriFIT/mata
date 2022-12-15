@@ -241,7 +241,7 @@ namespace {
                     if (iter_to_new_state_to != original_to_new_states_map.end())
                     {
                         // We can push here, because we assume that new states follow the ordering of original states.
-                        new_state_trans_with_symbol.targets.push_back(iter_to_new_state_to->second);
+                        new_state_trans_with_symbol.targets.insert(iter_to_new_state_to->second);
                     }
                 }
                 if (!new_state_trans_with_symbol.targets.empty()) {
@@ -265,7 +265,7 @@ namespace {
             if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
             {
                 // we can use push_back here, because initial_states is ordered + new states follow the ordering of the old states
-                trimmed_aut.initial_states.push_back(original_to_new_states_map.at(old_initial_state));
+                trimmed_aut.initial_states.insert(original_to_new_states_map.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final_states)
@@ -273,7 +273,7 @@ namespace {
             if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
             {
                 // we can use push_back here, because final_states is ordered + new states follow the ordering of the old states
-                trimmed_aut.final_states.push_back(original_to_new_states_map.at(old_final_state));
+                trimmed_aut.final_states.insert(original_to_new_states_map.at(old_final_state));
             }
         }
 
@@ -453,7 +453,7 @@ StateSet Nfa::get_reachable_states() const
     {
         if (reachable_bool_array[original_state])
         {
-            reachable_states.push_back(original_state);
+            reachable_states.insert(original_state);
         }
     }
 
@@ -497,7 +497,7 @@ StateSet Nfa::get_useful_states() const
         if (useful_states_bool_array[original_state]) {
             // We can use push_back here, because we are always increasing the value of original_state (so useful_states
             //  will always be ordered).
-            useful_states.push_back(original_state);
+            useful_states.insert(original_state);
         }
     }
     return useful_states;

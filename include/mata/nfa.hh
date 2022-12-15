@@ -315,13 +315,7 @@ struct Post : private Util::OrdVector<Move> {
     const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
     iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
 
-    void insert(const Move& m) override
-    {
-        if (this->empty() || this->back().symbol < m.symbol)
-            Util::OrdVector<Move>::push_back(m);
-        else
-            Util::OrdVector<Move>::insert(m);
-    }
+    void insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
 
     const Move& back() const override { return Util::OrdVector<Move>::back(); }
 
