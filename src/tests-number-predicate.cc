@@ -9,8 +9,8 @@
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 
-TEST_CASE("Mata::Util::NumPredicate") {
-    NumPredicate<State> p;
+TEST_CASE("Mata::Util::NumberPredicate") {
+    NumberPredicate<State> p;
     // to test switching between watching and not watching
     std::vector<bool> vals = {true, false, false, true, true};
     int i = 0;

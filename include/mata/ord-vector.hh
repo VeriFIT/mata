@@ -23,7 +23,7 @@ namespace Mata
 {
 	namespace Util
 	{
-        template <class Number> class NumPredicate;
+        template <class Number> class NumberPredicate;
 
 		template <
 			class Key
@@ -169,7 +169,7 @@ public:   // Public methods
 		assert(vectorIsSorted());
 	}
 
-    OrdVector(const NumPredicate<Key>& p) : OrdVector(p.get_elements()) {};
+    OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
 
 
 	template <class InputIterator>

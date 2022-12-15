@@ -298,8 +298,8 @@ struct Nfa
      *
      */
     TransitionRelation transition_relation;
-    Util::NumPredicate<State> initial = {};
-    Util::NumPredicate<State> final = {};
+    Util::NumberPredicate<State> initial = {};
+    Util::NumberPredicate<State> final = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.

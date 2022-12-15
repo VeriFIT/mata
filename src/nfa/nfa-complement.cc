@@ -48,7 +48,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 
 	make_complete(result, alphabet, sink_state);
 	//StateSet old_fs = std::move(result.final);
-    NumPredicate<State> old_fs = std::move(result.final);
+    NumberPredicate<State> old_fs = std::move(result.final);
 	result.final = { };
 	assert(result.initial.size() == 1);
 

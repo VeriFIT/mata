@@ -61,12 +61,12 @@ namespace Util
 {
 
     template <typename Number>
-    bool are_disjoint(NumPredicate<Number> lhs, NumPredicate<Number> rhs) {
+    bool are_disjoint(NumberPredicate<Number> lhs, NumberPredicate<Number> rhs) {
         return lhs.are_disjoint(rhs);
     }
 
     template <typename Number>
-    bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumPredicate<Number> rhs) {
+    bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
         for (auto q: lhs)
             if (rhs[q])
                 return false;
