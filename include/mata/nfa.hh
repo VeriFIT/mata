@@ -742,7 +742,7 @@ public:
      *
      * The whole NFA is cleared, each member is set to its zero value.
      */
-    void clear_nfa() {
+    void clear() {
         delta.clear();
         clear_initial();
         clear_final();
