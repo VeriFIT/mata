@@ -137,7 +137,7 @@ namespace {
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
                     // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta[q_class_state].push_back(Move(q_trans.symbol, representatives_class_states));
+                    result.delta[q_class_state].insert(Move(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.has_final(q)) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -245,7 +245,7 @@ namespace {
                     }
                 }
                 if (!new_state_trans_with_symbol.targets.empty()) {
-                    trimmed_aut.delta[original_state_mapping.second].push_back(new_state_trans_with_symbol);
+                    trimmed_aut.delta[original_state_mapping.second].insert(new_state_trans_with_symbol);
                 }
             }
         }
@@ -362,9 +362,9 @@ void Nfa::add_trans(State state_from, Symbol symbol, State state_to) {
     auto& state_transitions{delta[state_from] };
 
     if (state_transitions.empty()) {
-        state_transitions.push_back({ symbol, state_to});
+        state_transitions.insert({ symbol, state_to});
     } else if (state_transitions.back().symbol < symbol) {
-        state_transitions.push_back({ symbol, state_to});
+        state_transitions.insert({ symbol, state_to});
     } else {
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
@@ -391,9 +391,9 @@ void Nfa::add_trans(const State state_from, const Symbol symbol, const StateSet&
 
     auto& state_transitions{delta[state_from] };
     if (state_transitions.empty()) {
-        state_transitions.push_back({ symbol, states_to });
+        state_transitions.insert({ symbol, states_to });
     } else if (state_transitions.back().symbol < symbol) {
-        state_transitions.push_back({ symbol, states_to });
+        state_transitions.insert({ symbol, states_to });
     } else {
         const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
         if (symbol_transitions != state_transitions.end()) {
@@ -1056,7 +1056,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
                 transitionFromUnionState.targets.insert(thisStateToUnionState[stateTo]);
             }
 
-            unionAutomaton.delta[unionState].push_back(transitionFromUnionState);
+            unionAutomaton.delta[unionState].insert(transitionFromUnionState);
         }
     }
 
@@ -1184,7 +1184,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.delta[Sid].push_back(Move(currentSymbol, Tid));
+            result.delta[Sid].insert(Move(currentSymbol, Tid));
         }
     }
 

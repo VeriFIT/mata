@@ -39,7 +39,7 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
     auto& intersect_state_transitions{ product.delta[product_map[pair_to_process]] };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
     if (symbol_transitions_iter == intersect_state_transitions.end()) {
-        intersect_state_transitions.push_back(intersection_transition);
+        intersect_state_transitions.insert(intersection_transition);
     } else {
         // Product already has some target states for the given symbol from the current product state.
         union_to_left(symbol_transitions_iter->targets, intersection_transition.targets);
