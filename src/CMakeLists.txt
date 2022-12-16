@@ -64,7 +64,7 @@ add_library(libmata STATIC
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
 	rra/rrt.cc
-		../include/mata/number-predicate.hh tests-number-predicate.cc)
+	tests-number-predicate.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
