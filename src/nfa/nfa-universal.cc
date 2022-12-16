@@ -22,6 +22,10 @@
 using namespace Mata::Nfa;
 using namespace Mata::Util;
 
+//TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
+// it is not something needed in practice, so some little overhead is ok
+
+
 /// naive universality check (complementation + emptiness)
 bool Mata::Nfa::Algorithms::is_universal_naive(
 	const Nfa&         aut,
@@ -73,7 +77,6 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
 	std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-            //{ {aut.initial, {aut.initial, 0}} };
 		{ {StateSet(aut.initial), {StateSet(aut.initial), 0}} };
 
 	while (!worklist.empty()) {

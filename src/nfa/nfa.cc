@@ -99,14 +99,12 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State q_class_state = state_map.at(q);
 
-            //if (aut.has_initial(q)) { // if a symmetric class contains initial state, then the whole class should be initial
             if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
                 result.initial.add(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
                 for (const auto &q_trans : aut.get_moves_from(q)) {
-                    // representatives_of_states_to = representatives of q_trans.states_to
                     const StateSet representatives_of_states_to = [&]{
                         StateSet state_set;
                         for (auto s : q_trans.states_to) {
@@ -151,7 +149,6 @@ namespace {
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
     StateBoolArray compute_reachability(const Nfa& nfa) {
-        //std::vector<State> worklist{ nfa.initial.ToVector() };
         std::vector<State> worklist{ nfa.initial.get_elements()};
 
         StateBoolArray reachable(nfa.states_number(), false);
@@ -260,8 +257,6 @@ namespace {
         {
             if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
             {
-                // we can use push_back here, because initial is ordered + new states follow the ordering of the old states
-                //trimmed_aut.initial.push_back(original_to_new_states_map.at(old_initial_state));
                 trimmed_aut.initial.add(original_to_new_states_map.at(old_initial_state));
             }
         }
@@ -269,8 +264,6 @@ namespace {
         {
             if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
             {
-                // we can use push_back here, because final is ordered + new states follow the ordering of the old states
-                //trimmed_aut.final.push_back(original_to_new_states_map.at(old_final_state));
                 trimmed_aut.final.add(original_to_new_states_map.at(old_final_state));
             }
         }
@@ -634,8 +627,6 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     }
 
     // now we construct the automaton without epsilon transitions
-    //result.initial.insert(aut.initial);
-    //result.final.insert(aut.final);
     result.initial.add(aut.initial.get_elements());
     result.final.add(aut.initial.get_elements());
     State max_state{};
@@ -781,7 +772,6 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
 
 bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 {
-    //StateSet cur = aut.initial;
     StateSet cur(aut.initial);
 
     for (Symbol sym : run.word)
@@ -835,7 +825,6 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
         State state = worklist.front();
         worklist.pop_front();
 
-        //if (haskey(aut.final, state))
         if (aut.final[state])
         {
             // TODO process the CEX
@@ -967,7 +956,6 @@ size_t Nfa::get_num_of_trans() const
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    //Nfa digraph{states_number(), initial, final};
     Nfa digraph{states_number(), StateSet(initial), StateSet(final)};
     collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
@@ -1143,7 +1131,6 @@ Nfa Mata::Nfa::determinize(
 
     result.clear_nfa();
 
-    //const StateSet S0 =  Mata::Util::OrdVector<State>(aut.initial.ToVector());
     const StateSet S0 =  StateSet(aut.initial);
     const State S0id = result.add_state();
     result.initial.add(S0id);

@@ -2363,6 +2363,7 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
         //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
     }
 
+    //TODO: modify or remove these
     //SECTION("Add new states without specifying the number of states")
     //{
     //    REQUIRE_THROWS_AS(aut.initial.add(0), std::runtime_error);

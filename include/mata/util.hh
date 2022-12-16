@@ -60,21 +60,20 @@ extern unsigned LOG_VERBOSITY;
 namespace Util
 {
 
-    template <typename Number>
-    bool are_disjoint(NumberPredicate<Number> lhs, NumberPredicate<Number> rhs) {
-        return lhs.are_disjoint(rhs);
-    }
+template <typename Number>
+bool are_disjoint(NumberPredicate<Number> lhs, NumberPredicate<Number> rhs) {
+    return lhs.are_disjoint(rhs);
+}
 
-    template <typename Number>
-    bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
-        for (auto q: lhs)
-            if (rhs[q])
-                return false;
-        return true;
-    }
+template <typename Number>
+bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+    for (auto q: lhs)
+        if (rhs[q])
+            return false;
+    return true;
+}
 
-
-    /** Are two sets disjoint? */
+/** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 { // {{{

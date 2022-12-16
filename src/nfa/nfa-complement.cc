@@ -47,14 +47,12 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	}
 
 	make_complete(result, alphabet, sink_state);
-	//StateSet old_fs = std::move(result.final);
     NumberPredicate<State> old_fs = std::move(result.final);
 	result.final = { };
 	assert(result.initial.size() == 1);
 
     //TODO: rewrite this, work with final states properly, after martin introduces classes for trel
 	auto make_final_if_not_in_old = [&](const State& state) {
-        //if (!haskey(old_fs, state))
 		if (!old_fs[state])
 		{
 			result.final.add(state);

@@ -20,10 +20,10 @@ namespace Mata {
          * To keep constant test and set, new elements are pushed back to the vector but remove does not modify the vector.
          * Hence, after a remove, the vector contains a superset of the true elements.
          * Superset is still useful, to iterate through true elements, iterate through the vector and test membership in the bool array.
-         * watching_elements indicates that elements are tracked in the vector of elements as described above.
+         * tracking_elements indicates that elements are tracked in the vector of elements as described above.
          * elements_are_exact indicates that the vector of elements contains the exact set of true elements.
          * INVARIANT:
-         *  watching_elements -> elements contains a superset of the true elements
+         *  tracking_elements -> elements contains a superset of the true elements
          *  elements_are_exact -> elements contain exactly the true elements
          */
         template <class Number> class OrdVector;
@@ -34,8 +34,8 @@ namespace Mata {
             mutable std::vector<bool> predicate = {};
             mutable std::vector <Number> elements = {};
             mutable bool elements_are_exact = true;
-            mutable bool watching_elements = true;
-            //TODO: if it is never used with watching_elements = false, then we can remove that and simplify.
+            mutable bool tracking_elements = true;
+            //TODO: if it is never used with tracking_elements = false, then we can remove that and simplify.
 
             using const_iterator = typename std::vector<Number>::const_iterator;
 
@@ -71,7 +71,7 @@ namespace Mata {
              */
             void update_elements() const {
                 if (!elements_are_exact) {
-                    if (!watching_elements) {
+                    if (!tracking_elements) {
                         compute_elements();
                     } else {
                         prune_elements();
@@ -80,18 +80,18 @@ namespace Mata {
             }
 
         public:
-            NumberPredicate(bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {};
+            NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {};
 
-            NumberPredicate(std::initializer_list <Number> list, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
+            NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
                 for (auto q: list)
                     add(q);
             }
 
-            NumberPredicate(std::vector <Number> list, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
+            NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
                 add(list);
             }
 
-            NumberPredicate(Mata::Util::OrdVector<Number> vec, bool watch_elements = true) : elements_are_exact(true), watching_elements(watch_elements) {
+            NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
                 for (auto q: vec)
                     add(q);
             }
@@ -106,12 +106,12 @@ namespace Mata {
             }
 
             /*
-             * Note that it extends predicate if q is out of its curren domain.
+             * Note that it extends predicate if q is out of its current domain.
              */
             void add(Number q) {
                 if (predicate.size() <= q)
                     predicate.resize(q+1,false);
-                if (watching_elements) {
+                if (tracking_elements) {
                     Number q_was_there = predicate[q];
                     predicate[q] = true;
                     if (!q_was_there) {
@@ -141,17 +141,17 @@ namespace Mata {
             }
 
             /**
-             * start watching elements (might require updating them to establish the invariant)
+             * start tracking elements (might require updating them to establish the invariant)
              */
-            void watch_elements() {
-                if (!watching_elements) {
+            void track_elements() {
+                if (!tracking_elements) {
                     update_elements();
-                    watching_elements = true;
+                    tracking_elements = true;
                 }
             }
 
-            void dont_watch_elements() {
-                watching_elements = false;
+            void dont_track_elements() {
+                tracking_elements = false;
             }
 
             /**
@@ -170,7 +170,7 @@ namespace Mata {
             Number size() const {
                 if (elements_are_exact)
                     return elements.size();
-                if (watching_elements) {
+                if (tracking_elements) {
                     prune_elements();
                     return elements.size();
                 } else {
@@ -187,7 +187,7 @@ namespace Mata {
              * clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
              */
             void clear() {
-                if (watching_elements)
+                if (tracking_elements)
                     for (size_t i = 0, size = elements.size(); i < size; i++)
                         predicate[elements[i]] = false;
                 else
@@ -202,11 +202,12 @@ namespace Mata {
 
             void reserve(Number n) {
                 predicate.reserve(n);
-                if (watching_elements) {
+                if (tracking_elements) {
                     elements.reserve(n);
                 }
             }
 
+            //TODO: or negate()?
             void flip(Number q) {
                 if (this[q])
                     add(q);
@@ -233,7 +234,7 @@ namespace Mata {
                     for (Number q = domain_size; q < old_domain_size; ++q) {
                         predicate[q]=false;
                     }
-                if (watching_elements) {
+                if (tracking_elements) {
                     compute_elements();
                 }
             }

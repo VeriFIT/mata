@@ -16,8 +16,8 @@ TEST_CASE("Mata::Util::NumberPredicate") {
     int i = 0;
     for (auto val: vals) {
         i++;
-        if (val) p.watch_elements();
-        else p.dont_watch_elements();
+        if (val) p.track_elements();
+        else p.dont_track_elements();
 
         SECTION("basic functionality: add, remove, access, constructor, size, get_elements "+std::to_string(i)) {
             std::vector<State> v = {1, 2, 3, 4, 5};
