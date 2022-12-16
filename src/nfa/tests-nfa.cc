@@ -8,6 +8,7 @@
 #include <mata/nfa-plumbing.hh>
 #include <mata/nfa-strings.hh>
 #include <mata/nfa-algorithms.hh>
+#include <mata/re2parser.hh>
 
 using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
@@ -1725,6 +1726,15 @@ TEST_CASE("Mata::Nfa::are_equivalent")
             CHECK(!are_equivalent(bigger, smaller, params));
             CHECK(!are_equivalent(bigger, smaller));
         }
+    }
+
+    SECTION("a* != (a|b)*, was throwing exception")
+    {
+        Mata::Nfa::Nfa aut;
+        Mata::RE2Parser::create_nfa(&aut, "a*");
+        Mata::Nfa::Nfa aut2;
+        Mata::RE2Parser::create_nfa(&aut2, "(a|b)*");
+        CHECK(!Mata::Nfa::are_equivalent(aut, aut2));
     }
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
