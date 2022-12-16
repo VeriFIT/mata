@@ -54,9 +54,9 @@ namespace
     }
 }
 
-std::vector<BDD> Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
+void Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
 {
-    std::vector<BDD> bdds;
+    assert(aut.is_nfa());
 
     for (const auto& trans : aut.transitions) {
         // Foreach transition create a BDD
@@ -69,14 +69,11 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &a
         bdds.push_back(bdd);
         trans_to_bddvar[&symbol_part] = bdd;
     }
-
-    return bdds;
 }
 
-std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
+void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
 {
     assert(aut.is_afa());
-    std::vector<BDD> bdds;
 
     for (const auto& trans : aut.transitions) {
         lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
@@ -119,8 +116,6 @@ std::vector<BDD> Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &a
             bdds.push_back(bdd.val);
         }
     }
-
-    return bdds;
 }
 
 std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& bdds)
@@ -219,7 +214,7 @@ const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
     assert(false);
 }
 
-void Mata::Mintermization::minterms_to_aut(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
                                            const std::vector<BDD>& minterms)
 {
     for (const auto& trans : aut.transitions) {
@@ -276,26 +271,44 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
     }
 }
 
-Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateAut& aut)
+Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateAut& aut) {
+    return mintermize(std::vector<const Mata::IntermediateAut *> {&aut})[0];
+}
+
+std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<const Mata::IntermediateAut *> &auts)
 {
-    if ((!aut.is_nfa() && !aut.is_afa()) || aut.alphabet_type != IntermediateAut::BITVECTOR) {
-        throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
+    for (const Mata::IntermediateAut *aut : auts) {
+        if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::BITVECTOR) {
+            throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
+        }
+
+        aut->is_nfa() ? trans_to_bdd_nfa(*aut) : trans_to_bdd_afa(*aut);
     }
-
-    std::vector<BDD> bdds = aut.is_nfa() ? trans_to_bdd_nfa(aut) : trans_to_bdd_afa(aut);
-
-    assert(aut.transitions.empty() || !bdds.empty());
 
     // Build minterm tree over BDDs
     std::vector<BDD> minterms = compute_minterms(bdds);
-    IntermediateAut res = aut;
-    res.alphabet_type = IntermediateAut::EXPLICIT;
-    res.transitions.clear();
 
-    if (aut.is_nfa())
-        minterms_to_aut(res, aut, minterms);
-    else if (aut.is_afa())
-        minterms_to_aut_afa(res, aut, minterms);
+    std::vector<Mata::IntermediateAut> res;
+    for (const Mata::IntermediateAut *aut : auts) {
+        IntermediateAut mintermized_aut = *aut;
+        mintermized_aut.alphabet_type = IntermediateAut::EXPLICIT;
+        mintermized_aut.transitions.clear();
+
+        if (aut->is_nfa())
+            minterms_to_aut_nfa(mintermized_aut, *aut, minterms);
+        else if (aut->is_afa())
+            minterms_to_aut_afa(mintermized_aut, *aut, minterms);
+
+        res.push_back(mintermized_aut);
+    }
 
     return res;
+}
+
+std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<Mata::IntermediateAut> &auts) {
+    std::vector<const Mata::IntermediateAut *> auts_pointers;
+    for (const Mata::IntermediateAut &aut : auts) {
+        auts_pointers.push_back(&aut);
+    }
+    return mintermize(auts_pointers);
 }
