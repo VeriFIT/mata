@@ -288,6 +288,10 @@ namespace Mata {
             bool empty() const {
                 return (size() == 0);
             }
+
+            Number domain_size() {
+                return predicate.size();
+            }
         };
     }
 
