@@ -99,6 +99,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         paths.insert({ st, {st, 0}});
     }
 
+    //For synchronised iteration over the set of states
+    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
+
     while (!worklist.empty()) {
         // get a next product state
         ProdStateType prod_state;
@@ -148,7 +152,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 {
                     if (nullptr != cex) {
                         cex->word.clear();
-                        cex->word.push_back(symb);
+                        cex->word.push_back(smaller_symbol);
                         ProdStateType trav = prod_state;
                         while (paths[trav].first != trav)
                         { // go back until initial state
@@ -191,7 +195,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
 
                 // also set that succ was accessed from state
-                paths[succ] = {prod_state, symb};
+                paths[succ] = {prod_state, smaller_symbol};
             }
         }
     }
