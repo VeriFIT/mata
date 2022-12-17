@@ -1,7 +1,6 @@
 /* nfa-incl.cc -- NFA language inclusion
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
- * Mata people (c) 2022 claim a competing copyright. The copyrights fight in the mud.
  *
  * This file is a part of libmata.
  *
