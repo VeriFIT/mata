@@ -47,7 +47,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         }
 
         result = Nfa();
-        result.transition_relation = lhs.transition_relation;
+        result.delta = lhs.delta;
         result.initial = lhs.initial;
         result.increase_size(result_num_of_states);
 
@@ -105,7 +105,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
             if (!lhs.final[lhs_state]) {
                 for (const auto& symbol_transitions:
                     lhs.get_moves_from(lhs_state)) {
-                    for (const State lhs_state_to: symbol_transitions.states_to) {
+                    for (const State lhs_state_to: symbol_transitions.targets) {
                         if (!lhs.final[lhs_state_to]) {
                             result.add_trans(lhs_result_states_map_internal[lhs_state],
                                              symbol_transitions.symbol,

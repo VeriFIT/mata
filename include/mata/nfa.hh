@@ -570,7 +570,7 @@ struct Nfa
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      *
      */
-    TransitionRelation transition_relation;
+    Delta delta;
     Util::NumberPredicate<State> initial = {};
     Util::NumberPredicate<State> final = {};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
@@ -584,14 +584,14 @@ struct Nfa
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    Nfa() : transition_relation(), initial(), final() {}
+    Nfa() : delta(), initial(), final() {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
-        : transition_relation(num_of_states), initial(initial_states), final(final_states),
+        : delta(num_of_states), initial(initial_states), final(final_states),
           alphabet(alphabet_p) {}
 
     /**
@@ -652,9 +652,8 @@ public:
      *
      * The whole NFA is cleared, each member is set to its zero value.
      */
-
-    void clear_nfa() {
-        transition_relation.clear();
+    void clear() {
+        delta.clear();
         initial.clear();
         final.clear();
     }
