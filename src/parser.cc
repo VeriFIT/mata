@@ -26,7 +26,7 @@ using std::tie;
 
 using Mata::Parser::Parsed;
 using Mata::Parser::ParsedSection;
-using Mata::util::haskey;
+using Mata::Util::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }

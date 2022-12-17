@@ -59,7 +59,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 
     // segments_one_initial_final[init, final] is the pointer to automaton created from one of
     // the segments such that init and final are one of the initial and final states of the segment
-    // and the created automaton takes this segment, sets initial_states={init}, final_states={final}
+    // and the created automaton takes this segment, sets initial={init}, final={final}
     // and trims it; also segments_one_initial_final[unused_state, final] is used for the first
     // segment (where we always want all initial states, only final state changes) and
     // segments_one_initial_final[init, unused_state] is similarly for the last segment
@@ -69,9 +69,9 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     // TODO this could probably be written better
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
-            for (const State final_state: iter->final_states) {
+            for (const State final_state: iter->final) {
                 SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_final->final_states = {final_state };
+                segment_one_final->final = {final_state };
                 segment_one_final->trim();
 
                 if (segment_one_final->states_number() > 0 || include_empty) {
@@ -79,9 +79,9 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
                 }
             }
         } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
-            for (const State init_state: iter->initial_states) {
+            for (const State init_state: iter->initial) {
                 SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_init->initial_states = {init_state };
+                segment_one_init->initial = {init_state };
                 segment_one_init->trim();
 
                 if (segment_one_init->states_number() > 0 || include_empty) {
@@ -89,11 +89,11 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
                 }
             }
         } else { // the segments in-between
-            for (const State init_state: iter->initial_states) {
-                for (const State final_state: iter->final_states) {
+            for (const State init_state: iter->initial) {
+                for (const State final_state: iter->final) {
                     SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
-                    segment_one_init_final->initial_states = {init_state };
-                    segment_one_init_final->final_states = {final_state };
+                    segment_one_init_final->initial = {init_state };
+                    segment_one_init_final->final = {final_state };
                     segment_one_init_final->trim();
 
                     if (segment_one_init_final->states_number() > 0 || include_empty) {
@@ -188,7 +188,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
     }
-    if (util::haskey(params, "reduce")) {
+    if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = reduce(product_pres_eps_trans);
@@ -208,7 +208,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
     const auto left_automata_end{ left_automata.end() };
 
     std::string reduce_value{};
-    if (util::haskey(params, "reduce")) {
+    if (Util::haskey(params, "reduce")) {
         reduce_value = params.at("reduce");
     }
 

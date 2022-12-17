@@ -72,8 +72,8 @@ void create_product_state_and_trans(
         product_map[intersect_state_pair_to] = intersect_state_to;
         pairs_to_process.insert(intersect_state_pair_to);
 
-        if (lhs.has_final(lhs_state_to) && rhs.has_final(rhs_state_to)) {
-            product.make_final(intersect_state_to);
+        if (lhs.final[lhs_state_to] && rhs.final[rhs_state_to]) {
+            product.final.add(intersect_state_to);
         }
     } else {
         intersect_state_to = product_map[intersect_state_pair_to];
@@ -95,8 +95,8 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
     std::unordered_set<std::pair<State,State>> pairs_to_process{}; // Set of state pairs of original states to process.
 
     // Initialize pairs to process with initial state pairs.
-    for (const State lhs_initial_state : lhs.initial_states) {
-        for (const State rhs_initial_state : rhs.initial_states) {
+    for (const State lhs_initial_state : lhs.initial) {
+        for (const State rhs_initial_state : rhs.initial) {
             // Update product with initial state pairs.
             const std::pair<State,State> this_and_other_initial_state_pair(lhs_initial_state, rhs_initial_state);
             const State new_intersection_state = product.add_state();
@@ -104,9 +104,9 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             product_map[this_and_other_initial_state_pair] = new_intersection_state;
             pairs_to_process.insert(this_and_other_initial_state_pair);
 
-            product.initial_states.push_back(new_intersection_state);
-            if (lhs.has_final(lhs_initial_state) && rhs.has_final(rhs_initial_state)) {
-                product.final_states.push_back(new_intersection_state);
+            product.initial.add(new_intersection_state);
+            if (lhs.final[lhs_initial_state] && rhs.final[rhs_initial_state]) {
+                product.final.add(new_intersection_state);
             }
         }
     }

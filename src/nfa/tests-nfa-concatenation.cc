@@ -32,8 +32,8 @@ using namespace Mata::Parser;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-    x.initial_states = {1, 3}; \
-    x.final_states = {5}; \
+    x.initial = {1, 3}; \
+    x.final = {5}; \
     x.add_trans(1, 'a', 3); \
     x.add_trans(1, 'a', 10); \
     x.add_trans(1, 'b', 7); \
@@ -53,8 +53,8 @@ using namespace Mata::Parser;
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
-    x.initial_states = {4}; \
-    x.final_states = {2, 12}; \
+    x.initial = {4}; \
+    x.final = {2, 12}; \
     x.add_trans(4, 'c', 8); \
     x.add_trans(4, 'a', 8); \
     x.add_trans(8, 'b', 4); \
@@ -79,8 +79,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
@@ -90,8 +90,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
@@ -101,58 +101,58 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("One empty automaton without states with other with initial states") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
+        lhs.initial.add(0);
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("Other empty automaton without states with other with initial states") {
         rhs.increase_size(1);
-        rhs.make_initial(0);
+        rhs.initial.add(0);
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("One empty automaton without states with other non-empty automaton") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("Other empty automaton without states with other non-empty automaton") {
         rhs.increase_size(1);
-        rhs.make_initial(0);
-        rhs.make_final(0);
+        rhs.initial.add(0);
+        rhs.final.add(0);
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
@@ -163,104 +163,104 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("Empty language") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
+        lhs.initial.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
+        rhs.initial.add(0);
 
         result = concatenate(lhs, rhs);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
     }
 
     SECTION("Empty language rhs automaton") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
+        rhs.initial.add(0);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.final_states.empty());
+        CHECK(result.initial[0]);
+        CHECK(result.final.empty());
         CHECK(result.states_number() == 1);
         CHECK(result.has_no_transitions());
     }
 
     SECTION("Single state automata accepting an empty string") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
-        rhs.make_final(0);
+        rhs.initial.add(0);
+        rhs.final.add(0);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(0));
+        CHECK(result.initial[0]);
+        CHECK(result.final[0]);
         CHECK(result.states_number() == 1);
         CHECK(result.has_no_transitions());
     }
 
     SECTION("Empty language rhs automaton") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(1));
+        CHECK(result.initial[0]);
+        CHECK(result.final[1]);
         CHECK(result.states_number() == 2);
         CHECK(result.has_no_transitions());
     }
 
     SECTION("Simple two state rhs automaton") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(1));
+        CHECK(result.initial[0]);
+        CHECK(result.final[1]);
         CHECK(result.states_number() == 2);
         CHECK(result.has_trans(0, 'a', 1));
     }
 
     SECTION("Simple two state automata") {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(2));
+        CHECK(result.initial[0]);
+        CHECK(result.final[2]);
         CHECK(result.states_number() == 3);
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(1, 'a', 2));
@@ -272,19 +272,19 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
     SECTION("Simple two state automata with higher state num for non-final state") {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(4);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
         rhs.add_trans(0, 'c', 3);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(2));
+        CHECK(result.initial[0]);
+        CHECK(result.final[2]);
         CHECK(result.states_number() == 5);
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(1, 'a', 2));
@@ -296,18 +296,18 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
     SECTION("Simple two state lhs automaton") {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(1);
-        rhs.make_initial(0);
-        rhs.make_final(0);
+        rhs.initial.add(0);
+        rhs.final.add(0);
         rhs.add_trans(0, 'a', 0);
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(1));
+        CHECK(result.initial[0]);
+        CHECK(result.final[1]);
         CHECK(result.states_number() == 2);
         CHECK(result.has_trans(0, 'b', 1));
         CHECK(result.has_trans(1, 'a', 1));
@@ -325,9 +325,9 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial_states.size() == 2);
-        CHECK(result.has_initial(1));
-        CHECK(result.has_initial(3));
+        CHECK(result.initial.size() == 2);
+        CHECK(result.initial[1]);
+        CHECK(result.initial[3]);
 
         CHECK(result.states_number() == 25);
 
@@ -349,10 +349,10 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         CHECK(result.states_number() == 24);
 
-        CHECK(result.initial_states.size() == 1);
+        CHECK(result.initial.size() == 1);
         // Final state 2 in automaton B will not stay in the result automaton.
         // Hence, initial state 4 in aut B will be initial state 3 in the result.
-        CHECK(result.has_initial(3));
+        CHECK(result.initial[3]);
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
@@ -364,8 +364,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
     SECTION("Sample automata") {
         lhs.increase_size_for_state(0);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         lhs.add_trans(0, 58, 0);
         lhs.add_trans(0, 65, 0);
         lhs.add_trans(0, 102, 0);
@@ -374,8 +374,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         lhs.add_trans(0, 116, 0);
 
         rhs.increase_size_for_state(5);
-        rhs.make_final({0, 5});
-        rhs.make_initial(5);
+        rhs.final.add({0, 5});
+        rhs.initial.add(5);
         rhs.add_trans(1, 112, 0);
         rhs.add_trans(2, 116, 1);
         rhs.add_trans(3, 102, 2);
@@ -386,7 +386,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.add_trans(5, 116, 1);
 
         result = concatenate(lhs, rhs);
-        CHECK(result.has_initial(5));
+        CHECK(result.initial[5]);
         // TODO: Add more checks.
     }
 }
@@ -402,38 +402,38 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         result = concatenate(lhs, rhs, true);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
         CHECK(is_lang_empty(result));
     }
 
     SECTION("Empty language") {
         lhs.increase_size(1);
-        lhs.make_initial(0);
+        lhs.initial.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
+        rhs.initial.add(0);
 
         result = concatenate(lhs, rhs, true);
 
         CHECK(result.states_number() == 0);
-        CHECK(result.initial_states.empty());
-        CHECK(result.final_states.empty());
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
         CHECK(result.has_no_transitions());
     }
 
     SECTION("Empty language rhs automaton")
     {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
+        rhs.initial.add(0);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.final_states.empty());
+        CHECK(result.initial[0]);
+        CHECK(result.final.empty());
         CHECK(result.states_number() == 2);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.has_trans(0, EPSILON, 1));
@@ -442,16 +442,16 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Single state automata accepting an empty string")
     {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(1);
-        rhs.make_initial(0);
-        rhs.make_final(0);
+        rhs.initial.add(0);
+        rhs.final.add(0);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(1));
+        CHECK(result.initial[0]);
+        CHECK(result.final[1]);
         CHECK(result.states_number() == 2);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.has_trans(0, EPSILON, 1));
@@ -460,16 +460,16 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Empty language rhs automaton")
     {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(2));
+        CHECK(result.initial[0]);
+        CHECK(result.final[2]);
         CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.has_trans(0, EPSILON, 1));
@@ -478,17 +478,17 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Simple two state rhs automaton")
     {
         lhs.increase_size(1);
-        lhs.make_initial(0);
-        lhs.make_final(0);
+        lhs.initial.add(0);
+        lhs.final.add(0);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(2));
+        CHECK(result.initial[0]);
+        CHECK(result.final[2]);
         CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 2);
         CHECK(result.has_trans(1, 'a', 2));
@@ -498,18 +498,18 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Simple two state automata")
     {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(2);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(3));
+        CHECK(result.initial[0]);
+        CHECK(result.final[3]);
         CHECK(result.states_number() == 4);
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.has_trans(0, 'b', 1));
@@ -524,19 +524,19 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Simple two state automata with higher state num for non-final state")
     {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(4);
-        rhs.make_initial(0);
-        rhs.make_final(1);
+        rhs.initial.add(0);
+        rhs.final.add(1);
         rhs.add_trans(0, 'a', 1);
         rhs.add_trans(0, 'c', 3);
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(3));
+        CHECK(result.initial[0]);
+        CHECK(result.final[3]);
         CHECK(result.states_number() == 6);
         CHECK(result.get_num_of_trans() == 4);
         CHECK(result.has_trans(0, 'b', 1));
@@ -552,12 +552,12 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
     SECTION("Simple two state lhs automaton")
     {
         lhs.increase_size(2);
-        lhs.make_initial(0);
-        lhs.make_final(1);
+        lhs.initial.add(0);
+        lhs.final.add(1);
         lhs.add_trans(0, 'b', 1);
         rhs.increase_size(1);
-        rhs.make_initial(0);
-        rhs.make_final(0);
+        rhs.initial.add(0);
+        rhs.final.add(0);
         rhs.add_trans(0, 'a', 0);
 
         StateToStateMap lhs_map{};
@@ -567,8 +567,8 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(lhs_map.empty());
         CHECK(rhs_map == StateToStateMap{ { 0, 2 } });
 
-        CHECK(result.has_initial(0));
-        CHECK(result.has_final(2));
+        CHECK(result.initial[0]);
+        CHECK(result.final[2]);
         CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.has_trans(0, 'b', 1));
@@ -589,9 +589,9 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.initial_states.size() == 2);
-        CHECK(result.has_initial(1));
-        CHECK(result.has_initial(3));
+        CHECK(result.initial.size() == 2);
+        CHECK(result.initial[1]);
+        CHECK(result.initial[3]);
 
         CHECK(result.states_number() == 26);
 
@@ -614,8 +614,8 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.states_number() == 26);
 
-        CHECK(result.initial_states.size() == 1);
-        CHECK(result.has_initial(4));
+        CHECK(result.initial.size() == 1);
+        CHECK(result.initial[4]);
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);

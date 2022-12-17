@@ -21,16 +21,15 @@
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool Mata::Nfa::Algorithms::is_included_naive(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
-    const Alphabet* const  alphabet, //TODO: this should not be needed, the alphabet should be taken from the input automata
-    Run*                   cex,
-    const StringMap&  /* params*/) //TODO: this parameter needed?
-{ // {{{
+        const Nfa &smaller,
+        const Nfa &bigger,
+        const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
+        Run *cex,
+        const StringMap &  /* params*/) { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
         bigger_cmpl = complement(bigger, OnTheFlyAlphabet::from_nfas(smaller, bigger));
@@ -95,15 +94,15 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
     // check initial states first // TODO: this would be done in the main loop as the first thing anyway?
-    for (const auto& state : smaller.initial_states) {
-        if (smaller.has_final(state) && //TODO: reimplement initial and final states with vector of bool or make your own vector of bool here
-            are_disjoint(bigger.initial_states, bigger.final_states)) //TODO: make more efficient
+    for (const auto& state : smaller.initial) {
+        if (smaller.final[state] &&
+            are_disjoint(bigger.initial, bigger.final))
         {
             if (cex != nullptr) { cex->word.clear(); }
             return false;
         }
 
-        const ProdStateType st = std::make_pair(state, bigger.initial_states);
+        const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
         worklist.push_back(st);
         processed.push_back(st);
 
@@ -159,8 +158,8 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
-                if (smaller.has_final(smaller_succ) &&
-                    are_disjoint(bigger_succ, bigger.final_states))
+                if (smaller.final[smaller_succ] &&
+                    are_disjoint(bigger_succ, bigger.final))
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();
@@ -254,13 +253,12 @@ namespace {
 
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_included(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
-    Run*                   cex,
-    const Alphabet* const  alphabet,
-    const StringMap&      params)
-{ // {{{
-    AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
+        const Nfa &smaller,
+        const Nfa &bigger,
+        Run *cex,
+        const Alphabet *const alphabet,
+        const StringMap &params) { // {{{
+    AlgoType algo{set_algorithm(std::to_string(__func__), params)};
     return algo(smaller, bigger, alphabet, cex, params);
 } // is_included }}}
 

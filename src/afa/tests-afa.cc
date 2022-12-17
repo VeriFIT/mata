@@ -594,8 +594,8 @@ TEST_CASE("Mata::Afa::construct() correct calls")
 
 		construct(&aut, parsec);
 
-		// REQUIRE(aut.initial_states.size() == 2);
-		// REQUIRE(aut.final_states.size() == 3);
+		// REQUIRE(aut.initial.size() == 2);
+		// REQUIRE(aut.final.size() == 3);
 	}
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
