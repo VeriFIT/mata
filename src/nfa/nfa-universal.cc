@@ -20,7 +20,11 @@
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
+
+//TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
+// it is not something needed in practice, so some little overhead is ok
+
 
 /// naive universality check (complementation + emptiness)
 bool Mata::Nfa::Algorithms::is_universal_naive(
@@ -60,20 +64,20 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 	bool is_dfs = true;
 
 	// check the initial state
-	if (are_disjoint(aut.initial_states, aut.final_states)) {
+	if (are_disjoint(aut.initial, aut.final)) {
 		if (nullptr != cex) { cex->word.clear(); }
 		return false;
 	}
 
 	// initialize
-	WorklistType worklist = { aut.initial_states };
-	ProcessedType processed = { aut.initial_states };
+	WorklistType worklist = { StateSet(aut.initial) };
+	ProcessedType processed = { StateSet(aut.initial) };
 	Mata::Util::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
 	std::map<StateSet, std::pair<StateSet, Symbol>> paths =
-		{ {aut.initial_states, {aut.initial_states, 0}} };
+		{ {StateSet(aut.initial), {StateSet(aut.initial), 0}} };
 
 	while (!worklist.empty()) {
 		// get a next state
@@ -89,7 +93,7 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols) {
 			StateSet succ = aut.post(state, symb);
-			if (are_disjoint(succ, aut.final_states)) {
+			if (are_disjoint(succ, aut.final)) {
 				if (nullptr != cex) {
 					cex->word.clear();
 					cex->word.push_back(symb);

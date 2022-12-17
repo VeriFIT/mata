@@ -65,8 +65,7 @@ add_library(libmata STATIC
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
-	rra/rrt.cc
-)
+	rra/rrt.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
@@ -79,7 +78,8 @@ add_executable(tests
 	tests-parser.cc
 	tests-re2parser.cc
 	tests-ord-vector.cc
-	nfa/tests-synchronized-iterator.cc
+	tests-number-predicate.cc
+	tests-synchronized-iterator.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc

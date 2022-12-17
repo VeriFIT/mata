@@ -34,8 +34,8 @@ using Word = std::vector<Symbol>;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-	x.initial_states = {1, 3}; \
-	x.final_states = {5}; \
+	x.initial = {1, 3}; \
+	x.final = {5}; \
 	x.add_trans(1, 'a', 3); \
 	x.add_trans(1, 'a', 10); \
 	x.add_trans(1, 'b', 7); \
@@ -55,8 +55,8 @@ using Word = std::vector<Symbol>;
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
-	x.initial_states = {4}; \
-	x.final_states = {2, 12}; \
+	x.initial = {4}; \
+	x.final = {2, 12}; \
 	x.add_trans(4, 'c', 8); \
 	x.add_trans(4, 'a', 8); \
 	x.add_trans(8, 'b', 4); \
@@ -92,14 +92,14 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         SECTION("Additional initial state with longer words")
         {
-            aut.initial_states.push_back(8);
+            aut.initial.add(8);
             REQUIRE(get_shortest_words(aut) == expected);
         }
 
         SECTION("Change initial state")
         {
-            aut.initial_states.clear();
-            aut.initial_states.push_back(8);
+            aut.initial.clear();
+            aut.initial.add(8);
 
             word.clear();
             word.push_back('b');
@@ -123,11 +123,11 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
     SECTION("One-state automaton accepting an empty language")
     {
-        aut.make_initial(0);
+        aut.initial.add(0);
         REQUIRE(get_shortest_words(aut).empty());
-        aut.make_final(1);
+        aut.final.add(1);
         REQUIRE(get_shortest_words(aut).empty());
-        aut.make_final(0);
+        aut.final.add(0);
         REQUIRE(get_shortest_words(aut) == WordSet{Word{}});
     }
 
@@ -147,8 +147,8 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
     SECTION("Single transition automaton")
     {
-        aut.initial_states = {1 };
-        aut.final_states = {2 };
+        aut.initial = {1 };
+        aut.final = {2 };
         aut.add_trans(1, 'a', 2);
 
         REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{'a'}});
@@ -156,8 +156,8 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
     SECTION("Single state automaton")
     {
-        aut.initial_states = {1 };
-        aut.final_states = {1 };
+        aut.initial = {1 };
+        aut.final = {1 };
         aut.add_trans(1, 'a', 1);
 
         REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
@@ -165,8 +165,8 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
     SECTION("Require FIFO queue")
     {
-        aut.initial_states = {1 };
-        aut.final_states = {4 };
+        aut.initial = {1 };
+        aut.final = {4 };
         aut.add_trans(1, 'a', 5);
         aut.add_trans(5, 'c', 4);
         aut.add_trans(1, 'a', 2);
@@ -186,8 +186,8 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortest_words]") {
     Nfa aut('q' + 1);
     FILL_WITH_AUT_B(aut);
-    aut.initial_states.clear();
-    aut.initial_states.push_back(8);
+    aut.initial.clear();
+    aut.initial.add(8);
     Word word{};
     word.push_back('b');
     word.push_back('b');

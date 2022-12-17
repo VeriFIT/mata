@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <vector>
 #include <mata/ord-vector.hh>
+#include <mata/number-predicate.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -56,8 +57,21 @@ namespace Mata
 /// log verbosity
 extern unsigned LOG_VERBOSITY;
 
-namespace util
+namespace Util
 {
+
+template <typename Number>
+bool are_disjoint(NumberPredicate<Number> lhs, NumberPredicate<Number> rhs) {
+    return lhs.are_disjoint(rhs);
+}
+
+template <typename Number>
+bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+    for (auto q: lhs)
+        if (rhs[q])
+            return false;
+    return true;
+}
 
 /** Are two sets disjoint? */
 template <class T>
@@ -181,7 +195,7 @@ struct hash<std::pair<A,B>>
 	inline size_t operator()(const std::pair<A,B>& k) const
 	{ // {{{
 		size_t accum = std::hash<A>{}(k.first);
-		return Mata::util::hash_combine(accum, k.second);
+		return Mata::Util::hash_combine(accum, k.second);
 	} // operator() }}}
 };
 
@@ -193,7 +207,7 @@ struct hash<std::set<A>>
 {
 	inline size_t operator()(const std::set<A>& cont) const
 	{ // {{{
-		return Mata::util::hash_range(cont.begin(), cont.end());
+		return Mata::Util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -205,7 +219,7 @@ struct hash<std::vector<A>>
 {
 	inline size_t operator()(const std::vector<A>& cont) const
 	{ // {{{
-		return Mata::util::hash_range(cont.begin(), cont.end());
+		return Mata::Util::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -385,7 +399,7 @@ template <class... Ts>
 std::string to_string(const std::tuple<Ts...>& tup)
 { // {{{
 	std::string str = "<";
-  str += Mata::util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
+  str += Mata::Util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
 	str += ">";
 
 	return str;
