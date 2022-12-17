@@ -26,7 +26,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
-    if (lhs.initial_states.empty() || lhs.final_states.empty() || rhs.initial_states.empty()) { return Nfa{}; }
+    if (lhs.initial.empty() || lhs.final.empty() || rhs.initial.empty()) { return Nfa{}; }
 
     const unsigned long lhs_states_num{lhs.states_number() };
     const unsigned long rhs_states_num{rhs.states_number() };
@@ -47,20 +47,20 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         }
 
         result = Nfa();
-        result.delta = lhs.delta;
-        result.initial_states = lhs.initial_states;
+        result.transition_relation = lhs.transition_relation;
+        result.initial = lhs.initial;
         result.increase_size(result_num_of_states);
 
         // Add epsilon transitions connecting lhs and rhs automata.
         // The epsilon transitions lead from lhs original final states to rhs original initial states.
-        for (const auto& lhs_final_state: lhs.final_states) {
-            for (const auto& rhs_initial_state: rhs.initial_states) {
+        for (const auto& lhs_final_state: lhs.final) {
+            for (const auto& rhs_initial_state: rhs.initial) {
                 result.add_trans(lhs_final_state, EPSILON,
                                  rhs_result_states_map_internal[rhs_initial_state]);
             }
         }
     } else { // !use_epsilon.
-        const size_t lhs_num_of_states_in_result{ lhs_states_num - lhs.final_states.size() };
+        const size_t lhs_num_of_states_in_result{ lhs_states_num - lhs.final.size() };
         const size_t result_num_of_states{lhs_num_of_states_in_result + rhs_states_num};
         if (result_num_of_states == 0) { return Nfa{}; }
         lhs_result_states_map_internal.reserve(lhs_num_of_states_in_result);
@@ -69,7 +69,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         // Map both lhs and rhs states to result states.
         State result_state_index{ 0 };
         for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
-            if (!lhs.has_final(lhs_state)) {
+            if (!lhs.final[lhs_state]) {
                 lhs_result_states_map_internal.insert(std::make_pair(lhs_state, result_state_index));
                 ++result_state_index;
             }
@@ -82,9 +82,9 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
             ++result_state_index;
         }
 
-        for (const State lhs_initial_state: lhs.initial_states) {
+        for (const State lhs_initial_state: lhs.initial) {
             if (lhs_result_states_map_internal.find(lhs_initial_state) == lhs_result_states_map_internal.end()) {
-                for (const State rhs_initial_state: rhs.initial_states) {
+                for (const State rhs_initial_state: rhs.initial) {
                     lhs_result_states_map_internal.insert(
                             std::make_pair(lhs_initial_state, rhs_result_states_map_internal[rhs_initial_state])
                     );
@@ -93,8 +93,8 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         }
 
         // Make initial states of the result.
-        for (const State lhs_initial_state: lhs.initial_states) {
-            result.make_initial(lhs_result_states_map_internal[lhs_initial_state]);
+        for (const State lhs_initial_state: lhs.initial) {
+            result.initial.add(lhs_result_states_map_internal[lhs_initial_state]);
         }
 
         // Add lhs transitions to the result.
@@ -102,11 +102,11 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         // Reindex all states in transitions in lhs, except for transitions concerning final states (both to and from
         //  final states).
         for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
-            if (!lhs.has_final(lhs_state)) {
+            if (!lhs.final[lhs_state]) {
                 for (const auto& symbol_transitions:
                     lhs.get_moves_from(lhs_state)) {
-                    for (const State lhs_state_to: symbol_transitions.targets) {
-                        if (!lhs.has_final(lhs_state_to)) {
+                    for (const State lhs_state_to: symbol_transitions.states_to) {
+                        if (!lhs.final[lhs_state_to]) {
                             result.add_trans(lhs_result_states_map_internal[lhs_state],
                                              symbol_transitions.symbol,
                                              lhs_result_states_map_internal[lhs_state_to]);
@@ -118,9 +118,9 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 
         // Add lhs transitions to lhs final states to the result.
         // For all transitions to lhs final states, point them to rhs initial states.
-        for (const auto& lhs_final_state: lhs.final_states) {
+        for (const auto& lhs_final_state: lhs.final) {
             for (const auto& lhs_trans_to_final_state: lhs.get_transitions_to(lhs_final_state)) {
-                for (const auto& rhs_initial_state: rhs.initial_states) {
+                for (const auto& rhs_initial_state: rhs.initial) {
                     if (lhs_trans_to_final_state.src == lhs_trans_to_final_state.tgt) {
                         // Handle self-loops on final states as lhs final states will not be present in the result
                         //  automaton.
@@ -138,12 +138,12 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 
         // Add lhs transitions from final states to the result.
         // For all lhs final states, copy all their transitions, except for self-loops on final states.
-        for (const auto& lhs_final_state: lhs.final_states) {
+        for (const auto& lhs_final_state: lhs.final) {
             for (const auto& transitions_from_lhs_final_state:
                 lhs.get_moves_from(lhs_final_state)) {
                 for (const auto& lhs_state_to: transitions_from_lhs_final_state.targets) {
                     if (lhs_state_to != lhs_final_state) { // Self-loops on final states already handled.
-                        for (const auto& rhs_initial_state: rhs.initial_states) {
+                        for (const auto& rhs_initial_state: rhs.initial) {
                             result.add_trans(rhs_result_states_map_internal[rhs_initial_state],
                                              transitions_from_lhs_final_state.symbol,
                                              lhs_result_states_map_internal[lhs_state_to]);
@@ -155,9 +155,9 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     }
 
     // Make result final states.
-    for (const auto& rhs_final_state: rhs.final_states)
+    for (const auto& rhs_final_state: rhs.final)
     {
-        result.make_final(rhs_result_states_map_internal[rhs_final_state]);
+        result.final.add(rhs_result_states_map_internal[rhs_final_state]);
     }
 
     // Add rhs transitions to the result.

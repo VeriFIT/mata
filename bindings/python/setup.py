@@ -24,11 +24,14 @@ src_dir = sdist_dir if os.path.exists(sdist_dir) else project_dir
 mata_include_dir = os.path.join(src_dir, "include")
 mata_source_dir = os.path.join(src_dir, "src")
 
+# TODO: Refactor this to include more 3rd party release
 third_party_include_dir = os.path.join(src_dir, "3rdparty")
 re2_include_dir = os.path.join(src_dir, "3rdparty", "re2")
 re2_source_dir = os.path.join(src_dir, "3rdparty", "re2")
 simlib_include_dir = os.path.join(src_dir, "3rdparty", "simlib", "include")
 simlib_source_dir = os.path.join(src_dir, "3rdparty", "simlib", "src")
+cudd_include_dir = os.path.join(src_dir, "3rdparty", "cudd-min")
+cudd_source_dir = os.path.join(src_dir, "3rdparty", "cudd-min")
 
 with open(os.path.join(src_dir, "README.md")) as readme_handle:
     README_MD = readme_handle.read()
@@ -44,7 +47,7 @@ def get_cpp_sources(src_dir):
     for root, _, files in os.walk(src_dir):
         for file in files:
             ext = os.path.splitext(file)[1]
-            if not file.startswith(('.', "test")) and ext in ('.cpp', '.cc'):
+            if not file.startswith(('.', "test")) and ext in ('.cpp', '.cc', '.c'):
                 sources.append(os.path.join(root, file))
     return sorted(sources)
 
@@ -55,8 +58,15 @@ extensions = [
         sources=["libmata.pyx"]
                 + get_cpp_sources(mata_source_dir)
                 + get_cpp_sources(re2_source_dir)
-                + get_cpp_sources(simlib_source_dir),
-        include_dirs=[mata_include_dir, third_party_include_dir, re2_include_dir, simlib_include_dir],
+                + get_cpp_sources(simlib_source_dir)
+                + get_cpp_sources(cudd_source_dir),
+        include_dirs=[
+            mata_include_dir,
+            third_party_include_dir,
+            re2_include_dir,
+            simlib_include_dir,
+            cudd_include_dir,
+        ],
         language="c++",
         extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
     ),

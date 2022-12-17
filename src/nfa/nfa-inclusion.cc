@@ -1,7 +1,6 @@
 /* nfa-incl.cc -- NFA language inclusion
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
- * Mata people (c) 2022 claim a competing copyright. The copyrights fight in the mud.
  *
  * This file is a part of libmata.
  *
@@ -21,16 +20,15 @@
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
 bool Mata::Nfa::Algorithms::is_included_naive(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
-    const Alphabet* const  alphabet, //TODO: this should not be needed, the alphabet should be taken from the input automata
-    Run*                   cex,
-    const StringMap&  /* params*/) //TODO: this parameter needed?
-{ // {{{
+        const Nfa &smaller,
+        const Nfa &bigger,
+        const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
+        Run *cex,
+        const StringMap &  /* params*/) { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
         bigger_cmpl = complement(bigger, OnTheFlyAlphabet::from_nfas(smaller, bigger));
@@ -40,31 +38,24 @@ bool Mata::Nfa::Algorithms::is_included_naive(
     Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
 
     return is_lang_empty(nfa_isect, cex);
-} // is_included_naive }}}
+} // is_incl_naive }}}
 
 
 /// language inclusion check using Antichains
-// TODO, what about to construct the separator from this?
 bool Mata::Nfa::Algorithms::is_included_antichains(
     const Nfa&             smaller,
     const Nfa&             bigger,
-    const Alphabet* const  alphabet, //TODO: this parameter is not used
+    const Alphabet* const  alphabet,
     Run*                   cex,
-    const StringMap&      params) //TODO: why is this parameter there?
+    const StringMap&      params)
 { // {{{
-    //TODO: what does this do?
     (void)params;
     (void)alphabet;
 
     using ProdStateType = std::pair<State, StateSet>;
-    using WorklistType = std::deque<ProdStateType>;
-    using ProcessedType = std::deque<ProdStateType>;
+    using WorklistType = std::list<ProdStateType>;
+    using ProcessedType = std::list<ProdStateType>;
 
-    //TODO: This is used in a container (a deque) of pairs, where every new pair means iterating through the entire list,
-    // and testing subsumption with everybody.
-    // Rewrite this as a deque (vector?) indexed by the first component (state) of vectors of the second components.
-    // We will go to the vector of the first component and test subsumption of the second components there.
-    // It may need some more fiddling if we still want to implement pure dfs/bfs however.
     auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
         if (lhs.first != rhs.first) {
             return false;
@@ -76,8 +67,6 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
             return false;
         }
 
-        //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
-        //TODO: Try BDDs! What about some abstractions?
         return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
             lhs_bigger.begin(), lhs_bigger.end());
     };
@@ -94,26 +83,21 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     // 'paths[s] == s' means that 's' is an initial state
     std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
-    // check initial states first // TODO: this would be done in the main loop as the first thing anyway?
-    for (const auto& state : smaller.initial_states) {
-        if (smaller.has_final(state) && //TODO: reimplement initial and final states with vector of bool or make your own vector of bool here
-            are_disjoint(bigger.initial_states, bigger.final_states)) //TODO: make more efficient
+    // check initial states first
+    for (const auto& state : smaller.initial) {
+        if (smaller.final[state] &&
+            are_disjoint(bigger.initial, bigger.final))
         {
-            if (cex != nullptr) { cex->word.clear(); }
+            if (nullptr != cex) { cex->word.clear(); }
             return false;
         }
 
-        const ProdStateType st = std::make_pair(state, bigger.initial_states);
+        const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
         worklist.push_back(st);
         processed.push_back(st);
 
-        if (cex != nullptr)
-            paths.insert({ st, {st, 0}});
+        paths.insert({ st, {st, 0}});
     }
-
-    //For synchronised iteration over the set of states
-    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
-    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
 
     while (!worklist.empty()) {
         // get a next product state
@@ -156,15 +140,15 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
             }
 
             for (const State& smaller_succ : smaller_move.targets) {
-
+            
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
-                if (smaller.has_final(smaller_succ) &&
-                    are_disjoint(bigger_succ, bigger.final_states))
+                if (smaller.final[smaller_succ] &&
+                    are_disjoint(bigger_succ, bigger.final))
                 {
-                    if (cex  != nullptr) {
+                    if (nullptr != cex) {
                         cex->word.clear();
-                        cex->word.push_back(smaller_symbol);
+                        cex->word.push_back(symb);
                         ProdStateType trav = prod_state;
                         while (paths[trav].first != trav)
                         { // go back until initial state
@@ -189,13 +173,14 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 if (is_subsumed) { continue; }
 
-                for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
-                    for (size_t it = 0; it < ds->size(); ++it) {
-                        if (subsumes(succ, ds->at(it))) {
-                            //Removal though replacement by the last element and removal pob_back.
-                            //Because calling erase would invalidate iterator it (in deque).
-                            ds->at(it) = ds->back(); //does it coppy stuff?
-                            ds->pop_back();
+                // prune data structures and insert succ inside
+                for (std::list<ProdStateType>* ds : {&processed, &worklist}) {
+                    auto it = ds->begin();
+                    while (it != ds->end()) {
+                        if (subsumes(succ, *it)) {
+                            auto to_remove = it;
+                            ++it;
+                            ds->erase(to_remove);
                         } else {
                             ++it;
                         }
@@ -206,7 +191,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
 
                 // also set that succ was accessed from state
-                paths[succ] = {prod_state, smaller_symbol};
+                paths[succ] = {prod_state, symb};
             }
         }
     }
@@ -219,7 +204,6 @@ namespace {
 
     bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringMap &params,
                              const AlgoType &algo) {
-        //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr, params)) {
             if (algo(rhs, lhs, alphabet, nullptr, params)) {
                 return true;
@@ -254,19 +238,17 @@ namespace {
 
 // The dispatching method that calls the correct one based on parameters
 bool Mata::Nfa::is_included(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
-    Run*                   cex,
-    const Alphabet* const  alphabet,
-    const StringMap&      params)
-{ // {{{
-    AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
+        const Nfa &smaller,
+        const Nfa &bigger,
+        Run *cex,
+        const Alphabet *const alphabet,
+        const StringMap &params) { // {{{
+    AlgoType algo{set_algorithm(std::to_string(__func__), params)};
     return algo(smaller, bigger, alphabet, cex, params);
 } // is_included }}}
 
 bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
 {
-    //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
     if (params.at("algo") == "naive") {

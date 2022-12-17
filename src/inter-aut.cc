@@ -31,7 +31,7 @@ namespace
 
     bool is_logical_operator(char ch)
     {
-        return (Mata::util::haskey(std::set<char>{'&', '|', '!'}, ch));
+        return (Mata::Util::haskey(std::set<char>{'&', '|', '!'}, ch));
     }
 
     Mata::IntermediateAut::Naming get_naming_type(const std::string &key)
@@ -99,6 +99,33 @@ namespace
                 return false;
 
         return true;
+    }
+
+    std::string serialize_graph(const Mata::FormulaGraph& graph)
+    {
+        if (graph.node.is_operand())
+            return graph.node.raw;
+
+        if (graph.children.size() == 1) { // unary operator
+            const auto& child = graph.children.front();
+            std::string child_name = child.node.is_operand() ? child.node.raw :
+                    "(" + serialize_graph(child.node) + ")";
+            return graph.node.raw + child_name;
+        }
+
+        assert(graph.node.is_operator() && graph.children.size() == 2);
+        const auto& left_child = graph.children.front();
+        std::string lhs = (left_child.node.is_operand()) ? left_child.node.raw :
+                serialize_graph(left_child);
+        if (left_child.children.size() == 2)
+            lhs = "(" + lhs + ")";
+        const auto& right_child = graph.children[1];
+        std::string rhs = (right_child.node.is_operand()) ? right_child.node.raw :
+                serialize_graph(right_child);
+        if (right_child.children.size() == 2)
+            rhs = "(" + rhs + ")";
+
+        return lhs + " " + graph.node.raw + " " + rhs;
     }
 
     Mata::FormulaNode create_node(const Mata::IntermediateAut &mata, const std::string &token)
@@ -303,51 +330,6 @@ namespace
     }
 
     /**
-     * Parses a transition by firstly transforming transition formula to postfix form and then creating
-     * a tree representing the formula from postfix.
-     * @param aut Automaton to which transition will be added.
-     * @param tokens Series of tokens representing transition formula
-     */
-    void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens)
-    {
-        assert(tokens.size() > 1); // transition formula has at least two items
-        const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
-        const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
-
-        std::vector<Mata::FormulaNode> postfix;
-
-        // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-        if (aut.automaton_type == Mata::IntermediateAut::NFA && tokens[tokens.size()-2] != "&") {
-            // we need to take care about this case manually since user does not need to determine
-            // symbol and state naming and put conjunction to transition
-            if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
-                assert(rhs.size() == 2);
-                postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
-                                         Mata::FormulaNode::OperandType::SYMBOL});
-                postfix.push_back(create_node(aut,rhs[1]));
-            } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
-                // this is a case where rhs state not separated by conjunction from rest of trans
-                postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
-                postfix.push_back(create_node(aut,rhs.back()));
-            } else
-                assert(false && "Unknown NFA type");
-
-            postfix.push_back(Mata::FormulaNode(
-                    Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
-        } else
-            postfix = infix_to_postfix(aut, rhs);
-
-        for (const auto& node : postfix) {
-            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
-            assert(node.is_leftpar() || node.name != "(");
-            assert(node.is_rightpar() || node.name != ")");
-        }
-        const Mata::FormulaGraph graph = postfix_to_graph(postfix);
-
-        aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
-    }
-
-    /**
      * The wrapping function for parsing one section of input to IntermediateAut.
      * It parses basic information about type of automaton and naming of its component.
      * Then it parses initial and final formula and finally it creates graphs for transition formula.
@@ -411,12 +393,80 @@ namespace
         }
 
         for (const auto& trans : section.body) {
-            parse_transition(aut,trans);
+            Mata::IntermediateAut::parse_transition(aut,trans);
         }
 
         return aut;
     }
 } // anonymous
+
+size_t Mata::IntermediateAut::get_number_of_disjuncts() const
+{
+    size_t res = 0;
+
+    for (const auto& trans : this->transitions) {
+        size_t trans_disjuncts = 0;
+        std::vector<const FormulaGraph *> stack;
+        stack.push_back(&trans.second);
+
+        while (!stack.empty()) {
+            const FormulaGraph *gr = stack.back();
+            stack.pop_back();
+            if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OR)
+                trans_disjuncts++;
+            for (const auto &ch: gr->children)
+                stack.push_back(&ch);
+        }
+        res += std::max(trans_disjuncts, (size_t) 1);
+    }
+
+    return res;
+}
+
+/**
+ * Parses a transition by firstly transforming transition formula to postfix form and then creating
+ * a tree representing the formula from postfix.
+ * @param aut Automaton to which transition will be added.
+ * @param tokens Series of tokens representing transition formula
+ */
+void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens)
+{
+    assert(tokens.size() > 1); // transition formula has at least two items
+    const Mata::FormulaNode lhs = create_node(aut, tokens[0]);
+    const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
+
+    std::vector<Mata::FormulaNode> postfix;
+
+    // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
+    if (aut.automaton_type == Mata::IntermediateAut::NFA && tokens[tokens.size()-2] != "&") {
+        // we need to take care about this case manually since user does not need to determine
+        // symbol and state naming and put conjunction to transition
+        if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
+            assert(rhs.size() == 2);
+            postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
+                                                Mata::FormulaNode::OperandType::SYMBOL});
+            postfix.push_back(create_node(aut,rhs[1]));
+        } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
+            // this is a case where rhs state not separated by conjunction from rest of trans
+            postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
+            postfix.push_back(create_node(aut,rhs.back()));
+        } else
+            assert(false && "Unknown NFA type");
+
+        postfix.push_back(Mata::FormulaNode(
+                Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
+    } else
+        postfix = infix_to_postfix(aut, rhs);
+
+    for (const auto& node : postfix) {
+        assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
+        assert(node.is_leftpar() || node.name != "(");
+        assert(node.is_rightpar() || node.name != ")");
+    }
+    const Mata::FormulaGraph graph = postfix_to_graph(postfix);
+
+    aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
+}
 
 std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
 {
@@ -444,6 +494,26 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     return res;
 }
 
+void Mata::FormulaGraph::print_tree(std::ostream& os) const
+{
+    std::vector<const FormulaGraph*> next_level;
+    std::vector<const FormulaGraph*> this_level;
+
+    next_level.push_back(this);
+    while (!next_level.empty())
+    {
+        this_level = next_level;
+        next_level.clear();
+        for (const auto& graph : this_level) {
+            for (const auto& child : graph->children) {
+                next_level.push_back(&child);
+            }
+            os << graph->node.raw << "    ";
+        }
+        os << "\n";
+    }
+}
+
 std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Mata::Parser::Parsed &parsed)
 {
     std::vector<Mata::IntermediateAut> result;
@@ -459,9 +529,46 @@ std::vector<Mata::IntermediateAut> Mata::IntermediateAut::parse_from_mf(const Ma
     return result;
 }
 
+const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
+        const std::pair<FormulaNode, FormulaGraph>& trans) const
+{
+    if (!this->is_nfa()) {
+        throw std::runtime_error("We currently support symbol extraction only for NFA");
+    }
+    assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::STATE);
+    assert(trans.second.node.is_operator()); // conjunction with rhs state
+    assert(trans.second.children[1].node.is_operand()); // rhs state
+    return trans.second.children[0];
+}
+
+void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs)
+{
+    FormulaNode conjunction(FormulaNode::OPERATOR, "&", "&", FormulaNode::AND);
+    FormulaGraph graph(conjunction);
+    graph.children.push_back(FormulaGraph(symbol));
+    graph.children.push_back(rhs);
+    this->transitions.push_back(std::pair<FormulaNode, FormulaGraph>(lhs, graph));
+}
+
+void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& rhs)
+{
+    assert(rhs.is_operand());
+    FormulaGraph graph(rhs);
+    this->transitions.push_back(std::pair<FormulaNode, FormulaGraph>(lhs, graph));
+}
+
+void Mata::IntermediateAut::print_transitions_trees(std::ostream& os) const
+{
+    for (const auto& trans : transitions) {
+        os << trans.first.raw << " -> ";
+        trans.second.print_tree(os);
+    }
+}
+
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
 {
-    os << "Intermediate automaton type " << inter_aut.automaton_type << '\n';
+    std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");
+    os << "Intermediate automaton type " << type << '\n';
     os << "Naming - state: " << inter_aut.state_naming << " symbol: " << inter_aut.symbol_naming << " node: "
         << inter_aut.node_naming << '\n';
     os << "Alphabet " << inter_aut.alphabet_type << '\n';
@@ -480,10 +587,13 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& int
 
     os << "Transitions: \n";
     for (const auto& trans : inter_aut.transitions) {
-        os << trans.first.name << " -> ";
+        os << trans.first.raw << " -> ";
+        os << serialize_graph(trans.second);
+        /*
         for (const auto& rhs : trans.second.collect_node_names()) {
             os << rhs << ' ';
         }
+         */
         os << '\n';
     }
     os << "\n";

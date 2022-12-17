@@ -20,7 +20,7 @@
 #include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
@@ -47,18 +47,19 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	}
 
 	make_complete(result, alphabet, sink_state);
-	StateSet old_fs = std::move(result.final_states);
-	result.final_states = { };
-	assert(result.initial_states.size() == 1);
+    NumberPredicate<State> old_fs = std::move(result.final);
+	result.final = { };
+	assert(result.initial.size() == 1);
 
+    //TODO: rewrite this, work with final states properly, after martin introduces classes for trel
 	auto make_final_if_not_in_old = [&](const State& state) {
-		if (!haskey(old_fs, state))
+		if (!old_fs[state])
 		{
-			result.final_states.insert(state);
+			result.final.add(state);
 		}
 	};
 
-	make_final_if_not_in_old(*result.initial_states.begin());
+	make_final_if_not_in_old(*result.initial.begin());
 
 	for (const auto& trs : result) {
                 make_final_if_not_in_old(trs.tgt);
@@ -86,17 +87,18 @@ Nfa Mata::Nfa::Algorithms::complement_naive(
     return result;
 }
 
+//TODO: rewrite this, work with final states properly, after martin introduces classes for trans. rel.
 void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 
     const size_t size = aut.delta.size();
     for (State q = 0; q < size; ++q) {
-        if (aut.final_states.count(q) == 0) {
+        if (!aut.final[q]) {
             newFinalStates.insert(q);
         }
     }
 
-    aut.final_states = newFinalStates;
+    aut.final = newFinalStates;
 }
 
 Nfa Mata::Nfa::complement(

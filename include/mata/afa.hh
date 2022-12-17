@@ -194,7 +194,7 @@ public:
 	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
-		return Mata::util::haskey(this->initialstates, state);
+		return Mata::Util::haskey(this->initialstates, state);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
 	void add_final(const std::vector<State> vec)
@@ -203,7 +203,7 @@ public:
 	} // }}}
 	bool has_final(State state) const
 	{ // {{{
-		return Mata::util::haskey(this->finalstates, state);
+		return Mata::Util::haskey(this->finalstates, state);
 	} // }}}
 
 	void add_trans(const Trans& trans);
@@ -539,8 +539,8 @@ struct hash<Mata::Afa::Trans>
 	inline size_t operator()(const Mata::Afa::Trans& trans) const
 	{
 		size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
-		accum = Mata::util::hash_combine(accum, trans.symb);
-		accum = Mata::util::hash_combine(accum, trans.dst);
+		accum = Mata::Util::hash_combine(accum, trans.symb);
+		accum = Mata::Util::hash_combine(accum, trans.dst);
 		return accum;
 	}
 };

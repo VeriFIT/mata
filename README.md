@@ -126,8 +126,8 @@ int main() {
 You can set the initial and final states directly using the initializers.
 
 ```cpp
-    aut.initial_states = {0, 1};
-    aut.final_states = {2, 3};
+    aut.initial = {0, 1};
+    aut.final = {2, 3};
 ```
 
 Further, you can add transitions in form of tripple `(state_from, symbol, targets)`:
@@ -185,8 +185,8 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 ```python
     aut = mata.Nfa(4)
 
-    aut.initial_states = {0, 1}
-    aut.final_states = {2, 3}
+    aut.initial = {0, 1}
+    aut.final = {2, 3}
     aut.add_trans_raw(0, 0, 2)
     aut.add_trans_raw(1, 1, 3)
 

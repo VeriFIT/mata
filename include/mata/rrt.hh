@@ -176,7 +176,7 @@ public:
 	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
-		return Mata::util::haskey(this->initialstates, state);
+		return Mata::Util::haskey(this->initialstates, state);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
 	void add_final(const std::vector<State> vec)
@@ -185,7 +185,7 @@ public:
 	} // }}}
 	bool has_final(State state) const
 	{ // {{{
-		return Mata::util::haskey(this->finalstates, state);
+		return Mata::Util::haskey(this->finalstates, state);
 	} // }}}
 
 	void add_trans(

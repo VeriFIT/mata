@@ -73,17 +73,17 @@ bool Mata::Rrt::Trans::Label::operator==(const Label& rhs) const
   if ((this->out1 != rhs.out1) && (this->out2 != rhs.out2)) return false;
   // FIXME: this is probably not optimal
   for (const Guard& grd : this->guards) {
-    if (!util::is_in(grd, rhs.guards)) return false;
+    if (!Util::is_in(grd, rhs.guards)) return false;
   }
   for (const Guard& grd : rhs.guards) {
-    if (!util::is_in(grd, this->guards)) return false;
+    if (!Util::is_in(grd, this->guards)) return false;
   }
 
   for (const Update& upd : this->updates) {
-    if (!util::is_in(upd, rhs.updates)) return false;
+    if (!Util::is_in(upd, rhs.updates)) return false;
   }
   for (const Update& upd : rhs.updates) {
-    if (!util::is_in(upd, this->updates)) return false;
+    if (!Util::is_in(upd, this->updates)) return false;
   }
   return true;
 } // Label::operator== }}}

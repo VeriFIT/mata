@@ -15,14 +15,14 @@
  * GNU General Public License for more details.
  */
 
-#include "../3rdparty/catch.hpp"
+#include "catch.hpp"
 #include "mata/inter-aut.hh"
 
 #include <mata/parser.hh>
 #include <mata/util.hh>
 
 using namespace Mata::Parser;
-using namespace Mata::util;
+using namespace Mata::Util;
 
 
 TEST_CASE("correct use of Mata::Parser::parse_mf_section()")

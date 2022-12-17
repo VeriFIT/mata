@@ -16,16 +16,34 @@
 #include <algorithm>
 #include <cassert>
 
+#include <mata/number-predicate.hh>
+
 // insert the class into proper namespace
 namespace Mata
 {
-	namespace Util
-	{
-		template <
-			class Key
-		>
-		class OrdVector;
-	}
+    namespace Util
+    {
+        template <class Number> class NumberPredicate;
+
+        template <
+            class Key
+        >
+        class OrdVector;
+
+        template <class Key>
+        bool is_sorted(std::vector<Key> vec)
+        {
+            for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
+            {	// check that the vector is sorted
+                if (!(*(itVec - 1) < *itVec))
+                {	// in case there is an unordered pair (or there is one element twice)
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
 }
 
 namespace
@@ -50,7 +68,9 @@ namespace
         // return the string
         return oss.str();
     }
+
 }
+
 
 /**
  * @brief  Implementation of a set using ordered vector
@@ -63,75 +83,69 @@ namespace
  */
 template
 <
-	class Key
+    class Key
 >
 class Mata::Util::OrdVector
 {
 private:  // Private data types
-	using VectorType = std::vector<Key>;
+    using VectorType = std::vector<Key>;
 
 public:   // Public data types
-	using iterator = typename VectorType::iterator ;
-	using const_iterator = typename VectorType::const_iterator;
-	using const_reference = typename VectorType::const_reference;
+    using iterator = typename VectorType::iterator ;
+    using const_iterator = typename VectorType::const_iterator;
+    using const_reference = typename VectorType::const_reference;
 
 private:  // Private data members
 
-	VectorType vec_;
+    VectorType vec_;
 
 
 private:  // Private methods
 
-	bool vectorIsSorted() const
-	{
-		for (auto itVec = vec_.cbegin() + 1; itVec < vec_.cend(); ++itVec)
-		{	// check that the vector is sorted
-			if (!(*(itVec - 1) < *itVec))
-			{	// in case there is an unordered pair (or there is one element twice)
-				return false;
-			}
-		}
-
-		return true;
-	}
+    bool vectorIsSorted() const
+    {
+        return(Mata::Util::is_sorted(vec_));
+    }
 
 
 public:   // Public methods
 
-	OrdVector() :
-		vec_()
-	{
-		// Assertions
-		assert(vectorIsSorted());
-	}
+    OrdVector() :
+        vec_()
+    {
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
-	explicit OrdVector(const VectorType& vec) :
-		vec_(vec)
-	{
-		// sort
-		std::sort(vec_.begin(), vec_.end());
+    explicit OrdVector(const VectorType& vec) :
+        vec_(vec)
+    {
+        //if (vectorIsSorted()) return;//probably useless
 
-		// remove duplicates
-		auto it = std::unique(vec_.begin(), vec_.end());
-		vec_.resize(it - vec_.begin());
+        // sort
+        std::sort(vec_.begin(), vec_.end());
 
-		// Assertions
-		assert(vectorIsSorted());
-	}
+        // remove duplicates
+        auto it = std::unique(vec_.begin(), vec_.end());
+        vec_.resize(it - vec_.begin());
 
-	OrdVector(std::initializer_list<Key> list) :
-		vec_(list)
-	{
-		// sort
-		std::sort(vec_.begin(), vec_.end());
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
-		// remove duplicates
-		auto it = std::unique(vec_.begin(), vec_.end());
-		vec_.resize(it - vec_.begin());
+    OrdVector(std::initializer_list<Key> list) :
+        vec_(list)
+    {
+        // sort
+        std::sort(vec_.begin(), vec_.end());
 
-		// Assertions
-		assert(vectorIsSorted());
-	}
+        // remove duplicates
+        auto it = std::unique(vec_.begin(), vec_.end());
+        vec_.resize(it - vec_.begin());
+
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
     OrdVector(const OrdVector& rhs) :
         vec_()
@@ -148,27 +162,30 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-	explicit OrdVector(const Key& key) :
-		vec_(1, key)
-	{
-		// Assertions
-		assert(vectorIsSorted());
-	}
+    explicit OrdVector(const Key& key) :
+        vec_(1, key)
+    {
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
-	template <class InputIterator>
-	OrdVector(InputIterator first, InputIterator last) :
-		vec_(first, last)
-	{
-		// sort
-		std::sort(vec_.begin(), vec_.end());
+    OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
 
-		// remove duplicates
-		auto it = std::unique(vec_.begin(), vec_.end());
-		vec_.resize(it - vec_.begin());
 
-		// Assertions
-		assert(vectorIsSorted());
-	}
+    template <class InputIterator>
+    OrdVector(InputIterator first, InputIterator last) :
+        vec_(first, last)
+    {
+        // sort
+        std::sort(vec_.begin(), vec_.end());
+
+        // remove duplicates
+        auto it = std::unique(vec_.begin(), vec_.end());
+        vec_.resize(it - vec_.begin());
+
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
     virtual ~OrdVector() = default;
 
@@ -183,21 +200,21 @@ public:   // Public methods
         return ord_vector;
     }
 
-	OrdVector& operator=(const OrdVector& rhs)
-	{
-		// Assertions
-		assert(rhs.vectorIsSorted());
+    OrdVector& operator=(const OrdVector& rhs)
+    {
+        // Assertions
+        assert(rhs.vectorIsSorted());
 
-		if (&rhs != this)
-		{
-			vec_ = rhs.vec_;
-		}
+        if (&rhs != this)
+        {
+            vec_ = rhs.vec_;
+        }
 
-		// Assertions
-		assert(vectorIsSorted());
+        // Assertions
+        assert(vectorIsSorted());
 
-		return *this;
-	}
+        return *this;
+    }
 
 
     void insert(iterator itr, const Key& x)
@@ -206,82 +223,80 @@ public:   // Public methods
         vec_.insert(itr,x);
     }
 
-
     virtual void insert(const Key& x)
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		// perform binary search (cannot use std::binary_search because it is
-		// ineffective due to not returning the iterator to the position of the
-		// desirable insertion in case the searched element is not present in the
-		// range)
-		size_t first = 0;
-		size_t last = vec_.size();
+        // perform binary search (cannot use std::binary_search because it is
+        // ineffective due to not returning the iterator to the position of the
+        // desirable insertion in case the searched element is not present in the
+        // range)
+        size_t first = 0;
+        size_t last = vec_.size();
 
-		if ((last != 0) && (vec_.back() < x))
-		{	// for the case which would be prevalent
-			vec_.push_back(x);
-			return;
-		}
+        if ((last != 0) && (vec_.back() < x))
+        {	// for the case which would be prevalent
+            vec_.push_back(x);
+            return;
+        }
 
-		while (first < last)
-		{	// while the pointers do not overlap
-			size_t middle = first + (last - first) / 2;
-			if (vec_[middle] == x)
-			{	// in case we found x
-				return;
-			}
-			else if (vec_[middle] < x)
-			{	// in case middle is less than x
-				first = middle + 1;
-			}
-			else
-			{	// in case middle is greater than x
-				last = middle;
-			}
-		}
+        while (first < last)
+        {	// while the pointers do not overlap
+            size_t middle = first + (last - first) / 2;
+            if (vec_[middle] == x)
+            {	// in case we found x
+                return;
+            }
+            else if (vec_[middle] < x)
+            {	// in case middle is less than x
+                first = middle + 1;
+            }
+            else
+            {	// in case middle is greater than x
+                last = middle;
+            }
+        }
 
-		vec_.resize(vec_.size() + 1);
-		std::copy_backward(vec_.begin() + first, vec_.end() - 1, vec_.end());
+        vec_.resize(vec_.size() + 1);
+        std::copy_backward(vec_.begin() + first, vec_.end() - 1, vec_.end());
 
-		// insert the new element
-		vec_[first] = x;
+        // insert the new element
+        vec_[first] = x;
 
-		// Assertions
-		assert(vectorIsSorted());
-	}
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
 
-	void insert(const OrdVector& vec)
-	{
-		// Assertions
-		assert(vectorIsSorted());
-		assert(vec.vectorIsSorted());
+    virtual void insert(const OrdVector& vec)
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(vec.vectorIsSorted());
 
-		OrdVector result = this->Union(vec);
-		vec_ = result.vec_;
+        OrdVector result = this->Union(vec);
+        vec_ = result.vec_;
 
-		// Assertions
-		assert(vectorIsSorted());
-	}
+        // Assertions
+        assert(vectorIsSorted());
+    }
 
-	inline void clear()
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    inline void clear()
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		vec_.clear();
-	}
-
+        vec_.clear();
+    }
 
     virtual inline size_t size() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		return vec_.size();
-	}
+        return vec_.size();
+    }
 
 
     inline size_t count(const Key& key) const
@@ -338,86 +353,86 @@ public:   // Public methods
         return result;
     }
 
-	OrdVector Union(const OrdVector& rhs) const
-	{
-		// Assertions
-		assert(vectorIsSorted());
-		assert(rhs.vectorIsSorted());
+    OrdVector Union(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
 
-		VectorType newVector;
+        VectorType newVector;
 
-		auto lhsIt = vec_.begin();
-		auto rhsIt = rhs.vec_.begin();
+        auto lhsIt = vec_.begin();
+        auto rhsIt = rhs.vec_.begin();
 
-		while ((lhsIt != vec_.end()) || (rhsIt != rhs.vec_.end()))
-		{	// until we get to the end of both vectors
-			if (lhsIt == vec_.end())
-			{	// if we are finished with the left-hand side vector
-				newVector.push_back(*rhsIt);
-				++rhsIt;
-			}
-			else if (rhsIt == rhs.vec_.end())
-			{	// if we are finished with the right-hand side vector
-				newVector.push_back(*lhsIt);
-				++lhsIt;
-			}
-			else
-			{
-				if (*lhsIt < *rhsIt)
-				{
-					newVector.push_back(*lhsIt);
-					++lhsIt;
-				}
-				else if (*rhsIt < *lhsIt)
-				{
-					newVector.push_back(*rhsIt);
-					++rhsIt;
-				}
-				else
-				{	// in case they are equal
-					newVector.push_back(*rhsIt);
-					++rhsIt;
-					++lhsIt;
-				}
-			}
-		}
+        while ((lhsIt != vec_.end()) || (rhsIt != rhs.vec_.end()))
+        {	// until we get to the end of both vectors
+            if (lhsIt == vec_.end())
+            {	// if we are finished with the left-hand side vector
+                newVector.push_back(*rhsIt);
+                ++rhsIt;
+            }
+            else if (rhsIt == rhs.vec_.end())
+            {	// if we are finished with the right-hand side vector
+                newVector.push_back(*lhsIt);
+                ++lhsIt;
+            }
+            else
+            {
+                if (*lhsIt < *rhsIt)
+                {
+                    newVector.push_back(*lhsIt);
+                    ++lhsIt;
+                }
+                else if (*rhsIt < *lhsIt)
+                {
+                    newVector.push_back(*rhsIt);
+                    ++rhsIt;
+                }
+                else
+                {	// in case they are equal
+                    newVector.push_back(*rhsIt);
+                    ++rhsIt;
+                    ++lhsIt;
+                }
+            }
+        }
 
-		OrdVector result(newVector);
+        OrdVector result(newVector);
 
-		// Assertions
-		assert(result.vectorIsSorted());
+        // Assertions
+        assert(result.vectorIsSorted());
 
-		return result;
-	}
+        return result;
+    }
 
     virtual const_iterator find(const Key& key) const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		size_t first = 0;
-		size_t last = vec_.size();
+        size_t first = 0;
+        size_t last = vec_.size();
 
-		while (first < last)
-		{	// while the pointers do not overlap
-			size_t middle = first + (last - first) / 2;
-			if (vec_[middle] == key)
-			{	// in case we found x
+        while (first < last)
+        {	// while the pointers do not overlap
+            size_t middle = first + (last - first) / 2;
+            if (vec_[middle] == key)
+            {	// in case we found x
 //				return const_iterator(&vec_[middle]);
-				return vec_.cbegin() + middle;
-			}
-			else if (vec_[middle] < key)
-			{	// in case middle is less than x
-				first = middle + 1;
-			}
-			else
-			{	// in case middle is greater than x
-				last = middle;
-			}
-		}
+                return vec_.cbegin() + middle;
+            }
+            else if (vec_[middle] < key)
+            {	// in case middle is less than x
+                first = middle + 1;
+            }
+            else
+            {	// in case middle is greater than x
+                last = middle;
+            }
+        }
 
-		return end();
-	}
+        return end();
+    }
 
     virtual iterator find(const Key& key)
     {
@@ -455,36 +470,37 @@ public:   // Public methods
     }
 
     virtual inline bool empty() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		return vec_.empty();
-	}
+        return vec_.empty();
+    }
 
     virtual inline const_reference back() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        
+        return vec_.back();
+    }
 
-		return vec_.back();
-	}
 
     virtual inline const_iterator begin() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		return vec_.begin();
-	}
+        return vec_.begin();
+    }
 
     virtual inline const_iterator end() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
+    {
+        // Assertions
+        assert(vectorIsSorted());
 
-		return vec_.end();
-	}
+        return vec_.end();
+    }
 
 
     virtual inline iterator begin()
@@ -564,55 +580,55 @@ public:   // Public methods
         return (vec_ != rhs.vec_);
     }
 
-	bool operator<(const OrdVector& rhs) const
-	{
-		// Assertions
-		assert(vectorIsSorted());
-		assert(rhs.vectorIsSorted());
+    bool operator<(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
 
-		return std::lexicographical_compare(vec_.begin(), vec_.end(),
-			rhs.vec_.begin(), rhs.vec_.end());
-	}
+        return std::lexicographical_compare(vec_.begin(), vec_.end(),
+            rhs.vec_.begin(), rhs.vec_.end());
+    }
 
-	const std::vector<Key>& ToVector() const
-	{
-		return vec_;
-	}
+    const std::vector<Key>& ToVector() const
+    {
+        return vec_;
+    }
 
-	bool IsSubsetOf(const OrdVector& bigger) const
-	{
-		return std::includes(bigger.cbegin(), bigger.cend(),
-			this->cbegin(), this->cend());
-	}
+    bool IsSubsetOf(const OrdVector& bigger) const
+    {
+        return std::includes(bigger.cbegin(), bigger.cend(),
+            this->cbegin(), this->cend());
+    }
 
-	bool HaveEmptyIntersection(const OrdVector& rhs) const
-	{
-		// Assertions
-		assert(vectorIsSorted());
-		assert(rhs.vectorIsSorted());
+    bool HaveEmptyIntersection(const OrdVector& rhs) const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
 
-		const_iterator itLhs = begin();
-		const_iterator itRhs = rhs.begin();
+        const_iterator itLhs = begin();
+        const_iterator itRhs = rhs.begin();
 
-		while ((itLhs != end()) && (itRhs != rhs.end()))
-		{	// until we drop out of the array (or find a common element)
-			if (*itLhs == *itRhs)
-			{	// in case there exists a common element
-				return false;
-			}
-			else if (*itLhs < *itRhs)
-			{	// in case the element in lhs is smaller
-				++itLhs;
-			}
-			else
-			{	// in case the element in rhs is smaller
-				assert(*itLhs > *itRhs);
-				++itRhs;
-			}
-		}
+        while ((itLhs != end()) && (itRhs != rhs.end()))
+        {	// until we drop out of the array (or find a common element)
+            if (*itLhs == *itRhs)
+            {	// in case there exists a common element
+                return false;
+            }
+            else if (*itLhs < *itRhs)
+            {	// in case the element in lhs is smaller
+                ++itLhs;
+            }
+            else
+            {	// in case the element in rhs is smaller
+                assert(*itLhs > *itRhs);
+                ++itRhs;
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 };
 
 namespace std {

@@ -13,7 +13,7 @@ using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Parser;
 
 using Word = std::vector<Symbol>;
@@ -22,8 +22,8 @@ using Word = std::vector<Symbol>;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-	x.initial_states = {1, 3}; \
-	x.final_states = {5}; \
+	x.initial = {1, 3}; \
+	x.final = {5}; \
 	x.add_trans(1, 'a', 3); \
 	x.add_trans(1, 'a', 10); \
 	x.add_trans(1, 'b', 7); \
@@ -43,8 +43,8 @@ using Word = std::vector<Symbol>;
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
-	x.initial_states = {4}; \
-	x.final_states = {2, 12}; \
+	x.initial = {4}; \
+	x.final = {2, 12}; \
 	x.add_trans(4, 'c', 8); \
 	x.add_trans(4, 'a', 8); \
 	x.add_trans(8, 'b', 4); \
@@ -220,8 +220,8 @@ TEST_CASE("Mata::Nfa::are_state_disjoint()")
 
 	SECTION("Left-hand side empty automaton is state disjoint with anything")
 	{
-		b.initial_states = {1, 4, 6};
-		b.final_states = {4, 7, 9, 0};
+		b.initial = {1, 4, 6};
+		b.final = {4, 7, 9, 0};
 		b.add_trans(1, 'a', 1);
 		b.add_trans(2, 'a', 8);
 		b.add_trans(0, 'c', 49);
@@ -231,8 +231,8 @@ TEST_CASE("Mata::Nfa::are_state_disjoint()")
 
 	SECTION("Right-hand side empty automaton is state disjoint with anything")
 	{
-		a.initial_states = {1, 4, 6};
-		a.final_states = {4, 7, 9, 0};
+		a.initial = {1, 4, 6};
+		a.final = {4, 7, 9, 0};
 		a.add_trans(1, 'a', 1);
 		a.add_trans(2, 'a', 8);
 		a.add_trans(0, 'c', 49);
@@ -242,27 +242,27 @@ TEST_CASE("Mata::Nfa::are_state_disjoint()")
 
 	SECTION("Automata with intersecting initial states are not state disjoint")
 	{
-		a.initial_states = {1, 4, 6};
-		b.initial_states = {3, 9, 6, 8};
+		a.initial = {1, 4, 6};
+		b.initial = {3, 9, 6, 8};
 
 		REQUIRE(!are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with intersecting final states are not state disjoint")
 	{
-		a.final_states = {1, 4, 6};
-		b.final_states = {3, 9, 6, 8};
+		a.final = {1, 4, 6};
+		b.final = {3, 9, 6, 8};
 
 		REQUIRE(!are_state_disjoint(a, b));
 	}
 
 	SECTION("Automata with disjoint sets of states are state disjoint")
 	{
-		a.initial_states = {0, 5, 16};
-		a.final_states = {1, 4, 6};
+		a.initial = {0, 5, 16};
+		a.final = {1, 4, 6};
 
-		b.initial_states = {11, 3};
-		b.final_states = {3, 9, 8};
+		b.initial = {11, 3};
+		b.final = {3, 9, 8};
 
 		a.add_trans(1, 'a', 7);
 		a.add_trans(1, 'b', 7);
@@ -274,11 +274,11 @@ TEST_CASE("Mata::Nfa::are_state_disjoint()")
 
 	SECTION("Automata with intersecting states are not disjoint")
 	{
-		a.initial_states = {0, 5, 16};
-		a.final_states = {1, 4};
+		a.initial = {0, 5, 16};
+		a.final = {1, 4};
 
-		b.initial_states = {11, 3};
-		b.final_states = {3, 9, 6, 8};
+		b.initial = {11, 3};
+		b.final = {3, 9, 6, 8};
 
 		a.add_trans(1, 'a', 7);
 		a.add_trans(1, 'b', 7);
@@ -299,32 +299,32 @@ TEST_CASE("Mata::Nfa::union_norename()")
 	{
 		union_norename(&res, a, b);
 
-		REQUIRE(res.initial_states.empty());
-		REQUIRE(res.final_states.empty());
+		REQUIRE(res.initial.empty());
+		REQUIRE(res.final.empty());
 		REQUIRE(res.has_no_transitions());
 	}
 
 	SECTION("Union of automata with no transitions")
 	{
-		a.initial_states = {1, 3};
-		a.final_states = {3, 5};
+		a.initial = {1, 3};
+		a.final = {3, 5};
 
-		b.initial_states = {4, 6};
-		b.final_states = {4, 2};
+		b.initial = {4, 6};
+		b.final = {4, 2};
 
 		union_norename(&res, a, b);
 
-		REQUIRE(!res.initial_states.empty());
-		REQUIRE(!res.final_states.empty());
+		REQUIRE(!res.initial.empty());
+		REQUIRE(!res.final.empty());
 
-		REQUIRE(res.has_initial(1));
-		REQUIRE(res.has_initial(3));
-		REQUIRE(res.has_initial(4));
-		REQUIRE(res.has_initial(6));
-		REQUIRE(res.has_final(3));
-		REQUIRE(res.has_final(5));
-		REQUIRE(res.has_final(4));
-		REQUIRE(res.has_final(2));
+		REQUIRE(res.initial[1]);
+		REQUIRE(res.initial[3]);
+		REQUIRE(res.initial[4]);
+		REQUIRE(res.initial[6]);
+		REQUIRE(res.final[3]);
+		REQUIRE(res.final[5]);
+		REQUIRE(res.final[4]);
+		REQUIRE(res.final[2]);
 	}
 
 	SECTION("Union of automata with some transitions")
@@ -346,7 +346,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 	{
 		FILL_WITH_AUT_A(a);
 		FILL_WITH_AUT_B(b);
-		b.final_states = {};
+		b.final = {};
 
 		union_norename(&res, a, b);
 
@@ -374,8 +374,8 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 
 	SECTION("An automaton with a state that is both initial and final does not have an empty language")
 	{
-		aut.initial_states = {1, 2};
-		aut.final_states = {2, 3};
+		aut.initial = {1, 2};
+		aut.final = {2, 3};
 
 		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
@@ -383,7 +383,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 
 	SECTION("More complicated automaton")
 	{
-		aut.initial_states = {1, 2};
+		aut.initial = {1, 2};
 		aut.add_trans(1, 'a', 2);
 		aut.add_trans(1, 'a', 3);
 		aut.add_trans(1, 'b', 4);
@@ -397,7 +397,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 
 		SECTION("with final states")
 		{
-			aut.final_states = {7};
+			aut.final = {7};
 			REQUIRE(!is_lang_empty(aut));
 		}
 
@@ -416,7 +416,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 		SECTION("a complicated automaton with unreachable final states")
 		{
 			FILL_WITH_AUT_A(aut);
-			aut.final_states = {13};
+			aut.final = {13};
 
 			REQUIRE(is_lang_empty(aut));
 		}
@@ -424,8 +424,8 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 
 	SECTION("An automaton with a state that is both initial and final does not have an empty language")
 	{
-		aut.initial_states = {1, 2};
-		aut.final_states = {2, 3};
+		aut.initial = {1, 2};
+		aut.final = {2, 3};
 
 		bool is_empty = is_lang_empty(aut, &cex);
 		REQUIRE(!is_empty);
@@ -437,8 +437,8 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
 
 	SECTION("Counterexample of an automaton with non-empty language")
 	{
-		aut.initial_states = {1, 2};
-		aut.final_states = {8, 9};
+		aut.initial = {1, 2};
+		aut.final = {8, 9};
 		aut.add_trans(1, 'c', 2);
 		aut.add_trans(2, 'a', 4);
 		aut.add_trans(2, 'c', 1);
@@ -474,7 +474,7 @@ TEST_CASE("Mata::Nfa::get_word_for_path()")
 
 	SECTION("empty word 2")
 	{
-		aut.initial_states = {1};
+		aut.initial = {1};
 		path.path = {1};
 
 		auto word_bool_pair = get_word_for_path(aut, path);
@@ -484,7 +484,7 @@ TEST_CASE("Mata::Nfa::get_word_for_path()")
 
 	SECTION("nonempty word")
 	{
-		aut.initial_states = {1};
+		aut.initial = {1};
 		aut.add_trans(1, 'c', 2);
 		aut.add_trans(2, 'a', 4);
 		aut.add_trans(2, 'c', 1);
@@ -499,7 +499,7 @@ TEST_CASE("Mata::Nfa::get_word_for_path()")
 
 	SECTION("longer word")
 	{
-		aut.initial_states = {1};
+		aut.initial = {1};
 		aut.add_trans(1, 'a', 2);
 		aut.add_trans(1, 'c', 2);
 		aut.add_trans(2, 'a', 4);
@@ -519,7 +519,7 @@ TEST_CASE("Mata::Nfa::get_word_for_path()")
 
 	SECTION("invalid path")
 	{
-		aut.initial_states = {1};
+		aut.initial = {1};
 		aut.add_trans(1, 'a', 2);
 		aut.add_trans(1, 'c', 2);
 		aut.add_trans(2, 'a', 4);
@@ -542,8 +542,8 @@ TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
 
 	SECTION("Counterexample of an automaton with non-empty language")
 	{
-		aut.initial_states = {1, 2};
-		aut.final_states = {8, 9};
+		aut.initial = {1, 2};
+		aut.final = {8, 9};
 		aut.add_trans(1, 'c', 2);
 		aut.add_trans(2, 'a', 4);
 		aut.add_trans(2, 'c', 1);
@@ -572,31 +572,31 @@ TEST_CASE("Mata::Nfa::determinize()")
 	{
 		result = determinize(aut);
 
-		REQUIRE(result.has_initial(subset_map[{}]));
-		REQUIRE(result.final_states.empty());
+		REQUIRE(result.initial[subset_map[{}]]);
+		REQUIRE(result.final.empty());
 		REQUIRE(nothing_in_trans(result));
 	}
 
 	SECTION("simple automaton 1")
 	{
-		aut.initial_states = {1 };
-		aut.final_states = {1 };
+		aut.initial = {1 };
+		aut.final = {1 };
 		result = determinize(aut, &subset_map);
 
-		REQUIRE(result.has_initial(subset_map[{1}]));
-		REQUIRE(result.has_final(subset_map[{1}]));
+		REQUIRE(result.initial[subset_map[{1}]]);
+		REQUIRE(result.final[subset_map[{1}]]);
 		REQUIRE(nothing_in_trans(result));
 	}
 
 	SECTION("simple automaton 2")
 	{
-		aut.initial_states = {1 };
-		aut.final_states = {2 };
+		aut.initial = {1 };
+		aut.final = {2 };
 		aut.add_trans(1, 'a', 2);
 		result = determinize(aut, &subset_map);
 
-		REQUIRE(result.has_initial(subset_map[{1}]));
-        REQUIRE(result.has_final(subset_map[{2}]));
+		REQUIRE(result.initial[subset_map[{1}]]);
+        REQUIRE(result.final[subset_map[{2}]]);
 		REQUIRE(result.has_trans(subset_map[{1}], 'a', subset_map[{2}]));
 	}
 } // }}}
@@ -606,8 +606,8 @@ TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
     Nfa result;
     std::unordered_map<StateSet, State> subset_map;
 
-    aut.make_initial(0);
-    aut.make_final(3);
+    aut.initial.add(0);
+    aut.final.add(3);
     aut.add_trans(0, 46, 0);
     aut.add_trans(0, 47, 0);
     aut.add_trans(0, 58, 0);
@@ -675,8 +675,8 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
 		aut = construct(parsec);
 
-		REQUIRE(aut.initial_states.size() == 2);
-		REQUIRE(aut.final_states.size() == 3);
+		REQUIRE(aut.initial.size() == 2);
+		REQUIRE(aut.final.size() == 3);
 	}
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
@@ -807,8 +807,8 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
         construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial_states.size() == 2);
-        REQUIRE(aut.final_states.size() == 3);
+        REQUIRE(aut.initial.size() == 2);
+        REQUIRE(aut.final.size() == 3);
     }
 
     SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
@@ -824,8 +824,8 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
         construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial_states.size() == 2);
-        REQUIRE(aut.final_states.size() == 3);
+        REQUIRE(aut.initial.size() == 2);
+        REQUIRE(aut.final.size() == 3);
     }
 
     SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
@@ -841,8 +841,8 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
         construct(&aut, inter_aut);
 
-        REQUIRE(aut.initial_states.size() == 3);
-        REQUIRE(aut.final_states.size() == 4);
+        REQUIRE(aut.initial.size() == 3);
+        REQUIRE(aut.final.size() == 4);
     }
 
     SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton")
@@ -932,15 +932,15 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 		Mata::Parser::ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
 		Nfa res = construct(parsec);
 
-		REQUIRE(res.initial_states.empty());
-		REQUIRE(res.final_states.empty());
+		REQUIRE(res.initial.empty());
+		REQUIRE(res.final.empty());
 		REQUIRE(res.has_no_transitions());
 	}
 
 	SECTION("small automaton")
 	{
-		aut.initial_states = { 'q', 'r', 's' };
-		aut.final_states = { 'r', 's', 't' };
+		aut.initial = { 'q', 'r', 's' };
+		aut.final = { 'r', 's', 't' };
 
 		aut.add_trans('q', 'a', 'r');
 		aut.add_trans('r', 'b', 'q');
@@ -962,8 +962,8 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 			Mata::util::invert_map(symb_dict);
 		Nfa res = construct(parsec, &inv_symb_dict, &inv_state_dict);
 
-		REQUIRE(res.initial_states == aut.initial_states);
-		REQUIRE(res.final_states == aut.final_states);
+		REQUIRE(res.initial == aut.initial);
+		REQUIRE(res.final == aut.final);
 		REQUIRE(res.trans_size() == aut.trans_size());
 		REQUIRE(res.has_trans('q', 'a', 'r'));
 		REQUIRE(res.has_trans('r', 'b', 'q'));
@@ -1014,8 +1014,8 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 		make_complete(aut, alph, 0);
 
-		REQUIRE(aut.initial_states.empty());
-		REQUIRE(aut.final_states.empty());
+		REQUIRE(aut.initial.empty());
+		REQUIRE(aut.final.empty());
 		REQUIRE(nothing_in_trans(aut));
 	}
 
@@ -1025,8 +1025,8 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 		make_complete(aut, alph, 0);
 
-		REQUIRE(aut.initial_states.empty());
-		REQUIRE(aut.final_states.empty());
+		REQUIRE(aut.initial.empty());
+		REQUIRE(aut.final.empty());
 		REQUIRE(aut.has_trans(0, alph["a"], 0));
 		REQUIRE(aut.has_trans(0, alph["b"], 0));
 	}
@@ -1035,13 +1035,13 @@ TEST_CASE("Mata::Nfa::make_complete()")
 	{
 		OnTheFlyAlphabet alphabet{};
 
-		aut.initial_states = {1};
+		aut.initial = {1};
 
 		make_complete(aut, alphabet, 0);
 
-		REQUIRE(aut.initial_states.size() == 1);
-		REQUIRE(*aut.initial_states.begin() == 1);
-		REQUIRE(aut.final_states.empty());
+		REQUIRE(aut.initial.size() == 1);
+		REQUIRE(*aut.initial.begin() == 1);
+		REQUIRE(aut.final.empty());
 		REQUIRE(nothing_in_trans(aut));
 	}
 
@@ -1050,13 +1050,13 @@ TEST_CASE("Mata::Nfa::make_complete()")
 		OnTheFlyAlphabet alph{"a", "b"};
 		const State SINK = 10;
 
-		aut.initial_states = {1};
+		aut.initial = {1};
 
 		make_complete(aut, alph, SINK);
 
-		REQUIRE(aut.initial_states.size() == 1);
-		REQUIRE(*aut.initial_states.begin() == 1);
-		REQUIRE(aut.final_states.empty());
+		REQUIRE(aut.initial.size() == 1);
+		REQUIRE(*aut.initial.begin() == 1);
+		REQUIRE(aut.final.empty());
 		REQUIRE(aut.has_trans(1, alph["a"], SINK));
 		REQUIRE(aut.has_trans(1, alph["b"], SINK));
 		REQUIRE(aut.has_trans(SINK, alph["a"], SINK));
@@ -1068,8 +1068,8 @@ TEST_CASE("Mata::Nfa::make_complete()")
 		OnTheFlyAlphabet alph{"a", "b", "c"};
 		const State SINK = 9;
 
-		aut.initial_states = {1, 2};
-		aut.final_states = {8};
+		aut.initial = {1, 2};
+		aut.final = {8};
 		aut.add_trans(1, alph["a"], 2);
 		aut.add_trans(2, alph["a"], 4);
 		aut.add_trans(2, alph["c"], 1);
@@ -1116,10 +1116,10 @@ TEST_CASE("Mata::Nfa::complement()")
 		cmpl = complement(aut, alph);
 
 		REQUIRE(is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial_states.size() == 1);
-		REQUIRE(cmpl.final_states.size() == 1);
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
 		REQUIRE(nothing_in_trans(cmpl));
-		REQUIRE(*cmpl.initial_states.begin() == *cmpl.final_states.begin());
+		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
 	}
 
 	SECTION("empty automaton")
@@ -1136,11 +1136,11 @@ TEST_CASE("Mata::Nfa::complement()")
 
 		// TODO: consider removing the structural tests (in case a more}
 		// sophisticated complementation algorithm is used)
-		REQUIRE(cmpl.initial_states.size() == 1);
-		REQUIRE(cmpl.final_states.size() == 1);
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
 
-		State init_state = *cmpl.initial_states.begin();
-		State fin_state = *cmpl.final_states.begin();
+		State init_state = *cmpl.initial.begin();
+		State fin_state = *cmpl.final.begin();
 		REQUIRE(init_state == fin_state);
 		REQUIRE(cmpl.get_moves_from(init_state).size() == 2);
 		REQUIRE(cmpl.has_trans(init_state, alph["a"], init_state));
@@ -1150,22 +1150,22 @@ TEST_CASE("Mata::Nfa::complement()")
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		aut.initial_states = {1};
-		aut.final_states = {1};
+		aut.initial = {1};
+		aut.final = {1};
 
 		cmpl = complement(aut, alph);
 
 		REQUIRE(!is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial_states.size() == 1);
-		REQUIRE(cmpl.final_states.size() == 0);
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 0);
 		REQUIRE(nothing_in_trans(cmpl));
 	}
 
 	SECTION("empty automaton accepting epsilon")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1};
-		aut.final_states = {1};
+		aut.initial = {1};
+		aut.final = {1};
 
 		cmpl = complement(aut, alph);
 
@@ -1174,8 +1174,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
-		REQUIRE(cmpl.initial_states.size() == 1);
-		REQUIRE(cmpl.final_states.size() == 1);
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
             unused(x);
@@ -1187,8 +1187,8 @@ TEST_CASE("Mata::Nfa::complement()")
 	SECTION("non-empty automaton accepting a*b*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1, 2};
-		aut.final_states = {1, 2};
+		aut.initial = {1, 2};
+		aut.final = {1, 2};
 
 		aut.add_trans(1, alph["a"], 1);
 		aut.add_trans(1, alph["a"], 2);
@@ -1204,8 +1204,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"], alph["b"], alph["b"] }, {}}));
 		REQUIRE(is_in_lang(cmpl, {{ alph["b"], alph["a"], alph["a"], alph["a"] }, {}}));
 
-		REQUIRE(cmpl.initial_states.size() == 1);
-		REQUIRE(cmpl.final_states.size() == 1);
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
 		size_t sum = 0;
 		for (const auto& x : cmpl) {
             unused(x);
@@ -1242,8 +1242,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		aut.initial_states = {1};
-		aut.final_states = {1};
+		aut.initial = {1};
+		aut.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1257,8 +1257,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("empty automaton accepting epsilon")
 	{
 		OnTheFlyAlphabet alph{"a"};
-		aut.initial_states = {1};
-		aut.final_states = {1};
+		aut.initial = {1};
+		aut.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1272,8 +1272,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("automaton for a*b*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1, 2};
-		aut.final_states = {1, 2};
+		aut.initial = {1, 2};
+		aut.final = {1, 2};
 
 		aut.add_trans(1, alph["a"], 1);
 		aut.add_trans(1, alph["a"], 2);
@@ -1290,8 +1290,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("automaton for a* + b*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1, 2};
-		aut.final_states = {1, 2};
+		aut.initial = {1, 2};
+		aut.final = {1, 2};
 
 		aut.add_trans(1, alph["a"], 1);
 		aut.add_trans(2, alph["b"], 2);
@@ -1307,8 +1307,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("automaton for (a + b)*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1};
-		aut.final_states = {1};
+		aut.initial = {1};
+		aut.final = {1};
 
 		aut.add_trans(1, alph["a"], 1);
 		aut.add_trans(1, alph["b"], 1);
@@ -1324,8 +1324,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1};
-		aut.final_states = {1, 2, 3, 4, 5};
+		aut.initial = {1};
+		aut.final = {1, 2, 3, 4, 5};
 
 		aut.add_trans(1, alph["a"], 2);
 		aut.add_trans(1, alph["b"], 2);
@@ -1356,8 +1356,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1, 3};
-		aut.final_states = {1, 2, 4};
+		aut.initial = {1, 3};
+		aut.final = {1, 2, 4};
 
 		aut.add_trans(1, alph["a"], 2);
 		aut.add_trans(2, alph["a"], 2);
@@ -1377,8 +1377,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("example from Abdulla et al. TACAS'10")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial_states = {1, 2};
-		aut.final_states = {1, 2, 3};
+		aut.initial = {1, 2};
+		aut.final = {1, 2, 3};
 
 		aut.add_trans(1, alph["b"], 1);
 		aut.add_trans(1, alph["a"], 2);
@@ -1401,8 +1401,8 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("subsumption-pruning in processed")
 	{
 		OnTheFlyAlphabet alph{"a"};
-		aut.initial_states = {1, 2};
-		aut.final_states = {1};
+		aut.initial = {1, 2};
+		aut.final = {1};
 
 		aut.add_trans(1, alph["a"], 1);
 
@@ -1461,8 +1461,8 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("{} <= {epsilon}, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		bigger.initial_states = {1};
-		bigger.final_states = {1};
+		bigger.initial = {1};
+		bigger.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1477,10 +1477,10 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("{epsilon} <= {epsilon}, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		smaller.initial_states = {1};
-		smaller.final_states = {1};
-		bigger.initial_states = {11};
-		bigger.final_states = {11};
+		smaller.initial = {1};
+		smaller.final = {1};
+		bigger.initial = {11};
+		bigger.final = {11};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1495,8 +1495,8 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("{epsilon} !<= {}, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		smaller.initial_states = {1};
-		smaller.final_states = {1};
+		smaller.initial = {1};
+		smaller.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
 			params["algo"] = algo;
@@ -1514,13 +1514,13 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("a* + b* <= (a+b)*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial_states = {1, 2};
-		smaller.final_states = {1, 2};
+		smaller.initial = {1, 2};
+		smaller.final = {1, 2};
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(2, alph["b"], 2);
 
-		bigger.initial_states = {11};
-		bigger.final_states = {11};
+		bigger.initial = {11};
+		bigger.final = {11};
 		bigger.add_trans(11, alph["a"], 11);
 		bigger.add_trans(11, alph["b"], 11);
 
@@ -1537,13 +1537,13 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("(a+b)* !<= a* + b*")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial_states = {1};
-		smaller.final_states = {1};
+		smaller.initial = {1};
+		smaller.final = {1};
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(1, alph["b"], 1);
 
-		bigger.initial_states = {11, 12};
-		bigger.final_states = {11, 12};
+		bigger.initial = {11, 12};
+		bigger.final = {11, 12};
 		bigger.add_trans(11, alph["a"], 11);
 		bigger.add_trans(12, alph["b"], 12);
 
@@ -1568,13 +1568,13 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
 	{
         OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial_states = {1};
-		smaller.final_states = {1};
+		smaller.initial = {1};
+		smaller.final = {1};
 		smaller.add_trans(1, alph["a"], 1);
 		smaller.add_trans(1, alph["b"], 1);
 
-		bigger.initial_states = {11};
-		bigger.final_states = {11, 12, 13, 14, 15};
+		bigger.initial = {11};
+		bigger.final = {11, 12, 13, 14, 15};
 
 		bigger.add_trans(11, alph["a"], 12);
 		bigger.add_trans(11, alph["b"], 12);
@@ -1663,8 +1663,8 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("{} == {epsilon}, empty alphabet")
     {
         OnTheFlyAlphabet alph{};
-        bigger.initial_states = {1};
-        bigger.final_states = {1};
+        bigger.initial = {1};
+        bigger.final = {1};
 
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
@@ -1682,10 +1682,10 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("{epsilon} == {epsilon}, empty alphabet")
     {
         OnTheFlyAlphabet alph{};
-        smaller.initial_states = {1};
-        smaller.final_states = {1};
-        bigger.initial_states = {11};
-        bigger.final_states = {11};
+        smaller.initial = {1};
+        smaller.final = {1};
+        bigger.initial = {11};
+        bigger.final = {11};
 
         for (const auto& algo : ALGORITHMS) {
             params["algo"] = algo;
@@ -1703,13 +1703,13 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("a* + b* == (a+b)*")
     {
         OnTheFlyAlphabet alph{"a", "b"};
-        smaller.initial_states = {0, 1};
-        smaller.final_states = {0, 1};
-        smaller.add_trans(0, alph["a"], 0);
-        smaller.add_trans(1, alph["b"], 1);
+        smaller.initial = {1, 2};
+        smaller.final = {1, 2};
+        smaller.add_trans(1, alph["a"], 1);
+        smaller.add_trans(2, alph["b"], 2);
 
-        bigger.initial_states = {11};
-        bigger.final_states = {11};
+        bigger.initial = {11};
+        bigger.final = {11};
         bigger.add_trans(11, alph["a"], 11);
         bigger.add_trans(11, alph["b"], 11);
 
@@ -1732,13 +1732,13 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
     {
         OnTheFlyAlphabet alph{"a", "b"};
-        smaller.initial_states = {1};
-        smaller.final_states = {1};
+        smaller.initial = {1};
+        smaller.final = {1};
         smaller.add_trans(1, alph["a"], 1);
         smaller.add_trans(1, alph["b"], 1);
 
-        bigger.initial_states = {11};
-        bigger.final_states = {11, 12, 13, 14, 15};
+        bigger.initial = {11};
+        bigger.final = {11, 12, 13, 14, 15};
 
         bigger.add_trans(11, alph["a"], 12);
         bigger.add_trans(11, alph["b"], 12);
@@ -1797,44 +1797,44 @@ TEST_CASE("Mata::Nfa::revert()")
 		Nfa result = revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
-		REQUIRE(result.initial_states.size() == 0);
-		REQUIRE(result.final_states.size() == 0);
+		REQUIRE(result.initial.size() == 0);
+		REQUIRE(result.final.size() == 0);
 	}
 
 	SECTION("no-transition automaton")
 	{
-		aut.make_initial(1);
-		aut.make_initial(3);
+		aut.initial.add(1);
+		aut.initial.add(3);
 
-		aut.make_final(2);
-		aut.make_final(5);
+		aut.final.add(2);
+		aut.final.add(5);
 
 		Nfa result = revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
-		REQUIRE(result.has_initial(2));
-		REQUIRE(result.has_initial(5));
-		REQUIRE(result.has_final(1));
-		REQUIRE(result.has_final(3));
+		REQUIRE(result.initial[2]);
+		REQUIRE(result.initial[5]);
+		REQUIRE(result.final[1]);
+		REQUIRE(result.final[3]);
 	}
 
 	SECTION("one-transition automaton")
 	{
-		aut.make_initial(1);
-		aut.make_final(2);
+		aut.initial.add(1);
+		aut.final.add(2);
 		aut.add_trans(1, 'a', 2);
 
 		Nfa result = revert(aut);
 
-		REQUIRE(result.has_initial(2));
-		REQUIRE(result.has_final(1));
+		REQUIRE(result.initial[2]);
+		REQUIRE(result.final[1]);
 		REQUIRE(result.has_trans(2, 'a', 1));
 		REQUIRE(result.states_number() == aut.states_number());
 	}
 
 	SECTION("bigger automaton")
 	{
-		aut.initial_states = {1, 2};
+		aut.initial = {1, 2};
 		aut.add_trans(1, 'a', 2);
 		aut.add_trans(1, 'a', 3);
 		aut.add_trans(1, 'b', 4);
@@ -1845,10 +1845,11 @@ TEST_CASE("Mata::Nfa::revert()")
 		aut.add_trans(3, 'c', 7);
 		aut.add_trans(3, 'b', 2);
 		aut.add_trans(7, 'a', 8);
-		aut.final_states = {3};
+		aut.final = {3};
 
 		Nfa result = revert(aut);
-		REQUIRE(result.final_states == StateSet({1, 2}));
+		//REQUIRE(result.final == StateSet({1, 2}));
+        REQUIRE(StateSet(result.final.get_elements()) == StateSet({1, 2}));
 		REQUIRE(result.has_trans(2, 'a', 1));
 		REQUIRE(result.has_trans(3, 'a', 1));
 		REQUIRE(result.has_trans(4, 'b', 1));
@@ -1859,16 +1860,16 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.has_trans(7, 'c', 3));
 		REQUIRE(result.has_trans(2, 'b', 3));
 		REQUIRE(result.has_trans(8, 'a', 7));
-		REQUIRE(result.initial_states == StateSet({3}));
+		REQUIRE(StateSet(result.initial.get_elements()) == StateSet({3}));
 	}
 
 	SECTION("Automaton A") {
 		Nfa nfa{ 11 };
 		FILL_WITH_AUT_A(nfa);
 		Nfa res = revert(nfa);
-		CHECK(res.has_initial(5));
-		CHECK(res.has_final(1));
-		CHECK(res.has_final(3));
+		CHECK(res.initial[5]);
+		CHECK(res.final[1]);
+		CHECK(res.final[3]);
 		CHECK(res.get_num_of_trans() == 15);
 		CHECK(res.has_trans(5, 'a', 5));
 		CHECK(res.has_trans(5, 'a', 7));
@@ -1891,9 +1892,9 @@ TEST_CASE("Mata::Nfa::revert()")
 		Nfa nfa{ 15 };
 		FILL_WITH_AUT_B(nfa);
 		Nfa res = revert(nfa);
-		CHECK(res.has_initial(2));
-		CHECK(res.has_initial(12));
-		CHECK(res.has_final(4));
+		CHECK(res.initial[2]);
+		CHECK(res.initial[12]);
+		CHECK(res.final[4]);
 		CHECK(res.get_num_of_trans() == 12);
 		CHECK(res.has_trans(8, 'a', 4));
 		CHECK(res.has_trans(8, 'c', 4));
@@ -1920,25 +1921,25 @@ TEST_CASE("Mata::Nfa::is_deterministic()")
 		REQUIRE(!is_deterministic(aut));
 
 		// add an initial state
-		aut.make_initial('q');
+		aut.initial.add('q');
 		REQUIRE(is_deterministic(aut));
 
 		// add the same initial state
-		aut.make_initial('q');
+		aut.initial.add('q');
 		REQUIRE(is_deterministic(aut));
 
 		// add another initial state
-		aut.make_initial('r');
+		aut.initial.add('r');
 		REQUIRE(!is_deterministic(aut));
 
 		// add a final state
-		aut.make_final('q');
+		aut.final.add('q');
 		REQUIRE(!is_deterministic(aut));
 	}
 
 	SECTION("trivial automata")
 	{
-		aut.make_initial('q');
+		aut.initial.add('q');
 		aut.add_trans('q', 'a', 'r');
 		REQUIRE(is_deterministic(aut));
 
@@ -1994,7 +1995,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 	{
 		OnTheFlyAlphabet alph{};
 
-        aut.make_initial(4);
+        aut.initial.add(4);
 		aut.add_trans(4, alph["a"], 8);
 		aut.add_trans(4, alph["c"], 8);
 		aut.add_trans(4, alph["a"], 6);
@@ -2007,7 +2008,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 		aut.add_trans(0, alph["a"], 2);
 		aut.add_trans(12, alph["a"], 14);
 		aut.add_trans(14, alph["b"], 12);
-		aut.make_final({2, 12});
+		aut.final.add({2, 12});
 
 		REQUIRE(!is_complete(aut, alph));
 
@@ -2019,7 +2020,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
 	{
 		OnTheFlyAlphabet alph{};
 
-		aut.make_initial(4);
+		aut.initial.add(4);
 		aut.add_trans(4, alph["a"], 8);
 		aut.add_trans(4, alph["c"], 8);
 		aut.add_trans(4, alph["a"], 6);
@@ -2047,8 +2048,8 @@ TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
 
 	SECTION("automaton accepting only epsilon")
 	{
-		aut.make_initial('q');
-		aut.make_final('q');
+		aut.initial.add('q');
+		aut.final.add('q');
 
 		Run w;
 		w.word = { };
@@ -2103,11 +2104,11 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
     aut.increase_size(9);
     SECTION("no-transition automaton")
     {
-        aut.make_initial(1);
-        aut.make_initial(3);
+        aut.initial.add(1);
+        aut.initial.add(3);
 
-        aut.make_final(2);
-        aut.make_final(5);
+        aut.final.add(2);
+        aut.final.add(5);
 
         Simlib::Util::BinaryRelation result = compute_relation(aut);
         REQUIRE(result.get(1,3));
@@ -2118,8 +2119,8 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
     SECTION("small automaton")
     {
-        aut.make_initial(1);
-        aut.make_final(2);
+        aut.initial.add(1);
+        aut.final.add(2);
         aut.add_trans(1, 'a', 4);
         aut.add_trans(4, 'b', 5);
         aut.add_trans(2, 'b', 5);
@@ -2135,7 +2136,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
     SECTION("bigger automaton")
     {
-        aut_big.initial_states = {1, 2};
+        aut_big.initial = {1, 2};
         aut_big.add_trans(1, 'a', 2);
         aut_big.add_trans(1, 'a', 3);
         aut_big.add_trans(1, 'b', 4);
@@ -2148,7 +2149,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         aut_big.add_trans(3, 'b', 2);
         aut_big.add_trans(5, 'c', 3);
         aut_big.add_trans(7, 'a', 8);
-        aut_big.final_states = {3};
+        aut_big.final = {3};
 
         Simlib::Util::BinaryRelation result = compute_relation(aut_big);
         REQUIRE(result.get(1,2));
@@ -2178,21 +2179,21 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		Nfa result = reduce(aut, &state_map);
 
 		REQUIRE(nothing_in_trans(result));
-		REQUIRE(result.initial_states.size() == 0);
-		REQUIRE(result.final_states.size() == 0);
+		REQUIRE(result.initial.size() == 0);
+		REQUIRE(result.final.size() == 0);
 	}
 
 	SECTION("simple automaton")
 	{
 		aut.increase_size(3);
-        aut.make_initial(1);
+        aut.initial.add(1);
 
-        aut.make_final(2);
+        aut.final.add(2);
 		Nfa result = reduce(aut, &state_map);
 
 		REQUIRE(nothing_in_trans(result));
-		REQUIRE(result.has_initial(state_map[1]));
-		REQUIRE(result.has_final(state_map[2]));
+		REQUIRE(result.initial[state_map[1]]);
+		REQUIRE(result.final[state_map[2]]);
 		REQUIRE(result.states_number() == 2);
 		REQUIRE(state_map[1] == state_map[0]);
 		REQUIRE(state_map[2] != state_map[0]);
@@ -2201,7 +2202,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 	SECTION("big automaton")
 	{
 		aut.increase_size(10);
-		aut.initial_states = {1, 2};
+		aut.initial = {1, 2};
 		aut.add_trans(1, 'a', 2);
 		aut.add_trans(1, 'a', 3);
 		aut.add_trans(1, 'b', 4);
@@ -2217,14 +2218,14 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		aut.add_trans(9, 'b', 2);
 		aut.add_trans(9, 'c', 0);
 		aut.add_trans(0, 'a', 4);
-		aut.final_states = {3, 9};
+		aut.final = {3, 9};
 
 
 		Nfa result = reduce(aut, &state_map);
 
 		REQUIRE(result.states_number() == 6);
-		REQUIRE(result.has_initial(state_map[1]));
-		REQUIRE(result.has_initial(state_map[2]));
+		REQUIRE(result.initial[state_map[1]]);
+		REQUIRE(result.initial[state_map[2]]);
 		REQUIRE(result.has_trans(state_map[9], 'c', state_map[0]));
 		REQUIRE(result.has_trans(state_map[9], 'c', state_map[7]));
 		REQUIRE(result.has_trans(state_map[3], 'c', state_map[0]));
@@ -2233,8 +2234,8 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		REQUIRE(result.has_trans(state_map[1], 'a', state_map[3]));
 		REQUIRE(!result.has_trans(state_map[3], 'b', state_map[4]));
 		REQUIRE(result.has_trans(state_map[2], 'a', state_map[2]));
-		REQUIRE(result.has_final(state_map[9]));
-		REQUIRE(result.has_final(state_map[3]));
+		REQUIRE(result.final[state_map[9]]);
+		REQUIRE(result.final[state_map[3]]);
 	}
 }
 
@@ -2243,16 +2244,16 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     Run zero{{0}, {}};
 
     Nfa lhs(2);
-    lhs.make_initial(0);
+    lhs.initial.add(0);
     lhs.add_trans(0, 0, 1);
-    lhs.make_final(1);
+    lhs.final.add(1);
     REQUIRE(!is_in_lang(lhs, one));
     REQUIRE(is_in_lang(lhs, zero));
 
     Nfa rhs(2);
-    rhs.make_initial(0);
+    rhs.initial.add(0);
     rhs.add_trans(0, 1, 1);
-    rhs.make_final(1);
+    rhs.final.add(1);
     REQUIRE(is_in_lang(rhs, one));
     REQUIRE(!is_in_lang(rhs, zero));
 
@@ -2270,11 +2271,11 @@ TEST_CASE("Mata::Nfa::remove_final()")
     SECTION("Automaton B")
     {
         FILL_WITH_AUT_B(aut);
-        REQUIRE(aut.has_final(2));
-        REQUIRE(aut.has_final(12));
-        aut.remove_final(12);
-        REQUIRE(aut.has_final(2));
-        REQUIRE(!aut.has_final(12));
+        REQUIRE(aut.final[2]);
+        REQUIRE(aut.final[12]);
+        aut.final.remove(12);
+        REQUIRE(aut.final[2]);
+        REQUIRE(!aut.final[12]);
     }
 }
 
@@ -2339,9 +2340,9 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
     SECTION("Add new states within the limit")
     {
         aut.increase_size(20);
-        aut.make_initial(0);
-        aut.make_initial(1);
-        aut.make_initial(2);
+        aut.initial.add(0);
+        aut.initial.add(1);
+        aut.initial.add(2);
         REQUIRE_NOTHROW(aut.get_moves_from(0));
         REQUIRE_NOTHROW(aut.get_moves_from(1));
         REQUIRE_NOTHROW(aut.get_moves_from(2));
@@ -2353,9 +2354,9 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
     SECTION("Add new states over the limit")
     {
         aut.increase_size(2);
-        REQUIRE_NOTHROW(aut.make_initial(0));
-        REQUIRE_NOTHROW(aut.make_initial(1));
-        REQUIRE_THROWS_AS(aut.make_initial(2), std::runtime_error);
+        REQUIRE_NOTHROW(aut.initial.add(0));
+        REQUIRE_NOTHROW(aut.initial.add(1));
+        //REQUIRE_THROWS_AS(aut.initial.add(2), std::runtime_error);
         REQUIRE_NOTHROW(aut.get_moves_from(0));
         REQUIRE_NOTHROW(aut.get_moves_from(1));
         //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
@@ -2364,17 +2365,18 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
         //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
     }
 
-    SECTION("Add new states without specifying the number of states")
-    {
-        REQUIRE_THROWS_AS(aut.make_initial(0), std::runtime_error);
-        //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
-    }
+    //TODO: modify or remove these
+    //SECTION("Add new states without specifying the number of states")
+    //{
+    //    REQUIRE_THROWS_AS(aut.initial.add(0), std::runtime_error);
+    //    //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    //}
 
-    SECTION("Add new initial without specifying the number of states with over +1 number")
-    {
-        REQUIRE_THROWS_AS(aut.make_initial(25), std::runtime_error);
-        //REQUIRE_THROWS(aut.get_moves_from(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
-    }
+    //SECTION("Add new initial without specifying the number of states with over +1 number")
+    //{
+    //    REQUIRE_THROWS_AS(aut.initial.add(25), std::runtime_error);
+    //    //REQUIRE_THROWS(aut.get_moves_from(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+    //}
 }
 
 
@@ -2469,8 +2471,8 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(9) == reachable.end());
         CHECK(reachable.find(10) == reachable.end());
 
-        aut.remove_initial(1);
-        aut.remove_initial(3);
+        aut.initial.remove(1);
+        aut.initial.remove(3);
 
         reachable = aut.get_reachable_states();
         CHECK(reachable.empty());
@@ -2500,7 +2502,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(13) == reachable.end());
         CHECK(reachable.find(14) == reachable.end());
 
-        aut.remove_final(2);
+        aut.final.remove(2);
         reachable = aut.get_reachable_states();
         CHECK(reachable.size() == 4);
         CHECK(reachable.find(0) != reachable.end());
@@ -2509,7 +2511,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(6) != reachable.end());
         CHECK(aut.get_useful_states().empty());
 
-        aut.make_final(4);
+        aut.final.add(4);
         reachable = aut.get_reachable_states();
         CHECK(reachable.find(4) != reachable.end());
     }
@@ -2547,15 +2549,15 @@ TEST_CASE("Mata::Nfa::trim()")
     Nfa old_aut{aut};
 
     aut.trim();
-    CHECK(aut.initial_states.size() == old_aut.initial_states.size());
-    CHECK(aut.final_states.size() == old_aut.final_states.size());
+    CHECK(aut.initial.size() == old_aut.initial.size());
+    CHECK(aut.final.size() == old_aut.final.size());
     CHECK(aut.states_number() == 4);
     for (const Word& word: get_shortest_words(old_aut))
     {
         CHECK(is_in_lang(aut, Run{word,{}}));
     }
 
-    aut.remove_final(2); // '2' is the new final state in the earlier trimmed automaton.
+    aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
     aut.trim();
     CHECK(aut.has_no_transitions());
     CHECK(aut.states_number() == 0);
@@ -2579,16 +2581,16 @@ TEST_CASE("Mata::Nfa::Nfa::has_no_transitions()")
     SECTION("Single state automaton with no transitions")
     {
         aut.increase_size(1);
-        aut.make_initial(0);
-        aut.make_final(0);
+        aut.initial.add(0);
+        aut.final.add(0);
         CHECK(aut.has_no_transitions());
     }
 
     SECTION("Single state automaton with transitions")
     {
         aut.increase_size(1);
-        aut.make_initial(0);
-        aut.make_final(0);
+        aut.initial.add(0);
+        aut.final.add(0);
         aut.add_trans(0, 'a', 0);
         CHECK(!aut.has_no_transitions());
     }
@@ -2596,16 +2598,16 @@ TEST_CASE("Mata::Nfa::Nfa::has_no_transitions()")
     SECTION("Single state automaton with transitions")
     {
         aut.increase_size(2);
-        aut.make_initial(0);
-        aut.make_final(1);
+        aut.initial.add(0);
+        aut.final.add(1);
         CHECK(aut.has_no_transitions());
     }
 
     SECTION("Single state automaton with transitions")
     {
         aut.increase_size(2);
-        aut.make_initial(0);
-        aut.make_final(1);
+        aut.initial.add(0);
+        aut.final.add(1);
         aut.add_trans(0, 'a', 1);
         CHECK(!aut.has_no_transitions());
     }
@@ -2617,58 +2619,58 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     SECTION("No initial") {
         nfa.unify_initial();
         CHECK(nfa.states_number() == 10);
-        CHECK(nfa.initial_states.empty());
+        CHECK(nfa.initial.empty());
     }
 
     SECTION("initial==final unify final") {
-        nfa.make_initial(0);
-        nfa.make_final(0);
-        nfa.make_final(1);
+        nfa.initial.add(0);
+        nfa.final.add(0);
+        nfa.final.add(1);
         nfa.unify_final();
         REQUIRE(nfa.states_number() == 11);
-        CHECK(nfa.final_states.size() == 1);
-        CHECK(nfa.has_final(10));
-        CHECK(nfa.has_initial(10));
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.final[10]);
+        CHECK(nfa.initial[10]);
     }
 
     SECTION("initial==final unify initial") {
-        nfa.make_initial(0);
-        nfa.make_initial(1);
-        nfa.make_final(0);
+        nfa.initial.add(0);
+        nfa.initial.add(1);
+        nfa.final.add(0);
         nfa.unify_initial();
         REQUIRE(nfa.states_number() == 11);
-        CHECK(nfa.initial_states.size() == 1);
-        CHECK(nfa.has_initial(10));
-        CHECK(nfa.has_final(10));
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.initial[10]);
+        CHECK(nfa.final[10]);
     }
 
     SECTION("Single initial") {
-        nfa.make_initial(0);
+        nfa.initial.add(0);
         nfa.unify_initial();
         CHECK(nfa.states_number() == 10);
-        CHECK(nfa.initial_states.size() == 1);
-        CHECK(nfa.has_initial(0));
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.initial[0]);
     }
 
     SECTION("Multiple initial") {
-        nfa.make_initial(0);
-        nfa.make_initial(1);
+        nfa.initial.add(0);
+        nfa.initial.add(1);
         nfa.unify_initial();
         CHECK(nfa.states_number() == 11);
-        CHECK(nfa.initial_states.size() == 1);
-        CHECK(nfa.has_initial(10));
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.initial[10]);
     }
 
     SECTION("With transitions") {
-        nfa.make_initial(0);
-        nfa.make_initial(1);
+        nfa.initial.add(0);
+        nfa.initial.add(1);
         nfa.add_trans(0, 'a', 3);
         nfa.add_trans(1, 'b', 0);
         nfa.add_trans(1, 'c', 1);
         nfa.unify_initial();
         CHECK(nfa.states_number() == 11);
-        CHECK(nfa.initial_states.size() == 1);
-        CHECK(nfa.has_initial(10));
+        CHECK(nfa.initial.size() == 1);
+        CHECK(nfa.initial[10]);
         CHECK(nfa.has_trans(10, 'a', 3));
         CHECK(nfa.has_trans(10, 'b', 0));
         CHECK(nfa.has_trans(10, 'c', 1));
@@ -2680,36 +2682,36 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     SECTION("No final") {
         nfa.unify_final();
         CHECK(nfa.states_number() == 10);
-        CHECK(nfa.final_states.empty());
+        CHECK(nfa.final.empty());
     }
 
     SECTION("Single final") {
-        nfa.make_final(0);
+        nfa.final.add(0);
         nfa.unify_final();
         CHECK(nfa.states_number() == 10);
-        CHECK(nfa.final_states.size() == 1);
-        CHECK(nfa.has_final(0));
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.final[0]);
     }
 
     SECTION("Multiple final") {
-        nfa.make_final(0);
-        nfa.make_final(1);
+        nfa.final.add(0);
+        nfa.final.add(1);
         nfa.unify_final();
         CHECK(nfa.states_number() == 11);
-        CHECK(nfa.final_states.size() == 1);
-        CHECK(nfa.has_final(10));
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.final[10]);
     }
 
     SECTION("With transitions") {
-        nfa.make_final(0);
-        nfa.make_final(1);
+        nfa.final.add(0);
+        nfa.final.add(1);
         nfa.add_trans(3, 'a', 0);
         nfa.add_trans(4, 'b', 1);
         nfa.add_trans(1, 'c', 1);
         nfa.unify_final();
         CHECK(nfa.states_number() == 11);
-        CHECK(nfa.final_states.size() == 1);
-        CHECK(nfa.has_final(10));
+        CHECK(nfa.final.size() == 1);
+        CHECK(nfa.final[10]);
         CHECK(nfa.has_trans(3, 'a', 10));
         CHECK(nfa.has_trans(4, 'b', 10));
         CHECK(nfa.has_trans(1, 'c', 10));
