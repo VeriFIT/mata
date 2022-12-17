@@ -34,19 +34,6 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
-    //searches for every state in the set of final states
-    template<class T>
-    bool contains_final(const T &states, const Nfa &automaton) {
-        auto finalState = find_if(states.begin(), states.end(),
-                                  [&automaton](State s) { return automaton.final[s]; });
-        return (finalState != states.end());
-    }
-
-    //checks whether the set has someone with the isFinal flag on
-    template<class T>
-    bool contains_final(const T &states, const std::vector<bool> &isFinal) {
-        return any_of(states.begin(), states.end(), [&isFinal](State s) { return isFinal[s]; });
-
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
