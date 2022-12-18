@@ -357,6 +357,63 @@ TEST_CASE("Mata::Mintermization::mintermization")
         const auto res = mintermization.mintermize(aut);
     }
 
+    SECTION("Mintermization NFA true and false")
+    {
+        std::string file =
+            "@NFA-bits\n"
+            "%States-enum q r s\n"
+            "%Alphabet-auto\n"
+            "%Initial q\n"
+            "%Final r\n"
+            "q true r\n"
+            "r a1 & a2 s\n"
+            "s false s\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto& aut= auts[0];
+        REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
+        REQUIRE(aut.transitions[0].second.children[0].node.raw == "true");
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
+        REQUIRE(aut.transitions[0].second.children[1].node.raw == "r");
+
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 3);
+        REQUIRE(res.transitions[0].first.name == "q");
+        REQUIRE(res.transitions[1].first.name == "q");
+        REQUIRE(res.transitions[2].first.name == "r");
+    }
+
+    SECTION("Mintermization AFA true and false")
+    {
+        std::string file =
+            "@AFA-bits\n"
+            "%Initial q0\n"
+            "%Final q3\n"
+            "q0 (true & q2 & q3 & q0) | (a4 & !a5 & !a6 & !a7 & q0 & q1 & q2)\n"
+            "q1 false\n"
+            "q2 q1\n"
+            "q3 true\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto& aut= auts[0];
+        REQUIRE(aut.transitions[0].second.node.is_operator());
+        REQUIRE(aut.transitions[0].second.node.raw == "|");
+        REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
+        REQUIRE(aut.transitions[0].second.children[1].node.raw == "&");
+
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 7);
+        REQUIRE(res.transitions[0].first.raw == "q0");
+        REQUIRE(res.transitions[1].first.raw == "q0");
+        REQUIRE(res.transitions[2].first.raw == "q0");
+        REQUIRE(res.transitions[3].first.raw == "q2");
+        REQUIRE(res.transitions[4].first.raw == "q2");
+        REQUIRE(res.transitions[5].first.raw == "q3");
+        REQUIRE(res.transitions[6].first.raw == "q3");
+    }
+
     SECTION("Mintermization NFA multiple")
     {
         Parsed parsed;

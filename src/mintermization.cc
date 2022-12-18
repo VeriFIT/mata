@@ -61,7 +61,8 @@ void Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
     for (const auto& trans : aut.transitions) {
         // Foreach transition create a BDD
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
-        assert(symbol_part.node.is_operator()); // beginning of symbol part of transition
+        assert((symbol_part.node.is_operator() || symbol_part.children.empty()) &&
+            "Symbol part must be either formula or single symbol");
         const BDD bdd = graph_to_bdd_nfa(symbol_part);
         if (bdd.IsZero())
             continue;
@@ -151,7 +152,8 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(c
         if (symbol_to_bddvar.count(node.name)) {
             return OptionalBdd(symbol_to_bddvar.at(node.name));
         } else {
-            BDD res = bdd_mng.bddVar();
+            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
+                    (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
             symbol_to_bddvar[node.name] = res;
             return OptionalBdd(res);
         }
@@ -185,7 +187,8 @@ const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
         if (symbol_to_bddvar.count(node.name)) {
             return symbol_to_bddvar.at(node.name);
         } else {
-            BDD res = bdd_mng.bddVar();
+            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
+                      (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
             symbol_to_bddvar[node.name] = res;
             return res;
         }
