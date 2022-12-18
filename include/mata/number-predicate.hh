@@ -306,8 +306,12 @@ namespace Mata {
                         predicate.resize(0);
                         return;
                     }
-                    else
-                        max = *std::max_element(elements.begin(), elements.end());
+                    else {
+                        if (predicate[predicate.size()])
+                            return;
+                        else
+                            max = *std::max_element(elements.begin(), elements.end());
+                    }
                 }
                 else {
                     // one needs to be careful, Number can be unsigned, empty would cause 0-1 below

@@ -23,6 +23,7 @@ TEST_CASE("Mata::Util::NumberPredicate") {
         SECTION("basic functionality: add, remove, access, constructor, size, get_elements "+std::to_string(i)) {
             std::vector<State> v = {1, 2, 3, 4, 5};
             p.add(v);
+            p.truncate_domain();
             auto elems = p.get_elements();
             CHECK(elems == v);
             CHECK(p.size() == 5);
