@@ -122,7 +122,7 @@ cdef class Trans:
 
 cdef class Move:
     """Wrapper over pair of symbol and states for transitions"""
-    cdef mata.CTransSymbolStates *thisptr
+    cdef mata.CMove *thisptr
 
     @property
     def symbol(self):
@@ -133,18 +133,18 @@ cdef class Move:
         self.thisptr.symbol = value
 
     @property
-    def states_to(self):
-        cdef vector[State] states_as_vector = self.thisptr.states_to.ToVector()
+    def targets(self):
+        cdef vector[State] states_as_vector = self.thisptr.targets.ToVector()
         return [s for s in states_as_vector]
 
-    @states_to.setter
-    def states_to(self, value):
-        cdef StateSet states_to = StateSet(value)
-        self.thisptr.states_to = states_to
+    @targets.setter
+    def targets(self, value):
+        cdef StateSet targets = StateSet(value)
+        self.thisptr.targets = targets
 
     def __cinit__(self, Symbol symbol, vector[State] states):
-        cdef StateSet states_to = StateSet(states)
-        self.thisptr = new mata.CTransSymbolStates(symbol, states_to)
+        cdef StateSet targets = StateSet(states)
+        self.thisptr = new mata.CMove(symbol, targets)
 
     def __dealloc__(self):
         if self.thisptr != NULL:
@@ -163,13 +163,13 @@ cdef class Move:
         return dereference(self.thisptr) >= dereference(other.thisptr)
 
     def __eq__(self, Move other):
-        return self.symbol == other.symbol and self.states_to == other.states_to
+        return self.symbol == other.symbol and self.targets == other.targets
 
     def __neq__(self, Move other):
-        return self.symbol != other.symbol or self.states_to != other.states_to
+        return self.symbol != other.symbol or self.targets != other.targets
 
     def __str__(self):
-        trans = "{" + ",".join(map(str, self.states_to)) + "}"
+        trans = "{" + ",".join(map(str, self.targets)) + "}"
         return f"[{self.symbol}]\u2192{trans}"
 
     def __repr__(self):
@@ -413,16 +413,16 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: Move
         """
-        cdef mata.Moves transitions = self.thisptr.get().get_moves_from(state)
-        cdef vector[mata.CTransSymbolStates] transitions_list = transitions.ToVector()
+        cdef mata.CPost transitions = self.thisptr.get().get_moves_from(state)
+        cdef vector[mata.CMove] transitions_list = transitions.ToVector()
 
-        cdef vector[mata.CTransSymbolStates].iterator it = transitions_list.begin()
-        cdef vector[mata.CTransSymbolStates].iterator end = transitions_list.end()
+        cdef vector[mata.CMove].iterator it = transitions_list.begin()
+        cdef vector[mata.CMove].iterator end = transitions_list.end()
         transsymbols = []
         while it != end:
             t = Move(
                 dereference(it).symbol,
-                dereference(it).states_to.ToVector()
+                dereference(it).targets.ToVector()
             )
             postinc(it)
             transsymbols.append(t)
@@ -947,14 +947,14 @@ cdef class Nfa:
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CTransSymbolStates].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
+        cdef COrdVector[CMove].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
             state, epsilon
         )
         if c_epsilon_transitions_iter == self.thisptr.get().get_moves_from(state).cend():
             return None
 
-        cdef CTransSymbolStates epsilon_transitions = dereference(c_epsilon_transitions_iter)
-        return Move(epsilon_transitions.symbol, epsilon_transitions.states_to.ToVector())
+        cdef CMove epsilon_transitions = dereference(c_epsilon_transitions_iter)
+        return Move(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
     @classmethod
@@ -1690,7 +1690,7 @@ cdef class Segmentation:
             segment = Nfa(c_segment.states_number())
             segment.thisptr.get().initial_states = c_segment.initial_states
             segment.thisptr.get().final_states = c_segment.final_states
-            segment.thisptr.get().transition_relation = c_segment.transition_relation
+            segment.thisptr.get().delta = c_segment.delta
 
             segments.append(segment)
 

@@ -1069,7 +1069,7 @@ def test_get_epsilon_transitions():
     nfa.add_transition(1, mata.epsilon(), 3)
     epsilon_transitions = nfa.get_epsilon_transitions(1)
     assert epsilon_transitions.symbol == mata.epsilon()
-    assert epsilon_transitions.states_to == [2, 3]
+    assert epsilon_transitions.targets == [2, 3]
 
     nfa.add_transition(0, 1, 2)
     nfa.add_transition(0, 2, 2)
@@ -1077,7 +1077,7 @@ def test_get_epsilon_transitions():
     nfa.add_transition(0, 8, 6)
     epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
     assert epsilon_transitions.symbol == 8
-    assert epsilon_transitions.states_to == [5, 6]
+    assert epsilon_transitions.targets == [5, 6]
 
     assert nfa.get_epsilon_transitions(5) is None
 

@@ -129,11 +129,11 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
         sync_iterator.reset();
         for (State q: bigger_set) {
-            Mata::Util::push_back(sync_iterator, bigger.transition_relation[q]);
+            Mata::Util::push_back(sync_iterator, bigger.delta[q]);
         }
 
         // process transitions leaving smaller_state
-        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.transition_relation[smaller_state] after refactoring
+        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.delta[smaller_state] after refactoring
             const Symbol& smaller_symbol = smaller_move.symbol;
 
             do {
@@ -147,15 +147,14 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
             // TODO: this is ugly, the interface of the sync iterator should be redesigned so that this looks ok
             StateSet bigger_succ = {};
-            if(sync_iterator.is_synchronized() && *sync_iterator.get_current_minimum() == smaller_move) {
+            if(*sync_iterator.get_current_minimum() == smaller_move) {
                 std::vector<Iterator> bigger_moves = sync_iterator.get_current();
                 for (auto m: bigger_moves) {
-                    bigger_succ = bigger_succ.Union(m->states_to);
+                    bigger_succ = bigger_succ.Union(m->targets);
                 }
             }
 
-            for (const State& smaller_succ : smaller_move.states_to) {
-
+            for (const State& smaller_succ : smaller_move.targets) {            
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&

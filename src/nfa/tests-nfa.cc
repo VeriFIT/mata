@@ -66,8 +66,12 @@ template<class T> void unused(const T &) {}
 //TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
 bool nothing_in_trans(const Nfa& nfa)
 {
-    return std::all_of(nfa.transition_relation.begin(), nfa.transition_relation.end(),
-                       [](const auto& trans) {return trans.size() == 0;});
+    bool all_empty = true;
+    for (size_t i = 0; i < nfa.delta.size(); ++i) {
+        all_empty &= nfa.delta[i].empty();
+    }
+
+    return all_empty;
 }
 
 /*
@@ -183,27 +187,25 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 	{
 		aut.add_trans('q', 'a', 'r');
 		aut.add_trans('q', 'b', 'r');
-		auto it = aut.transition_relation.begin();
-		auto jt = aut.transition_relation.begin();
+		auto it = aut.delta.begin();
+		auto jt = aut.delta.begin();
 		REQUIRE(it == jt);
 		++it;
 		REQUIRE(it != jt);
-		REQUIRE((it != aut.transition_relation.begin() && it != aut.transition_relation.end()));
-		REQUIRE(jt == aut.transition_relation.begin());
+		REQUIRE((it != aut.delta.begin() && it != aut.delta.end()));
+		REQUIRE(jt == aut.delta.begin());
 
 		++jt;
 		REQUIRE(it == jt);
-		REQUIRE((jt != aut.transition_relation.begin() && jt != aut.transition_relation.end()));
+		REQUIRE((jt != aut.delta.begin() && jt != aut.delta.end()));
 
-        jt = aut.transition_relation.begin() + state_num - 1;
-		++jt;
+        jt = aut.delta.end();
 		REQUIRE(it != jt);
-		REQUIRE((jt != aut.transition_relation.begin() && jt == aut.transition_relation.end()));
+		REQUIRE((jt != aut.delta.begin() && jt == aut.delta.end()));
 
-        it = aut.transition_relation.begin() + state_num - 1;
-		++it;
+        it = aut.delta.end();
 		REQUIRE(it == jt);
-		REQUIRE((it != aut.transition_relation.begin() && it == aut.transition_relation.end()));
+		REQUIRE((it != aut.delta.begin() && it == aut.delta.end()));
 	}
 } // }}}
 
@@ -2311,32 +2313,32 @@ TEST_CASE("Mata::Nfa::remove_trans()")
             REQUIRE_THROWS_AS(aut.remove_trans(1, 1, 5), std::invalid_argument);
         }
 
-        SECTION("Remove the last state_to from states_to")
+        SECTION("Remove the last state_to from targets")
         {
             REQUIRE(aut.has_trans(6, 'a', 2));
             aut.remove_trans(6, 'a', 2);
             REQUIRE(!aut.has_trans(6, 'a', 2));
-            REQUIRE(aut.transition_relation[6].empty());
+            REQUIRE(aut.delta[6].empty());
 
             REQUIRE(aut.has_trans(4, 'a', 8));
             REQUIRE(aut.has_trans(4, 'c', 8));
             REQUIRE(aut.has_trans(4, 'a', 6));
             REQUIRE(aut.has_trans(4, 'b', 6));
-            REQUIRE(aut.transition_relation[4].size() == 3);
+            REQUIRE(aut.delta[4].size() == 3);
             aut.remove_trans(4, 'a', 6);
             REQUIRE(!aut.has_trans(4, 'a', 6));
             REQUIRE(aut.has_trans(4, 'b', 6));
-            REQUIRE(aut.transition_relation[4].size() == 3);
+            REQUIRE(aut.delta[4].size() == 3);
 
             aut.remove_trans(4, 'a', 8);
             REQUIRE(!aut.has_trans(4, 'a', 8));
             REQUIRE(aut.has_trans(4, 'c', 8));
-            REQUIRE(aut.transition_relation[4].size() == 2);
+            REQUIRE(aut.delta[4].size() == 2);
 
             aut.remove_trans(4, 'c', 8);
             REQUIRE(!aut.has_trans(4, 'a', 8));
             REQUIRE(!aut.has_trans(4, 'c', 8));
-            REQUIRE(aut.transition_relation[4].size() == 1);
+            REQUIRE(aut.delta[4].size() == 1);
         }
     }
 }
@@ -2738,10 +2740,10 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
 
     auto state_eps_trans{ aut.get_epsilon_transitions(0) };
     CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->states_to == StateSet{ 3 });
+    CHECK(state_eps_trans->targets == StateSet{3 });
     state_eps_trans = aut.get_epsilon_transitions(3);
     CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+    CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
     aut.add_trans(8, 42, 3);
     aut.add_trans(8, 42, 4);
@@ -2749,20 +2751,20 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
 
     state_eps_trans = aut.get_epsilon_transitions(8, 42);
     CHECK(state_eps_trans->symbol == 42);
-    CHECK(state_eps_trans->states_to == StateSet{ 3, 4, 6 });
+    CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
 
     CHECK(aut.get_epsilon_transitions(1) == aut.get_moves_from(1).end());
     CHECK(aut.get_epsilon_transitions(5) == aut.get_moves_from(5).end());
     CHECK(aut.get_epsilon_transitions(19) == aut.get_moves_from(19).end());
 
-    auto state_transitions{ aut.transition_relation[0] };
+    auto state_transitions{ aut.delta[0] };
     state_eps_trans = aut.get_epsilon_transitions(state_transitions);
     CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->states_to == StateSet{ 3 });
-    state_transitions = aut.transition_relation[3];
+    CHECK(state_eps_trans->targets == StateSet{3 });
+    state_transitions = aut.delta[3];
     state_eps_trans = aut.get_epsilon_transitions(state_transitions);
     CHECK(state_eps_trans->symbol == EPSILON);
-    CHECK(state_eps_trans->states_to == StateSet{ 3, 4 });
+    CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
     state_transitions = aut.get_moves_from(1);
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
@@ -2770,5 +2772,27 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
     state_transitions = aut.get_moves_from(19);
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
+}
 
+TEST_CASE("Mata::Nfa::Nfa::defragment()") {
+    Nfa aut{6};
+    aut.add_trans(0, 42, 2);
+    aut.add_trans(0, 42, 1);
+    aut.add_trans(1, 42, 3);
+    aut.add_trans(1, 42, 2);
+    aut.add_trans(2, 42, 3);
+    aut.add_trans(4, 42, 2);
+    aut.add_trans(4, 42, 1);
+    aut.add_trans(5, 42, 4);
+    CHECK(aut.states_number() == 6);
+    CHECK(aut.has_trans(1,42,3));
+    aut.defragment();
+    CHECK(aut.states_number() == 5);
+    CHECK(aut.has_trans(1,42,5));
+    CHECK(aut.has_trans(4,42,3)); // previously (5,42,4)
+    aut.defragment();
+    CHECK(aut.states_number() == 5);
+    // transitions has not been changed
+    CHECK(aut.has_trans(1,42,5));
+    CHECK(aut.has_trans(4,42,3));
 }

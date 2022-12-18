@@ -486,7 +486,7 @@ namespace {
             for (int state = 0; state < program_size; state++) {
                 const auto& transition_list = input_nfa.get_moves_from(state);
                 for (const auto& transition: transition_list) {
-                    for (auto stateTo: transition.states_to) {
+                    for (auto stateTo: transition.targets) {
                         if (static_cast<int>(renumbered_states[stateTo]) == -1) {
                             renumbered_states[stateTo] = renumbered_explicit_nfa.add_state();
                         }

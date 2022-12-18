@@ -23,14 +23,14 @@ def test_move():
     c = mata.Move(0, [0])
     d = mata.Move(1, [])
     assert a.symbol == 0
-    assert a.states_to == [0, 1]
+    assert a.targets == [0, 1]
 
     # Test getter and setters
     a.symbol = 1
     assert not a.symbol == 0
     assert a.symbol == 1
-    a.states_to = []
-    assert a.states_to == []
+    a.targets = []
+    assert a.targets == []
 
     # Test comparision
     assert not a < b

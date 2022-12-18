@@ -187,6 +187,8 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
+    virtual ~OrdVector() = default;
+
     /**
      * Create OrdVector with reserved @p capacity.
      * @param[in] capacity Capacity of OrdVector to reserve.
@@ -221,8 +223,7 @@ public:   // Public methods
         vec_.insert(itr,x);
     }
 
-
-    void insert(const Key& x)
+    virtual void insert(const Key& x)
     {
         // Assertions
         assert(vectorIsSorted());
@@ -268,7 +269,7 @@ public:   // Public methods
     }
 
 
-    void insert(const OrdVector& vec)
+    virtual void insert(const OrdVector& vec)
     {
         // Assertions
         assert(vectorIsSorted());
@@ -281,14 +282,6 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-
-    void push_back(const Key& k)
-    {
-        assert(vec_.empty() || vec_.at(vec_.size()-1) < k);
-
-        vec_.push_back(k);
-    }
-
     inline void clear()
     {
         // Assertions
@@ -297,8 +290,7 @@ public:   // Public methods
         vec_.clear();
     }
 
-
-    inline size_t size() const
+    virtual inline size_t size() const
     {
         // Assertions
         assert(vectorIsSorted());
@@ -413,7 +405,7 @@ public:   // Public methods
         return result;
     }
 
-    const_iterator find(const Key& key) const
+    virtual const_iterator find(const Key& key) const
     {
         // Assertions
         assert(vectorIsSorted());
@@ -442,7 +434,7 @@ public:   // Public methods
         return end();
     }
 
-    iterator find(const Key& key)
+    virtual iterator find(const Key& key)
     {
         // Assertions
         assert(vectorIsSorted());
@@ -477,7 +469,7 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-    inline bool empty() const
+    virtual inline bool empty() const
     {
         // Assertions
         assert(vectorIsSorted());
@@ -485,15 +477,16 @@ public:   // Public methods
         return vec_.empty();
     }
 
-    inline const_reference back() const
+    virtual inline const_reference back() const
     {
         // Assertions
         assert(vectorIsSorted());
-
+        
         return vec_.back();
     }
 
-    inline const_iterator begin() const
+
+    virtual inline const_iterator begin() const
     {
         // Assertions
         assert(vectorIsSorted());
@@ -501,7 +494,7 @@ public:   // Public methods
         return vec_.begin();
     }
 
-    inline const_iterator end() const
+    virtual inline const_iterator end() const
     {
         // Assertions
         assert(vectorIsSorted());
@@ -510,7 +503,7 @@ public:   // Public methods
     }
 
 
-    inline iterator begin()
+    virtual inline iterator begin()
     {
         // Assertions
         assert(vectorIsSorted());
@@ -518,7 +511,7 @@ public:   // Public methods
         return vec_.begin();
     }
 
-    inline iterator end()
+    virtual inline iterator end()
     {
         // Assertions
         assert(vectorIsSorted());
@@ -526,57 +519,57 @@ public:   // Public methods
         return vec_.end();
     }
 
-    inline const_iterator cbegin() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
+	virtual inline const_iterator cbegin() const
+	{
+		// Assertions
+		assert(vectorIsSorted());
 
-        return begin();
-    }
+		return begin();
+	}
 
-    inline const_iterator cend() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
+	virtual inline const_iterator cend() const
+	{
+		// Assertions
+		assert(vectorIsSorted());
 
-        return end();
-    }
+		return end();
+	}
 
-    /**
-     * @brief  Overloaded << operator
-     *
-     * Overloaded << operator for output stream.
-     *
-     * @see  to_string()
-     *
-     * @param[in]  os    The output stream
-     * @param[in]  vec   Assignment to the variables
-     *
-     * @returns  Modified output stream
-     */
-    friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec)
-    {
-        // Assertions
-        assert(vec.vectorIsSorted());
+	/**
+	 * @brief  Overloaded << operator
+	 *
+	 * Overloaded << operator for output stream.
+	 *
+	 * @see  to_string()
+	 *
+	 * @param[in]  os    The output stream
+	 * @param[in]  vec   Assignment to the variables
+	 *
+	 * @returns  Modified output stream
+	 */
+	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec)
+	{
+		// Assertions
+		assert(vec.vectorIsSorted());
 
-        std::string result = "{";
+		std::string result = "{";
 
-        for (auto it = vec.cbegin(); it != vec.cend(); ++it)
-        {
-            result += ((it != vec.begin())? ", " : " ") + ToString(*it);
-        }
+		for (auto it = vec.cbegin(); it != vec.cend(); ++it)
+		{
+			result += ((it != vec.begin())? ", " : " ") + ToString(*it);
+		}
 
-        return os << (result + "}");
-    }
+		return os << (result + "}");
+	}
 
-    bool operator==(const OrdVector& rhs) const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+	bool operator==(const OrdVector& rhs) const
+	{
+		// Assertions
+		assert(vectorIsSorted());
+		assert(rhs.vectorIsSorted());
 
-        return (vec_ == rhs.vec_);
-    }
+		return (vec_ == rhs.vec_);
+	}
 
     bool operator!=(const OrdVector& rhs) const
     {

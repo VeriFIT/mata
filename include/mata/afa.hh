@@ -517,7 +517,7 @@ inline Word encode_word(
 	const std::vector<std::string>&  input)
 { // {{{
 	Word result;
-	for (auto str : input) { result.push_back(symbol_map.at(str)); }
+	for (auto str : input) { result.insert(symbol_map.at(str)); }
 	return result;
 } // encode_word }}}
 
