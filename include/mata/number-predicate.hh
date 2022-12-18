@@ -25,6 +25,10 @@ namespace Mata {
          * INVARIANT:
          *  tracking_elements -> elements contains a superset of the true elements
          *  elements_are_exact -> elements contain exactly the true elements
+         *
+         * predicate.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
+         * but the size of the domain is going to be used to determine the number of states in the nfa automaton :(.
+         * This is somewhat ugly, but don't know how else to do it efficiently (computing true maximum would be costly).
          */
         template <class Number> class OrdVector;
 
@@ -287,6 +291,41 @@ namespace Mata {
 
             bool empty() const {
                 return (size() == 0);
+            }
+
+            // This is supposed to return something not smaller than the largest element in the set
+            // the easiest is to return the size of the predicate, roughly, the largest element ever inserted.
+            Number domain_size() {
+                return predicate.size();
+            }
+
+            // truncates the domain to the maximal element (so the elements stay the same)
+            // this could be needed in defragmentation of nfa
+            void truncate_domain() {
+                if (predicate.empty())
+                    return;
+                else if (predicate[predicate.size()])
+                    return;
+
+                Number max;
+                if (tracking_elements) {
+                    update_elements();
+                    // if empty, max would be something strange
+                    if (elements.empty()) {
+                        predicate.resize(0);
+                        return;
+                    }
+                    else
+                        max = *std::max_element(elements.begin(), elements.end());
+                }
+                else {
+                    // one needs to be careful, Number can be unsigned, empty predicate would cause 0-1 below
+                    for (max = predicate.size()-1; max >= 0; --max)
+                        if (predicate[max])
+                            break;
+                }
+
+                predicate.resize(max+1);
             }
         };
     }
