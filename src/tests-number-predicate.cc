@@ -11,6 +11,7 @@ using namespace Mata::Nfa;
 
 TEST_CASE("Mata::Util::NumberPredicate") {
     NumberPredicate<State> p;
+    p.truncate_domain();
     // to test switching between watching and not watching
     std::vector<bool> vals = {true, false, false, true, true};
     int i = 0;
@@ -26,6 +27,7 @@ TEST_CASE("Mata::Util::NumberPredicate") {
             CHECK(elems == v);
             CHECK(p.size() == 5);
             p.remove({2, 4});
+            p.truncate_domain();
             CHECK(OrdVector<State>(p) == OrdVector<State>({1,3,5}));
             v = {1, 3, 5};
             elems = p.get_elements();
