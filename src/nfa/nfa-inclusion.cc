@@ -99,6 +99,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         paths.insert({ st, {st, 0}});
     }
 
+    //For synchronised iteration over the set of states
+    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
+
     while (!worklist.empty()) {
         // get a next product state
         ProdStateType prod_state;
@@ -113,12 +117,34 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         const State& smaller_state = prod_state.first;
         const StateSet& bigger_set = prod_state.second;
 
-        // process transitions leaving smaller_state
-        for (const auto& post_symb : smaller[smaller_state]) {
-            const Symbol& symb = post_symb.symbol;
+        sync_iterator.reset();
+        for (State q: bigger_set) {
+            Mata::Util::push_back(sync_iterator, bigger.delta[q]);
+        }
 
-            for (const State& smaller_succ : post_symb.states_to) {
-                const StateSet bigger_succ = bigger.post(bigger_set, symb);
+        // process transitions leaving smaller_state
+        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.delta[smaller_state] after refactoring
+            const Symbol& smaller_symbol = smaller_move.symbol;
+
+            do {
+                if (sync_iterator.is_synchronized()) {
+                    auto current_min = sync_iterator.get_current_minimum();
+                    if (*current_min >= smaller_move) {
+                        break;
+                    }
+                }
+            } while (sync_iterator.advance());
+
+            StateSet bigger_succ = {};
+            if(*sync_iterator.get_current_minimum() == smaller_move) {
+                std::vector<Iterator> bigger_moves = sync_iterator.get_current();
+                for (auto m: bigger_moves) {
+                    bigger_succ = bigger_succ.Union(m->targets);
+                }
+            }
+
+            for (const State& smaller_succ : smaller_move.targets) {
+            
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&
@@ -126,7 +152,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 {
                     if (nullptr != cex) {
                         cex->word.clear();
-                        cex->word.push_back(symb);
+                        cex->word.push_back(smaller_symbol);
                         ProdStateType trav = prod_state;
                         while (paths[trav].first != trav)
                         { // go back until initial state
@@ -169,7 +195,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
 
                 // also set that succ was accessed from state
-                paths[succ] = {prod_state, symb};
+                paths[succ] = {prod_state, smaller_symbol};
             }
         }
     }

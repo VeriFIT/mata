@@ -47,7 +47,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         }
 
         result = Nfa();
-        result.transition_relation = lhs.transition_relation;
+        result.delta = lhs.delta;
         result.initial = lhs.initial;
         result.increase_size(result_num_of_states);
 
@@ -105,7 +105,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
             if (!lhs.final[lhs_state]) {
                 for (const auto& symbol_transitions:
                     lhs.get_moves_from(lhs_state)) {
-                    for (const State lhs_state_to: symbol_transitions.states_to) {
+                    for (const State lhs_state_to: symbol_transitions.targets) {
                         if (!lhs.final[lhs_state_to]) {
                             result.add_trans(lhs_result_states_map_internal[lhs_state],
                                              symbol_transitions.symbol,
@@ -141,7 +141,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         for (const auto& lhs_final_state: lhs.final) {
             for (const auto& transitions_from_lhs_final_state:
                 lhs.get_moves_from(lhs_final_state)) {
-                for (const auto& lhs_state_to: transitions_from_lhs_final_state.states_to) {
+                for (const auto& lhs_state_to: transitions_from_lhs_final_state.targets) {
                     if (lhs_state_to != lhs_final_state) { // Self-loops on final states already handled.
                         for (const auto& rhs_initial_state: rhs.initial) {
                             result.add_trans(rhs_result_states_map_internal[rhs_initial_state],
@@ -165,7 +165,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     {
         for (const auto& symbol_transitions: rhs.get_moves_from(rhs_state))
         {
-            for (const auto& rhs_state_to: symbol_transitions.states_to)
+            for (const auto& rhs_state_to: symbol_transitions.targets)
             {
                 result.add_trans(rhs_result_states_map_internal[rhs_state],
                                  symbol_transitions.symbol,

@@ -105,7 +105,7 @@ void ShortestWordsMap::compute_for_state(const State state)
 
     for (const Move& transition: reversed_automaton.get_moves_from(state))
     {
-        for (const State state_to: transition.states_to)
+        for (const State state_to: transition.targets)
         {
             const LengthWordsPair& orig{ map_default_shortest_words(state_to) };
             act = orig;
