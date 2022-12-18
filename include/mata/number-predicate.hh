@@ -25,6 +25,10 @@ namespace Mata {
          * INVARIANT:
          *  tracking_elements -> elements contains a superset of the true elements
          *  elements_are_exact -> elements contain exactly the true elements
+         *
+         * predicate.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
+         * but the size of the domain is going to be used to determine the number of states in the nfa automaton :(.
+         * This is somewhat ugly, but don't know how else to do it efficiently (computing true maximum would be costly).
          */
         template <class Number> class OrdVector;
 
