@@ -302,6 +302,9 @@ namespace Mata {
             // truncates the domain to the maximal element (so the elements stay the same)
             // this could be needed in defragmentation of nfa
             void truncate_domain() {
+                if (predicate[predicate.size()])
+                    return;
+
                 Number max;
                 if (tracking_elements) {
                     update_elements();
@@ -310,12 +313,8 @@ namespace Mata {
                         predicate.resize(0);
                         return;
                     }
-                    else {
-                        if (predicate[predicate.size()])
-                            return;
-                        else
-                            max = *std::max_element(elements.begin(), elements.end());
-                    }
+                    else
+                        max = *std::max_element(elements.begin(), elements.end());
                 }
                 else {
                     // one needs to be careful, Number can be unsigned, empty would cause 0-1 below
