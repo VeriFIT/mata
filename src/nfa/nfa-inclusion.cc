@@ -147,7 +147,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
             // TODO: this is ugly, the interface of the sync iterator should be redesigned so that this looks ok
             StateSet bigger_succ = {};
-            if(*sync_iterator.get_current_minimum() == smaller_move) {
+            if(sync_iterator.is_synchronized() && *sync_iterator.get_current_minimum() == smaller_move) {
                 std::vector<Iterator> bigger_moves = sync_iterator.get_current();
                 for (auto m: bigger_moves) {
                     bigger_succ = bigger_succ.Union(m->targets);
