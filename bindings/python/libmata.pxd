@@ -50,6 +50,52 @@ cdef extern from "simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void get_quotient_projection(ivector&)
 
 
+cdef extern from "mata/number-predicate.hh" namespace "Mata::Util":
+    cdef cppclass CNumberPredicate "Mata::Util::NumberPredicate" [T]:
+        vector[bool] predicate
+        vector[T] elements
+        bool elements_are_exact
+        bool tracking_elements
+
+        CNumberPredicate(bool)
+        CNumberPredicate(vector[T], bool)
+
+        void prune_elements()
+        void update_elements()
+        void compute_elements()
+
+        void add(T)
+        void remove(T)
+        void track_elements()
+        void dont_track_elements()
+        bool operator[](T)
+        T size()
+        void clear()
+        void reserve(T)
+        void flip(T)
+        void complement(T)
+        vector[T] get_elements()
+        bool are_disjoint(CNumberPredicate[T])
+        bool empty()
+        T domain_size()
+        void truncate_domain()
+
+        cppclass const_iterator:
+            const T operator *()
+            const_iterator operator++()
+            bint operator ==(const_iterator)
+            bint operator !=(const_iterator)
+        const_iterator cbegin()
+        const_iterator cend()
+
+        cppclass iterator:
+            T operator *()
+            iterator operator++()
+            bint operator ==(iterator)
+            bint operator !=(iterator)
+        iterator begin()
+        iterator end()
+
 cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
     cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
         COrdVector() except+
@@ -169,8 +215,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
             void refresh_trans()
 
         # Public Attributes
-        StateSet initial_states
-        StateSet final_states
+        CNumberPredicate[State] initial
+        CNumberPredicate[State] final
         CDelta delta
         umap[string, void*] attributes
         CAlphabet* alphabet
