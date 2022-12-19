@@ -907,6 +907,32 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
         REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
     }
+
+    SECTION("construct - final states from negation")
+    {
+        std::string file =
+                "@NFA-bits\n"
+                "%Alphabet-auto\n"
+                "%Initial q0 q8\n"
+                "%Final !q0 & !q1 & !q4 & !q5 & !q6\n"
+                "q0 a1 q1\n"
+                "q1 a2 q2\n"
+                "q2 a3 q3\n"
+                "q2 a4 q4\n"
+                "q3 a5 q5\n"
+                "q3 a6 q6\n"
+                "q5 a7 q7\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        construct(&aut, inter_aut, &symbol_map);
+        REQUIRE(aut.final.size() == 4);
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a5", "a7"})));
+    }
 } // }}}
 
 /*

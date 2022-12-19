@@ -1296,7 +1296,9 @@ Nfa Mata::Nfa::construct(
         aut.initial.add(state);
     }
 
-    for (const auto& str : inter_aut.final_formula.collect_node_names())
+    const auto final_states = inter_aut.are_final_states_conjunction_of_negation() ?
+            inter_aut.get_positive_finals() : inter_aut.final_formula.collect_node_names();
+    for (const auto& str : final_states)
     {
         State state = get_state_name(str);
         aut.final.add(state);
