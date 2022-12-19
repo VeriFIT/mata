@@ -46,6 +46,8 @@ jobs:
 
       - name: Install runner for jupyter notebooks
         run: |
+          python3 -m pip install ipykernel
+          python3 -m ipykernel install --user
           python3 -m pip install papermill
 
       - name: Test the jupyter notebooks
