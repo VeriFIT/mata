@@ -48,7 +48,8 @@ jobs:
         run: |
           python3 -m pip install ipykernel
           python3 -m ipykernel install --user
-          python3 -m pip install papermill seaborn pandas
+          python3 -m pip install seaborn==0.12.0
+          python3 -m pip install papermill pandas
 
       - name: Test the jupyter notebooks
         run: |
