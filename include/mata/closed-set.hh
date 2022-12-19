@@ -41,6 +41,7 @@
  * -> insert a node/more nodes to the closed set
  * -> perform an union over two closed sets of the same type and with the same carrier
  * -> perform an intersection over two closed sets of the same type and with the same carrier
+ * -> compute a complement of a closed set
  *
  * It is not possible to:
  *
@@ -49,7 +50,6 @@
  * -> remove a node/more nodes from the closed set (nonsense)
  * -> perform an union over two closed sets of different types or different carriers (nonsense)
  * -> perform an intersection over two closed sets of different types or different carriers (nonsense) 
- * -> compute a complement of a closed set (TODO)
  *
  * Examples:
  *
@@ -221,8 +221,7 @@ struct ClosedSet
 
        ClosedSet Union (const ClosedSet rhs) const;
        ClosedSet intersection (const ClosedSet rhs) const;
-
-       //TODO: complement!!!
+       ClosedSet complement () const;
 
        /////////////////////////////////////////////
 }; // ClosedSet }}}
@@ -421,6 +420,100 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const
     }    
     return result;
 } // intersection }}}
+
+/** Performs a complementation over a closed set. The result will
+* contain nodes which are not elements of the former closed set.
+* The complement of an upward-closed set is always downward-closed and vice versa.
+* @brief performs a complementation over a closed set
+* @return a complement of a closed sets
+*/
+template <typename T>
+ClosedSet<T> ClosedSet<T>::complement() const
+{
+	// The complement of an upward-closed set is
+	// always downward-closed and vice versa.
+	ClosedSetType new_type = upward_closed_set;
+	if(type_ == upward_closed_set)
+	{
+		new_type = downward_closed_set;
+	}
+	ClosedSet<T> result = ClosedSet(new_type, get_min(), get_max(), antichain());
+	
+	if(type_ == upward_closed_set)
+	{
+		// Initially, a complement contains all possible elements
+		// which will be then (possibly) removed.
+		Node initialValues{};
+		for(long unsigned i = 0; i <= max_val_; ++i)
+		{
+			initialValues.insert(i);
+		}
+		result.insert(initialValues);       
+		
+		// For each element of the closed set {xa, xb, xc, ...}, we
+		// create a set of all sets Xa, Xb, Xc,... such that Xn contains
+		// all elements of the carrier except of xn
+		// For example, for a node {0, 2, 3} (the maximal element is 4),
+		// we create a set {{1, 2, 3, 4}, {0, 1, 3, 4}, {0, 1, 2, 4}}.
+		// This set corresponds to an antichain of a new downward-closed set.
+		// The result will be an intersection of all downward-closed sets
+		// created using this procedure.
+		for(auto element : antichain())
+		{
+			ClosedSet preparingAntichain(downward_closed_set, get_min(), get_max());
+			for(int i = 0; i <= max_val_; ++i)
+			{
+				if(!element.count(i))
+				{
+					continue;
+				}		
+	            Node candidates{};
+	            for(int j = 0; j <= max_val_; ++j)
+	            {
+	                if(i!=j)
+	                {
+	                    candidates.insert(j);
+	                }
+	            }
+	            preparingAntichain.insert(candidates);
+			}
+			result = result.intersection(preparingAntichain);
+	    }
+    }
+
+    else if(type_ == downward_closed_set)
+    {
+		// Initially, a complement contains all possible elements
+		// which will be then (possibly) removed.
+		result.insert(Node());   
+
+		// For each element of the closed set {xa, xb, xc, ...}, we
+		// create a set of all sets Xa, Xb, Xc,... such that Xn contains
+		// only xn. For example, for a node {0, 2, 3}, we create a set 
+		// {{0}, {2}, {3}}.
+		// This set corresponds to an antichain of a new upward-closed set.
+		// The result will be an intersection of all upward-closed sets
+		// created using this procedure. 
+        for(Node element : antichain())
+        {
+            ClosedSet preparingAntichain(upward_closed_set, min_val_, max_val_);
+            for(T i = min_val_; i <= max_val_; ++i)
+            {
+                Node candidates{i};
+                if(!element.count(i))
+                {
+                    preparingAntichain.insert({i});
+                }
+            }
+                result = result.intersection(preparingAntichain);   
+        }
+    }
+
+    return result;
+
+///////////////////////////////////////////////////////////////
+
+} // complement }}}
 
 
 } // std }}}
