@@ -210,23 +210,25 @@ cdef class Nfa:
 
     @property
     def initial_states(self):
-        cdef vector[State] initial_states = self.thisptr.get().initial_states.ToVector()
+        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
         return [initial_state for initial_state in initial_states]
 
     @initial_states.setter
-    def initial_states(self, value):
-        cdef StateSet initial_states = StateSet(value)
-        self.thisptr.get().initial_states = initial_states
+    def initial_states(self, vector[State] value):
+        self.thisptr.get().initial.clear()
+        for state in value:
+            self.thisptr.get().initial.add(state)
 
     @property
     def final_states(self):
-        cdef vector[State] final_states = self.thisptr.get().final_states.ToVector()
+        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
         return [final_state for final_state in final_states]
 
     @final_states.setter
-    def final_states(self, value):
-        cdef StateSet final_states = StateSet(value)
-        self.thisptr.get().final_states = final_states
+    def final_states(self, vector[State] value):
+        self.thisptr.get().final.clear()
+        for state in value:
+            self.thisptr.get().final.add(state)
 
     def is_state(self, state):
         """Tests if state is in the automaton
@@ -248,14 +250,15 @@ cdef class Nfa:
 
         :param State state: State to be made initial.
         """
-        self.thisptr.get().make_initial(state)
+        self.thisptr.get().initial.add(state)
 
     def make_initial_states(self, vector[State] states):
         """Makes specified states from the automaton initial.
 
         :param list states: List of states to be made initial.
         """
-        self.thisptr.get().make_initial(states)
+        for state in states:
+            self.thisptr.get().initial.add(state)
 
     def has_initial_state(self, State st):
         """Tests if automaton contains given state
@@ -263,32 +266,33 @@ cdef class Nfa:
         :param State st: tested state
         :return: true if automaton contains given state
         """
-        return self.thisptr.get().has_initial(st)
+        return self.thisptr.get().initial[st]
 
     def remove_initial_state(self, State state):
         """Removes state from initial state set of the automaton.
 
         :param State state: State to be removed from initial states.
         """
-        self.thisptr.get().remove_initial(state)
+        self.thisptr.get().initial.remove(state)
 
     def clear_initial(self):
         """Clears initial state set of the automaton."""
-        self.thisptr.get().clear_initial()
+        self.thisptr.get().initial.clear()
 
     def make_final_state(self, State state):
         """Makes specified state from the automaton final.
 
         :param State state: State to be made final.
         """
-        self.thisptr.get().make_final(state)
+        self.thisptr.get().final.add(state)
 
     def make_final_states(self, vector[State] states):
         """Makes specified states from the automaton final.
 
         :param vector[State] states: List of states to be made final.
         """
-        self.thisptr.get().make_final(states)
+        for state in states:
+            self.thisptr.get().final.add(state)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state
@@ -296,18 +300,18 @@ cdef class Nfa:
         :param State st: tested state
         :return: true if automaton contains given state
         """
-        return self.thisptr.get().has_final(st)
+        return self.thisptr.get().final[st]
 
     def remove_final_state(self, State state):
         """Removes state from final state set of the automaton.
 
         :param State state: State to be removed from final states.
         """
-        self.thisptr.get().remove_final(state)
+        self.thisptr.get().final.remove(state)
 
     def clear_final(self):
         """Clears final state set of the automaton."""
-        self.thisptr.get().clear_final()
+        self.thisptr.get().final.clear()
 
     def unify_initial(self):
         """Unify initial states into a single new initial state."""
@@ -516,8 +520,8 @@ cdef class Nfa:
 
         :return: string representation of the automaton
         """
-        cdef vector[State] initial_states = self.thisptr.get().initial_states.ToVector()
-        cdef vector[State] final_states = self.thisptr.get().final_states.ToVector()
+        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
+        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
         result = "initial_states: {}\n".format([s for s in initial_states])
         result += "final_states: {}\n".format([s for s in final_states])
         result += "transitions:\n"
@@ -1217,7 +1221,7 @@ cdef class Nfa:
         :param Nfa lhs: tested automaton
         :return: true if automaton accepts epsilon
         """
-        cdef vector[State] initial_states = lhs.thisptr.get().initial_states.ToVector()
+        cdef vector[State] initial_states = lhs.thisptr.get().initial.get_elements()
         for state in initial_states:
             if lhs.has_final_state(state):
                 return True
@@ -1688,8 +1692,8 @@ cdef class Segmentation:
         cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
             segment = Nfa(c_segment.states_number())
-            segment.thisptr.get().initial_states = c_segment.initial_states
-            segment.thisptr.get().final_states = c_segment.final_states
+            segment.thisptr.get().initial = c_segment.initial
+            segment.thisptr.get().final = c_segment.final
             segment.thisptr.get().delta = c_segment.delta
 
             segments.append(segment)
@@ -1802,7 +1806,7 @@ def plot_using_graphviz(
             )
 
     # Plot edges
-    for state in aut.initial_states:
+    for state in aut.initial:
         dot.edge(f"q{state}", f"{state}", **edge_configuration)
     edges = {}
     for trans in aut.iterate():
