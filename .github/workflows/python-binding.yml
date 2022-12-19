@@ -50,6 +50,6 @@ jobs:
 
       - name: Test the jupyter notebooks
         run: |
-          papermill example-01-ws1s-formulae.ipynb out.ipynb
-          papermill example-02-redos-attacks.ipynb out.ipynb
-          papermill example-03-exploring-maze.ipynb out.ipynb
+          papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
+          papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
+          papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb
