@@ -930,7 +930,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         REQUIRE(aut.final.size() == 4);
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2"})));
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a4"})));
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a5", "a7"})));
     }
 } // }}}
