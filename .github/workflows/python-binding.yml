@@ -43,3 +43,13 @@ jobs:
       - name: Run tests
         run: |
           make -C bindings/python test
+
+      - name: Install runner for jupyter notebooks
+        run: |
+          python3 -m pip install papermill
+
+      - name: Test the jupyter notebooks
+        run: |
+          papermill example-01-ws1s-formulae.ipynb out.ipynb
+          papermill example-02-redos-attacks.ipynb out.ipynb
+          papermill example-03-exploring-maze.ipynb out.ipynb
