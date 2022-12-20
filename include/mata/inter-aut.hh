@@ -239,7 +239,7 @@ public:
     static bool is_graph_conjunction_of_negations(const FormulaGraph& graph);
 
     /**
-     * Methods returns a set of final state in the case that they were entered as a conjunction
+     * Method returns a set of final states in the case that they were entered as a conjunction
      * of negated states. It collects all negated states and subtracts them from set of all states.
      */
     std::unordered_set<std::string> get_positive_finals() const;
