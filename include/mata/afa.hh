@@ -289,9 +289,9 @@ public:
 	}
 
 	StateClosedSet get_non_initial_nodes(void) const {return StateClosedSet(upward_closed_set,
-													 0, transitionrelation.size()-1, initialstates).complement();};
+	0, transitionrelation.size()-1, initialstates).complement();};
 	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set, 
-												0, transitionrelation.size()-1, finalstates);};
+	0, transitionrelation.size()-1, finalstates);};
 	StateClosedSet get_non_final_nodes(void) const;
 
 }; // Afa }}}
