@@ -724,8 +724,6 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
 	{
 		current = next;
 		next = current.Union(aut.pre(current));
-
-		std::cout << next.type() << goal.type() << std::endl;
 		if(!(next <= goal))
 		{
 			return false;
