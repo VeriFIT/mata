@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Building MacOS dependencies
-        run: brew install lcov gcovr
+        run: brew install lcov gcovr automake
       - name: Compile the static and shared libraries
         run: make release
       - name: Test the library
