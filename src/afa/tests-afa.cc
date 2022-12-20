@@ -595,6 +595,32 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         REQUIRE(aut.get_trans_from_state(state_map["q2"], symbol_map["a"]).dst.size() == 3);
         REQUIRE(aut.get_trans_from_state(state_map["q3"], symbol_map["a"]).dst.size() == 2);
     }
+
+    SECTION("Initial formula in DNF")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%Initial qQC0_0 | (qQC0_1 & qQC1_1 & qQC1_0) \n"
+                "%Final !qQC0_2 & !qQC0_1 & !qQC1_1 & !qQC1_0 & !qQC0_0\n"
+                "qQC0_1 a & (qQC0_1 | qQC0_2)\n"
+                "qQC1_1 a & qQC1_1\n"
+                "qQC0_2 a\n"
+                "qQC1_0 a & qQC1_1\n"
+                "qQC0_0 a & (qQC0_2 | qQC0_1)\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));     inter_aut = auts[0];
+
+        StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+
+        REQUIRE(aut.initialstates.size() == 2);
+        auto it = aut.initialstates.begin();
+        REQUIRE(it->count(state_map["QC0_1"]));
+        REQUIRE(it->count(state_map["QC1_1"]));
+        REQUIRE(it->count(state_map["QC1_0"]));
+        ++it;
+        REQUIRE(it->count(state_map["QC0_0"]));
+    }
 } // }}}
 
 /*
