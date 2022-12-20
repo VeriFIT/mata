@@ -939,7 +939,7 @@ Afa Mata::Afa::construct(
 	if (parsec.dict.end() != it) {
 		for (const auto& str : it->second) {
 			State state = get_state_name(str);
-			aut.initialstates.insert(state);
+			aut.initialstates.insert(Node{state});
 		}
 	}
 
