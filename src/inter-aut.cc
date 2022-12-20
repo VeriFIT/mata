@@ -565,6 +565,42 @@ void Mata::IntermediateAut::print_transitions_trees(std::ostream& os) const
     }
 }
 
+std::unordered_set<std::string> Mata::IntermediateAut::get_positive_finals() const
+{
+    if (!is_graph_conjunction_of_negations(this->final_formula))
+        throw (std::runtime_error("Final formula is not a conjunction of negations"));
+
+    std::unordered_set<std::string> all = initial_formula.collect_node_names();
+    for (const auto& trans : this->transitions) {
+        all.insert(trans.first.name);
+        // get names from state part of transition
+        const auto node_names = trans.second.children[1].collect_node_names();
+        all.insert(node_names.begin(), node_names.end());
+    }
+
+    for (const std::string& nonfinal : final_formula.collect_node_names())
+        all.erase(nonfinal);
+
+    return all;
+}
+
+bool Mata::IntermediateAut::is_graph_conjunction_of_negations(const Mata::FormulaGraph &graph) {
+    const FormulaGraph *act_graph = &graph;
+    if (act_graph->children.size() != 2)
+        return false;
+
+    while (act_graph->children.size() == 2) {
+        // this node is conjunction and the left son is negation, otherwise returns false
+        if (act_graph->node.is_operator() && act_graph->node.is_and() &&
+            act_graph->children[0].node.is_operator() && act_graph->children[0].node.is_neg())
+            act_graph = &act_graph->children[1];
+        else
+            return false;
+    }
+
+    return true;
+}
+
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
 {
     std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");

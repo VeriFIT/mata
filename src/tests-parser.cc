@@ -758,6 +758,33 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(!finals.count("r"));
     }
 
+    SECTION("NFA - final states from negation")
+    {
+        std::string file =
+                "@NFA-bits\n"
+                "%Alphabet-auto\n"
+                "%Initial q1 q8\n"
+                "%Final !q0 & !q1 & !q4 & !q5\n"
+                "q0 (!a1 & !a2 & !a3 & (!a0 | a0)) q1\n"
+                "q1 (!a2 & !a3 & !a4 & (!a0 | a0)) q2\n"
+                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q3\n"
+                "q2 (!a3 & !a4 & !a5 & (!a0 | a0)) q4\n"
+                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q5\n"
+                "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
+                "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const Mata::IntermediateAut inter_aut = auts[0];
+
+        auto final_states = inter_aut.get_positive_finals();
+        REQUIRE(final_states.size() == 5);
+        REQUIRE(final_states.count("2"));
+        REQUIRE(final_states.count("3"));
+        REQUIRE(final_states.count("6"));
+        REQUIRE(final_states.count("7"));
+        REQUIRE(final_states.count("8"));
+    }
+
     SECTION("AFA explicit")
     {
         std::string file =

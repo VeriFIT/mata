@@ -88,6 +88,8 @@ public:
 
     bool is_and() const { return type == OPERATOR && operator_type == AND; }
 
+    bool is_neg() const { return type == OPERATOR && operator_type == NEG; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
@@ -228,6 +230,19 @@ public:
 
     std::unordered_set<std::string> get_enumerated_initials() const {return initial_formula.collect_node_names();}
     std::unordered_set<std::string> get_enumerated_finals() const {return final_formula.collect_node_names();}
+
+    bool are_final_states_conjunction_of_negation() const
+    {
+        return is_graph_conjunction_of_negations(final_formula);
+    }
+
+    static bool is_graph_conjunction_of_negations(const FormulaGraph& graph);
+
+    /**
+     * Method returns a set of final states in the case that they were entered as a conjunction
+     * of negated states. It collects all negated states and subtracts them from set of all states.
+     */
+    std::unordered_set<std::string> get_positive_finals() const;
 
     size_t get_number_of_disjuncts() const;
 
