@@ -1806,7 +1806,7 @@ def plot_using_graphviz(
             )
 
     # Plot edges
-    for state in aut.initial:
+    for state in aut.initial_states:
         dot.edge(f"q{state}", f"{state}", **edge_configuration)
     edges = {}
     for trans in aut.iterate():
