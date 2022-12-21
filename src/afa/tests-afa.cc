@@ -608,7 +608,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "qQC1_0 a & qQC1_1\n"
                 "qQC0_0 a & (qQC0_2 | qQC0_1)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));     inter_aut = auts[0];
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
 
         StringToStateMap state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
