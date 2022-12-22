@@ -281,7 +281,7 @@ public:
 	StateClosedSet get_initial_nodes(void) const 
 	{
 		StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
-		for(auto node : initialstates)
+		for(const auto& node : initialstates)
 		{
 			result.insert(node);
 		}

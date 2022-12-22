@@ -458,7 +458,7 @@ ClosedSet<T> ClosedSet<T>::complement() const
 		// This set corresponds to an antichain of a new downward-closed set.
 		// The result will be an intersection of all downward-closed sets
 		// created using this procedure.
-		for(auto element : antichain())
+		for(const auto& element : antichain())
 		{
 			ClosedSet preparingAntichain(downward_closed_set, get_min(), get_max());
 			for(int i = 0; i <= max_val_; ++i)

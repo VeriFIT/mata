@@ -834,7 +834,7 @@ Mata::Parser::ParsedSection Mata::Afa::serialize(
 
 	// construct initial states
 	std::vector<std::string> init_states;
-	for (Node node : aut.initialstates) {
+	for (const Node& node : aut.initialstates) {
 		std::string init_res = "( ";
 		bool first = true;
 		for (State s : node) {
@@ -1142,7 +1142,7 @@ bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
 
 bool Mata::Afa::accepts_epsilon(const Afa& aut)
 { // {{{
-	for (Node node : aut.initialstates) {
+	for (const Node &node : aut.initialstates) {
 		if(node.IsSubsetOf(aut.finalstates))
 		{
 			return true;
