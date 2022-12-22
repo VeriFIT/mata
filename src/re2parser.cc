@@ -254,7 +254,7 @@ namespace {
                     for (auto transition: this->outgoingEdges[copyEdgeFromTo->first]) {
                         // We copy transitions only to states that has incoming edge
                         if (this->state_cache.has_state_incoming_edge[copyEdgeFromTo->second]) {
-                            explicit_nfa.add_trans(copyEdgeFromTo->second, transition.first, transition.second);
+                            explicit_nfa.delta.add(copyEdgeFromTo->second, transition.first, transition.second);
                         }
                         // However, we still need to save the transitions (we could possibly copy them to another state in
                         // the epsilon closure that has incoming edge)
@@ -291,7 +291,7 @@ namespace {
                         }
                         if (this->state_cache.has_state_incoming_edge[mappedState]) {
                             this->state_cache.has_state_incoming_edge[mappedTargetState] = true;
-                            nfa.add_trans(mappedState, symbol, mappedTargetState);
+                            nfa.delta.add(mappedState, symbol, mappedTargetState);
                         }
                     }
                 }
@@ -299,7 +299,7 @@ namespace {
             if (use_epsilon) {
                 // There is an epsilon transition to the currentState+1, so we must handle it
                 if (!this->state_cache.is_last[currentState]) {
-                    nfa.add_trans(currentState, epsilon_value, currentState + 1);
+                    nfa.delta.add(currentState, epsilon_value, currentState + 1);
                 }
             }
         }
@@ -490,9 +490,9 @@ namespace {
                         if (static_cast<int>(renumbered_states[stateTo]) == -1) {
                             renumbered_states[stateTo] = renumbered_explicit_nfa.add_state();
                         }
-                        assert(renumbered_states[state] <= renumbered_explicit_nfa.states_number());
-                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.states_number());
-                        renumbered_explicit_nfa.add_trans(renumbered_states[state], transition.symbol,
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.delta.post_size());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.delta.post_size());
+                        renumbered_explicit_nfa.delta.add(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }
                 }

@@ -355,10 +355,17 @@ struct Post : private Util::OrdVector<Move> {
 struct Delta {
 private:
     std::vector<Post> post;
+    size_t max_state_;
+
+
+    /**
+     * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
+     */
+    size_t size() const;
 
 public:
-    Delta() : post{} {}
-    explicit Delta(size_t n) : post(n) {}
+    Delta() : post{}, max_state_{0} {}
+    explicit Delta(size_t n) : post(n), max_state_{n} {}
 
     void reserve(size_t n) { post.reserve(n); };
 
@@ -374,65 +381,49 @@ public:
         return post[q];
     };
 
-    void emplace_back() { post.emplace_back(); }
+    void emplace_back()
+    {
+        post.emplace_back();
+        if (post.size()-1 > max_state_)
+            ++max_state_;
+    }
 
-    void clear() { post.clear(); }
+    void clear()
+    {
+        post.clear();
+        max_state_ = 0;
+    }
+
     bool empty() const { return post.empty(); }
-    void resize(size_t n) { post.resize(n); }
-    size_t size() const { return post.size(); }
+
+    void resize(size_t n)
+    {
+        post.resize(n);
+        if (post.size()-1 > max_state_)
+            max_state_ = post.size();
+    }
+
+    size_t post_size() const { return post.size(); }
+
+    void add(State state_from, Symbol symbol, State state_to);
+    void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
+    void remove(State src, Symbol symb, State tgt);
+    void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
+
+    bool contains(State src, Symbol symb, State tgt) const;
+    /**
+     * Check whether automaton contains no transitions.
+     * @return True if there are no transitions in the automaton, false otherwise.
+     */
+    bool has_no_transitions() const;
+
+    size_t max_state() const { return max_state_; }
 
     /**
      * Function removes empty indices in transition vector and renames states accordingly
      * @return Renaming of states where on index defined by old state number is a new number of the same state
      */
-    std::vector<State> defragment()
-    {
-        std::vector<State> renaming(this->post.size());
-        std::vector<State> removed{};
-
-        size_t last_empty = 0;
-        const size_t post_size = post.size();
-        for (size_t i = 0; i < post_size; ++i) {
-            if (post.at(i).empty()) {
-                last_empty = i;
-                removed.push_back(i);
-            } else if (last_empty < i) {
-                post[last_empty] = post[i];
-                renaming[i] = last_empty;
-                last_empty = i;
-            } else { // there was no empty space, last_empty is synchronized with i
-                renaming[i] = i; // nothing changed, no renaming needed
-                last_empty += 1;
-            }
-        }
-
-        if (!removed.empty())
-            post.resize(post.size() - removed.size());
-        else // no further renaming is needed, nothing has been done
-            return renaming;
-
-        const size_t removed_size = removed.size();
-        for (size_t i = 0; i < removed_size; ++i) {
-            renaming[removed[i]] = post.size()+i;
-        }
-
-        // rename states according to reindexing done above
-        for (Post& p : this->post) {
-            for (Move& m : p) {
-                StateSet new_targets{};
-                const size_t renaming_size = renaming.size();
-                for (State i = 0; i < renaming_size; ++i) {
-                    if (m.count(i)) {
-                        m.remove(i);
-                        new_targets.insert(renaming[i]);
-                    }
-                }
-                m.insert(new_targets);
-            }
-        }
-
-        return renaming;
-    }
+    std::vector<State> defragment();
 
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
@@ -446,22 +437,7 @@ public:
         bool is_end;
 
     public:
-        explicit const_iterator(const std::vector<Post>& post_p, bool ise = false) :
-                post(post_p), current_state(0), is_end(ise)
-        {
-            const size_t post_size = post.size();
-            for (size_t i = 0; i < post_size; ++i) {
-                if (!post[i].empty()) {
-                    current_state = i;
-                    post_iterator = post[i].begin();
-                    targets_position = post_iterator->targets.begin();
-                    return;
-                }
-            }
-
-            // no transition found, an empty post
-            is_end = true;
-        }
+        explicit const_iterator(const std::vector<Post>& post_p, bool ise = false);
 
         const_iterator(const std::vector<Post>& post_p, size_t as,
                        Post::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
@@ -475,33 +451,7 @@ public:
         }
 
         // Prefix increment
-        const_iterator& operator++()
-        {
-            assert(post.begin() != post.end());
-
-            ++targets_position;
-            if (targets_position != post_iterator->targets.end())
-                return *this;
-
-            ++post_iterator;
-            if (post_iterator != post[current_state].cend()) {
-                targets_position = post_iterator->targets.begin();
-                return *this;
-            }
-
-            ++current_state;
-            while (current_state < post.size() && post[current_state].empty()) // skip empty posts
-                current_state++;
-
-            if (current_state >= post.size())
-                is_end = true;
-            else {
-                post_iterator = post[current_state].begin();
-                targets_position = post_iterator->targets.begin();
-            }
-
-            return *this;
-        }
+        const_iterator& operator++();
 
         // Postfix increment
         const const_iterator operator++(int)
@@ -604,19 +554,17 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        const size_t delta_size = delta.size();
+        const size_t delta_size = delta.post_size();
         for (size_t i = 0; i < delta_size; ++i) {
             delta[i] = Post();
         }
     }
 
-    auto states_number() const { return delta.size(); }
-
     //TODO: why this? Maybe we could have add_state(int state)
     //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
     void increase_size(size_t size)
     {
-        assert(this->states_number() <= size);
+        assert(this->delta.post_size() <= size);
         delta.resize(size);
     }
 
@@ -645,7 +593,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check < delta.size(); }
+    bool is_state(const State &state_to_check) const { return state_to_check <= delta.max_state(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -720,79 +668,11 @@ public:
      * */
 
     /**
-     * Add transition from @p state_from with @p symbol to @p state_to to automaton.
-     * @param state_from Source state.
-     * @param symbol Symbol on transition.
-     * @param state_to Target states.
-     */
-    void add_trans(State state_from, Symbol symbol, State state_to);
-
-    /**
-     * Add transition @p trans to automaton.
-     * @param trans Transition to add.
-     */
-    void add_trans(const Trans& trans) { add_trans(trans.src, trans.symb, trans.tgt); }
-
-    /**
-     * Add transitions from @p state_from with @p symbol to @p targets to automaton.
-     * @param state_from Source state.
-     * @param symbol Symbol on transitions.
-     * @param states_to Set of target states.
-     */
-    void add_trans(State state_from, Symbol symbol, const StateSet& states_to);
-    //TODO: rename all "trans" to "transition". At lest function names.
-
-    /**
-     * Remove transition.
-     * @param src Source state of the transition to be removed.
-     * @param symb Transition symbol of the transition to be removed.
-     * @param tgt Target state of the transition to be removed.
-     */
-    void remove_trans(State src, Symbol symb, State tgt);
-
-    /**
-     * Remove transition.
-     * @param trans Transition to be removed.
-     */
-    void remove_trans(const Trans& trans)
-    {
-        remove_trans(trans.src, trans.symb, trans.tgt);
-    }
-
-    /**
      * Remove epsilon transitions from the automaton.
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    bool has_trans(State src, Symbol symb, State tgt) const
-    { // {{{
-        if (delta.empty()) {
-            return false;
-        }
-
-        const Post& tl = get_moves_from(src);
-        if (tl.empty()) {
-            return false;
-        }
-        auto symbol_transitions{ tl.find(Move{symb} ) };
-        if (symbol_transitions == tl.cend()) {
-            return false;
-        }
-
-        if (symbol_transitions->targets.find(tgt) == symbol_transitions->targets.end()) {
-            return false;
-        }
-
-        return true;
-    } // }}}
-
-    /**
-     * Check whether automaton has no transitions.
-     * @return True if there are no transitions in the automaton, false otherwise.
-     */
-    bool has_no_transitions() const;
-
-    size_t get_num_of_trans() const; ///< Number of transitions; has linear time complexity.
+    size_t get_num_of_trans() const; ///< Number of transitions; contains linear time complexity.
 
     /**
      * Get transitions as a sequence of @c Trans.
@@ -814,7 +694,7 @@ public:
      */
     const Post& get_moves_from(const State state_from) const
     {
-        assert(states_number() >= state_from + 1);
+        assert(delta.post_size() >= state_from + 1);
         return delta[state_from];
     }
 
@@ -892,7 +772,7 @@ public:
 
     const Post& operator[](State state) const
     { // {{{
-        assert(state < delta.size());
+        assert(state < delta.post_size());
 
         return delta[state];
     } // operator[] }}}
@@ -1071,7 +951,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  *
  * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
  * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
- * the alphabet has to be computed first.
+ * the alphabet contains to be computed first.
  *
  * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
@@ -1092,7 +972,7 @@ Nfa revert(const Nfa& aut);
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
-/// one initial state and every state has at most one outgoing transition over
+/// one initial state and every state contains at most one outgoing transition over
 /// every symbol.  Checks the whole automaton, not only the reachable part
 bool is_deterministic(const Nfa& aut);
 
@@ -1393,7 +1273,7 @@ private:
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-        size_t nfa_num_of_states{nfa.states_number() };
+        size_t nfa_num_of_states{nfa.delta.post_size() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto state_transitions: nfa.delta) {
                 alphabet.update_next_symbol_value(state_transitions.symb);

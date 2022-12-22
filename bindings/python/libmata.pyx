@@ -333,7 +333,7 @@ cdef class Nfa:
 
         :param Trans tr: added transition
         """
-        self.thisptr.get().add_trans(dereference(tr.thisptr))
+        self.thisptr.get().add(dereference(tr.thisptr))
 
     def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
@@ -347,16 +347,16 @@ cdef class Nfa:
             alphabet = alphabet or store().get('alphabet')
             if not alphabet:
                 raise Exception(f"Cannot translate symbol '{symb}' without specified alphabet")
-            self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
+            self.thisptr.get().add(src, alphabet.translate_symbol(symb), tgt)
         else:
-            self.thisptr.get().add_trans(src, symb, tgt)
+            self.thisptr.get().add(src, symb, tgt)
 
     def remove_trans(self, Trans tr):
         """Removes transition from the automaton.
 
         :param Trans tr: Transition to be removed.
         """
-        self.thisptr.get().remove_trans(dereference(tr.thisptr))
+        self.thisptr.get().remove(dereference(tr.thisptr))
 
     def remove_trans_raw(self, State src, Symbol symb, State tgt):
         """Constructs transition and removes it from the automaton.
@@ -365,7 +365,7 @@ cdef class Nfa:
         :param Symbol symb: Symbol of the transition to be removed.
         :param State tgt: Target state of the transition to be removed.
         """
-        self.thisptr.get().remove_trans(src, symb, tgt)
+        self.thisptr.get().remove(src, symb, tgt)
 
     def has_transition(self, State src, Symbol symb, State tgt):
         """Tests if automaton contains transition
@@ -375,7 +375,7 @@ cdef class Nfa:
         :param State tgt: target state
         :return: true if automaton contains transition
         """
-        return self.thisptr.get().has_trans(src, symb, tgt)
+        return self.thisptr.get().has(src, symb, tgt)
 
     def get_num_of_trans(self):
         """Returns number of transitions in automaton

@@ -36,39 +36,39 @@ using Word = std::vector<Symbol>;
 #define FILL_WITH_AUT_A(x) \
 	x.initial = {1, 3}; \
 	x.final = {5}; \
-	x.add_trans(1, 'a', 3); \
-	x.add_trans(1, 'a', 10); \
-	x.add_trans(1, 'b', 7); \
-	x.add_trans(3, 'a', 7); \
-	x.add_trans(3, 'b', 9); \
-	x.add_trans(9, 'a', 9); \
-	x.add_trans(7, 'b', 1); \
-	x.add_trans(7, 'a', 3); \
-	x.add_trans(7, 'c', 3); \
-	x.add_trans(10, 'a', 7); \
-	x.add_trans(10, 'b', 7); \
-	x.add_trans(10, 'c', 7); \
-	x.add_trans(7, 'a', 5); \
-	x.add_trans(5, 'a', 5); \
-	x.add_trans(5, 'c', 9); \
+	x.delta.add(1, 'a', 3); \
+	x.delta.add(1, 'a', 10); \
+	x.delta.add(1, 'b', 7); \
+	x.delta.add(3, 'a', 7); \
+	x.delta.add(3, 'b', 9); \
+	x.delta.add(9, 'a', 9); \
+	x.delta.add(7, 'b', 1); \
+	x.delta.add(7, 'a', 3); \
+	x.delta.add(7, 'c', 3); \
+	x.delta.add(10, 'a', 7); \
+	x.delta.add(10, 'b', 7); \
+	x.delta.add(10, 'c', 7); \
+	x.delta.add(7, 'a', 5); \
+	x.delta.add(5, 'a', 5); \
+	x.delta.add(5, 'c', 9); \
 
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
 	x.initial = {4}; \
 	x.final = {2, 12}; \
-	x.add_trans(4, 'c', 8); \
-	x.add_trans(4, 'a', 8); \
-	x.add_trans(8, 'b', 4); \
-	x.add_trans(4, 'a', 6); \
-	x.add_trans(4, 'b', 6); \
-	x.add_trans(6, 'a', 2); \
-	x.add_trans(2, 'b', 2); \
-	x.add_trans(2, 'a', 0); \
-	x.add_trans(0, 'a', 2); \
-	x.add_trans(2, 'c', 12); \
-	x.add_trans(12, 'a', 14); \
-	x.add_trans(14, 'b', 12); \
+	x.delta.add(4, 'c', 8); \
+	x.delta.add(4, 'a', 8); \
+	x.delta.add(8, 'b', 4); \
+	x.delta.add(4, 'a', 6); \
+	x.delta.add(4, 'b', 6); \
+	x.delta.add(6, 'a', 2); \
+	x.delta.add(2, 'b', 2); \
+	x.delta.add(2, 'a', 0); \
+	x.delta.add(0, 'a', 2); \
+	x.delta.add(2, 'c', 12); \
+	x.delta.add(12, 'a', 14); \
+	x.delta.add(14, 'b', 12); \
 
 // }}}
 
@@ -149,7 +149,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     {
         aut.initial = {1 };
         aut.final = {2 };
-        aut.add_trans(1, 'a', 2);
+        aut.delta.add(1, 'a', 2);
 
         REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{'a'}});
     }
@@ -158,7 +158,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     {
         aut.initial = {1 };
         aut.final = {1 };
-        aut.add_trans(1, 'a', 1);
+        aut.delta.add(1, 'a', 1);
 
         REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
     }
@@ -167,11 +167,11 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
     {
         aut.initial = {1 };
         aut.final = {4 };
-        aut.add_trans(1, 'a', 5);
-        aut.add_trans(5, 'c', 4);
-        aut.add_trans(1, 'a', 2);
-        aut.add_trans(2, 'b', 3);
-        aut.add_trans(3, 'b', 4);
+        aut.delta.add(1, 'a', 5);
+        aut.delta.add(5, 'c', 4);
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(2, 'b', 3);
+        aut.delta.add(3, 'b', 4);
 
         Word word{};
         word.push_back('a');

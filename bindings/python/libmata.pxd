@@ -240,11 +240,11 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void unify_initial()
         void unify_final()
         COrdVector[Symbol] get_used_symbols()
-        void add_trans(CTrans) except +
-        void add_trans(State, Symbol, State) except +
-        void remove_trans(CTrans) except +
-        void remove_trans(State, Symbol, State) except +
-        bool has_trans(State, Symbol, State)
+        void add(CTrans) except +
+        void add(State, Symbol, State) except +
+        void remove(CTrans) except +
+        void remove(State, Symbol, State) except +
+        bool contains(State, Symbol, State)
         bool is_state(State)
         size_t get_num_of_trans()
         StateSet post(StateSet&, Symbol)
