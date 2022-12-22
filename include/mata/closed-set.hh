@@ -425,7 +425,7 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const
 * contain nodes which are not elements of the former closed set.
 * The complement of an upward-closed set is always downward-closed and vice versa.
 * @brief performs a complementation over a closed set
-* @return a complement of a closed sets
+* @return a complement of a closed set
 */
 template <typename T>
 ClosedSet<T> ClosedSet<T>::complement() const
