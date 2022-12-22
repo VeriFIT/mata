@@ -1034,10 +1034,36 @@ Afa Mata::Afa::construct(
         return tgt_node;
     };
 
-    for (const auto& str : inter_aut.initial_formula.collect_node_names())
-    {
-        State state = get_state_name(str);
-        aut.add_initial(state);
+
+    const FormulaGraph* init_graph = &inter_aut.initial_formula;
+    if (is_node_operator(init_graph->node, FormulaNode::AND)) { // initial formula is just conjunction
+        for (const auto& str : init_graph->collect_node_names())
+        {
+            State state = get_state_name(str);
+            aut.add_initial(state);
+        }
+    } else { // initial formula is dnf
+        while (is_node_operator(init_graph->node, FormulaNode::OR))
+        {  // Processes each clause separately
+            assert(init_graph->children[1].node.is_operand() ||
+                   is_node_operator(init_graph->children[1].node, FormulaNode::AND) ||
+                   "Clause should be conjunction or single state");
+            // Conjunction is the right son of initent node
+            Node initial_node;
+            for (const auto s : init_graph->children[1].collect_node_names())
+                initial_node.insert(get_state_name(s));
+            aut.add_initial(initial_node);
+
+            // jump to another clause which is the left son of initent node
+            init_graph = &init_graph->children.front();
+        }
+        assert(init_graph->node.is_operand() ||
+               is_node_operator(init_graph->node, FormulaNode::AND) ||
+                       "Remaining clause should be conjunction or single element");
+        Node initial_node;
+        for (const auto s : init_graph->collect_node_names())
+            initial_node.insert(get_state_name(s));
+        aut.add_initial(initial_node);
     }
 
     for (const auto& str : inter_aut.final_formula.collect_node_names())
