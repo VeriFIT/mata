@@ -173,28 +173,36 @@ public:
 
 	Afa() : transitionrelation(), inverseTransRelation() {}
 
-	explicit Afa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
+	explicit Afa(const unsigned long num_of_states, const Nodes& initial_states = Nodes{},
 		         const StateSet& final_states = StateSet{})
 		: transitionrelation(num_of_states), inverseTransRelation(num_of_states), 
 		initialstates(initial_states), finalstates(final_states) {}
 
 public:
 
-	StateSet initialstates = {};
+	Nodes initialstates = {};
 	StateSet finalstates = {};
 
 	State add_new_state(void);
 
 	auto get_num_of_states() const { return transitionrelation.size(); }
 
-	void add_initial(State state) { this->initialstates.insert(state); }
+	void add_initial(State state) { this->initialstates.insert(Node({state})); }
+	void add_initial(Node node) { this->initialstates.insert(node); }
 	void add_initial(const std::vector<State> vec)
 	{ // {{{
-		for (const State& st : vec) { this->add_initial(st); }
+		Node node{};
+		for (const State& st : vec) { node.insert(st); }
+		this->initialstates.insert(node);
 	} // }}}
 	bool has_initial(State state) const
 	{ // {{{
-		return Mata::Util::haskey(this->initialstates, state);
+		return has_initial(Node({state}));
+	} // }}}
+	bool has_initial(Node node) const
+	{ // {{{
+		return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, 
+		initialstates).contains(node);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
 	void add_final(const std::vector<State> vec)
@@ -270,9 +278,20 @@ public:
 
 	StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
 
-	StateClosedSet get_initial_nodes(void) const;
-	StateClosedSet get_non_initial_nodes(void) const;
-	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, finalstates);};
+	StateClosedSet get_initial_nodes(void) const 
+	{
+		StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
+		for(const auto& node : initialstates)
+		{
+			result.insert(node);
+		}
+		return result;
+	}
+
+	StateClosedSet get_non_initial_nodes(void) const {return StateClosedSet(upward_closed_set,
+	0, transitionrelation.size()-1, initialstates).complement();};
+	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set, 
+	0, transitionrelation.size()-1, finalstates);};
 	StateClosedSet get_non_final_nodes(void) const;
 
 }; // Afa }}}

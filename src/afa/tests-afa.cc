@@ -96,6 +96,42 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	c8.insert(Node{0});
 	REQUIRE(std::to_string(c8.antichain()) == "{ { 0}}");
 
+	StateClosedSet c9 = StateClosedSet(Mata::upward_closed_set, 0, 4, Nodes());
+
+	c9.insert(Node{1, 4});    
+	c9.insert(Node{1, 2, 3});
+
+	REQUIRE(c9.complement().antichain() == Nodes{{0, 1, 2}, {0, 1, 3}, {0, 2, 3, 4}});
+	REQUIRE(!(c9.complement().antichain() == Nodes{{0, 2}, {0, 1, 3}, {0, 2, 3, 4}}));
+
+	REQUIRE(c9.complement().complement().antichain() == Nodes{{1, 4}, {1, 2, 3}});
+	REQUIRE(!(c9.complement().complement().antichain() == Nodes{{0, 1, 4}, {1, 2, 3}}));
+
+	StateClosedSet c10 = StateClosedSet(Mata::downward_closed_set, 0, 3, Nodes());
+
+	c10.insert(Node{1, 2});
+	c10.insert(Node{2, 3});
+
+	REQUIRE(c10.complement().antichain() == Nodes{{0}, {1, 3}});
+	
+	REQUIRE(c10.type() == Mata::downward_closed_set);
+	c10 = c10.complement();	
+	REQUIRE(c10.type() == Mata::upward_closed_set);
+
+	StateClosedSet c11 = StateClosedSet(Mata::downward_closed_set, 0, 3, Nodes());
+	REQUIRE(c11.complement().antichain() == Nodes{{}});
+
+	StateClosedSet c12 = StateClosedSet(Mata::upward_closed_set, 0, 3, Nodes());
+	REQUIRE(c12.complement().antichain() == Nodes{{0, 1, 2, 3}});
+
+	StateClosedSet c13 = StateClosedSet(Mata::downward_closed_set, 0, 3, Nodes());
+	c13.insert(Node{0, 1, 2, 3});
+	REQUIRE(c13.complement().antichain() == Nodes{});
+
+	StateClosedSet c14 = StateClosedSet(Mata::upward_closed_set, 0, 3, Nodes());
+	c14.insert(Node{0, 1, 2, 3});
+	REQUIRE(c14.complement().antichain() == Nodes{{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3}});
+
 } // }}}
 
 
@@ -104,7 +140,7 @@ TEST_CASE("Mata::Afa creating an AFA, basic properties")
 
 	Afa aut(4);
 
-	aut.initialstates = {0};
+	aut.initialstates = {{0}};
 	aut.finalstates = {3};
 	aut.add_trans(0, 0, Node{1, 2});
 	aut.add_trans(1, 0, Node{2});
@@ -118,6 +154,8 @@ TEST_CASE("Mata::Afa creating an AFA, basic properties")
 	REQUIRE(!aut.has_final(2));
 	REQUIRE(aut.has_initial(0));
 	REQUIRE(!aut.has_initial(1));
+
+
 
 	REQUIRE(aut.get_num_of_states() == 4);
 	REQUIRE(aut.add_new_state() == 4);
@@ -165,7 +203,7 @@ TEST_CASE("Mata::Afa transition test")
 
 	Afa aut(3);
 
-	aut.initialstates = {0};
+	aut.initialstates = {{0}};
 	aut.finalstates = {2};
 	aut.add_trans(0, 0, Nodes{Node{0}});
 	aut.add_trans(0, 1, Nodes{Node{1}});
@@ -232,7 +270,7 @@ TEST_CASE("Mata::Afa inverse transition test")
 
 	Afa aut(3);
 
-	aut.initialstates = {0};
+	aut.initialstates = {{0}};
 	aut.finalstates = {2};
 	aut.add_inverse_trans(0, 0, Nodes{Node{0}});
 	aut.add_inverse_trans(0, 1, Nodes{Node{1}});
@@ -304,7 +342,7 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 	Afa aut(3);
 
-	aut.initialstates = {0};
+	aut.initialstates = {{0}};
 	aut.finalstates = {2};
 
 	// TODO: Add transition and inverse transition simultaneously???
@@ -349,7 +387,7 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 	Afa aut1(10);
 
-	aut1.initialstates = {0};
+	aut1.initialstates = {{0}};
 	aut1.finalstates = {9};
 
 	aut1.add_trans(0, 0, Nodes{Node{1}});
@@ -402,7 +440,7 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 	REQUIRE(antichain_concrete_forward_emptiness_test_new(aut2));
 	REQUIRE(antichain_concrete_backward_emptiness_test_new(aut2));
 
-	aut2.initialstates = {0};
+	aut2.initialstates = {{0}};
 
 	REQUIRE(antichain_concrete_forward_emptiness_test_old(aut2));
 	REQUIRE(antichain_concrete_backward_emptiness_test_old(aut2));
@@ -425,7 +463,6 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 
 	REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut2));
 	REQUIRE(!antichain_concrete_backward_emptiness_test_new(aut2));
-
 }
 
 TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
