@@ -415,11 +415,7 @@ bool Delta::contains(State src, Symbol symb, State tgt) const
         return false;
     }
 
-    if (symbol_transitions->targets.find(tgt) == symbol_transitions->targets.end()) {
-        return false;
-    }
-
-    return true;
+    return symbol_transitions->targets.find(tgt) != symbol_transitions->targets.end();
 }
 
 bool Delta::has_no_transitions() const
