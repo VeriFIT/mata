@@ -627,7 +627,8 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
         if (haskey(lhs_states, rhs_st)) { return false; }
     }
 
-    for (size_t i = 0; i < lhs.delta.post_size(); i++) {
+    const size_t lhs_post_size = lhs.delta.post_size();
+    for (size_t i = 0; i < lhs_post_size; i++) {
         if (haskey(lhs_states, i))
             return false;
         for (const auto& symState : lhs.delta[i]) {
