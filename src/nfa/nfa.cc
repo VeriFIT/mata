@@ -535,6 +535,7 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 
 State Nfa::add_state() {
     delta.emplace_back();
+    ++max_state_;
     return delta.post_size() - 1;
 }
 

@@ -533,6 +533,8 @@ struct Nfa
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
+    size_t max_state_;
+
 public:
     Nfa() : delta(), initial(), final() {}
 
@@ -542,7 +544,7 @@ public:
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
         : delta(num_of_states), initial(initial_states), final(final_states),
-          alphabet(alphabet_p) {}
+          alphabet(alphabet_p), max_state_(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -582,6 +584,11 @@ public:
      * @return The newly created state.
      */
     State add_state();
+
+    size_t max_state()
+    {
+        return std::max({max_state_, delta.max_state(), initial.domain_size(), final.domain_size()});
+    }
 
     /**
      * Unify initial states into a single new initial state.
