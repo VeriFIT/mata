@@ -958,7 +958,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  *
  * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
  * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
- * the alphabet contains to be computed first.
+ * the alphabet has to be computed first.
  *
  * Hence, this function is less efficient than its alternative taking already defined alphabet as its parameter.
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
@@ -979,7 +979,7 @@ Nfa revert(const Nfa& aut);
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly
-/// one initial state and every state contains at most one outgoing transition over
+/// one initial state and every state has at most one outgoing transition over
 /// every symbol.  Checks the whole automaton, not only the reachable part
 bool is_deterministic(const Nfa& aut);
 
