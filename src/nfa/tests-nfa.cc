@@ -2826,3 +2826,16 @@ TEST_CASE("Mata::Nfa::Nfa::defragment()") {
 TEST_CASE("Mata::Nfa::Nfa::delta()") {
     Delta delta(6);
 }
+
+TEST_CASE("A segmentation fault in the make_complement") {
+    Nfa r(1);
+    OnTheFlyAlphabet alph{};
+    alph["a"];
+    alph["b"];
+
+    r.initial = {0};
+    r.delta.add(0, 0, 0);
+    REQUIRE(not is_complete(r, alph));
+    make_complete(r, alph, 1);
+    REQUIRE(is_complete(r, alph));
+}
