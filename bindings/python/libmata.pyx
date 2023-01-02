@@ -326,14 +326,14 @@ cdef class Nfa:
 
         :return: number of states in automaton
         """
-        return self.thisptr.get().states_number()
+        return self.thisptr.get().delta.post_size()
 
     def add_transition_object(self, Trans tr):
         """Adds transition to automaton
 
         :param Trans tr: added transition
         """
-        self.thisptr.get().add_trans(dereference(tr.thisptr))
+        self.thisptr.get().delta.add(dereference(tr.thisptr))
 
     def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
@@ -347,16 +347,16 @@ cdef class Nfa:
             alphabet = alphabet or store().get('alphabet')
             if not alphabet:
                 raise Exception(f"Cannot translate symbol '{symb}' without specified alphabet")
-            self.thisptr.get().add_trans(src, alphabet.translate_symbol(symb), tgt)
+            self.thisptr.get().delta.add(src, alphabet.translate_symbol(symb), tgt)
         else:
-            self.thisptr.get().add_trans(src, symb, tgt)
+            self.thisptr.get().delta.add(src, symb, tgt)
 
     def remove_trans(self, Trans tr):
         """Removes transition from the automaton.
 
         :param Trans tr: Transition to be removed.
         """
-        self.thisptr.get().remove_trans(dereference(tr.thisptr))
+        self.thisptr.get().delta.remove(dereference(tr.thisptr))
 
     def remove_trans_raw(self, State src, Symbol symb, State tgt):
         """Constructs transition and removes it from the automaton.
@@ -365,7 +365,7 @@ cdef class Nfa:
         :param Symbol symb: Symbol of the transition to be removed.
         :param State tgt: Target state of the transition to be removed.
         """
-        self.thisptr.get().remove_trans(src, symb, tgt)
+        self.thisptr.get().delta.remove(src, symb, tgt)
 
     def has_transition(self, State src, Symbol symb, State tgt):
         """Tests if automaton contains transition
@@ -375,7 +375,7 @@ cdef class Nfa:
         :param State tgt: target state
         :return: true if automaton contains transition
         """
-        return self.thisptr.get().has_trans(src, symb, tgt)
+        return self.thisptr.get().delta.contains(src, symb, tgt)
 
     def get_num_of_trans(self):
         """Returns number of transitions in automaton
@@ -1691,7 +1691,7 @@ cdef class Segmentation:
         segments = []
         cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
-            segment = Nfa(c_segment.states_number())
+            segment = Nfa(c_segment.delta.post_size())
             segment.thisptr.get().initial = c_segment.initial
             segment.thisptr.get().final = c_segment.final
             segment.thisptr.get().delta = c_segment.delta
