@@ -653,6 +653,9 @@ void Mata::Nfa::make_complete(
                               aut.initial.end());
     std::unordered_set<State> processed(aut.initial.begin(),
                                         aut.initial.end());
+    if (aut.delta.post_size() <= sink_state)
+        aut.increase_size(sink_state+1);
+
     worklist.push_back(sink_state);
     processed.insert(sink_state);
     while (!worklist.empty())
