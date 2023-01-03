@@ -400,7 +400,7 @@ public:
     {
         post.resize(n);
         if (post.size()-1 > max_state_)
-            max_state_ = post.size();
+            max_state_ = post.size() - 1;
     }
 
     size_t post_size() const { return post.size(); }
