@@ -585,7 +585,7 @@ public:
      */
     State add_state();
 
-    size_t max_state()
+    size_t max_state() const
     {
         return std::max({max_state_, delta.max_state(), initial.domain_size(), final.domain_size()});
     }
@@ -600,7 +600,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check <= delta.max_state(); }
+    bool is_state(const State &state_to_check) const { return state_to_check <= max_state(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
