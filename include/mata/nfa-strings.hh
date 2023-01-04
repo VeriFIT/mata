@@ -248,6 +248,20 @@ namespace SegNfa {
     using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
     /**
+     * @brief segs_one_initial_final
+     * 
+     * segments_one_initial_final[init, final] is the pointer to automaton created from one of
+     * the segments such that init and final are one of the initial and final states of the segment
+     * and the created automaton takes this segment, sets initial={init}, final={final}
+     * and trims it; also segments_one_initial_final[unused_state, final] is used for the first
+     * segment (where we always want all initial states, only final state changes) and
+     * segments_one_initial_final[init, unused_state] is similarly for the last segment
+     * TODO: should we use unordered_map? then we need hash
+     */
+    void segs_one_initial_final(const Mata::Nfa::AutSequence& segments, bool include_empty, 
+        const State& unused_state, std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out);
+
+    /**
      * @brief Create noodles from segment automaton @p aut.
      *
      * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
@@ -260,6 +274,20 @@ namespace SegNfa {
      * @return A list of all (non-empty) noodles.
      */
     NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+
+    /**
+     * @brief Create noodles from segment automaton @p aut.
+     *
+     * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
+     * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
+     *  between each two consecutive segments.
+     *
+     * @param[in] automaton Segment automaton to noodlify.
+     * @param[in] epsilon Epsilon symbol to noodlify for.
+     * @param[in] include_empty Whether to also include empty noodles.
+     * @return A list of all (non-empty) noodles.
+     */
+    NoodleSequence noodlify_reach(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
     /**
      * @brief Create noodles for left and right side of equation.

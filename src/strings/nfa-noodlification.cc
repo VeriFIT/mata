@@ -42,6 +42,9 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 } // namespace
 
 SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
+
+    return noodlify_reach(aut, epsilon, include_empty);
+
     Segmentation segmentation{ aut, epsilon };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
@@ -56,53 +59,8 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     }
 
     State unused_state = aut.states_number(); // get some State not used in aut
-
-    // segments_one_initial_final[init, final] is the pointer to automaton created from one of
-    // the segments such that init and final are one of the initial and final states of the segment
-    // and the created automaton takes this segment, sets initial={init}, final={final}
-    // and trims it; also segments_one_initial_final[unused_state, final] is used for the first
-    // segment (where we always want all initial states, only final state changes) and
-    // segments_one_initial_final[init, unused_state] is similarly for the last segment
-    // TODO: should we use unordered_map? then we need hash
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
-
-    // TODO this could probably be written better
-    for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
-        if (iter == segments.begin()) { // first segment will always have all initial states in noodles
-            for (const State final_state: iter->final) {
-                SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_final->final = {final_state };
-                segment_one_final->trim();
-
-                if (segment_one_final->states_number() > 0 || include_empty) {
-                    segments_one_initial_final[std::make_pair(unused_state, final_state)] = segment_one_final;
-                }
-            }
-        } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
-            for (const State init_state: iter->initial) {
-                SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_init->initial = {init_state };
-                segment_one_init->trim();
-
-                if (segment_one_init->states_number() > 0 || include_empty) {
-                    segments_one_initial_final[std::make_pair(init_state, unused_state)] = segment_one_init;
-                }
-            }
-        } else { // the segments in-between
-            for (const State init_state: iter->initial) {
-                for (const State final_state: iter->final) {
-                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
-                    segment_one_init_final->initial = {init_state };
-                    segment_one_init_final->final = {final_state };
-                    segment_one_init_final->trim();
-
-                    if (segment_one_init_final->states_number() > 0 || include_empty) {
-                        segments_one_initial_final[std::make_pair(init_state, final_state)] = segment_one_init_final;
-                    }
-                }
-            }
-        }
-    }
+    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
     const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
 
@@ -159,6 +117,125 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
         }
 
         noodles.push_back(noodle);
+    }
+    return noodles;
+}
+
+void SegNfa::segs_one_initial_final(
+    const Mata::Nfa::AutSequence& segments, 
+    bool include_empty, 
+    const State& unused_state, 
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out) {
+
+    for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
+        if (iter == segments.begin()) { // first segment will always have all initial states in noodles
+            for (const State final_state: iter->final) {
+                SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
+                segment_one_final->final = {final_state };
+                segment_one_final->trim();
+
+                if (segment_one_final->states_number() > 0 || include_empty) {
+                    out[std::make_pair(unused_state, final_state)] = segment_one_final;
+                }
+            }
+        } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
+            for (const State init_state: iter->initial) {
+                SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
+                segment_one_init->initial = {init_state };
+                segment_one_init->trim();
+
+                if (segment_one_init->states_number() > 0 || include_empty) {
+                    out[std::make_pair(init_state, unused_state)] = segment_one_init;
+                }
+            }
+        } else { // the segments in-between
+            for (const State init_state: iter->initial) {
+                for (const State final_state: iter->final) {
+                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
+                    segment_one_init_final->initial = {init_state };
+                    segment_one_init_final->final = {final_state };
+                    segment_one_init_final->trim();
+
+                    if (segment_one_init_final->states_number() > 0 || include_empty) {
+                        out[std::make_pair(init_state, final_state)] = segment_one_init_final;
+                    }
+                }
+            }
+        }
+    }
+}
+
+SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
+    Segmentation segmentation{ aut, epsilon };
+    const auto& segments{ segmentation.get_untrimmed_segments() };
+
+    if (segments.size() == 1) {
+        std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
+        segment->trim();
+        if (segment->states_number() > 0 || include_empty) {
+            return {{ segment }};
+        } else {
+            return {};
+        }
+    }
+
+    State unused_state = aut.states_number(); // get some State not used in aut
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
+    segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
+
+    const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
+
+    struct SegItem {
+        Noodle noodle;
+        State fin;
+        size_t seg_id;
+        std::vector<Symbol> eps_sequence;
+    };
+
+    NoodleSequence noodles{};
+    std::deque<SegItem> lifo;
+
+    for(const State& fn : segments[0].final) {
+        SegItem new_item;
+        new_item.noodle.push_back(segments_one_initial_final[{unused_state, fn}]);
+        new_item.seg_id = 0;
+        new_item.fin = fn;
+        new_item.eps_sequence = std::vector<Symbol>();
+        lifo.push_back(new_item);
+    }
+
+    while(!lifo.empty()) {
+        SegItem item = lifo.front();
+        lifo.pop_front();
+
+        if(item.seg_id + 1 == segments.size()) {
+            noodles.push_back(item.noodle);
+            continue;
+        }
+
+        for(const Trans& tr : epsilon_depths.at(item.seg_id)) {
+            if(tr.src != item.fin) { // TODO: use map instead of vector
+                continue; 
+            }
+
+            Mata::Util::NumberPredicate<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
+            if(item.seg_id + 1 == segments.size() - 1) { // last segment
+                fins = Mata::Util::NumberPredicate<Mata::Nfa::State>({unused_state});
+            }
+
+            for(const State& fn : fins) {
+                auto seg_iter = segments_one_initial_final.find({tr.tgt, fn});
+                if(seg_iter == segments_one_initial_final.end())
+                    continue;
+
+                SegItem new_item = item; // deep copy
+                new_item.seg_id++;
+                new_item.noodle.push_back(seg_iter->second);
+                new_item.fin = fn;
+                new_item.eps_sequence.push_back(tr.symb);
+                lifo.push_back(new_item);
+            }
+        }
     }
     return noodles;
 }
