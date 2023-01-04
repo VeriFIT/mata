@@ -267,7 +267,9 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void remove_epsilon(Symbol) except +
         COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
         COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& state_transitions, Symbol epsilon)
-
+        void clear()
+        void defragment()
+        size_t max_state()
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)

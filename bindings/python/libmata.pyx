@@ -391,6 +391,20 @@ cdef class Nfa:
         """
         self.thisptr.get().increase_size(size)
 
+    def clear(self):
+        """Clears all of the internals in the automaton"""
+        self.thisptr.get().clear()
+
+    def defragment(self):
+        """Defragments the internal structures (needed, e.g., after resize."""
+        self.thisptr.get().defragment()
+
+    def max_state(self):
+        """
+        :return: maximal seen state in the automaton
+        """
+        return self.thisptr.get().max_state()
+
     def resize_for_state(self, State state):
         """Increases the size of the automaton to include state.
 

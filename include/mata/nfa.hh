@@ -611,6 +611,7 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
+        max_state_ = 0;
     }
 
     /**
