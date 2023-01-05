@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-        -
+
       - name: Infer the new version (without tagging)
         id: tagger
         uses: phish108/autotag-action@1.1.51
