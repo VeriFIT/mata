@@ -396,8 +396,9 @@ public:
 
     bool empty() const { return post.empty(); }
 
-    void resize(size_t n)
+    void increase_size(size_t n)
     {
+        assert(n >= post.size());
         post.resize(n);
         if (post.size()-1 > max_state_)
             max_state_ = post.size() - 1;
@@ -567,7 +568,7 @@ public:
     void increase_size(size_t size)
     {
         assert(this->delta.post_size() <= size);
-        delta.resize(size);
+        delta.increase_size(size);
     }
 
     /**
