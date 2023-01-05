@@ -33,16 +33,9 @@ jobs:
           bump: minor
           dry-run: 'TRUE'
 
-      - name: Set the new version to file
+      - name: Set the new version to file (without commit; will serve as temporary file)
         run: |
           echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
-          git commit -m "version: bump to ${{ steps.tagger.outputs.new-tag }}" -a
-
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.ref }}
 
       - name: Tag the new version
         uses: phish108/autotag-action@1.1.51
