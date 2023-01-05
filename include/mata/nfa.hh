@@ -394,8 +394,6 @@ public:
         max_state_ = 0;
     }
 
-    bool empty() const { return post.empty(); }
-
     void increase_size(size_t n)
     {
         assert(n >= post.size());
@@ -416,7 +414,7 @@ public:
      * Check whether automaton contains no transitions.
      * @return True if there are no transitions in the automaton, false otherwise.
      */
-    bool has_no_transitions() const;
+    bool empty() const;
 
     size_t max_state() const { return max_state_; }
 

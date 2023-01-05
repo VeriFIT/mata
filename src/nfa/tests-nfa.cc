@@ -302,7 +302,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 
 		REQUIRE(res.initial.empty());
 		REQUIRE(res.final.empty());
-		REQUIRE(res.delta.has_no_transitions());
+		REQUIRE(res.delta.empty());
 	}
 
 	SECTION("Union of automata with no transitions")
@@ -961,7 +961,7 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 
 		REQUIRE(res.initial.empty());
 		REQUIRE(res.final.empty());
-		REQUIRE(res.delta.has_no_transitions());
+		REQUIRE(res.delta.empty());
 	}
 
 	SECTION("small automaton")
@@ -2595,23 +2595,23 @@ TEST_CASE("Mata::Nfa::trim()")
 
     aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
     aut.trim();
-    CHECK(aut.delta.has_no_transitions());
+    CHECK(aut.delta.empty());
     CHECK(aut.delta.post_size() == 0);
 }
 
-TEST_CASE("Mata::Nfa::Nfa::delta.has_no_transitions()")
+TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
 {
     Nfa aut{};
 
     SECTION("Empty automaton")
     {
-        CHECK(aut.delta.has_no_transitions());
+        CHECK(aut.delta.empty());
     }
 
     SECTION("No transitions automaton")
     {
         aut.increase_size(1);
-        CHECK(aut.delta.has_no_transitions());
+        CHECK(aut.delta.empty());
     }
 
     SECTION("Single state automaton with no transitions")
@@ -2619,7 +2619,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.has_no_transitions()")
         aut.increase_size(1);
         aut.initial.add(0);
         aut.final.add(0);
-        CHECK(aut.delta.has_no_transitions());
+        CHECK(aut.delta.empty());
     }
 
     SECTION("Single state automaton with transitions")
@@ -2628,7 +2628,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.has_no_transitions()")
         aut.initial.add(0);
         aut.final.add(0);
         aut.delta.add(0, 'a', 0);
-        CHECK(!aut.delta.has_no_transitions());
+        CHECK(!aut.delta.empty());
     }
 
     SECTION("Single state automaton with transitions")
@@ -2636,7 +2636,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.has_no_transitions()")
         aut.increase_size(2);
         aut.initial.add(0);
         aut.final.add(1);
-        CHECK(aut.delta.has_no_transitions());
+        CHECK(aut.delta.empty());
     }
 
     SECTION("Single state automaton with transitions")
@@ -2645,7 +2645,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.has_no_transitions()")
         aut.initial.add(0);
         aut.final.add(1);
         aut.delta.add(0, 'a', 1);
-        CHECK(!aut.delta.has_no_transitions());
+        CHECK(!aut.delta.empty());
     }
 }
 

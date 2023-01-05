@@ -418,7 +418,7 @@ bool Delta::contains(State src, Symbol symb, State tgt) const
     return symbol_transitions->targets.find(tgt) != symbol_transitions->targets.end();
 }
 
-bool Delta::has_no_transitions() const
+bool Delta::empty() const
 {
     return this->begin() == this->end();
 }
@@ -664,7 +664,7 @@ void Mata::Nfa::make_complete(
         worklist.pop_front();
 
         std::set<Symbol> used_symbols;
-        if (!aut.delta.has_no_transitions())
+        if (!aut.delta.empty())
         {
             for (const auto &symb_stateset: aut[state]) {
                 // TODO: Possibly fix insert.
@@ -787,7 +787,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initial.size() != 1) { return false; }
 
-    if (aut.delta.has_no_transitions()) { return true; }
+    if (aut.delta.empty()) { return true; }
 
     const size_t aut_size = aut.delta.post_size();
     for (size_t i = 0; i < aut_size; ++i)
@@ -818,7 +818,7 @@ bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
         worklist.pop_front();
 
         size_t n = 0;      // counter of symbols
-        if (!aut.delta.has_no_transitions()) {
+        if (!aut.delta.empty()) {
             for (const auto &symb_stateset: aut[state]) {
                 ++n;
                 if (!haskey(symbs, symb_stateset.symbol)) {
@@ -854,7 +854,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
         State newSt = run.path[i];
         bool found = false;
 
-        if (!aut.delta.has_no_transitions())
+        if (!aut.delta.empty())
         {
             for (const auto &symbolMap: aut.delta[cur]) {
                 for (State st: symbolMap.targets) {
@@ -954,7 +954,7 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
             return false;
         }
 
-        if (aut.delta.has_no_transitions())
+        if (aut.delta.empty())
             continue;
 
         for (const auto& symb_stateset : aut[state])
@@ -1089,7 +1089,7 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
 
 StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     StateSet res{};
-    if (delta.has_no_transitions()) {
+    if (delta.empty()) {
         return res;
     }
 
@@ -1231,7 +1231,7 @@ Nfa Mata::Nfa::determinize(
 
     (*subset_map)[Mata::Util::OrdVector<State>(S0)] = S0id;
 
-    if (aut.delta.has_no_transitions())
+    if (aut.delta.empty())
         return result;
 
     using Iterator = Mata::Util::OrdVector<Move>::const_iterator;

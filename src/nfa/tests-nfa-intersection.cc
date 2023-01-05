@@ -79,7 +79,7 @@ TEST_CASE("Mata::Nfa::intersection()")
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
-        REQUIRE(res.delta.has_no_transitions());
+        REQUIRE(res.delta.empty());
         REQUIRE(prod_map.empty());
     }
 
@@ -89,7 +89,7 @@ TEST_CASE("Mata::Nfa::intersection()")
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
-        REQUIRE(res.delta.has_no_transitions());
+        REQUIRE(res.delta.empty());
     }
 
     a.increase_size(6);

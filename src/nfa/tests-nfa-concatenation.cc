@@ -81,7 +81,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -92,7 +92,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -103,7 +103,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -115,7 +115,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -127,7 +127,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -140,7 +140,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -153,7 +153,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -165,7 +165,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -180,7 +180,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
     }
 
     SECTION("Empty language rhs automaton") {
@@ -195,7 +195,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.initial[0]);
         CHECK(result.final.empty());
         CHECK(result.delta.post_size() == 1);
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
     }
 
     SECTION("Single state automata accepting an empty string") {
@@ -211,7 +211,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.initial[0]);
         CHECK(result.final[0]);
         CHECK(result.delta.post_size() == 1);
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
     }
 
     SECTION("Empty language rhs automaton") {
@@ -227,7 +227,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         CHECK(result.initial[0]);
         CHECK(result.final[1]);
         CHECK(result.delta.post_size() == 2);
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
     }
 
     SECTION("Simple two state rhs automaton") {
@@ -404,7 +404,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
         CHECK(is_lang_empty(result));
     }
 
@@ -419,7 +419,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.delta.post_size() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
-        CHECK(result.delta.has_no_transitions());
+        CHECK(result.delta.empty());
     }
 
     SECTION("Empty language rhs automaton")
