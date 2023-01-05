@@ -29,7 +29,7 @@ jobs:
         id: tagger
         uses: phish108/autotag-action@1.1.51
         with:
-          release-branch: devel
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           bump: minor
           dry-run: 'TRUE'
 
