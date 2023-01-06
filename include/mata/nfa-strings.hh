@@ -119,6 +119,9 @@ namespace SegNfa {
     using SegNfa = Nfa::Nfa;
     using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 
+    /// Number of visited epsilons
+    using EpsCntMap = std::map<Symbol, unsigned>;
+
     /**
     * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
     */
@@ -175,7 +178,7 @@ namespace SegNfa {
         struct StateDepthTuple {
             State state; ///< State with a depth.
             EpsilonDepth depth; ///< Depth of a state.
-            std::map<Symbol, unsigned> eps; /// visited epsilons
+            EpsCntMap eps; /// visited epsilons and their numbers
         };
 
         /**
@@ -252,6 +255,10 @@ namespace SegNfa {
     using Noodle = std::vector<SharedPtrAut>;
     using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
+    /// Noodles as segments enriched with EpsCntMap
+    using NoodleSubst = std::vector<std::pair<SharedPtrAut, EpsCntMap>>;
+    using NoodleSubstSequence = std::vector<NoodleSubst>;
+
     /**
      * @brief segs_one_initial_final
      * 
@@ -292,7 +299,7 @@ namespace SegNfa {
      * @param[in] include_empty Whether to also include empty noodles.
      * @return A list of all (non-empty) noodles.
      */
-    NoodleSequence noodlify_reach(const SegNfa& aut, const std::set<Symbol> epsilons, bool include_empty = false);
+    NoodleSubstSequence noodlify_reach(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
 
     /**
      * @brief Create noodles for left and right side of equation.
@@ -339,6 +346,21 @@ namespace SegNfa {
      */
     NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
                                          bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+
+    /**
+     * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
+     *
+     * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+     * @param[in] right_automaton Sequence of pointers to segment automata for right side of an equation to noodlify.
+     * @param[in] include_empty Whether to also include empty noodles.
+     * @param[in] params Additional parameters for the noodlification:
+     *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
+     *                 minimization before noodlification.
+     * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
+     */
+    NoodleSubstSequence noodlify_for_equation(const AutRefSequence& left_automata, const AutRefSequence& right_automata,
+                                                     bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+
 } // Namespace SegNfa.
 
 } // Namespace Strings.

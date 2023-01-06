@@ -44,7 +44,7 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
 
     const std::set<Symbol> epsilons({epsilon});
-    return noodlify_reach(aut, epsilons, include_empty);
+    // return noodlify_reach(aut, epsilons, include_empty);
 
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
@@ -166,15 +166,20 @@ void SegNfa::segs_one_initial_final(
     }
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<Symbol> epsilons, bool include_empty) {
+SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
+
+    EpsCntMap def_eps_map;
+    for(const Symbol& eps : epsilons) {
+        def_eps_map[eps] = 0;
+    }
 
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
         if (segment->states_number() > 0 || include_empty) {
-            return {{ segment }};
+            return {{ {segment, def_eps_map} }, };
         } else {
             return {};
         }
@@ -187,23 +192,22 @@ SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<
     const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
 
     struct SegItem {
-        Noodle noodle;
+        NoodleSubst noodle;
         State fin;
         size_t seg_id;
-        std::vector<Symbol> eps_sequence;
     };
 
-    NoodleSequence noodles{};
+    NoodleSubstSequence noodles{};
     std::deque<SegItem> lifo;
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        new_item.noodle.push_back(segments_one_initial_final[{unused_state, fn}]);
+        new_item.noodle.push_back({segments_one_initial_final[{unused_state, fn}], def_eps_map});
         new_item.seg_id = 0;
         new_item.fin = fn;
-        new_item.eps_sequence = std::vector<Symbol>();
         lifo.push_back(new_item);
     }
+    auto visited_eps = segmentation.get_visited_eps();
 
     while(!lifo.empty()) {
         SegItem item = lifo.front();
@@ -231,9 +235,8 @@ SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<
 
                 SegItem new_item = item; // deep copy
                 new_item.seg_id++;
-                new_item.noodle.push_back(seg_iter->second);
+                new_item.noodle.push_back({seg_iter->second, visited_eps[tr.tgt]});
                 new_item.fin = fn;
-                new_item.eps_sequence.push_back(tr.symb);
                 lifo.push_back(new_item);
             }
         }
@@ -326,4 +329,59 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
         }
     }
     return noodlify(product_pres_eps_trans, EPSILON, include_empty);
+}
+
+
+SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const AutRefSequence& right_automata,
+                                                     bool include_empty, const StringMap& params) {
+    const auto left_automata_begin{ left_automata.begin() };
+    const auto left_automata_end{ left_automata.end() };
+    const auto right_automata_begin{ right_automata.begin() };
+    const auto right_automata_end{ right_automata.end() };
+
+    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
+         ++left_aut_iter) {
+        (*left_aut_iter).get().unify_initial();
+        (*left_aut_iter).get().unify_final();
+    }
+    for (auto right_aut_iter{ right_automata_begin }; right_aut_iter != right_automata_end;
+         ++right_aut_iter) {
+        (*right_aut_iter).get().unify_initial();
+        (*right_aut_iter).get().unify_final();
+    }
+
+    if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
+
+    // Automaton representing the left side concatenated over epsilon transitions.
+    Nfa::Nfa concatenated_left_side{ *left_automata_begin };
+    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
+         ++next_left_automaton_it) {
+        concatenated_left_side = concatenate_eps(concatenated_left_side, *next_left_automaton_it, EPSILON, true);
+    }
+    Nfa::Nfa concatenated_right_side{ *right_automata_begin };
+    for (auto next_right_automaton_it{ right_automata_begin + 1 }; next_right_automaton_it != right_automata_end;
+         ++next_right_automaton_it) {
+        concatenated_right_side = concatenate_eps(concatenated_right_side, *next_right_automaton_it, EPSILON-1, true); // we use EPSILON-1
+    }
+
+    const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
+    auto product_pres_eps_trans{
+            intersection_eps(concatenated_left_side, concatenated_right_side, true, epsilons) };
+
+    product_pres_eps_trans.trim();
+    if (is_lang_empty(product_pres_eps_trans)) {
+        return NoodleSubstSequence{};
+    }
+    if (Util::haskey(params, "reduce")) {
+        const std::string& reduce_value = params.at("reduce");
+        if (reduce_value == "forward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+        }
+        if (reduce_value == "backward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans = revert(product_pres_eps_trans);
+            product_pres_eps_trans = reduce(product_pres_eps_trans);
+            product_pres_eps_trans = revert(product_pres_eps_trans);
+        }
+    }
+    return noodlify_reach(product_pres_eps_trans, epsilons, include_empty);
 }
