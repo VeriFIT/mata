@@ -23,6 +23,11 @@ namespace Nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
+    return concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
+}
+
+Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
+                StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
@@ -55,7 +60,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
         // The epsilon transitions lead from lhs original final states to rhs original initial states.
         for (const auto& lhs_final_state: lhs.final) {
             for (const auto& rhs_initial_state: rhs.initial) {
-                result.add_trans(lhs_final_state, EPSILON,
+                result.add_trans(lhs_final_state, epsilon,
                                  rhs_result_states_map_internal[rhs_initial_state]);
             }
         }
