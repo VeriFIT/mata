@@ -219,7 +219,10 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
         }
 
         for(const Trans& tr : epsilon_depths.at(item.seg_id)) {
-            if(tr.src != item.fin) { // TODO: use map instead of vector
+            /**
+             * TODO: use map instead of vector
+             */
+            if(tr.src != item.fin) {
                 continue; 
             }
 
@@ -233,6 +236,9 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
                 if(seg_iter == segments_one_initial_final.end())
                     continue;
 
+                /**
+                 * TODO: do not include trivial segments (=with epsilon language)
+                 */
                 SegItem new_item = item; // deep copy
                 new_item.seg_id++;
                 new_item.noodle.push_back({seg_iter->second, visited_eps[tr.tgt]});
