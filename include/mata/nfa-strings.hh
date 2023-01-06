@@ -117,6 +117,7 @@ namespace SegNfa {
     /// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
     /// Segment automaton can have initial states only in the first segment and final states only in the last segment.
     using SegNfa = Nfa::Nfa;
+    using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 
     /**
     * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
@@ -133,7 +134,7 @@ namespace SegNfa {
          * @param[in] aut Segment automaton to make segments for.
          * @param[in] epsilon Symbol to execute segmentation for.
          */
-        explicit Segmentation(const SegNfa& aut, const Symbol epsilon = EPSILON) : epsilon(epsilon), automaton(aut) {
+        explicit Segmentation(const SegNfa& aut, const std::set<Symbol> epsilons) : epsilons(epsilons), automaton(aut) {
             compute_epsilon_depths(); // Map depths to epsilon transitions.
         }
 
@@ -157,20 +158,24 @@ namespace SegNfa {
          */
         const AutSequence& get_untrimmed_segments();
 
+        const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
+
     private:
-        const Symbol epsilon; ///< Symbol for which to execute segmentation.
+        const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
         /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
         const SegNfa& automaton;
         EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
         AutSequence segments{}; ///< Segments for @p automaton.
         AutSequence segments_raw{}; ///< Raw segments for @p automaton.
+        VisitedEpsMap visited_eps{}; /// number of visited eps for each state
 
         /**
          * Pair of state and its depth.
          */
-        struct StateDepthPair {
+        struct StateDepthTuple {
             State state; ///< State with a depth.
             EpsilonDepth depth; ///< Depth of a state.
+            std::map<Symbol, unsigned> eps; /// visited epsilons
         };
 
         /**
@@ -207,14 +212,14 @@ namespace SegNfa {
          * Initialize worklist of states with depths to process.
          * @return Queue of state and its depth pairs.
          */
-        std::deque<StateDepthPair> initialize_worklist() const;
+        std::deque<StateDepthTuple> initialize_worklist() const;
 
         /**
          * Process pair of state and its depth.
          * @param[in] state_depth_pair Current state depth pair.
          * @param[out] worklist Worklist of state and depth pairs to process.
          */
-        void process_state_depth_pair(const StateDepthPair& state_depth_pair, std::deque<StateDepthPair>& worklist);
+        void process_state_depth_pair(const StateDepthTuple& state_depth_pair, std::deque<StateDepthTuple>& worklist);
 
         /**
          * Add states with non-epsilon transitions to the @p worklist.
@@ -222,8 +227,8 @@ namespace SegNfa {
          * @param depth[in] Current depth.
          * @param worklist[out] Worklist of state and depth pairs to process.
          */
-        static void add_transitions_to_worklist(const Move& state_transitions, EpsilonDepth depth,
-                                                std::deque<StateDepthPair>& worklist);
+        void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const Move& state_transitions,
+                                                std::deque<StateDepthTuple>& worklist);
 
         /**
          * Process epsilon transitions for the current state.
@@ -231,8 +236,8 @@ namespace SegNfa {
          * @param[in] state_transitions Transitions from current state.
          * @param[out] worklist Worklist of state and depth pairs to process.
          */
-        void handle_epsilon_transitions(const StateDepthPair& state_depth_pair, const Move& state_transitions,
-                                        std::deque<StateDepthPair>& worklist);
+        void handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const Move& state_transitions,
+                                        std::deque<StateDepthTuple>& worklist);
 
         /**
          * @brief Remove inner initial and final states.
@@ -283,11 +288,11 @@ namespace SegNfa {
      *  between each two consecutive segments.
      *
      * @param[in] automaton Segment automaton to noodlify.
-     * @param[in] epsilon Epsilon symbol to noodlify for.
+     * @param[in] epsilons Epsilon symbols to noodlify for.
      * @param[in] include_empty Whether to also include empty noodles.
      * @return A list of all (non-empty) noodles.
      */
-    NoodleSequence noodlify_reach(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+    NoodleSequence noodlify_reach(const SegNfa& aut, const std::set<Symbol> epsilons, bool include_empty = false);
 
     /**
      * @brief Create noodles for left and right side of equation.

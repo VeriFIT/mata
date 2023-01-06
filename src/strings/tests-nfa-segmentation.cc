@@ -74,11 +74,12 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 {
     Nfa aut('q' + 1);
     constexpr Symbol epsilon{'c'};
+    const std::set<Symbol> epsilons({epsilon});
 
     SECTION("Automaton A")
     {
         FILL_WITH_AUT_A(aut);
-        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        auto segmentation{SegNfa::Segmentation{aut, epsilons } };
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
         REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Trans>{
                 {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
@@ -97,7 +98,7 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
         aut.add_trans(6, epsilon, 7);
         aut.add_trans(7, epsilon, 8);
 
-        auto segmentation{SegNfa::Segmentation{aut, epsilon } };
+        auto segmentation{SegNfa::Segmentation{aut, epsilons } };
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
 
         REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
@@ -111,6 +112,7 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
 TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
     Symbol epsilon{ 'c' };
+    const std::set<Symbol> epsilons({epsilon}); 
     SECTION("Large automaton") {
         Nfa aut(100);
         aut.initial.add(1);
@@ -129,7 +131,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
         aut.add_trans(9, 'a', 11);
         aut.add_trans(10, 'b', 11);
 
-        auto segmentation{SegNfa::Segmentation{aut, 'c'}};
+        auto segmentation{SegNfa::Segmentation{aut, epsilons}};
         auto segments{ segmentation.get_segments() };
         REQUIRE(segments.size() == 4);
 
@@ -168,7 +170,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
         aut.add_trans(2, epsilon, 4);
         aut.add_trans(5, epsilon, 6);
 
-        auto segmentation{SegNfa::Segmentation{aut, epsilon}};
+        auto segmentation{SegNfa::Segmentation{aut, epsilons}};
         auto segments{ segmentation.get_segments() };
         CHECK(segments.size() == 3);
 

@@ -43,9 +43,10 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 
 SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
 
-    return noodlify_reach(aut, epsilon, include_empty);
+    const std::set<Symbol> epsilons({epsilon});
+    return noodlify_reach(aut, epsilons, include_empty);
 
-    Segmentation segmentation{ aut, epsilon };
+    Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
@@ -165,8 +166,8 @@ void SegNfa::segs_one_initial_final(
     }
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
-    Segmentation segmentation{ aut, epsilon };
+SegNfa::NoodleSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<Symbol> epsilons, bool include_empty) {
+    Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
     if (segments.size() == 1) {
