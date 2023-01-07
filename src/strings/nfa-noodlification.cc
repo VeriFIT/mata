@@ -133,6 +133,9 @@ void SegNfa::segs_one_initial_final(
             for (const State final_state: iter->final) {
                 SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
                 segment_one_final->final = {final_state };
+                /**
+                 * TODO: reduce
+                 */
                 segment_one_final->trim();
 
                 if (segment_one_final->states_number() > 0 || include_empty) {
@@ -236,12 +239,12 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
                 if(seg_iter == segments_one_initial_final.end())
                     continue;
 
-                /**
-                 * TODO: do not include trivial segments (=with epsilon language)
-                 */
                 SegItem new_item = item; // deep copy
                 new_item.seg_id++;
-                new_item.noodle.push_back({seg_iter->second, visited_eps[tr.tgt]});
+                // do not include segmets with trivial epsilon language
+                if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
+                    new_item.noodle.push_back({seg_iter->second, visited_eps[tr.tgt]});
+                }
                 new_item.fin = fn;
                 lifo.push_back(new_item);
             }

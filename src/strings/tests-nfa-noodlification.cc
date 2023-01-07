@@ -380,6 +380,28 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
             }
         }
     }
+
+    SECTION("Simple automata -- epsilon") {
+        Nfa x, y, z, w, astar;
+        create_nfa(&x, "a+");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)+");
+        create_nfa(&astar, "a*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntMap>>>( { 
+                {{astar, { {EPSILON, 0}, {EPSILON-1, 0} } }, {x, { {EPSILON, 0}, {EPSILON-1, 1} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }}, 
+                {{astar, { {EPSILON, 0}, {EPSILON-1, 0} } }, {x, { {EPSILON, 0}, {EPSILON-1, 1} } }}, 
+                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }}, 
+                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {y, { {EPSILON, 1}, {EPSILON-1, 0} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }} } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x,y},std::vector<std::reference_wrapper<Nfa>>{z,w});
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
 }
 
 TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
