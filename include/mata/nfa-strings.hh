@@ -131,6 +131,7 @@ namespace SegNfa {
         /// Dictionary of lists of ε-transitions grouped by their depth.
         /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
         using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
+        using EpsilonDepthTransitionMap = std::unordered_map<EpsilonDepth, std::unordered_map<State,TransSequence>>;
 
         /**
          * Prepare automaton @p aut for segmentation.
@@ -146,6 +147,13 @@ namespace SegNfa {
          * @return Map of depths to lists of ε-transitions.
          */
         const EpsilonDepthTransitions& get_epsilon_depths() const { return epsilon_depth_transitions; }
+
+        /**
+         * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
+         * 
+         * @return Map of depths to a map of states to transitions
+         */
+        const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map; }
 
         /**
          * Get segment automata.
@@ -168,6 +176,7 @@ namespace SegNfa {
         /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
         const SegNfa& automaton;
         EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
+        EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
         AutSequence segments{}; ///< Segments for @p automaton.
         AutSequence segments_raw{}; ///< Raw segments for @p automaton.
         VisitedEpsMap visited_eps{}; /// number of visited eps for each state

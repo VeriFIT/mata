@@ -192,7 +192,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
-    const auto& epsilon_depths{ segmentation.get_epsilon_depths() };
+    const auto& epsilon_depths_map{ segmentation.get_epsilon_depth_trans_map() };
 
     struct SegItem {
         NoodleSubst noodle;
@@ -210,6 +210,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
         new_item.fin = fn;
         lifo.push_back(new_item);
     }
+    /// Number of visited epsilons for each state.
     auto visited_eps = segmentation.get_visited_eps();
 
     while(!lifo.empty()) {
@@ -221,14 +222,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
             continue;
         }
 
-        for(const Trans& tr : epsilon_depths.at(item.seg_id)) {
-            /**
-             * TODO: use map instead of vector
-             */
-            if(tr.src != item.fin) {
-                continue; 
-            }
-
+        for(const Trans& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
             Mata::Util::NumberPredicate<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
             if(item.seg_id + 1 == segments.size() - 1) { // last segment
                 fins = Mata::Util::NumberPredicate<Mata::Nfa::State>({unused_state});
