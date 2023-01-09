@@ -370,7 +370,7 @@ void Delta::add(State state_from, Symbol symbol, State state_to)
 
 void Delta::remove(State src, Symbol symb, State tgt) {
     if (src >= post.size()) {
-        throw std::runtime_error("State " + std::to_string(src) + " is not in Delta");
+        return;
     }
 
     auto& state_transitions{post[src] };
