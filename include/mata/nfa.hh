@@ -33,7 +33,6 @@
 #include <mata/util.hh>
 #include <mata/ord-vector.hh>
 #include <mata/inter-aut.hh>
-#include <simlib/util/binary_relation.hh>
 #include <mata/synchronized-iterator.hh>
 
 namespace Mata
@@ -882,10 +881,6 @@ Nfa minimize(const Nfa &aut);
 Nfa determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map = nullptr);
-
-Simlib::Util::BinaryRelation compute_relation(
-        const Nfa& aut,
-        const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});
 
 // Reduce the size of the automaton
 Nfa reduce(
