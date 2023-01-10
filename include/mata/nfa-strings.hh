@@ -121,6 +121,8 @@ namespace SegNfa {
 
     /// Number of visited epsilons
     using EpsCntMap = std::map<Symbol, unsigned>;
+    /// Projection of EpsCntMap to sorted keys (desc)
+    using EpsCntVector = std::vector<unsigned>;
 
     /**
     * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
@@ -265,7 +267,7 @@ namespace SegNfa {
     using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
     /// Noodles as segments enriched with EpsCntMap
-    using NoodleSubst = std::vector<std::pair<SharedPtrAut, EpsCntMap>>;
+    using NoodleSubst = std::vector<std::pair<SharedPtrAut, EpsCntVector>>;
     using NoodleSubstSequence = std::vector<NoodleSubst>;
 
     /**
@@ -308,7 +310,7 @@ namespace SegNfa {
      * @param[in] include_empty Whether to also include empty noodles.
      * @return A list of all (non-empty) noodles.
      */
-    NoodleSubstSequence noodlify_reach(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
+    NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
 
     /**
      * @brief Create noodles for left and right side of equation.
@@ -369,6 +371,14 @@ namespace SegNfa {
      */
     NoodleSubstSequence noodlify_for_equation(const AutRefSequence& left_automata, const AutRefSequence& right_automata,
                                                      bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+
+    /**
+     * @brief Process epsilon map to a sequence of values (sorted according to key desc)
+     * 
+     * @param eps_cnt Epsilon count
+     * @return Vector of keys (count of epsilons)
+     */
+    EpsCntVector process_eps_map(const EpsCntMap& eps_cnt);
 
 } // Namespace SegNfa.
 

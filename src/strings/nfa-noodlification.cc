@@ -169,7 +169,7 @@ void SegNfa::segs_one_initial_final(
     }
 }
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
+SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
@@ -177,12 +177,13 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
     for(const Symbol& eps : epsilons) {
         def_eps_map[eps] = 0;
     }
+    EpsCntVector def_eps_vector = process_eps_map(def_eps_map);
 
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
         if (segment->states_number() > 0 || include_empty) {
-            return {{ {segment, def_eps_map} }, };
+            return {{ {segment, def_eps_vector} } };
         } else {
             return {};
         }
@@ -205,7 +206,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        new_item.noodle.push_back({segments_one_initial_final[{unused_state, fn}], def_eps_map});
+        new_item.noodle.push_back({segments_one_initial_final[{unused_state, fn}], def_eps_vector});
         new_item.seg_id = 0;
         new_item.fin = fn;
         lifo.push_back(new_item);
@@ -237,7 +238,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_reach(const SegNfa& aut, const std:
                 new_item.seg_id++;
                 // do not include segmets with trivial epsilon language
                 if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
-                    new_item.noodle.push_back({seg_iter->second, visited_eps[tr.tgt]});
+                    new_item.noodle.push_back({seg_iter->second, process_eps_map(visited_eps[tr.tgt])});
                 }
                 new_item.fin = fn;
                 lifo.push_back(new_item);
@@ -386,5 +387,13 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const AutRefSequence& 
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify_reach(product_pres_eps_trans, epsilons, include_empty);
+    return noodlify_mult_eps(product_pres_eps_trans, epsilons, include_empty);
+}
+
+SegNfa::EpsCntVector SegNfa::process_eps_map(const EpsCntMap& eps_cnt) {
+    EpsCntVector ret;
+    for(auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); it++) {
+        ret.push_back(it->second);
+    }
+    return ret;
 }

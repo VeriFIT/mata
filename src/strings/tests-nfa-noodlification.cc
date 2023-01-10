@@ -369,9 +369,9 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntMap>>>( { 
-                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {x, { {EPSILON, 0}, {EPSILON-1, 1} } }, {y, { {EPSILON, 1}, {EPSILON-1, 1} } }}, 
-                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {y, { {EPSILON, 1}, {EPSILON-1, 0} } }, {y, { {EPSILON, 1}, {EPSILON-1, 1} } }} } );
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( { 
+                {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }}, 
+                {{x, {0, 0} }, {y, {1, 0} }, {y, {1, 1} }} } );
         SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x,y},std::vector<std::reference_wrapper<Nfa>>{z,w});
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
@@ -389,11 +389,11 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&w, "(a|b)+");
         create_nfa(&astar, "a*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntMap>>>( { 
-                {{astar, { {EPSILON, 0}, {EPSILON-1, 0} } }, {x, { {EPSILON, 0}, {EPSILON-1, 1} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }}, 
-                {{astar, { {EPSILON, 0}, {EPSILON-1, 0} } }, {x, { {EPSILON, 0}, {EPSILON-1, 1} } }}, 
-                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }}, 
-                {{x, { {EPSILON, 0}, {EPSILON-1, 0} } }, {y, { {EPSILON, 1}, {EPSILON-1, 0} } }, {w, { {EPSILON, 1}, {EPSILON-1, 1} } }} } );
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( { 
+                {{astar, {0, 0} }, {x, {0, 1} }, {w, {1, 1} }}, 
+                {{astar, {0, 0} }, {x, {0, 1} }}, 
+                {{x, {0, 0} }, {w, {1, 1} }}, 
+                {{x, {0, 0} }, {y, {1, 0} }, {w, {1, 1} }} } );
         SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x,y},std::vector<std::reference_wrapper<Nfa>>{z,w});
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
