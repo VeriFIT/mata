@@ -105,6 +105,10 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
 )
 
+add_custom_command(TARGET libmata POST_BUILD
+		COMMAND ../merge_static_libraries.sh libcombined.a ../build/src/libmata.a ../build/3rdparty/simlib/libsimlib.a
+		../build/3rdparty/re2/libre2.a ../build/3rdparty/cudd/lib/libcudd.a)
+
 if(FALSE)
 
 # problems with valgrind under appleOS
