@@ -354,9 +354,8 @@ struct Post : private Util::OrdVector<Move> {
  */
 struct Delta {
 private:
-    std::vector<Post> post;
+    mutable std::vector<Post> post;
     size_t max_state_;
-
 
     /**
      * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
@@ -371,13 +370,19 @@ public:
 
     Post & operator[] (State q)
     {
-        assert(q < post.size() && "There is not transition for given state");
+        if (q >= post.size()) {
+            post.resize(q+1);
+        }
+
         return post[q];
     };
 
     const Post & operator[] (State q) const
     {
-        assert(q < post.size() && "There is not transition for given state");
+        if (q >= post.size()) {
+            post.resize(q+1);
+        }
+
         return post[q];
     };
 
