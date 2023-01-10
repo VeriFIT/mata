@@ -57,8 +57,8 @@ def get_cpp_sources(src_dir):
 
 extensions = [
     Extension(
-        "libmata",
-        sources=["libmata.pyx"]
+        "libmata.nfa",
+        sources=["libmata/nfa.pyx"]
                 + get_cpp_sources(mata_source_dir)
                 + get_cpp_sources(re2_source_dir)
                 + get_cpp_sources(simlib_source_dir)
@@ -201,8 +201,13 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     name="libmata",
+    packages=["libmata"],
+    package_dir={'libmata': 'libmata'},
     version=get_version(),
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={'language_level': "3"}
+    ),
     description="The automata library",
     author="Lukáš Holík <holik@fit.vutbr.cz>, "
                 "Ondřej Lengál <lengal@fit.vutbr.cz>, "

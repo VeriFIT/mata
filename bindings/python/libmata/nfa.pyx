@@ -1,5 +1,12 @@
-cimport libmata as mata
+cimport libmata.nfa as mata
+from libmata.nfa cimport \
+    Symbol, State, StateSet, StateToStateMap, StringToSymbolMap, \
+    CAlphabet, CDelta, COrdVector, CRun, CTrans, CNfa, CMove, \
+    CEPSILON, \
+    AutSequence, NoodleSequence, AutPtrSequence
 
+from libcpp.string cimport string
+from libcpp cimport bool
 from libcpp.vector cimport vector
 from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
@@ -572,7 +579,7 @@ cdef class Nfa:
         :return: string with dot representation of the automaton
         """
         cdef mata.stringstream* output_stream
-        output_stream = new mata.stringstream("")
+        output_stream = new mata.stringstream("".encode('ascii'))
         cdef string result
         try:
             self.thisptr.get().print_to_DOT(dereference(output_stream))
