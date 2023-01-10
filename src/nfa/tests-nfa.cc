@@ -2657,13 +2657,16 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     aut.delta[25];
 
     REQUIRE(aut.delta.post_size() == 26);
+    REQUIRE(aut.delta[25].empty());
 
     aut.delta[50];
     REQUIRE(aut.delta.post_size() == 51);
+    REQUIRE(aut.delta[50].empty());
 
     const Nfa aut1 = aut;
     aut1.delta[60];
     REQUIRE(aut1.delta.post_size() == 61);
+    REQUIRE(aut1.delta[60].empty());
 }
 
 TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
