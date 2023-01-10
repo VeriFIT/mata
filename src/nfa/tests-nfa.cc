@@ -2649,6 +2649,23 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
     }
 }
 
+TEST_CASE("Mata::Nfa::delta.operator[]")
+{
+    Nfa aut{20};
+    FILL_WITH_AUT_A(aut);
+    REQUIRE(aut.get_num_of_trans() == 15);
+    aut.delta[25];
+
+    REQUIRE(aut.delta.post_size() == 26);
+
+    aut.delta[50];
+    REQUIRE(aut.delta.post_size() == 51);
+
+    const Nfa aut1 = aut;
+    aut1.delta[60];
+    REQUIRE(aut1.delta.post_size() == 61);
+}
+
 TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     Nfa nfa{10};
 
