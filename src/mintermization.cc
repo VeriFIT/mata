@@ -108,6 +108,8 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
         // Foreach disjunct create a BDD
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
+            if (ds_pair.first->node.is_state()) // skip trans to state
+                continue;
             const auto bdd = graph_to_bdd_afa(*ds_pair.first);
             assert(bdd.type == OptionalBdd::BDD_E);
             if (bdd.val.IsZero())
