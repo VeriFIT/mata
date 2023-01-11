@@ -25,7 +25,7 @@ echo "LIBS copied"
 (
 	cd ${TMP_DIR}
 	for i in *.a
-  do
+	do
 		${AR} ${AR_EXTRACT_FLAGS} ${i}
 	done 
 	rm *.a
