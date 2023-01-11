@@ -73,7 +73,7 @@ std::deque<SegNfa::Segmentation::StateDepthPair> SegNfa::Segmentation::initializ
 std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() const
 {
     std::unordered_map<State, bool> visited{};
-    const size_t state_num = automaton.states_number();
+    const size_t state_num = automaton.delta.post_size();
     for (State state{ 0 }; state < state_num; ++state)
     {
         visited[state] = false;
@@ -116,11 +116,11 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
 void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
 {
     assert(transition.symb == epsilon);
-    assert(segments_raw[current_depth].has_trans(transition.src, transition.symb, transition.tgt));
+    assert(segments_raw[current_depth].delta.contains(transition.src, transition.symb, transition.tgt));
 
     segments_raw[current_depth].final.add(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
-    segments_raw[current_depth].remove_trans(transition);
+    segments_raw[current_depth].delta.remove(transition);
 }
 
 void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const Trans& transition)
@@ -128,7 +128,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
     const size_t next_depth = current_depth + 1;
 
     assert(transition.symb == epsilon);
-    assert(segments_raw[next_depth].has_trans(transition.src, transition.symb, transition.tgt));
+    assert(segments_raw[next_depth].delta.contains(transition.src, transition.symb, transition.tgt));
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
