@@ -295,7 +295,7 @@ namespace Mata {
 
             // This is supposed to return something not smaller than the largest element in the set
             // the easiest is to return the size of the predicate, roughly, the largest element ever inserted.
-            Number domain_size() {
+            Number domain_size() const {
                 return predicate.size();
             }
 

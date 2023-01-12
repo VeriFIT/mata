@@ -37,9 +37,9 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	}
 
 	result = determinize(aut, subset_map);
-	State sink_state = result.states_number() + 1;
+	State sink_state = result.delta.post_size() + 1;
 	result.increase_size(sink_state+1);
-	assert(sink_state < result.states_number());
+	assert(sink_state < result.delta.post_size());
 	auto it_inserted_pair = subset_map->insert({{}, sink_state});
 	if (!it_inserted_pair.second)
 	{
@@ -91,7 +91,7 @@ Nfa Mata::Nfa::Algorithms::complement_naive(
 void Mata::Nfa::complement_in_place(Nfa& aut) {
     StateSet newFinalStates;
 
-    const size_t size = aut.delta.size();
+    const size_t size = aut.delta.post_size();
     for (State q = 0; q < size; ++q) {
         if (!aut.final[q]) {
             newFinalStates.insert(q);

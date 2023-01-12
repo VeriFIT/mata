@@ -20,39 +20,39 @@ using namespace Mata::RE2Parser;
 #define FILL_WITH_AUT_A(x) \
 	x.initialstates = {1, 3}; \
 	x.finalstates = {5}; \
-	x.add_trans(1, 'a', 3); \
-	x.add_trans(1, 'a', 10); \
-	x.add_trans(1, 'b', 7); \
-	x.add_trans(3, 'a', 7); \
-	x.add_trans(3, 'b', 9); \
-	x.add_trans(9, 'a', 9); \
-	x.add_trans(7, 'b', 1); \
-	x.add_trans(7, 'a', 3); \
-	x.add_trans(7, 'c', 3); \
-	x.add_trans(10, 'a', 7); \
-	x.add_trans(10, 'b', 7); \
-	x.add_trans(10, 'c', 7); \
-	x.add_trans(7, 'a', 5); \
-	x.add_trans(5, 'a', 5); \
-	x.add_trans(5, 'c', 9); \
+	x.delta.add(1, 'a', 3); \
+	x.delta.add(1, 'a', 10); \
+	x.delta.add(1, 'b', 7); \
+	x.delta.add(3, 'a', 7); \
+	x.delta.add(3, 'b', 9); \
+	x.delta.add(9, 'a', 9); \
+	x.delta.add(7, 'b', 1); \
+	x.delta.add(7, 'a', 3); \
+	x.delta.add(7, 'c', 3); \
+	x.delta.add(10, 'a', 7); \
+	x.delta.add(10, 'b', 7); \
+	x.delta.add(10, 'c', 7); \
+	x.delta.add(7, 'a', 5); \
+	x.delta.add(5, 'a', 5); \
+	x.delta.add(5, 'c', 9); \
 
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
 	x.initialstates = {4}; \
 	x.finalstates = {2, 12}; \
-	x.add_trans(4, 'c', 8); \
-	x.add_trans(4, 'a', 8); \
-	x.add_trans(8, 'b', 4); \
-	x.add_trans(4, 'a', 6); \
-	x.add_trans(4, 'b', 6); \
-	x.add_trans(6, 'a', 2); \
-	x.add_trans(2, 'b', 2); \
-	x.add_trans(2, 'a', 0); \
-	x.add_trans(0, 'a', 2); \
-	x.add_trans(2, 'c', 12); \
-	x.add_trans(12, 'a', 14); \
-	x.add_trans(14, 'b', 12); \
+	x.delta.add(4, 'c', 8); \
+	x.delta.add(4, 'a', 8); \
+	x.delta.add(8, 'b', 4); \
+	x.delta.add(4, 'a', 6); \
+	x.delta.add(4, 'b', 6); \
+	x.delta.add(6, 'a', 2); \
+	x.delta.add(2, 'b', 2); \
+	x.delta.add(2, 'a', 0); \
+	x.delta.add(0, 'a', 2); \
+	x.delta.add(2, 'c', 12); \
+	x.delta.add(12, 'a', 14); \
+	x.delta.add(14, 'b', 12); \
 
 // }}}
 
@@ -65,11 +65,11 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
     SECTION("Small automaton") {
         aut.initial.add(0);
         aut.final.add(1);
-        aut.add_trans(0, 'a', 1);
+        aut.delta.add(0, 'a', 1);
 
         Nfa noodle{2 };
         noodle.initial.add(0);
-        noodle.add_trans(0, 'a', 1);
+        noodle.delta.add(0, 'a', 1);
         noodle.final.add(1);
         auto result{ SegNfa::noodlify(aut, 'c') };
         REQUIRE(result.size() == 1);
@@ -86,13 +86,13 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
     {
         aut.initial.add(0);
         aut.final.add({4, 5, 6, 7});
-        aut.add_trans(0, 'e', 1);
-        aut.add_trans(1, 'e', 2);
-        aut.add_trans(1, 'e', 3);
-        aut.add_trans(2, 'e', 4);
-        aut.add_trans(2, 'e', 5);
-        aut.add_trans(2, 'e', 6);
-        aut.add_trans(3, 'e', 7);
+        aut.delta.add(0, 'e', 1);
+        aut.delta.add(1, 'e', 2);
+        aut.delta.add(1, 'e', 3);
+        aut.delta.add(2, 'e', 4);
+        aut.delta.add(2, 'e', 5);
+        aut.delta.add(2, 'e', 6);
+        aut.delta.add(3, 'e', 7);
 
         auto noodles{ SegNfa::noodlify(aut, 'e') };
 
@@ -103,25 +103,25 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
     {
         aut.initial.add({0, 1, 2});
         aut.final.add({11, 12, 13, 14, 15, 16});
-        aut.add_trans(0, 'e', 3);
-        aut.add_trans(0, 'e', 4);
-        aut.add_trans(0, 'e', 5);
-        aut.add_trans(1, 'e', 3);
-        aut.add_trans(1, 'e', 4);
-        aut.add_trans(2, 'e', 5);
+        aut.delta.add(0, 'e', 3);
+        aut.delta.add(0, 'e', 4);
+        aut.delta.add(0, 'e', 5);
+        aut.delta.add(1, 'e', 3);
+        aut.delta.add(1, 'e', 4);
+        aut.delta.add(2, 'e', 5);
 
-        aut.add_trans(3, 'e', 6);
-        aut.add_trans(3, 'e', 7);
-        aut.add_trans(4, 'e', 8);
-        aut.add_trans(4, 'e', 9);
-        aut.add_trans(5, 'e', 10);
+        aut.delta.add(3, 'e', 6);
+        aut.delta.add(3, 'e', 7);
+        aut.delta.add(4, 'e', 8);
+        aut.delta.add(4, 'e', 9);
+        aut.delta.add(5, 'e', 10);
 
-        aut.add_trans(6, 'e', 11);
-        aut.add_trans(7, 'e', 12);
-        aut.add_trans(8, 'e', 13);
-        aut.add_trans(8, 'e', 14);
-        aut.add_trans(9, 'e', 15);
-        aut.add_trans(10, 'e', 16);
+        aut.delta.add(6, 'e', 11);
+        aut.delta.add(7, 'e', 12);
+        aut.delta.add(8, 'e', 13);
+        aut.delta.add(8, 'e', 14);
+        aut.delta.add(9, 'e', 15);
+        aut.delta.add(10, 'e', 16);
 
         auto noodles{ SegNfa::noodlify(aut, 'e') };
 
@@ -132,18 +132,18 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
     {
         aut.initial.add(0);
         aut.final.add(7);
-        aut.add_trans(0, 'e', 1);
+        aut.delta.add(0, 'e', 1);
 
-        aut.add_trans(1, 'e', 2);
-        aut.add_trans(1, 'e', 3);
+        aut.delta.add(1, 'e', 2);
+        aut.delta.add(1, 'e', 3);
 
-        aut.add_trans(2, 'e', 4);
-        aut.add_trans(3, 'e', 5);
-        aut.add_trans(3, 'e', 6);
+        aut.delta.add(2, 'e', 4);
+        aut.delta.add(3, 'e', 5);
+        aut.delta.add(3, 'e', 6);
 
-        aut.add_trans(4, 'e', 7);
-        aut.add_trans(5, 'e', 7);
-        aut.add_trans(6, 'e', 7);
+        aut.delta.add(4, 'e', 7);
+        aut.delta.add(5, 'e', 7);
+        aut.delta.add(6, 'e', 7);
 
         auto noodles{ SegNfa::noodlify(aut, 'e') };
 
@@ -189,7 +189,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
 
         Nfa noodle{2};
         noodle.initial.add(0);
-        noodle.add_trans(0, 0, 1);
+        noodle.delta.add(0, 0, 1);
         noodle.final.add(1);
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right) };
         REQUIRE(result.size() == 1);
@@ -200,23 +200,23 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         Nfa left1{ 2};
         left1.initial.add(0);
         left1.final.add(1);
-        left1.add_trans(0, 'a', 1);
+        left1.delta.add(0, 'a', 1);
         Nfa left2{ 2};
         left2.initial.add(0);
         left2.final.add(1);
-        left2.add_trans(0, 'b', 1);
+        left2.delta.add(0, 'b', 1);
         Nfa right_side{ 3};
         right_side.initial.add(0);
-        right_side.add_trans(0, 'a', 1);
-        right_side.add_trans(1, 'b', 2);
+        right_side.delta.add(0, 'a', 1);
+        right_side.delta.add(1, 'b', 2);
         right_side.final.add(2);
 
         Nfa noodle{ 4 };
         noodle.initial.add(0);
         noodle.final.add(3);
-        noodle.add_trans(0, 'a', 1);
-        noodle.add_trans(1, 'c', 2); // The automatically chosen epsilon symbol (one larger than 'b').
-        noodle.add_trans(2, 'b', 3);
+        noodle.delta.add(0, 'a', 1);
+        noodle.delta.add(1, 'c', 2); // The automatically chosen epsilon symbol (one larger than 'b').
+        noodle.delta.add(2, 'b', 3);
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right_side) };
         REQUIRE(result.size() == 1);
         //CHECK(are_equivalent(result[0], noodle));
@@ -226,33 +226,33 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         Nfa left{ 10};
         left.initial.add(0);
         left.final.add(9);
-        left.add_trans(0, 108, 1);
-        left.add_trans(1, 111, 2);
-        left.add_trans(2, 99, 3);
-        left.add_trans(3, 97, 4);
-        left.add_trans(4, 108, 5);
-        left.add_trans(5, 104, 6);
-        left.add_trans(6, 111, 7);
-        left.add_trans(7, 115, 8);
-        left.add_trans(8, 116, 9);
+        left.delta.add(0, 108, 1);
+        left.delta.add(1, 111, 2);
+        left.delta.add(2, 99, 3);
+        left.delta.add(3, 97, 4);
+        left.delta.add(4, 108, 5);
+        left.delta.add(5, 104, 6);
+        left.delta.add(6, 111, 7);
+        left.delta.add(7, 115, 8);
+        left.delta.add(8, 116, 9);
 
         Nfa right_side{ 1 };
         right_side.initial.add(0);
         right_side.final.add(0);
-        right_side.add_trans(0, 44, 0);
-        right_side.add_trans(0, 47, 0);
-        right_side.add_trans(0, 58, 0);
-        right_side.add_trans(0, 85, 0);
-        right_side.add_trans(0, 90, 0);
-        right_side.add_trans(0, 97, 0);
-        right_side.add_trans(0, 99, 0);
-        right_side.add_trans(0, 104, 0);
-        right_side.add_trans(0, 108, 0);
-        right_side.add_trans(0, 111, 0);
-        right_side.add_trans(0, 115, 0);
-        right_side.add_trans(0, 116, 0);
-        right_side.add_trans(0, 117, 0);
-        right_side.add_trans(0, 122, 0);
+        right_side.delta.add(0, 44, 0);
+        right_side.delta.add(0, 47, 0);
+        right_side.delta.add(0, 58, 0);
+        right_side.delta.add(0, 85, 0);
+        right_side.delta.add(0, 90, 0);
+        right_side.delta.add(0, 97, 0);
+        right_side.delta.add(0, 99, 0);
+        right_side.delta.add(0, 104, 0);
+        right_side.delta.add(0, 108, 0);
+        right_side.delta.add(0, 111, 0);
+        right_side.delta.add(0, 115, 0);
+        right_side.delta.add(0, 116, 0);
+        right_side.delta.add(0, 117, 0);
+        right_side.delta.add(0, 122, 0);
 
         auto result{ SegNfa::noodlify_for_equation({ left }, right_side) };
         REQUIRE(result.size() == 1);
@@ -264,31 +264,31 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         Nfa left1{ 3};
         left1.initial.add(0);
         left1.final.add({1, 2});
-        left1.add_trans(0, 'a', 1);
-        left1.add_trans(0, 'b', 2);
+        left1.delta.add(0, 'a', 1);
+        left1.delta.add(0, 'b', 2);
         Nfa left2{ 2};
         left2.initial.add(0);
         left2.final.add(1);
-        left2.add_trans(0, 'a', 1);
+        left2.delta.add(0, 'a', 1);
         Nfa left3{ 2};
         left3.initial.add(0);
         left3.final.add(1);
-        left3.add_trans(0, 'b', 1);
+        left3.delta.add(0, 'b', 1);
 
         Nfa noodle1_segment1{ 2 };
         noodle1_segment1.initial.add(0);
         noodle1_segment1.final.add(1);
-        noodle1_segment1.add_trans(0, 'a', 1);
+        noodle1_segment1.delta.add(0, 'a', 1);
 
         Nfa noodle1_segment2{ 2 };
         noodle1_segment2.initial.add(0);
         noodle1_segment2.final.add(1);
-        noodle1_segment2.add_trans(0, 'a', 1);
+        noodle1_segment2.delta.add(0, 'a', 1);
 
         Nfa noodle1_segment3{ 2 };
         noodle1_segment3.initial.add(0);
         noodle1_segment3.final.add(1);
-        noodle1_segment3.add_trans(0, 'b', 1);
+        noodle1_segment3.delta.add(0, 'b', 1);
 
         std::vector<std::shared_ptr<Nfa>> noodle1_segments{ std::make_shared<Nfa>(noodle1_segment1),
                 std::make_shared<Nfa>(noodle1_segment2), std::make_shared<Nfa>(noodle1_segment3) };
@@ -296,28 +296,28 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         SECTION("Full intersection") {
             Nfa right_side{ 7 };
             right_side.initial.add(0);
-            right_side.add_trans(0, 'a', 1);
-            right_side.add_trans(1, 'a', 2);
-            right_side.add_trans(2, 'b', 3);
-            right_side.add_trans(0, 'b', 4);
-            right_side.add_trans(4, 'a', 5);
-            right_side.add_trans(5, 'b', 6);
+            right_side.delta.add(0, 'a', 1);
+            right_side.delta.add(1, 'a', 2);
+            right_side.delta.add(2, 'b', 3);
+            right_side.delta.add(0, 'b', 4);
+            right_side.delta.add(4, 'a', 5);
+            right_side.delta.add(5, 'b', 6);
             right_side.final.add({3, 6});
 
             Nfa noodle2_segment1{ 2 };
             noodle2_segment1.initial.add(0);
             noodle2_segment1.final.add(1);
-            noodle2_segment1.add_trans(0, 'b', 1);
+            noodle2_segment1.delta.add(0, 'b', 1);
 
             Nfa noodle2_segment2{ 2 };
             noodle2_segment2.initial.add(0);
             noodle2_segment2.final.add(1);
-            noodle2_segment2.add_trans(0, 'a', 1);
+            noodle2_segment2.delta.add(0, 'a', 1);
 
             Nfa noodle2_segment3{ 2 };
             noodle2_segment3.initial.add(0);
             noodle2_segment3.final.add(1);
-            noodle2_segment3.add_trans(0, 'b', 1);
+            noodle2_segment3.delta.add(0, 'b', 1);
 
             std::vector<std::shared_ptr<Nfa>> noodle2_segments{ std::make_shared<Nfa>(noodle2_segment1),
                     std::make_shared<Nfa>(noodle2_segment2), std::make_shared<Nfa>(noodle2_segment3) };
@@ -339,12 +339,12 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         SECTION("Partial intersection") {
             Nfa right_side{ 7 };
             right_side.initial.add(0);
-            right_side.add_trans(0, 'a', 1);
-            right_side.add_trans(1, 'a', 2);
-            right_side.add_trans(2, 'b', 3);
-            right_side.add_trans(0, 'b', 4);
-            right_side.add_trans(4, 'a', 5);
-            right_side.add_trans(5, 'b', 6);
+            right_side.delta.add(0, 'a', 1);
+            right_side.delta.add(1, 'a', 2);
+            right_side.delta.add(2, 'b', 3);
+            right_side.delta.add(0, 'b', 4);
+            right_side.delta.add(4, 'a', 5);
+            right_side.delta.add(5, 'b', 6);
             right_side.final.add(3);
 
             auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
@@ -408,25 +408,25 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
     Nfa left1{ 3};
     left1.initial.add(0);
     left1.final.add({1, 2});
-    left1.add_trans(0, 'a', 1);
-    left1.add_trans(0, 'b', 2);
+    left1.delta.add(0, 'a', 1);
+    left1.delta.add(0, 'b', 2);
     Nfa left2{ 2};
     left2.initial.add(0);
     left2.final.add(1);
-    left2.add_trans(0, 'a', 1);
+    left2.delta.add(0, 'a', 1);
     Nfa left3{ 2};
     left3.initial.add(0);
     left3.final.add(1);
-    left3.add_trans(0, 'b', 1);
+    left3.delta.add(0, 'b', 1);
 
     Nfa right_side{ 7 };
     right_side.initial.add(0);
-    right_side.add_trans(0, 'a', 1);
-    right_side.add_trans(1, 'a', 2);
-    right_side.add_trans(2, 'b', 3);
-    right_side.add_trans(0, 'b', 4);
-    right_side.add_trans(4, 'a', 5);
-    right_side.add_trans(5, 'b', 6);
+    right_side.delta.add(0, 'a', 1);
+    right_side.delta.add(1, 'a', 2);
+    right_side.delta.add(2, 'b', 3);
+    right_side.delta.add(0, 'b', 4);
+    right_side.delta.add(4, 'a', 5);
+    right_side.delta.add(5, 'b', 6);
     right_side.final.add({3, 6});
 
     AutPtrSequence left_side{ &left1, &left2, &left3 };

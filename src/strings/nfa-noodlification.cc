@@ -52,14 +52,14 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
-        if (segment->states_number() > 0 || include_empty) {
+        if (segment->delta.post_size() > 0 || include_empty) {
             return {{ segment }};
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.states_number(); // get some State not used in aut
+    State unused_state = aut.delta.post_size(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 

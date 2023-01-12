@@ -161,8 +161,13 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void clear()
         bool empty()
         void resize(size_t)
-        size_t size()
+        size_t post_size()
         void defragment()
+        void add(CTrans) except +
+        void add(State, Symbol, State) except +
+        void remove(CTrans) except +
+        void remove(State, Symbol, State) except +
+        bool contains(State, Symbol, State)
 
     cdef cppclass CRun "Mata::Nfa::Run":
         # Public Attributes
@@ -240,17 +245,11 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void unify_initial()
         void unify_final()
         COrdVector[Symbol] get_used_symbols()
-        void add_trans(CTrans) except +
-        void add_trans(State, Symbol, State) except +
-        void remove_trans(CTrans) except +
-        void remove_trans(State, Symbol, State) except +
-        bool has_trans(State, Symbol, State)
         bool is_state(State)
         size_t get_num_of_trans()
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()
-        size_t states_number()
         void increase_size(size_t)
         void increase_size_for_state(State)
         State add_state()
@@ -268,7 +267,9 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void remove_epsilon(Symbol) except +
         COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
         COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& state_transitions, Symbol epsilon)
-
+        void clear()
+        void defragment()
+        size_t max_state()
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)

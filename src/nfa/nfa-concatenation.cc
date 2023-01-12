@@ -33,8 +33,8 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
 
     if (lhs.initial.empty() || lhs.final.empty() || rhs.initial.empty()) { return Nfa{}; }
 
-    const unsigned long lhs_states_num{lhs.states_number() };
-    const unsigned long rhs_states_num{rhs.states_number() };
+    const unsigned long lhs_states_num{lhs.delta.post_size() };
+    const unsigned long rhs_states_num{rhs.delta.post_size() };
     Nfa result{}; // Concatenated automaton.
     StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
     StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
@@ -60,7 +60,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
         // The epsilon transitions lead from lhs original final states to rhs original initial states.
         for (const auto& lhs_final_state: lhs.final) {
             for (const auto& rhs_initial_state: rhs.initial) {
-                result.add_trans(lhs_final_state, epsilon,
+                result.delta.add(lhs_final_state, epsilon,
                                  rhs_result_states_map_internal[rhs_initial_state]);
             }
         }
@@ -112,7 +112,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
                     lhs.get_moves_from(lhs_state)) {
                     for (const State lhs_state_to: symbol_transitions.targets) {
                         if (!lhs.final[lhs_state_to]) {
-                            result.add_trans(lhs_result_states_map_internal[lhs_state],
+                            result.delta.add(lhs_result_states_map_internal[lhs_state],
                                              symbol_transitions.symbol,
                                              lhs_result_states_map_internal[lhs_state_to]);
                         }
@@ -129,11 +129,11 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
                     if (lhs_trans_to_final_state.src == lhs_trans_to_final_state.tgt) {
                         // Handle self-loops on final states as lhs final states will not be present in the result
                         //  automaton.
-                        result.add_trans(rhs_result_states_map_internal[rhs_initial_state],
+                        result.delta.add(rhs_result_states_map_internal[rhs_initial_state],
                                          lhs_trans_to_final_state.symb,
                                          rhs_result_states_map_internal[rhs_initial_state]);
                     } else { // All other transitions can be copied with updated initial state number.
-                        result.add_trans(lhs_result_states_map_internal[lhs_trans_to_final_state.src],
+                        result.delta.add(lhs_result_states_map_internal[lhs_trans_to_final_state.src],
                                          lhs_trans_to_final_state.symb,
                                          rhs_result_states_map_internal[rhs_initial_state]);
                     }
@@ -149,7 +149,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
                 for (const auto& lhs_state_to: transitions_from_lhs_final_state.targets) {
                     if (lhs_state_to != lhs_final_state) { // Self-loops on final states already handled.
                         for (const auto& rhs_initial_state: rhs.initial) {
-                            result.add_trans(rhs_result_states_map_internal[rhs_initial_state],
+                            result.delta.add(rhs_result_states_map_internal[rhs_initial_state],
                                              transitions_from_lhs_final_state.symbol,
                                              lhs_result_states_map_internal[lhs_state_to]);
                         }
@@ -172,7 +172,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
         {
             for (const auto& rhs_state_to: symbol_transitions.targets)
             {
-                result.add_trans(rhs_result_states_map_internal[rhs_state],
+                result.delta.add(rhs_result_states_map_internal[rhs_state],
                                  symbol_transitions.symbol,
                                  rhs_result_states_map_internal[rhs_state_to]);
             }
