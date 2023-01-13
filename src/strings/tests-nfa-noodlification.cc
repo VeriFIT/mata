@@ -381,7 +381,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         }
     }
 
-    SECTION("Simple automata -- epsilon") {
+    SECTION("Simple automata -- epsilon result") {
         Nfa x, y, z, w, astar;
         create_nfa(&x, "a+");
         create_nfa(&y, "(a|b)*");
@@ -395,6 +395,45 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
                 {{x, {0, 0} }, {w, {1, 1} }}, 
                 {{x, {0, 0} }, {y, {1, 0} }, {w, {1, 1} }} } );
         SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x,y},std::vector<std::reference_wrapper<Nfa>>{z,w});
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
+
+    SECTION("Simple automata -- epsilon input") {
+        Nfa x, y, z, w;
+        create_nfa(&x, "");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {} );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x},std::vector<std::reference_wrapper<Nfa>>{y,z,w});
+        CHECK(noodles.size() == 1);
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
+
+    SECTION("Simple automata -- epsilon input 2") {
+        Nfa x, y, z, w;
+        create_nfa(&x, "");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+                {{y, {1, 1} }}, 
+                {{y, {1, 0} }, {y, {1, 1} }},
+            } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{x, y},std::vector<std::reference_wrapper<Nfa>>{z,w});
+        CHECK(noodles.size() == 2);
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);

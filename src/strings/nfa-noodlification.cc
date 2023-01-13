@@ -206,7 +206,10 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        new_item.noodle.push_back({segments_one_initial_final[{unused_state, fn}], def_eps_vector});
+        Mata::Nfa::SharedPtrAut seg = segments_one_initial_final[{unused_state, fn}];
+        if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
+            new_item.noodle.push_back({seg, def_eps_vector});
+        }
         new_item.seg_id = 0;
         new_item.fin = fn;
         lifo.push_back(new_item);
