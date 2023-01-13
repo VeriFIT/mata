@@ -120,6 +120,36 @@ namespace Algorithms {
             const Alphabet&    alphabet,
             Run*              cex,
             const StringMap&  params);
+
+
+
+        /**
+         * @brief Compute intersection of two NFAs with a possibility of using multiple epsilons.
+         *
+         * @param[in] lhs First NFA to compute intersection for.
+         * @param[in] rhs Second NFA to compute intersection for.
+         * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
+         * @param[in] epsilons Set of symbols to be considered as epsilons
+         * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
+         * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+         */
+        Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
+                        std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+
+        /**
+         * @brief Concatenate two NFAs.
+         *
+         * Supports epsilon symbols when @p use_epsilon is set to true.
+         * @param[in] lhs First automaton to concatenate.
+         * @param[in] rhs Second automaton to concatenate.
+         * @param[in] epsilon Epsilon to be used co concatenation (provided @p use_epsilon is true)
+         * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
+         * @param[out] lhs_result_states_map Map mapping lhs states to result states.
+         * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+         * @return Concatenated automaton.
+         */
+        Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
+                        StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 } // Algorithms
 } // Nfa
 }

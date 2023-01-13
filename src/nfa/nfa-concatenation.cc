@@ -15,6 +15,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 
@@ -23,10 +24,10 @@ namespace Nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
-    return concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
+    return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
 }
 
-Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
+Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
