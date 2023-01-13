@@ -188,7 +188,7 @@ namespace Mata {
             }
 
             /*
-             * clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
+             * Clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
              */
             void clear() {
                 if (tracking_elements)
