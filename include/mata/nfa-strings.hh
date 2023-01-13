@@ -369,7 +369,7 @@ namespace SegNfa {
      *                 minimization before noodlification.
      * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
      */
-    NoodleSubstSequence noodlify_for_equation(const AutRefSequence& left_automata, const AutRefSequence& right_automata,
+    NoodleSubstSequence noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata, const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata,
                                                      bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 
     /**
