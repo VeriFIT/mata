@@ -739,7 +739,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 
     // now we construct the automaton without epsilon transitions
     result.initial.add(aut.initial.get_elements());
-    result.final.add(aut.initial.get_elements());
+    result.final.add(aut.final.get_elements());
     State max_state{};
     for (const auto& state_closure_pair : eps_closure) { // for every state
         State src_state = state_closure_pair.first;
