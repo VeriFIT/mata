@@ -892,7 +892,7 @@ def test_segmentation(prepare_automaton_a):
     nfa = prepare_automaton_a()
     epsilon = ord('c')
 
-    segmentation = mata.Segmentation(nfa, epsilon)
+    segmentation = mata.Segmentation(nfa, [epsilon])
     epsilon_depths = segmentation.get_epsilon_depths()
     assert len(epsilon_depths) == 1
     assert 0 in epsilon_depths
@@ -912,7 +912,7 @@ def test_segmentation(prepare_automaton_a):
     nfa.add_transition(6, epsilon, 7)
     nfa.add_transition(7, epsilon, 8)
 
-    segmentation = mata.Segmentation(nfa, epsilon)
+    segmentation = mata.Segmentation(nfa, [epsilon])
     epsilon_depths = segmentation.get_epsilon_depths()
     assert len(epsilon_depths) == 3
     assert 0 in epsilon_depths
