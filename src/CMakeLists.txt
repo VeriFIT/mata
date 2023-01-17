@@ -95,8 +95,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 endif()
 
 add_dependencies(libmata cudd_library)
-target_link_libraries(libmata simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
-target_link_libraries(tests libmata re2 simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a)
+target_link_libraries(libmata simlib ${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
+target_link_libraries(tests libmata re2 simlib ${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(

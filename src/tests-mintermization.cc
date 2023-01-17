@@ -215,6 +215,29 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[7].second.children[1].node.name == "3'");
     }
 
+    SECTION("Mintermization AFA small 2")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+        std::string file =
+                "@AFA-bits\n"
+                "%Initial q1\n"
+                "%Final q2\n"
+                "q1 a2 | q2\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 3);
+        REQUIRE(res.transitions[0].first.name == "1");
+        REQUIRE(res.transitions[1].first.name == "1");
+        REQUIRE(res.transitions[2].first.name == "1");
+        REQUIRE(res.transitions[2].second.children.empty());
+        REQUIRE(res.transitions[0].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[1].second.children[1].node.name == "2");
+    }
+
     SECTION("Mintermization AFA normal")
     {
         Parsed parsed;
@@ -459,5 +482,126 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res[1].transitions[1].first.name == "q");
         REQUIRE(res[1].transitions[0].second.children[1].node.name == "r");
         REQUIRE(res[1].transitions[1].second.children[1].node.name == "r");
+    }
+
+    SECTION("AFA big")
+    {
+        std::string file =
+                "@AFA-bits\n"
+                "%Initial qQC0_0 & qQC1_0\n"
+                "%Final !qQC0_39 & !qQC0_5 & !qQC1_12 & !qQC0_20 & !qQC1_22 & !qQC0_10 & !qQC1_36 & !qQC0_40 & !qQC1_2 & !qQC1_31 & !qQC0_47 & !qQC1_5 & !qQC1_28 & !qQC0_35 & !qQC1_43 & !qQC0_9 & !qQC1_51 & !qQC1_48 & !qQC0_2 & !qQC1_15 & !qQC0_27 & !qQC0_7 & !qQC1_10 & !qQC0_22 & !qQC1_24 & !qQC0_52 & !qQC0_16 & !qQC1_9 & !qQC0_13 & !qQC1_38 & !qQC1_21 & !qQC0_18 & !qQC1_33 & !qQC0_45 & !qQC1_7 & !qQC0_37 & !qQC1_41 & !qQC0_30 & !qQC1_46 & !qQC0_29 & !qQC1_52 & !qQC0_1 & !qQC1_16 & !qQC0_24 & !qQC0_14 & !qQC0_49 & !qQC1_26 & !qQC0_50 & !qQC0_11 & !qQC1_23 & !qQC1_35 & !qQC0_43 & !qQC1_1 & !qQC1_4 & !qQC1_29 & !qQC1_30 & !qQC0_46 & !qQC0_32 & !qQC1_44 & !qQC1_19 & !qQC1_50 & !qQC1_49 & !qQC0_3 & !qQC1_14 & !qQC0_26 & !qQC0_4 & !qQC1_13 & !qQC0_21 & !qQC0_38 & !qQC1_8 & !qQC1_25 & !qQC0_53 & !qQC0_17 & !qQC1_3 & !qQC1_37 & !qQC0_41 & !qQC1_6 & !qQC0_19 & !qQC1_32 & !qQC0_44 & !qQC0_34 & !qQC1_42 & !qQC0_8 & !qQC0_28 & !qQC0_31 & !qQC1_47 & !qQC1_11 & !qQC0_23 & !qQC0_6 & !qQC1_27 & !qQC0_51 & !qQC0_15 & !qQC0_48 & !qQC1_20 & !qQC0_12 & !qQC1_39 & !qQC1_0 & !qQC1_34 & !qQC0_42 & !qQC0_36 & !qQC1_40 & !qQC1_18 & !qQC0_33 & !qQC1_45 & !qQC0_25 & !qQC1_53 & !qQC0_0 & !qQC1_17\n"
+                "qQC1_34 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_35\n"
+                "qQC1_1 aF | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0) & (aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0))) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0) & qQC1_1) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0)) & qQC1_2) | (qQC1_2 & qQC1_1)\n"
+                "qQC0_42 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_43\n"; // I cut it here to make test time feasible
+                "qQC0_3 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_4\n"
+                "qQC1_40 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_41\n"
+                "qQC0_36 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_37\n"
+                "qQC1_9 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_10\n"
+                "qQC1_10 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_11\n"
+                "qQC1_4 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_5\n"
+                "qQC0_22 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_23\n"
+                "qQC1_3 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_4\n"
+                "qQC0_25 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_26\n"
+                "qQC1_53 !aF\n"
+                "qQC1_17 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_18\n"
+                "qQC1_38 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_39\n"
+                "qQC1_21 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_22\n"
+                "qQC0_13 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_14\n"
+                "qQC1_33 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_34\n"
+                "qQC0_18 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_19\n"
+                "qQC0_45 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_46\n"
+                "qQC0_4 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_5\n"
+                "qQC1_36 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_37\n"
+                "qQC0_40 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_41\n"
+                "qQC0_1 (!aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & aV0 & qQC0_2) | (!aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_1)\n"
+                "qQC0_30 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_31\n"
+                "qQC0_29 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_30\n"
+                "qQC1_46 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_47\n"
+                "qQC0_35 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_36\n"
+                "qQC1_43 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_44\n"
+                "qQC0_27 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_28\n"
+                "qQC1_51 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_52\n"
+                "qQC1_48 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_49\n"
+                "qQC1_15 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_16\n"
+                "qQC1_23 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_24\n"
+                "qQC0_11 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_12\n"
+                "qQC1_24 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_25\n"
+                "qQC0_16 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_17\n"
+                "qQC0_52 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_53\n"
+                "qQC0_46 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_47\n"
+                "qQC0_7 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_8\n"
+                "qQC1_30 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_31\n"
+                "qQC1_29 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_30\n"
+                "qQC0_32 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_33\n"
+                "qQC1_44 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_45\n"
+                "qQC1_19 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_20\n"
+                "qQC1_8 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_9\n"
+                "qQC1_41 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_42\n"
+                "qQC0_37 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_38\n"
+                "qQC0_21 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_22\n"
+                "qQC1_13 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_14\n"
+                "qQC0_38 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_39\n"
+                "qQC1_7 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_8\n"
+                "qQC0_24 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_25\n"
+                "qQC1_52 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_53\n"
+                "qQC1_16 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_17\n"
+                "qQC1_2 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_3\n"
+                "qQC0_14 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_15\n"
+                "qQC0_49 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_50\n"
+                "qQC0_50 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_51\n"
+                "qQC0_8 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_9\n"
+                "qQC1_26 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_27\n"
+                "qQC0_19 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_20\n"
+                "qQC0_44 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_45\n"
+                "qQC0_5 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_6\n"
+                "qQC1_32 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_33\n"
+                "qQC0_43 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_44\n"
+                "qQC0_2 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & aV0 & qQC0_3\n"
+                "qQC1_35 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_36\n"
+                "qQC0_28 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_29\n"
+                "qQC1_47 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_48\n"
+                "qQC0_31 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_32\n"
+                "qQC1_11 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_12\n"
+                "qQC1_5 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_6\n"
+                "qQC0_23 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_24\n"
+                "qQC1_50 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_51\n"
+                "qQC1_49 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_50\n"
+                "qQC1_14 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_15\n"
+                "qQC1_0 aF | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0)) & (aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0)) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0)) & qQC1_2) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0) & qQC1_1) | (qQC1_1 & qQC1_2)\n"
+                "qQC0_26 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_27\n"
+                "qQC0_12 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_13\n"
+                "qQC1_39 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_40\n"
+                "qQC1_20 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_21\n"
+                "qQC0_53 aF\n"
+                "qQC1_25 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_26\n"
+                "qQC0_17 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_18\n"
+                "qQC0_41 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_42\n"
+                "qQC0_0 (!aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_1) | (!aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & aV0 & qQC0_2)\n"
+                "qQC1_37 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_38\n"
+                "qQC1_45 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_46\n"
+                "qQC1_18 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_19\n"
+                "qQC0_33 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_34\n"
+                "qQC1_42 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_43\n"
+                "qQC0_34 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_35\n"
+                "qQC1_12 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_13\n"
+                "qQC0_39 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_40\n"
+                "qQC1_6 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_7\n"
+                "qQC0_20 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_21\n"
+                "qQC1_22 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_23\n"
+                "qQC0_10 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_11\n"
+                "qQC0_51 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_52\n"
+                "qQC0_9 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_10\n"
+                "qQC1_27 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_28\n"
+                "qQC0_15 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_16\n"
+                "qQC0_48 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_49\n"
+                "qQC1_31 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_32\n"
+                "qQC1_28 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_29\n"
+                "qQC0_47 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_48\n"
+                "qQC0_6 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_7\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto& aut= auts[0];
+        const auto res = mintermization.mintermize(aut);
     }
 } // mintermization
