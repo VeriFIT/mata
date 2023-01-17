@@ -215,6 +215,29 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[7].second.children[1].node.name == "3'");
     }
 
+    SECTION("Mintermization AFA small 2")
+    {
+        Parsed parsed;
+        Mata::Mintermization mintermization{};
+        std::string file =
+                "@AFA-bits\n"
+                "%Initial q1\n"
+                "%Final q2\n"
+                "q1 a2 | q2\n";
+
+        parsed = parse_mf(file);
+        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        const auto &aut = auts[0];
+        const auto res = mintermization.mintermize(aut);
+        REQUIRE(res.transitions.size() == 3);
+        REQUIRE(res.transitions[0].first.name == "1");
+        REQUIRE(res.transitions[1].first.name == "1");
+        REQUIRE(res.transitions[2].first.name == "1");
+        REQUIRE(res.transitions[2].second.children.empty());
+        REQUIRE(res.transitions[0].second.children[1].node.name == "2");
+        REQUIRE(res.transitions[1].second.children[1].node.name == "2");
+    }
+
     SECTION("Mintermization AFA normal")
     {
         Parsed parsed;
