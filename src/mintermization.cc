@@ -23,6 +23,9 @@ namespace
 {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
     {
+        if (node->node.is_state())
+            return node;
+
         std::vector<const Mata::FormulaGraph *> worklist{node};
         while (!worklist.empty()) {
             const auto act_node = worklist.back();
@@ -77,7 +80,7 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
 
     for (const auto& trans : aut.transitions) {
         lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
-        if (trans.second.node.is_state()) { // node from state to state - we can skip it
+        if (trans.second.node.is_state()) { // node from state to state
             lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&trans.second, &trans.second));
         }
         // split transition to disjuncts
@@ -105,7 +108,7 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
         // Foreach disjunct create a BDD
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
-            const auto bdd = (ds_pair.first == ds_pair.second || ds_pair.first->node.is_state()) ? // disjunct contains only states
+            const auto bdd = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
                     OptionalBdd(bdd_mng.bddOne()) : // transition from state to states -> add true as symbol
                     graph_to_bdd_afa(*ds_pair.first);
             assert(bdd.type == OptionalBdd::BDD_E);
