@@ -21,6 +21,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-algorithms.hh>
 #include <simlib/explicit_lts.hh>
 
 using std::tie;
@@ -61,7 +62,8 @@ namespace {
 
 	Nfa reduce_size_by_simulation(const Nfa& aut, StateToStateMap &state_map) {
         Nfa result;
-        const auto sim_relation = compute_relation(aut, StringMap{{"relation", "simulation"}, {"direction", "forward"}});
+        const auto sim_relation = Algorithms::compute_relation(
+                aut, StringMap{{"relation", "simulation"}, {"direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -1157,7 +1159,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     return unionAutomaton;
 }
 
-Simlib::Util::BinaryRelation Mata::Nfa::compute_relation(const Nfa& aut, const StringMap& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const StringMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "

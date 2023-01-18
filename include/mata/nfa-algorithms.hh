@@ -19,6 +19,7 @@
 #define MATA_NFA_INTERNALS_HH_
 
 #include <mata/nfa.hh>
+#include <simlib/util/binary_relation.hh>
 
 namespace Mata {
 
@@ -121,7 +122,9 @@ namespace Algorithms {
             Run*              cex,
             const StringMap&  params);
 
-
+    Simlib::Util::BinaryRelation compute_relation(
+            const Nfa& aut,
+            const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});
 
         /**
          * @brief Compute intersection of two NFAs with a possibility of using multiple epsilons.
