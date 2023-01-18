@@ -492,7 +492,8 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "%Final !qQC0_39 & !qQC0_5 & !qQC1_12 & !qQC0_20 & !qQC1_22 & !qQC0_10 & !qQC1_36 & !qQC0_40 & !qQC1_2 & !qQC1_31 & !qQC0_47 & !qQC1_5 & !qQC1_28 & !qQC0_35 & !qQC1_43 & !qQC0_9 & !qQC1_51 & !qQC1_48 & !qQC0_2 & !qQC1_15 & !qQC0_27 & !qQC0_7 & !qQC1_10 & !qQC0_22 & !qQC1_24 & !qQC0_52 & !qQC0_16 & !qQC1_9 & !qQC0_13 & !qQC1_38 & !qQC1_21 & !qQC0_18 & !qQC1_33 & !qQC0_45 & !qQC1_7 & !qQC0_37 & !qQC1_41 & !qQC0_30 & !qQC1_46 & !qQC0_29 & !qQC1_52 & !qQC0_1 & !qQC1_16 & !qQC0_24 & !qQC0_14 & !qQC0_49 & !qQC1_26 & !qQC0_50 & !qQC0_11 & !qQC1_23 & !qQC1_35 & !qQC0_43 & !qQC1_1 & !qQC1_4 & !qQC1_29 & !qQC1_30 & !qQC0_46 & !qQC0_32 & !qQC1_44 & !qQC1_19 & !qQC1_50 & !qQC1_49 & !qQC0_3 & !qQC1_14 & !qQC0_26 & !qQC0_4 & !qQC1_13 & !qQC0_21 & !qQC0_38 & !qQC1_8 & !qQC1_25 & !qQC0_53 & !qQC0_17 & !qQC1_3 & !qQC1_37 & !qQC0_41 & !qQC1_6 & !qQC0_19 & !qQC1_32 & !qQC0_44 & !qQC0_34 & !qQC1_42 & !qQC0_8 & !qQC0_28 & !qQC0_31 & !qQC1_47 & !qQC1_11 & !qQC0_23 & !qQC0_6 & !qQC1_27 & !qQC0_51 & !qQC0_15 & !qQC0_48 & !qQC1_20 & !qQC0_12 & !qQC1_39 & !qQC1_0 & !qQC1_34 & !qQC0_42 & !qQC0_36 & !qQC1_40 & !qQC1_18 & !qQC0_33 & !qQC1_45 & !qQC0_25 & !qQC1_53 & !qQC0_0 & !qQC1_17\n"
                 "qQC1_34 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_35\n"
                 "qQC1_1 aF | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0) & (aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0))) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | !aV0) & qQC1_1) | ((aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0)) & qQC1_2) | (qQC1_2 & qQC1_1)\n"
-                "qQC0_42 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_43\n"; // I cut it here to make test time feasible
+                "qQC0_42 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_43\n"; // I cut it here to make test time feasible.
+                /*
                 "qQC0_3 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_4\n"
                 "qQC1_40 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_41\n"
                 "qQC0_36 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_37\n"
@@ -598,6 +599,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "qQC1_28 aF | aV15 | aV14 | aV13 | aV12 | aV11 | aV10 | aV9 | aV8 | aV7 | aV6 | !aV5 | !aV4 | aV3 | aV2 | aV1 | (aV0 & !aV0) | qQC1_29\n"
                 "qQC0_47 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_48\n"
                 "qQC0_6 !aF & !aV15 & !aV14 & !aV13 & !aV12 & !aV11 & !aV10 & !aV9 & !aV8 & !aV7 & !aV6 & aV5 & aV4 & !aV3 & !aV2 & !aV1 & (!aV0 | aV0) & qQC0_7\n";
+                 */
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
