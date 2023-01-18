@@ -21,12 +21,14 @@
 
 #include "mata/nfa.hh"
 #include "mata/nfa-strings.hh"
+#include "mata/re2parser.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 using namespace Mata::Strings::SegNfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
+using namespace Mata::RE2Parser;
 
 using Word = std::vector<Symbol>;
 
@@ -201,5 +203,14 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
 
     for (size_t n{}; n < 100000; ++n) {
         get_shortest_words(aut);
+    }
+}
+
+TEST_CASE("Mata::Strings::get_lengths()") {
+     
+    SECTION("basic") {
+        Nfa x;
+        create_nfa(&x, "(abcde)*");
+        CHECK(get_lengths(x) == std::vector<std::pair<int, int>>({{0,5}}));
     }
 }
