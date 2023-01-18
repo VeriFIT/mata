@@ -589,9 +589,26 @@ public:
      */
     State add_state();
 
+    /**
+     * Get the maximal state number currently present in the whole automaton.
+     *
+     * This includes the initial and final states as well as states in the transition relation.
+     * @return The maximal state number.
+     */
     size_t max_state() const
     {
         return std::max({max_state_, delta.max_state(), initial.domain_size(), final.domain_size()});
+    }
+
+    /**
+     * @brief Get the current number of states in the whole automaton.
+     *
+     * This includes the initial and final states as well as states in the transition relation.
+     * @return The number of states.
+     */
+     size_t states_number() const
+    {
+        return max_state() + 1;
     }
 
     /**
