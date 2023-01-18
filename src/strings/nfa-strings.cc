@@ -145,3 +145,43 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     }
     act.first = dst.first + 1;
 }
+
+
+std::vector<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
+    Nfa::Nfa one_letter;
+    aut.get_one_letter_aut(one_letter);
+    determinize(one_letter);
+    one_letter.trim();
+
+    std::vector<std::pair<int, int>> ret;
+    std::vector<int> handles(one_letter.delta.max_state() + 1, 0); // initialized to 0
+    std::deque<Nfa::State> worklist(one_letter.initial.begin(), one_letter.initial.end()); 
+    std::set<Nfa::State> visited;
+    int cnt = 0; // handle counter
+    int loop_size = 0; // loop size
+
+    while(!worklist.empty()) {
+        Nfa::State state = worklist.front();
+        worklist.pop_front();
+        visited.insert(state);
+
+        handles[state] = cnt++;
+        Nfa::Post post = one_letter.delta[state];
+        assert(post.size() <= 1);
+        for(const Move& move : post) {
+            assert(move.targets.size() == 1);
+            Nfa::State tgt = *move.targets.begin();
+
+            if(visited.find(tgt) == visited.end()) {
+                worklist.push_back(tgt);
+            } else {
+                loop_size = cnt - handles[tgt];
+            }
+        }
+    }
+    for(const Nfa::State& fin : one_letter.final) {
+        ret.push_back({handles[fin], loop_size});
+    }
+
+    return ret;
+}
