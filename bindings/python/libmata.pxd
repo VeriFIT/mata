@@ -270,6 +270,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void clear()
         void defragment()
         size_t max_state()
+        size_t states_number()
 
     # Automata tests
     cdef bool is_deterministic(CNfa&)
