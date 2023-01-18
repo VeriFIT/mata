@@ -74,7 +74,7 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // The epsilon transitions lead from lhs original final states to rhs original initial states.
     for (const auto& lhs_final_state: lhs.final) {
         for (const auto& rhs_initial_state: rhs.initial) {
-            result.delta.add(lhs_final_state, EPSILON,
+            result.delta.add(lhs_final_state, epsilon,
                              rhs_result_states_map_internal[rhs_initial_state]);
         }
     }
