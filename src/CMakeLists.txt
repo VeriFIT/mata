@@ -94,7 +94,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-add_dependencies(libmata cudd_library)
+add_dependencies(libmata cudd_library re2 simlib)
 target_link_libraries(libmata simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
 target_link_libraries(tests libmata re2 simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a)
 include(Catch)
@@ -109,9 +109,7 @@ add_custom_command(TARGET libmata POST_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/merge_static_libraries.sh libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a
 		${CMAKE_SOURCE_DIR}/build/3rdparty/simlib/libsimlib.a ${CMAKE_SOURCE_DIR}/build/3rdparty/re2/libre2.a
 		${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a
-		COMMAND mv ${CMAKE_SOURCE_DIR}/build/src/libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a
-		DEPENDS ${CMAKE_SOURCE_DIR}/build/3rdparty/simlib/libsimlib.a ${CMAKE_SOURCE_DIR}/build/3rdparty/re2/libre2.a
-		${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a)
+		COMMAND mv ${CMAKE_SOURCE_DIR}/build/src/libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a)
 
 if(FALSE)
 
