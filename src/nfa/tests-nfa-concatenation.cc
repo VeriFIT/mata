@@ -79,7 +79,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     SECTION("Empty automaton without states") {
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -90,7 +90,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.increase_size(1);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -101,7 +101,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         lhs.increase_size(1);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -113,7 +113,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         lhs.initial.add(0);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -125,7 +125,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.initial.add(0);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -138,7 +138,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         lhs.final.add(0);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -151,7 +151,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.final.add(0);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -163,7 +163,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.increase_size(1);
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -178,7 +178,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -370,7 +370,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.increase_size(1);
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -385,7 +385,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         result = concatenate(lhs, rhs, true);
 
-        CHECK(result.delta.post_size() == 0);
+        CHECK(result.states_number() == 0);
         CHECK(result.initial.empty());
         CHECK(result.final.empty());
         CHECK(result.delta.empty());
@@ -416,7 +416,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[1]);
-        CHECK(result.delta.post_size() > 0);
+        CHECK(result.states_number() == 2);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
@@ -434,7 +434,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
-        CHECK(result.delta.post_size() == 3);
+        CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
@@ -453,7 +453,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
-        CHECK(result.delta.post_size() == 3);
+        CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 2);
         CHECK(result.delta.contains(1, 'a', 2));
         CHECK(result.delta.contains(0, EPSILON, 1));
@@ -474,7 +474,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
-        CHECK(result.delta.post_size() == 4);
+        CHECK(result.states_number() == 4);
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
@@ -501,7 +501,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
-        CHECK(result.delta.post_size() == 6);
+        CHECK(result.states_number() == 6);
         CHECK(result.get_num_of_trans() == 4);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
@@ -532,7 +532,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
-        CHECK(result.delta.post_size() == 3);
+        CHECK(result.states_number() == 3);
         CHECK(result.get_num_of_trans() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 2));
@@ -556,7 +556,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[1]);
         CHECK(result.initial[3]);
 
-        CHECK(result.delta.post_size() == 26);
+        CHECK(result.states_number() == 26);
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
@@ -575,7 +575,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         result = concatenate(rhs, lhs, true);
 
-        CHECK(result.delta.post_size() == 26);
+        CHECK(result.states_number() == 26);
 
         CHECK(result.initial.size() == 1);
         CHECK(result.initial[4]);

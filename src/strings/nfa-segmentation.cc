@@ -90,7 +90,7 @@ std::deque<SegNfa::Segmentation::StateDepthTuple> SegNfa::Segmentation::initiali
 std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() const
 {
     std::unordered_map<State, bool> visited{};
-    const size_t state_num = automaton.delta.post_size();
+    const size_t state_num = automaton.states_number();
     for (State state{ 0 }; state < state_num; ++state)
     {
         visited[state] = false;

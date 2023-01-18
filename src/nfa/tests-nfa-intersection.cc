@@ -231,7 +231,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     CHECK(result.is_state(prod_map[{4, 7}]));
     CHECK(result.is_state(prod_map[{5, 9}]));
     CHECK(result.is_state(prod_map[{5, 8}]));
-    CHECK(result.delta.post_size() == 13);
+    CHECK(result.states_number() == 13);
 
     CHECK(result.initial[prod_map[{0, 0}]]);
     CHECK(result.initial.size() == 1);

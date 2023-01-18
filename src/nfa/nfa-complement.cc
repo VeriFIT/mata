@@ -37,9 +37,9 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	}
 
 	result = determinize(aut, subset_map);
-	State sink_state = result.delta.post_size() + 1;
-	result.increase_size(sink_state+1);
-	assert(sink_state < result.delta.post_size());
+	State sink_state = result.states_number();
+	result.increase_size(sink_state + 1);
+	assert(sink_state < result.states_number());
 	auto it_inserted_pair = subset_map->insert({{}, sink_state});
 	if (!it_inserted_pair.second)
 	{
@@ -48,7 +48,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 
 	make_complete(result, alphabet, sink_state);
     NumberPredicate<State> old_fs = std::move(result.final);
-	result.final = { };
+	result.final = NumberPredicate<State>{};
 	assert(result.initial.size() == 1);
 
     //TODO: rewrite this, work with final states properly, after martin introduces classes for trel
@@ -98,7 +98,7 @@ void Mata::Nfa::complement_in_place(Nfa& aut) {
         }
     }
 
-    aut.final = newFinalStates;
+    aut.final = NumberPredicate<State>{ newFinalStates };
 }
 
 Nfa Mata::Nfa::complement(

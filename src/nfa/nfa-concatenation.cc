@@ -37,8 +37,8 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
         return Nfa{};
     }
 
-    const unsigned long lhs_states_num{lhs.delta.post_size() };
-    const unsigned long rhs_states_num{rhs.delta.post_size() };
+    const unsigned long lhs_states_num{lhs.states_number() };
+    const unsigned long rhs_states_num{rhs.states_number() };
     Nfa result{}; // Concatenated automaton.
     StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
     StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.

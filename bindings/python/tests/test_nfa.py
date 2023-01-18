@@ -576,7 +576,7 @@ def test_intersection_preserving_epsilon_transitions():
 
 
 def test_complement(
-        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+        fa_one_divisible_by_two
 ):
     alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
@@ -586,7 +586,7 @@ def test_complement(
     assert not mata.Nfa.is_in_lang(res, [1, 1])
     assert mata.Nfa.is_in_lang(res, [1, 1, 1])
     assert not mata.Nfa.is_in_lang(res, [1, 1, 1, 1])
-    assert subset_map == {(): 4, (0,): 0, (1,): 1, (2,): 2}
+    assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
 
 
 def test_revert():
@@ -703,7 +703,6 @@ def test_get_digraph(prepare_automaton_a):
     """Test creating digraph from an automaton."""
     abstract_symbol = ord('x')
     nfa = prepare_automaton_a()
-    old_nfa = prepare_automaton_a()
 
     digraph = nfa.get_digraph()
 

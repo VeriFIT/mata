@@ -38,7 +38,7 @@ namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
-        const size_t state_num = aut.delta.post_size();
+        const size_t state_num = aut.states_number();
 
         for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
             for (const Move &t : aut.get_moves_from(stateFrom)) {
@@ -72,7 +72,7 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-		const size_t num_of_states = aut.delta.post_size();
+		const size_t num_of_states = aut.states_number();
 
 		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
 		for (State q = 0; q < num_of_states; ++q) {
@@ -141,7 +141,7 @@ namespace {
     StateBoolArray compute_reachability(const Nfa& nfa) {
         std::vector<State> worklist{ nfa.initial.get_elements()};
 
-        StateBoolArray reachable(nfa.delta.post_size(), false);
+        StateBoolArray reachable(nfa.states_number(), false);
         for (const State state: nfa.initial)
         {
             reachable.at(state) = true;
@@ -178,7 +178,7 @@ namespace {
      */
     StateBoolArray compute_reachability(const Nfa& nfa, const StateBoolArray& states_to_consider) {
         std::vector<State> worklist{};
-        StateBoolArray reachable(nfa.delta.post_size(), false);
+        StateBoolArray reachable(nfa.states_number(), false);
         for (const State state: nfa.initial) {
             if (states_to_consider[state]) {
                 worklist.push_back(state);
@@ -269,7 +269,7 @@ namespace {
      * @param[out] digraph Digraph to add computed transitions to.
      */
     void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
-        const State num_of_states{nfa.delta.post_size() };
+        const State num_of_states{nfa.states_number() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
             for (const auto& symbol_transitions: nfa.delta[src_state]) {
                 for (const State tgt_state: symbol_transitions.targets) {
@@ -316,7 +316,7 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms)
 } // OnTheFlyAlphabet::get_complement.
 
 void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
-    size_t aut_num_of_states{nfa.delta.post_size() };
+    size_t aut_num_of_states{nfa.states_number() };
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: nfa.delta[state]) {
             update_next_symbol_value(state_transitions.symbol);
@@ -343,31 +343,36 @@ size_t Delta::size() const
 void Delta::add(State state_from, Symbol symbol, State state_to)
 {
     if (state_from >= post.size()) {
-        post.resize(state_from+1);
+        size_t new_size{ state_from + 1 };
+        post.resize(new_size);
     }
 
-    auto& state_transitions{post[state_from] };
+    if (state_from >= m_states_number) {
+        // state_from == 0 && m_states_number == 0 handles the case where delta is empty.
+
+        m_states_number = state_from + 1;
+    }
+    if (state_to >= m_states_number) {
+        m_states_number = state_to + 1;
+    }
+
+    auto& state_transitions{ post[state_from] };
 
     if (state_transitions.empty()) {
-        state_transitions.insert({ symbol, state_to});
+        state_transitions.insert({ symbol, state_to });
     } else if (state_transitions.back().symbol < symbol) {
-        state_transitions.insert({ symbol, state_to});
+        state_transitions.insert({ symbol, state_to });
     } else {
-        const auto symbol_transitions{ state_transitions.find(Move{symbol }) };
+        const auto symbol_transitions{ state_transitions.find(Move{ symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from stateFrom.
             symbol_transitions->insert(state_to);
         } else {
             // Add transition to a new Move struct with symbolOnTransition yet unused on transitions from stateFrom.
-            const Move new_symbol_transitions{symbol, state_to };
+            const Move new_symbol_transitions{ symbol, state_to };
             state_transitions.insert(new_symbol_transitions);
         }
     }
-
-    if (state_from > max_state_)
-        max_state_ = state_from;
-    if (state_to > max_state_)
-        max_state_ = state_to;
 }
 
 void Delta::remove(State src, Symbol symb, State tgt) {
@@ -375,7 +380,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         return;
     }
 
-    auto& state_transitions{post[src] };
+    auto& state_transitions{ post[src] };
     if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -479,7 +484,7 @@ std::vector<State> Delta::defragment()
         if (t.tgt > new_max)
             new_max = t.tgt;
     }
-    max_state_ = new_max;
+    m_states_number = new_max + 1;
 
     return renaming;
 }
@@ -532,9 +537,8 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
-    delta.emplace_back();
-    ++max_state_;
-    return delta.post_size() - 1;
+    m_states_number = states_number() + 1;
+    return m_states_number - 1;
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -768,7 +772,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 Nfa Mata::Nfa::revert(const Nfa& aut) {
     Nfa result;
     result.clear();
-    const size_t num_of_states{aut.delta.post_size() };
+    const size_t num_of_states{aut.states_number() };
     result.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
@@ -1065,7 +1069,7 @@ size_t Nfa::get_num_of_trans() const
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{delta.post_size(), StateSet(initial), StateSet(final)};
+    Nfa digraph{delta.states_number(), StateSet(initial), StateSet(final)};
     collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
@@ -1183,7 +1187,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
 }
 
 Nfa Mata::Nfa::reduce(const Nfa &aut, StateToStateMap *state_map, const StringMap& params) {
-    Nfa result;
+    Nfa result{};
 
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
@@ -1191,7 +1195,6 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, StateToStateMap *state_map, const StringMa
                                  "received: " + std::to_string(params));
     }
 
-    result.clear();
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
         if (state_map == nullptr) {
@@ -1245,7 +1248,8 @@ Nfa Mata::Nfa::determinize(
         const StateSet S = Spair.second;
         const State Sid = Spair.first;
         if (S.empty()) {
-            break;//this should not happen assuming all sets targets are non empty
+            // This should not happen assuming all sets targets are non-empty.
+            break;
         }
 
         // add moves of S to the sync ex iterator
@@ -1465,11 +1469,23 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     }
 
     result.nfa = nfa;
-    result.trIt = 0;
-    assert(!nfa->get_moves_from(0).empty());
-    result.tlIt = nfa->get_moves_from(0).begin();
-    assert(!nfa->get_moves_from(0).begin()->empty());
-    result.ssIt = result.tlIt->targets.begin();
+
+    for (size_t trIt{ 0 }; trIt < nfa->delta.post_size(); ++trIt) {
+        auto& moves{ nfa->get_moves_from(trIt) };
+        if (!moves.empty()) {
+            auto move{ moves.begin() };
+            while (move != moves.end()) {
+                if (!move->targets.empty()) {
+                    result.trIt = trIt;
+                    result.tlIt = moves.begin();
+                    result.ssIt = result.tlIt->targets.begin();
+                    break;
+                }
+                ++move;
+            }
+            break;
+        }
+    }
 
     result.refresh_trans();
 
@@ -1576,7 +1592,7 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
 
 void Nfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
-    const State new_final_state{add_state() };
+    const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
         for (const auto& transitions: get_transitions_to(orig_final_state)) {
             delta.add(transitions.src, transitions.symb, new_final_state);

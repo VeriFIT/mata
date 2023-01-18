@@ -355,23 +355,33 @@ struct Post : private Util::OrdVector<Move> {
 struct Delta {
 private:
     mutable std::vector<Post> post;
-    size_t max_state_;
+    mutable size_t m_states_number;
+
+public:
+    Delta() : post(), m_states_number(0) {}
+    explicit Delta(size_t n) : post(), m_states_number(n) {}
+
+    void reserve(size_t n) {
+        post.reserve(n);
+        if (n > m_states_number) {
+            m_states_number = n;
+        }
+    };
 
     /**
      * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
      */
     size_t size() const;
 
-public:
-    Delta() : post{}, max_state_{0} {}
-    explicit Delta(size_t n) : post(n), max_state_{n} {}
-
-    void reserve(size_t n) { post.reserve(n); };
 
     Post & operator[] (State q)
     {
         if (q >= post.size()) {
-            post.resize(q+1);
+            const size_t new_size{ q + 1 };
+            post.resize(new_size);
+            if (new_size > m_states_number) {
+                m_states_number = new_size;
+            }
         }
 
         return post[q];
@@ -380,31 +390,33 @@ public:
     const Post & operator[] (State q) const
     {
         if (q >= post.size()) {
-            post.resize(q+1);
+            const size_t new_size{ q + 1 };
+            post.resize(new_size);
+            if (new_size > m_states_number) {
+                m_states_number = new_size;
+            }
         }
 
         return post[q];
     };
 
-    void emplace_back()
-    {
+    void emplace_back() {
         post.emplace_back();
-        if (post.size()-1 > max_state_)
-            ++max_state_;
+        if (post.size() > m_states_number) { ++m_states_number; }
     }
 
     void clear()
     {
         post.clear();
-        max_state_ = 0;
+        m_states_number = 0;
     }
 
     void increase_size(size_t n)
     {
         assert(n >= post.size());
         post.resize(n);
-        if (post.size()-1 > max_state_)
-            max_state_ = post.size() - 1;
+        if (post.size() > m_states_number)
+            m_states_number = post.size();
     }
 
     size_t post_size() const { return post.size(); }
@@ -415,13 +427,16 @@ public:
     void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
 
     bool contains(State src, Symbol symb, State tgt) const;
+
     /**
      * Check whether automaton contains no transitions.
      * @return True if there are no transitions in the automaton, false otherwise.
      */
     bool empty() const;
 
-    size_t max_state() const { return max_state_; }
+    size_t max_state() const { return m_states_number - 1; }
+
+    size_t states_number() const { return m_states_number; }
 
     /**
      * Function removes empty indices in transition vector and renames states accordingly
@@ -522,11 +537,10 @@ struct Nfa
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
      *
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
-     *
      */
     Delta delta;
-    Util::NumberPredicate<State> initial = {};
-    Util::NumberPredicate<State> final = {};
+    Util::NumberPredicate<State> initial{};
+    Util::NumberPredicate<State> final{};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -537,18 +551,18 @@ struct Nfa
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
-    size_t max_state_;
+    size_t m_states_number;
 
 public:
-    Nfa() : delta(), initial(), final() {}
+    Nfa() : delta(), initial(), final(), m_states_number(0) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
-        : delta(num_of_states), initial(initial_states), final(final_states),
-          alphabet(alphabet_p), max_state_(0) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet_p),
+          m_states_number(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -595,9 +609,9 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The maximal state number.
      */
-    size_t max_state() const
-    {
-        return std::max({max_state_, delta.max_state(), initial.domain_size(), final.domain_size()});
+    size_t max_state() const {
+        // TODO: Should NFA throw exception when states_number() is 0?
+        return states_number() - 1;
     }
 
     /**
@@ -606,9 +620,8 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t states_number() const
-    {
-        return max_state() + 1;
+     size_t states_number() const {
+        return std::max({ m_states_number, delta.states_number(), initial.domain_size(), final.domain_size() });
     }
 
     /**
@@ -632,7 +645,7 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
-        max_state_ = 0;
+        m_states_number = 0;
     }
 
     /**
@@ -718,12 +731,15 @@ public:
 
     /**
      * Get transitions leading from @p state_from.
+     *
+     * If we try to access a state which is present in the delta as a target state, yet does not have allocated space
+     *  for itself in @c post, @c post is resized to include @p state_from.
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
     const Post& get_moves_from(const State state_from) const
     {
-        assert(delta.post_size() >= state_from + 1);
+        assert(state_from < delta.states_number());
         return delta[state_from];
     }
 
@@ -801,8 +817,7 @@ public:
 
     const Post& operator[](State state) const
     { // {{{
-        assert(state < delta.post_size());
-
+        assert(state < states_number());
         return delta[state];
     } // operator[] }}}
 
@@ -828,9 +843,16 @@ public:
     /**
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
-     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states
+     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
+     * TODO: Modify Nfa::m_states_number as well. Or not?
      */
-    void defragment() { delta.defragment();}
+    void defragment() {
+        delta.defragment();
+        // FIXME.
+        initial.truncate_domain();
+        final.truncate_domain();
+        m_states_number = 0;
+    }
 }; // Nfa
 
 /// Do the automata have disjoint sets of states?
