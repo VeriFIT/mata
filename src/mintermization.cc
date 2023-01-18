@@ -23,6 +23,9 @@ namespace
 {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
     {
+        if (node->node.is_state())
+            return node;
+
         std::vector<const Mata::FormulaGraph *> worklist{node};
         while (!worklist.empty()) {
             const auto act_node = worklist.back();
@@ -77,19 +80,16 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
 
     for (const auto& trans : aut.transitions) {
         lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
-        if (trans.second.node.is_state()) { // node from state to state - we can skip it
-            const auto bdd = bdd_mng.bddOne();
+        if (trans.second.node.is_state()) { // node from state to state
             lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&trans.second, &trans.second));
-            trans_to_bddvar[&trans.second] = bdd;
-            continue;
         }
         // split transition to disjuncts
         const FormulaGraph *act_graph = &trans.second;
 
-        if (act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OR) // there are no disjuncts
+        if (!trans.second.node.is_state() && act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OR) // there are no disjuncts
             lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph, detect_state_part(
                     act_graph)));
-        else {
+        else if (!trans.second.node.is_state()) {
             while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OR) {
                 // map lhs to disjunct and its state formula. The content of disjunct is right son of actual graph
                 // since the left one is a rest of formula
@@ -108,7 +108,9 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
         // Foreach disjunct create a BDD
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create bdd for the whole disjunct
-            const auto bdd = graph_to_bdd_afa(*ds_pair.first);
+            const auto bdd = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
+                    OptionalBdd(bdd_mng.bddOne()) : // transition from state to states -> add true as symbol
+                    graph_to_bdd_afa(*ds_pair.first);
             assert(bdd.type == OptionalBdd::BDD_E);
             if (bdd.val.IsZero())
                 continue;

@@ -1669,13 +1669,13 @@ cdef class Segmentation:
     """Wrapper over Segmentation."""
     cdef mata.CSegmentation* thisptr
 
-    def __cinit__(self, Nfa aut, Symbol symbol = CEPSILON):
+    def __cinit__(self, Nfa aut, cset[Symbol] symbols):
         """Compute segmentation.
 
         :param aut: Segment automaton to compute epsilon depths for.
         :param symbol: Symbol to execute segmentation for.
         """
-        self.thisptr = new mata.CSegmentation(dereference(aut.thisptr), symbol)
+        self.thisptr = new mata.CSegmentation(dereference(aut.thisptr), symbols)
 
     def __dealloc__(self):
         del self.thisptr

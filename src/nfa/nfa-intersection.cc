@@ -15,6 +15,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/nfa-algorithms.hh>
 
 using namespace Mata::Nfa;
 
@@ -82,7 +83,15 @@ void create_product_state_and_trans(
 namespace Mata {
 namespace Nfa {
 
+
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
+                 std::unordered_map<std::pair<State,State>, State> *prod_map) {
+    
+    const std::set<Symbol> epsilons({EPSILON});
+    return Algorithms::intersection_eps(lhs, rhs, preserve_epsilon, epsilons, prod_map);
+}
+
+Nfa Mata::Nfa::Algorithms::intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
                  std::unordered_map<std::pair<State,State>, State> *prod_map) {
     Nfa product{}; // Product of the intersection.
     // Product map for the generated intersection mapping original state pairs to new product states.
@@ -145,11 +154,11 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             const auto& lhs_state_symbol_transitions{ lhs.delta[pair_to_process.first] };
             if (!lhs_state_symbol_transitions.empty()) {
                 const auto& lhs_state_last_transitions{ lhs_state_symbol_transitions.back() };
-                if (lhs_state_last_transitions.symbol == EPSILON) {
+                if (epsilons.find(lhs_state_last_transitions.symbol) != epsilons.end()) {
                     // Compute product for state transitions with lhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition
                     //  goes and states to which second one goes.
-                    Move intersection_transition{EPSILON};
+                    Move intersection_transition{lhs_state_last_transitions.symbol};
                     for (const State lhs_state_to: lhs_state_last_transitions.targets) {
                         create_product_state_and_trans(product, product_map, lhs, rhs, pairs_to_process,
                                                        lhs_state_to, pair_to_process.second,
@@ -163,11 +172,11 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
             const auto& rhs_state_symbol_transitions{ rhs.delta[pair_to_process.second]};
             if (!rhs_state_symbol_transitions.empty()) {
                 const auto& rhs_state_last_transitions{rhs_state_symbol_transitions.back()};
-                if (rhs_state_last_transitions.symbol == EPSILON) {
+                if (epsilons.find(rhs_state_last_transitions.symbol) != epsilons.end()) {
                     // Compute product for state transitions with rhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition
                     //  goes and states to which second one goes.
-                    Move intersection_transition{EPSILON};
+                    Move intersection_transition{rhs_state_last_transitions.symbol};
                     for (const State rhs_state_to: rhs_state_last_transitions.targets) {
                         create_product_state_and_trans(product, product_map, lhs, rhs, pairs_to_process,
                                                        pair_to_process.first, rhs_state_to,

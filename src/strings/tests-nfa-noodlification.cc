@@ -6,11 +6,13 @@
 
 #include "mata/nfa.hh"
 #include "mata/nfa-strings.hh"
+#include "mata/re2parser.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 using namespace Mata::util;
 using namespace Mata::Parser;
+using namespace Mata::RE2Parser;
 
 // Some common automata {{{
 
@@ -350,6 +352,101 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             CHECK(are_equivalent(*result[0][0], *noodle1_segments[0]));
             CHECK(are_equivalent(*result[0][1], *noodle1_segments[1]));
             CHECK(are_equivalent(*result[0][2], *noodle1_segments[2]));
+        }
+    }
+}
+
+
+TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
+    SECTION("Empty input") {
+        CHECK(SegNfa::noodlify_for_equation(std::vector<std::shared_ptr<Nfa>>{},std::vector<std::shared_ptr<Nfa>>{}).empty());
+    }
+
+    SECTION("Simple automata") {
+        Nfa x, y, z, w;
+        create_nfa(&x, "a*");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( { 
+                {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }}, 
+                {{x, {0, 0} }, {y, {1, 0} }, {y, {1, 1} }} } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) }, 
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
+
+    SECTION("Simple automata -- epsilon result") {
+        Nfa x, y, z, w, astar;
+        create_nfa(&x, "a+");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)+");
+        create_nfa(&astar, "a*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( { 
+                {{astar, {0, 0} }, {x, {0, 1} }, {w, {1, 1} }}, 
+                {{astar, {0, 0} }, {x, {0, 1} }}, 
+                {{x, {0, 0} }, {w, {1, 1} }}, 
+                {{x, {0, 0} }, {y, {1, 0} }, {w, {1, 1} }} } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) }, 
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
+
+    SECTION("Simple automata -- epsilon input") {
+        Nfa x, y, z, w;
+        create_nfa(&x, "");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {} );
+       SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x) }, 
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(y), std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
+        CHECK(noodles.size() == 1);
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
+
+    SECTION("Simple automata -- epsilon input 2") {
+        Nfa x, y, z, w;
+        create_nfa(&x, "");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+                {{y, {1, 1} }}, 
+                {{y, {1, 0} }, {y, {1, 1} }},
+            } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) }, 
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
+        CHECK(noodles.size() == 2);
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
         }
     }
 }

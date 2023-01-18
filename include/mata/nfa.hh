@@ -354,9 +354,8 @@ struct Post : private Util::OrdVector<Move> {
  */
 struct Delta {
 private:
-    std::vector<Post> post;
+    mutable std::vector<Post> post;
     size_t max_state_;
-
 
     /**
      * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
@@ -371,13 +370,19 @@ public:
 
     Post & operator[] (State q)
     {
-        assert(q < post.size() && "There is not transition for given state");
+        if (q >= post.size()) {
+            post.resize(q+1);
+        }
+
         return post[q];
     };
 
     const Post & operator[] (State q) const
     {
-        assert(q < post.size() && "There is not transition for given state");
+        if (q >= post.size()) {
+            post.resize(q+1);
+        }
+
         return post[q];
     };
 
@@ -859,6 +864,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+
 
 /// makes the transition relation complete
 void make_complete(
