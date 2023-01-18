@@ -109,7 +109,9 @@ add_custom_command(TARGET libmata POST_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/merge_static_libraries.sh libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a
 		${CMAKE_SOURCE_DIR}/build/3rdparty/simlib/libsimlib.a ${CMAKE_SOURCE_DIR}/build/3rdparty/re2/libre2.a
 		${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a
-		COMMAND mv ${CMAKE_SOURCE_DIR}/build/src/libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a)
+		COMMAND mv ${CMAKE_SOURCE_DIR}/build/src/libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a
+		DEPENDS ${CMAKE_SOURCE_DIR}/build/3rdparty/simlib/libsimlib.a ${CMAKE_SOURCE_DIR}/build/3rdparty/re2/libre2.a
+		${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a)
 
 if(FALSE)
 
