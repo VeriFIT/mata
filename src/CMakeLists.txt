@@ -1,5 +1,6 @@
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 17)
 
 project(libmata)
 
@@ -13,7 +14,6 @@ set(cxx_compiler_flags
   -Wfloat-equal
   -fms-extensions
   -fdiagnostics-show-option
-  -std=c++14
   -Wctor-dtor-privacy
   -Weffc++
   -fPIC

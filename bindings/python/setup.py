@@ -71,7 +71,7 @@ extensions = [
             cudd_include_dir,
         ],
         language="c++",
-        extra_compile_args=["-std=c++14", "-DNO_THROW_DISPATCHER"],
+        extra_compile_args=["-std=c++17", "-DNO_THROW_DISPATCHER"],
     ),
 ]
 
