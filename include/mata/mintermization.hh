@@ -20,7 +20,7 @@
 #ifndef _MATA_MINTERM_HH
 #define _MATA_MINTERM_HH
 
-#include <cudd/cplusplus/cuddObj.hh>
+#include <mata/cudd/cuddObj.hh>
 
 #include <mata/inter-aut.hh>
 
