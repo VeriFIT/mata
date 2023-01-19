@@ -434,7 +434,12 @@ public:
      */
     bool empty() const;
 
-    size_t max_state() const { return m_states_number - 1; }
+    size_t max_state() const {
+        if (m_states_number == 0) {
+            throw std::runtime_error("The transition relation is empty.");
+        }
+        return m_states_number - 1;
+    }
 
     size_t states_number() const { return m_states_number; }
 
@@ -610,8 +615,11 @@ public:
      * @return The maximal state number.
      */
     size_t max_state() const {
-        // TODO: Should NFA throw exception when states_number() is 0?
-        return states_number() - 1;
+        const size_t states_number{ this->states_number() };
+        if (states_number == 0) {
+            throw std::runtime_error("The automaton is empty and has no states.");
+        }
+        return states_number - 1;
     }
 
     /**
