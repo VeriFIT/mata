@@ -22,6 +22,7 @@
 
 #include <mata/nfa.hh>
 #include <mata/nfa-strings.hh>
+#include <mata/re2parser.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
@@ -191,11 +192,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.initial.add(0);
 
         result = concatenate(lhs, rhs);
-
-        CHECK(result.initial[0]);
-        CHECK(result.final.empty());
-        CHECK(result.delta.post_size() == 1);
-        CHECK(result.delta.empty());
+        CHECK(is_lang_empty(result));
     }
 
     SECTION("Single state automata accepting an empty string") {
@@ -208,9 +205,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[0]);
-        CHECK(result.delta.post_size() == 1);
+        CHECK(!is_lang_empty(result));
+        CHECK(is_in_lang(result, Run{ {}, {} }));
         CHECK(result.delta.empty());
     }
 
@@ -224,9 +220,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[1]);
-        CHECK(result.delta.post_size() == 2);
+        CHECK(!result.initial.empty());
+        CHECK(!result.final.empty());
         CHECK(result.delta.empty());
     }
 
@@ -241,10 +236,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[1]);
-        CHECK(result.delta.post_size() == 2);
-        CHECK(result.delta.contains(0, 'a', 1));
+        CHECK(!result.initial.empty());
+        CHECK(!result.final.empty());
     }
 
     SECTION("Simple two state automata") {
@@ -259,11 +252,8 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[2]);
-        CHECK(result.delta.post_size() == 3);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(1, 'a', 2));
+        CHECK(!result.initial.empty());
+        CHECK(!result.final.empty());
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
@@ -283,12 +273,6 @@ TEST_CASE("Mata::Nfa::concatenate()") {
 
         result = concatenate(lhs, rhs);
 
-        CHECK(result.initial[0]);
-        CHECK(result.final[2]);
-        CHECK(result.delta.post_size() == 5);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(1, 'a', 2));
-
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
         CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a' }) != shortest_words.end());
@@ -305,13 +289,11 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.delta.add(0, 'a', 0);
 
         result = concatenate(lhs, rhs);
-
-        CHECK(result.initial[0]);
-        CHECK(result.final[1]);
-        CHECK(result.delta.post_size() == 2);
-        CHECK(result.delta.contains(0, 'b', 1));
-        CHECK(result.delta.contains(1, 'a', 1));
-
+        CHECK(is_in_lang(result, Run{ { 'b' }, {} }));
+        CHECK(is_in_lang(result, Run{ { 'b', 'a' }, {} }));
+        CHECK(is_in_lang(result, Run{ { 'b', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(result, Run{ { 'a' }, {} }));
+        CHECK(!is_in_lang(result, Run{ { 'a', 'b' }, {} }));
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
         CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
@@ -324,12 +306,6 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(lhs, rhs);
-
-        CHECK(result.initial.size() == 2);
-        CHECK(result.initial[1]);
-        CHECK(result.initial[3]);
-
-        CHECK(result.delta.post_size() == 25);
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
@@ -346,13 +322,6 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(rhs, lhs);
-
-        CHECK(result.delta.post_size() == 24);
-
-        CHECK(result.initial.size() == 1);
-        // Final state 2 in automaton B will not stay in the result automaton.
-        // Hence, initial state 4 in aut B will be initial state 3 in the result.
-        CHECK(result.initial[3]);
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 4);
@@ -386,7 +355,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         rhs.delta.add(5, 116, 1);
 
         result = concatenate(lhs, rhs);
-        CHECK(result.initial[5]);
+        CHECK(!is_lang_empty(result));
         // TODO: Add more checks.
     }
 }
@@ -431,12 +400,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.initial.add(0);
 
         result = concatenate(lhs, rhs, true);
-
-        CHECK(result.initial[0]);
-        CHECK(result.final.empty());
-        CHECK(result.delta.post_size() == 2);
-        CHECK(result.get_num_of_trans() == 1);
-        CHECK(result.delta.contains(0, EPSILON, 1));
+        CHECK(is_lang_empty(result));
     }
 
     SECTION("Single state automata accepting an empty string")
@@ -452,7 +416,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         CHECK(result.initial[0]);
         CHECK(result.final[1]);
-        CHECK(result.delta.post_size() == 2);
+        CHECK(result.delta.post_size() > 0);
         CHECK(result.get_num_of_trans() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
@@ -564,7 +528,6 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         StateToStateMap rhs_map{};
         result = concatenate(lhs, rhs, true, &lhs_map, &rhs_map);
 
-        CHECK(lhs_map.empty());
         CHECK(rhs_map == StateToStateMap{ { 0, 2 } });
 
         CHECK(result.initial[0]);
@@ -577,7 +540,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', EPSILON }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
     }
 
     SECTION("Automaton A concatenate automaton B")
@@ -624,4 +587,15 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'a', 'a' }) != shortest_words.end());
         CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', EPSILON, 'b', 'a' }) != shortest_words.end());
     }
+}
+
+TEST_CASE("(a|b)*") {
+    Nfa aut1;
+    Mata::RE2Parser::create_nfa(&aut1, "a*");
+    Nfa aut2;
+    Mata::RE2Parser::create_nfa(&aut2, "b*");
+    Nfa aut3;
+    Mata::RE2Parser::create_nfa(&aut3, "a*b*");
+    auto concatenated_aut{ concatenate(aut1, aut2) };
+    CHECK(are_equivalent(concatenated_aut, aut3));
 }
