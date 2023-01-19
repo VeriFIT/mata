@@ -32,7 +32,7 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
-    if (lhs.delta.post_size() == 0 || rhs.delta.post_size() == 0 || lhs.initial.empty() || lhs.final.empty() ||
+    if (lhs.states_number() == 0 || rhs.states_number() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
         return Nfa{};
     }

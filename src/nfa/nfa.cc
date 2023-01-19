@@ -343,8 +343,7 @@ size_t Delta::size() const
 void Delta::add(State state_from, Symbol symbol, State state_to)
 {
     if (state_from >= post.size()) {
-        size_t new_size{ state_from + 1 };
-        post.resize(new_size);
+        post.resize(state_from + 1);
     }
 
     if (state_from >= m_states_number) {
@@ -400,6 +399,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
             if (symbol_transitions->empty()) {
                 post[src].remove(*symbol_transitions);
             }
+            m_states_number = find_max_state() + 1;
         }
     }
 }
@@ -477,14 +477,7 @@ std::vector<State> Delta::defragment()
     }
 
     // finally we need to find the new max state
-    size_t new_max = 0;
-    for (const Trans& t : *this) {
-        if (t.src > new_max)
-            new_max = t.src;
-        if (t.tgt > new_max)
-            new_max = t.tgt;
-    }
-    m_states_number = new_max + 1;
+    m_states_number = find_max_state() + 1;
 
     return renaming;
 }
@@ -534,6 +527,19 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
+State Delta::find_max_state() {
+    size_t new_max = 0;
+    for (const Trans& t : *this) {
+        if (t.src > new_max) {
+            new_max = t.src;
+        }
+        if (t.tgt > new_max) {
+            new_max = t.tgt;
+        }
+    }
+    return new_max;
+}
+
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
@@ -551,7 +557,7 @@ StateSet Nfa::get_reachable_states() const
     StateBoolArray reachable_bool_array{ compute_reachability(*this) };
 
     StateSet reachable_states{};
-    const size_t num_of_states{delta.post_size() };
+    const size_t num_of_states{ states_number() };
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
     {
         if (reachable_bool_array[original_state])
@@ -594,7 +600,7 @@ StateSet Nfa::get_useful_states() const
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
     const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
-    const size_t num_of_states{delta.post_size() };
+    const size_t num_of_states{ states_number() };
     StateSet useful_states{};
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
         if (useful_states_bool_array[original_state]) {
@@ -659,8 +665,9 @@ void Mata::Nfa::make_complete(
                               aut.initial.end());
     std::unordered_set<State> processed(aut.initial.begin(),
                                         aut.initial.end());
-    if (aut.delta.post_size() <= sink_state)
+    if (aut.states_number() <= sink_state) {
         aut.increase_size(sink_state+1);
+    }
 
     worklist.push_back(sink_state);
     processed.insert(sink_state);
@@ -698,14 +705,14 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     Nfa result;
 
     result.clear();
-    result.increase_size(aut.delta.post_size());
+    result.increase_size(aut.states_number());
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    const size_t num_of_states{aut.delta.post_size() };
+    const size_t num_of_states{ aut.states_number() };
     for (size_t i{ 0 }; i < num_of_states; ++i)
     {
         for (const auto& trans: aut[i])
@@ -795,7 +802,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     if (aut.delta.empty()) { return true; }
 
-    const size_t aut_size = aut.delta.post_size();
+    const size_t aut_size = aut.states_number();
     for (size_t i = 0; i < aut_size; ++i)
     {
         for (const auto& symStates : aut[i])
@@ -1069,7 +1076,7 @@ size_t Nfa::get_num_of_trans() const
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{delta.states_number(), StateSet(initial), StateSet(final)};
+    Nfa digraph{ states_number(), StateSet(initial), StateSet(final) };
     collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
@@ -1133,8 +1140,8 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
     StateToStateMap thisStateToUnionState;
-    const size_t delta_size = lhs.delta.post_size();
-    for (State thisState = 0; thisState < delta_size; ++thisState) {
+    const size_t size = lhs.states_number();
+    for (State thisState = 0; thisState < size; ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton.add_state();
     }
 
@@ -1146,7 +1153,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
         unionAutomaton.final.add(thisStateToUnionState[thisFinalState]);
     }
 
-    for (State thisState = 0; thisState < delta_size; ++thisState) {
+    for (State thisState = 0; thisState < size; ++thisState) {
         State unionState = thisStateToUnionState[thisState];
         for (const Move &transitionFromThisState : lhs.delta[thisState]) {
 

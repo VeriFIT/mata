@@ -177,23 +177,22 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
     }
 
     SECTION("Small automata") {
-        Nfa left1{ 1};
+        Nfa left1{ 1 };
         left1.initial.add(0);
         left1.final.add(0);
-        Nfa left2{ 1};
+        Nfa left2{ 1 };
         left2.initial.add(0);
         left2.final.add(0);
-        Nfa right{ 2};
+        Nfa right{ 2 };
         right.initial.add(0);
         right.final.add(0);
 
-        Nfa noodle{2};
+        Nfa noodle{ 2 };
         noodle.initial.add(0);
         noodle.delta.add(0, 0, 1);
         noodle.final.add(1);
         auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right) };
         REQUIRE(result.size() == 1);
-        //CHECK(are_equivalent(result[0], noodle));
     }
 
     SECTION("Larger automata") {

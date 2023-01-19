@@ -2362,8 +2362,7 @@ TEST_CASE("Mata::Nfa::delta.remove()")
             REQUIRE_THROWS_AS(aut.delta.remove(1, 1, 5), std::invalid_argument);
         }
 
-        SECTION("Remove the last state_to from targets")
-        {
+        SECTION("Remove the last state_to from targets") {
             REQUIRE(aut.delta.contains(6, 'a', 2));
             aut.delta.remove(6, 'a', 2);
             REQUIRE(!aut.delta.contains(6, 'a', 2));

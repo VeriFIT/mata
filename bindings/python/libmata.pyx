@@ -1704,7 +1704,7 @@ cdef class Segmentation:
         segments = []
         cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
-            segment = Nfa(c_segment.delta.post_size())
+            segment = Nfa(c_segment.states_number())
             segment.thisptr.get().initial = c_segment.initial
             segment.thisptr.get().final = c_segment.final
             segment.thisptr.get().delta = c_segment.delta

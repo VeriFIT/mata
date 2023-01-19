@@ -528,6 +528,9 @@ public:
     {
         return cend();
     }
+
+private:
+    State find_max_state();
 };
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
@@ -747,7 +750,7 @@ public:
      */
     const Post& get_moves_from(const State state_from) const
     {
-        assert(state_from < delta.states_number());
+        assert(state_from < states_number());
         return delta[state_from];
     }
 
@@ -1329,7 +1332,7 @@ private:
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-        size_t nfa_num_of_states{nfa.delta.post_size() };
+        size_t nfa_num_of_states{nfa.states_number() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto state_transitions: nfa.delta) {
                 alphabet.update_next_symbol_value(state_transitions.symb);
