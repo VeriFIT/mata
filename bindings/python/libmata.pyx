@@ -392,12 +392,6 @@ cdef class Nfa:
         """Defragments the internal structures (needed, e.g., after resize."""
         self.thisptr.get().defragment()
 
-    def max_state(self) -> int:
-        """
-        :return: maximal seen state in the automaton
-        """
-        return self.thisptr.get().max_state()
-
     def states_number(self) -> int:
         """Get the current number of states in the whole automaton.
         :return: The number of states.

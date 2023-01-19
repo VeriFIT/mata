@@ -1087,7 +1087,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 
 TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
-    const size_t num_of_states{delta.post_size() };
+    const size_t num_of_states{ delta.post_size() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const auto& symbol_transitions: delta[state_from]) {
             const auto& symbol_states_to{ symbol_transitions.targets };

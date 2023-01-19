@@ -434,13 +434,6 @@ public:
      */
     bool empty() const;
 
-    size_t max_state() const {
-        if (m_states_number == 0) {
-            throw std::runtime_error("The transition relation is empty.");
-        }
-        return m_states_number - 1;
-    }
-
     size_t states_number() const { return m_states_number; }
 
     /**
@@ -612,20 +605,6 @@ public:
     State add_state();
 
     /**
-     * Get the maximal state number currently present in the whole automaton.
-     *
-     * This includes the initial and final states as well as states in the transition relation.
-     * @return The maximal state number.
-     */
-    size_t max_state() const {
-        const size_t states_number{ this->states_number() };
-        if (states_number == 0) {
-            throw std::runtime_error("The automaton is empty and has no states.");
-        }
-        return states_number - 1;
-    }
-
-    /**
      * @brief Get the current number of states in the whole automaton.
      *
      * This includes the initial and final states as well as states in the transition relation.
@@ -645,7 +624,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check <= max_state(); }
+    bool is_state(const State &state_to_check) const { return state_to_check < states_number(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.

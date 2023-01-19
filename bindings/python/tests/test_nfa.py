@@ -47,14 +47,12 @@ def test_adding_states():
     for i in range(0, 10):
         assert rhs.is_state(i)
 
-    assert rhs.max_state() == 9
     assert rhs.states_number() == 10
     rhs.defragment()
     rhs.clear()
     assert rhs.states_number() == 0
 
     rhs.resize(1)
-    assert rhs.max_state() == 0
     assert rhs.states_number() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
