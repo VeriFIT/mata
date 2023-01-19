@@ -11,8 +11,8 @@
 #ifndef _SIMLIB_SMART_SET_HH_
 #define _SIMLIB_SMART_SET_HH_
 
-#include <simlib/util/convert.hh>
-#include <simlib/util/simlib.hh>
+#include <mata/simlib/util/convert.hh>
+#include <mata/simlib/util/simlib.hh>
 
 // Standard library headers
 #include <algorithm>

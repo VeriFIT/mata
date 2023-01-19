@@ -19,7 +19,7 @@
 #define MATA_NFA_INTERNALS_HH_
 
 #include <mata/nfa.hh>
-#include <simlib/util/binary_relation.hh>
+#include <mata/simlib/util/binary_relation.hh>
 
 namespace Mata {
 

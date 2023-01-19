@@ -11,10 +11,10 @@
 #ifndef _SIMLIB_BINARY_RELATION_HH_
 #define _SIMLIB_BINARY_RELATION_HH_
 
-#include <simlib/util/convert.hh>
-#include <simlib/util/simlib.hh>
-#include <simlib/util/transl_weak.hh>
-#include <simlib/util/two_way_dict.hh>
+#include <mata/simlib/util/convert.hh>
+#include <mata/simlib/util/simlib.hh>
+#include <mata/simlib/util/transl_weak.hh>
+#include <mata/simlib/util/two_way_dict.hh>
 
 // Standard library headers
 #include <vector>

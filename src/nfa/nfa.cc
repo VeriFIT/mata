@@ -22,7 +22,7 @@
 // MATA headers
 #include <mata/nfa.hh>
 #include <mata/nfa-algorithms.hh>
-#include <simlib/explicit_lts.hh>
+#include <mata/simlib/explicit_lts.hh>
 
 using std::tie;
 
