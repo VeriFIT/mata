@@ -561,9 +561,8 @@ public:
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet_p),
-          m_num_of_states(0) {}
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet = new IntAlphabet())
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
