@@ -392,11 +392,11 @@ cdef class Nfa:
         """Defragments the internal structures (needed, e.g., after resize."""
         self.thisptr.get().defragment()
 
-    def states_number(self) -> int:
+    def size(self) -> int:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
         """
-        return self.thisptr.get().states_number()
+        return self.thisptr.get().size()
 
     def resize_for_state(self, State state):
         """Increases the size of the automaton to include state.
@@ -916,7 +916,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet of the
         """
         if not lhs.thisptr.get().is_state(sink_state):
-            lhs.thisptr.get().increase_size(lhs.states_number() + 1)
+            lhs.thisptr.get().increase_size(lhs.size() + 1)
         mata.make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
@@ -1698,7 +1698,7 @@ cdef class Segmentation:
         segments = []
         cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
-            segment = Nfa(c_segment.states_number())
+            segment = Nfa(c_segment.size())
             segment.thisptr.get().initial = c_segment.initial
             segment.thisptr.get().final = c_segment.final
             segment.thisptr.get().delta = c_segment.delta
@@ -1805,7 +1805,7 @@ def plot_using_graphviz(
                     )
     else:
         # Only print reachable states
-        for state in range(0, aut.states_number()):
+        for state in range(0, aut.size()):
             # Helper node to simulate initial automaton
             _plot_state(
                 aut, dot, state,

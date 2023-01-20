@@ -38,7 +38,7 @@ namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
-        const size_t state_num = aut.states_number();
+        const size_t state_num = aut.size();
 
         for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
             for (const Move &t : aut.get_moves_from(stateFrom)) {
@@ -72,7 +72,7 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-		const size_t num_of_states = aut.states_number();
+		const size_t num_of_states = aut.size();
 
 		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
 		for (State q = 0; q < num_of_states; ++q) {
@@ -141,7 +141,7 @@ namespace {
     StateBoolArray compute_reachability(const Nfa& nfa) {
         std::vector<State> worklist{ nfa.initial.get_elements()};
 
-        StateBoolArray reachable(nfa.states_number(), false);
+        StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial)
         {
             reachable.at(state) = true;
@@ -178,7 +178,7 @@ namespace {
      */
     StateBoolArray compute_reachability(const Nfa& nfa, const StateBoolArray& states_to_consider) {
         std::vector<State> worklist{};
-        StateBoolArray reachable(nfa.states_number(), false);
+        StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial) {
             if (states_to_consider[state]) {
                 worklist.push_back(state);
@@ -269,7 +269,7 @@ namespace {
      * @param[out] digraph Digraph to add computed transitions to.
      */
     void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
-        const State num_of_states{nfa.states_number() };
+        const State num_of_states{nfa.size() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
             for (const auto& symbol_transitions: nfa.delta[src_state]) {
                 for (const State tgt_state: symbol_transitions.targets) {
@@ -316,7 +316,7 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms)
 } // OnTheFlyAlphabet::get_complement.
 
 void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
-    size_t aut_num_of_states{nfa.states_number() };
+    size_t aut_num_of_states{nfa.size() };
     for (State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: nfa.delta[state]) {
             update_next_symbol_value(state_transitions.symbol);
@@ -543,7 +543,7 @@ State Delta::find_max_state() {
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
-    m_states_number = states_number() + 1;
+    m_states_number = size() + 1;
     return m_states_number - 1;
 }
 
@@ -557,7 +557,7 @@ StateSet Nfa::get_reachable_states() const
     StateBoolArray reachable_bool_array{ compute_reachability(*this) };
 
     StateSet reachable_states{};
-    const size_t num_of_states{ states_number() };
+    const size_t num_of_states{size() };
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
     {
         if (reachable_bool_array[original_state])
@@ -600,7 +600,7 @@ StateSet Nfa::get_useful_states() const
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
     const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
-    const size_t num_of_states{ states_number() };
+    const size_t num_of_states{size() };
     StateSet useful_states{};
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
         if (useful_states_bool_array[original_state]) {
@@ -665,7 +665,7 @@ void Mata::Nfa::make_complete(
                               aut.initial.end());
     std::unordered_set<State> processed(aut.initial.begin(),
                                         aut.initial.end());
-    if (aut.states_number() <= sink_state) {
+    if (aut.size() <= sink_state) {
         aut.increase_size(sink_state+1);
     }
 
@@ -705,14 +705,14 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     Nfa result;
 
     result.clear();
-    result.increase_size(aut.states_number());
+    result.increase_size(aut.size());
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    const size_t num_of_states{ aut.states_number() };
+    const size_t num_of_states{aut.size() };
     for (size_t i{ 0 }; i < num_of_states; ++i)
     {
         for (const auto& trans: aut[i])
@@ -779,7 +779,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 Nfa Mata::Nfa::revert(const Nfa& aut) {
     Nfa result;
     result.clear();
-    const size_t num_of_states{aut.states_number() };
+    const size_t num_of_states{aut.size() };
     result.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
@@ -802,7 +802,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     if (aut.delta.empty()) { return true; }
 
-    const size_t aut_size = aut.states_number();
+    const size_t aut_size = aut.size();
     for (size_t i = 0; i < aut_size; ++i)
     {
         for (const auto& symStates : aut[i])
@@ -1076,7 +1076,7 @@ size_t Nfa::get_num_of_trans() const
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{ states_number(), StateSet(initial), StateSet(final) };
+    Nfa digraph{size(), StateSet(initial), StateSet(final) };
     collect_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
@@ -1140,7 +1140,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
     StateToStateMap thisStateToUnionState;
-    const size_t size = lhs.states_number();
+    const size_t size = lhs.size();
     for (State thisState = 0; thisState < size; ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton.add_state();
     }

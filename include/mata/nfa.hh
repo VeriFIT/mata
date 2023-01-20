@@ -434,7 +434,7 @@ public:
      */
     bool empty() const;
 
-    size_t states_number() const { return m_states_number; }
+    size_t num_of_states() const { return m_states_number; }
 
     /**
      * Function removes empty indices in transition vector and renames states accordingly
@@ -610,8 +610,8 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t states_number() const {
-        return std::max({ m_states_number, delta.states_number(), initial.domain_size(), final.domain_size() });
+     size_t size() const {
+        return std::max({m_states_number, delta.num_of_states(), initial.domain_size(), final.domain_size() });
     }
 
     /**
@@ -624,7 +624,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check < states_number(); }
+    bool is_state(const State &state_to_check) const { return state_to_check < size(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -729,7 +729,7 @@ public:
      */
     const Post& get_moves_from(const State state_from) const
     {
-        assert(state_from < states_number());
+        assert(state_from < size());
         return delta[state_from];
     }
 
@@ -807,7 +807,7 @@ public:
 
     const Post& operator[](State state) const
     { // {{{
-        assert(state < states_number());
+        assert(state < size());
         return delta[state];
     } // operator[] }}}
 
@@ -1311,7 +1311,7 @@ private:
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     static void fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-        size_t nfa_num_of_states{nfa.states_number() };
+        size_t nfa_num_of_states{nfa.size() };
         for (State state{ 0 }; state < nfa_num_of_states; ++state) {
             for (const auto state_transitions: nfa.delta) {
                 alphabet.update_next_symbol_value(state_transitions.symb);

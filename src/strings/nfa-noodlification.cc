@@ -54,14 +54,14 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
-        if (segment->states_number() > 0 || include_empty) {
+        if (segment->size() > 0 || include_empty) {
             return {{ segment }};
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.states_number(); // get some State not used in aut
+    State unused_state = aut.size(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -140,7 +140,7 @@ void SegNfa::segs_one_initial_final(
                  */
                 segment_one_final->trim();
 
-                if (segment_one_final->states_number() > 0 || include_empty) {
+                if (segment_one_final->size() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = segment_one_final;
                 }
             }
@@ -150,7 +150,7 @@ void SegNfa::segs_one_initial_final(
                 segment_one_init->initial = {init_state };
                 segment_one_init->trim();
 
-                if (segment_one_init->states_number() > 0 || include_empty) {
+                if (segment_one_init->size() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = segment_one_init;
                 }
             }
@@ -162,7 +162,7 @@ void SegNfa::segs_one_initial_final(
                     segment_one_init_final->final = {final_state };
                     segment_one_init_final->trim();
 
-                    if (segment_one_init_final->states_number() > 0 || include_empty) {
+                    if (segment_one_init_final->size() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = segment_one_init_final;
                     }
                 }
@@ -184,14 +184,14 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
         segment->trim();
-        if (segment->states_number() > 0 || include_empty) {
+        if (segment->size() > 0 || include_empty) {
             return {{ {segment, def_eps_vector} } };
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.states_number(); // get some State not used in aut
+    State unused_state = aut.size(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 

@@ -67,34 +67,34 @@ template<class T> void unused(const T &) {}
 bool nothing_in_trans(const Nfa& nfa)
 {
     bool all_empty = true;
-    for (size_t i = 0; i < nfa.states_number(); ++i) {
+    for (size_t i = 0; i < nfa.size(); ++i) {
         all_empty &= nfa.delta[i].empty();
     }
 
     return all_empty;
 }
 
-TEST_CASE("Mata::Nfa::states_number()") {
+TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};
-    CHECK(nfa.states_number() == 0);
+    CHECK(nfa.size() == 0);
 
     nfa.increase_size(4);
-    CHECK(nfa.states_number() == 4);
+    CHECK(nfa.size() == 4);
 
     nfa.clear();
     nfa.add_state();
-    CHECK(nfa.states_number() == 1);
+    CHECK(nfa.size() == 1);
 
     nfa.clear();
     FILL_WITH_AUT_A(nfa);
-    CHECK(nfa.states_number() == 11);
+    CHECK(nfa.size() == 11);
 
     nfa.clear();
     FILL_WITH_AUT_B(nfa);
-    CHECK(nfa.states_number() == 15);
+    CHECK(nfa.size() == 15);
 
     nfa = Nfa{ 0, {}, {} };
-    CHECK(nfa.states_number() == 0);
+    CHECK(nfa.size() == 0);
 }
 
 /*
@@ -1888,7 +1888,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.initial[2]);
 		REQUIRE(result.final[1]);
 		REQUIRE(result.delta.contains(2, 'a', 1));
-		REQUIRE(result.delta.states_number() == aut.delta.states_number());
+		REQUIRE(result.delta.num_of_states() == aut.delta.num_of_states());
 	}
 
 	SECTION("bigger automaton")
@@ -2253,7 +2253,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial[state_map[1]]);
 		REQUIRE(result.final[state_map[2]]);
-		REQUIRE(result.states_number() == 2);
+		REQUIRE(result.size() == 2);
 		REQUIRE(state_map[1] == state_map[0]);
 		REQUIRE(state_map[2] != state_map[0]);
 	}
@@ -2282,7 +2282,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 
 		Nfa result = reduce(aut, &state_map);
 
-		REQUIRE(result.states_number() == 6);
+		REQUIRE(result.size() == 6);
 		REQUIRE(result.initial[state_map[1]]);
 		REQUIRE(result.initial[state_map[2]]);
 		REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
@@ -2496,7 +2496,7 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
 
     Nfa digraph{aut.get_one_letter_aut() };
 
-    REQUIRE(digraph.states_number() == aut.states_number());
+    REQUIRE(digraph.size() == aut.size());
     REQUIRE(digraph.get_num_of_trans() == 12);
     REQUIRE(digraph.delta.contains(1, abstract_symbol, 10));
     REQUIRE(digraph.delta.contains(10, abstract_symbol, 7));
@@ -2609,7 +2609,7 @@ TEST_CASE("Mata::Nfa::trim()")
     aut.trim();
     CHECK(aut.initial.size() == old_aut.initial.size());
     CHECK(aut.final.size() == old_aut.final.size());
-    CHECK(aut.states_number() == 4);
+    CHECK(aut.size() == 4);
     for (const Word& word: get_shortest_words(old_aut))
     {
         CHECK(is_in_lang(aut, Run{word,{}}));
@@ -2618,7 +2618,7 @@ TEST_CASE("Mata::Nfa::trim()")
     aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
     aut.trim();
     CHECK(aut.delta.empty());
-    CHECK(aut.states_number() == 0);
+    CHECK(aut.size() == 0);
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
@@ -2678,16 +2678,16 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     REQUIRE(aut.get_num_of_trans() == 15);
     aut.delta[25];
 
-    REQUIRE(aut.states_number() == 26);
+    REQUIRE(aut.size() == 26);
     REQUIRE(aut.delta[25].empty());
 
     aut.delta[50];
-    REQUIRE(aut.states_number() == 51);
+    REQUIRE(aut.size() == 51);
     REQUIRE(aut.delta[50].empty());
 
     const Nfa aut1 = aut;
     aut1.delta[60];
-    REQUIRE(aut1.states_number() == 61);
+    REQUIRE(aut1.size() == 61);
     REQUIRE(aut1.delta[60].empty());
 }
 
@@ -2696,7 +2696,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
 
     SECTION("No initial") {
         nfa.unify_initial();
-        CHECK(nfa.states_number() == 10);
+        CHECK(nfa.size() == 10);
         CHECK(nfa.initial.empty());
     }
 
@@ -2705,7 +2705,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.final.add(0);
         nfa.final.add(1);
         nfa.unify_final();
-        REQUIRE(nfa.states_number() == 11);
+        REQUIRE(nfa.size() == 11);
         CHECK(nfa.final.size() == 1);
         CHECK(nfa.final[10]);
         CHECK(nfa.initial[10]);
@@ -2716,7 +2716,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.initial.add(1);
         nfa.final.add(0);
         nfa.unify_initial();
-        REQUIRE(nfa.states_number() == 11);
+        REQUIRE(nfa.size() == 11);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.initial[10]);
         CHECK(nfa.final[10]);
@@ -2725,7 +2725,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     SECTION("Single initial") {
         nfa.initial.add(0);
         nfa.unify_initial();
-        CHECK(nfa.states_number() == 10);
+        CHECK(nfa.size() == 10);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.initial[0]);
     }
@@ -2734,7 +2734,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.initial.add(0);
         nfa.initial.add(1);
         nfa.unify_initial();
-        CHECK(nfa.states_number() == 11);
+        CHECK(nfa.size() == 11);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.initial[10]);
     }
@@ -2746,7 +2746,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.delta.add(1, 'b', 0);
         nfa.delta.add(1, 'c', 1);
         nfa.unify_initial();
-        CHECK(nfa.states_number() == 11);
+        CHECK(nfa.size() == 11);
         CHECK(nfa.initial.size() == 1);
         CHECK(nfa.initial[10]);
         CHECK(nfa.delta.contains(10, 'a', 3));
@@ -2759,14 +2759,14 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
 
     SECTION("No final") {
         nfa.unify_final();
-        CHECK(nfa.states_number() == 10);
+        CHECK(nfa.size() == 10);
         CHECK(nfa.final.empty());
     }
 
     SECTION("Single final") {
         nfa.final.add(0);
         nfa.unify_final();
-        CHECK(nfa.states_number() == 10);
+        CHECK(nfa.size() == 10);
         CHECK(nfa.final.size() == 1);
         CHECK(nfa.final[0]);
     }
@@ -2775,7 +2775,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.final.add(0);
         nfa.final.add(1);
         nfa.unify_final();
-        CHECK(nfa.states_number() == 11);
+        CHECK(nfa.size() == 11);
         CHECK(nfa.final.size() == 1);
         CHECK(nfa.final[10]);
     }
@@ -2787,7 +2787,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         nfa.delta.add(4, 'b', 1);
         nfa.delta.add(1, 'c', 1);
         nfa.unify_final();
-        CHECK(nfa.states_number() == 11);
+        CHECK(nfa.size() == 11);
         CHECK(nfa.final.size() == 1);
         CHECK(nfa.final[10]);
         CHECK(nfa.delta.contains(3, 'a', 10));
@@ -2852,14 +2852,14 @@ TEST_CASE("Mata::Nfa::Nfa::defragment()") {
     aut.delta.add(4, 42, 2);
     aut.delta.add(4, 42, 1);
     aut.delta.add(5, 42, 4);
-    CHECK(aut.states_number() == 6);
+    CHECK(aut.size() == 6);
     CHECK(aut.delta.contains(1, 42, 2));
     aut.defragment();
-    CHECK(aut.states_number() == 5);
+    CHECK(aut.size() == 5);
     CHECK(aut.delta.contains(1, 42, 3));
     CHECK(aut.delta.contains(4, 42, 3)); // previously (5,42,4)
     aut.defragment();
-    CHECK(aut.states_number() == 5);
+    CHECK(aut.size() == 5);
     // transitions contains not been changed
     CHECK(aut.delta.contains(1, 42, 3));
     CHECK(aut.delta.contains(4, 42, 3));
