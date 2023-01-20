@@ -26,6 +26,9 @@ test:
 check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
 
+install:
+	cd $(BUILD_DIR) && $(MAKE) install
+
 clean:
 	cd $(BUILD_DIR) && rm -rf *
 	rm -rf doc

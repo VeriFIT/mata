@@ -17,16 +17,16 @@
 
 
 // simlib headers
-#include <simlib/explicit_lts.hh>
-#include <simlib/util/binary_relation.hh>
-#include <simlib/util/convert.hh>
-#include <simlib/util/smart_set.hh>
-#include <simlib/util/simlib.hh>
+#include <mata/simlib/explicit_lts.hh>
+#include <mata/simlib/util/binary_relation.hh>
+#include <mata/simlib/util/convert.hh>
+#include <mata/simlib/util/smart_set.hh>
+#include <mata/simlib/util/simlib.hh>
 
-#include <simlib/util/caching_allocator.hh>
-#include <simlib/util/shared_counter.hh>
-#include <simlib/util/shared_list.hh>
-#include <simlib/util/splitting_relation.hh>
+#include <mata/simlib/util/caching_allocator.hh>
+#include <mata/simlib/util/shared_counter.hh>
+#include <mata/simlib/util/shared_list.hh>
+#include <mata/simlib/util/splitting_relation.hh>
 
 
 using Simlib::Util::BinaryRelation;

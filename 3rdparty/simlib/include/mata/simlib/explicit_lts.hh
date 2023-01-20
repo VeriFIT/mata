@@ -13,8 +13,8 @@
 
 #include <vector>
 
-#include <simlib/util/binary_relation.hh>
-#include <simlib/util/smart_set.hh>
+#include <mata/simlib/util/binary_relation.hh>
+#include <mata/simlib/util/smart_set.hh>
 
 
 namespace Simlib { class ExplicitLTS; }

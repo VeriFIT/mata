@@ -14,8 +14,8 @@
 // Standard library headers
 #include <vector>
 
-#include <simlib/util/simlib.hh>
-#include <simlib/util/caching_allocator.hh>
+#include <mata/simlib/util/simlib.hh>
+#include <mata/simlib/util/caching_allocator.hh>
 
 namespace Simlib
 {

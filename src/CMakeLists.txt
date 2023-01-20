@@ -1,5 +1,6 @@
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_CXX_STANDARD 17)
 
 project(libmata)
 
@@ -13,7 +14,6 @@ set(cxx_compiler_flags
   -Wfloat-equal
   -fms-extensions
   -fdiagnostics-show-option
-  -std=c++14
   -Wctor-dtor-privacy
   -Weffc++
   -fPIC
@@ -44,7 +44,7 @@ endif()
 
 include_directories(../include)
 include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
-include_directories(../3rdparty/cudd/cudd)
+include_directories(../3rdparty/cudd/include)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
@@ -94,9 +94,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-add_dependencies(libmata cudd_library)
-target_link_libraries(libmata simlib ${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
-target_link_libraries(tests libmata re2 simlib ${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a)
+add_dependencies(libmata cudd_library re2 simlib)
+target_link_libraries(libmata simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a) # ${CUDD} ${CUDD++})
+target_link_libraries(tests libmata re2 simlib ${CMAKE_BINARY_DIR}/3rdparty/cudd/lib/libcudd.a)
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(
@@ -104,6 +104,12 @@ add_custom_command(
 	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/unit-test-data
 	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
 )
+
+add_custom_command(TARGET libmata POST_BUILD
+		COMMAND ${CMAKE_SOURCE_DIR}/merge_static_libraries.sh libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a
+		${CMAKE_SOURCE_DIR}/build/3rdparty/simlib/libsimlib.a ${CMAKE_SOURCE_DIR}/build/3rdparty/re2/libre2.a
+		${CMAKE_SOURCE_DIR}/build/3rdparty/cudd/lib/libcudd.a
+		COMMAND mv ${CMAKE_SOURCE_DIR}/build/src/libcombined.a ${CMAKE_SOURCE_DIR}/build/src/libmata.a)
 
 if(FALSE)
 

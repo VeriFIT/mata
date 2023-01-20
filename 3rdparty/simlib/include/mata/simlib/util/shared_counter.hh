@@ -14,7 +14,7 @@
 #include <cstring>
 #include <vector>
 
-#include <simlib/util/caching_allocator.hh>
+#include <mata/simlib/util/caching_allocator.hh>
 
 namespace Simlib { namespace Util {
 	class SharedCounter;

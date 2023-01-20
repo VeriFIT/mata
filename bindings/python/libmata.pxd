@@ -22,7 +22,7 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-cdef extern from "simlib/util/binary_relation.hh" namespace "Simlib::Util":
+cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
     ctypedef vector[size_t] ivector
     ctypedef vector[bool] bvector
     ctypedef vector[ivector] IndexType
@@ -284,7 +284,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef bool is_prfx_in_lang(CNfa&, CRun&)
 
     # Automata operations
-    cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
     cdef void compute_fw_direct_simulation(const CNfa&)
 
     # Helper functions
@@ -312,6 +311,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StringToSymbolMap add_symbols_from(StringToSymbolMap)
         StringToSymbolMap add_symbols_from(vector[string])
 
+cdef extern from "mata/nfa-algorithms.hh" namespace "Mata::Nfa::Algorithms":
+    cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
 
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)

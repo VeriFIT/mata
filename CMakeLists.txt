@@ -86,6 +86,11 @@ add_subdirectory(cli)
 add_subdirectory(3rdparty/re2)
 add_subdirectory(3rdparty/simlib)
 
+install(TARGETS libmata ARCHIVE DESTINATION lib)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd/include/mata DESTINATION include FILES_MATCHING PATTERN "*.h*")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/simlib/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")
+
 # Since cudd package use autotools it needs to be added via external project feature
 include(ExternalProject)
 ExternalProject_Add(
