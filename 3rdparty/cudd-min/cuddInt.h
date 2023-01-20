@@ -56,7 +56,7 @@
 #include "st.h"
 #include "mtr.h"
 #include "epd.h"
-#include "cudd.h"
+#include "mata/cudd/cudd.h"
 
 /*---------------------------------------------------------------------------*/
 /* Constant declarations                                                     */

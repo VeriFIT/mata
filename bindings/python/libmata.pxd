@@ -22,7 +22,7 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-cdef extern from "simlib/util/binary_relation.hh" namespace "Simlib::Util":
+cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
     ctypedef vector[size_t] ivector
     ctypedef vector[bool] bvector
     ctypedef vector[ivector] IndexType

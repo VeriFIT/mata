@@ -48,7 +48,7 @@
 */
 
 #include "config.h"
-#include "cuddObj.hh"
+#include "mata/cudd/cuddObj.hh"
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
