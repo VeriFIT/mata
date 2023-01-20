@@ -560,6 +560,7 @@ namespace {
  * @param pattern regex as string
  * @param use_epsilon whether to create NFA with epsilon transitions or not
  * @param epsilon_value value, that will represent epsilon on transitions
+ * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
  * @return mata::Nfa::Nfa corresponding to pattern
  */
 void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value, bool use_reduce) {
