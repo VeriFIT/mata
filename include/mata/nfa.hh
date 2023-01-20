@@ -355,16 +355,16 @@ struct Post : private Util::OrdVector<Move> {
 struct Delta {
 private:
     mutable std::vector<Post> post;
-    mutable size_t m_states_number;
+    mutable size_t m_num_of_states;
 
 public:
-    Delta() : post(), m_states_number(0) {}
-    explicit Delta(size_t n) : post(), m_states_number(n) {}
+    Delta() : post(), m_num_of_states(0) {}
+    explicit Delta(size_t n) : post(), m_num_of_states(n) {}
 
     void reserve(size_t n) {
         post.reserve(n);
-        if (n > m_states_number) {
-            m_states_number = n;
+        if (n > m_num_of_states) {
+            m_num_of_states = n;
         }
     };
 
@@ -379,8 +379,8 @@ public:
         if (q >= post.size()) {
             const size_t new_size{ q + 1 };
             post.resize(new_size);
-            if (new_size > m_states_number) {
-                m_states_number = new_size;
+            if (new_size > m_num_of_states) {
+                m_num_of_states = new_size;
             }
         }
 
@@ -392,8 +392,8 @@ public:
         if (q >= post.size()) {
             const size_t new_size{ q + 1 };
             post.resize(new_size);
-            if (new_size > m_states_number) {
-                m_states_number = new_size;
+            if (new_size > m_num_of_states) {
+                m_num_of_states = new_size;
             }
         }
 
@@ -402,21 +402,21 @@ public:
 
     void emplace_back() {
         post.emplace_back();
-        if (post.size() > m_states_number) { ++m_states_number; }
+        if (post.size() > m_num_of_states) { ++m_num_of_states; }
     }
 
     void clear()
     {
         post.clear();
-        m_states_number = 0;
+        m_num_of_states = 0;
     }
 
     void increase_size(size_t n)
     {
         assert(n >= post.size());
         post.resize(n);
-        if (post.size() > m_states_number)
-            m_states_number = post.size();
+        if (post.size() > m_num_of_states)
+            m_num_of_states = post.size();
     }
 
     size_t post_size() const { return post.size(); }
@@ -434,7 +434,7 @@ public:
      */
     bool empty() const;
 
-    size_t num_of_states() const { return m_states_number; }
+    size_t num_of_states() const { return m_num_of_states; }
 
     /**
      * Function removes empty indices in transition vector and renames states accordingly
@@ -552,10 +552,10 @@ struct Nfa
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
-    size_t m_states_number;
+    size_t m_num_of_states;
 
 public:
-    Nfa() : delta(), initial(), final(), m_states_number(0) {}
+    Nfa() : delta(), initial(), final(), m_num_of_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
@@ -563,7 +563,7 @@ public:
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet_p = new IntAlphabet())
         : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet_p),
-          m_states_number(0) {}
+          m_num_of_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -611,7 +611,7 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        return std::max({m_states_number, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        return std::max({m_num_of_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
     }
 
     /**
@@ -635,7 +635,7 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
-        m_states_number = 0;
+        m_num_of_states = 0;
     }
 
     /**
@@ -834,14 +834,14 @@ public:
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
      * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
-     * TODO: Modify Nfa::m_states_number as well. Or not?
+     * TODO: Modify Nfa::m_num_of_states as well. Or not?
      */
     void defragment() {
         delta.defragment();
         // FIXME.
         initial.truncate_domain();
         final.truncate_domain();
-        m_states_number = 0;
+        m_num_of_states = 0;
     }
 }; // Nfa
 

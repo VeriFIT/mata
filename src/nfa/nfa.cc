@@ -346,13 +346,13 @@ void Delta::add(State state_from, Symbol symbol, State state_to)
         post.resize(state_from + 1);
     }
 
-    if (state_from >= m_states_number) {
-        // state_from == 0 && m_states_number == 0 handles the case where delta is empty.
+    if (state_from >= m_num_of_states) {
+        // state_from == 0 && m_num_of_states == 0 handles the case where delta is empty.
 
-        m_states_number = state_from + 1;
+        m_num_of_states = state_from + 1;
     }
-    if (state_to >= m_states_number) {
-        m_states_number = state_to + 1;
+    if (state_to >= m_num_of_states) {
+        m_num_of_states = state_to + 1;
     }
 
     auto& state_transitions{ post[state_from] };
@@ -399,7 +399,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
             if (symbol_transitions->empty()) {
                 post[src].remove(*symbol_transitions);
             }
-            m_states_number = find_max_state() + 1;
+            m_num_of_states = find_max_state() + 1;
         }
     }
 }
@@ -477,7 +477,7 @@ std::vector<State> Delta::defragment()
     }
 
     // finally we need to find the new max state
-    m_states_number = find_max_state() + 1;
+    m_num_of_states = find_max_state() + 1;
 
     return renaming;
 }
@@ -543,8 +543,8 @@ State Delta::find_max_state() {
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
-    m_states_number = size() + 1;
-    return m_states_number - 1;
+    m_num_of_states = size() + 1;
+    return m_num_of_states - 1;
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
