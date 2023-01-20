@@ -1255,3 +1255,17 @@ TEST_CASE("Mata::RE2Parser error")
         REQUIRE(!is_in_lang(aut2, Word{'q','R','q'}));
     }
 } // }}}
+
+TEST_CASE("Mata::RE2Parser bug epsilon")
+{ // {{{
+    SECTION("failing regex")
+    {
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
+        CHECK(is_in_lang(x, Run{Word{'a', 'a', 'a', 'a'}, {}}));
+    }
+} // }}}
+
+
+
+

@@ -562,7 +562,7 @@ namespace {
  * @param epsilon_value value, that will represent epsilon on transitions
  * @return mata::Nfa::Nfa corresponding to pattern
  */
-void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value) {
+void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value, bool use_reduce) {
     if (nfa == NULL) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
@@ -570,8 +570,15 @@ void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
-    regexParser.convert_pro_to_nfa(nfa, program, use_epsilon, epsilon_value);
+    regexParser.convert_pro_to_nfa(nfa, program, true, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
+    if(!use_epsilon) {
+        *nfa = Mata::Nfa::remove_epsilon(*nfa, epsilon_value);
+    }
+    if(use_reduce) {
+        nfa->trim();
+        *nfa = Mata::Nfa::reduce(*nfa);
+    }
 }
