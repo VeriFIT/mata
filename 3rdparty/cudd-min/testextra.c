@@ -45,7 +45,7 @@
 
 #include "util.h"
 #include "epd.h"
-#include "cudd.h"
+#include "mata/cudd/cudd.h"
 #include <setjmp.h>
 
 /** \cond */

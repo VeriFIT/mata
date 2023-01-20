@@ -43,7 +43,7 @@
 
 */
 
-#include "cuddObj.hh"
+#include "mata/cudd/cuddObj.hh"
 #include <math.h>
 #include <iostream>
 #include <sstream>

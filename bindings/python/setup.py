@@ -33,7 +33,7 @@ re2_include_dir = os.path.join(src_dir, "3rdparty", "re2")
 re2_source_dir = os.path.join(src_dir, "3rdparty", "re2")
 simlib_include_dir = os.path.join(src_dir, "3rdparty", "simlib", "include")
 simlib_source_dir = os.path.join(src_dir, "3rdparty", "simlib", "src")
-cudd_include_dir = os.path.join(src_dir, "3rdparty", "cudd-min")
+cudd_include_dir = os.path.join(src_dir, "3rdparty", "cudd-min", "include")
 cudd_source_dir = os.path.join(src_dir, "3rdparty", "cudd-min")
 
 with open(os.path.join(src_dir, "README.md")) as readme_handle:

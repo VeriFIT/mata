@@ -13,8 +13,8 @@
 
 #include <functional>
 
-#include <simlib/util/simlib.hh>
-#include <simlib/util/abstract_transl.hh>
+#include <mata/simlib/util/simlib.hh>
+#include <mata/simlib/util/abstract_transl.hh>
 
 
 namespace Simlib

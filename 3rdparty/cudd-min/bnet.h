@@ -52,7 +52,7 @@
 
 #include "util.h"
 #include "st.h"
-#include "cudd.h"
+#include "mata/cudd/cudd.h"
 
 #ifdef __cplusplus
 extern "C" {

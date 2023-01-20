@@ -44,7 +44,7 @@ endif()
 
 include_directories(../include)
 include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
-include_directories(../3rdparty/cudd/cudd)
+include_directories(../3rdparty/cudd/include)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
