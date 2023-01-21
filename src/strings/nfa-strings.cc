@@ -147,13 +147,13 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 }
 
 
-std::vector<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
+std::set<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
     Nfa::Nfa one_letter;
     aut.get_one_letter_aut(one_letter);
     one_letter = determinize(one_letter);
     one_letter.trim();
 
-    std::vector<std::pair<int, int>> ret;
+    std::set<std::pair<int, int>> ret;
     std::vector<int> handles(one_letter.max_state() + 1, 0); // initialized to 0
     std::deque<Nfa::State> worklist(one_letter.initial.begin(), one_letter.initial.end()); 
     std::set<Nfa::State> visited;
@@ -180,7 +180,7 @@ std::vector<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut)
         }
     }
     for(const Nfa::State& fin : one_letter.final) {
-        ret.push_back({handles[fin], loop_size});
+        ret.insert({handles[fin], loop_size});
     }
 
     return ret;

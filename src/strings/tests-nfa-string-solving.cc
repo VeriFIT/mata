@@ -212,12 +212,14 @@ TEST_CASE("Mata::Strings::get_lengths()") {
         Nfa x;
         create_nfa(&x, "(abcde)*");
         x.trim();
-        CHECK(get_lengths(x) == std::vector<std::pair<int, int>>({{0,5}}));
+        CHECK(get_lengths(x) == std::set<std::pair<int, int>>({{0,5}}));
     }
 
     SECTION("advanced 1") {
         Nfa x;
         create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
-        CHECK(get_lengths(x) == std::vector<std::pair<int, int>>({{1,3}, {2,5}}));
+        CHECK(get_lengths(x) == std::set<std::pair<int, int>>({
+            {1,15}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
+        }));
     }
 }

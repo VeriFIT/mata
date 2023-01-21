@@ -108,7 +108,7 @@ namespace Strings {
      */
     WordSet get_shortest_words(const Nfa::Nfa& nfa);
 
-    std::vector<std::pair<int, int>> get_lengths(const Nfa::Nfa& aut);
+    std::set<std::pair<int, int>> get_lengths(const Nfa::Nfa& aut);
 
 /**
  * Operations on segment automata.
