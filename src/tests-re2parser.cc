@@ -1259,6 +1259,17 @@ TEST_CASE("Mata::RE2Parser error")
         Nfa x;
         Mata::RE2Parser::create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
         CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+    }
+
+    SECTION("Another failing regex") {
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)+)|(a(aaa)+|ccc+)");
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c', 'c', 'c', 'c' }, {} }));
     }
 } // }}}
 

@@ -401,11 +401,8 @@ namespace {
             // should have incoming edge set
             for (auto state_to_check: states_for_second_check) {
               re2::Prog::Inst *inst = prog->inst(state_to_check);
-              for (auto mappedState: this->state_cache.state_mapping[inst->out()]) {
-                if (mappedState == state_to_check) {
-                  this->state_cache.has_state_incoming_edge[state_to_check] = true;
-                  break;
-                }
+              for (auto mapped_state: this->state_cache.state_mapping[inst->out()]) {
+                this->state_cache.has_state_incoming_edge[mapped_state] = true;
               }
             }
         }
