@@ -215,11 +215,35 @@ TEST_CASE("Mata::Strings::get_lengths()") {
         CHECK(get_lengths(x) == std::set<std::pair<int, int>>({{0,5}}));
     }
 
+    SECTION("empty") {
+        Nfa x;
+        create_nfa(&x, "");
+        x.trim();
+        CHECK(get_lengths(x) == std::set<std::pair<int, int>>({{0,0}}));
+    }
+
+    SECTION("finite") {
+        Nfa x;
+        create_nfa(&x, "abcd");
+        x.trim();
+        CHECK(get_lengths(x) == std::set<std::pair<int, int>>({{4,0}}));
+    }
+
     SECTION("advanced 1") {
         Nfa x;
         create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
         CHECK(get_lengths(x) == std::set<std::pair<int, int>>({
-            {1,15}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
+            {1,0}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
+        }));
+    }
+
+    SECTION("advanced 2") {
+        Nfa x;
+        create_nfa(&x, "a(aaaa|aaaaaaa)*");
+        CHECK(get_lengths(x) == std::set<std::pair<int, int>>({
+            {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0}, 
+            {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0}, 
+            {26,1}
         }));
     }
 }

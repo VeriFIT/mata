@@ -154,11 +154,12 @@ std::set<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
     one_letter.trim();
 
     std::set<std::pair<int, int>> ret;
-    std::vector<int> handles(one_letter.max_state() + 1, 0); // initialized to 0
+    std::vector<int> handles(one_letter.size(), 0); // initialized to 0
     std::deque<Nfa::State> worklist(one_letter.initial.begin(), one_letter.initial.end()); 
     std::set<Nfa::State> visited;
     int cnt = 0; // handle counter
     int loop_size = 0; // loop size
+    int loop_start = -1; // cnt where the loop starts
 
     while(!worklist.empty()) {
         Nfa::State state = worklist.front();
@@ -175,12 +176,17 @@ std::set<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
             if(visited.find(tgt) == visited.end()) {
                 worklist.push_back(tgt);
             } else {
+                loop_start = handles[tgt];
                 loop_size = cnt - handles[tgt];
             }
         }
     }
     for(const Nfa::State& fin : one_letter.final) {
-        ret.insert({handles[fin], loop_size});
+        if(handles[fin] >= loop_start) {
+            ret.insert({handles[fin], loop_size});
+        } else {
+            ret.insert({handles[fin], 0});
+        }
     }
 
     return ret;
