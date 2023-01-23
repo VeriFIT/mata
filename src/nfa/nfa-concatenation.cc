@@ -32,13 +32,13 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
-    if (lhs.delta.post_size() == 0 || rhs.delta.post_size() == 0 || lhs.initial.empty() || lhs.final.empty() ||
+    if (lhs.size() == 0 || rhs.size() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
         return Nfa{};
     }
 
-    const unsigned long lhs_states_num{lhs.delta.post_size() };
-    const unsigned long rhs_states_num{rhs.delta.post_size() };
+    const unsigned long lhs_states_num{lhs.size() };
+    const unsigned long rhs_states_num{rhs.size() };
     Nfa result{}; // Concatenated automaton.
     StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
     StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.

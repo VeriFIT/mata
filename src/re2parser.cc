@@ -490,8 +490,8 @@ namespace {
                         if (static_cast<int>(renumbered_states[stateTo]) == -1) {
                             renumbered_states[stateTo] = renumbered_explicit_nfa.add_state();
                         }
-                        assert(renumbered_states[state] <= renumbered_explicit_nfa.delta.post_size());
-                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.delta.post_size());
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.size());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.size());
                         renumbered_explicit_nfa.delta.add(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }
