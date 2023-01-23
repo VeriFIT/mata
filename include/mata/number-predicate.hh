@@ -159,7 +159,7 @@ namespace Mata {
             }
 
             /**
-             * Note that it returns false if q is out of range of the predicate.
+             * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
              */
             bool operator[](Number q) const {
                 if (q < predicate.size())

@@ -12,6 +12,7 @@ def test_adding_states():
     lhs = mata.Nfa(5)
 
     # Test adding states
+    assert lhs.size() == 5
     assert not lhs.has_initial_state(0)
     assert not lhs.has_final_state(0)
     lhs.make_initial_state(0)
@@ -33,27 +34,26 @@ def test_adding_states():
     assert lhs.has_final_state(0)
 
     rhs = mata.Nfa()
-    assert rhs.get_num_of_states() == 0
+    assert rhs.size() == 0
     state = rhs.add_new_state()
     assert state == 0
-    assert rhs.get_num_of_states() == 1
+    assert rhs.size() == 1
     state = rhs.add_new_state()
     assert state == 1
-    assert rhs.get_num_of_states() == 2
+    assert rhs.size() == 2
 
     rhs.resize(10)
-    assert rhs.get_num_of_states() == 10
+    assert rhs.size() == 10
     for i in range(0, 10):
         assert rhs.is_state(i)
 
-    assert rhs.max_state() == 9
+    assert rhs.size() == 10
     rhs.defragment()
     rhs.clear()
-    assert rhs.max_state() == 0
+    assert rhs.size() == 0
 
     rhs.resize(1)
-    assert rhs.max_state() == 0
-    assert rhs.get_num_of_states() == 1
+    assert rhs.size() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
 
@@ -61,7 +61,7 @@ def test_adding_states():
         rhs.resize(-10)
 
     rhs.resize_for_state(11)
-    assert rhs.get_num_of_states() == 12
+    assert rhs.size() == 12
     assert rhs.is_state(11)
     assert not rhs.is_state(12)
 
@@ -366,9 +366,7 @@ def test_concatenate():
 
     result = mata.Nfa.concatenate(lhs, rhs)
 
-    assert len(result.initial_states) > 0
-    assert len(result.final_states) > 0
-
+    assert not mata.Nfa.is_lang_empty(result)
     shortest_words = mata.Nfa.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
@@ -376,7 +374,7 @@ def test_concatenate():
     result = mata.Nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.get_num_of_states() == 4
+    assert result.size() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -384,7 +382,7 @@ def test_concatenate():
     result, lhs_map, rhs_map = mata.Nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.get_num_of_states() == 4
+    assert result.size() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -507,7 +505,7 @@ def test_intersection_preserving_epsilon_transitions():
     result, product_map = mata.Nfa.intersection_with_product_map(a, b, True)
 
     # Check states.
-    assert result.get_num_of_states() == 13
+    assert result.size() == 13
     assert result.is_state(product_map[(0, 0)])
     assert result.is_state(product_map[(1, 0)])
     assert result.is_state(product_map[(1, 1)])
@@ -576,7 +574,7 @@ def test_intersection_preserving_epsilon_transitions():
 
 
 def test_complement(
-        fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
+        fa_one_divisible_by_two
 ):
     alph = mata.OnTheFlyAlphabet()
     alph.translate_symbol("a")
@@ -586,7 +584,7 @@ def test_complement(
     assert not mata.Nfa.is_in_lang(res, [1, 1])
     assert mata.Nfa.is_in_lang(res, [1, 1, 1])
     assert not mata.Nfa.is_in_lang(res, [1, 1, 1, 1])
-    assert subset_map == {(): 4, (0,): 0, (1,): 1, (2,): 2}
+    assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
 
 
 def test_revert():
@@ -696,18 +694,17 @@ def test_trim(prepare_automaton_a):
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()
     assert nfa.get_num_of_trans() == 0
-    assert nfa.get_num_of_states() == 0
+    assert nfa.size() == 0
 
 
 def test_get_digraph(prepare_automaton_a):
     """Test creating digraph from an automaton."""
     abstract_symbol = ord('x')
     nfa = prepare_automaton_a()
-    old_nfa = prepare_automaton_a()
 
     digraph = nfa.get_digraph()
 
-    assert digraph.get_num_of_states() == nfa.get_num_of_states()
+    assert digraph.size() == nfa.size()
     assert digraph.get_num_of_trans() == 12
     assert digraph.has_transition(1, abstract_symbol, 10)
     assert digraph.has_transition(10, abstract_symbol, 7)
@@ -937,7 +934,7 @@ def test_reduce():
     nfa.make_final_state(2)
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
     assert result.get_num_of_trans() == 0
-    assert result.get_num_of_states() == 2
+    assert result.size() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
     assert state_map[1] == state_map[0]
@@ -964,7 +961,7 @@ def test_reduce():
     nfa.add_transition(0, ord('a'), 4)
 
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
-    assert result.get_num_of_states() == 6
+    assert result.size() == 6
     assert result.has_initial_state(state_map[1])
     assert result.has_initial_state(state_map[2])
     assert result.has_final_state(state_map[9])
