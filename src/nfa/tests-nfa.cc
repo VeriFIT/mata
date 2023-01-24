@@ -1888,7 +1888,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.initial[2]);
 		REQUIRE(result.final[1]);
 		REQUIRE(result.delta.contains(2, 'a', 1));
-		REQUIRE(result.delta.num_of_states() == aut.delta.num_of_states());
+		REQUIRE(result.delta.size() == aut.delta.size());
 	}
 
 	SECTION("bigger automaton")

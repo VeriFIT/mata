@@ -782,9 +782,9 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     Nfa result;
     result.clear();
 
-    const size_t num_of_states{aut.size() };
-    result.add_state(num_of_states-1);
+    result.add_state(aut.m_num_of_states);
 
+    const size_t num_of_states{aut.size() };
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
