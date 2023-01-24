@@ -300,9 +300,9 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     }
 
     SECTION("Automaton A concatenate automaton B") {
-        lhs.add_state(9);
+        lhs.add_state(10);
         FILL_WITH_AUT_A(lhs);
-        rhs.add_state(13);
+        rhs.add_state(14);
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(lhs, rhs);
@@ -316,9 +316,9 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     }
 
     SECTION("Automaton B concatenate automaton A") {
-        lhs.add_state(9);
+        lhs.add_state(10);
         FILL_WITH_AUT_A(lhs);
-        rhs.add_state(13);
+        rhs.add_state(14);
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(rhs, lhs);
@@ -342,7 +342,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
         lhs.delta.add(0, 115, 0);
         lhs.delta.add(0, 116, 0);
 
-        rhs.add_state(4);
+        rhs.add_state(5);
         rhs.final.add({0, 5});
         rhs.initial.add(5);
         rhs.delta.add(1, 112, 0);
@@ -545,9 +545,9 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
     SECTION("Automaton A concatenate automaton B")
     {
-        lhs.add_state(9);
+        lhs.add_state(10);
         FILL_WITH_AUT_A(lhs);
-        rhs.add_state(13);
+        rhs.add_state(14);
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(lhs, rhs, true);
@@ -568,9 +568,9 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
     SECTION("Automaton B concatenate automaton A")
     {
-        lhs.add_state(9);
+        lhs.add_state(10);
         FILL_WITH_AUT_A(lhs);
-        rhs.add_state(13);
+        rhs.add_state(14);
         FILL_WITH_AUT_B(rhs);
 
         result = concatenate(rhs, lhs, true);
