@@ -68,7 +68,7 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (rhs_accepts_empty_string) {
         result.final = lhs.final;
     }
-    result.increase_size(result_num_of_states);
+    result.add_state(result_num_of_states-1);
 
     // Add epsilon transitions connecting lhs and rhs automata.
     // The epsilon transitions lead from lhs original final states to rhs original initial states.

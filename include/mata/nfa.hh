@@ -566,28 +566,17 @@ public:
         }
     }
 
-    //TODO: why this? Maybe we could have add_state(int state)
-    //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
-    void increase_size(size_t size)
-    {
-        assert(this->delta.post_size() <= size);
-        delta.increase_size(size);
-    }
-
-    /**
-     * Increase size to include @p state.
-     * @param state[in] The new state to be included.
-     */
-    void increase_size_for_state(const State state)
-    {
-        increase_size(state + 1);
-    }
-
     /**
      * Add a new state to the automaton.
      * @return The newly created state.
      */
     State add_state();
+
+    void add_state(size_t state)
+    {
+        assert(this->delta.post_size() <= state);
+        delta.increase_size(state + 1);
+    }
 
     size_t max_state() const
     {

@@ -181,7 +181,7 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 	}
 
     const size_t state_num = 'r'+1;
-    aut.increase_size(state_num);
+    aut.add_state(state_num-1);
 
 	SECTION("a non-empty automaton")
 	{
@@ -2137,7 +2137,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
         REQUIRE(result.size() == 0);
     }
 
-    aut.increase_size(9);
+    aut.add_state(8);
     SECTION("no-transition automaton")
     {
         aut.initial.add(1);
@@ -2221,7 +2221,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 
 	SECTION("simple automaton")
 	{
-		aut.increase_size(3);
+		aut.add_state(2);
         aut.initial.add(1);
 
         aut.final.add(2);
@@ -2237,7 +2237,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 
 	SECTION("big automaton")
 	{
-		aut.increase_size(10);
+		aut.add_state(9);
 		aut.initial = {1, 2};
 		aut.delta.add(1, 'a', 2);
 		aut.delta.add(1, 'a', 3);
@@ -2375,7 +2375,7 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
 
     SECTION("Add new states within the limit")
     {
-        aut.increase_size(20);
+        aut.add_state(19);
         aut.initial.add(0);
         aut.initial.add(1);
         aut.initial.add(2);
@@ -2389,7 +2389,7 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
 
     SECTION("Add new states over the limit")
     {
-        aut.increase_size(2);
+        aut.add_state(1);
         REQUIRE_NOTHROW(aut.initial.add(0));
         REQUIRE_NOTHROW(aut.initial.add(1));
         //REQUIRE_THROWS_AS(aut.initial.add(2), std::runtime_error);
@@ -2610,13 +2610,13 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
 
     SECTION("No transitions automaton")
     {
-        aut.increase_size(1);
+        aut.add_state();
         CHECK(aut.delta.empty());
     }
 
     SECTION("Single state automaton with no transitions")
     {
-        aut.increase_size(1);
+        aut.add_state();
         aut.initial.add(0);
         aut.final.add(0);
         CHECK(aut.delta.empty());
@@ -2624,7 +2624,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
 
     SECTION("Single state automaton with transitions")
     {
-        aut.increase_size(1);
+        aut.add_state();
         aut.initial.add(0);
         aut.final.add(0);
         aut.delta.add(0, 'a', 0);
@@ -2633,7 +2633,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
 
     SECTION("Single state automaton with transitions")
     {
-        aut.increase_size(2);
+        aut.add_state(1);
         aut.initial.add(0);
         aut.final.add(1);
         CHECK(aut.delta.empty());
@@ -2641,7 +2641,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
 
     SECTION("Single state automaton with transitions")
     {
-        aut.increase_size(2);
+        aut.add_state(1);
         aut.initial.add(0);
         aut.final.add(1);
         aut.delta.add(0, 'a', 1);
