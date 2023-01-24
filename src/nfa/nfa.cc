@@ -667,7 +667,7 @@ void Mata::Nfa::make_complete(
                                         aut.initial.end());
 
     if (aut.size() <= sink_state) {
-        aut.increase_size(sink_state+1);
+        aut.add_state(sink_state);
     }
 
     worklist.push_back(sink_state);
@@ -783,7 +783,7 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     result.clear();
 
     const size_t num_of_states{aut.size() };
-    result.increase_size(num_of_states-1);
+    result.add_state(num_of_states-1);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &transition: aut.delta[sourceState]) {

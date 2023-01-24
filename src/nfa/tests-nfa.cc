@@ -78,7 +78,7 @@ TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};
     CHECK(nfa.size() == 0);
 
-    nfa.increase_size(4);
+    nfa.add_state(3);
     CHECK(nfa.size() == 4);
 
     nfa.clear();
