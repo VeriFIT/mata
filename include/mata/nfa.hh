@@ -572,7 +572,7 @@ public:
      */
     State add_state();
 
-    void add_state(size_t state)
+    void add_state(State state)
     {
         assert(this->delta.post_size() <= state);
         delta.increase_size(state + 1);
