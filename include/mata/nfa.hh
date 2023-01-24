@@ -586,10 +586,13 @@ public:
      */
     State add_state();
 
-    void add_state(State state)
+    State add_state(State state)
     {
-        assert(this->delta.post_size() <= state);
-        delta.increase_size(state + 1);
+        if (state < size())
+            return size() - 1;
+
+        m_num_of_states = state+1;
+        return state;
     }
 
     /**
