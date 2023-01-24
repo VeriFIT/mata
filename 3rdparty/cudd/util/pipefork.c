@@ -65,7 +65,7 @@
 
 */
 
-#include "config.h"
+#include "cudd_config.h"
 #if HAVE_UNISTD_H == 1
 #define _POSIX_SOURCE
 #include <unistd.h>

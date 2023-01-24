@@ -44,3 +44,6 @@ doc/_build
 coverage.info
 cov_html
 VERSION
+
+.DS_Store
+.vscode/

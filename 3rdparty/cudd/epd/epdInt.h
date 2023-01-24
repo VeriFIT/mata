@@ -47,7 +47,7 @@
 #ifndef EPD_INT_H_
 #define EPD_INT_H_
 
-#include "config.h"
+#include "cudd_config.h"
 #include "epd.h"
 
 #if WORDS_BIGENDIAN == 1
