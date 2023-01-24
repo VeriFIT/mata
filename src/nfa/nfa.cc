@@ -767,7 +767,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
                 for (State tgt_state : symb_set.targets) {
                     max_state = std::max(src_state, tgt_state);
                     if (result.delta.post_size() < max_state) {
-                        result.add_state(max_state-1);
+                        result.add_state(max_state);
                     }
                     result.delta.add(src_state, symb_set.symbol, tgt_state);
                 }
