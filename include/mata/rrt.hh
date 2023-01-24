@@ -29,7 +29,6 @@ namespace Rrt
 {
 
 using State = Nfa::State;
-using Symbol = Nfa::Symbol;
 
 /// A transition of a 2-tape RRT (FIXME: probably too specialized)
 struct Trans

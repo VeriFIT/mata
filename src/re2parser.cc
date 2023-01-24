@@ -18,6 +18,7 @@
 #include <iostream>
 
 // MATA headers
+#include <mata/alphabet.hh>
 #include <mata/re2parser.hh>
 
 // RE2 headers
@@ -91,7 +92,7 @@ namespace {
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
             const int ascii_shift_value = 32;
             int empty_flag;
-            std::vector<Mata::Nfa::Symbol> symbols;
+            std::vector<Mata::Symbol> symbols;
             Mata::Nfa::Nfa explicit_nfa(prog_size);
 
             // Vectors are saved in this->state_cache after this
@@ -279,7 +280,7 @@ namespace {
          * @param epsilon_value value, that will represent epsilon on transitions
          */
         void create_explicit_nfa_transitions(int currentState, re2::Prog::Inst *inst,
-                                                       const std::vector<Mata::Nfa::Symbol>& symbols,
+                                                       const std::vector<Mata::Symbol>& symbols,
                                                        Mata::Nfa::Nfa &nfa, bool use_epsilon, int epsilon_value) {
             for (auto mappedState: this->state_cache.state_mapping[currentState]) {
                 for (auto mappedTargetState: this->state_cache.state_mapping[inst->out()]) {

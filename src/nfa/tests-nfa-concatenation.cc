@@ -29,6 +29,8 @@ using namespace Mata::Strings;
 using namespace Mata::util;
 using namespace Mata::Parser;
 
+using Symbol = Mata::Symbol;
+
 // Some common automata {{{
 
 // Automaton A

@@ -16,6 +16,10 @@ using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::Util;
 using namespace Mata::Parser;
+using Symbol = Mata::Symbol;
+using IntAlphabet = Mata::IntAlphabet;
+using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
 

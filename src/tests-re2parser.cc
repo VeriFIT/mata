@@ -4,7 +4,10 @@
 #include <mata/re2parser.hh>
 using namespace Mata::Nfa;
 
+using Symbol = Mata::Symbol;
 using Word = std::vector<Symbol>;
+using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+
 bool is_in_lang(const Nfa& aut, const Word& word)
 {
     return is_in_lang(aut, Run{word, {}});

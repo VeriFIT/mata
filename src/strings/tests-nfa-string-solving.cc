@@ -28,6 +28,7 @@ using namespace Mata::Strings::SegNfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
 
+using Symbol = Mata::Symbol;
 using Word = std::vector<Symbol>;
 
 // Some common automata {{{

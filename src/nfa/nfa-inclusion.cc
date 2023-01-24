@@ -215,7 +215,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 namespace {
     using AlgoType = decltype(Algorithms::is_included_naive)*;
 
-    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Alphabet *const alphabet, const StringMap &params,
+    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Mata::Alphabet *const alphabet, const StringMap &params,
                              const AlgoType &algo) {
         //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr, params)) {
