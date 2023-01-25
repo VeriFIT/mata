@@ -149,6 +149,9 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 
 std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& aut) {
     Nfa::Nfa one_letter;
+    /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions. 
+    /// The lengths of @p aut are hence equivalent to lengts of the NFA taken from @p aut where all symbols on 
+    /// transitions are renamed to a single symbol (e.g., `a`).
     aut.get_one_letter_aut(one_letter);
     one_letter = determinize(one_letter);
     one_letter.trim();
