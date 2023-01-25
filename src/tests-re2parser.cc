@@ -1254,6 +1254,59 @@ TEST_CASE("Mata::RE2Parser error")
         REQUIRE(is_in_lang(aut2, Word{'q','r','q','r'}));
         REQUIRE(!is_in_lang(aut2, Word{'q','R','q'}));
     }
+
+    SECTION("Regex from issue #139") {
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+
+        x.clear();
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)", false, 306, false);
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+    }
+
+    SECTION("Another failing regex") {
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)+)|(a(aaa)+|ccc+)");
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'e', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'd' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'c' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c', 'c', 'c', 'c' }, {} }));
+
+        x.clear();
+        Mata::RE2Parser::create_nfa(&x, "(cd(abcde)+)|(a(aaa)+|ccc+)", false, 306, false);
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'a', 'a', 'a', 'a', 'a', 'a', 'a' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'e', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'd', 'a', 'b', 'c', 'd', 'a', 'b', 'c', 'd', 'e' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'd' }, {} }));
+        CHECK(!is_in_lang(x, Run{ Word{ 'c', 'c' }, {} }));
+        CHECK(is_in_lang(x, Run{ Word{ 'c', 'c', 'c', 'c', 'c', 'c' }, {} }));
+    }
 } // }}}
 
 TEST_CASE("Mata::RE2Parser bug epsilon")
@@ -1265,7 +1318,3 @@ TEST_CASE("Mata::RE2Parser bug epsilon")
         CHECK(is_in_lang(x, Run{Word{'a', 'a', 'a', 'a'}, {}}));
     }
 } // }}}
-
-
-
-
