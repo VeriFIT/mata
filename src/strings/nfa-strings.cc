@@ -147,7 +147,7 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 }
 
 
-std::set<std::pair<int, int>> Mata::Strings::get_lengths(const Nfa::Nfa& aut) {
+std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& aut) {
     Nfa::Nfa one_letter;
     aut.get_one_letter_aut(one_letter);
     one_letter = determinize(one_letter);
