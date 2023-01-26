@@ -92,8 +92,8 @@ TEST_CASE("Mata::Nfa::intersection()")
         REQUIRE(res.delta.empty());
     }
 
-    a.increase_size(6);
-    b.increase_size(7);
+    a.add_state(5);
+    b.add_state(6);
 
     SECTION("Intersection of automata with no transitions")
     {
@@ -119,8 +119,8 @@ TEST_CASE("Mata::Nfa::intersection()")
         REQUIRE(res.final[init_fin_st]);
     }
 
-    a.increase_size(11);
-    b.increase_size(15);
+    a.add_state(10);
+    b.add_state(14);
 
     SECTION("Intersection of automata with some transitions")
     {

@@ -580,28 +580,24 @@ public:
         }
     }
 
-    //TODO: why this? Maybe we could have add_state(int state)
-    //Btw, why do we need adding states actually, we could just add states with transitions, or with initial/final states.
-    void increase_size(size_t size)
-    {
-        assert(this->delta.post_size() <= size);
-        delta.increase_size(size);
-    }
-
-    /**
-     * Increase size to include @p state.
-     * @param state[in] The new state to be included.
-     */
-    void increase_size_for_state(const State state)
-    {
-        increase_size(state + 1);
-    }
-
     /**
      * Add a new state to the automaton.
      * @return The newly created state.
      */
     State add_state();
+
+    /**
+     * Add a state provided by a user to the automaton. It increases size of NFA, if needed for adding the state.
+     * @param state State be added to automaton
+     * @return State added to automaton
+     */
+    State add_state(State state)
+    {
+        if (state >= size())
+            m_num_of_states = state+1;
+
+        return state;
+    }
 
     /**
      * @brief Get the current number of states in the whole automaton.

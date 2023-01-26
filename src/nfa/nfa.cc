@@ -665,8 +665,9 @@ void Mata::Nfa::make_complete(
                               aut.initial.end());
     std::unordered_set<State> processed(aut.initial.begin(),
                                         aut.initial.end());
+
     if (aut.size() <= sink_state) {
-        aut.increase_size(sink_state+1);
+        aut.add_state(sink_state);
     }
 
     worklist.push_back(sink_state);
@@ -705,7 +706,8 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     Nfa result;
 
     result.clear();
-    result.increase_size(aut.size());
+
+    result.add_state(aut.delta.post_size()-1);
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
@@ -765,7 +767,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
                 for (State tgt_state : symb_set.targets) {
                     max_state = std::max(src_state, tgt_state);
                     if (result.delta.post_size() < max_state) {
-                        result.increase_size_for_state(max_state);
+                        result.add_state(max_state);
                     }
                     result.delta.add(src_state, symb_set.symbol, tgt_state);
                 }
@@ -779,9 +781,10 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 Nfa Mata::Nfa::revert(const Nfa& aut) {
     Nfa result;
     result.clear();
-    const size_t num_of_states{aut.size() };
-    result.increase_size(num_of_states);
 
+    result.add_state(aut.m_num_of_states);
+
+    const size_t num_of_states{aut.size() };
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {

@@ -42,7 +42,7 @@ def test_adding_states():
     assert state == 1
     assert rhs.size() == 2
 
-    rhs.resize(10)
+    rhs.add_state(9)
     assert rhs.size() == 10
     for i in range(0, 10):
         assert rhs.is_state(i)
@@ -52,21 +52,21 @@ def test_adding_states():
     rhs.clear()
     assert rhs.size() == 0
 
-    rhs.resize(1)
+    rhs.add_state(0)
     assert rhs.size() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
 
     with pytest.raises(OverflowError):
-        rhs.resize(-10)
+        rhs.add_state(-10)
 
-    rhs.resize_for_state(11)
+    rhs.add_state(11)
     assert rhs.size() == 12
     assert rhs.is_state(11)
     assert not rhs.is_state(12)
 
     with pytest.raises(OverflowError):
-        rhs.resize_for_state(-10)
+        rhs.add_state(-10)
 
 
 def test_making_initial_and_final_states():
@@ -929,7 +929,7 @@ def test_reduce():
     assert len(result.final_states) == 0
 
     # Test the reduction of a simple automaton.
-    nfa.resize(3)
+    nfa.add_state(2)
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
     result, state_map = mata.Nfa.reduce_with_state_map(nfa)
@@ -941,7 +941,7 @@ def test_reduce():
     assert state_map[2] != state_map[0]
 
     # Test the reduction of a bigger automaton.
-    nfa.resize(10)
+    nfa.add_state(9)
     nfa.initial_states = {1, 2}
     nfa.final_states = {3, 9}
     nfa.add_transition(1, ord('a'), 2)

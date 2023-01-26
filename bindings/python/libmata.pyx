@@ -245,6 +245,13 @@ cdef class Nfa:
         """
         return self.thisptr.get().add_state()
 
+    def add_state(self, State state):
+        """Adds passed state to the automaton.
+
+        :return: number of the state
+        """
+        return self.thisptr.get().add_state(state)
+
     def make_initial_state(self, State state):
         """Makes specified state from the automaton initial.
 
@@ -377,13 +384,6 @@ cdef class Nfa:
         """
         return self.thisptr.get().get_num_of_trans()
 
-    def resize(self, size):
-        """Increases the size of the automaton to size
-
-        :param int size: new size of the
-        """
-        self.thisptr.get().increase_size(size)
-
     def clear(self):
         """Clears all of the internals in the automaton"""
         self.thisptr.get().clear()
@@ -397,13 +397,6 @@ cdef class Nfa:
         :return: The number of states.
         """
         return self.thisptr.get().size()
-
-    def resize_for_state(self, State state):
-        """Increases the size of the automaton to include state.
-
-        :param State state: State to resize for.
-        """
-        self.thisptr.get().increase_size_for_state(state)
 
     def iterate(self):
         """Iterates over all transitions
@@ -916,7 +909,7 @@ cdef class Nfa:
         :param OnTheFlyAlphabet alphabet: alphabet of the
         """
         if not lhs.thisptr.get().is_state(sink_state):
-            lhs.thisptr.get().increase_size(lhs.size() + 1)
+            lhs.thisptr.get().add_state(lhs.size())
         mata.make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
