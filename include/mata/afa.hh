@@ -44,7 +44,6 @@ extern const std::string TYPE_AFA;
 // START OF THE DECLARATIONS
 
 using State = Mata::Nfa::State;
-using Symbol = Mata::Symbol;
 
 template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 
@@ -54,7 +53,6 @@ using Nodes = OrdVec<Node>;
 using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
 using StateToStringMap = Mata::Nfa::StateToStringMap;
 using StringToStateMap = Mata::Nfa::StringToStateMap;
-using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Path = Util::OrdVector<State>;
 using Word = Util::OrdVector<Symbol>;
@@ -63,8 +61,6 @@ using StringDict = Mata::Nfa::StringMap;
 
 using StateSet = OrdVec<State>;
 using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
-
-using Alphabet = Mata::Alphabet;
 
 /*
 * A node is an ordered vector of states of the automaton.

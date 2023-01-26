@@ -31,7 +31,6 @@ using std::tie;
 
 using namespace Mata::util;
 using namespace Mata::Afa;
-using Mata::Afa::Symbol;
 
 const std::string Mata::Afa::TYPE_AFA = "AFA";
 
