@@ -586,12 +586,16 @@ public:
      */
     State add_state();
 
+    /**
+     * Add a state provided by a user to the automaton. It increases size of NFA, if needed for adding the state.
+     * @param state State be added to automaton
+     * @return State added to automaton
+     */
     State add_state(State state)
     {
-        if (state < size())
-            return size() - 1;
+        if (state >= size())
+            m_num_of_states = state+1;
 
-        m_num_of_states = state+1;
         return state;
     }
 
