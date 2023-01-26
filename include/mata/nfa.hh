@@ -801,6 +801,13 @@ public:
         }
         return alphabet;
     }
+
+    /**
+     * @brief Expand alphabet by symbols from this automaton to given alphabet
+     *
+     * The value of the already existing symbols will NOT be overwritten.
+     */
+    void add_symbols_to(OnTheFlyAlphabet& alphabet);
 }; // Nfa
 
 /// Do the automata have disjoint sets of states?

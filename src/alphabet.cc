@@ -14,7 +14,6 @@
  */
 
 #include <mata/alphabet.hh>
-#include <mata/nfa.hh>
 
 using Mata::Symbol;
 using Mata::OnTheFlyAlphabet;
@@ -42,15 +41,6 @@ std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms)
     return result;
 } // OnTheFlyAlphabet::get_complement.
 
-void OnTheFlyAlphabet::add_symbols_from(const Mata::Nfa::Nfa& nfa) {
-    size_t aut_num_of_states{nfa.size() };
-    for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const auto& state_transitions: nfa.delta[state]) {
-            update_next_symbol_value(state_transitions.symbol);
-            try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-        }
-    }
-}
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
     for (const auto& symbol_binding: new_symbol_map) {

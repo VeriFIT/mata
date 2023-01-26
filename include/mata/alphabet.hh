@@ -22,24 +22,8 @@
 #include <mata/util.hh>
 
 namespace Mata {
-    namespace Nfa {
-        struct Nfa;
-    }
-}
-
-namespace Mata {
         using Symbol = unsigned long;
         using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
-
-        template<typename T> using Sequence = std::vector<T>; ///< A sequence of elements.
-        using AutSequence = Sequence<Mata::Nfa::Nfa>; ///< A sequence of non-deterministic finite automata.
-        template<typename T> using PtrSequence = Sequence<T*>; ///< A sequence of pointers to elements.
-        using AutPtrSequence = PtrSequence<Mata::Nfa::Nfa>; ///< A sequence of pointers to non-deterministic finite automata.
-        using ConstAutPtrSequence = PtrSequence<const Mata::Nfa::Nfa>; ///< A sequence of pointers to const non-deterministic finite automata.
-
-        template<typename T> using RefSequence = Sequence<std::reference_wrapper<T>>; ///< A sequence of references to elements.
-        using AutRefSequence = RefSequence<Mata::Nfa::Nfa>; ///< A sequence of references to non-deterministic finite automata.
-        using ConstAutRefSequence = RefSequence<const Mata::Nfa::Nfa>; ///< A sequence of const references to non-deterministic finite automat
 
          /**
           * The abstract interface for NFA alphabets.
@@ -212,14 +196,6 @@ namespace Mata {
 
     private:
         OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
-
-        /**
-         * @brief Expand alphabet by symbols from the passed @p nfa.
-         *
-         * The value of the already existing symbols will NOT be overwritten.
-         * @param[in] nfa Automaton with whose transition symbols to expand the current alphabet.
-         */
-        void add_symbols_from(const Mata::Nfa::Nfa& nfa);
 
         /**
          * @brief Expand alphabet by symbols from the passed @p symbol_names.

@@ -1574,3 +1574,12 @@ void Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         }
     }
 }
+void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) {
+    size_t aut_num_of_states{size() };
+    for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
+        for (const auto& state_transitions: delta[state]) {
+            alphabet.update_next_symbol_value(state_transitions.symbol);
+            alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+        }
+    }
+}
