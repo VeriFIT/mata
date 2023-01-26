@@ -31,7 +31,7 @@ bool Mata::Nfa::Algorithms::is_included_naive(
         const StringMap &  /* params*/) { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
-        bigger_cmpl = complement(bigger, OnTheFlyAlphabet::from_nfas(smaller, bigger));
+        bigger_cmpl = complement(bigger, Nfa::from_nfas(smaller, bigger));
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
@@ -268,7 +268,7 @@ bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
 
     if (params.at("algo") == "naive") {
         if (alphabet == nullptr) {
-            const auto computed_alphabet{ OnTheFlyAlphabet::from_nfas(lhs, rhs) };
+            const auto computed_alphabet{ Nfa::from_nfas(lhs, rhs) };
             return compute_equivalence(lhs, rhs, &computed_alphabet, params, algo);
         }
     }

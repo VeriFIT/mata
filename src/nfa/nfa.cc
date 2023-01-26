@@ -1564,3 +1564,13 @@ void Nfa::unify_final() {
     final.clear();
     final.add(new_final_state);
 }
+
+void Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
+    size_t nfa_num_of_states{nfa.size() };
+    for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
+        for (const auto state_transitions: nfa.delta) {
+            alphabet.update_next_symbol_value(state_transitions.symb);
+            alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
+        }
+    }
+}

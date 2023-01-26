@@ -137,7 +137,7 @@ TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::from_nfas()") {
     Nfa c{1};
     b.delta.add(0, 'c', 0);
 
-    auto alphabet{ OnTheFlyAlphabet::from_nfas(a, b, c) };
+    auto alphabet{ Nfa::from_nfas(a, b, c) };
 
     auto symbols{alphabet.get_alphabet_symbols() };
     CHECK(symbols == Mata::Util::OrdVector<Symbol>{ 'c', 'b', 'a' });

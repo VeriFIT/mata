@@ -213,85 +213,6 @@ namespace Mata {
     private:
         OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 
-    private:
-        // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
-        template<bool...> struct bool_pack{};
-        /// Checks for all types in the pack.
-        template<typename... Ts>
-        using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
-        /// Checks whether all types are 'Nfa'.
-        template<typename... Ts>
-        using AreAllNfas = typename conjunction<std::is_same<Ts, const Mata::Nfa::Nfa&>...>::type;
-
-    public:
-        /**
-         * Create alphabet from variable number of NFAs.
-         * @tparam[in] Nfas Type Nfa.
-         * @param[in] nfas NFAs to create alphabet from.
-         * @return Created alphabet.
-         */
-        template<typename... Nfas, typename = AreAllNfas<Nfas...>>
-        static OnTheFlyAlphabet from_nfas(const Nfas&... nfas) {
-            OnTheFlyAlphabet alphabet{};
-            auto f = [&alphabet](const Mata::Nfa::Nfa& aut) {
-                fill_alphabet(aut, alphabet);
-            };
-            (f(nfas), ...);
-            return alphabet;
-        }
-
-        /**
-         * Create alphabet from vector of of NFAs.
-         * @param[in] nfas Vector of NFAs to create alphabet from.
-         * @return Created alphabet.
-         */
-        static OnTheFlyAlphabet from_nfas(const ConstAutRefSequence& nfas) {
-            OnTheFlyAlphabet alphabet{};
-            for (const auto& nfa: nfas) {
-                fill_alphabet(nfa, alphabet);
-            }
-            return alphabet;
-        }
-
-        /**
-         * Create alphabet from vector of of NFAs.
-         * @param[in] nfas Vector of NFAs to create alphabet from.
-         * @return Created alphabet.
-         */
-        static OnTheFlyAlphabet from_nfas(const AutRefSequence& nfas) {
-            OnTheFlyAlphabet alphabet{};
-            for (const auto& nfa: nfas) {
-                fill_alphabet(nfa, alphabet);
-            }
-            return alphabet;
-        }
-
-        /**
-         * Create alphabet from vector of of NFAs.
-         * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
-         * @return Created alphabet.
-         */
-        static OnTheFlyAlphabet from_nfas(const ConstAutPtrSequence& nfas) {
-            OnTheFlyAlphabet alphabet{};
-            for (const Mata::Nfa::Nfa* const nfa: nfas) {
-                fill_alphabet(*nfa, alphabet);
-            }
-            return alphabet;
-        }
-
-        /**
-         * Create alphabet from vector of of NFAs.
-         * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
-         * @return Created alphabet.
-         */
-        static OnTheFlyAlphabet from_nfas(const AutPtrSequence& nfas) {
-            OnTheFlyAlphabet alphabet{};
-            for (const Mata::Nfa::Nfa* const nfa: nfas) {
-                fill_alphabet(*nfa, alphabet);
-            }
-            return alphabet;
-        }
-
         /**
          * @brief Expand alphabet by symbols from the passed @p nfa.
          *
@@ -312,6 +233,7 @@ namespace Mata {
             }
         }
 
+public:
         /**
          * @brief Expand alphabet by symbols from the passed @p symbol_map.
          *
@@ -419,6 +341,7 @@ namespace Mata {
         StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
         Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
 
+    public:
         /**
          * @brief Update next symbol value when appropriate.
          *
@@ -431,13 +354,6 @@ namespace Mata {
                 next_symbol_value = value + 1;
             }
         }
-
-        /**
-         * Fill @p alphabet with symbols from @p nfa.
-         * @param[in] nfa NFA with symbols to fill @p alphabet with.
-         * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
-         */
-        static void fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet);
     }; // class OnTheFlyAlphabet.
 } // namespace Mata
 
