@@ -52,7 +52,7 @@
 /*---------------------------------------------------------------------------*/
 
 #include <math.h>
-#include "config.h"
+#include "cudd_config.h"
 #include "st.h"
 #include "mtr.h"
 #include "epd.h"

@@ -41,7 +41,7 @@
 
 */
 
-#include "config.h"
+#include "cudd_config.h"
 
 #if HAVE_STDINT_H == 1
 #include <stdint.h>
