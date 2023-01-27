@@ -697,20 +697,20 @@ def test_trim(prepare_automaton_a):
     assert nfa.size() == 0
 
 
-def test_get_digraph(prepare_automaton_a):
-    """Test creating digraph from an automaton."""
+def test_get_one_letter_automaton(prepare_automaton_a):
+    """Test creating one letter automaton from an input automaton."""
     abstract_symbol = ord('x')
     nfa = prepare_automaton_a()
 
-    digraph = nfa.get_digraph()
+    one_letter_automaton = nfa.get_one_letter_aut()
 
-    assert digraph.size() == nfa.size()
-    assert digraph.get_num_of_trans() == 12
-    assert digraph.has_transition(1, abstract_symbol, 10)
-    assert digraph.has_transition(10, abstract_symbol, 7)
-    assert not digraph.has_transition(10, ord('a'), 7)
-    assert not digraph.has_transition(10, ord('b'), 7)
-    assert not digraph.has_transition(10, ord('c'), 7)
+    assert one_letter_automaton.size() == nfa.size()
+    assert one_letter_automaton.get_num_of_trans() == 12
+    assert one_letter_automaton.has_transition(1, abstract_symbol, 10)
+    assert one_letter_automaton.has_transition(10, abstract_symbol, 7)
+    assert not one_letter_automaton.has_transition(10, ord('a'), 7)
+    assert not one_letter_automaton.has_transition(10, ord('b'), 7)
+    assert not one_letter_automaton.has_transition(10, ord('c'), 7)
 
 
 def test_simulation(fa_one_divisible_by_four):

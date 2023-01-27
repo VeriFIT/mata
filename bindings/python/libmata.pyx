@@ -498,14 +498,15 @@ cdef class Nfa:
         """
         self.thisptr.get().trim()
 
-    def get_digraph(self) -> Nfa:
-        """Unify transitions to create a directed graph with at most a single transition between two states.
+    def get_one_letter_aut(self) -> Nfa:
+        """Unify transitions to create a directed graph with at most a single transition between two states (using only
+         one letter for all transitions).
 
-        :return: mata.Nfa: An automaton representing a directed graph.
+        :return: mata.Nfa: One letter automaton representing a directed graph.
         """
-        cdef Nfa digraph = mata.Nfa()
-        self.thisptr.get().get_one_letter_aut(dereference(digraph.thisptr.get()))
-        return digraph
+        cdef Nfa one_letter_aut = mata.Nfa()
+        self.thisptr.get().get_one_letter_aut(dereference(one_letter_aut.thisptr.get()))
+        return one_letter_aut
 
     def is_epsilon(self, Symbol symbol) -> bool:
         """Check whether passed symbol is epsilon symbol or not.
