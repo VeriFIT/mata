@@ -197,6 +197,7 @@ namespace Mata {
     private:
         OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 
+    public:
         /**
          * @brief Expand alphabet by symbols from the passed @p symbol_names.
          *
@@ -209,7 +210,6 @@ namespace Mata {
             }
         }
 
-public:
         /**
          * @brief Expand alphabet by symbols from the passed @p symbol_map.
          *
