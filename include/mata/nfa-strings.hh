@@ -19,6 +19,7 @@
 #define MATA_NFA_STRING_SOLVING_HH_
 
 #include <memory>
+#include <optional>
 
 #include <mata/nfa.hh>
 
