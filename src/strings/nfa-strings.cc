@@ -155,30 +155,34 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     aut.get_one_letter_aut(one_letter);
     one_letter = determinize(one_letter);
     one_letter.trim();
+    if(one_letter.size() == 0) {
+        return std::set<std::pair<int, int>>();
+    } 
 
     std::set<std::pair<int, int>> ret;
     std::vector<int> handles(one_letter.size(), 0); // initialized to 0
-    std::deque<Nfa::State> worklist(one_letter.initial.begin(), one_letter.initial.end()); 
+    assert(one_letter.initial.size() == 1);
+    std::optional<Nfa::State> curr_state = *one_letter.initial.begin();
     std::set<Nfa::State> visited;
     int cnt = 0; // handle counter
     int loop_size = 0; // loop size
     int loop_start = -1; // cnt where the loop starts
 
-    while(!worklist.empty()) {
-        Nfa::State state = worklist.front();
-        worklist.pop_front();
-        visited.insert(state);
+    while(curr_state.has_value()) {
+        visited.insert(curr_state.value());
+        handles[curr_state.value()] = cnt++;
+        Nfa::Post post = one_letter.delta[curr_state.value()];
 
-        handles[state] = cnt++;
-        Nfa::Post post = one_letter.delta[state];
+        curr_state.reset();
         assert(post.size() <= 1);
         for(const Move& move : post) {
             assert(move.targets.size() == 1);
             Nfa::State tgt = *move.targets.begin();
 
             if(visited.find(tgt) == visited.end()) {
-                worklist.push_back(tgt);
+                curr_state = tgt;
             } else {
+                curr_state.reset();
                 loop_start = handles[tgt];
                 loop_size = cnt - handles[tgt];
             }
