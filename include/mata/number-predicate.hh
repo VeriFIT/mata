@@ -327,6 +327,34 @@ namespace Mata {
 
                 predicate.resize(max+1);
             }
+
+            void rename(const std::vector<Number>& renaming) {
+                update_elements();
+
+                auto max_or_default = [](const std::vector<Number>& container, Number def) {
+                    auto max_it = std::max_element(container.begin(), container.end());
+                    return (max_it == container.end() ? def : *max_it);
+                };
+
+                std::vector<Number> new_elements;
+                std::vector<bool> new_predicate(std::max(max_or_default(elements, 0), max_or_default(renaming, 0)));
+
+                for (const Number& number : elements) {
+                    if (renaming.size() < number) {
+                        new_elements.push_back(renaming[number]);
+                        if (predicate[number])
+                            new_predicate[renaming[number]] = true;
+                    }
+                    else {
+                        new_elements.push_back(number);
+                        if (predicate[number])
+                            new_predicate[number] = true;
+                    }
+                }
+
+                elements = new_elements;
+                predicate = new_predicate;
+            }
         };
     }
 
