@@ -145,3 +145,56 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     }
     act.first = dst.first + 1;
 }
+
+
+std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& aut) {
+    Nfa::Nfa one_letter;
+    /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions. 
+    /// The lengths of @p aut are hence equivalent to lengts of the NFA taken from @p aut where all symbols on 
+    /// transitions are renamed to a single symbol (e.g., `a`).
+    aut.get_one_letter_aut(one_letter);
+    one_letter = determinize(one_letter);
+    one_letter.trim();
+    if(one_letter.size() == 0) {
+        return std::set<std::pair<int, int>>();
+    } 
+
+    std::set<std::pair<int, int>> ret;
+    std::vector<int> handles(one_letter.size(), 0); // initialized to 0
+    assert(one_letter.initial.size() == 1);
+    std::optional<Nfa::State> curr_state = *one_letter.initial.begin();
+    std::set<Nfa::State> visited;
+    int cnt = 0; // handle counter
+    int loop_size = 0; // loop size
+    int loop_start = -1; // cnt where the loop starts
+
+    while(curr_state.has_value()) {
+        visited.insert(curr_state.value());
+        handles[curr_state.value()] = cnt++;
+        Nfa::Post post = one_letter.delta[curr_state.value()];
+
+        curr_state.reset();
+        assert(post.size() <= 1);
+        for(const Move& move : post) {
+            assert(move.targets.size() == 1);
+            Nfa::State tgt = *move.targets.begin();
+
+            if(visited.find(tgt) == visited.end()) {
+                curr_state = tgt;
+            } else {
+                curr_state.reset();
+                loop_start = handles[tgt];
+                loop_size = cnt - handles[tgt];
+            }
+        }
+    }
+    for(const Nfa::State& fin : one_letter.final) {
+        if(handles[fin] >= loop_start) {
+            ret.insert({handles[fin], loop_size});
+        } else {
+            ret.insert({handles[fin], 0});
+        }
+    }
+
+    return ret;
+}

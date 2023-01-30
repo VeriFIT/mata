@@ -19,6 +19,7 @@
 #define MATA_NFA_STRING_SOLVING_HH_
 
 #include <memory>
+#include <optional>
 
 #include <mata/nfa.hh>
 
@@ -107,6 +108,16 @@ namespace Strings {
      * @return Set of shortest words.
      */
     WordSet get_shortest_words(const Nfa::Nfa& nfa);
+
+    /**
+     * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each 
+     * such a pair there is a word with length u+k*v for all ks. The disjunction of such formulae of all pairs hence precisely 
+     * describe lengths of all words in the automaton.
+     * 
+     * @param aut Input automaton
+     * @return Set of pairs describing lengths
+     */
+    std::set<std::pair<int, int>> get_word_lengths(const Nfa::Nfa& aut);
 
 /**
  * Operations on segment automata.

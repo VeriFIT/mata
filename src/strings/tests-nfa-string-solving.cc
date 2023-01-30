@@ -21,12 +21,14 @@
 
 #include "mata/nfa.hh"
 #include "mata/nfa-strings.hh"
+#include "mata/re2parser.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 using namespace Mata::Strings::SegNfa;
 using namespace Mata::util;
 using namespace Mata::Parser;
+using namespace Mata::RE2Parser;
 
 using Symbol = Mata::Symbol;
 using Word = std::vector<Symbol>;
@@ -202,5 +204,61 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
 
     for (size_t n{}; n < 100000; ++n) {
         get_shortest_words(aut);
+    }
+}
+
+TEST_CASE("Mata::Strings::get_lengths()") {
+     
+    SECTION("basic") {
+        Nfa x;
+        create_nfa(&x, "(abcde)*");
+        x.trim();
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,5}}));
+    }
+
+    SECTION("basic2") {
+        Nfa x;
+        create_nfa(&x, "a+");
+        x.trim();
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{1,1}}));
+    }
+
+    SECTION("basic3") {
+        Nfa x;
+        create_nfa(&x, "a*");
+        x.trim();
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,1}}));
+    }
+
+    SECTION("empty") {
+        Nfa x;
+        create_nfa(&x, "");
+        x.trim();
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{0,0}}));
+    }
+
+    SECTION("finite") {
+        Nfa x;
+        create_nfa(&x, "abcd");
+        x.trim();
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({{4,0}}));
+    }
+
+    SECTION("advanced 1") {
+        Nfa x;
+        create_nfa(&x, "(cd(abcde)*)|(a(aaa)*)");
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
+            {1,0}, {2,15}, {4,15}, {7,15}, {10,15}, {12,15}, {13,15}, {16,15}
+        }));
+    }
+
+    SECTION("advanced 2") {
+        Nfa x;
+        create_nfa(&x, "a(aaaa|aaaaaaa)*");
+        CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
+            {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0}, 
+            {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0}, 
+            {26,1}
+        }));
     }
 }
