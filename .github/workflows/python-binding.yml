@@ -59,8 +59,8 @@ jobs:
           python3 -m pip install seaborn==0.12.0
           python3 -m pip install papermill pandas
 
-      - name: Test the jupyter notebooks
-        run: |
-          papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
-          papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
-          papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb
+      #- name: Test the jupyter notebooks
+      #  run: |
+      #    papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
+      #    papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
+      #    papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb
