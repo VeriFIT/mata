@@ -28,7 +28,7 @@ using std::tie;
 
 using namespace Mata::Util;
 using namespace Mata::Nfa;
-using Mata::Nfa::Symbol;
+using Mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -289,48 +289,6 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
                          std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
     return os << result;
 } // operator<<(ostream, Trans) }}}
-
-////// Alphabet related functions
-
-Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
-    Util::OrdVector<Symbol> result;
-	for (const auto& str_sym_pair : symbol_map) {
-		result.insert(str_sym_pair.second);
-	}
-	return result;
-} // OnTheFlyAlphabet::get_alphabet_symbols.
-
-std::list<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& syms) const {
-    std::list<Symbol> result;
-    // TODO: Could be optimized.
-    std::set<Symbol> symbols_alphabet;
-    for (const auto& str_sym_pair : symbol_map) {
-        symbols_alphabet.insert(str_sym_pair.second);
-    }
-
-    std::set_difference(
-            symbols_alphabet.begin(), symbols_alphabet.end(),
-            syms.begin(), syms.end(),
-            std::inserter(result, result.end()));
-    return result;
-} // OnTheFlyAlphabet::get_complement.
-
-void OnTheFlyAlphabet::add_symbols_from(const Nfa& nfa) {
-    size_t aut_num_of_states{nfa.size() };
-    for (State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const auto& state_transitions: nfa.delta[state]) {
-            update_next_symbol_value(state_transitions.symbol);
-            try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
-        }
-    }
-}
-
-void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
-    for (const auto& symbol_binding: new_symbol_map) {
-        update_next_symbol_value(symbol_binding.second);
-        try_add_new_symbol(symbol_binding.first, symbol_binding.second);
-    }
-}
 
 size_t Delta::size() const
 {
@@ -1573,9 +1531,6 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     os << " }";
 }
 
-std::ostream &std::operator<<(std::ostream &os, const Alphabet& alphabet) {
-    return os << std::to_string(alphabet);
-}
 
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
      Util::OrdVector<Symbol>  symbols{};
@@ -1611,4 +1566,23 @@ void Nfa::unify_final() {
     }
     final.clear();
     final.add(new_final_state);
+}
+
+void Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
+    size_t nfa_num_of_states{nfa.size() };
+    for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
+        for (const auto state_transitions: nfa.delta) {
+            alphabet.update_next_symbol_value(state_transitions.symb);
+            alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
+        }
+    }
+}
+void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) {
+    size_t aut_num_of_states{size() };
+    for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
+        for (const auto& state_transitions: delta[state]) {
+            alphabet.update_next_symbol_value(state_transitions.symbol);
+            alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
+        }
+    }
 }

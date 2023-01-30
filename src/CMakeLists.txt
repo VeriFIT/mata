@@ -50,6 +50,7 @@ include_directories(../3rdparty/simlib/include)
 
 add_library(libmata STATIC
 # add_library(libmata SHARED
+	alphabet.cc
 	afa/afa.cc
 	config.cc
 	inter-aut.cc

@@ -118,18 +118,39 @@ cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
         iterator begin()
         iterator end()
 
+cdef extern from "mata/alphabet.hh" namespace "Mata":
+    ctypedef uintptr_t Symbol
+    ctypedef umap[string, Symbol] StringToSymbolMap
+
+    cdef cppclass CAlphabet "Mata::Alphabet":
+        CAlphabet() except +
+
+        Symbol translate_symb(string)
+        string reverse_translate_symbol(Symbol)
+
+    cdef cppclass CIntAlphabet "Mata::IntAlphabet" (CAlphabet):
+        COrdVector[Symbol] get_alphabet_symbols()
+
+    cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
+        StringToSymbolMap symbol_map
+        COnTheFlyAlphabet(StringToSymbolMap) except +
+        COnTheFlyAlphabet(Symbol) except +
+        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
+        COnTheFlyAlphabet(vector[string]) except +
+        COrdVector[Symbol] get_alphabet_symbols()
+        StringToSymbolMap get_symbol_map()
+        StringToSymbolMap add_symbols_from(StringToSymbolMap)
+        StringToSymbolMap add_symbols_from(vector[string])
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
-    ctypedef uintptr_t Symbol
     ctypedef COrdVector[State] StateSet
     ctypedef uset[State] UnorderedStateSet
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
     ctypedef umap[string, State] StringSubsetMap
     ctypedef umap[string, State] StringToStateMap
-    ctypedef umap[string, Symbol] StringToSymbolMap
     ctypedef umap[State, string] StateToStringMap
     ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
@@ -288,27 +309,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Helper functions
     cdef pair[CRun, bool] get_word_for_path(CNfa&, CRun&)
     cdef CRun encode_word(StringToSymbolMap&, vector[string])
-
-    # Alphabets
-    cdef cppclass CAlphabet "Mata::Nfa::Alphabet":
-        CAlphabet() except +
-
-        Symbol translate_symb(string)
-        string reverse_translate_symbol(Symbol)
-
-    cdef cppclass CIntAlphabet "Mata::Nfa::IntAlphabet" (CAlphabet):
-        COrdVector[Symbol] get_alphabet_symbols()
-
-    cdef cppclass COnTheFlyAlphabet "Mata::Nfa::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap) except +
-        COnTheFlyAlphabet(Symbol) except +
-        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
-        COnTheFlyAlphabet(vector[string]) except +
-        COrdVector[Symbol] get_alphabet_symbols()
-        StringToSymbolMap get_symbol_map()
-        StringToSymbolMap add_symbols_from(StringToSymbolMap)
-        StringToSymbolMap add_symbols_from(vector[string])
 
 cdef extern from "mata/nfa-algorithms.hh" namespace "Mata::Nfa::Algorithms":
     cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)

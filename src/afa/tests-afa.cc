@@ -469,7 +469,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 { // {{{
     Afa aut;
     Mata::IntermediateAut inter_aut;
-    StringToSymbolMap symbol_map;
+    Mata::StringToSymbolMap symbol_map;
 
     SECTION("construct an empty automaton")
     {

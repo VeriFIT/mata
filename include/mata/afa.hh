@@ -28,6 +28,7 @@
 #include <memory>
 
 // MATA headers
+#include <mata/alphabet.hh>
 #include <mata/nfa.hh>
 #include <mata/parser.hh>
 #include <mata/util.hh>
@@ -43,7 +44,6 @@ extern const std::string TYPE_AFA;
 // START OF THE DECLARATIONS
 
 using State = Mata::Nfa::State;
-using Symbol = Mata::Nfa::Symbol;
 
 template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 
@@ -53,7 +53,6 @@ using Nodes = OrdVec<Node>;
 using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
 using StateToStringMap = Mata::Nfa::StateToStringMap;
 using StringToStateMap = Mata::Nfa::StringToStateMap;
-using StringToSymbolMap = Mata::Nfa::StringToSymbolMap;
 
 using Path = Util::OrdVector<State>;
 using Word = Util::OrdVector<Symbol>;
@@ -62,8 +61,6 @@ using StringDict = Mata::Nfa::StringMap;
 
 using StateSet = OrdVec<State>;
 using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
-
-using Alphabet = Mata::Nfa::Alphabet;
 
 /*
 * A node is an ordered vector of states of the automaton.
@@ -474,7 +471,7 @@ Afa construct(
 
     auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
 
-    Mata::Nfa::OnTheFlyAlphabet alphabet(*symbol_map);
+    Mata::OnTheFlyAlphabet alphabet(*symbol_map);
 
     try
     {
