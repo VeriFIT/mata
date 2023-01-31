@@ -187,6 +187,9 @@ namespace
         assert(false);
     }
 
+    /**
+     * Checks if @p op1 has lower precedence than @p op2. Precedence from the lowest to highest is: | < & < !
+     */
     bool lower_precedence(Mata::FormulaNode::OperatorType op1, Mata::FormulaNode::OperatorType op2) {
         if (op1 == Mata::FormulaNode::NEG) {
             return false;

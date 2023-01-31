@@ -130,7 +130,16 @@ std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& 
     const size_t bdds_size = bdds.size();
     for (size_t i = 1; i < bdds_size; ++i) {
         std::vector<BDD> next;
+        /**
+         * Possible optimization. Maybe we can remember which transition belongs to the currently processed bdds
+         * and mintermize automaton somehow directly here. However, it would be better to do such optimization
+         * in copy of this function and this one keep clean and straightforward.
+         */
         for (const auto& minterm : stack) {
+            /**
+             * Possible optimization. We can check whether bdds[i] has not been already processed (we can have
+             * same bdds for more transitions) and if it was, we can skip it here
+             */
             BDD b = minterm * bdds[i];
             if (!b.IsZero())
                 next.push_back(b);
