@@ -2858,13 +2858,17 @@ TEST_CASE("Mata::Nfa::Nfa::defragment()") {
     aut.delta.add(5, 42, 4);
     aut.initial.add(3);
     aut.final.add(3);
+    aut.final.add(4);
     CHECK(aut.initial[3]);
     CHECK(aut.final[3]);
+    CHECK(aut.final[4]);
     CHECK(aut.size() == 6);
     CHECK(aut.delta.contains(1, 42, 2));
     aut.defragment();
     CHECK(aut.initial[5]);
     CHECK(aut.final[5]);
+    CHECK(aut.final[3]);
+    CHECK(!aut.final[4]);
     CHECK(aut.size() == 6);
     CHECK(aut.delta.contains(1, 42, 3));
     CHECK(aut.delta.contains(4, 42, 3)); // previously (5,42,4)

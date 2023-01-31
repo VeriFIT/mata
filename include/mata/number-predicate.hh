@@ -353,7 +353,7 @@ namespace Mata {
                 std::vector<bool> new_predicate(std::max(max_or_default(elements, 0)+1, max_or_default(renaming, 0)+1));
 
                 for (const Number& number : elements) {
-                    if (renaming.size() < number) { // number is renamed by provided vector
+                    if (number < renaming.size()) { // number is renamed by provided vector
                         new_elements.push_back(renaming[number]);
                         if (predicate[number])
                             new_predicate[renaming[number]] = true;
