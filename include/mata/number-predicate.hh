@@ -328,7 +328,20 @@ namespace Mata {
                 predicate.resize(max+1);
             }
 
-            void rename(const std::vector<Number>& renaming) {
+            /**
+             * Renames numbers in predicate according to the given @renaming. If a number is not present in @renaming
+             * it is renamed to base + offset value. Rationalization for this is that base should e.g.,
+             * higher than number of states in Nfa delta so we rename the initial or final states not presented in delta
+             * to numbers just after delta. Offset is then increased after encountering each of such states
+             * not presented in delta.
+             */
+            void rename(const std::vector<Number>& renaming, const Number base = 0) {
+                if (renaming.empty())
+                    return; // nothing to rename
+
+                Number offset = 0;
+                std::vector<Number> single_states_renaming;
+
                 update_elements();
 
                 auto max_or_default = [](const std::vector<Number>& container, Number def) {
@@ -337,18 +350,24 @@ namespace Mata {
                 };
 
                 std::vector<Number> new_elements;
-                std::vector<bool> new_predicate(std::max(max_or_default(elements, 0), max_or_default(renaming, 0)));
+                std::vector<bool> new_predicate(std::max(max_or_default(elements, 0)+1, max_or_default(renaming, 0)+1));
 
                 for (const Number& number : elements) {
-                    if (renaming.size() < number) {
+                    if (renaming.size() < number) { // number is renamed by provided vector
                         new_elements.push_back(renaming[number]);
                         if (predicate[number])
                             new_predicate[renaming[number]] = true;
                     }
-                    else {
-                        new_elements.push_back(number);
+                    else { // number not defined in provided vector, needs to be renamed by this function
+                        if (number >= single_states_renaming.size()) {
+                            single_states_renaming.resize(number + 1);
+                            single_states_renaming[number] = base + offset;
+                            ++offset;
+                        }
+
+                        new_elements.push_back(single_states_renaming[number]);
                         if (predicate[number])
-                            new_predicate[number] = true;
+                            new_predicate[single_states_renaming[number]] = true;
                     }
                 }
 

@@ -704,9 +704,9 @@ public:
      */
     void defragment() {
         std::vector<State> renaming = delta.defragment();
-        initial.rename(renaming);
+        initial.rename(renaming, delta.num_of_states());
         initial.truncate_domain();
-        final.rename(renaming);
+        final.rename(renaming, delta.num_of_states());
         final.truncate_domain();
         m_num_of_states = 0;
     }
