@@ -37,10 +37,7 @@
 #include <mata/inter-aut.hh>
 #include <mata/synchronized-iterator.hh>
 
-namespace Mata
-{
-namespace Nfa
-{
+namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
 using State = unsigned long;
@@ -73,7 +70,7 @@ using StringMap = std::unordered_map<std::string, std::string>;
  * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, State<UMap>, ...
  * maybe something else is needed for the more complex maps*/
 
-static constexpr struct Limits {//TODO: still needed?
+static constexpr struct Limits {
     State maxState = std::numeric_limits<State>::max();
     State minState = std::numeric_limits<State>::min();
     Symbol maxSymbol = std::numeric_limits<Symbol>::max();
@@ -226,6 +223,11 @@ struct Post : private Util::OrdVector<Move> {
 struct Delta {
 private:
     mutable std::vector<Post> post;
+
+    /// Number of actual states occuring in the transition relation.
+    ///
+    /// These states are used in the transition relation, either on the left side or on the right side.
+    /// The value is always consistent with the actual number of states in the transition relation.
     mutable size_t m_num_of_states;
 
 public:
@@ -403,8 +405,7 @@ constexpr Symbol EPSILON = limits.maxSymbol;
 /**
  * A struct representing an NFA.
  */
-struct Nfa
-{
+struct Nfa {
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
      *
@@ -423,6 +424,10 @@ struct Nfa
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
+    /// Number of prerequested states in the automaton.
+    ///
+    /// These states may be unallocated and they might not be used anywhere in the automaton.
+    /// The value can be always less than the actual number of states in the whole automaton.
     size_t m_num_of_states;
 
 public:
@@ -1021,9 +1026,8 @@ Nfa construct(
     }
     return aut;
 }
-// CLOSING NAMESPACES AND GUARDS
-} /* Nfa */
-} /* Mata */
+
+} // namespace Mata::Nfa.
 
 namespace std
 { // {{{
