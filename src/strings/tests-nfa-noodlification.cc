@@ -449,6 +449,28 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
             }
         }
     }
+
+    SECTION("Simple automata -- regex 1") {
+        Nfa x, y, z, u;
+        create_nfa(&x, "a");
+        create_nfa(&y, "ab*");
+        create_nfa(&z, "ab*");
+        create_nfa(&u, "a*");
+
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+                {{x, {0, 0} }, {x, {1, 1} }},
+            } );
+        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) }, 
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(u)});
+        CHECK(noodles.size() == 1);
+        for(size_t i = 0; i < noodles.size(); i++) {
+            for(size_t j = 0; j < noodles[i].size(); j++) {
+                CHECK(noodles[i][j].second == res[i][j].second);
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
+            }
+        }
+    }
 }
 
 TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
