@@ -224,7 +224,13 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
         lifo.pop_front();
 
         if(item.seg_id + 1 == segments.size()) {
-            noodles.push_back(item.noodle);
+            // check if the noodle is already there
+            if(!std::any_of(noodles.begin(), noodles.end(), 
+                [&](NoodleSubst &s) { 
+                    return s == item.noodle; 
+            } )) {
+                noodles.push_back(item.noodle);
+            }
             continue;
         }
 
