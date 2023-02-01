@@ -1619,3 +1619,15 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
     }
     return alphabet;
 }
+
+Nfa Mata::Nfa::create_empty_string_nfa() {
+    return Nfa{ 1, StateSet{ 0 }, StateSet{ 0 } };
+}
+
+Nfa Mata::Nfa::create_sigma_star_nfa(Mata::Alphabet* alphabet) {
+    Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
+    for (const Mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
+        nfa.delta.add(0, symbol, 0);
+    }
+    return nfa;
+}

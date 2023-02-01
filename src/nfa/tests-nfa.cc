@@ -2897,3 +2897,23 @@ TEST_CASE("A segmentation fault in the make_complement") {
     make_complete(r, alph, 1);
     REQUIRE(is_complete(r, alph));
 }
+
+TEST_CASE("Mata::Nfa:: create simple automata") {
+    Nfa nfa{create_empty_string_nfa() };
+    CHECK(is_in_lang(nfa, { {}, {} }));
+    CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+
+    OnTheFlyAlphabet alphabet{};
+    StringToSymbolMap symbol_map{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
+    alphabet.add_symbols_from(symbol_map);
+    nfa = create_sigma_star_nfa(&alphabet);
+    CHECK(is_in_lang(nfa, { {}, {} }));
+    CHECK(is_in_lang(nfa, { { 0 }, {} }));
+    CHECK(is_in_lang(nfa, { { 1 }, {} }));
+    CHECK(is_in_lang(nfa, { { 2 }, {} }));
+    CHECK(is_in_lang(nfa, { { 0, 1 }, {} }));
+    CHECK(is_in_lang(nfa, { { 1, 0 }, {} }));
+    CHECK(is_in_lang(nfa, { { 2, 2, 2 }, {} }));
+    CHECK(is_in_lang(nfa, { { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
+    CHECK(!is_in_lang(nfa, { { 3 }, {} }));
+}
