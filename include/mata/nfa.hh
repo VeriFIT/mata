@@ -703,9 +703,10 @@ public:
      * TODO: Modify Nfa::m_num_of_states as well. Or not?
      */
     void defragment() {
-        delta.defragment();
-        // FIXME.
+        std::vector<State> renaming = delta.defragment();
+        initial.rename(renaming, delta.num_of_states());
         initial.truncate_domain();
+        final.rename(renaming, delta.num_of_states());
         final.truncate_domain();
         m_num_of_states = 0;
     }
