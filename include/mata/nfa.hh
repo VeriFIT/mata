@@ -435,17 +435,17 @@ struct Nfa {
     ///  therefore always zero (or less than the actual number of states in the whole automaton), unless
     ///  'Nfa::Nfa::add_state(n)' was called. In that case, this variable will be set to n to store the information
     ///  that the user manually added (requested) new states.
-    size_t m_num_of_requested_states;
+    size_t m_num_of_requested_states{ 0 };
 
 public:
-    Nfa() : delta(), initial(), final(), m_num_of_states(0) {}
+    Nfa() : delta(), initial(), final(), m_num_of_requested_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet = new IntAlphabet())
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_states(0) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_requested_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -477,7 +477,7 @@ public:
     State add_state(State state)
     {
         if (state >= size())
-            m_num_of_states = state+1;
+            m_num_of_requested_states = state + 1;
 
         return state;
     }
@@ -489,7 +489,7 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        return std::max({m_num_of_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
     }
 
     /**
@@ -513,7 +513,7 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
-        m_num_of_states = 0;
+        m_num_of_requested_states = 0;
     }
 
     /**
@@ -712,7 +712,7 @@ public:
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
      * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
-     * TODO: Modify Nfa::m_num_of_states as well. Or not?
+     * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
      */
     void defragment() {
         std::vector<State> renaming = delta.defragment();
@@ -720,7 +720,7 @@ public:
         initial.truncate_domain();
         final.rename(renaming, delta.num_of_states());
         final.truncate_domain();
-        m_num_of_states = 0;
+        m_num_of_requested_states = 0;
     }
 
     /**

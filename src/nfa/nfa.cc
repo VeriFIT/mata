@@ -501,8 +501,8 @@ State Delta::find_max_state() {
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
-    m_num_of_states = size() + 1;
-    return m_num_of_states - 1;
+    m_num_of_requested_states = size() + 1;
+    return m_num_of_requested_states - 1;
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
