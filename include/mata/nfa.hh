@@ -424,11 +424,18 @@ struct Nfa {
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
-    /// Number of prerequested states in the automaton.
+    /// Number of pre-requested states in the automaton.
     ///
     /// These states may be unallocated and they might not be used anywhere in the automaton.
     /// The value can be always less than the actual number of states in the whole automaton.
-    size_t m_num_of_states;
+    ///
+    /// This variable exists solely for the purpose of pre-requesting a certain number of states with
+    ///  'Nfa::Nfa::add_state(n)' where 'n' is the number of requested states. However, it does not make sense to
+    ///  allocate for these states space in Delta, nor in the sets of initial/final states. The variable should be
+    ///  therefore always zero (or less than the actual number of states in the whole automaton), unless
+    ///  'Nfa::Nfa::add_state(n)' was called. In that case, this variable will be set to n to store the information
+    ///  that the user manually added (requested) new states.
+    size_t m_num_of_requested_states;
 
 public:
     Nfa() : delta(), initial(), final(), m_num_of_states(0) {}
