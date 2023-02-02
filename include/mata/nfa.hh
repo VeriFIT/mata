@@ -851,9 +851,6 @@ void make_complete(
         const Alphabet&  alphabet,
         State            sink_state);
 
-// assumes deterministic automaton
-void complement_in_place(Nfa &aut);
-
 /// Co
 Nfa complement(
         const Nfa&         aut,
