@@ -1568,7 +1568,7 @@ void Nfa::unify_final() {
     final.add(new_final_state);
 }
 
-void Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
+void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
     size_t nfa_num_of_states{nfa.size() };
     for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
         for (const auto state_transitions: nfa.delta) {
@@ -1577,6 +1577,7 @@ void Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
         }
     }
 }
+
 void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) {
     size_t aut_num_of_states{size() };
     for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
@@ -1585,4 +1586,36 @@ void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) {
             alphabet.try_add_new_symbol(std::to_string(state_transitions.symbol), state_transitions.symbol);
         }
     }
+}
+
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
+    Mata::OnTheFlyAlphabet alphabet{};
+    for (const auto& nfa: nfas) {
+        fill_alphabet(nfa, alphabet);
+    }
+    return alphabet;
+}
+
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutRefSequence& nfas) {
+    Mata::OnTheFlyAlphabet alphabet{};
+    for (const auto& nfa: nfas) {
+        fill_alphabet(nfa, alphabet);
+    }
+    return alphabet;
+}
+
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutPtrSequence& nfas) {
+    Mata::OnTheFlyAlphabet alphabet{};
+    for (const Mata::Nfa::Nfa* const nfa: nfas) {
+        fill_alphabet(*nfa, alphabet);
+    }
+    return alphabet;
+}
+
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
+    Mata::OnTheFlyAlphabet alphabet{};
+    for (const Mata::Nfa::Nfa* const nfa: nfas) {
+        fill_alphabet(*nfa, alphabet);
+    }
+    return alphabet;
 }

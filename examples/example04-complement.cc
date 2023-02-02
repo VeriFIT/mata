@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-    OnTheFlyAlphabet alph{ stsm };
+    Mata::OnTheFlyAlphabet alph{ stsm };
 	Nfa cmpl = complement(aut, alph);
 
 	std::cout << std::to_string(cmpl);
