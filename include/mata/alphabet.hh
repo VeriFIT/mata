@@ -321,8 +321,8 @@ namespace Mata {
         /**
          * @brief Update next symbol value when appropriate.
          *
-         * When the newly inserted value is larger or equal to the current next symbol value, update he next symbol value to
-         * a value one larger than the new value.
+         * When the newly inserted value is larger or equal to the current next symbol value, update the next symbol
+         *  value to a value one larger than the new value.
          * @param value The value of the newly added symbol.
          */
         void update_next_symbol_value(Symbol value) {

@@ -736,15 +736,15 @@ public:
 /**
  * Create automaton accepting only epsilon string.
  */
-[[nodiscard]] Nfa create_empty_string_nfa();
+Nfa create_empty_string_nfa();
 
 /**
  * Create automaton accepting sigma star over the passed alphabet.
  *
  * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
- *  alphabet is used, creating an automaton accepting only the epsilon string.
+ *  alphabet is used, creating an automaton accepting only the empty string.
  */
-[[nodiscard]] Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
+Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /**
   * Fill @p alphabet with symbols from @p nfa.

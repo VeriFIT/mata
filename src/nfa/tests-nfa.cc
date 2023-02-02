@@ -2899,7 +2899,7 @@ TEST_CASE("A segmentation fault in the make_complement") {
 }
 
 TEST_CASE("Mata::Nfa:: create simple automata") {
-    Nfa nfa{create_empty_string_nfa() };
+    Nfa nfa{ create_empty_string_nfa() };
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
