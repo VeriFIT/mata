@@ -1054,7 +1054,7 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
             const auto& symbol_states_to{ symbol_transitions.targets };
             const auto target_state{ symbol_states_to.find(state_to) };
             if (target_state != symbol_states_to.end()) {
-                transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
+                transitions_to_state.emplace_back( state_from, symbol_transitions.symbol, state_to );
             }
         }
     }
