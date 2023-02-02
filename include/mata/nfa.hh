@@ -442,6 +442,8 @@ public:
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
+     *
+     * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet = new IntAlphabet())
