@@ -58,7 +58,7 @@ add_library(libmata STATIC
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
-        nfa/nfa-inclusion.cc
+	nfa/nfa-inclusion.cc
 	nfa/nfa-universal.cc
 	nfa/nfa-complement.cc
 	nfa/nfa-intersection.cc
@@ -66,7 +66,8 @@ add_library(libmata STATIC
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
-	rra/rrt.cc)
+	rra/rrt.cc
+)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata

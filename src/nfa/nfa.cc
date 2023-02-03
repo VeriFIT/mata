@@ -501,8 +501,8 @@ State Delta::find_max_state() {
 ///// Nfa structure related methods
 
 State Nfa::add_state() {
-    m_num_of_states = size() + 1;
-    return m_num_of_states - 1;
+    m_num_of_requested_states = size() + 1;
+    return m_num_of_requested_states - 1;
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -740,9 +740,9 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     Nfa result;
     result.clear();
 
-    result.add_state(aut.m_num_of_states);
+    const size_t num_of_states{ aut.size() };
+    result.add_state(num_of_states - 1);
 
-    const size_t num_of_states{aut.size() };
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
@@ -1054,7 +1054,7 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
             const auto& symbol_states_to{ symbol_transitions.targets };
             const auto target_state{ symbol_states_to.find(state_to) };
             if (target_state != symbol_states_to.end()) {
-                transitions_to_state.push_back({ state_from, symbol_transitions.symbol, state_to });
+                transitions_to_state.emplace_back( state_from, symbol_transitions.symbol, state_to );
             }
         }
     }
@@ -1618,4 +1618,16 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
         fill_alphabet(*nfa, alphabet);
     }
     return alphabet;
+}
+
+Nfa Mata::Nfa::create_empty_string_nfa() {
+    return Nfa{ 1, StateSet{ 0 }, StateSet{ 0 } };
+}
+
+Nfa Mata::Nfa::create_sigma_star_nfa(Mata::Alphabet* alphabet) {
+    Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
+    for (const Mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
+        nfa.delta.add(0, symbol, 0);
+    }
+    return nfa;
 }

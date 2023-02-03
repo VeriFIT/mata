@@ -37,10 +37,7 @@
 #include <mata/inter-aut.hh>
 #include <mata/synchronized-iterator.hh>
 
-namespace Mata
-{
-namespace Nfa
-{
+namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
 using State = unsigned long;
@@ -73,7 +70,7 @@ using StringMap = std::unordered_map<std::string, std::string>;
  * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, State<UMap>, ...
  * maybe something else is needed for the more complex maps*/
 
-static constexpr struct Limits {//TODO: still needed?
+static constexpr struct Limits {
     State maxState = std::numeric_limits<State>::max();
     State minState = std::numeric_limits<State>::min();
     Symbol maxSymbol = std::numeric_limits<Symbol>::max();
@@ -226,6 +223,11 @@ struct Post : private Util::OrdVector<Move> {
 struct Delta {
 private:
     mutable std::vector<Post> post;
+
+    /// Number of actual states occuring in the transition relation.
+    ///
+    /// These states are used in the transition relation, either on the left side or on the right side.
+    /// The value is always consistent with the actual number of states in the transition relation.
     mutable size_t m_num_of_states;
 
 public:
@@ -403,8 +405,7 @@ constexpr Symbol EPSILON = limits.maxSymbol;
 /**
  * A struct representing an NFA.
  */
-struct Nfa
-{
+struct Nfa {
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
      *
@@ -423,17 +424,30 @@ struct Nfa
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
-    size_t m_num_of_states;
+    /// Number of pre-requested states in the automaton.
+    ///
+    /// These states may be unallocated and they might not be used anywhere in the automaton.
+    /// The value can be always less than the actual number of states in the whole automaton.
+    ///
+    /// This variable exists solely for the purpose of pre-requesting a certain number of states with
+    ///  'Nfa::Nfa::add_state(n)' where 'n' is the number of requested states. However, it does not make sense to
+    ///  allocate for these states space in Delta, nor in the sets of initial/final states. The variable should be
+    ///  therefore always zero (or less than the actual number of states in the whole automaton), unless
+    ///  'Nfa::Nfa::add_state(n)' was called. In that case, this variable will be set to n to store the information
+    ///  that the user manually added (requested) new states.
+    size_t m_num_of_requested_states{ 0 };
 
 public:
-    Nfa() : delta(), initial(), final(), m_num_of_states(0) {}
+    Nfa() : delta(), initial(), final(), m_num_of_requested_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
+     *
+     * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet = new IntAlphabet())
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_states(0) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_requested_states(0) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -465,7 +479,7 @@ public:
     State add_state(State state)
     {
         if (state >= size())
-            m_num_of_states = state+1;
+            m_num_of_requested_states = state + 1;
 
         return state;
     }
@@ -477,7 +491,7 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        return std::max({m_num_of_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
     }
 
     /**
@@ -501,7 +515,7 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
-        m_num_of_states = 0;
+        m_num_of_requested_states = 0;
     }
 
     /**
@@ -700,7 +714,7 @@ public:
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
      * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
-     * TODO: Modify Nfa::m_num_of_states as well. Or not?
+     * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
      */
     void defragment() {
         std::vector<State> renaming = delta.defragment();
@@ -708,7 +722,7 @@ public:
         initial.truncate_domain();
         final.rename(renaming, delta.num_of_states());
         final.truncate_domain();
-        m_num_of_states = 0;
+        m_num_of_requested_states = 0;
     }
 
     /**
@@ -717,7 +731,20 @@ public:
      * The value of the already existing symbols will NOT be overwritten.
      */
     void add_symbols_to(OnTheFlyAlphabet& alphabet);
-}; // Nfa
+}; // struct Nfa.
+
+/**
+ * Create automaton accepting only epsilon string.
+ */
+Nfa create_empty_string_nfa();
+
+/**
+ * Create automaton accepting sigma star over the passed alphabet.
+ *
+ * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
+ *  alphabet is used, creating an automaton accepting only the empty string.
+ */
+Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /**
   * Fill @p alphabet with symbols from @p nfa.
@@ -832,9 +859,6 @@ void make_complete(
         Nfa&             aut,
         const Alphabet&  alphabet,
         State            sink_state);
-
-// assumes deterministic automaton
-void complement_in_place(Nfa &aut);
 
 /// Co
 Nfa complement(
@@ -1021,9 +1045,8 @@ Nfa construct(
     }
     return aut;
 }
-// CLOSING NAMESPACES AND GUARDS
-} /* Nfa */
-} /* Mata */
+
+} // namespace Mata::Nfa.
 
 namespace std
 { // {{{
