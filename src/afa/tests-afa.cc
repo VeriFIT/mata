@@ -622,6 +622,30 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         ++it;
         REQUIRE(it->count(state_map["QC0_0"]));
     }
+
+    SECTION("AFA final states from multiple negations")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%Initial q1\n"
+                "%Final !q0 & !q1 & !q3\n"
+                "q0 a1 & q1\n"
+                "q1 a2 & q2\n"
+                "q2 a1 & (q3 | q2)\n"
+                "q2 a2 & (q4 & q1)\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+
+        CHECK(aut.finalstates.size() == 2);
+		CHECK(aut.finalstates.count(state_map.at("2")));
+		CHECK(aut.finalstates.count(state_map.at("4")));
+
+    }
+
 } // }}}
 
 /*

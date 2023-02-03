@@ -1065,12 +1065,6 @@ Afa Mata::Afa::construct(
         aut.add_initial(initial_node);
     }
 
-    for (const auto& str : inter_aut.final_formula.collect_node_names())
-    {
-        State state = get_state_name(str);
-        aut.finalstates.insert(state);
-    }
-
     for (const auto& trans : inter_aut.transitions)
     {
         State src_state = get_state_name(trans.first.name);
@@ -1120,6 +1114,23 @@ Afa Mata::Afa::construct(
         aut.add_trans(src_state, symbol,
                       create_node(curr_graph->collect_node_names()));
     }
+
+	if (inter_aut.are_final_states_conjunction_of_negation()) {
+		// final states are given as a conjunction of non-final states
+		auto non_final_states = inter_aut.final_formula.collect_node_names();
+		for (const auto &state_name_and_number : *state_map) {
+			if (!non_final_states.count(state_name_and_number.first)) {
+				aut.finalstates.insert(state_name_and_number.second);
+			}
+		}
+	} else {
+		// final states are given normally
+		for (const auto& str : inter_aut.final_formula.collect_node_names())
+		{
+			State state = get_state_name(str);
+			aut.finalstates.insert(state);
+		}
+	}
 
     // do the dishes and take out garbage
     clean_up();
