@@ -1115,6 +1115,7 @@ Afa Mata::Afa::construct(
                       create_node(curr_graph->collect_node_names()));
     }
 
+	// TODO final states can be also given as true/false
 	if (inter_aut.are_final_states_conjunction_of_negation()) {
 		// final states are given as a conjunction of non-final states
 		auto non_final_states = inter_aut.final_formula.collect_node_names();

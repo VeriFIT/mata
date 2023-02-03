@@ -1387,14 +1387,6 @@ Nfa Mata::Nfa::construct(
         aut.initial.add(state);
     }
 
-    const auto final_states = inter_aut.are_final_states_conjunction_of_negation() ?
-            inter_aut.get_positive_finals() : inter_aut.final_formula.collect_node_names();
-    for (const auto& str : final_states)
-    {
-        State state = get_state_name(str);
-        aut.final.add(state);
-    }
-
     for (const auto& trans : inter_aut.transitions)
     {
         if (trans.second.children.size() != 2)
@@ -1417,6 +1409,26 @@ Nfa Mata::Nfa::construct(
         State tgt_state = get_state_name(trans.second.children[1].node.name);
 
         aut.delta.add(src_state, symbol, tgt_state);
+    }
+
+    std::unordered_set<std::string> final_formula_nodes;
+    if (!(inter_aut.final_formula.node.name == "true" || inter_aut.final_formula.node.name == "false")) { 
+        final_formula_nodes = inter_aut.final_formula.collect_node_names();
+    }
+    bool final_nodes_are_negated = (inter_aut.final_formula.node.name == "true" || inter_aut.are_final_states_conjunction_of_negation());
+
+    if (final_nodes_are_negated) {
+        for (const auto &state_name_and_id : *state_map) {
+            if (!final_formula_nodes.count(state_name_and_id.first)) {
+                aut.final.add(state_name_and_id.second);
+            }
+        }
+    } else {
+        for (const auto& str : final_formula_nodes)
+        {
+            State state = get_state_name(str);
+            aut.final.add(state);
+        }
     }
 
     // do the dishes and take out garbage
