@@ -599,11 +599,8 @@ bool Mata::IntermediateAut::is_graph_conjunction_of_negations(const Mata::Formul
             return false;
     }
 
-    if (act_graph->node.is_operator() && act_graph->node.is_neg()) {
-        return true;
-    } else {
-        return false;
-    }
+    // the last child needs to be negation
+    return (act_graph->node.is_operator() && act_graph->node.is_neg());
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)
