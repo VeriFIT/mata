@@ -2300,6 +2300,14 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		REQUIRE(result.final[state_map[9]]);
 		REQUIRE(result.final[state_map[3]]);
 	}
+
+	SECTION("no transitions from non-final state")
+	{
+		aut.delta.add(0, 'a', 1);
+		aut.initial = { 0 };
+		Nfa result = reduce(aut, &state_map);
+		CHECK(Mata::Nfa::are_equivalent(result, aut));
+	}
 }
 
 TEST_CASE("Mata::Nfa::union_norename()") {

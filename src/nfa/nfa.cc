@@ -36,9 +36,9 @@ const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Simlib::ExplicitLTS LTSforSimulation;
         Symbol maxSymbol = 0;
         const size_t state_num = aut.size();
+        Simlib::ExplicitLTS LTSforSimulation(state_num);
 
         for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
             for (const Move &t : aut.get_moves_from(stateFrom)) {
