@@ -1412,18 +1412,22 @@ Nfa Mata::Nfa::construct(
     }
 
     std::unordered_set<std::string> final_formula_nodes;
-    if (!(inter_aut.final_formula.node.name == "true" || inter_aut.final_formula.node.name == "false")) { 
+    if (!(inter_aut.final_formula.node.is_constant())) {
+        // we do not want to parse true/false (constant) as a state so we do not collect it
         final_formula_nodes = inter_aut.final_formula.collect_node_names();
     }
-    bool final_nodes_are_negated = (inter_aut.final_formula.node.name == "true" || inter_aut.are_final_states_conjunction_of_negation());
+    // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
+    bool final_nodes_are_negated = (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation());
 
     if (final_nodes_are_negated) {
+        // we add all states NOT in final_formula_nodes to final states
         for (const auto &state_name_and_id : *state_map) {
             if (!final_formula_nodes.count(state_name_and_id.first)) {
                 aut.final.add(state_name_and_id.second);
             }
         }
     } else {
+        // we add all states in final_formula_nodes to final states
         for (const auto& str : final_formula_nodes)
         {
             State state = get_state_name(str);

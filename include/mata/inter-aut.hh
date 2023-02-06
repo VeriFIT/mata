@@ -90,6 +90,11 @@ public:
 
     bool is_neg() const { return type == OPERATOR && operator_type == NEG; }
 
+    // TODO: should constant be its own operand type?
+    bool is_constant() const { return type == OPERAND && (name == "true" || name == "false"); }
+    bool is_true() const { return type == OPERAND && name == "true"; }
+    bool is_false() const { return type == OPERAND && name == "false"; }
+
     FormulaNode() : type(UNKNOWN), raw(""), name(""), operator_type(NOT_OPERATOR), operand_type(NOT_OPERAND) {}
 
     FormulaNode(Type t, std::string raw, std::string name,
