@@ -532,22 +532,35 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-void Nfa::trim()
+void Nfa::trim(StateToStateMap* state_map)
 {
-    *this = get_trimmed_automaton();
+    if (!state_map) {
+        StateToStateMap tmp_state_map{};
+        *this = get_trimmed_automaton(&tmp_state_map);
+    } else {
+        state_map->clear();
+        *this = get_trimmed_automaton(state_map);
+    }
 }
 
-Nfa Nfa::get_trimmed_automaton() {
+Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
+    StateToStateMap tmp_state_map{};
+    if (!state_map) {
+        state_map = &tmp_state_map;
+    }
+    state_map->clear();
+
     const StateSet original_useful_states{ get_useful_states() };
-    StateToStateMap original_to_new_states_map{ original_useful_states.size() };
+    state_map->reserve(original_useful_states.size());
+
     size_t new_state_num{ 0 };
     for (const State original_state: original_useful_states) {
-        original_to_new_states_map[original_state] = new_state_num;
+        (*state_map)[original_state] = new_state_num;
         ++new_state_num;
     }
-    return create_trimmed_aut(*this, original_to_new_states_map);
+    return create_trimmed_aut(*this, *state_map);
 }
 
 StateSet Nfa::get_useful_states() const
@@ -1154,8 +1167,8 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, StateToStateMap *state_map, const StringMap& params) {
-    Nfa result{};
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_result, StateToStateMap *state_map, const StringMap& params) {
+    Nfa result;
 
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
@@ -1167,14 +1180,32 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, StateToStateMap *state_map, const StringMa
     if ("simulation" == algorithm) {
         if (state_map == nullptr) {
             std::unordered_map<State,State> tmp_state_map;
-            return reduce_size_by_simulation(aut, tmp_state_map);
+            result = reduce_size_by_simulation(aut, tmp_state_map);
         } else {
-            return reduce_size_by_simulation(aut, *state_map);
+            state_map->clear();
+            result = reduce_size_by_simulation(aut, *state_map);
         }
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
+
+    if (trim_result) {
+        std::unordered_map<State,State> trimmed_state_map;
+        result.trim(&trimmed_state_map);
+        if (state_map) {
+            StateToStateMap result_state_map{ *state_map };
+            for (const auto& reduced_mapping : *state_map) {
+                const auto trimmed_mapping{ trimmed_state_map.find(reduced_mapping.second) };
+                if (trimmed_state_map.find(reduced_mapping.second) != trimmed_state_map.end()) {
+                    result_state_map[reduced_mapping.first] = trimmed_mapping->second;
+                }
+            }
+            *state_map = result_state_map;
+        }
+    }
+
+    return result;
 }
 
 Nfa Mata::Nfa::determinize(
