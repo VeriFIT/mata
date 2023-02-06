@@ -923,7 +923,7 @@ def test_reduce():
     nfa = mata.Nfa()
 
     # Test the reduction of an empty automaton.
-    result, state_map = mata.Nfa.reduce_with_state_map(nfa)
+    result, state_map = mata.Nfa.reduce_with_state_map(nfa, False)
     assert result.get_num_of_trans() == 0
     assert len(result.initial_states) == 0
     assert len(result.final_states) == 0
@@ -932,13 +932,17 @@ def test_reduce():
     nfa.add_state(2)
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
-    result, state_map = mata.Nfa.reduce_with_state_map(nfa)
+    result, state_map = mata.Nfa.reduce_with_state_map(nfa, False)
     assert result.get_num_of_trans() == 0
     assert result.size() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
     assert state_map[1] == state_map[0]
     assert state_map[2] != state_map[0]
+
+    result, state_map = mata.Nfa.reduce_with_state_map(nfa, True)
+    assert result.get_num_of_trans() == 0
+    assert result.size() == 0
 
     # Test the reduction of a bigger automaton.
     nfa.add_state(9)
@@ -960,7 +964,7 @@ def test_reduce():
     nfa.add_transition(9, ord('c'), 0)
     nfa.add_transition(0, ord('a'), 4)
 
-    result, state_map = mata.Nfa.reduce_with_state_map(nfa)
+    result, state_map = mata.Nfa.reduce_with_state_map(nfa, False)
     assert result.size() == 6
     assert result.has_initial_state(state_map[1])
     assert result.has_initial_state(state_map[2])
