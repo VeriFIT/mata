@@ -1197,7 +1197,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_result, StateToStateMap *state_m
             StateToStateMap result_state_map{ *state_map };
             for (const auto& reduced_mapping : *state_map) {
                 const auto trimmed_mapping{ trimmed_state_map.find(reduced_mapping.second) };
-                if (trimmed_state_map.find(reduced_mapping.second) != trimmed_state_map.end()) {
+                if (trimmed_mapping != trimmed_state_map.end()) {
                     result_state_map[reduced_mapping.first] = trimmed_mapping->second;
                 }
             }
