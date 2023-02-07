@@ -444,22 +444,13 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
     if (aut.automaton_type == Mata::IntermediateAut::NFA && tokens[tokens.size()-2] != "&") {
         // we need to take care about this case manually since user does not need to determine
         // symbol and state naming and put conjunction to transition
-        if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {  
-            if (rhs.size() != 2) {
-                if (rhs.size() == 1)
-                {
-                    throw std::runtime_error("Epsilon transitions not supported");
-                }
-                else
-                {
-                    throw std::runtime_error("Invalid transition");
-                }
-            }
+        if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
+            assert(rhs.size() == 2);
             postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
                                                 Mata::FormulaNode::OperandType::SYMBOL});
             postfix.push_back(create_node(aut,rhs[1]));
         } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
-            // this is a case where rhs state is not separated by conjunction from the rest of trans
+            // this is a case where rhs state not separated by conjunction from rest of trans
             postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
             postfix.push_back(create_node(aut,rhs.back()));
         } else

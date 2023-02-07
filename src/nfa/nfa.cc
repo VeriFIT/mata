@@ -1262,7 +1262,88 @@ Nfa Mata::Nfa::construct(
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map)
 { // {{{
-    return construct(Mata::IntermediateAut::parse_from_mf(Mata::Parser::Parsed{parsec})[0], alphabet, state_map);
+    Nfa aut;
+    assert(nullptr != alphabet);
+
+    if (parsec.type != Mata::Nfa::TYPE_NFA) {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
+                                 Mata::Nfa::TYPE_NFA + "\"");
+    }
+
+    bool remove_state_map = false;
+    if (nullptr == state_map) {
+        state_map = new StringToStateMap();
+        remove_state_map = true;
+    }
+
+    // a lambda for translating state names to identifiers
+    auto get_state_name = [&state_map, &aut](const std::string& str) {
+        if (!state_map->count(str)) {
+            State state = aut.add_state();
+            state_map->insert({str, state});
+            return state;
+        } else {
+            return (*state_map)[str];
+        }
+    };
+
+    // a lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) { delete state_map; }
+    };
+
+
+    auto it = parsec.dict.find("Initial");
+    if (parsec.dict.end() != it)
+    {
+        for (const auto& str : it->second)
+        {
+            State state = get_state_name(str);
+            aut.initial.add(state);
+        }
+    }
+
+
+    it = parsec.dict.find("Final");
+    if (parsec.dict.end() != it)
+    {
+        for (const auto& str : it->second)
+        {
+            State state = get_state_name(str);
+            aut.final.add(state);
+        }
+    }
+
+    for (const auto& body_line : parsec.body)
+    {
+        if (body_line.size() != 3)
+        {
+            // clean up
+            clean_up();
+
+            if (body_line.size() == 2)
+            {
+                throw std::runtime_error("Epsilon transitions not supported: " +
+                                         std::to_string(body_line));
+            }
+            else
+            {
+                throw std::runtime_error("Invalid transition: " +
+                                         std::to_string(body_line));
+            }
+        }
+
+        State src_state = get_state_name(body_line[0]);
+        Symbol symbol = alphabet->translate_symb(body_line[1]);
+        State tgt_state = get_state_name(body_line[2]);
+
+        aut.delta.add(src_state, symbol, tgt_state);
+    }
+
+    // do the dishes and take out garbage
+    clean_up();
+
+    return aut;
 } // construct }}}
 
 Nfa Mata::Nfa::construct(
@@ -1278,9 +1359,10 @@ Nfa Mata::Nfa::construct(
                                  Mata::Nfa::TYPE_NFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    bool remove_state_map = false;
     if (nullptr == state_map) {
-        state_map = &tmp_state_map;
+        state_map = new StringToStateMap();
+        remove_state_map = true;
     }
 
     // a lambda for translating state names to identifiers
@@ -1294,6 +1376,10 @@ Nfa Mata::Nfa::construct(
         }
     };
 
+    // a lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) { delete state_map; }
+    };
 
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
@@ -1305,6 +1391,9 @@ Nfa Mata::Nfa::construct(
     {
         if (trans.second.children.size() != 2)
         {
+            // clean up
+            clean_up();
+
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1345,6 +1434,9 @@ Nfa Mata::Nfa::construct(
             aut.final.add(state);
         }
     }
+
+    // do the dishes and take out garbage
+    clean_up();
 
     return aut;
 } // construct }}}

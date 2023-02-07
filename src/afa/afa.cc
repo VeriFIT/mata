@@ -905,7 +905,79 @@ Afa Mata::Afa::construct(
 	Alphabet*                            alphabet,
 	StringToStateMap*                    state_map)
 { // {{{
-	return construct(Mata::IntermediateAut::parse_from_mf(Mata::Parser::Parsed{parsec})[0], alphabet, state_map);
+	assert(nullptr != alphabet);
+	Afa aut;
+
+	if (parsec.type != Mata::Afa::TYPE_AFA) {
+		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
+                                 Mata::Afa::TYPE_AFA + "\"");
+	}
+
+	bool remove_state_map = false;
+	if (nullptr == state_map) {
+		state_map = new StringToStateMap();
+		remove_state_map = true;
+	}
+
+	State cnt_state = 0;
+
+	// a lambda for translating state names to identifiers
+	auto get_state_name = [state_map, &cnt_state](const std::string& str) {
+		auto it_insert_pair = state_map->insert({str, cnt_state});
+		if (it_insert_pair.second) { return cnt_state++; }
+		else { return it_insert_pair.first->second; }
+	};
+
+	// a lambda for cleanup
+	auto clean_up = [&]() {
+		if (remove_state_map) { delete state_map; }
+	};
+
+
+	auto it = parsec.dict.find("Initial");
+	if (parsec.dict.end() != it) {
+		for (const auto& str : it->second) {
+			State state = get_state_name(str);
+			aut.initialstates.insert(Node{state});
+		}
+	}
+
+
+	it = parsec.dict.find("Final");
+	if (parsec.dict.end() != it) {
+		for (const auto& str : it->second) {
+			State state = get_state_name(str);
+			aut.finalstates.insert(state);
+		}
+	}
+
+	for (const auto& body_line : parsec.body) {
+		if (body_line.size() < 2) {
+			// clean up
+      clean_up();
+
+      throw std::runtime_error("Invalid transition: " +
+        std::to_string(body_line));
+		}
+
+		State src_state = get_state_name(body_line[0]);
+    std::string formula;
+    for (size_t i = 1; i < body_line.size(); ++i) {
+      formula += body_line[i] + " ";
+    }
+
+	// TODO: Transform a positive Boolean formula from the string format
+	// to the inner representation (src state, symbol on transition, ordered
+	// vector of ordered vectors of states which corresponds to the formula in DNF) 
+	// Call the "add_trans" and "add_inverse_trans" functions over the
+	// parsed formula to add it do the automaton
+
+	}
+
+	// do the dishes and take out garbage
+	clean_up();
+
+    return aut;
 } // construct }}}
 
 Afa Mata::Afa::construct(
@@ -921,9 +993,10 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    bool remove_state_map = false;
     if (nullptr == state_map) {
-        state_map = &tmp_state_map;
+        state_map = new StringToStateMap();
+        remove_state_map = true;
     }
 
     // a lambda for translating state names to identifiers
@@ -935,6 +1008,11 @@ Afa Mata::Afa::construct(
         } else {
             return (*state_map)[str];
         }
+    };
+
+    // a lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) { delete state_map; }
     };
 
     // lambda returning true if node is operator of given type
@@ -998,6 +1076,7 @@ Afa Mata::Afa::construct(
         }
         else if (trans.second.children.size() != 2)
         {
+            clean_up();
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1053,6 +1132,9 @@ Afa Mata::Afa::construct(
 			aut.finalstates.insert(state);
 		}
 	}
+
+    // do the dishes and take out garbage
+    clean_up();
 
     return aut;
 } // construct }}}
