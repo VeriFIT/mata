@@ -556,8 +556,10 @@ public:
      * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
+     *
+     * @param[out] state_map Mapping of trimmed states to new states.
      */
-    void trim();
+    void trim(StateToStateMap* state_map = nullptr);
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -566,9 +568,10 @@ public:
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
+     * @param[out] state_map Mapping of trimmed states to new states.
      * @return Trimmed automaton.
      */
-    Nfa get_trimmed_automaton();
+    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr);
 
     // FIXME: Resolve this comment and delete it.
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,
@@ -874,9 +877,19 @@ Nfa determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map = nullptr);
 
-// Reduce the size of the automaton
+/**
+ * Reduce the size of the automaton.
+ *
+ * @param[in] aut Automaton to reduce.
+ * @param[in] trim_input Whether to trim the input automaton first or not.
+ * @param[out] state_map Mapping of trimmed states to new states.
+ * @param params[in] Optional parameters to control the reduction algorithm:
+ * - "algorithm": "simulation".
+ * @return Reduced automaton.
+ */
 Nfa reduce(
         const Nfa &aut,
+        bool trim_input = true,
         StateToStateMap *state_map = nullptr,
         const StringMap&  params = {{"algorithm", "simulation"}});
 

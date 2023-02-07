@@ -278,7 +278,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
-        void trim()
+        void trim(StateToStateMap*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         StateSet get_useful_states()
@@ -323,7 +323,7 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
-    cdef void reduce(CNfa*, CNfa&, StateToStateMap*, StringMap&)
+    cdef void reduce(CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
 
 
 cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":

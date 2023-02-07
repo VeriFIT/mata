@@ -2239,11 +2239,11 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 
 	SECTION("empty automaton")
 	{
-		Nfa result = reduce(aut, &state_map);
+		Nfa result = reduce(aut, false, &state_map);
 
 		REQUIRE(nothing_in_trans(result));
-		REQUIRE(result.initial.size() == 0);
-		REQUIRE(result.final.size() == 0);
+		REQUIRE(result.initial.empty());
+		REQUIRE(result.final.empty());
 	}
 
 	SECTION("simple automaton")
@@ -2252,7 +2252,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.initial.add(1);
 
         aut.final.add(2);
-		Nfa result = reduce(aut, &state_map);
+		Nfa result = reduce(aut, false, &state_map);
 
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial[state_map[1]]);
@@ -2284,7 +2284,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		aut.final = {3, 9};
 
 
-		Nfa result = reduce(aut, &state_map);
+		Nfa result = reduce(aut, false, &state_map);
 
 		REQUIRE(result.size() == 6);
 		REQUIRE(result.initial[state_map[1]]);
@@ -2299,6 +2299,24 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
 		REQUIRE(result.final[state_map[9]]);
 		REQUIRE(result.final[state_map[3]]);
+
+        result = reduce(aut, true, &state_map);
+        CHECK(result.size() == 3);
+        CHECK(result.initial.size() == 2);
+        for (State initial : result.initial) {
+            CHECK(((initial == state_map[1]) || (initial == state_map[2])));
+        }
+        REQUIRE(result.final.size() == 1);
+        for (State final : result.final) {
+            CHECK(final == state_map[3]);
+        }
+        CHECK(result.delta.size() == 6);
+        CHECK(result.delta.contains(state_map[1], 'a', state_map[3]));
+        CHECK(result.delta.contains(state_map[1], 'a', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'a', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'b', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'a', state_map[3]));
+        CHECK(result.delta.contains(state_map[3], 'b', state_map[2]));
 	}
 
 	SECTION("no transitions from non-final state")
@@ -2618,19 +2636,44 @@ TEST_CASE("Mata::Nfa::trim()")
 
     Nfa old_aut{aut};
 
-    aut.trim();
-    CHECK(aut.initial.size() == old_aut.initial.size());
-    CHECK(aut.final.size() == old_aut.final.size());
-    CHECK(aut.size() == 4);
-    for (const Word& word: get_shortest_words(old_aut))
-    {
-        CHECK(is_in_lang(aut, Run{word,{}}));
+    SECTION("Without state map") {
+        aut.trim();
+        CHECK(aut.initial.size() == old_aut.initial.size());
+        CHECK(aut.final.size() == old_aut.final.size());
+        CHECK(aut.size() == 4);
+        for (const Word& word: get_shortest_words(old_aut))
+        {
+            CHECK(is_in_lang(aut, Run{word,{}}));
+        }
+
+        aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
+        aut.trim();
+        CHECK(aut.delta.empty());
+        CHECK(aut.size() == 0);
     }
 
-    aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
-    aut.trim();
-    CHECK(aut.delta.empty());
-    CHECK(aut.size() == 0);
+    SECTION("With state map") {
+        StateToStateMap state_map{};
+        aut.trim(&state_map);
+        CHECK(aut.initial.size() == old_aut.initial.size());
+        CHECK(aut.final.size() == old_aut.final.size());
+        CHECK(aut.size() == 4);
+        for (const Word& word: get_shortest_words(old_aut))
+        {
+            CHECK(is_in_lang(aut, Run{word,{}}));
+        }
+        REQUIRE(state_map.size() == 4);
+        CHECK(state_map.at(1) == 0);
+        CHECK(state_map.at(3) == 1);
+        CHECK(state_map.at(7) == 3);
+        CHECK(state_map.at(5) == 2);
+
+        aut.final.remove(2); // '2' is the new final state in the earlier trimmed automaton.
+        aut.trim(&state_map);
+        CHECK(aut.delta.empty());
+        CHECK(aut.size() == 0);
+        CHECK(state_map.empty());
+    }
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta.empty()")

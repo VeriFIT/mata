@@ -61,10 +61,11 @@ namespace Plumbing {
     inline void reduce(
             Nfa* result,
             const Nfa &aut,
+            bool trim_result = true,
             StateToStateMap *state_map = nullptr,
             const StringMap&  params = {{"algorithm", "simulation"}})
     { // {{{
-        *result = reduce(aut, state_map, params);
+        *result = reduce(aut, trim_result, state_map, params);
     } // reduce }}}
 
     inline void revert(Nfa* result, const Nfa& aut)

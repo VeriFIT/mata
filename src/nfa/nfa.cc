@@ -40,14 +40,10 @@ namespace {
         const size_t state_num = aut.size();
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
-        for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
-            for (const Move &t : aut.get_moves_from(stateFrom)) {
-                for (State stateTo : t.targets) {
-                    LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
-                }
-                if (t.symbol > maxSymbol) {
-                    maxSymbol = t.symbol;
-                }
+        for (const auto& transition : aut.delta) {
+            LTSforSimulation.add_transition(transition.src, transition.symb, transition.tgt);
+            if (transition.symb > maxSymbol) {
+                maxSymbol = transition.symb;
             }
         }
 
@@ -532,22 +528,35 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-void Nfa::trim()
+void Nfa::trim(StateToStateMap* state_map)
 {
-    *this = get_trimmed_automaton();
+    if (!state_map) {
+        StateToStateMap tmp_state_map{};
+        *this = get_trimmed_automaton(&tmp_state_map);
+    } else {
+        state_map->clear();
+        *this = get_trimmed_automaton(state_map);
+    }
 }
 
-Nfa Nfa::get_trimmed_automaton() {
+Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
+    StateToStateMap tmp_state_map{};
+    if (!state_map) {
+        state_map = &tmp_state_map;
+    }
+    state_map->clear();
+
     const StateSet original_useful_states{ get_useful_states() };
-    StateToStateMap original_to_new_states_map{ original_useful_states.size() };
+    state_map->reserve(original_useful_states.size());
+
     size_t new_state_num{ 0 };
     for (const State original_state: original_useful_states) {
-        original_to_new_states_map[original_state] = new_state_num;
+        (*state_map)[original_state] = new_state_num;
         ++new_state_num;
     }
-    return create_trimmed_aut(*this, original_to_new_states_map);
+    return create_trimmed_aut(*this, *state_map);
 }
 
 StateSet Nfa::get_useful_states() const
@@ -1154,27 +1163,44 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, StateToStateMap *state_map, const StringMap& params) {
-    Nfa result{};
-
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
 
+    Nfa aut_to_reduce{ aut };
+    StateToStateMap trimmed_state_map{};
+    if (trim_input) {
+        aut_to_reduce.trim(&trimmed_state_map);
+    }
+
+    Nfa result;
+    std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        if (state_map == nullptr) {
-            std::unordered_map<State,State> tmp_state_map;
-            return reduce_size_by_simulation(aut, tmp_state_map);
-        } else {
-            return reduce_size_by_simulation(aut, *state_map);
-        }
+        result = reduce_size_by_simulation(aut_to_reduce, reduced_state_map);
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
+
+    if (state_map) {
+        state_map->clear();
+        if (trim_input) {
+            for (const auto& trimmed_mapping : trimmed_state_map) {
+                const auto reduced_mapping{ reduced_state_map.find(trimmed_mapping.second) };
+                if (reduced_mapping != reduced_state_map.end()) {
+                    (*state_map)[trimmed_mapping.first] = reduced_mapping->second;
+                }
+            }
+        } else { // Input has not been trimmed, the reduced state map is the actual input to result state map.
+            *state_map = reduced_state_map;
+        }
+    }
+
+    return result;
 }
 
 Nfa Mata::Nfa::determinize(

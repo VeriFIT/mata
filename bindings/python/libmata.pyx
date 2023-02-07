@@ -496,7 +496,20 @@ cdef class Nfa:
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
         """
-        self.thisptr.get().trim()
+        self.thisptr.get().trim(NULL)
+
+    def trim_with_state_map(self):
+        """Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+
+        Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+         starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+         the starting point of a path ending in a final state).
+
+        :return: State map of original to new states.
+        """
+        cdef StateToStateMap state_map
+        self.thisptr.get().trim(&state_map)
+        return {k: v for k, v in state_map}
 
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
@@ -974,10 +987,11 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def reduce_with_state_map(cls, Nfa aut, params = None):
+    def reduce_with_state_map(cls, Nfa aut, bool trim_input = True, params = None):
         """Reduce the automaton.
 
         :param Nfa aut: Original automaton to reduce.
+        :param bool trim_input: Whether to trim the input automaton first or not.
         :param Dict params: Additional parameters for the reduction algorithm:
             - "algorithm": "simulation"
         :return: (Reduced automaton, state map of original to new states)
@@ -985,7 +999,7 @@ cdef class Nfa:
         params = params or {"algorithm": "simulation"}
         cdef StateToStateMap state_map
         result = Nfa()
-        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
+        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
             {
                 k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
             }
@@ -994,9 +1008,10 @@ cdef class Nfa:
         return result, {k: v for k, v in state_map}
 
     @classmethod
-    def reduce(cls, Nfa aut, params = None):
+    def reduce(cls, Nfa aut, bool trim_input = True, params = None):
         """Reduce the automaton.
 
+        :param bool trim_input: Whether to trim the input automaton first or not.
         :param Nfa aut: Original automaton to reduce.
         :param Dict params: Additional parameters for the reduction algorithm:
             - "algorithm": "simulation"
@@ -1004,7 +1019,7 @@ cdef class Nfa:
         """
         params = params or {"algorithm": "simulation"}
         result = Nfa()
-        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
+        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
             {
                 k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
             }
