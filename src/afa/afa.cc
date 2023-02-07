@@ -900,6 +900,7 @@ void Mata::Afa::minimize(
   assert(false);
 } // minimize }}}
 
+// TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Afa Mata::Afa::construct(
 	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
@@ -993,10 +994,9 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    bool remove_state_map = false;
+    StringToStateMap tmp_state_map;
     if (nullptr == state_map) {
-        state_map = new StringToStateMap();
-        remove_state_map = true;
+        state_map = &tmp_state_map;
     }
 
     // a lambda for translating state names to identifiers
@@ -1008,11 +1008,6 @@ Afa Mata::Afa::construct(
         } else {
             return (*state_map)[str];
         }
-    };
-
-    // a lambda for cleanup
-    auto clean_up = [&]() {
-        if (remove_state_map) { delete state_map; }
     };
 
     // lambda returning true if node is operator of given type
@@ -1076,7 +1071,6 @@ Afa Mata::Afa::construct(
         }
         else if (trans.second.children.size() != 2)
         {
-            clean_up();
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1132,10 +1126,6 @@ Afa Mata::Afa::construct(
 			aut.finalstates.insert(state);
 		}
 	}
-
-    // do the dishes and take out garbage
-    clean_up();
-
     return aut;
 } // construct }}}
 

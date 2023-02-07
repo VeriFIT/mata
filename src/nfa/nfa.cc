@@ -1257,6 +1257,7 @@ Nfa Mata::Nfa::determinize(
     return result;
 }
 
+// TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Nfa Mata::Nfa::construct(
         const Mata::Parser::ParsedSection&   parsec,
         Alphabet*                            alphabet,
@@ -1359,10 +1360,9 @@ Nfa Mata::Nfa::construct(
                                  Mata::Nfa::TYPE_NFA + "\"");
     }
 
-    bool remove_state_map = false;
+    StringToStateMap tmp_state_map;
     if (nullptr == state_map) {
-        state_map = new StringToStateMap();
-        remove_state_map = true;
+        state_map = &tmp_state_map;
     }
 
     // a lambda for translating state names to identifiers
@@ -1376,11 +1376,6 @@ Nfa Mata::Nfa::construct(
         }
     };
 
-    // a lambda for cleanup
-    auto clean_up = [&]() {
-        if (remove_state_map) { delete state_map; }
-    };
-
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
         State state = get_state_name(str);
@@ -1391,9 +1386,6 @@ Nfa Mata::Nfa::construct(
     {
         if (trans.second.children.size() != 2)
         {
-            // clean up
-            clean_up();
-
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1434,9 +1426,6 @@ Nfa Mata::Nfa::construct(
             aut.final.add(state);
         }
     }
-
-    // do the dishes and take out garbage
-    clean_up();
 
     return aut;
 } // construct }}}
