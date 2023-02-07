@@ -1163,41 +1163,40 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_result, StateToStateMap *state_map, const StringMap& params) {
-    Nfa result;
-
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
 
+    Nfa aut_to_reduce{ aut };
+    StateToStateMap trimmed_state_map{};
+    if (trim_input) {
+        aut_to_reduce.trim(&trimmed_state_map);
+    }
+
+    Nfa result;
+    std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        if (state_map == nullptr) {
-            std::unordered_map<State,State> tmp_state_map;
-            result = reduce_size_by_simulation(aut, tmp_state_map);
-        } else {
-            state_map->clear();
-            result = reduce_size_by_simulation(aut, *state_map);
-        }
+        result = reduce_size_by_simulation(aut_to_reduce, reduced_state_map);
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
 
-    if (trim_result) {
-        std::unordered_map<State,State> trimmed_state_map;
-        result.trim(&trimmed_state_map);
-        if (state_map) {
-            StateToStateMap result_state_map{ *state_map };
-            for (const auto& reduced_mapping : *state_map) {
-                const auto trimmed_mapping{ trimmed_state_map.find(reduced_mapping.second) };
-                if (trimmed_mapping != trimmed_state_map.end()) {
-                    result_state_map[reduced_mapping.first] = trimmed_mapping->second;
+    if (state_map) {
+        state_map->clear();
+        if (trim_input) {
+            for (const auto& trimmed_mapping : trimmed_state_map) {
+                const auto reduced_mapping{ reduced_state_map.find(trimmed_mapping.second) };
+                if (reduced_mapping != reduced_state_map.end()) {
+                    (*state_map)[trimmed_mapping.first] = reduced_mapping->second;
                 }
             }
-            *state_map = result_state_map;
+        } else { // Input has not been trimmed, the reduced state map is the actual input to result state map.
+            *state_map = reduced_state_map;
         }
     }
 

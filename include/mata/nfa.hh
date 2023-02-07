@@ -881,7 +881,7 @@ Nfa determinize(
  * Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[in] trim_result Whether to trim the result automaton or not.
+ * @param[in] trim_input Whether to trim the input automaton first or not.
  * @param[out] state_map Mapping of trimmed states to new states.
  * @param params[in] Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
@@ -889,7 +889,7 @@ Nfa determinize(
  */
 Nfa reduce(
         const Nfa &aut,
-        bool trim_result = true,
+        bool trim_input = true,
         StateToStateMap *state_map = nullptr,
         const StringMap&  params = {{"algorithm", "simulation"}});
 
