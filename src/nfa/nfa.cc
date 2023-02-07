@@ -40,14 +40,10 @@ namespace {
         const size_t state_num = aut.size();
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
-        for (State stateFrom = 0; stateFrom < state_num; ++stateFrom) {
-            for (const Move &t : aut.get_moves_from(stateFrom)) {
-                for (State stateTo : t.targets) {
-                    LTSforSimulation.add_transition(stateFrom, t.symbol, stateTo);
-                }
-                if (t.symbol > maxSymbol) {
-                    maxSymbol = t.symbol;
-                }
+        for (const auto& transition : aut.delta) {
+            LTSforSimulation.add_transition(transition.src, transition.symb, transition.tgt);
+            if (transition.symb > maxSymbol) {
+                maxSymbol = transition.symb;
             }
         }
 
