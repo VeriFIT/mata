@@ -233,7 +233,7 @@ private:
     size_t m_num_of_states;
 
 public:
-    inline static const Post empty_post;
+    inline static const Post empty_post; //when post[q] is not allocated, then delta[q] returns this.
 
     Delta() : post(), m_num_of_states(0) {}
     explicit Delta(size_t n) : post(), m_num_of_states(n) {}
