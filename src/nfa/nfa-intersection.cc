@@ -33,7 +33,6 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
                             Move& intersection_transition) {
     if (intersection_transition.empty()) { return; }
 
-    //auto& intersect_state_transitions{ product.delta[product_map[pair_to_process]] };
     auto& intersect_state_transitions{ product.delta.mutable_post(product_map[pair_to_process]) };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
     if (symbol_transitions_iter == intersect_state_transitions.end()) {

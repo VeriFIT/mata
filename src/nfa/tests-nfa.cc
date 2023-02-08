@@ -2758,7 +2758,6 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     REQUIRE(aut.size() == 26);
     REQUIRE(aut.delta[25].empty());
 
-    //aut.delta[50];
     aut.delta.mutable_post(50);
     REQUIRE(aut.size() == 51);
     REQUIRE(aut.delta[50].empty());
