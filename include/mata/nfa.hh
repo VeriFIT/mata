@@ -214,6 +214,9 @@ struct Post : private Util::OrdVector<Move> {
 	}
 };
 
+
+    static Post empty_post;
+
 /**
  * Delta is a data structure for representing transition relation.
  * Its underlying data structure is vector of Post structures.
@@ -222,15 +225,16 @@ struct Post : private Util::OrdVector<Move> {
  */
 struct Delta {
 private:
-    mutable std::vector<Post> post;
+    std::vector<Post> post;
 
     /// Number of actual states occuring in the transition relation.
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
-    mutable size_t m_num_of_states;
+    size_t m_num_of_states;
 
 public:
+
     Delta() : post(), m_num_of_states(0) {}
     explicit Delta(size_t n) : post(), m_num_of_states(n) {}
 
@@ -247,7 +251,20 @@ public:
     size_t size() const;
 
 
-    Post & operator[] (State q)
+    //Post & operator[] (State q)
+    //{
+    //    if (q >= post.size()) {
+    //        const size_t new_size{ q + 1 };
+    //        post.resize(new_size);
+    //        if (new_size > m_num_of_states) {
+    //            m_num_of_states = new_size;
+    //        }
+    //    }
+
+    //    return post[q];
+    //};
+
+    Post & mutable_post(State q)
     {
         if (q >= post.size()) {
             const size_t new_size{ q + 1 };
@@ -262,15 +279,11 @@ public:
 
     const Post & operator[] (State q) const
     {
-        if (q >= post.size()) {
-            const size_t new_size{ q + 1 };
-            post.resize(new_size);
-            if (new_size > m_num_of_states) {
-                m_num_of_states = new_size;
-            }
-        }
-
-        return post[q];
+        if (q >= post.size())
+            //return Mata::Nfa::Delta::empty_post;
+            return empty_post;
+        else
+            return post[q];
     };
 
     void emplace_back() {
@@ -461,7 +474,8 @@ public:
     void clear_transitions() {
         const size_t delta_size = delta.post_size();
         for (size_t i = 0; i < delta_size; ++i) {
-            delta[i] = Post();
+            //delta[i] = Post();
+            delta.mutable_post(i) = Post();
         }
     }
 
