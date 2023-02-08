@@ -460,31 +460,15 @@ Afa construct(
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr)
 { // {{{
-    Afa aut;
-
-    bool remove_symbol_map = false;
-    if (nullptr == symbol_map)
-    {
-        symbol_map = new StringToSymbolMap();
-        remove_symbol_map = true;
+    StringToSymbolMap tmp_symbol_map;
+    if (symbol_map) {
+        tmp_symbol_map = *symbol_map;
     }
+    Mata::OnTheFlyAlphabet alphabet(tmp_symbol_map);
 
-    auto release_res = [&](){ if (remove_symbol_map) delete symbol_map; };
+    Afa aut = construct(parsed, &alphabet, state_map);
 
-    Mata::OnTheFlyAlphabet alphabet(*symbol_map);
-
-    try
-    {
-        aut = Mata::Afa::construct(parsed, &alphabet, state_map);
-    }
-    catch (std::exception&)
-    {
-        release_res();
-        throw;
-    }
-
-    release_res();
-    if (!remove_symbol_map) {
+    if (symbol_map) {
         *symbol_map = alphabet.get_symbol_map();
     }
     return aut;

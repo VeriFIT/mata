@@ -1283,6 +1283,7 @@ Nfa Mata::Nfa::determinize(
     return result;
 }
 
+// TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Nfa Mata::Nfa::construct(
         const Mata::Parser::ParsedSection&   parsec,
         Alphabet*                            alphabet,
@@ -1385,10 +1386,9 @@ Nfa Mata::Nfa::construct(
                                  Mata::Nfa::TYPE_NFA + "\"");
     }
 
-    bool remove_state_map = false;
+    StringToStateMap tmp_state_map;
     if (nullptr == state_map) {
-        state_map = new StringToStateMap();
-        remove_state_map = true;
+        state_map = &tmp_state_map;
     }
 
     // a lambda for translating state names to identifiers
@@ -1402,32 +1402,16 @@ Nfa Mata::Nfa::construct(
         }
     };
 
-    // a lambda for cleanup
-    auto clean_up = [&]() {
-        if (remove_state_map) { delete state_map; }
-    };
-
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
         State state = get_state_name(str);
         aut.initial.add(state);
     }
 
-    const auto final_states = inter_aut.are_final_states_conjunction_of_negation() ?
-            inter_aut.get_positive_finals() : inter_aut.final_formula.collect_node_names();
-    for (const auto& str : final_states)
-    {
-        State state = get_state_name(str);
-        aut.final.add(state);
-    }
-
     for (const auto& trans : inter_aut.transitions)
     {
         if (trans.second.children.size() != 2)
         {
-            // clean up
-            clean_up();
-
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1445,8 +1429,29 @@ Nfa Mata::Nfa::construct(
         aut.delta.add(src_state, symbol, tgt_state);
     }
 
-    // do the dishes and take out garbage
-    clean_up();
+    std::unordered_set<std::string> final_formula_nodes;
+    if (!(inter_aut.final_formula.node.is_constant())) {
+        // we do not want to parse true/false (constant) as a state so we do not collect it
+        final_formula_nodes = inter_aut.final_formula.collect_node_names();
+    }
+    // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
+    bool final_nodes_are_negated = (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation());
+
+    if (final_nodes_are_negated) {
+        // we add all states NOT in final_formula_nodes to final states
+        for (const auto &state_name_and_id : *state_map) {
+            if (!final_formula_nodes.count(state_name_and_id.first)) {
+                aut.final.add(state_name_and_id.second);
+            }
+        }
+    } else {
+        // we add all states in final_formula_nodes to final states
+        for (const auto& str : final_formula_nodes)
+        {
+            State state = get_state_name(str);
+            aut.final.add(state);
+        }
+    }
 
     return aut;
 } // construct }}}

@@ -589,8 +589,6 @@ std::unordered_set<std::string> Mata::IntermediateAut::get_positive_finals() con
 
 bool Mata::IntermediateAut::is_graph_conjunction_of_negations(const Mata::FormulaGraph &graph) {
     const FormulaGraph *act_graph = &graph;
-    if (act_graph->children.size() != 2)
-        return false;
 
     while (act_graph->children.size() == 2) {
         // this node is conjunction and the left son is negation, otherwise returns false
@@ -601,7 +599,8 @@ bool Mata::IntermediateAut::is_graph_conjunction_of_negations(const Mata::Formul
             return false;
     }
 
-    return true;
+    // the last child needs to be negation
+    return (act_graph->node.is_operator() && act_graph->node.is_neg());
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut)

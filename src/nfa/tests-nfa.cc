@@ -960,6 +960,61 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a4"})));
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a5", "a7"})));
     }
+
+    SECTION("construct - final states given as true")
+    {
+        std::string file =
+                "@NFA-bits\n"
+                "%Alphabet-auto\n"
+                "%Initial q0 q8\n"
+                "%Final true\n"
+                "q0 a1 q1\n"
+                "q1 a2 q2\n"
+                "q2 a3 q3\n"
+                "q2 a4 q4\n"
+                "q3 a5 q5\n"
+                "q3 a6 q6\n"
+                "q5 a7 q7\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+		Mata::Nfa::StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+        CHECK(aut.final.size() == 9);
+		CHECK(aut.final[state_map.at("0")]);
+		CHECK(aut.final[state_map.at("1")]);
+		CHECK(aut.final[state_map.at("2")]);
+		CHECK(aut.final[state_map.at("3")]);
+		CHECK(aut.final[state_map.at("4")]);
+		CHECK(aut.final[state_map.at("5")]);
+		CHECK(aut.final[state_map.at("6")]);
+		CHECK(aut.final[state_map.at("7")]);
+		CHECK(aut.final[state_map.at("8")]);
+    }
+
+    SECTION("construct - final states given as false")
+    {
+        std::string file =
+                "@NFA-bits\n"
+                "%Alphabet-auto\n"
+                "%Initial q0 q8\n"
+                "%Final false\n"
+                "q0 a1 q1\n"
+                "q1 a2 q2\n"
+                "q2 a3 q3\n"
+                "q2 a4 q4\n"
+                "q3 a5 q5\n"
+                "q3 a6 q6\n"
+                "q5 a7 q7\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+		Mata::Nfa::StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+        CHECK(aut.final.size() == 0);
+    }
 } // }}}
 
 /*

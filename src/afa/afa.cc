@@ -900,6 +900,7 @@ void Mata::Afa::minimize(
   assert(false);
 } // minimize }}}
 
+// TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Afa Mata::Afa::construct(
 	const Mata::Parser::ParsedSection&  parsec,
 	Alphabet*                            alphabet,
@@ -993,10 +994,9 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    bool remove_state_map = false;
+    StringToStateMap tmp_state_map;
     if (nullptr == state_map) {
-        state_map = new StringToStateMap();
-        remove_state_map = true;
+        state_map = &tmp_state_map;
     }
 
     // a lambda for translating state names to identifiers
@@ -1008,11 +1008,6 @@ Afa Mata::Afa::construct(
         } else {
             return (*state_map)[str];
         }
-    };
-
-    // a lambda for cleanup
-    auto clean_up = [&]() {
-        if (remove_state_map) { delete state_map; }
     };
 
     // lambda returning true if node is operator of given type
@@ -1065,12 +1060,6 @@ Afa Mata::Afa::construct(
         aut.add_initial(initial_node);
     }
 
-    for (const auto& str : inter_aut.final_formula.collect_node_names())
-    {
-        State state = get_state_name(str);
-        aut.finalstates.insert(state);
-    }
-
     for (const auto& trans : inter_aut.transitions)
     {
         State src_state = get_state_name(trans.first.name);
@@ -1082,7 +1071,6 @@ Afa Mata::Afa::construct(
         }
         else if (trans.second.children.size() != 2)
         {
-            clean_up();
             if (trans.second.children.size() == 1)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
@@ -1121,9 +1109,23 @@ Afa Mata::Afa::construct(
                       create_node(curr_graph->collect_node_names()));
     }
 
-    // do the dishes and take out garbage
-    clean_up();
-
+	// TODO final states can be also given as true/false
+	if (inter_aut.are_final_states_conjunction_of_negation()) {
+		// final states are given as a conjunction of non-final states
+		auto non_final_states = inter_aut.final_formula.collect_node_names();
+		for (const auto &state_name_and_number : *state_map) {
+			if (!non_final_states.count(state_name_and_number.first)) {
+				aut.finalstates.insert(state_name_and_number.second);
+			}
+		}
+	} else {
+		// final states are given normally
+		for (const auto& str : inter_aut.final_formula.collect_node_names())
+		{
+			State state = get_state_name(str);
+			aut.finalstates.insert(state);
+		}
+	}
     return aut;
 } // construct }}}
 
