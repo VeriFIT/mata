@@ -33,7 +33,7 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
                             Move& intersection_transition) {
     if (intersection_transition.empty()) { return; }
 
-    auto& intersect_state_transitions{ product.delta.mutable_post(product_map[pair_to_process]) };
+    auto& intersect_state_transitions{ product.delta.get_mutable_post(product_map[pair_to_process]) };
     auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
     if (symbol_transitions_iter == intersect_state_transitions.end()) {
         intersect_state_transitions.insert(intersection_transition);
@@ -86,7 +86,7 @@ namespace Nfa {
 
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
                  std::unordered_map<std::pair<State,State>, State> *prod_map) {
-    
+
     const std::set<Symbol> epsilons({EPSILON});
     return Algorithms::intersection_eps(lhs, rhs, preserve_epsilon, epsilons, prod_map);
 }

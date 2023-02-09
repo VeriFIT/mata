@@ -258,7 +258,7 @@ public:
     // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
-    Post & mutable_post(State q)
+    Post & get_mutable_post(State q)
     {
         if (q >= post.size()) {
             const size_t new_size{ q + 1 };
@@ -468,7 +468,7 @@ public:
     void clear_transitions() {
         const size_t delta_size = delta.post_size();
         for (size_t i = 0; i < delta_size; ++i) {
-            delta.mutable_post(i) = Post();
+            delta.get_mutable_post(i) = Post();
         }
     }
 
