@@ -214,8 +214,6 @@ struct Post : private Util::OrdVector<Move> {
 	}
 };
 
-//static Post empty_post;
-
 /**
  * Delta is a data structure for representing transition relation.
  * Its underlying data structure is vector of Post structures.

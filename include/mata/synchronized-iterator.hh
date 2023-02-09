@@ -35,11 +35,6 @@ namespace Mata {
         *  The memory allocated internally for positions and ends is kept after reset, so it is advisable to use the same iterator for many iterations, as
         *  opposed to creating a new one for each iteration.
         */
-        template<typename Inner> class Iterable {
-            
-        };
-
-
         template<typename Iterator> class SynchronizedIterator {
         public:
 
