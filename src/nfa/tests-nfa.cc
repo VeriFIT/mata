@@ -627,6 +627,26 @@ TEST_CASE("Mata::Nfa::determinize()")
         REQUIRE(result.final[subset_map[{2}]]);
 		REQUIRE(result.delta.contains(subset_map[{1}], 'a', subset_map[{2}]));
 	}
+
+    SECTION("This broke Delta when delta[q] could cause re-allocation of post")
+    {
+        Nfa x{};
+        x.initial.add(0);
+        x.final.add(4);
+        x.delta.add(0, 1, 3);
+        x.delta.add(3, 1, 3);
+        x.delta.add(3, 2, 3);
+        x.delta.add(3, 0, 1);
+        x.delta.add(1, 1, 1);
+        x.delta.add(1, 2, 1);
+        x.delta.add(1, 0, 2);
+        x.delta.add(2, 0, 2);
+        x.delta.add(2, 1, 2);
+        x.delta.add(2, 2, 2);
+        x.delta.add(2, 0, 4);
+        OnTheFlyAlphabet alphabet{};
+        auto complement_result{determinize(x)};
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
@@ -2787,18 +2807,25 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     FILL_WITH_AUT_A(aut);
     REQUIRE(aut.get_num_of_trans() == 15);
     aut.delta[25];
+    REQUIRE(aut.size() == 20);
 
+    aut.delta.get_mutable_post(25);
     REQUIRE(aut.size() == 26);
     REQUIRE(aut.delta[25].empty());
 
-    aut.delta[50];
+    aut.delta.get_mutable_post(50);
     REQUIRE(aut.size() == 51);
     REQUIRE(aut.delta[50].empty());
 
-    const Nfa aut1 = aut;
-    aut1.delta[60];
+    Nfa aut1 = aut;
+    aut1.delta.get_mutable_post(60);
     REQUIRE(aut1.size() == 61);
     REQUIRE(aut1.delta[60].empty());
+
+    const Nfa aut2 = aut;
+    aut2.delta[60];
+    REQUIRE(aut2.size() == 51);
+    REQUIRE(aut2.delta[60].empty());
 }
 
 TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {

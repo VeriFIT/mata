@@ -222,15 +222,17 @@ struct Post : private Util::OrdVector<Move> {
  */
 struct Delta {
 private:
-    mutable std::vector<Post> post;
+    std::vector<Post> post;
 
     /// Number of actual states occuring in the transition relation.
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
-    mutable size_t m_num_of_states;
+    size_t m_num_of_states;
 
 public:
+    inline static const Post empty_post; //when post[q] is not allocated, then delta[q] returns this.
+
     Delta() : post(), m_num_of_states(0) {}
     explicit Delta(size_t n) : post(), m_num_of_states(n) {}
 
@@ -246,8 +248,17 @@ public:
      */
     size_t size() const;
 
-
-    Post & operator[] (State q)
+    // Get a non const reference to post of a state, which allows modifying the post.
+    //
+    // BEWARE, IT HAS A SIDE EFFECT.
+    //
+    // Namely, it allocates the post of the state if it was not allocated yet. This in turn may cause that
+    // the entire post data structure is re-allocated, iterators to it get invalidated ...
+    // Use the constant [] operator below if possible.
+    // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
+    // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
+    // But it feels fragile, before doing something like that, better think and talk to people.
+    Post & get_mutable_post(State q)
     {
         if (q >= post.size()) {
             const size_t new_size{ q + 1 };
@@ -260,17 +271,13 @@ public:
         return post[q];
     };
 
+    // Get a constant reference to the post of a state. No side effects.
     const Post & operator[] (State q) const
     {
-        if (q >= post.size()) {
-            const size_t new_size{ q + 1 };
-            post.resize(new_size);
-            if (new_size > m_num_of_states) {
-                m_num_of_states = new_size;
-            }
-        }
-
-        return post[q];
+        if (q >= post.size())
+            return empty_post;
+        else
+            return post[q];
     };
 
     void emplace_back() {
@@ -461,7 +468,7 @@ public:
     void clear_transitions() {
         const size_t delta_size = delta.post_size();
         for (size_t i = 0; i < delta_size; ++i) {
-            delta[i] = Post();
+            delta.get_mutable_post(i) = Post();
         }
     }
 

@@ -115,8 +115,8 @@ namespace {
                     }
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
-                    // as the q_trans.symbol should be largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta[q_class_state].insert(Move(q_trans.symbol, representatives_class_states));
+                    // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
+                    result.delta.get_mutable_post(q_class_state).insert(Move(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -224,7 +224,7 @@ namespace {
                     }
                 }
                 if (!new_state_trans_with_symbol.empty()) {
-                    trimmed_aut.delta[original_state_mapping.second].insert(new_state_trans_with_symbol);
+                    trimmed_aut.delta.get_mutable_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
                 }
             }
         }
@@ -1133,7 +1133,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
                 transitionFromUnionState.insert(thisStateToUnionState[stateTo]);
             }
 
-            unionAutomaton.delta[unionState].insert(transitionFromUnionState);
+            unionAutomaton.delta.get_mutable_post(unionState).insert(transitionFromUnionState);
         }
     }
 
@@ -1274,7 +1274,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.delta[Sid].insert(Move(currentSymbol, Tid));
+            result.delta.get_mutable_post(Sid).insert(Move(currentSymbol, Tid));
         }
     }
 
