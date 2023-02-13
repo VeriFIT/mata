@@ -154,7 +154,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
             }
 
-            for (const State& smaller_succ : smaller_move.targets) {            
+            for (const State& smaller_succ : smaller_move.targets) {
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&

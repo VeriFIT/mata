@@ -224,7 +224,7 @@ struct Delta {
 private:
     std::vector<Post> post;
 
-    /// Number of actual states occuring in the transition relation.
+    /// Number of actual states occurring in the transition relation.
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
