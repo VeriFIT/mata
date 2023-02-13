@@ -877,7 +877,7 @@ cdef class Nfa:
         :return: complemented automaton, map of subsets to states
         """
         result = Nfa()
-        params = params or {'algo': 'classical'}
+        params = params or {'algorithm': 'classical'}
         cdef umap[StateSet, State] subset_map
         mata.complement(
             result.thisptr.get(),
@@ -901,7 +901,7 @@ cdef class Nfa:
         :return: complemented automaton
         """
         result = Nfa()
-        params = params or {'algo': 'classical'}
+        params = params or {'algorithm': 'classical'}
         mata.complement(
             result.thisptr.get(),
             dereference(lhs.thisptr.get()),
@@ -1080,11 +1080,11 @@ cdef class Nfa:
 
         :param Nfa lhs: automaton tested for universality
         :param OnTheFlyAlphabet alphabet: on the fly alphabet
-        :param dict params: additional params to the function, currently supports key 'algo',
+        :param dict params: additional params to the function, currently supports key 'algorithm',
             which determines used universality test
         :return: true if lhs is universal
         """
-        params = params or {'algo': 'antichains'}
+        params = params or {'algorithm': 'antichains'}
         return mata.is_universal(
             dereference(lhs.thisptr.get()),
             <CAlphabet&>dereference(alphabet.as_base()),
@@ -1110,7 +1110,7 @@ cdef class Nfa:
         cdef CAlphabet* c_alphabet = NULL
         if alphabet:
             c_alphabet = alphabet.as_base()
-        params = params or {'algo': 'antichains'}
+        params = params or {'algorithm': 'antichains'}
         result = mata.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
@@ -1138,7 +1138,7 @@ cdef class Nfa:
         cdef CAlphabet* c_alphabet = NULL
         if alphabet:
             c_alphabet = alphabet.as_base()
-        params = params or {'algo': 'antichains'}
+        params = params or {'algorithm': 'antichains'}
         result = mata.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
@@ -1159,10 +1159,10 @@ cdef class Nfa:
         :param Nfa rhs: Bigger automaton.
         :param Alphabet alphabet: Alphabet shared by two automata.
         :param dict params: Additional params:
-            - "algo": "antichains"
+            - "algorithm": "antichains"
         :return: True if lhs is equivalent to rhs, False otherwise.
         """
-        params = params or {'algo': 'antichains'}
+        params = params or {'algorithm': 'antichains'}
         cdef CAlphabet * c_alphabet = NULL
         if alphabet:
             c_alphabet = alphabet.as_base()

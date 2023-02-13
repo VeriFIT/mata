@@ -228,14 +228,14 @@ namespace {
     }
 
     AlgoType set_algorithm(const std::string &function_name, const StringMap &params) {
-        if (!haskey(params, "algo")) {
+        if (!haskey(params, "algorithm")) {
             throw std::runtime_error(function_name +
                                      " requires setting the \"algo\" key in the \"params\" argument; "
                                      "received: " + std::to_string(params));
         }
 
         decltype(Algorithms::is_included_naive) *algo;
-        const std::string &str_algo = params.at("algo");
+        const std::string &str_algo = params.at("algorithm");
         if ("naive" == str_algo) {
             algo = Algorithms::is_included_naive;
         } else if ("antichains" == str_algo) {
@@ -266,7 +266,7 @@ bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
-    if (params.at("algo") == "naive") {
+    if (params.at("algorithm") == "naive") {
         if (alphabet == nullptr) {
             const auto computed_alphabet{create_alphabet(lhs, rhs) };
             return compute_equivalence(lhs, rhs, &computed_alphabet, params, algo);
