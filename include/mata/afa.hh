@@ -64,7 +64,7 @@ using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
 
 /*
 * A node is an ordered vector of states of the automaton.
-* A transition consists of a source state, a symbol on the transition 
+* A transition consists of a source state, a symbol on the transition
 * and a vector of nodes (which are the destination of the transition).
 *
 * In context of an AFA, the transition relation maps a state and a symbol
@@ -73,7 +73,7 @@ using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
 * a formula can be converted to the DNF, we can represent it as an ordered vector
 * of nodes. The ordered vector represents a set of disjuncts. Each node corresponds
 * to a single disjunct of a formula in DNF (states connected by conjunctions).
-* 
+*
 */
 struct Trans
 {
@@ -100,13 +100,13 @@ using TransRelation = std::vector<TransList>;
 * of a given node 'N' if the node 'precondition' is its subset. */
 struct InverseResults{
 
-	Node result_node{}; 
+	Node result_node{};
 	Node precondition{};
 
 	InverseResults() : result_node(), precondition() { }
-	InverseResults(State state, Node precondition) : result_node(Node(state)), 
+	InverseResults(State state, Node precondition) : result_node(Node(state)),
 	precondition(precondition) { }
-	InverseResults(Node result_node, Node precondition) : result_node(result_node), 
+	InverseResults(Node result_node, Node precondition) : result_node(result_node),
 	precondition(precondition) { }
 
 	bool operator==(InverseResults rhs) const
@@ -121,7 +121,7 @@ struct InverseResults{
 
 	bool operator<(InverseResults rhs) const
 	{ // {{{
-		return precondition < rhs.precondition || 
+		return precondition < rhs.precondition ||
 		(precondition == rhs.precondition && result_node < rhs.result_node);
 	} // operator< }}}
 
@@ -130,18 +130,18 @@ struct InverseResults{
 /*
 * A tuple (state, symb, inverseResults). The structure inverseResults contains tuples (inverseResult,
 * precondition). If a node is a subset of 'precondition', the 'inverseResult' is a predecessor
-* of the given node which is accessible through the symbol 'symb'. 
+* of the given node which is accessible through the symbol 'symb'.
 * The state 'state' is always part of all 'preconditions' and it is a minimal element of them.
 */
 struct InverseTrans{
 
 	State state;
-	Symbol symb;    
+	Symbol symb;
 	std::vector<InverseResults> inverseResults{};
 
 	InverseTrans() : symb(), inverseResults() { }
 	InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
-	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) 
+	InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb)
 	{ inverseResults.push_back(inverseResults_); }
 	InverseTrans(State state, Symbol symb, InverseResults inverseResults_) : state(state), symb(symb)
 	{ inverseResults.push_back(inverseResults_); }
@@ -172,7 +172,7 @@ public:
 
 	explicit Afa(const unsigned long num_of_states, const Nodes& initial_states = Nodes{},
 		         const StateSet& final_states = StateSet{})
-		: transitionrelation(num_of_states), inverseTransRelation(num_of_states), 
+		: transitionrelation(num_of_states), inverseTransRelation(num_of_states),
 		initialstates(initial_states), finalstates(final_states) {}
 
 public:
@@ -198,7 +198,7 @@ public:
 	} // }}}
 	bool has_initial(Node node) const
 	{ // {{{
-		return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, 
+		return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1,
 		initialstates).contains(node);
 	} // }}}
 	void add_final(State state) { this->finalstates.insert(state); }
@@ -275,7 +275,7 @@ public:
 
 	StateClosedSet pre(StateClosedSet closed_set) const {return pre(closed_set.antichain());};
 
-	StateClosedSet get_initial_nodes(void) const 
+	StateClosedSet get_initial_nodes(void) const
 	{
 		StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
 		for(const auto& node : initialstates)
@@ -287,7 +287,7 @@ public:
 
 	StateClosedSet get_non_initial_nodes(void) const {return StateClosedSet(upward_closed_set,
 	0, transitionrelation.size()-1, initialstates).complement();};
-	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set, 
+	StateClosedSet get_final_nodes(void) const {return StateClosedSet(downward_closed_set,
 	0, transitionrelation.size()-1, finalstates);};
 	StateClosedSet get_non_final_nodes(void) const;
 
@@ -329,7 +329,7 @@ bool is_universal(
 	const Afa&         aut,
 	const Alphabet&    alphabet,
 	Word*              cex = nullptr,
-	const StringDict&  params = {{"algo", "antichains"}});
+	const StringDict&  params = {{"algorithm", "antichains"}});
 
 inline bool is_universal(
 	const Afa&         aut,
@@ -348,7 +348,7 @@ bool is_incl(
 	const Afa&         bigger,
 	const Alphabet&    alphabet,
 	Word*              cex = nullptr,
-	const StringDict&  params = {{"algo", "antichains"}});
+	const StringDict&  params = {{"algorithm", "antichains"}});
 
 inline bool is_incl(
 	const Afa&         smaller,

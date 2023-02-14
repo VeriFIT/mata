@@ -224,7 +224,7 @@ struct Delta {
 private:
     std::vector<Post> post;
 
-    /// Number of actual states occuring in the transition relation.
+    /// Number of actual states occurring in the transition relation.
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
@@ -874,7 +874,7 @@ void make_complete(
 Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params = {{"algo", "classical"}},
+        const StringMap&  params = {{"algorithm", "classical"}},
         std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 Nfa minimize(const Nfa &aut);
@@ -905,7 +905,7 @@ bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         Run*              cex = nullptr,
-        const StringMap&  params = {{"algo", "antichains"}});
+        const StringMap&  params = {{"algorithm", "antichains"}});
 
 inline bool is_universal(
         const Nfa&         aut,
@@ -923,7 +923,7 @@ inline bool is_universal(
  * @param cex[out] Counterexample for the inclusion.
  * @param alphabet[in] Alphabet of both NFAs to compute with.
  * @param params[in] Optional parameters to control the equivalence check algorithm:
- * - "algo": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
 bool is_included(
@@ -931,18 +931,18 @@ bool is_included(
         const Nfa&         bigger,
         Run*               cex,
         const Alphabet*    alphabet = nullptr,
-        const StringMap&   params = {{"algo", "antichains"}});
+        const StringMap&   params = {{"algorithm", "antichains"}});
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  * @param params[in] Optional parameters to control the equivalence check algorithm:
- * - "algo": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains" (Default: "antichains")
  */
 inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algo", "antichains"}})
+        const StringMap&      params = {{"algorithm", "antichains"}})
 { // {{{
     return is_included(smaller, bigger, nullptr, alphabet, params);
 } // }}}
@@ -954,11 +954,11 @@ inline bool is_included(
  * @param rhs[in] Second automaton to concatenate.
  * @param alphabet[in] Alphabet of both NFAs to compute with.
  * @param params[in] Optional parameters to control the equivalence check algorithm:
- * - "algo": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
-                    const StringMap& params = {{"algo", "antichains"}});
+                    const StringMap& params = {{"algorithm", "antichains"}});
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -974,10 +974,10 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * @param lhs[in] First automaton to concatenate.
  * @param rhs[in] Second automaton to concatenate.
  * @param params[in] Optional parameters to control the equivalence check algorithm:
- * - "algo": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algo", "antichains"}});
+bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
 /// Reverting the automaton
 Nfa revert(const Nfa& aut);

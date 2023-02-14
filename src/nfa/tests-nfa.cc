@@ -364,7 +364,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 
 		OnTheFlyAlphabet alph{"a", "b"};
 		StringMap params;
-		params["algo"] = "antichains";
+		params["algorithm"] = "antichains";
 
 		REQUIRE(is_included(a, res, &alph, params));
 		REQUIRE(is_included(b, res, &alph, params));
@@ -380,7 +380,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 
 		OnTheFlyAlphabet alph{"a", "b"};
 		StringMap params;
-		params["algo"] = "antichains";
+		params["algorithm"] = "antichains";
 
 		REQUIRE(is_included(a, res, &alph, params));
 		REQUIRE(is_included(res, a, &alph, params));
@@ -1361,7 +1361,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		OnTheFlyAlphabet alph{};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
@@ -1375,7 +1375,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);
@@ -1390,7 +1390,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(!is_univ);
@@ -1409,7 +1409,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(2, alph["b"], 2);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
@@ -1426,7 +1426,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(2, alph["b"], 2);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(!is_univ);
@@ -1443,7 +1443,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(1, alph["b"], 1);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, params);
 
 			REQUIRE(is_univ);
@@ -1468,7 +1468,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(5, alph["b"], 5);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(!is_univ);
@@ -1496,7 +1496,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(4, alph["b"], 4);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);
@@ -1520,7 +1520,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(4, alph["b"], 3);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);
@@ -1536,7 +1536,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 		aut.delta.add(1, alph["a"], 1);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_univ = is_universal(aut, alph, &cex, params);
 
 			REQUIRE(is_univ);
@@ -1554,7 +1554,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 	SECTION("wrong parameters 2")
 	{
 		OnTheFlyAlphabet alph{};
-		params["algo"] = "foo";
+		params["algorithm"] = "foo";
 
 		CHECK_THROWS_WITH(is_universal(aut, alph, params),
 			Catch::Contains("received an unknown value"));
@@ -1578,7 +1578,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		OnTheFlyAlphabet alph{};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &alph, params);
 			CHECK(is_incl);
 
@@ -1594,7 +1594,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		bigger.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
             CHECK(is_incl);
 
@@ -1612,7 +1612,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		bigger.final = {11};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
             CHECK(is_incl);
 
@@ -1628,7 +1628,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		smaller.final = {1};
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
 			REQUIRE(!is_incl);
@@ -1654,7 +1654,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		bigger.delta.add(11, alph["b"], 11);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &alph, params);
 			REQUIRE(is_incl);
 
@@ -1677,7 +1677,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		bigger.delta.add(12, alph["b"], 12);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
@@ -1717,7 +1717,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 		bigger.delta.add(15, alph["b"], 15);
 
 		for (const auto& algo : ALGORITHMS) {
-			params["algo"] = algo;
+			params["algorithm"] = algo;
 			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 			REQUIRE(!is_incl);
 
@@ -1752,7 +1752,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 	SECTION("wrong parameters 2")
 	{
         OnTheFlyAlphabet alph{};
-		params["algo"] = "foo";
+		params["algorithm"] = "foo";
 
 		CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
 			Catch::Contains("received an unknown value"));
@@ -1777,7 +1777,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         OnTheFlyAlphabet alph{};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algo"] = algo;
+            params["algorithm"] = algo;
 
             CHECK(are_equivalent(smaller, bigger, &alph, params));
             CHECK(are_equivalent(smaller, bigger, params));
@@ -1796,7 +1796,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.final = {1};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algo"] = algo;
+            params["algorithm"] = algo;
 
             CHECK(!are_equivalent(smaller, bigger, &alph, params));
             CHECK(!are_equivalent(smaller, bigger, params));
@@ -1817,7 +1817,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.final = {11};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algo"] = algo;
+            params["algorithm"] = algo;
 
             CHECK(are_equivalent(smaller, bigger, &alph, params));
             CHECK(are_equivalent(smaller, bigger, params));
@@ -1843,7 +1843,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.delta.add(11, alph["b"], 11);
 
         for (const auto& algo : ALGORITHMS) {
-            params["algo"] = algo;
+            params["algorithm"] = algo;
 
             //TODO:what about we test the plumbing versions primarily?
             // Debugging with the dispatcher is annoying.
@@ -1890,7 +1890,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
         bigger.delta.add(15, alph["b"], 15);
 
         for (const auto& algo : ALGORITHMS) {
-            params["algo"] = algo;
+            params["algorithm"] = algo;
 
             CHECK(!are_equivalent(smaller, bigger, &alph, params));
             CHECK(!are_equivalent(smaller, bigger, params));
@@ -1916,7 +1916,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("wrong parameters 2")
     {
         OnTheFlyAlphabet alph{};
-        params["algo"] = "foo";
+        params["algorithm"] = "foo";
 
         CHECK_THROWS_WITH(are_equivalent(smaller, bigger, &alph, params),
                           Catch::Contains("received an unknown value"));

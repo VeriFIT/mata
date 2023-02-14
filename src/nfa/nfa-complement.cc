@@ -81,13 +81,13 @@ Nfa Mata::Nfa::complement(
 	Nfa result;
 	// setting the default algorithm
 	decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
-	if (!haskey(params, "algo")) {
+	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
 			"received: " + std::to_string(params));
 	}
 
-	const std::string& str_algo = params.at("algo");
+	const std::string& str_algo = params.at("algorithm");
 	if ("classical" == str_algo) {  /* default */ }
 	else {
 		throw std::runtime_error(std::to_string(__func__) +

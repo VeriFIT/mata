@@ -156,13 +156,13 @@ bool Mata::Nfa::is_universal(
 
 	// setting the default algorithm
 	decltype(Algorithms::is_universal_naive)* algo = Algorithms::is_universal_naive;
-	if (!haskey(params, "algo")) {
+	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
 			"received: " + std::to_string(params));
 	}
 
-	const std::string& str_algo = params.at("algo");
+	const std::string& str_algo = params.at("algorithm");
 	if ("naive" == str_algo) { /* default */ }
 	else if ("antichains" == str_algo) {
 		algo = Algorithms::is_universal_antichains;

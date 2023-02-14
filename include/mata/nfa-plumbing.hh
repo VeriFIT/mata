@@ -39,7 +39,7 @@ namespace Plumbing {
             Nfa*               result,
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            const StringMap&  params = {{"algo", "classical"}},
+            const StringMap&  params = {{"algorithm", "classical"}},
             std::unordered_map<StateSet, State> *subset_map = nullptr)
     { // {{{
         *result = complement(aut, alphabet, params, subset_map);
