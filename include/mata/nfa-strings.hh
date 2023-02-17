@@ -119,6 +119,14 @@ namespace Strings {
      */
     std::set<std::pair<int, int>> get_word_lengths(const Nfa::Nfa& aut);
 
+    /**
+     * @brief Checks if the automaton @p nfa accepts only a single word \eps. 
+     * 
+     * @param nfa Input automaton
+     * @return true iff L(nfa) = {\eps}
+     */
+    bool is_lang_eps(const Nfa::Nfa& nfa);
+
 /**
  * Operations on segment automata.
  */

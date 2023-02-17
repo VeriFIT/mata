@@ -578,7 +578,7 @@ public:
      * @param[out] state_map Mapping of trimmed states to new states.
      * @return Trimmed automaton.
      */
-    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr);
+    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr) const;
 
     // FIXME: Resolve this comment and delete it.
     /* Lukas: the above is nice. The good thing is that access to [q] is constant,

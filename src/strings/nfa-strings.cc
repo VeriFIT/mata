@@ -198,3 +198,14 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
 
     return ret;
 }
+
+bool Mata::Strings::is_lang_eps(const Nfa::Nfa& aut) {
+    Nfa::Nfa tr_aut = aut.get_trimmed_automaton();
+    for(const auto& ini : tr_aut.initial) {
+        if(!tr_aut.final[ini])
+            return false;
+        if(tr_aut.delta[ini].size() > 0)
+            return false;
+    }
+    return true;
+}
