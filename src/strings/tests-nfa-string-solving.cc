@@ -276,4 +276,9 @@ TEST_CASE("Mata::Strings::is_lang_eps()") {
         create_nfa(&x, "");
         CHECK(is_lang_eps(x));
     }
+
+    SECTION("basic 3") {
+        Nfa x;
+        CHECK(!is_lang_eps(x));
+    }
 }
