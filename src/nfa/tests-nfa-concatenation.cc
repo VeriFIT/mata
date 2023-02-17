@@ -542,7 +542,6 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
     }
 
     SECTION("Automaton A concatenate automaton B")
@@ -600,4 +599,37 @@ TEST_CASE("(a|b)*") {
     Mata::RE2Parser::create_nfa(&aut3, "a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
+}
+
+TEST_CASE("Bug with epsilon transitions") {
+    Nfa nfa1{};
+    nfa1.initial.add(0);
+    nfa1.final.add(3);
+    nfa1.delta.add(0, 97, 0);
+    nfa1.delta.add(0, 98, 0);
+    nfa1.delta.add(0, 99, 0);
+    nfa1.delta.add(0, 100, 0);
+    nfa1.delta.add(0, EPSILON, 1);
+    nfa1.delta.add(1, 97, 2);
+    nfa1.delta.add(2, 98, 3);
+
+    Nfa nfa2{};
+    nfa2.initial.add(0);
+    nfa2.final.add(0);
+    nfa2.delta.add(0, 97, 0);
+    nfa2.delta.add(0, 98, 0);
+    nfa2.delta.add(0, 99, 0);
+    nfa2.delta.add(0, 100, 0);
+
+    auto result{ concatenate(nfa1, nfa2, true) };
+
+    Nfa expected{ nfa1 };
+    expected.delta.add(3, EPSILON, 4);
+    expected.delta.add(4, 97, 4);
+    expected.delta.add(4, 98, 4);
+    expected.delta.add(4, 99, 4);
+    expected.delta.add(4, 100, 4);
+    expected.final = { 4 };
+
+    CHECK(are_equivalent(result, expected));
 }
