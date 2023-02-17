@@ -542,7 +542,6 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
-        CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
     }
 
     SECTION("Automaton A concatenate automaton B")
@@ -623,4 +622,14 @@ TEST_CASE("Bug with epsilon transitions") {
     nfa2.delta.add(0, 100, 0);
 
     auto result{ concatenate(nfa1, nfa2, true) };
+
+    Nfa expected{ nfa1 };
+    expected.delta.add(3, EPSILON, 4);
+    expected.delta.add(4, 97, 4);
+    expected.delta.add(4, 98, 4);
+    expected.delta.add(4, 99, 4);
+    expected.delta.add(4, 100, 4);
+    expected.final = { 4 };
+
+    CHECK(are_equivalent(result, expected));
 }

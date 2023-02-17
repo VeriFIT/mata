@@ -41,8 +41,6 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     Nfa result{}; // Concatenated automaton.
     StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
     StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
-    const bool lhs_accepts_empty_string{ is_in_lang(lhs, Run{{}, {}}) };
-    const bool rhs_accepts_empty_string{ is_in_lang(rhs, Run{{}, {}}) };
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
     if (result_num_of_states == 0) { return Nfa{}; }
@@ -64,9 +62,6 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     result = Nfa();
     result.delta = lhs.delta;
     result.initial = lhs.initial;
-    if (rhs_accepts_empty_string) {
-        result.final = lhs.final;
-    }
     result.add_state(result_num_of_states-1);
 
     // Add epsilon transitions connecting lhs and rhs automata.
