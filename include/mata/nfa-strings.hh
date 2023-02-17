@@ -110,10 +110,10 @@ namespace Strings {
     WordSet get_shortest_words(const Nfa::Nfa& nfa);
 
     /**
-     * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each 
-     * such a pair there is a word with length u+k*v for all ks. The disjunction of such formulae of all pairs hence precisely 
+     * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each
+     * such a pair there is a word with length u+k*v for all ks. The disjunction of such formulae of all pairs hence precisely
      * describe lengths of all words in the automaton.
-     * 
+     *
      * @param aut Input automaton
      * @return Set of pairs describing lengths
      */
@@ -163,7 +163,7 @@ namespace SegNfa {
 
         /**
          * Get the epsilon depth trans map object (mapping of depths and states to eps-successors)
-         * 
+         *
          * @return Map of depths to a map of states to transitions
          */
         const EpsilonDepthTransitionMap& get_epsilon_depth_trans_map() const { return this->eps_depth_trans_map; }
@@ -267,7 +267,8 @@ namespace SegNfa {
         /**
          * @brief Remove inner initial and final states.
          *
-         * Remove all initial states for all segments but the first one and all final states for all segments but the last one.
+         * Remove all initial states for all segments but the first one and all final states for all segments but the
+         *  last one.
          */
         void remove_inner_initial_and_final_states();
     }; // Class Segmentation.
@@ -283,7 +284,7 @@ namespace SegNfa {
 
     /**
      * @brief segs_one_initial_final
-     * 
+     *
      * segments_one_initial_final[init, final] is the pointer to automaton created from one of
      * the segments such that init and final are one of the initial and final states of the segment
      * and the created automaton takes this segment, sets initial={init}, final={final}
@@ -292,7 +293,7 @@ namespace SegNfa {
      * segments_one_initial_final[init, unused_state] is similarly for the last segment
      * TODO: should we use unordered_map? then we need hash
      */
-    void segs_one_initial_final(const Mata::Nfa::AutSequence& segments, bool include_empty, 
+    void segs_one_initial_final(const Mata::Nfa::AutSequence& segments, bool include_empty,
         const State& unused_state, std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out);
 
     /**
@@ -385,7 +386,7 @@ namespace SegNfa {
 
     /**
      * @brief Process epsilon map to a sequence of values (sorted according to key desc)
-     * 
+     *
      * @param eps_cnt Epsilon count
      * @return Vector of keys (count of epsilons)
      */

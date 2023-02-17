@@ -125,9 +125,9 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 }
 
 void SegNfa::segs_one_initial_final(
-    const Mata::Nfa::AutSequence& segments, 
-    bool include_empty, 
-    const State& unused_state, 
+    const Mata::Nfa::AutSequence& segments,
+    bool include_empty,
+    const State& unused_state,
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out) {
 
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
@@ -225,9 +225,9 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
 
         if(item.seg_id + 1 == segments.size()) {
             // check if the noodle is already there
-            if(!std::any_of(noodles.begin(), noodles.end(), 
-                [&](NoodleSubst &s) { 
-                    return s == item.noodle; 
+            if(!std::any_of(noodles.begin(), noodles.end(),
+                [&](NoodleSubst &s) {
+                    return s == item.noodle;
             } )) {
                 noodles.push_back(item.noodle);
             }
@@ -347,7 +347,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 }
 
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata, 
+SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
     const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const StringMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
@@ -356,27 +356,27 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
 
     for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
          ++left_aut_iter) {
-        (*left_aut_iter).get()->unify_initial();
-        (*left_aut_iter).get()->unify_final();
+        left_aut_iter->get()->unify_initial();
+        left_aut_iter->get()->unify_final();
     }
     for (auto right_aut_iter{ right_automata_begin }; right_aut_iter != right_automata_end;
          ++right_aut_iter) {
-        (*right_aut_iter).get()->unify_initial();
-        (*right_aut_iter).get()->unify_final();
+        right_aut_iter->get()->unify_initial();
+        right_aut_iter->get()->unify_final();
     }
 
     if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa::Nfa concatenated_left_side{ *left_automata_begin->get() };
+    Nfa::Nfa concatenated_left_side{ **left_automata_begin };
     for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
          ++next_left_automaton_it) {
-        concatenated_left_side = concatenate_eps(concatenated_left_side, *next_left_automaton_it->get(), EPSILON, true);
+        concatenated_left_side = concatenate_eps(concatenated_left_side, **next_left_automaton_it, EPSILON, true);
     }
-    Nfa::Nfa concatenated_right_side{ *right_automata_begin->get() };
+    Nfa::Nfa concatenated_right_side{ **right_automata_begin };
     for (auto next_right_automaton_it{ right_automata_begin + 1 }; next_right_automaton_it != right_automata_end;
          ++next_right_automaton_it) {
-        concatenated_right_side = concatenate_eps(concatenated_right_side, *next_right_automaton_it->get(), EPSILON-1, true); // we use EPSILON-1
+        concatenated_right_side = concatenate_eps(concatenated_right_side, **next_right_automaton_it, EPSILON-1, true); // we use EPSILON-1
     }
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
