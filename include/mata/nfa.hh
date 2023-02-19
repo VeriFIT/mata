@@ -172,6 +172,14 @@ struct Move {
         }
     }
 
+    // THIS BREAKS THE SORTEDNESS INVARIANT,
+    // very dangerous,
+    // but useful when I want to add states in a random order and sort later (more efficient than inserting in a random order)
+    void push_back(State s)
+    {
+        targets.push_back(s);
+    }
+
     void remove(State s) { targets.remove(s); }
 };
 
@@ -201,7 +209,13 @@ struct Post : private Util::OrdVector<Move> {
 
     void insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
 
+    // dangerous, breaks the sortedness invariant
+    void push_back(const Move& m) override { Util::OrdVector<Move>::push_back(m); }
+
     const Move& back() const override { return Util::OrdVector<Move>::back(); }
+
+    // is adding this non-const version ok?
+    Move& back() { return Util::OrdVector<Move>::back(); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
@@ -261,6 +275,8 @@ public:
     Post & get_mutable_post(State q)
     {
         if (q >= post.size()) {
+            if (post.size()==post.capacity())
+                post.reserve(post.size()+10);
             const size_t new_size{ q + 1 };
             post.resize(new_size);
             if (new_size > m_num_of_states) {
@@ -525,6 +541,18 @@ public:
         m_num_of_requested_states = 0;
     }
 
+    // this is exact equality of automata, including state numbering (so even stronger than isomorphism)
+    // essentially only useful for testing purposes
+    bool is_equal(const Nfa & aut) {
+        std::vector<Trans> thisTrans;
+        for (auto trans: *this) thisTrans.push_back(trans);
+        std::vector<Trans> autTrans;
+        for (auto trans: aut) autTrans.push_back(trans);
+        return (initial.get_elements() == aut.initial.get_elements()
+            && final.get_elements() == aut.final.get_elements()
+            && thisTrans == autTrans);
+    };
+
     /**
      * @brief Get set of symbols used on the transitions in the automaton.
      *
@@ -533,6 +561,10 @@ public:
      */
     Util::OrdVector<Symbol> get_used_symbols() const;
 
+    /**
+     * @brief Get set maximum non-e used symbol.
+     */
+    Symbol Nfa::get_max_symbol() const;
     /**
      * @brief Get set of reachable states.
      *
@@ -979,8 +1011,15 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
-/// Reverting the automaton
+/// Reverting the automaton by a fast algorithm,
+/// potentially dangerous when there are very many used symbols (allocates an array indexed by symbols)
 Nfa revert(const Nfa& aut);
+
+/// Reverting the automaton by a simple slow algorithm
+Nfa simple_revert(const Nfa& aut);
+
+/// Reverting the automaton by a simple slow algorithm
+Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);

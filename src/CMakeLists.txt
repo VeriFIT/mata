@@ -75,13 +75,13 @@ set_target_properties(libmata PROPERTIES
 )
 
 add_executable(tests
-	tests-main.cc
-	tests-mintermization.cc
-	tests-parser.cc
-	tests-re2parser.cc
 	tests-ord-vector.cc
 	tests-number-predicate.cc
 	tests-synchronized-iterator.cc
+	tests-main.cc
+	tests-parser.cc
+	tests-re2parser.cc
+	tests-mintermization.cc
 	afa/tests-afa.cc
 	nfa/tests-nfa.cc
 	nfa/tests-nfa-concatenation.cc

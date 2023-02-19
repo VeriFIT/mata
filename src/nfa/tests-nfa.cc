@@ -65,6 +65,23 @@ using Word = std::vector<Symbol>;
 
 // }}}
 
+// Automaton C
+#define FILL_WITH_AUT_C(x) \
+	x.initial = {4}; \
+	x.final = {2, 12}; \
+	x.delta.add(4, 3, 8); \
+	x.delta.add(4, 1, 8); \
+	x.delta.add(8, 2, 4); \
+	x.delta.add(4, 1, 6); \
+	x.delta.add(4, 2, 6); \
+	x.delta.add(6, 1, 2); \
+	x.delta.add(2, 2, 2); \
+	x.delta.add(2, 1, 0); \
+	x.delta.add(0, 1, 2); \
+	x.delta.add(2, 3, 12); \
+	x.delta.add(12, 1, 14); \
+	x.delta.add(14, 2, 12); \
+
 template<class T> void unused(const T &) {}
 
 //TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
@@ -2047,7 +2064,52 @@ TEST_CASE("Mata::Nfa::revert()")
 		CHECK(res.delta.contains(12, 'b', 14));
 		CHECK(res.delta.contains(14, 'a', 12));
 	}
+
 } // }}}
+
+TEST_CASE("Mata::Nfa::revert() speed" ) {
+    Nfa A,B,C;
+    FILL_WITH_AUT_C(B);
+    //C = B;
+    //CHECK(B.is_equal(C));
+    for (int i=0;i<100000;i++) {
+        B = revert(B);
+        //B = A;
+    }
+    //CHECK(B.is_equal(C));
+}
+
+TEST_CASE("Mata::Nfa::simple_revert() speed") {
+    Nfa A,B,C;
+    FILL_WITH_AUT_C(B);
+    //C = B;
+    //CHECK(B.is_equal(C));
+    for (int i=0;i<100000;i++) {
+        B = simple_revert(B);
+        //B = A;
+    }
+    //CHECK(B.is_equal(C));
+}
+
+TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed") {
+    Nfa A,B,C;
+    FILL_WITH_AUT_C(B);
+    //C = B;
+    //CHECK(B.is_equal(C));
+    for (int i=0;i<100000;i++) {
+        B = somewhat_simple_revert(B);
+        //B = A;
+    }
+    //CHECK(B.is_equal(C));
+}
+
+// TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed") {
+//     int rounds = 100000;
+//     std::vector<Nfa> nfas(rounds);
+//     FILL_WITH_AUT_B(nfas[0]);
+//     for (int i=0;i<rounds;i++)
+//         nfas[i+1] = somewhat_simple_revert(nfas[i]);
+// }
 
 TEST_CASE("Mata::Nfa::is_deterministic()")
 { // {{{

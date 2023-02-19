@@ -297,6 +297,8 @@ size_t Delta::size() const
 void Delta::add(State state_from, Symbol symbol, State state_to)
 {
     if (state_from >= post.size()) {
+        if (state_from >= post.capacity())
+            post.reserve(state_from + 10);
         post.resize(state_from + 1);
     }
 
@@ -746,6 +748,115 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 }
 
 Nfa Mata::Nfa::revert(const Nfa& aut) {
+    const size_t num_of_states{ aut.size() };
+
+    Nfa result(num_of_states);
+
+    result.initial = aut.final;
+    result.final = aut.initial;
+
+    //OrdVector<Symbol> symbols = aut.get_used_symbols();
+
+    // if (symbols.empty())
+    //     return result;
+
+    // if (symbols.back() == EPSILON)
+    //     symbols.pop_back();
+    // // size of the "used alphabet", i.e. max symbol+1 or 0
+    // Symbol alphasize =  (symbols.empty()) ? 0 : (symbols.back()+1);
+
+    Symbol max_symbol = aut.get_max_symbol();
+    Symbol alphasize = max_symbol + 1;
+
+    Madness:
+    static std::vector<std::vector<State>> sources;//(alphasize);
+    static std::vector<std::vector<State>> targets;//(alphasize);
+    static std::vector<State> e_sources;
+    static std::vector<State> e_targets;
+    e_sources.clear();
+    e_targets.clear();
+    sources.resize(alphasize);
+    targets.resize(alphasize);
+    for (int i = 0;i<alphasize;i++) {
+        if(!sources[i].empty()) {
+            sources[i].clear();
+            targets[i].clear();
+        }
+    }
+
+//    std::vector<std::vector<State>> sources (alphasize);
+//    std::vector<std::vector<State>> targets (alphasize);
+//    std::vector<State> e_sources;
+//    std::vector<State> e_targets;
+//    e_sources.clear();
+//    e_targets.clear();
+
+    //initialise with this?
+    //int avg_trans_per_symb  = aut.delta.size() / symbols.size();
+
+    for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
+        for (const Move &move: aut.delta[sourceState]) {
+            if (move.symbol == EPSILON) {
+                for (const State targetState: move.targets) {
+                    e_sources.push_back(sourceState);
+                    e_targets.push_back(targetState);
+                }
+            }
+            else {
+                for (const State targetState: move.targets) {
+                    sources[move.symbol].push_back(sourceState);
+                    targets[move.symbol].push_back(targetState);
+                }
+            }
+        }
+    }
+
+    result.delta.reserve(num_of_states);
+
+    // adding non-e transitions
+    //for (const Symbol symbol: symbols) {
+    for (Symbol symbol = 0; symbol <= max_symbol; ++symbol) {
+        for (int i = 0; i<sources[symbol].size(); ++i) {
+            State tgt_state =sources[symbol][i];
+            State src_state =targets[symbol][i];
+            Post & src_post = result.delta.get_mutable_post(src_state);
+            if (src_post.empty() || src_post.back().symbol != symbol) {
+                src_post.push_back(Move(symbol));
+            }
+            //Move & m = src_post.back();
+            //if (m.empty())
+            //    src_post.back().reserve(10);
+            //src_post.back().push_back(tgt_state);
+            src_post.back().push_back(tgt_state);
+        }
+    }
+
+    // adding e-transitions
+    for (int i = 0; i<e_sources.size(); ++i) {
+        State tgt_state =e_sources[i];
+        State src_state =e_targets[i];
+        Post & src_post = result.delta.get_mutable_post(src_state);
+        if (src_post.empty() || src_post.back().symbol != EPSILON) {
+            src_post.push_back(Move(EPSILON));
+        }
+        src_post.back().push_back(tgt_state);
+    }
+
+    //sorting the targets
+    for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
+        for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
+            m->targets.sort_and_rmdupl();
+        }
+    }
+
+    //Nfa test =simple_revert(aut);
+    //if (!result.is_equal(test))
+    //    std::cout<<"fuck";
+
+    return result;
+}
+
+Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
     Nfa result;
     result.clear();
 
@@ -765,6 +876,41 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
 
     return result;
 }
+
+Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
+    const size_t num_of_states{ aut.size() };
+
+    Nfa result(num_of_states);
+
+    result.initial = aut.final;
+    result.final = aut.initial;
+
+    for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
+        for (const Move &transition: aut.delta[sourceState]) {
+            for (const State targetState: transition.targets) {
+                //result.delta.add(targetState, transition.symbol, sourceState);
+                Post & post = result.delta.get_mutable_post(targetState);
+                auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
+                if (move == post.end()) {
+                    post.insert(Move(transition.symbol,sourceState));
+                }
+                else
+                    move->push_back(sourceState);
+                //add(targetState, transition.symbol, sourceState);
+            }
+        }
+    }
+
+    //sorting the targets
+    for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
+        for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
+            m->targets.sort_and_rmdupl();
+        }
+    }
+
+    return result;
+}
+
 
 bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
@@ -1562,14 +1708,48 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     os << " }";
 }
 
+// // returns symbols appearing in Delta
+// Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
+//     std::vector<Symbol>  symbols{};
+//     for (const auto& transition: delta) {
+//         symbols.push_back(transition.symb);
+//     }
+//     Util::OrdVector<Symbol>  sorted_symbols(symbols);
+//     return sorted_symbols;
+// }
 
+// returns symbols appearing in Delta
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
-     Util::OrdVector<Symbol>  symbols{};
-     for (const auto& transition: delta) {
+    std::set<Symbol>  symbols{};
+    for (const auto& transition: delta) {
         symbols.insert(transition.symb);
-     }
-     return symbols;
- }
+    }
+    Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
+    return sorted_symbols;
+}
+
+// returns symbols appearing in Delta
+// Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
+//     std::map<Symbol,int>  symbols{};
+//     for (const auto& transition: delta) {
+//         symbols.insert(std::pair<Symbol,int>(transition.symb,0));
+//     }
+//     std::vector<Symbol>  sorted_symbols(symbols.size());
+//     std::transform(symbols.begin(), symbols.end(), sorted_symbols.begin(),
+//                    [](const std::pair<Symbol, int>& p){ return p.first; });
+//
+//     return OrdVector<Symbol>(sorted_symbols);
+// }
+
+// returns max non-e symbol in Delta
+Symbol Nfa::get_max_symbol() const {
+    Symbol max = 0;
+    for (const auto& transition: delta) {
+        if (transition.symb>max && transition.symb!=EPSILON)
+            max = transition.symb;
+    }
+    return max;
+}
 
  void Nfa::unify_initial() {
     if (initial.empty() || initial.size() == 1) { return; }

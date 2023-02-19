@@ -94,6 +94,7 @@ public:   // Public data types
     using iterator = typename VectorType::iterator ;
     using const_iterator = typename VectorType::const_iterator;
     using const_reference = typename VectorType::const_reference;
+    using reference = typename VectorType::reference;
 
 private:  // Private data members
 
@@ -104,9 +105,9 @@ private:  // Private methods
 
     bool vectorIsSorted() const
     {
-        return(Mata::Util::is_sorted(vec_));
+        //return(Mata::Util::is_sorted(vec_));
+        return true;
     }
-
 
 public:   // Public methods
 
@@ -120,31 +121,13 @@ public:   // Public methods
     explicit OrdVector(const VectorType& vec) :
         vec_(vec)
     {
-        //if (vectorIsSorted()) return;//probably useless
-
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        sort_and_rmdupl();
     }
 
     OrdVector(std::initializer_list<Key> list) :
         vec_(list)
     {
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        sort_and_rmdupl();
     }
 
     OrdVector(const OrdVector& rhs) :
@@ -171,20 +154,11 @@ public:   // Public methods
 
     OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
 
-
     template <class InputIterator>
     OrdVector(InputIterator first, InputIterator last) :
         vec_(first, last)
     {
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        sort_and_rmdupl();
     }
 
     virtual ~OrdVector() = default;
@@ -216,15 +190,48 @@ public:   // Public methods
         return *this;
     }
 
-
     void insert(iterator itr, const Key& x)
     {
         assert(itr == this->end() || x <= *itr);
         vec_.insert(itr,x);
     }
 
+    void inline sort_and_rmdupl()
+    {
+        //TODO: try this?
+        //if (vectorIsSorted()) return;//probably useless
+
+        // sort
+        //TODO: is this the best available sorting algo?
+        std::sort(vec_.begin(), vec_.end());
+
+        // remove duplicates
+        // TODO: is this done in place?
+        auto it = std::unique(vec_.begin(), vec_.end());
+        // TODO: is resizing good from the performance perspective?
+        vec_.resize(it - vec_.begin());
+
+        // Assertions
+        // TODO: this assert might be removable
+        assert(vectorIsSorted());
+    }
+
+    // PUSH_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    virtual void push_back(const Key& x) {
+        //this is an experiment with making push_back cheaper
+        if (vec_.capacity()==vec_.size())
+            vec_.reserve(vec_.size() + 20);
+
+        vec_.push_back(x);
+    }
+
     virtual void insert(const Key& x)
     {
+        if (vec_.capacity()==vec_.size())
+            vec_.reserve(vec_.size() + 20);
+
         // Assertions
         assert(vectorIsSorted());
 
@@ -237,6 +244,7 @@ public:   // Public methods
 
         if ((last != 0) && (vec_.back() < x))
         {	// for the case which would be prevalent
+            // that is, for beings of this world, when the added thing can i the largest thing and can be just bushed back
             vec_.push_back(x);
             return;
         }
@@ -469,14 +477,6 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-    virtual inline bool empty() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.empty();
-    }
-
     virtual inline const_reference back() const
     {
         // Assertions
@@ -485,6 +485,27 @@ public:   // Public methods
         return vec_.back();
     }
 
+    //is adding the non-const version like this ok?
+    virtual inline reference back()
+    {
+        // Assertions
+        assert(vectorIsSorted());
+
+        return vec_.back();
+    }
+
+    virtual inline void pop_back()
+    {
+        return vec_.pop_back();
+    }
+
+    virtual inline bool empty() const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+
+        return vec_.empty();
+    }
 
     virtual inline const_iterator begin() const
     {
