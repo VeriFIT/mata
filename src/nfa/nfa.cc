@@ -539,7 +539,7 @@ void Nfa::trim(StateToStateMap* state_map)
     }
 }
 
-Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
+Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
     StateToStateMap tmp_state_map{};

@@ -262,3 +262,23 @@ TEST_CASE("Mata::Strings::get_lengths()") {
         }));
     }
 }
+
+TEST_CASE("Mata::Strings::is_lang_eps()") {
+     
+    SECTION("basic") {
+        Nfa x;
+        create_nfa(&x, "(abcde)*");
+        CHECK(!is_lang_eps(x));
+    }
+
+    SECTION("basic 2") {
+        Nfa x;
+        create_nfa(&x, "");
+        CHECK(is_lang_eps(x));
+    }
+
+    SECTION("basic 3") {
+        Nfa x;
+        CHECK(!is_lang_eps(x));
+    }
+}
