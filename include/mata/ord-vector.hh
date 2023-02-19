@@ -45,12 +45,39 @@ namespace Mata
         }
 
         template<class Vector>
-        void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 10) {
-            //return;
+        void inline sort_and_rmdupl(Vector & vec)
+        {
+            //TODO: try this?
+            //if (vectorIsSorted()) return;//probably useless
+
+            // sort
+            //TODO: is this the best available sorting algo?
+            std::sort(vec.begin(), vec.end());
+
+            // remove duplicates
+            // TODO: is this done in place?
+            auto it = std::unique(vec.begin(), vec.end());
+            // TODO: is resizing good from the performance perspective?
+            vec.resize(it - vec.begin());
+
+            // Assertions
+            // TODO: this assert might be removable
+            assert(vectorIsSorted());
+        }
+
+        // This reserves space in a vector, to be used before push_back or insert.
+        // So far it just reserves 20 more cells than currently needed, 12 being sucked out of a finger.
+        // Might be worth thinking about it.
+        // It seems to help in fragile_revert:
+        //  around 30% speedup for fragile fragile_revert,
+        //  more than 50% for simple fragile_revert,
+        // (when testing on a stupid test case)
+        template<class Vector>
+        void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 20) {
+            //return; //Try this to see the effect of calling this. It should not affect functionality.
             if (vec.capacity() < std::max(vec.size()+1,needed_capacity))
                 vec.reserve(vec.size()+extension);
         }
-
     }
 }
 
@@ -76,7 +103,6 @@ namespace
         // return the string
         return oss.str();
     }
-
 }
 
 
@@ -113,8 +139,7 @@ private:  // Private methods
 
     bool vectorIsSorted() const
     {
-        //return(Mata::Util::is_sorted(vec_));
-        return true;
+        return(Mata::Util::is_sorted(vec_));
     }
 
 public:   // Public methods
@@ -122,6 +147,7 @@ public:   // Public methods
     OrdVector() :
         vec_()
     {
+        //vec_.reserve(20);
         // Assertions
         assert(vectorIsSorted());
     }
@@ -129,13 +155,15 @@ public:   // Public methods
     explicit OrdVector(const VectorType& vec) :
         vec_(vec)
     {
-        sort_and_rmdupl();
+        Util::sort_and_rmdupl(vec_);
+        //sort_and_rmdupl();
     }
 
     OrdVector(std::initializer_list<Key> list) :
         vec_(list)
     {
-        sort_and_rmdupl();
+        Util::sort_and_rmdupl(vec_);
+        //sort_and_rmdupl();
     }
 
     OrdVector(const OrdVector& rhs) :
@@ -166,7 +194,8 @@ public:   // Public methods
     OrdVector(InputIterator first, InputIterator last) :
         vec_(first, last)
     {
-        sort_and_rmdupl();
+        Util::sort_and_rmdupl(vec_);
+        //sort_and_rmdupl();
     }
 
     virtual ~OrdVector() = default;
@@ -204,33 +233,17 @@ public:   // Public methods
         vec_.insert(itr,x);
     }
 
-    void inline sort_and_rmdupl()
-    {
-        //TODO: try this?
-        //if (vectorIsSorted()) return;//probably useless
-
-        // sort
-        //TODO: is this the best available sorting algo?
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        // TODO: is this done in place?
-        auto it = std::unique(vec_.begin(), vec_.end());
-        // TODO: is resizing good from the performance perspective?
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        // TODO: this assert might be removable
-        assert(vectorIsSorted());
-    }
-
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
-    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
-    virtual void push_back(const Key& x) {
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. fragile_revert)
+    virtual inline void push_back(const Key& x) {
         //this is an experiment with making push_back cheaper
         reserve_on_insert(vec_);
         vec_.push_back(x);
+    }
+
+    virtual inline void resize(size_t  size) {
+        vec_.resize(size);
     }
 
     virtual void insert(const Key& x)
@@ -279,7 +292,6 @@ public:   // Public methods
         // Assertions
         assert(vectorIsSorted());
     }
-
 
     virtual void insert(const OrdVector& vec)
     {
@@ -417,6 +429,8 @@ public:   // Public methods
         return result;
     }
 
+    //TODO: having this code duplicated is not nice
+    // it would be useful as a function too
     virtual const_iterator find(const Key& key) const
     {
         // Assertions
@@ -446,6 +460,7 @@ public:   // Public methods
         return end();
     }
 
+    //TODO: having this code duplicated is not nice
     virtual iterator find(const Key& key)
     {
         // Assertions

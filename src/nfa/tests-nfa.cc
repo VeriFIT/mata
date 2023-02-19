@@ -66,6 +66,7 @@ using Word = std::vector<Symbol>;
 // }}}
 
 // Automaton C
+// the same as B, but with small symbols
 #define FILL_WITH_AUT_C(x) \
 	x.initial = {4}; \
 	x.final = {2, 12}; \
@@ -80,8 +81,44 @@ using Word = std::vector<Symbol>;
 	x.delta.add(0, 1, 2); \
 	x.delta.add(2, 3, 12); \
 	x.delta.add(12, 1, 14); \
-	x.delta.add(14, 2, 12); \
+	x.delta.add(14, 2, 12);   \
 
+// Automaton D // shomewhat larger
+#define FILL_WITH_AUT_D(x) \
+    x.initial = {0}; \
+    x.final = {3}; \
+    x.delta.add(0, 46, 0); \
+    x.delta.add(0, 47, 0); \
+    x.delta.add(0, 58, 0); \
+    x.delta.add(0, 58, 1); \
+    x.delta.add(0, 64, 1); \
+    x.delta.add(0, 64, 1); \
+    x.delta.add(0, 82, 2); \
+    x.delta.add(0, 92, 2); \
+    x.delta.add(0, 98, 2); \
+    x.delta.add(0, 100, 1);\
+    x.delta.add(0, 103, 0);\
+    x.delta.add(0, 109, 0);\
+    x.delta.add(0, 110, 1);\
+    x.delta.add(0, 111, 2);\
+    x.delta.add(0, 114, 0);\
+    x.delta.add(1, 47, 2); \
+    x.delta.add(2, 47, 3); \
+    x.delta.add(3, 46, 2); \
+    x.delta.add(3, 47, 0); \
+    x.delta.add(3, 58, 2); \
+    x.delta.add(3, 64, 3); \
+    x.delta.add(3, 82, 2); \
+    x.delta.add(3, 92, 0); \
+    x.delta.add(3, 98, 2); \
+    x.delta.add(3, 100, 2);\
+    x.delta.add(3, 103, 3);\
+    x.delta.add(3, 109, 2);\
+    x.delta.add(3, 110, 3);\
+    x.delta.add(3, 111, 2);\
+    x.delta.add(3, 114, 3);\
+
+// }}}
 template<class T> void unused(const T &) {}
 
 //TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
@@ -1943,13 +1980,13 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     }
 }
 
-TEST_CASE("Mata::Nfa::revert()")
+TEST_CASE("Mata::Nfa::fragile_revert()")
 { // {{{
 	Nfa aut(9);
 
 	SECTION("empty automaton")
 	{
-		Nfa result = revert(aut);
+		Nfa result = fragile_revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial.size() == 0);
@@ -1964,7 +2001,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		aut.final.add(2);
 		aut.final.add(5);
 
-		Nfa result = revert(aut);
+		Nfa result = fragile_revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial[2]);
@@ -1979,7 +2016,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		aut.final.add(2);
 		aut.delta.add(1, 'a', 2);
 
-		Nfa result = revert(aut);
+		Nfa result = fragile_revert(aut);
 
 		REQUIRE(result.initial[2]);
 		REQUIRE(result.final[1]);
@@ -2002,7 +2039,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		aut.delta.add(7, 'a', 8);
 		aut.final = {3};
 
-		Nfa result = revert(aut);
+		Nfa result = fragile_revert(aut);
 		//REQUIRE(result.final == StateSet({1, 2}));
         REQUIRE(StateSet(result.final.get_elements()) == StateSet({1, 2}));
 		REQUIRE(result.delta.contains(2, 'a', 1));
@@ -2021,7 +2058,7 @@ TEST_CASE("Mata::Nfa::revert()")
 	SECTION("Automaton A") {
 		Nfa nfa{ 11 };
 		FILL_WITH_AUT_A(nfa);
-		Nfa res = revert(nfa);
+		Nfa res = fragile_revert(nfa);
 		CHECK(res.initial[5]);
 		CHECK(res.final[1]);
 		CHECK(res.final[3]);
@@ -2046,7 +2083,7 @@ TEST_CASE("Mata::Nfa::revert()")
 	SECTION("Automaton B") {
 		Nfa nfa{ 15 };
 		FILL_WITH_AUT_B(nfa);
-		Nfa res = revert(nfa);
+		Nfa res = fragile_revert(nfa);
 		CHECK(res.initial[2]);
 		CHECK(res.initial[12]);
 		CHECK(res.final[4]);
@@ -2067,48 +2104,32 @@ TEST_CASE("Mata::Nfa::revert()")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::revert() speed") {
-    Nfa A,B,C;
-    FILL_WITH_AUT_B(B);
-    //C = B;
-    //CHECK(B.is_equal(C));
-    for (int i=0;i<300000;i++) {
-        B = revert(B);
-        //B = A;
-    }
-    //CHECK(B.is_equal(C));
-}
-
-TEST_CASE("Mata::Nfa::simple_revert() speed") {
-    Nfa A,B,C;
-    FILL_WITH_AUT_B(B);
-    //C = B;
-    //CHECK(B.is_equal(C));
-    for (int i=0;i<300000;i++) {
-        B = simple_revert(B);
-        //B = A;
-    }
-    //CHECK(B.is_equal(C));
-}
-
-TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed") {
-    Nfa A,B,C;
-    FILL_WITH_AUT_B(B);
-    //C = B;
-    //CHECK(B.is_equal(C));
-    for (int i=0;i<300000;i++) {
-        B = somewhat_simple_revert(B);
-        //B = A;
-    }
-    //CHECK(B.is_equal(C));
-}
-
+// These are speed test of variants of revert, they take some time though.
+// TEST_CASE("Mata::Nfa::fragile_revert() speed") {
+//     Nfa B;
+//     FILL_WITH_AUT_A(B);
+//     //FILL_WITH_AUT_B(B);
+//     //FILL_WITH_AUT_C(B);
+//     //FILL_WITH_AUT_D(B);
+//     for (int i=0;i<300000;i++) {
+//         B = fragile_revert(B);
+//     }
+// }
+//
+// TEST_CASE("Mata::Nfa::simple_revert() speed") {
+//     Nfa B;
+//     FILL_WITH_AUT_A(B);
+//     for (int i=0;i<300000;i++) {
+//         B = simple_revert(B);
+//     }
+// }
+//
 // TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed") {
-//     int rounds = 100000;
-//     std::vector<Nfa> nfas(rounds);
-//     FILL_WITH_AUT_B(nfas[0]);
-//     for (int i=0;i<rounds;i++)
-//         nfas[i+1] = somewhat_simple_revert(nfas[i]);
+//     Nfa B;
+//     FILL_WITH_AUT_C(B);
+//     for (int i=0;i<300000;i++) {
+//         B = somewhat_simple_revert(B);
+//     }
 // }
 
 TEST_CASE("Mata::Nfa::is_deterministic()")

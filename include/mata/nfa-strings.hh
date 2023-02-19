@@ -38,7 +38,7 @@ namespace Strings {
          * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
          * @param aut Automaton to compute shortest words for.
          */
-        explicit ShortestWordsMap(const Nfa::Nfa& aut) : reversed_automaton(revert(aut)) {
+        explicit ShortestWordsMap(const Nfa::Nfa& aut) : reversed_automaton(fragile_revert(aut)) {
             insert_initial_lengths();
             compute();
         }

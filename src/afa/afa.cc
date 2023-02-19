@@ -871,7 +871,7 @@ void Mata::Afa::revert(Afa* result, const Afa& aut)
 
   // TODO
   assert(false);
-} // revert }}}
+} // fragile_revert }}}
 
 
 void Mata::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)

@@ -175,12 +175,16 @@ struct Move {
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // very dangerous,
     // but useful when I want to add states in a random order and sort later (more efficient than inserting in a random order)
-    void push_back(State s)
+    void inline push_back(const State s)
     {
         targets.push_back(s);
     }
 
     void remove(State s) { targets.remove(s); }
+
+    const std::vector<State>::iterator find(State s) const { targets.find(s); }
+
+    std::vector<State>::iterator find(State s) { targets.find(s); }
 };
 
 /**
@@ -192,35 +196,37 @@ struct Post : private Util::OrdVector<Move> {
     using iterator = Util::OrdVector<Move>::iterator;
     using const_iterator = Util::OrdVector<Move>::const_iterator;
 
-    iterator begin() override { return Util::OrdVector<Move>::begin(); }
-    const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
-    iterator end() override { return Util::OrdVector<Move>::end(); }
-    const_iterator end() const override { return Util::OrdVector<Move>::end(); }
+    inline iterator begin() override { return Util::OrdVector<Move>::begin(); }
+    inline const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
+    inline iterator end() override { return Util::OrdVector<Move>::end(); }
+    inline const_iterator end() const override { return Util::OrdVector<Move>::end(); }
 
-    const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
-    const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
+    inline const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
+    inline const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
 
     Post() = default;
 
     virtual ~Post() = default;
 
-    const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
-    iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
+    inline const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
+    inline iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
 
-    void insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
+    void inline insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
 
     // dangerous, breaks the sortedness invariant
-    void push_back(const Move& m) override { Util::OrdVector<Move>::push_back(m); }
+    void inline push_back(const Move& m) override { Util::OrdVector<Move>::push_back(m); }
 
-    const Move& back() const override { return Util::OrdVector<Move>::back(); }
+    inline const Move& back() const override { return Util::OrdVector<Move>::back(); }
 
     // is adding this non-const version ok?
-    Move& back() { return Util::OrdVector<Move>::back(); }
+    inline Move& back() { return Util::OrdVector<Move>::back(); }
+
+    inline void inline resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
-    bool empty() const override{ return Util::OrdVector<Move>::empty(); }
-    size_t size() const override { return Util::OrdVector<Move>::size(); }
+    inline bool empty() const override{ return Util::OrdVector<Move>::empty(); }
+    inline size_t size() const override { return Util::OrdVector<Move>::size(); }
 
 	const std::vector<Move>& ToVector() const
 	{
@@ -553,15 +559,16 @@ public:
     };
 
     /**
-     * @brief Get set of symbols used on the transitions in the automaton.
+     * @brief Get the set of symbols used on the transitions in the automaton.
      *
      * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
      * @return Set of symbols used on the transitions.
+     * TODO: this could be a method of Delta
      */
     Util::OrdVector<Symbol> get_used_symbols() const;
 
     /**
-     * @brief Get set maximum non-e used symbol.
+     * @brief Get the maximum non-e used symbol.
      */
     Symbol Nfa::get_max_symbol() const;
     /**
@@ -569,6 +576,7 @@ public:
      *
      * Reachable states are states accessible from any initial state.
      * @return Set of reachable states.
+     * TODO: this could be a method of Delta
      */
     StateSet get_reachable_states() const;
 
@@ -610,15 +618,6 @@ public:
      * @return Trimmed automaton.
      */
     Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr);
-
-    // FIXME: Resolve this comment and delete it.
-    /* Lukas: the above is nice. The good thing is that access to [q] is constant,
-     * so one can iterate over all states for instance using this, and it is fast.
-     * But I don't know how to do a similar thing inside Moves.
-     * Returning a transition of q with the symbol a means to search for it in the list,
-     * so iteration over the entire list would be very inefficient.
-     * An efficient iteration would probably need an interface for an iterator, I don't know...
-     * */
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -1010,14 +1009,23 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
-/// Reverting the automaton by a fast algorithm,
-/// potentially dangerous when there are very many used symbols (allocates an array indexed by symbols)
+
+
+/// Reverting the automaton by one of the three below.
+/// Reverting the automaton by a supposedly smarter algorithm.
 Nfa revert(const Nfa& aut);
 
-/// Reverting the automaton by a simple slow algorithm
+/// This algorithm is fragile, uses low level accesses to Nfa and static data structures,
+/// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
+/// It should be faster assymptotically, or for dense automata,
+/// but in practice the overhead might be not worth it.
+Nfa fragile_revert(const Nfa& aut);
+
+/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
 Nfa simple_revert(const Nfa& aut);
 
-/// Reverting the automaton by a simple slow algorithm
+/// Reverting the automaton by a modification of the simple algorithm.
+/// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
