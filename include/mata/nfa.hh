@@ -275,8 +275,7 @@ public:
     Post & get_mutable_post(State q)
     {
         if (q >= post.size()) {
-            if (post.size()==post.capacity())
-                post.reserve(post.size()+10);
+            reserve_on_insert(post,q);
             const size_t new_size{ q + 1 };
             post.resize(new_size);
             if (new_size > m_num_of_states) {
