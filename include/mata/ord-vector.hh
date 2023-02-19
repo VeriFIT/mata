@@ -45,10 +45,12 @@ namespace Mata
         }
 
         template<class Vector>
-        void inline reserve_on_insert(Vector vec,size_t needed_capacity = 0,size_t extension = 10) {
-            if (vec.capacity() == std::max(vec.size(),needed_capacity))
+        void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 10) {
+            //return;
+            if (vec.capacity() < std::max(vec.size()+1,needed_capacity))
                 vec.reserve(vec.size()+extension);
         }
+
     }
 }
 
@@ -226,12 +228,18 @@ public:   // Public methods
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     virtual void push_back(const Key& x) {
+        //this is an experiment with making push_back cheaper
         reserve_on_insert(vec_);
+        //if (vec_.capacity()==vec_.size())
+        //    vec_.reserve(vec_.size() + 20);
+
         vec_.push_back(x);
     }
 
     virtual void insert(const Key& x)
     {
+        //if (vec_.capacity()==vec_.size())
+        //    vec_.reserve(vec_.size() + 20);
         reserve_on_insert(vec_);
 
         // Assertions

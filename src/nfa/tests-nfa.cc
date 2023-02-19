@@ -2069,10 +2069,10 @@ TEST_CASE("Mata::Nfa::revert()")
 
 TEST_CASE("Mata::Nfa::revert() speed" ) {
     Nfa A,B,C;
-    FILL_WITH_AUT_C(B);
+    FILL_WITH_AUT_B(B);
     //C = B;
     //CHECK(B.is_equal(C));
-    for (int i=0;i<100000;i++) {
+    for (int i=0;i<300000;i++) {
         B = revert(B);
         //B = A;
     }
@@ -2081,10 +2081,10 @@ TEST_CASE("Mata::Nfa::revert() speed" ) {
 
 TEST_CASE("Mata::Nfa::simple_revert() speed") {
     Nfa A,B,C;
-    FILL_WITH_AUT_C(B);
+    FILL_WITH_AUT_B(B);
     //C = B;
     //CHECK(B.is_equal(C));
-    for (int i=0;i<100000;i++) {
+    for (int i=0;i<300000;i++) {
         B = simple_revert(B);
         //B = A;
     }
@@ -2093,10 +2093,10 @@ TEST_CASE("Mata::Nfa::simple_revert() speed") {
 
 TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed") {
     Nfa A,B,C;
-    FILL_WITH_AUT_C(B);
+    FILL_WITH_AUT_B(B);
     //C = B;
     //CHECK(B.is_equal(C));
-    for (int i=0;i<100000;i++) {
+    for (int i=0;i<300000;i++) {
         B = somewhat_simple_revert(B);
         //B = A;
     }
