@@ -297,8 +297,6 @@ size_t Delta::size() const
 void Delta::add(State state_from, Symbol symbol, State state_to)
 {
     if (state_from >= post.size()) {
-        //if (state_from >= post.capacity())
-        //    post.reserve(state_from + 10);
         reserve_on_insert(post,state_from);
         post.resize(state_from + 1);
     }

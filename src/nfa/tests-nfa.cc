@@ -2067,7 +2067,7 @@ TEST_CASE("Mata::Nfa::revert()")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::revert() speed" ) {
+TEST_CASE("Mata::Nfa::revert() speed") {
     Nfa A,B,C;
     FILL_WITH_AUT_B(B);
     //C = B;

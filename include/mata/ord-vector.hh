@@ -230,18 +230,12 @@ public:   // Public methods
     virtual void push_back(const Key& x) {
         //this is an experiment with making push_back cheaper
         reserve_on_insert(vec_);
-        //if (vec_.capacity()==vec_.size())
-        //    vec_.reserve(vec_.size() + 20);
-
         vec_.push_back(x);
     }
 
     virtual void insert(const Key& x)
     {
-        //if (vec_.capacity()==vec_.size())
-        //    vec_.reserve(vec_.size() + 20);
         reserve_on_insert(vec_);
-
         // Assertions
         assert(vectorIsSorted());
 
@@ -254,7 +248,7 @@ public:   // Public methods
 
         if ((last != 0) && (vec_.back() < x))
         {	// for the case which would be prevalent
-            // that is, for beings of this world, when the added thing can i the largest thing and can be just bushed back
+            // that is, the added thing can is larger than the largest thing and can be just bushed back
             vec_.push_back(x);
             return;
         }
@@ -487,6 +481,14 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
+    virtual inline bool empty() const
+    {
+        // Assertions
+        assert(vectorIsSorted());
+
+        return vec_.empty();
+    }
+
     virtual inline const_reference back() const
     {
         // Assertions
@@ -507,14 +509,6 @@ public:   // Public methods
     virtual inline void pop_back()
     {
         return vec_.pop_back();
-    }
-
-    virtual inline bool empty() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.empty();
     }
 
     virtual inline const_iterator begin() const
