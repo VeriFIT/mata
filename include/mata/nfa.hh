@@ -221,7 +221,7 @@ struct Post : private Util::OrdVector<Move> {
     // is adding this non-const version ok?
     inline Move& back() { return Util::OrdVector<Move>::back(); }
 
-    inline void inline resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
+    inline void resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
@@ -570,7 +570,7 @@ public:
     /**
      * @brief Get the maximum non-e used symbol.
      */
-    Symbol Nfa::get_max_symbol() const;
+    Symbol get_max_symbol() const;
     /**
      * @brief Get set of reachable states.
      *
