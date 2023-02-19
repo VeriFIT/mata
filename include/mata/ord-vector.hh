@@ -147,7 +147,6 @@ public:   // Public methods
     OrdVector() :
         vec_()
     {
-        //vec_.reserve(20);
         // Assertions
         assert(vectorIsSorted());
     }
@@ -156,14 +155,12 @@ public:   // Public methods
         vec_(vec)
     {
         Util::sort_and_rmdupl(vec_);
-        //sort_and_rmdupl();
     }
 
     OrdVector(std::initializer_list<Key> list) :
         vec_(list)
     {
         Util::sort_and_rmdupl(vec_);
-        //sort_and_rmdupl();
     }
 
     OrdVector(const OrdVector& rhs) :
@@ -195,7 +192,6 @@ public:   // Public methods
         vec_(first, last)
     {
         Util::sort_and_rmdupl(vec_);
-        //sort_and_rmdupl();
     }
 
     virtual ~OrdVector() = default;
