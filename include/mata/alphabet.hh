@@ -23,7 +23,8 @@
 #include <mata/ord-vector.hh>
 
 namespace Mata {
-        using Symbol = unsigned long;
+        //using Symbol = unsigned long;
+        using Symbol = unsigned;
         using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
          /**

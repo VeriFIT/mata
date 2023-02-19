@@ -6,6 +6,7 @@
 #define LIBMATA_NUMBER_PREDICATE_HH
 
 #include <vector>
+#include <mata/util.hh>
 #include <mata/ord-vector.hh>
 
 namespace Mata::Util {
@@ -53,6 +54,8 @@ private:
             }
         }
         elements.resize(new_pos);
+        //there was a bug here! that that line was missing. Maybe not efficient.
+        Util::sort_and_rmdupl(elements);
         elements_are_exact = true;
     }
 
@@ -82,6 +85,15 @@ private:
     }
 
 public:
+    NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(tracking_elements), predicate(size, val)
+    {
+        if (tracking_elements && val) {
+            elements.reserve(size);
+            for (Number e = 0;e<size;++e)
+                elements.push_back(e);
+        }
+    };
+
     NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {};
 
     NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
@@ -111,12 +123,15 @@ public:
      * Note that it extends predicate if q is out of its current domain.
      */
     void add(Number q) {
-        if (predicate.size() <= q)
+        if (predicate.size() <= q) {
+            reserve_on_insert(predicate, q);
             predicate.resize(q+1,false);
+        }
         if (tracking_elements) {
             Number q_was_there = predicate[q];
             predicate[q] = true;
             if (!q_was_there) {
+                reserve_on_insert(elements);
                 elements.push_back(q);
             }
         } else {
@@ -275,6 +290,8 @@ public:
     }
 
     const std::vector <Number> &get_elements() const {
+        static int bz = 0;
+        bz++;
         update_elements();
         return elements;
     }
@@ -291,6 +308,15 @@ public:
         return (size() == 0);
     }
 
+    // written quickly without thinking
+    void intersect(const NumberPredicate<Number> & other_predicate) {
+        update_elements();
+        for (Number n: elements)
+            if (!other_predicate[n])
+                remove(n);
+    }
+
+
     // This is supposed to return something not smaller than the largest element in the set
     // the easiest is to return the size of the predicate, roughly, the largest element ever inserted.
     Number domain_size() const {
@@ -302,7 +328,7 @@ public:
     void truncate_domain() {
         if (predicate.empty())
             return;
-        else if (predicate[predicate.size()])
+        else if (predicate[predicate.size() - 1])
             return;
 
         Number max;
@@ -318,12 +344,12 @@ public:
         }
         else {
             // one needs to be careful, Number can be unsigned, empty predicate would cause 0-1 below
-            for (max = predicate.size()-1; max >= 0; --max)
+            for (max = predicate.size() - 1; max >= 0; --max)
                 if (predicate[max])
                     break;
         }
 
-        predicate.resize(max+1);
+        predicate.resize(max + 1);
     }
 
     /**
@@ -348,7 +374,7 @@ public:
         };
 
         std::vector<Number> new_elements;
-        std::vector<bool> new_predicate(std::max(max_or_default(elements, 0)+1, max_or_default(renaming, 0)+1));
+        std::vector<bool> new_predicate(std::max(max_or_default(elements, 0) + 1, max_or_default(renaming, 0) + 1));
 
         for (const Number& number : elements) {
             if (number < renaming.size()) { // number is renamed by provided vector

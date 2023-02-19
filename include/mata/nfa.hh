@@ -40,7 +40,8 @@
 namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
-using State = unsigned long;
+//using State = unsigned long;
+using State = unsigned; //unsigned long;
 
 using StateSet = Mata::Util::OrdVector<State>;
 
@@ -172,7 +173,19 @@ struct Move {
         }
     }
 
+    // THIS BREAKS THE SORTEDNESS INVARIANT,
+    // very dangerous,
+    // but useful when I want to add states in a random order and sort later (more efficient than inserting in a random order)
+    void inline push_back(const State s)
+    {
+        targets.push_back(s);
+    }
+
     void remove(State s) { targets.remove(s); }
+
+    const std::vector<State>::iterator find(State s) const { targets.find(s); }
+
+    std::vector<State>::iterator find(State s) { targets.find(s); }
 };
 
 /**
@@ -184,30 +197,42 @@ struct Post : private Util::OrdVector<Move> {
     using iterator = Util::OrdVector<Move>::iterator;
     using const_iterator = Util::OrdVector<Move>::const_iterator;
 
-    iterator begin() override { return Util::OrdVector<Move>::begin(); }
-    const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
-    iterator end() override { return Util::OrdVector<Move>::end(); }
-    const_iterator end() const override { return Util::OrdVector<Move>::end(); }
+    inline iterator begin() override { return Util::OrdVector<Move>::begin(); }
+    inline const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
+    inline iterator end() override { return Util::OrdVector<Move>::end(); }
+    inline const_iterator end() const override { return Util::OrdVector<Move>::end(); }
 
-    const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
-    const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
+    inline const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
+    inline const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
 
     Post() = default;
 
     virtual ~Post() = default;
 
-    const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
-    iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
+    inline const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
+    inline iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
 
-    void insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
+    void inline insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
 
-    const Move& back() const override { return Util::OrdVector<Move>::back(); }
+    // dangerous, breaks the sortedness invariant
+    void inline push_back(const Move& m) override { Util::OrdVector<Move>::push_back(m); }
+
+    inline const Move& back() const override { return Util::OrdVector<Move>::back(); }
+
+    // is adding this non-const version ok?
+    inline Move& back() { return Util::OrdVector<Move>::back(); }
+
+    inline void resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
-    bool empty() const override{ return Util::OrdVector<Move>::empty(); }
-    size_t size() const override { return Util::OrdVector<Move>::size(); }
+    inline bool empty() const override{ return Util::OrdVector<Move>::empty(); }
+    inline size_t size() const override { return Util::OrdVector<Move>::size(); }
 
+    template<class Barray>
+    inline void filter(const Barray & predicate) { return Util::OrdVector<Move>::filter(predicate); }
+
+    // why?
 	const std::vector<Move>& ToVector() const
 	{
 		return Util::OrdVector<Move>::ToVector();
@@ -228,6 +253,7 @@ private:
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
+    // TODO: "number of state" is somehow misleading, it is the maximum state, no? (currently maybe maximum state + 1)
     size_t m_num_of_states;
 
 public:
@@ -261,6 +287,7 @@ public:
     Post & get_mutable_post(State q)
     {
         if (q >= post.size()) {
+            Util::reserve_on_insert(post,q);
             const size_t new_size{ q + 1 };
             post.resize(new_size);
             if (new_size > m_num_of_states) {
@@ -269,6 +296,53 @@ public:
         }
 
         return post[q];
+    };
+
+    // TODO: why do we have the code of all these methods in the header file?
+    void shake_down(const Util::NumberPredicate<State> & predicate) {
+        Util::shake_down(post, predicate.get_elements());
+
+        std::vector<State> renaming(this->find_max_state()+1);
+        size_t i = 0;
+        for (State q:predicate.get_elements()) {
+            if (q >= renaming.size())
+                break;
+            renaming[q] = i;
+            i++;
+        }
+
+        for (State q=0;q<post.size();++q) {
+            Post & post = get_mutable_post(q);
+            for (auto move = post.begin(); move < post.end();move++) {
+                std::vector<bool> pred_idx(move->targets.size(),false);
+                size_t i = 0;
+                for (State q: move->targets) {
+                //for (size_t i = 0;i<move->targets.size();++i) {
+                    if (predicate[q])
+                        pred_idx[i] = true;
+                    i++;
+                }
+                //move->targets.filter(predicate);
+                move->targets.filter(pred_idx);
+                move->targets.rename(renaming);
+            }
+
+            std::vector<bool> nonempty(post.size(),false);
+            int i = 0;
+            for (Move & m: post) {
+                if (!m.empty())
+                    nonempty[i] = true;
+                i++;
+            }
+            post.filter(nonempty);
+        }
+
+        //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
+        if (post.size() > 0)
+            m_num_of_states = find_max_state()+1;
+        else
+            m_num_of_states = 0;
+
     };
 
     // Get a constant reference to the post of a state. No side effects.
@@ -498,7 +572,8 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        //return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        return std::max({ m_num_of_requested_states, delta.num_of_states(), static_cast<unsigned long>(initial.domain_size()), static_cast<unsigned long>(final.domain_size()) });
     }
 
     /**
@@ -525,19 +600,47 @@ public:
         m_num_of_requested_states = 0;
     }
 
+    // this is exact equality of automata, including state numbering (so even stronger than isomorphism)
+    // essentially only useful for testing purposes
+    bool is_equal(const Nfa & aut) {
+        std::vector<Trans> thisTrans;
+        for (auto trans: *this) thisTrans.push_back(trans);
+        std::vector<Trans> autTrans;
+        for (auto trans: aut) autTrans.push_back(trans);
+
+
+        bool init = Util::OrdVector<State>(initial.get_elements()) == Util::OrdVector<State>(aut.initial.get_elements());
+        bool fin = Util::OrdVector<State>(final.get_elements()) == Util::OrdVector<State>(aut.final.get_elements());
+        bool trans = thisTrans == autTrans;
+        bool crap = m_num_of_requested_states == aut.m_num_of_requested_states;
+        bool deltacrap = delta.num_of_states() == aut.delta.num_of_states();
+
+        return (init && fin && trans && crap && deltacrap);
+
+        //return (initial.get_elements() == aut.initial.get_elements()
+        //    && final.get_elements() == aut.final.get_elements()
+        //    && thisTrans == autTrans);
+    };
+
     /**
-     * @brief Get set of symbols used on the transitions in the automaton.
+     * @brief Get the set of symbols used on the transitions in the automaton.
      *
      * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
      * @return Set of symbols used on the transitions.
+     * TODO: this could be a method of Delta
      */
     Util::OrdVector<Symbol> get_used_symbols() const;
 
+    /**
+     * @brief Get the maximum non-e used symbol.
+     */
+    Symbol get_max_symbol() const;
     /**
      * @brief Get set of reachable states.
      *
      * Reachable states are states accessible from any initial state.
      * @return Set of reachable states.
+     * TODO: this could be a method of Delta
      */
     StateSet get_reachable_states() const;
 
@@ -557,6 +660,12 @@ public:
      */
     StateSet get_useful_states() const;
 
+
+    //Util::NumberPredicate<State> get_useful_states2() const;
+    const std::vector<bool> get_useful_states2() const;
+
+
+
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
      *
@@ -566,7 +675,15 @@ public:
      *
      * @param[out] state_map Mapping of trimmed states to new states.
      */
-    void trim(StateToStateMap* state_map = nullptr);
+    void trim1(StateToStateMap* state_map = nullptr);
+    void trim2(StateToStateMap* state_map = nullptr);
+    void trim(StateToStateMap* state_map = nullptr) {
+        trim2(state_map);
+        //if (!state_map)
+        //    trim2();
+        //else
+        //    trim1(state_map);
+    }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -579,15 +696,6 @@ public:
      * @return Trimmed automaton.
      */
     Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr) const;
-
-    // FIXME: Resolve this comment and delete it.
-    /* Lukas: the above is nice. The good thing is that access to [q] is constant,
-     * so one can iterate over all states for instance using this, and it is fast.
-     * But I don't know how to do a similar thing inside Moves.
-     * Returning a transition of q with the symbol a means to search for it in the list,
-     * so iteration over the entire list would be very inefficient.
-     * An efficient iteration would probably need an interface for an iterator, I don't know...
-     * */
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -627,6 +735,7 @@ public:
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
+     * (slow, traverses entire delta ... ?)
      */
     TransSequence get_transitions_to(State state_to) const;
 
@@ -675,6 +784,7 @@ public:
         static const_iterator for_begin(const Nfa* nfa);
         static const_iterator for_end(const Nfa* nfa);
 
+        //he, what is this?
         void refresh_trans()
         { // {{{
             this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
@@ -723,7 +833,7 @@ public:
     /**
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
-     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
+     * TODO: once merged with new initial and final state predicate_, do renaming of these sets of states.
      * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
      */
     void defragment() {
@@ -979,8 +1089,22 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
-/// Reverting the automaton
+/// Reverting the automaton by one of the three functions below,
+/// currently simple_revert seems best (however, not tested enough).
 Nfa revert(const Nfa& aut);
+
+/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
+/// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
+/// It should be faster assymptotically, or for dense automata,
+/// but in practice the overhead might be not worth it.
+Nfa fragile_revert(const Nfa& aut);
+
+/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
+Nfa simple_revert(const Nfa& aut);
+
+/// Reverting the automaton by a modification of the simple algorithm.
+/// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all.
+Nfa somewhat_simple_revert(const Nfa& aut);
 
 /// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);

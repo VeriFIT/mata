@@ -15,6 +15,19 @@ bool is_in_lang(const Nfa& aut, const Word& word)
 
 // Some example regexes were taken from RegExr under GPL v3: https://github.com/gskinner/regexr.
 
+TEST_CASE("Debug") {
+    Nfa aut;
+    Mata::RE2Parser::create_nfa(&aut, "(a+)a+");
+    CHECK(!aut.delta.empty());
+    CHECK(!is_lang_empty(aut));
+    CHECK(!is_in_lang(aut, Word{}));
+    CHECK(!is_in_lang(aut, Word{'a'}));
+    CHECK(is_in_lang(aut, Word{'a', 'a'}));
+    CHECK(is_in_lang(aut, Word{'a', 'a', 'a'}));
+    CHECK(is_in_lang(aut, Word{'a', 'a', 'a', 'a'}));
+}
+
+
 TEST_CASE("Mata::RE2Parser basic_parsing")
 { // {{{
     Nfa aut;

@@ -160,7 +160,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
 
@@ -181,13 +181,13 @@ TEST_CASE("Mata::Mintermization::mintermization")
         Parsed parsed;
         Mata::Mintermization mintermization{};
         std::string file =
-            "@AFA-bits\n"
-            "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
-            "%Final true & (!q3' | (!q1))\n"
-            "q1 (!a0 & !a1 & (q2))\n"
-            "q1 (a1 & !a2 & (q3))\n"
-            "q1' q1'\n"
-            "q3' q3'\n";
+                "@AFA-bits\n"
+                "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
+                "%Final true & (!q3' | (!q1))\n"
+                "q1 (!a0 & !a1 & (q2))\n"
+                "q1 (a1 & !a2 & (q3))\n"
+                "q1' q1'\n"
+                "q3' q3'\n";
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
@@ -356,21 +356,21 @@ TEST_CASE("Mata::Mintermization::mintermization")
         Mata::Mintermization mintermization{};
 
         std::string file =
-                            "@AFA-bits\n"
-                            "%Initial q11\n"
-                            "%Final !q0 & !q1 & !q2 & !q3 & !q4 & !q5 & !q6 & !q7 & !q8 & !q9 & !q10 & !q11\n"
-                            "q10 (a1 & !a0 & a0 & q9) | (a1 & !a0 & q9 & q10)\n"
-                            "q6 a3\n"
-                            "q8 !a2 | (a3 & !a0 & q8)\n"
-                            "q4 !a0 & q3\n"
-                            "q3 !a0 & q2\n"
-                            "q1 (!a1 & a0) | (!a1 & q1) | (!a0 & a0 & q0) | (!a0 & q0 & q1)\n"
-                            "q11 (!a1 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (!a1 & a0 & a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5) | (!a1 & a0 & a3 & !a0 & a0 & q6) | (!a1 & a0 & a3 & !a0 & q6 & q7) | (!a1 & a0 & a1 & !a0 & a0 & q9) | (!a1 & a0 & a1 & !a0 & q9 & q10) | (!a1 & a4 & !a0 & !a0 & !a0 & a0 & q1 & q2 & q3 & q4) | (!a1 & a4 & !a0 & !a0 & !a0 & q1 & q2 & q3 & q4 & q5) | (!a1 & a3 & !a0 & a0 & q1 & q6) | (!a1 & a3 & !a0 & q1 & q6 & q7) | (!a1 & a1 & !a0 & a0 & q1 & q9) | (!a1 & a1 & !a0 & q1 & q9 & q10) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q2 & q3 & q4) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & q0 & q2 & q3 & q4 & q5) | (!a0 & a0 & a3 & !a0 & a0 & q0 & q6) | (!a0 & a0 & a3 & !a0 & q0 & q6 & q7) | (!a0 & a0 & a1 & !a0 & a0 & q0 & q9) | (!a0 & a0 & a1 & !a0 & q0 & q9 & q10) | (!a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q1 & q2 & q3 & q4) | (!a0 & a4 & !a0 & !a0 & !a0 & q0 & q1 & q2 & q3 & q4 & q5) | (!a0 & a3 & !a0 & a0 & q0 & q1 & q6) | (!a0 & a3 & !a0 & q0 & q1 & q6 & q7) | (!a0 & a1 & !a0 & a0 & q0 & q1 & q9) | (!a0 & a1 & !a0 & q0 & q1 & q9 & q10)\n"
-                            "q7 (a3 & !a0 & a0 & q6) | (a3 & !a0 & q6 & q7)\n"
-                            "q2 !a3\n"
-                            "q9 q8\n"
-                            "q5 (a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5)\n"
-                            "q0 a2\n";
+                "@AFA-bits\n"
+                "%Initial q11\n"
+                "%Final !q0 & !q1 & !q2 & !q3 & !q4 & !q5 & !q6 & !q7 & !q8 & !q9 & !q10 & !q11\n"
+                "q10 (a1 & !a0 & a0 & q9) | (a1 & !a0 & q9 & q10)\n"
+                "q6 a3\n"
+                "q8 !a2 | (a3 & !a0 & q8)\n"
+                "q4 !a0 & q3\n"
+                "q3 !a0 & q2\n"
+                "q1 (!a1 & a0) | (!a1 & q1) | (!a0 & a0 & q0) | (!a0 & q0 & q1)\n"
+                "q11 (!a1 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (!a1 & a0 & a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5) | (!a1 & a0 & a3 & !a0 & a0 & q6) | (!a1 & a0 & a3 & !a0 & q6 & q7) | (!a1 & a0 & a1 & !a0 & a0 & q9) | (!a1 & a0 & a1 & !a0 & q9 & q10) | (!a1 & a4 & !a0 & !a0 & !a0 & a0 & q1 & q2 & q3 & q4) | (!a1 & a4 & !a0 & !a0 & !a0 & q1 & q2 & q3 & q4 & q5) | (!a1 & a3 & !a0 & a0 & q1 & q6) | (!a1 & a3 & !a0 & q1 & q6 & q7) | (!a1 & a1 & !a0 & a0 & q1 & q9) | (!a1 & a1 & !a0 & q1 & q9 & q10) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q2 & q3 & q4) | (!a0 & a0 & a4 & !a0 & !a0 & !a0 & q0 & q2 & q3 & q4 & q5) | (!a0 & a0 & a3 & !a0 & a0 & q0 & q6) | (!a0 & a0 & a3 & !a0 & q0 & q6 & q7) | (!a0 & a0 & a1 & !a0 & a0 & q0 & q9) | (!a0 & a0 & a1 & !a0 & q0 & q9 & q10) | (!a0 & a4 & !a0 & !a0 & !a0 & a0 & q0 & q1 & q2 & q3 & q4) | (!a0 & a4 & !a0 & !a0 & !a0 & q0 & q1 & q2 & q3 & q4 & q5) | (!a0 & a3 & !a0 & a0 & q0 & q1 & q6) | (!a0 & a3 & !a0 & q0 & q1 & q6 & q7) | (!a0 & a1 & !a0 & a0 & q0 & q1 & q9) | (!a0 & a1 & !a0 & q0 & q1 & q9 & q10)\n"
+                "q7 (a3 & !a0 & a0 & q6) | (a3 & !a0 & q6 & q7)\n"
+                "q2 !a3\n"
+                "q9 q8\n"
+                "q5 (a4 & !a0 & !a0 & !a0 & a0 & q2 & q3 & q4) | (a4 & !a0 & !a0 & !a0 & q2 & q3 & q4 & q5)\n"
+                "q0 a2\n";
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
@@ -384,18 +384,18 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization NFA true and false")
     {
         std::string file =
-            "@NFA-bits\n"
-            "%States-enum q r s\n"
-            "%Alphabet-auto\n"
-            "%Initial q\n"
-            "%Final r\n"
-            "q true r\n"
-            "r a1 & a2 s\n"
-            "s false s\n";
+                "@NFA-bits\n"
+                "%States-enum q r s\n"
+                "%Alphabet-auto\n"
+                "%Initial q\n"
+                "%Final r\n"
+                "q true r\n"
+                "r a1 & a2 s\n"
+                "s false s\n";
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.raw == "true");
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -411,17 +411,17 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA true and false")
     {
         std::string file =
-            "@AFA-bits\n"
-            "%Initial q0\n"
-            "%Final q3\n"
-            "q0 (true & q2 & q3 & q0) | (a4 & !a5 & !a6 & !a7 & q0 & q1 & q2)\n"
-            "q1 false\n"
-            "q2 q1\n"
-            "q3 true\n";
+                "@AFA-bits\n"
+                "%Initial q0\n"
+                "%Final q3\n"
+                "q0 (true & q2 & q3 & q0) | (a4 & !a5 & !a6 & !a7 & q0 & q1 & q2)\n"
+                "q1 false\n"
+                "q2 q1\n"
+                "q3 true\n";
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.node.is_operator());
         REQUIRE(aut.transitions[0].second.node.raw == "|");
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -484,6 +484,13 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res[1].transitions[0].second.children[1].node.name == "r");
         REQUIRE(res[1].transitions[1].second.children[1].node.name == "r");
     }
+}
+
+TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
+{
+
+    Parsed parsed;
+    Mata::Mintermization mintermization{};
 
     SECTION("AFA big")
     {
