@@ -528,7 +528,7 @@ StateSet Nfa::get_reachable_states() const
 
 StateSet Nfa::get_terminating_states() const
 {
-    return fragile_revert(*this).get_reachable_states();
+    return revert(*this).get_reachable_states();
 }
 
 void Nfa::trim(StateToStateMap* state_map)
@@ -568,7 +568,7 @@ StateSet Nfa::get_useful_states() const
 
     const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
-    const StateBoolArray useful_states_bool_array{ compute_reachability(fragile_revert(digraph), compute_reachability(digraph)) };
+    const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
     const size_t num_of_states{size() };
     StateSet useful_states{};
@@ -933,8 +933,6 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     return simple_revert(aut);
 }
 
-
-
 bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initial.size() != 1) { return false; }
@@ -1135,9 +1133,9 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 
 Nfa Mata::Nfa::minimize(const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
-    Nfa inverted = fragile_revert(aut);
+    Nfa inverted = revert(aut);
     Nfa tmp = determinize(inverted);
-    Nfa deter = fragile_revert(tmp);
+    Nfa deter = revert(tmp);
     return determinize(deter);
 }
 

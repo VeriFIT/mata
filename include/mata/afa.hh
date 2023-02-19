@@ -397,7 +397,7 @@ inline Afa revert(const Afa& aut)
 	Afa result;
 	revert(&result, aut);
 	return result;
-} // fragile_revert }}}
+} // revert }}}
 
 /// Removing epsilon transitions
 void remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon);

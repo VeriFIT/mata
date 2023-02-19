@@ -70,8 +70,8 @@ namespace Plumbing {
 
     inline void revert(Nfa* result, const Nfa& aut)
     { // {{{
-        *result = fragile_revert(aut);
-    } // fragile_revert }}}
+        *result = revert(aut);
+    } // revert }}}
 
     inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON)
     { // {{{

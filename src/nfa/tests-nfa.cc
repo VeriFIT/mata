@@ -1980,13 +1980,13 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     }
 }
 
-TEST_CASE("Mata::Nfa::fragile_revert()")
+TEST_CASE("Mata::Nfa::revert()")
 { // {{{
 	Nfa aut(9);
 
 	SECTION("empty automaton")
 	{
-		Nfa result = fragile_revert(aut);
+		Nfa result = revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial.size() == 0);
@@ -2001,7 +2001,7 @@ TEST_CASE("Mata::Nfa::fragile_revert()")
 		aut.final.add(2);
 		aut.final.add(5);
 
-		Nfa result = fragile_revert(aut);
+		Nfa result = revert(aut);
 
 		REQUIRE(nothing_in_trans(result));
 		REQUIRE(result.initial[2]);
@@ -2016,7 +2016,7 @@ TEST_CASE("Mata::Nfa::fragile_revert()")
 		aut.final.add(2);
 		aut.delta.add(1, 'a', 2);
 
-		Nfa result = fragile_revert(aut);
+		Nfa result = revert(aut);
 
 		REQUIRE(result.initial[2]);
 		REQUIRE(result.final[1]);
@@ -2039,7 +2039,7 @@ TEST_CASE("Mata::Nfa::fragile_revert()")
 		aut.delta.add(7, 'a', 8);
 		aut.final = {3};
 
-		Nfa result = fragile_revert(aut);
+		Nfa result = revert(aut);
 		//REQUIRE(result.final == StateSet({1, 2}));
         REQUIRE(StateSet(result.final.get_elements()) == StateSet({1, 2}));
 		REQUIRE(result.delta.contains(2, 'a', 1));
@@ -2058,7 +2058,7 @@ TEST_CASE("Mata::Nfa::fragile_revert()")
 	SECTION("Automaton A") {
 		Nfa nfa{ 11 };
 		FILL_WITH_AUT_A(nfa);
-		Nfa res = fragile_revert(nfa);
+		Nfa res = revert(nfa);
 		CHECK(res.initial[5]);
 		CHECK(res.final[1]);
 		CHECK(res.final[3]);
@@ -2083,7 +2083,7 @@ TEST_CASE("Mata::Nfa::fragile_revert()")
 	SECTION("Automaton B") {
 		Nfa nfa{ 15 };
 		FILL_WITH_AUT_B(nfa);
-		Nfa res = fragile_revert(nfa);
+		Nfa res = revert(nfa);
 		CHECK(res.initial[2]);
 		CHECK(res.initial[12]);
 		CHECK(res.final[4]);

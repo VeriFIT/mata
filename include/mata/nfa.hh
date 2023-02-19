@@ -1009,13 +1009,11 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
-
-
-/// Reverting the automaton by one of the three below.
-/// Reverting the automaton by a supposedly smarter algorithm.
+/// Reverting the automaton by one of the three functions below,
+/// currently simple_revert seems best (however, not tested enough).
 Nfa revert(const Nfa& aut);
 
-/// This algorithm is fragile, uses low level accesses to Nfa and static data structures,
+/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
 /// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
 /// It should be faster assymptotically, or for dense automata,
 /// but in practice the overhead might be not worth it.

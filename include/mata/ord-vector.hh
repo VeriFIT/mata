@@ -68,9 +68,9 @@ namespace Mata
         // This reserves space in a vector, to be used before push_back or insert.
         // So far it just reserves 20 more cells than currently needed, 12 being sucked out of a finger.
         // Might be worth thinking about it.
-        // It seems to help in fragile_revert:
-        //  around 30% speedup for fragile fragile_revert,
-        //  more than 50% for simple fragile_revert,
+        // It seems to help in revert:
+        //  around 30% speedup for fragile revert,
+        //  more than 50% for simple revert,
         // (when testing on a stupid test case)
         template<class Vector>
         void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 20) {
@@ -235,7 +235,7 @@ public:   // Public methods
 
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
-    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. fragile_revert)
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     virtual inline void push_back(const Key& x) {
         //this is an experiment with making push_back cheaper
         reserve_on_insert(vec_);
