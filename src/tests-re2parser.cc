@@ -1321,3 +1321,43 @@ TEST_CASE("Mata::RE2Parser bug epsilon")
         CHECK(is_in_lang(x, Run{Word{'a', 'a', 'a', 'a'}, {}}));
     }
 } // }}}
+
+TEST_CASE("Mata::RE2Parser bug inserting nonexistent symbols") {
+    SECTION("Benchmark example") {
+        std::string regex {
+                "[\\x{20}\\x{27}\\x{2f}\\x{3c}\\x{3d}\\x{3e}\\x{43}\\x{49}\\x{50}\\x{52}\\x{53}\\x{54}\\x{5c"
+                "}\\x{61}\\x{62}\\x{63}\\x{64}\\x{66}\\x{6c}\\x{6e}\\x{70}\\x{72}\\x{73}\\x{74}\\x{ff}]*"
+                "\\x{5c}\\x{3c}\\x{53}\\x{43}\\x{52}\\x{49}\\x{50}\\x{54}[\\x{20}\\x{27}\\x{2f}\\x{3c}\\x{3d}\\x{3e}\\x{43}"
+                "\\x{49}\\x{50}\\x{52}\\x{53}\\x{54}\\x{5c}\\x{61}\\x{62}\\x{63}\\x{64}\\x{66}\\x{6c}\\x{6e}\\x{70}"
+                "\\x{72}\\x{73}\\x{74}\\x{ff}]*"
+        };
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, regex);
+        x.print_to_DOT(std::cout);
+        std::cout << x.get_used_symbols() << "\n";
+    }
+
+    SECTION("Still valid example") {
+        std::string regex { "\\x{7f}" };
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, regex);
+        x.print_to_DOT(std::cout);
+        std::cout << x.get_used_symbols() << "\n";
+    }
+
+    SECTION("Minimal example") {
+        std::string regex { "\\x{80}" };
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, regex);
+        x.print_to_DOT(std::cout);
+        std::cout << x.get_used_symbols() << "\n";
+    }
+
+    SECTION("Another example") {
+        std::string regex { "\\x{fe}" };
+        Nfa x;
+        Mata::RE2Parser::create_nfa(&x, regex);
+        x.print_to_DOT(std::cout);
+        std::cout << x.get_used_symbols() << "\n";
+    }
+}
