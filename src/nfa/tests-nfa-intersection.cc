@@ -23,7 +23,7 @@
 #include <mata/nfa.hh>
 
 using namespace Mata::Nfa;
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Parser;
 
 // Some common automata {{{

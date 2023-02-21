@@ -377,5 +377,9 @@ namespace Mata {
         };
     }
 
+    template <typename Number>
+    bool are_disjoint(Util::NumberPredicate<Number> lhs, Util::NumberPredicate<Number> rhs) {
+        return lhs.are_disjoint(rhs);
+    }
 }
 #endif //LIBMATA_NUMBER_PREDICATE_HH

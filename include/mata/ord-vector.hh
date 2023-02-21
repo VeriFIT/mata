@@ -17,13 +17,37 @@
 #include <cassert>
 
 #include <mata/number-predicate.hh>
+#include <mata/util.hh>
 
 // insert the class into proper namespace
 namespace Mata
 {
     namespace Util
     {
-        template <class Number> class NumberPredicate;
+        template<typename Number>
+        bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+            for (auto q: lhs) {
+                if (rhs[q]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        template <class T>
+        bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
+        { // {{{
+            auto itLhs = lhs.begin();
+            auto itRhs = rhs.begin();
+            while (itLhs != lhs.end() && itRhs != rhs.end()) {
+                if (*itLhs == *itRhs) { return false; }
+                else if (*itLhs < *itRhs) { ++itLhs; }
+                else {++itRhs; }
+            }
+            return true;
+        } // }}}
+
+template <class Number> class NumberPredicate;
 
         template <
             class Key
@@ -481,7 +505,7 @@ public:   // Public methods
     {
         // Assertions
         assert(vectorIsSorted());
-        
+
         return vec_.back();
     }
 
