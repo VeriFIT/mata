@@ -6,7 +6,7 @@
 
 #include <mata/afa.hh>
 using namespace Mata::Afa;
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Parser;
 
 TEST_CASE("Mata::Afa::Trans::operator<<")

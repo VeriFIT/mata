@@ -28,8 +28,8 @@
 #include <stack>
 #include <unordered_map>
 #include <vector>
-#include <mata/ord-vector.hh>
-#include <mata/number-predicate.hh>
+//#include <mata/ord-vector.hh>
+//#include <mata/number-predicate.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -60,19 +60,6 @@ extern unsigned LOG_VERBOSITY;
 namespace Util
 {
 
-template <typename Number>
-bool are_disjoint(NumberPredicate<Number> lhs, NumberPredicate<Number> rhs) {
-    return lhs.are_disjoint(rhs);
-}
-
-template <typename Number>
-bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
-    for (auto q: lhs)
-        if (rhs[q])
-            return false;
-    return true;
-}
-
 /** Are two sets disjoint? */
 template <class T>
 bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
@@ -87,22 +74,6 @@ bool are_disjoint(const std::set<T>& lhs, const std::set<T>& rhs)
 	}
 
 	return true;
-} // }}}
-
-
-template <class T>
-bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
-{ // {{{
-    auto itLhs = lhs.begin();
-    auto itRhs = rhs.begin();
-    while (itLhs != lhs.end() && itRhs != rhs.end())
-    {
-        if (*itLhs == *itRhs) { return false; }
-        else if (*itLhs < *itRhs) { ++itLhs; }
-        else {++itRhs; }
-    }
-
-    return true;
 } // }}}
 
 /** Is there an element in a container? */
@@ -426,7 +397,7 @@ std::string to_string(const A& value)
 
 namespace Mata
 {
-namespace util
+namespace Util
 {
 
 // Taken from
@@ -449,6 +420,20 @@ struct TuplePrinter<Tuple, 1> {
         return std::to_string(std::get<0>(t));
     }
 };
+
+// This reserves space in a vector, to be used before push_back or insert.
+// So far it just reserves 20 more cells than currently needed, 12 being sucked out of a finger.
+// Might be worth thinking about it.
+// It seems to help in revert:
+//  around 30% speedup for fragile revert,
+//  more than 50% for simple revert,
+// (when testing on a stupid test case)
+template<class Vector>
+void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 20) {
+    //return; //Try this to see the effect of calling this. It should not affect functionality.
+    if (vec.capacity() < std::max(vec.size()+1,needed_capacity))
+        vec.reserve(vec.size()+extension);
+}
 
 }
 }

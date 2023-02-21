@@ -29,7 +29,7 @@
 
 using std::tie;
 
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Afa;
 
 const std::string Mata::Afa::TYPE_AFA = "AFA";

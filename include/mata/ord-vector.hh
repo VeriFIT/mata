@@ -17,6 +17,7 @@
 #include <cassert>
 
 #include <mata/number-predicate.hh>
+#include <mata/util.hh>
 
 // insert the class into proper namespace
 namespace Mata
@@ -65,19 +66,28 @@ namespace Mata
             assert(vectorIsSorted());
         }
 
-        // This reserves space in a vector, to be used before push_back or insert.
-        // So far it just reserves 20 more cells than currently needed, 12 being sucked out of a finger.
-        // Might be worth thinking about it.
-        // It seems to help in revert:
-        //  around 30% speedup for fragile revert,
-        //  more than 50% for simple revert,
-        // (when testing on a stupid test case)
-        template<class Vector>
-        void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 20) {
-            //return; //Try this to see the effect of calling this. It should not affect functionality.
-            if (vec.capacity() < std::max(vec.size()+1,needed_capacity))
-                vec.reserve(vec.size()+extension);
+        template <typename Number>
+        bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+            for (auto q: lhs)
+                if (rhs[q])
+                    return false;
+            return true;
         }
+
+        template <class T>
+        bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
+        { // {{{
+            auto itLhs = lhs.begin();
+            auto itRhs = rhs.begin();
+            while (itLhs != lhs.end() && itRhs != rhs.end())
+            {
+                if (*itLhs == *itRhs) { return false; }
+                else if (*itLhs < *itRhs) { ++itLhs; }
+                else {++itRhs; }
+            }
+
+            return true;
+        } // }}}
     }
 }
 
@@ -233,9 +243,8 @@ public:   // Public methods
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     virtual inline void push_back(const Key& x) {
-        //this is an experiment with making push_back cheaper
         reserve_on_insert(vec_);
-        vec_.push_back(x);
+        vec_.emplace_back(x);
     }
 
     virtual inline void resize(size_t  size) {
@@ -432,28 +441,34 @@ public:   // Public methods
         // Assertions
         assert(vectorIsSorted());
 
-        size_t first = 0;
-        size_t last = vec_.size();
+        auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
+        if (it == vec_.end() || *it != key)
+            return vec_.end();
+        else
+            return it;
 
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == key)
-            {	// in case we found x
-//				return const_iterator(&vec_[middle]);
-                return vec_.cbegin() + middle;
-            }
-            else if (vec_[middle] < key)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
-
-        return end();
+//         size_t first = 0;
+//         size_t last = vec_.size();
+//
+//         while (first < last)
+//         {	// while the pointers do not overlap
+//             size_t middle = first + (last - first) / 2;
+//             if (vec_[middle] == key)
+//             {	// in case we found x
+// //				return const_iterator(&vec_[middle]);
+//                 return vec_.cbegin() + middle;
+//             }
+//             else if (vec_[middle] < key)
+//             {	// in case middle is less than x
+//                 first = middle + 1;
+//             }
+//             else
+//             {	// in case middle is greater than x
+//                 last = middle;
+//             }
+//         }
+//
+//         return end();
     }
 
     //TODO: having this code duplicated is not nice
@@ -462,27 +477,33 @@ public:   // Public methods
         // Assertions
         assert(vectorIsSorted());
 
-        size_t first = 0;
-        size_t last = vec_.size();
+        auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
+        if (it == vec_.end() || *it != key)
+            return vec_.end();
+        else
+            return it;
 
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == key)
-            {	// in case we found x
-                return vec_.begin() + middle;
-            }
-            else if (vec_[middle] < key)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
-
-        return end();
+//        size_t first = 0;
+//        size_t last = vec_.size();
+//
+//        while (first < last)
+//        {	// while the pointers do not overlap
+//            size_t middle = first + (last - first) / 2;
+//            if (vec_[middle] == key)
+//            {	// in case we found x
+//                return vec_.begin() + middle;
+//            }
+//            else if (vec_[middle] < key)
+//            {	// in case middle is less than x
+//                first = middle + 1;
+//            }
+//            else
+//            {	// in case middle is greater than x
+//                last = middle;
+//            }
+//        }
+//
+//        return end();
     }
 
     inline void remove(Key k)

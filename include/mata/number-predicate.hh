@@ -114,16 +114,14 @@ namespace Mata {
              */
             void add(Number q) {
                 if (predicate.size() <= q) {
-                    //TODO: organize things to allow calling reserve_on_insert(predicate,q);
-                    if (predicate.capacity() <= q) predicate.reserve(q+20);
+                    reserve_on_insert(predicate,q);
                     predicate.resize(q + 1, false);
                 }
                 if (tracking_elements) {
                     Number q_was_there = predicate[q];
                     predicate[q] = true;
                     if (!q_was_there) {
-                        //TODO: organize things to calling reserve_on_insert(elements);
-                        if (elements.capacity() == elements.size()) elements.reserve(elements.size()+20);
+                        reserve_on_insert(elements);
                         elements.push_back(q);
                     }
                 } else {
@@ -382,5 +380,9 @@ namespace Mata {
         };
     }
 
+    template <typename Number>
+    bool are_disjoint(Util::NumberPredicate<Number> lhs, Util::NumberPredicate<Number> rhs) {
+        return lhs.are_disjoint(rhs);
+    }
 }
 #endif //LIBMATA_NUMBER_PREDICATE_HH
