@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
 project(libMATA)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Enable fancy colours
