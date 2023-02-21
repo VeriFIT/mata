@@ -802,13 +802,11 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         }
     }
 
-    // NORMAL, NON STATIC DATA STRUCTURES:
-//    std::vector<std::vector<State>> sources (alphasize);
-//    std::vector<std::vector<State>> targets (alphasize);
-//    std::vector<State> e_sources;
-//    std::vector<State> e_targets;
-//    e_sources.clear();
-//    e_targets.clear();
+    // // NORMAL, NON STATIC DATA STRUCTURES:
+    // std::vector<std::vector<State>> sources (alphasize);
+    // std::vector<std::vector<State>> targets (alphasize);
+    // std::vector<State> e_sources;
+    // std::vector<State> e_targets;
 
     //initialise with this?
     //int avg_trans_per_symb  = aut.delta.size() / symbols.size();
@@ -817,13 +815,17 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         for (const Move &move: aut.delta[sourceState]) {
             if (move.symbol == EPSILON) {
                 for (const State targetState: move.targets) {
+                    //reserve_on_insert(e_sources);
                     e_sources.push_back(sourceState);
+                    //reserve_on_insert(e_targets);
                     e_targets.push_back(targetState);
                 }
             }
             else {
                 for (const State targetState: move.targets) {
+                    //reserve_on_insert(sources[move.symbol]);
                     sources[move.symbol].push_back(sourceState);
+                    //reserve_on_insert(targets[move.symbol]);
                     targets[move.symbol].push_back(targetState);
                 }
             }

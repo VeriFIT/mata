@@ -40,7 +40,8 @@
 namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
-using State = unsigned long;
+//using State = unsigned long;
+using State = unsigned; //unsigned long;
 
 using StateSet = Mata::Util::OrdVector<State>;
 
@@ -519,7 +520,8 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        //return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        return std::max({ m_num_of_requested_states, delta.num_of_states(), static_cast<unsigned long>(initial.domain_size()), static_cast<unsigned long>(final.domain_size()) });
     }
 
     /**

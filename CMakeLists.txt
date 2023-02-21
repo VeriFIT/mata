@@ -12,9 +12,9 @@ set(CMAKE_MACOSX_RPATH 1)
 
 # this is recommended for profiling using clion here:
 # https://www.jetbrains.com/help/clion/cpu-profiler.html#UsingTheProfiler
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
-add_compile_options(-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer)
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+# add_compile_options(-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer)
 
 #to ignore asserts in profiling (supposed to work with g++):
 #https://stackoverflow.com/questions/5354314/how-can-i-completely-disable-calls-to-assert#
