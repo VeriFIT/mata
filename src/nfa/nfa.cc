@@ -1575,7 +1575,8 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const auto& orig_initial_state: initial) {
-        for (const auto& transitions: get_moves_from(orig_initial_state)) {
+        const auto moves{ get_moves_from(orig_initial_state) };
+        for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
             }

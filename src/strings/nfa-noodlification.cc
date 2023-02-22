@@ -349,23 +349,28 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 
 SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
     const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const StringMap& params) {
+    if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
+
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
     const auto right_automata_begin{ right_automata.begin() };
     const auto right_automata_end{ right_automata.end() };
 
-    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
-         ++left_aut_iter) {
-        left_aut_iter->get()->unify_initial();
-        left_aut_iter->get()->unify_final();
+    std::unordered_set<std::shared_ptr<Nfa::Nfa>> unified_nfas; // Unify each automaton only once.
+    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end; ++left_aut_iter) {
+        if (unified_nfas.find(*left_aut_iter) == unified_nfas.end()) {
+            left_aut_iter->get()->unify_initial();
+            left_aut_iter->get()->unify_final();
+            unified_nfas.insert(*left_aut_iter);
+        }
     }
-    for (auto right_aut_iter{ right_automata_begin }; right_aut_iter != right_automata_end;
-         ++right_aut_iter) {
-        right_aut_iter->get()->unify_initial();
-        right_aut_iter->get()->unify_final();
+    for (auto right_aut_iter{ right_automata_begin }; right_aut_iter != right_automata_end; ++right_aut_iter) {
+        if (unified_nfas.find(*right_aut_iter) == unified_nfas.end()) {
+            right_aut_iter->get()->unify_initial();
+            right_aut_iter->get()->unify_final();
+            unified_nfas.insert(*right_aut_iter);
+        }
     }
-
-    if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa::Nfa concatenated_left_side{ **left_automata_begin };
