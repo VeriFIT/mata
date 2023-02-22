@@ -1575,7 +1575,8 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const auto& orig_initial_state: initial) {
-        for (const auto& transitions: get_moves_from(orig_initial_state)) {
+        const auto moves{ get_moves_from(orig_initial_state) };
+        for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
             }
@@ -1590,7 +1591,8 @@ void Nfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
-        for (const auto& transitions: get_transitions_to(orig_final_state)) {
+        const auto transitions_to{ get_transitions_to(orig_final_state) };
+        for (const auto& transitions: transitions_to) {
             delta.add(transitions.src, transitions.symb, new_final_state);
         }
         if (initial[orig_final_state]) { initial.add(new_final_state); }

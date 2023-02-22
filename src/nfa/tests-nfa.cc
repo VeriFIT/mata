@@ -2934,6 +2934,16 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
         CHECK(nfa.delta.contains(4, 'b', 1));
         CHECK(nfa.delta.contains(1, 'c', 1));
     }
+
+    SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
+        Nfa aut;
+        Mata::RE2Parser::create_nfa(&aut, "a*b*");
+        for (size_t i{ 0 }; i < 8; ++i) {
+            aut.unify_initial();
+            aut.unify_final();
+        }
+        CHECK(true); // Check that the program does not seg fault.
+    }
 }
 
 TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
