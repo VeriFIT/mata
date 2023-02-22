@@ -4,7 +4,7 @@
 
 #include <mata/rrt.hh>
 using namespace Mata::Rrt;
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Parser;
 
 using GuardType = Mata::Rrt::Trans::Guard::GuardType;

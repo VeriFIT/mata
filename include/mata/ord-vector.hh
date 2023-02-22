@@ -8,69 +8,77 @@
  *
  *****************************************************************************/
 
-#ifndef _MATA_ORD_VECTOR_HH_
-#define _MATA_ORD_VECTOR_HH_
+#ifndef MATA_ORD_VECTOR_HH_
+#define MATA_ORD_VECTOR_HH_
 
-// Standard library headers
 #include <vector>
 #include <algorithm>
 #include <cassert>
 
 #include <mata/number-predicate.hh>
+#include <mata/util.hh>
 
-// insert the class into proper namespace
-namespace Mata
+namespace {
+/**
+ * @brief  Converts an object to string
+ *
+ * Static method for conversion of an object of any class with the << output
+ * operator into a string
+ *
+ * @param[in]  n  The object for the conversion
+ *
+ * @returns  The string representation of the object
+ */
+template <typename T>
+static std::string ToString(const T& n)
 {
-    namespace Util
-    {
-        template <class Number> class NumberPredicate;
+    // the output stream for the string
+    std::ostringstream oss;
+    // insert the object into the stream
+    oss << n;
+    // return the string
+    return oss.str();
+}
 
-        template <
-            class Key
-        >
-        class OrdVector;
+} // Anonymous namespace.
 
-        template <class Key>
-        bool is_sorted(std::vector<Key> vec)
-        {
-            for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
-            {	// check that the vector is sorted
-                if (!(*(itVec - 1) < *itVec))
-                {	// in case there is an unordered pair (or there is one element twice)
-                    return false;
-                }
-            }
+namespace Mata::Util {
 
-            return true;
+template <class Number> class NumberPredicate;
+template <class Key> class OrdVector;
+
+template<typename Number> bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+    for (auto q: lhs) {
+        if (rhs[q]) {
+            return false;
         }
     }
+    return true;
 }
 
-namespace
-{
-    /**
-     * @brief  Converts an object to string
-     *
-     * Static method for conversion of an object of any class with the << output
-     * operator into a string
-     *
-     * @param[in]  n  The object for the conversion
-     *
-     * @returns  The string representation of the object
-     */
-    template <typename T>
-    static std::string ToString(const T& n)
-    {
-        // the output stream for the string
-        std::ostringstream oss;
-        // insert the object into the stream
-        oss << n;
-        // return the string
-        return oss.str();
+template <class T>
+bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs) {
+    auto itLhs = lhs.begin();
+    auto itRhs = rhs.begin();
+    while (itLhs != lhs.end() && itRhs != rhs.end()) {
+        if (*itLhs == *itRhs) { return false; }
+        else if (*itLhs < *itRhs) { ++itLhs; }
+        else { ++itRhs; }
+    }
+    return true;
+}
+
+template <class Key> bool is_sorted(std::vector<Key> vec) {
+    for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
+    {	// check that the vector is sorted
+        if (!(*(itVec - 1) < *itVec))
+        {	// in case there is an unordered pair (or there is one element twice)
+            return false;
+        }
     }
 
+    return true;
 }
-
 
 /**
  * @brief  Implementation of a set using ordered vector
@@ -81,12 +89,7 @@ namespace
  * @tparam  Key  Key type: type of the elements contained in the container.
  *               Each elements in a set is also its key.
  */
-template
-<
-    class Key
->
-class Mata::Util::OrdVector
-{
+template<class Key> class OrdVector {
 private:  // Private data types
     using VectorType = std::vector<Key>;
 
@@ -481,7 +484,7 @@ public:   // Public methods
     {
         // Assertions
         assert(vectorIsSorted());
-        
+
         return vec_.back();
     }
 
@@ -629,7 +632,9 @@ public:   // Public methods
 
         return true;
     }
-};
+}; // Class OrdVector.
+
+} // Namespace Mata::Util.
 
 namespace std {
     template <class Key>
@@ -642,4 +647,4 @@ namespace std {
     };
 }
 
-#endif
+#endif // MATA_ORD_VECTOR_HH_.

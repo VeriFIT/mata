@@ -20,7 +20,6 @@
 #include <mata/util.hh>
 #include <mata/ord-vector.hh>
 
-using namespace Mata::util;
 using namespace Mata::Util;
 
 TEST_CASE("Mata::Util::OrdVector::intersection(}")

@@ -20,6 +20,7 @@
 #include <string>
 
 #include <mata/util.hh>
+#include <mata/ord-vector.hh>
 
 namespace Mata {
         using Symbol = unsigned long;

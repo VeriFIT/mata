@@ -26,7 +26,7 @@
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
-using namespace Mata::util;
+using namespace Mata::Util;
 using namespace Mata::Parser;
 
 using Symbol = Mata::Symbol;

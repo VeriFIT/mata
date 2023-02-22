@@ -47,3 +47,5 @@ VERSION
 
 .DS_Store
 .vscode/
+.venv
+bindings/python/libmata.cpp
