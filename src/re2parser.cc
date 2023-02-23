@@ -577,6 +577,7 @@ void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool
         *nfa = Mata::Nfa::remove_epsilon(*nfa, epsilon_value);
     }
     if(use_reduce) {
+        //TODO: triming might be unnecessary, regex->nfa construction should not produce useless states
         nfa->trim();
         *nfa = Mata::Nfa::reduce(*nfa);
     }

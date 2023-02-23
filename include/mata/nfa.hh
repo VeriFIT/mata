@@ -598,6 +598,11 @@ public:
      */
     StateSet get_useful_states() const;
 
+
+    std::vector<State> get_useful_states2() const;
+
+
+
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
      *

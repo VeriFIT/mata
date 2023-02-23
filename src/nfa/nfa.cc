@@ -535,6 +535,7 @@ void Nfa::trim(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
+        //TODO: does it always mean a copy?
         *this = get_trimmed_automaton(&tmp_state_map);
     } else {
         state_map->clear();
@@ -551,7 +552,8 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     }
     state_map->clear();
 
-    const StateSet original_useful_states{ get_useful_states() };
+    //const StateSet original_useful_states{ get_useful_states() };
+    const StateSet original_useful_states{ get_useful_states2() };
     state_map->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
@@ -562,12 +564,101 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     return create_trimmed_aut(*this, *state_map);
 }
 
+Nfa Nfa::get_trimmed_automaton2(StateToStateMap* state_map) {
+    if (initial.empty() || final.empty()) { return Nfa{}; }
+
+    StateToStateMap tmp_state_map{};
+    if (!state_map) {
+        state_map = &tmp_state_map;
+    }
+    state_map->clear();
+
+    const StateSet original_useful_states{ get_useful_states2() };
+    state_map->reserve(original_useful_states.size());
+
+    size_t new_state_num{ 0 };
+    for (const State original_state: original_useful_states) {
+        (*state_map)[original_state] = new_state_num;
+        ++new_state_num;
+    }
+    return create_trimmed_aut(*this, *state_map);
+}
+
+
+struct StackLevel {
+    State state;
+    Post::const_iterator post_it;
+    Post::const_iterator post_end;
+    StateSet::const_iterator targets_it;
+    StateSet::const_iterator targets_end;
+
+    StackLevel(State q, const Delta & delta):
+            state(q),
+            post_it(delta[q].cbegin()),
+            post_end(delta[q].cend())
+    {
+        if (post_it != post_end) {
+            targets_it = post_it->cbegin();
+            targets_end = post_it->cend();
+        }
+    };
+};
+
+std::vector<State> Nfa::get_useful_states2() const
+{
+    static NumberPredicate<State> reached(size(), false);
+    static NumberPredicate<State> reached_and_reaching(size(), false);
+    static std::vector<StackLevel> stack;
+    stack.clear();
+
+    for (const State q0: initial) {
+
+        stack.emplace_back(q0,delta);
+        reached.add(q0);
+        if (final[q0])
+            reached_and_reaching.add(q0);
+        while (!stack.empty()) {
+            StackLevel & level = stack.back();
+            while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
+                if (level.targets_it == level.targets_end) {
+                    level.post_it++;
+                    if (level.post_it != level.post_end) {
+                        level.targets_it = level.post_it->cbegin();
+                        level.targets_end = level.post_it->cend();
+                    }
+                } else
+                    level.targets_it++;
+            }
+            if (level.post_it == level.post_end) {
+                stack.pop_back();
+            }
+            else {
+                State succ_state = *(level.targets_it);
+                level.targets_it++;
+                if (final[succ_state])
+                    reached_and_reaching.add(succ_state);
+                if (reached_and_reaching[succ_state]) {
+                    for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
+                            reached_and_reaching.add(it->state);
+                    }
+                }
+                if (!reached[succ_state]) {
+                    reached.add(succ_state);
+                    stack.emplace_back(succ_state,delta);
+                }
+            }
+        }
+    }
+    return reached_and_reaching.get_elements();
+}
+
 StateSet Nfa::get_useful_states() const
 {
     if (initial.empty() || final.empty()) { return StateSet{}; }
 
     const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
+    // TODO: Here we could trim the final states before running the bckward reachability.
     const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
     const size_t num_of_states{size() };
@@ -932,7 +1023,9 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
 }
 
 Nfa Mata::Nfa::revert(const Nfa& aut) {
-    return simple_revert(aut);
+    //return simple_revert(aut);
+    //return fragile_revert(aut);
+    return somewhat_simple_revert(aut);
 }
 
 bool Mata::Nfa::is_deterministic(const Nfa& aut)

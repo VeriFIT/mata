@@ -84,6 +84,15 @@ namespace Mata {
             }
 
         public:
+            NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(tracking_elements), predicate(size,val)
+            {
+                if (tracking_elements && val) {
+                    elements.reserve(size);
+                    for (Number e = 0;e<size;++e)
+                        elements.push_back(e);
+                }
+            };
+
             NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {};
 
             NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {

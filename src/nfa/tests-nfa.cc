@@ -2106,7 +2106,6 @@ TEST_CASE("Mata::Nfa::revert()")
 
 // These are speed test of variants of revert, they take some time though.
 TEST_CASE("Mata::Nfa::fragile_revert() speed", "[.profiling]") {
-//TEST_CASE("Mata::Nfa::fragile_revert() speed") {
     Nfa B;
     FILL_WITH_AUT_C(B);
     //FILL_WITH_AUT_B(B);
@@ -2130,6 +2129,15 @@ TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed", "[.profiling]") {
     FILL_WITH_AUT_C(B);
     for (int i=0;i<300000;i++) {
         B = somewhat_simple_revert(B);
+    }
+}
+
+TEST_CASE("Mata::Nfa::trim() speed", "[.profiling]") {
+    Nfa A,B;
+    FILL_WITH_AUT_C(B);
+    for (int i=0;i<100000;i++) {
+        A = B;
+        A.trim();
     }
 }
 
