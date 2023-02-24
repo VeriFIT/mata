@@ -35,6 +35,14 @@ namespace Mata {
             virtual Symbol translate_symb(const std::string &symb) = 0;
 
             /**
+             * Translate sequence of symbol names to sequence of their respective values.
+             */
+            virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const {
+                (void)word;
+                throw std::runtime_error("Unimplemented");
+            }
+
+            /**
              * @brief Translate internal @p symbol representation back to its original string name.
              *
              * Throws an exception when the @p symbol is missing in the alphabet.
@@ -246,6 +254,20 @@ namespace Mata {
             //}
 
             //return it->second;
+        }
+
+        virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const {
+            const size_t word_size{ word.size() };
+            std::vector<Symbol> symbols;
+            symbols.reserve(word_size);
+            for (size_t i{ 0 }; i < word_size; ++i) {
+                const auto symbol_mapping_it = symbol_map.find(word[i]);
+                if (symbol_mapping_it == symbol_map.end()) {
+                    throw std::runtime_error("Unknown symbol \'" + word[i] + "\'");
+                }
+                symbols.push_back(symbol_mapping_it->second);
+            }
+            return symbols;
         }
 
         /**
