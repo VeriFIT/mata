@@ -69,7 +69,7 @@ void Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
         const BDD bdd = graph_to_bdd_nfa(symbol_part);
         if (bdd.IsZero())
             continue;
-        bdds.push_back(bdd);
+        bdds.insert(bdd);
         trans_to_bddvar[&symbol_part] = bdd;
     }
 }
@@ -115,37 +115,30 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
             if (bdd.val.IsZero())
                 continue;
             trans_to_bddvar[ds_pair.first] = bdd.val;
-            bdds.push_back(bdd.val);
+            bdds.insert(bdd.val);
         }
     }
 }
 
-std::vector<BDD> Mata::Mintermization::compute_minterms(const std::vector<BDD>& bdds)
+std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& bdds)
 {
-    std::vector<BDD> stack;
-    // we start mintermization with first bdd and its negation
-    stack.push_back(bdds.front());
-    stack.push_back(!bdds.front());
-
-    const size_t bdds_size = bdds.size();
-    for (size_t i = 1; i < bdds_size; ++i) {
-        std::vector<BDD> next;
+    std::unordered_set<BDD> stack{ bdd_mng.bddOne() };
+    for (BDD b : bdds) {
+        std::unordered_set<BDD> next;
         /**
-         * Possible optimization. Maybe we can remember which transition belongs to the currently processed bdds
+         * TODO: Possible optimization - we can remember which transition belongs to the currently processed bdds
          * and mintermize automaton somehow directly here. However, it would be better to do such optimization
          * in copy of this function and this one keep clean and straightforward.
          */
         for (const auto& minterm : stack) {
-            /**
-             * Possible optimization. We can check whether bdds[i] has not been already processed (we can have
-             * same bdds for more transitions) and if it was, we can skip it here
-             */
-            BDD b = minterm * bdds[i];
-            if (!b.IsZero())
-                next.push_back(b);
-            BDD b1 = minterm * !bdds[i];
-            if (!b1.IsZero())
-                next.push_back(b1);
+            BDD b1 = minterm * b;
+            if (!b1.IsZero()) {
+                next.insert(b1);
+            }
+            BDD b0 = minterm * !b;
+            if (!b0.IsZero()) {
+                next.insert(b0);
+            }
         }
         stack = next;
     }
@@ -226,7 +219,7 @@ const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
 }
 
 void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::vector<BDD>& minterms)
+                                           const std::unordered_set<BDD>& minterms)
 {
     for (const auto& trans : aut.transitions) {
             // for each t=(q1,s,q2)
@@ -251,7 +244,7 @@ void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const
 }
 
 void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::vector<BDD>& minterms)
+                                           const std::unordered_set<BDD>& minterms)
 {
     for (const auto& trans : aut.transitions) {
         for (const auto& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
@@ -297,7 +290,7 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
     }
 
     // Build minterm tree over BDDs
-    std::vector<BDD> minterms = compute_minterms(bdds);
+    auto minterms = compute_minterms(bdds);
 
     std::vector<Mata::IntermediateAut> res;
     for (const Mata::IntermediateAut *aut : auts) {

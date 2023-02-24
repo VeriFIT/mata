@@ -51,7 +51,7 @@
 #include <stdexcept>
 #include "epdInt.h"
 #include "cuddInt.h"
-#include "cuddObj.hh"
+#include "../include/mata/cudd/cuddObj.hh"
 
 using std::cout;
 using std::cerr;

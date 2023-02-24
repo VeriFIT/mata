@@ -54,6 +54,7 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <functional>
 #include "cudd.h"
 
 /*---------------------------------------------------------------------------*/
@@ -160,6 +161,7 @@ public:
 */
 class BDD : public ABDD {
     friend class Cudd;
+    friend struct std::hash<BDD>;
 public:
     BDD();
     BDD(Capsule *cap, DdNode *bddNode);
@@ -289,6 +291,14 @@ public:
 
 }; // BDD
 
+template<>
+struct std::hash<BDD>
+{
+    std::size_t operator()(BDD const& BDD) const
+    {
+      return std::hash<DdNode*>()(const_cast<DdNode*>(BDD.node));
+    }
+};
 
 /**
   @brief Class for ADDs.

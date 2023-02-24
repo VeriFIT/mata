@@ -77,7 +77,7 @@ private: // private data members
     std::unordered_map<std::string, BDD> symbol_to_bddvar;
     std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
-    std::vector<BDD> bdds; // bdds created from transitions
+    std::unordered_set<BDD> bdds; // bdds created from transitions
 
 private:
     void trans_to_bdd_nfa(const IntermediateAut& aut);
@@ -90,7 +90,7 @@ public:
      * @param bdds BDDs for which minterms are computed
      * @return Computed minterms
      */
-    static std::vector<BDD> compute_minterms(const std::vector<BDD>& bdds);
+    std::unordered_set<BDD> compute_minterms(const std::unordered_set<BDD>& bdds);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
@@ -134,7 +134,7 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
+    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
 
     /**
      * The method for mintermization of alternating finite automaton using
@@ -144,7 +144,7 @@ public:
      * @param minterms Set of minterms for mintermization
      */
     void minterms_to_aut_afa(Mata::IntermediateAut& res,
-                             const Mata::IntermediateAut& aut, const std::vector<BDD>& minterms);
+                             const Mata::IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
 
     Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar()
     {}

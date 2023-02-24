@@ -111,10 +111,10 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::vector<BDD> bdds;
-        bdds.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-        bdds.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
-        std::vector<BDD> res = mintermization.compute_minterms(bdds);
+        std::unordered_set<BDD> bdds;
+        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
+        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+        auto res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 4);
     }
 
@@ -134,10 +134,10 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::vector<BDD> bdds;
-        bdds.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-        bdds.push_back(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
-        std::vector<BDD> res = mintermization.compute_minterms(bdds);
+        std::unordered_set<BDD> bdds;
+        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
+        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
+        auto res = mintermization.compute_minterms(bdds);
         REQUIRE(res.size() == 3);
     }
 } // compute_minterms
@@ -205,8 +205,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[5].first.name == "3'");
         REQUIRE(res.transitions[6].first.name == "3'");
         REQUIRE(res.transitions[7].first.name == "3'");
-        REQUIRE(res.transitions[0].second.children[1].node.name == "2");
-        REQUIRE(res.transitions[1].second.children[1].node.name == "3");
+        REQUIRE(((res.transitions[0].second.children[1].node.name == "2" && res.transitions[1].second.children[1].node.name == "3") || (res.transitions[0].second.children[1].node.name == "3" && res.transitions[1].second.children[1].node.name == "2")));
         REQUIRE(res.transitions[2].second.children[1].node.name == "1'");
         REQUIRE(res.transitions[3].second.children[1].node.name == "1'");
         REQUIRE(res.transitions[4].second.children[1].node.name == "1'");
@@ -270,13 +269,14 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[7].first.name == "0");
         REQUIRE(res.transitions[8].first.name == "0");
         REQUIRE(res.transitions[9].first.name == "0");
-        REQUIRE(res.transitions[0].second.children[0].node.name == "0");
+        std::unordered_set<std::string> symbols_from1 = {res.transitions[0].second.children[0].node.name,
+                                                         res.transitions[1].second.children[0].node.name,
+                                                         res.transitions[2].second.children[0].node.name,
+                                                         res.transitions[3].second.children[0].node.name};
+        REQUIRE(symbols_from1.size() == 4);
         REQUIRE(res.transitions[0].second.children[1].node.name == "2");
-        REQUIRE(res.transitions[1].second.children[0].node.name == "1");
         REQUIRE(res.transitions[1].second.children[1].node.name == "2");
-        REQUIRE(res.transitions[2].second.children[0].node.name == "2");
         REQUIRE(res.transitions[2].second.children[1].node.name == "2");
-        REQUIRE(res.transitions[3].second.children[0].node.name == "3");
         REQUIRE(res.transitions[3].second.children[1].node.name == "2");
     }
 
@@ -337,13 +337,14 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res.transitions[7].first.name == "0");
         REQUIRE(res.transitions[8].first.name == "0");
         REQUIRE(res.transitions[9].first.name == "0");
-        REQUIRE(res.transitions[0].second.children[0].node.name == "0");
+        std::unordered_set<std::string> symbols_from1 = {res.transitions[0].second.children[0].node.name,
+                                                         res.transitions[1].second.children[0].node.name,
+                                                         res.transitions[2].second.children[0].node.name,
+                                                         res.transitions[3].second.children[0].node.name};
+        REQUIRE(symbols_from1.size() == 4);
         REQUIRE(res.transitions[0].second.children[1].node.name == "&");
-        REQUIRE(res.transitions[1].second.children[0].node.name == "1");
         REQUIRE(res.transitions[1].second.children[1].node.name == "&");
-        REQUIRE(res.transitions[2].second.children[0].node.name == "2");
         REQUIRE(res.transitions[2].second.children[1].node.name == "&");
-        REQUIRE(res.transitions[3].second.children[0].node.name == "3");
         REQUIRE(res.transitions[3].second.children[1].node.name == "&");
         REQUIRE(res.transitions[4].second.children[1].node.name == "&");
         REQUIRE(res.transitions[5].second.children[1].node.name == "&");
