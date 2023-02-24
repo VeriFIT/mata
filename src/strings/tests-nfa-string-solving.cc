@@ -208,7 +208,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
 }
 
 TEST_CASE("Mata::Strings::get_lengths()") {
-     
+
     SECTION("basic") {
         Nfa x;
         create_nfa(&x, "(abcde)*");
@@ -256,15 +256,15 @@ TEST_CASE("Mata::Strings::get_lengths()") {
         Nfa x;
         create_nfa(&x, "a(aaaa|aaaaaaa)*");
         CHECK(get_word_lengths(x) == std::set<std::pair<int, int>>({
-            {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0}, 
-            {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0}, 
+            {1,0}, {5,0}, {8,0}, {9,0}, {12,0}, {13,0}, {15,0}, {16,0},
+            {17,0}, {19,0}, {20,0}, {21,0}, {22,0}, {23,0}, {24,0}, {25,0},
             {26,1}
         }));
     }
 }
 
 TEST_CASE("Mata::Strings::is_lang_eps()") {
-     
+
     SECTION("basic") {
         Nfa x;
         create_nfa(&x, "(abcde)*");
@@ -280,5 +280,62 @@ TEST_CASE("Mata::Strings::is_lang_eps()") {
     SECTION("basic 3") {
         Nfa x;
         CHECK(!is_lang_eps(x));
+    }
+}
+
+TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
+    SECTION("From numbers") {
+        SECTION("Simple word") {
+            std::vector<Mata::Symbol> word{ 10, 20, 30, 40, 50, 60 };
+            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            CHECK(is_in_lang(nfa, { word, {} }));
+            CHECK(nfa.final.size() == 1);
+            CHECK(nfa.initial.size() == 1);
+            CHECK(Mata::Strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+        }
+
+        SECTION("Empty string") {
+            std::vector<Mata::Symbol> word{};
+            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            CHECK(is_in_lang(nfa, { word, {} }));
+            CHECK(Mata::Strings::is_lang_eps(nfa));
+            CHECK(nfa.final.size() == 1);
+            CHECK(nfa.initial.size() == 1);
+            CHECK(Mata::Strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+        }
+    }
+
+    SECTION("From symbol names") {
+        SECTION("Simple word") {
+            std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
+            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            CHECK(is_in_lang(nfa, { nfa.alphabet->translate_word(word), {} }));
+            CHECK(nfa.final.size() == 1);
+            CHECK(nfa.initial.size() == 1);
+            CHECK(Mata::Strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+        }
+
+        SECTION("Empty string") {
+            std::vector<Mata::Symbol> word{};
+            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            CHECK(is_in_lang(nfa, { word, {} }));
+            CHECK(Mata::Strings::is_lang_eps(nfa));
+            CHECK(nfa.final.size() == 1);
+            CHECK(nfa.initial.size() == 1);
+            CHECK(Mata::Strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+        }
+
+        SECTION("Simple word with alphabet") {
+            std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
+            Mata::OnTheFlyAlphabet alphabet{};
+            for (unsigned long symbol{ 0 }; symbol < word.size(); ++symbol) {
+                alphabet.add_new_symbol(word[symbol], symbol);
+            }
+            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            CHECK(is_in_lang(nfa, { nfa.alphabet->translate_word(word), {} }));
+            CHECK(nfa.final.size() == 1);
+            CHECK(nfa.initial.size() == 1);
+            CHECK(Mata::Strings::get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(6, 0) });
+        }
     }
 }
