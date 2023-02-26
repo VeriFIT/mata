@@ -38,7 +38,7 @@
 /*---------------------------------------------------------------------------*/
      
 #include "util.h"
-#include "cudd.h"
+#include "../include/mata/cudd/cudd.h"
 
 #ifdef __cplusplus
 extern "C" {

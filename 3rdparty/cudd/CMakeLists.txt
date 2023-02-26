@@ -46,7 +46,7 @@ configure_file(cudd_config.h.in cudd_config.h @ONLY)
 
 add_library(cudd STATIC
         cplusplus/cuddObj.cc
-        cplusplus/cuddObj.hh
+        include/mata/cudd/cuddObj.hh
         cudd/cuddAddAbs.c
         cudd/cuddAddApply.c
         cudd/cuddAddFind.c
@@ -136,7 +136,7 @@ add_library(cudd STATIC
         util/strsav.c
         util/texpand.c
         util/ucbqsort.c
-        cudd/cudd.h
+        include/mata/cudd/cudd.h
         cudd/cuddInt.h
         dddmp/dddmp.h
         dddmp/dddmpInt.h
