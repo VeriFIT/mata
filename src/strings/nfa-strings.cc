@@ -149,7 +149,7 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 
 std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& aut) {
     Nfa::Nfa one_letter;
-    /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions. 
+    /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions.
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
     /// transitions are renamed to a single symbol (e.g., `a`).
     aut.get_one_letter_aut(one_letter);
@@ -157,7 +157,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     one_letter.trim();
     if(one_letter.size() == 0) {
         return {};
-    } 
+    }
 
     std::set<std::pair<int, int>> ret;
     std::vector<int> handles(one_letter.size(), 0); // initialized to 0
@@ -210,4 +210,27 @@ bool Mata::Strings::is_lang_eps(const Nfa::Nfa& aut) {
             return false;
     }
     return true;
+}
+
+Nfa Mata::Strings::create_single_word_nfa(const std::vector<Mata::Symbol>& word) {
+    const size_t word_size{ word.size() };
+    Nfa::Nfa nfa{ word_size + 1, { 0 }, { word_size } };
+
+    for (State state{ 0 }; state < word_size; ++state) {
+        nfa.delta.add(state, word[state], state + 1);
+    }
+    return nfa;
+}
+
+Nfa Mata::Strings::create_single_word_nfa(const std::vector<std::string>& word, Mata::Alphabet *alphabet) {
+    if (!alphabet) {
+        alphabet = new OnTheFlyAlphabet{ word };
+    }
+    const size_t word_size{ word.size() };
+    Nfa::Nfa nfa{ word_size + 1, { 0 }, { word_size }, alphabet };
+
+    for (State state{ 0 }; state < word_size; ++state) {
+        nfa.delta.add(state, alphabet->translate_symb(word[state]), state + 1);
+    }
+    return nfa;
 }

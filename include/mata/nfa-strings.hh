@@ -120,12 +120,27 @@ namespace Strings {
     std::set<std::pair<int, int>> get_word_lengths(const Nfa::Nfa& aut);
 
     /**
-     * @brief Checks if the automaton @p nfa accepts only a single word \eps. 
-     * 
+     * @brief Checks if the automaton @p nfa accepts only a single word \eps.
+     *
      * @param nfa Input automaton
      * @return true iff L(nfa) = {\eps}
      */
     bool is_lang_eps(const Nfa::Nfa& nfa);
+
+    /**
+     * Create an automaton accepting only a single @p word.
+     */
+    Nfa::Nfa create_single_word_nfa(const std::vector<Symbol>& word);
+
+    /**
+     * Create an automaton accepting only a single @p word.
+     *
+     * @param word Word to accept.
+     * @param alphabet Alphabet to use in NFA for translating word into symbols. If specified, the alphabet has to contain
+     *  translations for all of the word symbols. If left empty, a new alphabet with only the symbols of the word will be
+     *  created.
+     */
+    Nfa::Nfa create_single_word_nfa(const std::vector<std::string>& word, Alphabet* alphabet = nullptr);
 
 /**
  * Operations on segment automata.
