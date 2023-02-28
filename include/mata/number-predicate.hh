@@ -6,6 +6,7 @@
 #define LIBMATA_NUMBER_PREDICATE_HH
 
 #include <vector>
+#include <mata/util.hh>
 #include <mata/ord-vector.hh>
 
 namespace Mata {
@@ -13,10 +14,10 @@ namespace Mata {
 
         /**
          * A sort of enhanced boolean array,
-         * implementing a set of numbers, aka a unary predicate over numbers, that provides a constant test and update.
+         * implementing a set of numbers, aka a unary predicate_ over numbers, that provides a constant test and update.
          * A number that is explicitly added is in the set, all the other numbers are implicitly not in the set.
          *
-         * Besides a vector of bools (predicate), it can also be asked to maintain a vector of elements (elements).
+         * Besides a vector of bools (predicate_), it can also be asked to maintain a vector of elements (elements).
          * To keep constant test and set, new elements are pushed back to the vector but remove does not modify the vector.
          * Hence, after a remove, the vector contains a superset of the true elements.
          * Superset is still useful, to iterate through true elements, iterate through the vector and test membership in the bool array.
@@ -26,7 +27,7 @@ namespace Mata {
          *  tracking_elements -> elements contains a superset of the true elements
          *  elements_are_exact -> elements contain exactly the true elements
          *
-         * predicate.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
+         * predicate_.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
          * but the size of the domain is going to be used to determine the number of states in the nfa automaton :(.
          * This is somewhat ugly, but don't know how else to do it efficiently (computing true maximum would be costly).
          */
@@ -35,8 +36,8 @@ namespace Mata {
         template<typename Number>
         class NumberPredicate {
         private:
-            mutable std::vector<bool> predicate = {};
-            mutable std::vector <Number> elements = {};
+            mutable std::vector<bool> predicate_ = {};
+            mutable std::vector <Number> elements_ = {};
             mutable bool elements_are_exact = true;
             mutable bool tracking_elements = true;
             //TODO: if it is never used with tracking_elements = false, then we can remove that and simplify.
@@ -48,13 +49,16 @@ namespace Mata {
              */
             void prune_elements() const {
                 Number new_pos = 0;
-                for (Number orig_pos = 0; orig_pos < elements.size(); ++orig_pos) {
-                    if (predicate[elements[orig_pos]]) {
-                        elements[new_pos] = elements[orig_pos];
+                for (Number orig_pos = 0; orig_pos < elements_.size(); ++orig_pos) {
+                    if (predicate_[elements_[orig_pos]]) {
+                        elements_[new_pos] = elements_[orig_pos];
                         ++new_pos;
                     }
                 }
-                elements.resize(new_pos);
+
+                elements_.resize(new_pos);
+                //there was a bug here! that that line was missing. Maybe not efficient.
+                Util::sort_and_rmdupl(elements_);
                 elements_are_exact = true;
             }
 
@@ -62,10 +66,10 @@ namespace Mata {
              * assuming nothing, compute the true elements from scratch
              */
             void compute_elements() const {
-                elements.clear();
-                for (Number q = 0, size=predicate.size(); q < size; ++q) {
-                    if (predicate[q])
-                        elements.push_back(q);
+                elements_.clear();
+                for (Number q = 0, size=predicate_.size(); q < size; ++q) {
+                    if (predicate_[q])
+                        elements_.push_back(q);
                 }
                 elements_are_exact = true;
             }
@@ -84,12 +88,12 @@ namespace Mata {
             }
 
         public:
-            NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(tracking_elements), predicate(size,val)
+            NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(tracking_elements), predicate_(size, val)
             {
                 if (tracking_elements && val) {
-                    elements.reserve(size);
+                    elements_.reserve(size);
                     for (Number e = 0;e<size;++e)
-                        elements.push_back(e);
+                        elements_.push_back(e);
                 }
             };
 
@@ -112,6 +116,7 @@ namespace Mata {
             template <class InputIterator>
             NumberPredicate(InputIterator first, InputIterator last)
             {
+                std::cout<<"henttototot"<<std::endl;
                 while (first < last) {
                     add(*first);
                     ++first;
@@ -119,30 +124,30 @@ namespace Mata {
             }
 
             /*
-             * Note that it extends predicate if q is out of its current domain.
+             * Note that it extends predicate_ if q is out of its current domain.
              */
             void add(Number q) {
-                if (predicate.size() <= q) {
-                    reserve_on_insert(predicate,q);
-                    predicate.resize(q + 1, false);
+                if (predicate_.size() <= q) {
+                    reserve_on_insert(predicate_, q);
+                    predicate_.resize(q + 1, false);
                 }
                 if (tracking_elements) {
-                    Number q_was_there = predicate[q];
-                    predicate[q] = true;
+                    Number q_was_there = predicate_[q];
+                    predicate_[q] = true;
                     if (!q_was_there) {
-                        reserve_on_insert(elements);
-                        elements.push_back(q);
+                        reserve_on_insert(elements_);
+                        elements_.push_back(q);
                     }
                 } else {
-                    predicate[q] = true;
+                    predicate_[q] = true;
                     elements_are_exact = false;
                 }
             }
 
             void remove(Number q) {
                 elements_are_exact = false;
-                if (q < predicate.size() && predicate[q]) {
-                    predicate[q] = false;
+                if (q < predicate_.size() && predicate_[q]) {
+                    predicate_[q] = false;
                 }
             }
 
@@ -171,11 +176,11 @@ namespace Mata {
             }
 
             /**
-             * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
+             * @return True if predicate_ for @p q is set. False otherwise (even if q is out of range of the predicate_).
              */
             bool operator[](Number q) const {
-                if (q < predicate.size())
-                    return predicate[q];
+                if (q < predicate_.size())
+                    return predicate_[q];
                 else
                     return false;
             }
@@ -185,14 +190,14 @@ namespace Mata {
              */
             Number size() const {
                 if (elements_are_exact)
-                    return elements.size();
+                    return elements_.size();
                 if (tracking_elements) {
                     prune_elements();
-                    return elements.size();
+                    return elements_.size();
                 } else {
                     Number cnt = 0;
-                    for (Number q = 0, size = predicate.size(); q < size; ++q) {
-                        if (predicate[q])
+                    for (Number q = 0, size = predicate_.size(); q < size; ++q) {
+                        if (predicate_[q])
                             cnt++;
                     }
                     return cnt;
@@ -200,26 +205,26 @@ namespace Mata {
             }
 
             /*
-             * Clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
+             * Clears the set of true elements. Does not clear the predicate_, only sets it false everywhere.
              */
             void clear() {
                 if (tracking_elements)
-                    for (size_t i = 0, size = elements.size(); i < size; i++)
-                        predicate[elements[i]] = false;
+                    for (size_t i = 0, size = elements_.size(); i < size; i++)
+                        predicate_[elements_[i]] = false;
                 else
-                    //for (size_t i = 0, size = predicate.size(); i < size; i++)
-                    //    predicate[i] = false;
+                    //for (size_t i = 0, size = predicate_.size(); i < size; i++)
+                    //    predicate_[i] = false;
                     // Vysvetlete mi, co dela to && nize a zaplatim obed.
-                    for (auto && i : predicate)
+                    for (auto && i : predicate_)
                         i = false;
-                elements.clear();
+                elements_.clear();
                 elements_are_exact = true;
             }
 
             void reserve(Number n) {
-                predicate.reserve(n);
+                predicate_.reserve(n);
                 if (tracking_elements) {
-                    elements.reserve(n);
+                    elements_.reserve(n);
                 }
             }
 
@@ -236,19 +241,19 @@ namespace Mata {
              * Should be somewhat efficient.
              */
             void complement(Number domain_size) {
-                Number old_domain_size = predicate.size();
-                predicate.reserve(domain_size);
+                Number old_domain_size = predicate_.size();
+                predicate_.reserve(domain_size);
                 Number to_flip = std::min(domain_size,old_domain_size);
                 for (Number q = 0; q < to_flip; ++q) {
-                     predicate[q] = !predicate[q];
+                    predicate_[q] = !predicate_[q];
                 }
                 if (domain_size > old_domain_size)
                     for (Number q = old_domain_size; q < domain_size; ++q) {
-                        predicate.push_back(true);
+                        predicate_.push_back(true);
                     }
                 else if (domain_size < old_domain_size)
                     for (Number q = domain_size; q < old_domain_size; ++q) {
-                        predicate[q]=false;
+                        predicate_[q]=false;
                     }
                 if (tracking_elements) {
                     compute_elements();
@@ -260,37 +265,39 @@ namespace Mata {
              */
             inline const_iterator begin() const {
                 update_elements();
-                return elements.begin();
+                return elements_.begin();
             }
 
             inline const_iterator end() const {
                 update_elements();
-                return elements.end();
+                return elements_.end();
             }
 
             inline const_iterator cbegin() const {
                 update_elements();
-                return elements.cbegin();
+                return elements_.cbegin();
             }
 
             inline const_iterator cend() const {
                 update_elements();
-                return elements.cend();
+                return elements_.cend();
             }
 
             inline const_iterator begin() {
                 update_elements();
-                return elements.begin();
+                return elements_.begin();
             }
 
             inline const_iterator end() {
                 update_elements();
-                return elements.end();
+                return elements_.end();
             }
 
-            const std::vector <Number> &get_elements() const {
+            const std::vector <Number> & get_elements() const {
+                static int bz = 0;
+                bz++;
                 update_elements();
-                return elements;
+                return elements_;
             }
 
             bool are_disjoint(const NumberPredicate<Number> &other) const {
@@ -305,43 +312,51 @@ namespace Mata {
                 return (size() == 0);
             }
 
+            // written quickly without thinking
+            void intersect(const NumberPredicate<Number> & other_predicate) {
+                update_elements();
+                for (Number n: elements_)
+                    if (!other_predicate[n])
+                        remove(n);
+            }
+
             // This is supposed to return something not smaller than the largest element in the set
-            // the easiest is to return the size of the predicate, roughly, the largest element ever inserted.
+            // the easiest is to return the size of the predicate_, roughly, the largest element ever inserted.
             Number domain_size() const {
-                return predicate.size();
+                return predicate_.size();
             }
 
             // truncates the domain to the maximal element (so the elements stay the same)
             // this could be needed in defragmentation of nfa
             void truncate_domain() {
-                if (predicate.empty())
+                if (predicate_.empty())
                     return;
-                else if (predicate[predicate.size()])
+                else if (predicate_[predicate_.size()])
                     return;
 
                 Number max;
                 if (tracking_elements) {
                     update_elements();
                     // if empty, max would be something strange
-                    if (elements.empty()) {
-                        predicate.resize(0);
+                    if (elements_.empty()) {
+                        predicate_.resize(0);
                         return;
                     }
                     else
-                        max = *std::max_element(elements.begin(), elements.end());
+                        max = *std::max_element(elements_.begin(), elements_.end());
                 }
                 else {
-                    // one needs to be careful, Number can be unsigned, empty predicate would cause 0-1 below
-                    for (max = predicate.size()-1; max >= 0; --max)
-                        if (predicate[max])
+                    // one needs to be careful, Number can be unsigned, empty predicate_ would cause 0-1 below
+                    for (max = predicate_.size() - 1; max >= 0; --max)
+                        if (predicate_[max])
                             break;
                 }
 
-                predicate.resize(max+1);
+                predicate_.resize(max + 1);
             }
 
             /**
-             * Renames numbers in predicate according to the given @renaming. If a number is not present in @renaming
+             * Renames numbers in predicate_ according to the given @renaming. If a number is not present in @renaming
              * it is renamed to base + offset value. Rationalization for this is that base should e.g.,
              * higher than number of states in Nfa delta so we rename the initial or final states not presented in delta
              * to numbers just after delta. Offset is then increased after encountering each of such states
@@ -362,12 +377,12 @@ namespace Mata {
                 };
 
                 std::vector<Number> new_elements;
-                std::vector<bool> new_predicate(std::max(max_or_default(elements, 0)+1, max_or_default(renaming, 0)+1));
+                std::vector<bool> new_predicate(std::max(max_or_default(elements_, 0) + 1, max_or_default(renaming, 0) + 1));
 
-                for (const Number& number : elements) {
+                for (const Number& number : elements_) {
                     if (number < renaming.size()) { // number is renamed by provided vector
                         new_elements.push_back(renaming[number]);
-                        if (predicate[number])
+                        if (predicate_[number])
                             new_predicate[renaming[number]] = true;
                     }
                     else { // number not defined in provided vector, needs to be renamed by this function
@@ -378,13 +393,13 @@ namespace Mata {
                         }
 
                         new_elements.push_back(single_states_renaming[number]);
-                        if (predicate[number])
+                        if (predicate_[number])
                             new_predicate[single_states_renaming[number]] = true;
                     }
                 }
 
-                elements = new_elements;
-                predicate = new_predicate;
+                elements_ = new_elements;
+                predicate_ = new_predicate;
             }
         };
     }

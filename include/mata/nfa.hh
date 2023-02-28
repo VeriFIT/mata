@@ -229,6 +229,10 @@ struct Post : private Util::OrdVector<Move> {
     inline bool empty() const override{ return Util::OrdVector<Move>::empty(); }
     inline size_t size() const override { return Util::OrdVector<Move>::size(); }
 
+    template<class Barray>
+    inline void filter(const Barray & predicate) { return Util::OrdVector<Move>::filter(predicate); }
+
+    // why?
 	const std::vector<Move>& ToVector() const
 	{
 		return Util::OrdVector<Move>::ToVector();
@@ -249,6 +253,7 @@ private:
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
+    // TODO: "number of state" is somehow misleading, it is the maximum state, no? (currently maybe maximum state + 1)
     size_t m_num_of_states;
 
 public:
@@ -291,6 +296,51 @@ public:
         }
 
         return post[q];
+    };
+
+    // TODO: why do we have the code of all these methods in the header file?
+    void shake_down(const Util::NumberPredicate<State> & predicate) {
+        Util::shake_down(post, predicate.get_elements());
+
+        std::vector<State> renaming(this->find_max_state()+1);
+        size_t i = 0;
+        for (State q:predicate.get_elements()) {
+            renaming[q] = i;
+            i++;
+        }
+
+        for (State q=0;q<post.size();++q) {
+            Post & post = get_mutable_post(q);
+            for (auto move = post.begin(); move < post.end();move++) {
+                std::vector<bool> pred_idx(move->targets.size(),false);
+                size_t i = 0;
+                for (State q: move->targets) {
+                //for (size_t i = 0;i<move->targets.size();++i) {
+                    if (predicate[q])
+                        pred_idx[i] = true;
+                    i++;
+                }
+                //move->targets.filter(predicate);
+                move->targets.filter(pred_idx);
+                move->targets.rename(renaming);
+            }
+
+            std::vector<bool> nonempty(post.size(),false);
+            int i = 0;
+            for (Move & m: post) {
+                if (!m.empty())
+                    nonempty[i] = true;
+                i++;
+            }
+            post.filter(nonempty);
+        }
+
+        //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
+        if (post.size() > 0)
+            m_num_of_states = find_max_state()+1;
+        else
+            m_num_of_states = 0;
+
     };
 
     // Get a constant reference to the post of a state. No side effects.
@@ -555,9 +605,19 @@ public:
         for (auto trans: *this) thisTrans.push_back(trans);
         std::vector<Trans> autTrans;
         for (auto trans: aut) autTrans.push_back(trans);
-        return (initial.get_elements() == aut.initial.get_elements()
-            && final.get_elements() == aut.final.get_elements()
-            && thisTrans == autTrans);
+
+
+        bool init = Util::OrdVector<State>(initial.get_elements()) == Util::OrdVector<State>(aut.initial.get_elements());
+        bool fin = Util::OrdVector<State>(final.get_elements()) == Util::OrdVector<State>(aut.final.get_elements());
+        bool trans = thisTrans == autTrans;
+        bool crap = m_num_of_requested_states == aut.m_num_of_requested_states;
+        bool deltacrap = delta.num_of_states() == aut.delta.num_of_states();
+
+        return (init && fin && trans && crap && deltacrap);
+
+        //return (initial.get_elements() == aut.initial.get_elements()
+        //    && final.get_elements() == aut.final.get_elements()
+        //    && thisTrans == autTrans);
     };
 
     /**
@@ -599,7 +659,8 @@ public:
     StateSet get_useful_states() const;
 
 
-    std::vector<State> get_useful_states2() const;
+    //Util::NumberPredicate<State> get_useful_states2() const;
+    const std::vector<bool> get_useful_states2() const;
 
 
 
@@ -612,7 +673,15 @@ public:
      *
      * @param[out] state_map Mapping of trimmed states to new states.
      */
-    void trim(StateToStateMap* state_map = nullptr);
+    void trim1(StateToStateMap* state_map = nullptr);
+    void trim2(StateToStateMap* state_map = nullptr);
+    void trim(StateToStateMap* state_map = nullptr) {
+        trim2(state_map);
+        //if (!state_map)
+        //    trim2();
+        //else
+        //    trim1(state_map);
+    }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -664,6 +733,7 @@ public:
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
+     * (slow, traverses entire delta ... ?)
      */
     TransSequence get_transitions_to(State state_to) const;
 
@@ -712,6 +782,7 @@ public:
         static const_iterator for_begin(const Nfa* nfa);
         static const_iterator for_end(const Nfa* nfa);
 
+        //he, what is this?
         void refresh_trans()
         { // {{{
             this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
@@ -760,7 +831,7 @@ public:
     /**
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
-     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
+     * TODO: once merged with new initial and final state predicate_, do renaming of these sets of states.
      * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
      */
     void defragment() {

@@ -45,27 +45,6 @@ namespace Mata
             return true;
         }
 
-        template<class Vector>
-        void inline sort_and_rmdupl(Vector & vec)
-        {
-            //TODO: try this?
-            //if (vectorIsSorted()) return;//probably useless
-
-            // sort
-            //TODO: is this the best available sorting algo?
-            std::sort(vec.begin(), vec.end());
-
-            // remove duplicates
-            // TODO: is this done in place?
-            auto it = std::unique(vec.begin(), vec.end());
-            // TODO: is resizing good from the performance perspective?
-            vec.resize(it - vec.begin());
-
-            // Assertions
-            // TODO: this assert might be removable
-            assert(vectorIsSorted());
-        }
-
         template <typename Number>
         bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
             for (auto q: lhs)
@@ -382,6 +361,7 @@ public:   // Public methods
         return result;
     }
 
+    //TODO: why are some method names capitalised?
     OrdVector Union(const OrdVector& rhs) const
     {
         // Assertions
@@ -519,6 +499,11 @@ public:   // Public methods
         assert(vectorIsSorted());
 
         return vec_.empty();
+    }
+
+    template<class BoolArray>
+    void filter(const BoolArray & predicate) {
+        Util::filter(vec_,predicate);
     }
 
     virtual inline const_reference back() const
@@ -685,6 +670,10 @@ public:   // Public methods
         }
 
         return true;
+    }
+
+    void rename(const std::vector<Key> & renaming) {
+        Util::rename(vec_,renaming);
     }
 };
 

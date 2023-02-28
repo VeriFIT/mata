@@ -135,7 +135,7 @@ namespace {
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
     StateBoolArray compute_reachability(const Nfa& nfa) {
-        std::vector<State> worklist{ nfa.initial.get_elements()};
+        std::vector<State> worklist{nfa.initial.get_elements()};
 
         StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial)
@@ -484,8 +484,11 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
+// beware, this is the maximum state in targets,
+// but sources maximum can be higher (post.size()+1)
 State Delta::find_max_state() {
     size_t new_max = 0;
+    //size_t new_max = post.size();
     for (const Trans& t : *this) {
         if (t.src > new_max) {
             new_max = t.src;
@@ -502,6 +505,7 @@ State Delta::find_max_state() {
 State Nfa::add_state() {
     m_num_of_requested_states = size() + 1;
     return m_num_of_requested_states - 1;
+    //why the -1? omg, we have to remove this ...
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -531,7 +535,7 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-void Nfa::trim(StateToStateMap* state_map)
+void Nfa::trim1(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
@@ -540,6 +544,65 @@ void Nfa::trim(StateToStateMap* state_map)
     } else {
         state_map->clear();
         *this = get_trimmed_automaton(state_map);
+    }
+}
+
+void Nfa::trim2(StateToStateMap* state_map)
+{
+    //NumberPredicate<State> useful_states{ get_useful_states2() };
+    //const std::vector<bool> useful_states_bv{ get_useful_states2() };
+    const std::vector<bool> useful_states_bv = get_useful_states2();
+    //wtf is happening on return here?
+
+    NumberPredicate<State> useful_states;
+
+    for (int i = 0;i<useful_states_bv.size();i++)
+        if(useful_states_bv[i])
+            useful_states.add(i);
+
+    initial.intersect(useful_states);
+    final.intersect(useful_states);
+
+    size_t i = 0;
+    for (State q:useful_states.get_elements()) {
+        if (initial[q]) {
+            initial.remove(q);
+            initial.add(i);
+        }
+        if (final[q]) {
+            final.remove(q);
+            final.add(i);
+        }
+        i++;
+    }
+    initial.truncate_domain();
+    final.truncate_domain();
+
+    m_num_of_requested_states = 0;
+
+    delta.shake_down(useful_states);
+
+    //if (!is_equal(trimmed_backup) && backup.size()==2)
+   // while (trimmed_backup.size() > size()) {
+   //     std::cout<<" HE! ";
+   //     add_state();
+   // }
+
+   // if (trimmed_backup.size() < size()) {
+   //     std::cout<<"SHUT";
+   // }
+
+    //m_num_of_requested_states = trimmed_backup.m_num_of_requested_states;
+    m_num_of_requested_states = 0;
+
+    // TODO : this is actually ony used in one test, remove state map?
+    if (state_map) {
+        state_map->clear();
+        state_map->reserve(useful_states.size());
+        StateSet us = StateSet(useful_states.get_elements());
+        std::vector<State> usv = us.ToVector();
+        for (State q=0;q<useful_states.size();q++)
+            (*state_map)[usv[q]] = q;
     }
 }
 
@@ -552,8 +615,8 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     }
     state_map->clear();
 
-    //const StateSet original_useful_states{ get_useful_states() };
-    const StateSet original_useful_states{ get_useful_states2() };
+    const StateSet original_useful_states{ get_useful_states() };
+    //const StateSet original_useful_states{ get_useful_states2() };
     state_map->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
@@ -563,27 +626,6 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
     }
     return create_trimmed_aut(*this, *state_map);
 }
-
-Nfa Nfa::get_trimmed_automaton2(StateToStateMap* state_map) {
-    if (initial.empty() || final.empty()) { return Nfa{}; }
-
-    StateToStateMap tmp_state_map{};
-    if (!state_map) {
-        state_map = &tmp_state_map;
-    }
-    state_map->clear();
-
-    const StateSet original_useful_states{ get_useful_states2() };
-    state_map->reserve(original_useful_states.size());
-
-    size_t new_state_num{ 0 };
-    for (const State original_state: original_useful_states) {
-        (*state_map)[original_state] = new_state_num;
-        ++new_state_num;
-    }
-    return create_trimmed_aut(*this, *state_map);
-}
-
 
 struct StackLevel {
     State state;
@@ -604,19 +646,28 @@ struct StackLevel {
     };
 };
 
-std::vector<State> Nfa::get_useful_states2() const
+const std::vector<bool> Nfa::get_useful_states2() const
+//NumberPredicate<State> Nfa::get_useful_states2() const
 {
-    static NumberPredicate<State> reached(size(), false);
-    static NumberPredicate<State> reached_and_reaching(size(), false);
-    static std::vector<StackLevel> stack;
-    stack.clear();
+    //NumberPredicate<State> reached(size());
+    //NumberPredicate<State> reached_and_reaching(size());
+
+    std::vector<bool> reached(size(),false);
+    std::vector<bool> reached_and_reaching(size(),false);
+    //reached_and_reaching.dont_track_elements();
+    std::vector<StackLevel> stack;
+    //stack.clear();
+    //reached.clear();
+    //reached_and_reaching.clear();
 
     for (const State q0: initial) {
 
         stack.emplace_back(q0,delta);
-        reached.add(q0);
+        //reached.add(q0);
+        reached[q0]=true;
         if (final[q0])
-            reached_and_reaching.add(q0);
+            //reached_and_reaching.add(q0);
+            reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
             while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
@@ -636,20 +687,23 @@ std::vector<State> Nfa::get_useful_states2() const
                 State succ_state = *(level.targets_it);
                 level.targets_it++;
                 if (final[succ_state])
-                    reached_and_reaching.add(succ_state);
+                    //reached_and_reaching.add(succ_state);
+                    reached_and_reaching[succ_state]=true;
                 if (reached_and_reaching[succ_state]) {
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
-                            reached_and_reaching.add(it->state);
+                            //reached_and_reaching.add(it->state);
+                            reached_and_reaching[it->state]=true;
                     }
                 }
                 if (!reached[succ_state]) {
-                    reached.add(succ_state);
+                    //reached.add(succ_state);
+                    reached[succ_state]=true;
                     stack.emplace_back(succ_state,delta);
                 }
             }
         }
     }
-    return reached_and_reaching.get_elements();
+    return reached_and_reaching;
 }
 
 StateSet Nfa::get_useful_states() const

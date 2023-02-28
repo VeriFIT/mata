@@ -29,7 +29,7 @@
 #include <unordered_map>
 #include <vector>
 //#include <mata/ord-vector.hh>
-//#include <mata/number-predicate.hh>
+//#include <mata/number-predicate_.hh>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -435,6 +435,78 @@ void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t ext
         vec.reserve(vec.size()+extension);
 }
 
+//This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
+// It assumes that renaming[i] <= i.
+// It assumes that vec is not longer than renaming.
+template<class Vector,typename Index>
+void shake_down(Vector & vec, const std::vector<Index> & renaming) {
+    //assert(vec.size() <= renaming.size());
+    size_t i = 0;
+    for (size_t rsize=renaming.size(),vsize=vec.size(); i<rsize && renaming[i]<vsize; i++) {
+        if (renaming[i] != i)
+        {
+            assert(renaming[i] < i);
+            vec[i] = std::move(vec[renaming[i]]);
+        }
+    }
+    vec.resize(i);
+}
+
+template<class Vector,typename Index>
+void rename(Vector & vec, const std::vector<Index> & renaming) {
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        //vec[i] = std::move(renaming[vec[i]]);
+        //vec[i] = std::move(vec[renaming[i]]);
+        vec[i] = renaming[vec[i]];
+    }
+}
+
+template<class Vector, class BoolArray>
+void filter(Vector & vec, const BoolArray & predicate) {
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (predicate[i]) {
+            vec[last] = std::move(vec[i]);
+            last++;
+        }
+    }
+    vec.resize(last);
+}
+
+// something wong ...
+//template<class Vector, typename Func>
+//void filterf(Vector & vec, Func const & predicate) {
+//    size_t last = 0;
+//    for (size_t i = 0,size = vec.size();i < size; ++i)
+//    {
+//        if (predicate(i)) {
+//            vec[last] = std::move(vec[i]);
+//            last++;
+//        }
+//    }
+//    vec.resize(last);
+//}
+
+
+    template<class Vector>
+    void inline sort_and_rmdupl(Vector & vec)
+    {
+        //TODO: try this?
+        //if (vectorIsSorted()) return;//probably useless
+
+        // sort
+        //TODO: is this the best available sorting algo?
+        std::sort(vec.begin(), vec.end());
+
+        // remove duplicates
+        auto it = std::unique(vec.begin(), vec.end());
+        vec.resize(it - vec.begin());
+
+        // TODO: this assert might be removable
+        assert(vectorIsSorted());
+    }
 }
 }
 #endif /* _MATA_UTIL_HH_ */
