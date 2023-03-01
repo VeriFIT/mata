@@ -549,10 +549,14 @@ void Nfa::trim1(StateToStateMap* state_map)
 
 void Nfa::trim2(StateToStateMap* state_map)
 {
+    static int fn = 0;
+    fn++;
     //NumberPredicate<State> useful_states{ get_useful_states2() };
     //const std::vector<bool> useful_states_bv{ get_useful_states2() };
     const std::vector<bool> useful_states_bv = get_useful_states2();
-    //wtf is happening on return here?
+
+    Nfa backup = *this;
+    backup.trim1();
 
     NumberPredicate<State> useful_states;
 
@@ -604,6 +608,9 @@ void Nfa::trim2(StateToStateMap* state_map)
         for (State q=0;q<useful_states.size();q++)
             (*state_map)[usv[q]] = q;
     }
+
+    if (!is_equal(backup))
+        std::cout<<"shit";
 }
 
 Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
