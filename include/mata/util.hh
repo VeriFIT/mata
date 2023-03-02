@@ -442,14 +442,12 @@ template<class Vector,typename Index>
 void shake_down(Vector & vec, const std::vector<Index> & renaming) {
     //assert(vec.size() <= renaming.size());
     size_t i = 0;
-    for (size_t rsize=renaming.size(),vsize=vec.size(); i<rsize && renaming[i]<vsize; i++) {
+    for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize && renaming[i]<vsize; i++) {
         if (renaming[i] != i)
         {
             assert(renaming[i] < i);
-            if (i != renaming[i]) {
-                vec[i] = std::move(vec[renaming[i]]);
-                //vec[i] = (vec[renaming[i]]);
-            }
+            //vec[i] = std::move(vec[renaming[i]]);
+            vec[i] = (vec[renaming[i]]);
         }
     }
     vec.resize(i);
@@ -459,7 +457,8 @@ template<class Vector,typename Index>
 void rename(Vector & vec, const std::vector<Index> & renaming) {
     for (size_t i = 0,size = vec.size();i < size; ++i)
     {
-        vec[i] = renaming[vec[i]];
+        if (i != vec[i])
+            vec[i] = renaming[vec[i]];
     }
 }
 
@@ -470,8 +469,8 @@ void filter(Vector & vec, const BoolArray & predicate) {
     {
         if (predicate[i]) {
             if (i!=last) {
-                vec[last] = std::move(vec[i]);
-                //vec[last] = (vec[i]);
+                //vec[last] = std::move(vec[i]);
+                vec[last] = (vec[i]);
             }
             last++;
         }

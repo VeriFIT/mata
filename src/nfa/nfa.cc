@@ -485,21 +485,24 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 }
 
 State Delta::find_max_state() {
-    size_t new_max = 0;
-    //size_t new_max = post.size();
+    size_t max = 0;
+    //size_t max = post.size();
     State src = 0;
     for (Post & p: post) {
-        if (src>new_max)
-            new_max = src;
+        if (src > max)
+            max = src;
         for (Move & m: p) {
-            for (State tgt: m.targets) {
-                if (tgt>new_max)
-                    new_max = tgt;
-            }
+            // for (State tgt: m.targets) {
+            //     if (tgt > max)
+            //         max = tgt;
+            // }
+            if (!m.targets.empty())
+                if (m.targets.back() > max)
+                    max = m.targets.back();
         }
         src++;
     }
-    return new_max;
+    return max;
 }
 
 ///// Nfa structure related methods
@@ -551,14 +554,15 @@ void Nfa::trim1(StateToStateMap* state_map)
 
 void Nfa::trim2(StateToStateMap* state_map)
 {
-    //static int fn = 0;
-    //fn++;
+    static int fn = 0;
+    fn++;
+    std::cout<<fn<<" "<<std::flush;
     //NumberPredicate<State> useful_states{ get_useful_states2() };
     //const std::vector<bool> useful_states_bv{ get_useful_states2() };
     const std::vector<bool> useful_states_bv = get_useful_states2();
 
-    //Nfa backup = *this;
-    //backup.trim1();
+    Nfa backup = *this;
+    backup.trim1();
 
     NumberPredicate<State> useful_states;
 
@@ -611,8 +615,12 @@ void Nfa::trim2(StateToStateMap* state_map)
             (*state_map)[usv[q]] = q;
     }
 
-    //if (!is_equal(backup))
-    //    std::cout<<"shit";
+    if (!is_equal(backup))
+        std::cout<<"B"<<fn<<std::flush;
+    else
+        std::cout<<"G"<<fn<<std::flush;
+
+    (*this) = backup;
 }
 
 Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
@@ -1086,9 +1094,9 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
 }
 
 Nfa Mata::Nfa::revert(const Nfa& aut) {
-    //return simple_revert(aut);
+    return simple_revert(aut);
     //return fragile_revert(aut);
-    return somewhat_simple_revert(aut);
+    //return somewhat_simple_revert(aut);
 }
 
 bool Mata::Nfa::is_deterministic(const Nfa& aut)
