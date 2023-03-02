@@ -331,7 +331,7 @@ namespace Mata {
             void truncate_domain() {
                 if (predicate_.empty())
                     return;
-                else if (predicate_[predicate_.size()])
+                else if (predicate_[predicate_.size()-1])
                     return;
 
                 Number max;
