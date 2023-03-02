@@ -486,16 +486,11 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 
 State Delta::find_max_state() {
     size_t max = 0;
-    //size_t max = post.size();
     State src = 0;
     for (Post & p: post) {
         if (src > max)
             max = src;
         for (Move & m: p) {
-            // for (State tgt: m.targets) {
-            //     if (tgt > max)
-            //         max = tgt;
-            // }
             if (!m.targets.empty())
                 if (m.targets.back() > max)
                     max = m.targets.back();
