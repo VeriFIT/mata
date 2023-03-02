@@ -484,22 +484,6 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
-// beware, this is the maximum state in targets,
-// but sources maximum can be higher (post.size()+1)
-//State Delta::find_max_state() {
-//    size_t new_max = 0;
-//    //size_t new_max = post.size();
-//    for (const Trans& t : *this) {
-//        if (t.src > new_max) {
-//            new_max = t.src;
-//        }
-//        if (t.tgt > new_max) {
-//            new_max = t.tgt;
-//        }
-//    }
-//    return new_max;
-//}
-
 State Delta::find_max_state() {
     size_t new_max = 0;
     //size_t new_max = post.size();
