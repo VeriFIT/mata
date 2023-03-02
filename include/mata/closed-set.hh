@@ -177,12 +177,12 @@ struct ClosedSet
         friend std::ostream& operator<<(std::ostream& os, const ClosedSet<T> cs)
         {
             std::string strType = "TYPE: ";
-            strType += cs.get_type() == upward_closed_set ? "UPWARD CLOSED" : "DOWNWARD CLOSED";
+            strType += cs.type() == upward_closed_set ? "UPWARD CLOSED" : "DOWNWARD CLOSED";
             strType += "\n";
             std::string strInterval = "INTERVAL: " + std::to_string(cs.get_min()) + 
 			" - " + std::to_string(cs.get_max()) + "\n";
             std::string strValues = "ANTICHAIN: {";
-            for(auto node : cs.get_antichain())
+            for(auto node : cs.antichain())
             {
                 strValues += "{";
                 for(auto state : node)
