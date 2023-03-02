@@ -2141,7 +2141,7 @@ TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed", "[.profiling]") {
     }
 }
 
-TEST_CASE("Mata::Nfa::trim() speed", "[.profiling]") {
+TEST_CASE("Mata::Nfa::trim1() speed", "[.profiling]") {
     Nfa A,B;
     FILL_WITH_AUT_B(B);
     for (int i=0;i<100000;i++) {

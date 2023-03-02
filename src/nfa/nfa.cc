@@ -486,16 +486,34 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 
 // beware, this is the maximum state in targets,
 // but sources maximum can be higher (post.size()+1)
+//State Delta::find_max_state() {
+//    size_t new_max = 0;
+//    //size_t new_max = post.size();
+//    for (const Trans& t : *this) {
+//        if (t.src > new_max) {
+//            new_max = t.src;
+//        }
+//        if (t.tgt > new_max) {
+//            new_max = t.tgt;
+//        }
+//    }
+//    return new_max;
+//}
+
 State Delta::find_max_state() {
     size_t new_max = 0;
     //size_t new_max = post.size();
-    for (const Trans& t : *this) {
-        if (t.src > new_max) {
-            new_max = t.src;
+    State src = 0;
+    for (Post & p: post) {
+        if (src>new_max)
+            new_max = src;
+        for (Move & m: p) {
+            for (State tgt: m.targets) {
+                if (tgt>new_max)
+                    new_max = tgt;
+            }
         }
-        if (t.tgt > new_max) {
-            new_max = t.tgt;
-        }
+        src++;
     }
     return new_max;
 }
@@ -549,8 +567,8 @@ void Nfa::trim1(StateToStateMap* state_map)
 
 void Nfa::trim2(StateToStateMap* state_map)
 {
-    static int fn = 0;
-    fn++;
+    //static int fn = 0;
+    //fn++;
     //NumberPredicate<State> useful_states{ get_useful_states2() };
     //const std::vector<bool> useful_states_bv{ get_useful_states2() };
     const std::vector<bool> useful_states_bv = get_useful_states2();

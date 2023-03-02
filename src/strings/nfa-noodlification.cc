@@ -148,7 +148,7 @@ void SegNfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
                 segment_one_init->initial = {init_state };
-                segment_one_init->trim1();
+                segment_one_init->trim();
 
                 if (segment_one_init->size() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = segment_one_init;
@@ -160,7 +160,7 @@ void SegNfa::segs_one_initial_final(
                     SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
                     segment_one_init_final->initial = {init_state };
                     segment_one_init_final->final = {final_state };
-                    segment_one_init_final->trim1();
+                    segment_one_init_final->trim();
 
                     if (segment_one_init_final->size() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = segment_one_init_final;

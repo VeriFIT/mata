@@ -133,6 +133,9 @@ private:  // Private methods
 
 public:   // Public methods
 
+    OrdVector(OrdVector&& rhs) = default;
+    OrdVector & operator=(OrdVector&& rhs) = default;
+
     OrdVector() :
         vec_()
     {
