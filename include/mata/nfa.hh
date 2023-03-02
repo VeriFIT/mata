@@ -305,6 +305,8 @@ public:
         std::vector<State> renaming(this->find_max_state()+1);
         size_t i = 0;
         for (State q:predicate.get_elements()) {
+            if (q >= renaming.size())
+                break;
             renaming[q] = i;
             i++;
         }

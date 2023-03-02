@@ -554,15 +554,15 @@ void Nfa::trim1(StateToStateMap* state_map)
 
 void Nfa::trim2(StateToStateMap* state_map)
 {
-    static int fn = 0;
-    fn++;
-    std::cout<<fn<<" "<<std::flush;
+    // static int fn = 0;
+    // fn++;
+    // std::cout<<fn<<" "<<std::flush;
     //NumberPredicate<State> useful_states{ get_useful_states2() };
     //const std::vector<bool> useful_states_bv{ get_useful_states2() };
     const std::vector<bool> useful_states_bv = get_useful_states2();
 
-    Nfa backup = *this;
-    backup.trim1();
+    // Nfa backup = *this;
+    // backup.trim1();
 
     NumberPredicate<State> useful_states;
 
@@ -615,12 +615,12 @@ void Nfa::trim2(StateToStateMap* state_map)
             (*state_map)[usv[q]] = q;
     }
 
-    if (!is_equal(backup))
-        std::cout<<"B"<<fn<<std::flush;
-    else
-        std::cout<<"G"<<fn<<std::flush;
+    // if (!is_equal(backup))
+    //     std::cout<<"B"<<fn<<std::flush;
+    // else
+    //     std::cout<<"G"<<fn<<std::flush;
 
-    (*this) = backup;
+    // (*this) = backup;
 }
 
 Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) {
