@@ -1031,11 +1031,13 @@ Afa Mata::Afa::construct(
 
     const FormulaGraph* init_graph = &inter_aut.initial_formula;
     if (is_node_operator(init_graph->node, FormulaNode::AND)) { // initial formula is just conjunction
+    	Node initial_node;
         for (const auto& str : init_graph->collect_node_names())
         {
             State state = get_state_name(str);
-            aut.add_initial(state);
+            initial_node.insert(state);
         }
+        aut.add_initial(initial_node);
     } else { // initial formula is dnf
         while (is_node_operator(init_graph->node, FormulaNode::OR))
         {  // Processes each clause separately
