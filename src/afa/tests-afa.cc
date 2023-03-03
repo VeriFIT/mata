@@ -640,7 +640,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         StringToStateMap state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
-		// Two initial nodes {q1} and {q2}
+        // Two initial nodes {q1} and {q2}
         REQUIRE(aut.initialstates.size() == 2);
 		REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
     }
@@ -662,7 +662,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         StringToStateMap state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
-		// One initial node {q1, q2}
+        // One initial node {q1, q2}
         REQUIRE(aut.initialstates.size() == 1);
 		REQUIRE(antichain_concrete_forward_emptiness_test_new(aut));
     }
@@ -689,7 +689,6 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 		CHECK(aut.finalstates.count(state_map.at("4")));
 
     }
-   
 
 } // }}}
 
