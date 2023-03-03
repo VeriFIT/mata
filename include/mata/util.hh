@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <cassert>
 #include <unordered_map>
 #include <vector>
 //#include <mata/ord-vector.hh>
