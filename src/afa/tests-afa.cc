@@ -642,7 +642,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
         // Two initial nodes {q1} and {q2}
         REQUIRE(aut.initialstates.size() == 2);
-		REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
+        REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
     }
     
     SECTION("AFA with a simple initial formula, just conjunction")
@@ -664,7 +664,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
         // One initial node {q1, q2}
         REQUIRE(aut.initialstates.size() == 1);
-		REQUIRE(antichain_concrete_forward_emptiness_test_new(aut));
+        REQUIRE(antichain_concrete_forward_emptiness_test_new(aut));
     }
 
     SECTION("AFA final states from multiple negations")
