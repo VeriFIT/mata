@@ -1292,7 +1292,7 @@ Nfa Mata::Nfa::construct(
     Nfa aut;
     assert(nullptr != alphabet);
 
-    if (parsec.type != Mata::Nfa::TYPE_NFA) {
+    if (parsec.type != Mata::Nfa::TYPE_NFA && parsec.type != std::string("NFA-bits")) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
                                  Mata::Nfa::TYPE_NFA + "\"");
     }
@@ -1320,30 +1320,43 @@ Nfa Mata::Nfa::construct(
     };
 
 
-    auto it = parsec.dict.find("Initial");
+    std::unordered_set<std::string> nonfinal{};
+    auto it = parsec.dict.find("Final");
+    if (parsec.dict.end() != it)
+    {
+        if (parsec.type == std::string("NFA-bits")) {
+            for (const auto &str: it->second) {
+                if (str != "&" && str != "!") {
+                    nonfinal.insert(str);
+                }
+            }
+        } else {
+            for (const auto &str: it->second) {
+                State state = get_state_name(str);
+                aut.final.add(state);
+            }
+        }
+    }
+
+
+    it = parsec.dict.find("Initial");
     if (parsec.dict.end() != it)
     {
         for (const auto& str : it->second)
         {
             State state = get_state_name(str);
             aut.initial.add(state);
+            if (!nonfinal.count(str)) {
+                aut.final.add(state);
+            }
         }
     }
 
-
-    it = parsec.dict.find("Final");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
-            aut.final.add(state);
-        }
-    }
 
     for (const auto& body_line : parsec.body)
     {
-        if (body_line.size() != 3)
+        if (parsec.type == Mata::Nfa::TYPE_NFA && body_line.size() != 3 ||
+            parsec.type == "NFA-bits" && body_line.size() < 3)
         {
             // clean up
             clean_up();
@@ -1356,13 +1369,25 @@ Nfa Mata::Nfa::construct(
             else
             {
                 throw std::runtime_error("Invalid transition: " +
-                                         std::to_string(body_line));
+                                         std::to_string(body_line) + " of size " + std::to_string(body_line.size()));
             }
         }
 
         State src_state = get_state_name(body_line[0]);
-        Symbol symbol = alphabet->translate_symb(body_line[1]);
-        State tgt_state = get_state_name(body_line[2]);
+        if (!nonfinal.count(body_line[0])) {
+            aut.final.add(get_state_name(body_line[0]));
+        }
+
+        std::string sym = "";
+        for (size_t i = 1; i < body_line.size()-1; ++i) {
+            sym += body_line[i];
+        }
+        Symbol symbol = alphabet->translate_symb(sym);
+
+        if (!nonfinal.count(body_line[body_line.size()-1])) {
+            aut.final.add(get_state_name(body_line[body_line.size() - 1]));
+        }
+        State tgt_state = get_state_name(body_line[body_line.size()-1]);
 
         aut.delta.add(src_state, symbol, tgt_state);
     }
