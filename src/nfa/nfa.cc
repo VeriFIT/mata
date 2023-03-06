@@ -1346,7 +1346,7 @@ Nfa Mata::Nfa::construct(
         {
             State state = get_state_name(str);
             aut.initial.add(state);
-            if (!nonfinal.count(str)) {
+            if (!nonfinal.count(str) && !nonfinal.empty()) {
                 aut.final.add(state);
             }
         }
@@ -1374,7 +1374,7 @@ Nfa Mata::Nfa::construct(
         }
 
         State src_state = get_state_name(body_line[0]);
-        if (!nonfinal.count(body_line[0])) {
+        if (!nonfinal.count(body_line[0]) && !nonfinal.empty()) {
             aut.final.add(get_state_name(body_line[0]));
         }
 
@@ -1384,7 +1384,7 @@ Nfa Mata::Nfa::construct(
         }
         Symbol symbol = alphabet->translate_symb(sym);
 
-        if (!nonfinal.count(body_line[body_line.size()-1])) {
+        if (!nonfinal.count(body_line[body_line.size()-1]) && !nonfinal.empty()) {
             aut.final.add(get_state_name(body_line[body_line.size() - 1]));
         }
         State tgt_state = get_state_name(body_line[body_line.size()-1]);
