@@ -25,7 +25,8 @@ using namespace Mata::Util;
 Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	std::unordered_map<StateSet, State>* subset_map)
+	std::unordered_map<StateSet, State>* subset_map,
+	bool minimize_after_determinization)
 { // {{{
  	Nfa result;
 
@@ -36,7 +37,11 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 		delete_subset_map = true;
 	}
 
-	result = determinize(aut, subset_map);
+	if (minimize_after_determinization) {
+		result = minimize(aut); // minimization makes it deterministic
+	} else {
+		result = determinize(aut, subset_map);
+	}
 	State sink_state = result.add_state();
 	auto it_inserted_pair = subset_map->insert({{}, sink_state});
 	if (!it_inserted_pair.second)
@@ -94,5 +99,14 @@ Nfa Mata::Nfa::complement(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	return algo(aut, alphabet, subset_map);
+	const std::string& minimize_arg = params.at("minimize");
+	bool minimize_after_determinization = false;
+	if ("true" == minimize_arg) { minimize_after_determinization = true; }
+	else if ("false" == minimize_arg) { minimize_after_determinization = false; }
+	else {
+		throw std::runtime_error(std::to_string(__func__) +
+			" received an unknown value of the \"minimize\" key: " + str_algo);
+	}
+
+	return algo(aut, alphabet, subset_map, minimize_after_determinization);
 } // complement

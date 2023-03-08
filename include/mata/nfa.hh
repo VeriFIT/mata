@@ -874,7 +874,8 @@ void make_complete(
 Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"}},
+        const StringMap&  params = {{"algorithm", "classical"},
+                                    {"minimize", "false"}},
         std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 Nfa minimize(const Nfa &aut);

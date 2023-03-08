@@ -45,7 +45,8 @@ namespace Algorithms {
     Nfa complement_classical(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            std::unordered_map<StateSet, State>* subset_map);
+            std::unordered_map<StateSet, State>* subset_map,
+            bool minimize_after_determinization);
 
     /**
      * Complement implemented by determization and making final states which were non final in the original automaton.
