@@ -3107,7 +3107,7 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
 }
 
-TEST_CASE("Mata::Nfa::Nfa::defragment()") {
+TEST_CASE("Mata::Nfa::Nfa::defragment_old()") {
     Nfa aut{};
     aut.delta.add(0, 42, 2);
     aut.delta.add(0, 42, 1);

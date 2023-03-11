@@ -423,7 +423,7 @@ struct TuplePrinter<Tuple, 1> {
 };
 
 // This reserves space in a vector, to be used before push_back or insert.
-// So far it just reserves 20 more cells than currently needed, 12 being sucked out of a finger.
+// So far it just reserves 20 more cells than currently needed, the 20 being sucked out of a finger.
 // Might be worth thinking about it.
 // It seems to help in revert:
 //  around 30% speedup for fragile revert,
@@ -436,27 +436,29 @@ void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t ext
         vec.reserve(vec.size()+extension);
 }
 
-//This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
-// It assumes that renaming[i] <= i.
-// It assumes that vec is not longer than renaming.
-template<class Vector,typename Index>
-void shake_down(Vector & vec, const std::vector<Index> & renaming) {
-    //assert(vec.size() <= renaming.size());
-    size_t i = 0;
-   // for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize && renaming[i]<vsize; i++) {
-    for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
-        if (renaming[i] != i)
-        {
-            if(! (renaming[i]<vsize) )
-                break;
-            assert(renaming[i] < i);
-            //vec[i] = std::move(vec[renaming[i]]);
-            vec[i] = (vec[renaming[i]]);
-        }
-    }
-    vec.resize(i);
-}
+// //This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
+// // It assumes that renaming[i] <= i.
+// // It assumes that vec is not longer than renaming.
+// // The function is very fragile.
+// template<class Vector,typename Index>
+// void defragment(Vector & vec, const std::vector<Index> & renaming) {
+//     //assert(vec.size() <= renaming.size());
+//     size_t i = 0;
+//    // for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize && renaming[i]<vsize; i++) {
+//     for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
+//         if (renaming[i] != i)
+//         {
+//             if(! (renaming[i]<vsize) )
+//                 break;
+//             assert(renaming[i] < i);
+//             vec[i] = std::move(vec[renaming[i]]);
+//             //vec[i] = (vec[renaming[i]]);
+//         }
+//     }
+//     vec.resize(i);
+// }
 
+//In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
 template<class Vector,typename Index>
 void rename(Vector & vec, const std::vector<Index> & renaming) {
     for (size_t i = 0,size = vec.size();i < size; ++i)
@@ -466,15 +468,14 @@ void rename(Vector & vec, const std::vector<Index> & renaming) {
     }
 }
 
-template<class Vector, class BoolArray>
-void filter(Vector & vec, const BoolArray & predicate) {
+template<class Vector, typename F>
+void filter_indexes(Vector & vec, const F && is_staying) {
     size_t last = 0;
     for (size_t i = 0,size = vec.size();i < size; ++i)
     {
-        if (predicate[i]) {
+        if (is_staying(i)) {
             if (i!=last) {
-                //vec[last] = std::move(vec[i]);
-                vec[last] = (vec[i]);
+                vec[last] = std::move(vec[i]);
             }
             last++;
         }
@@ -482,20 +483,20 @@ void filter(Vector & vec, const BoolArray & predicate) {
     vec.resize(last);
 }
 
-// something wong ...
-//template<class Vector, typename Func>
-//void filterf(Vector & vec, Func const & predicate) {
-//    size_t last = 0;
-//    for (size_t i = 0,size = vec.size();i < size; ++i)
-//    {
-//        if (predicate(i)) {
-//            vec[last] = std::move(vec[i]);
-//            last++;
-//        }
-//    }
-//    vec.resize(last);
-//}
-
+template<class Vector, typename F>
+void filter(Vector & vec, const F & is_staying) {
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (is_staying(vec[i])) {
+            if (i!=last) {
+                vec[last] = std::move(vec[i]);
+            }
+            last++;
+        }
+    }
+    vec.resize(last);
+}
 
     template<class Vector>
     void inline sort_and_rmdupl(Vector & vec)

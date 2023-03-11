@@ -142,6 +142,12 @@ struct Move {
     Move(Symbol symbolOnTransition, const StateSet& states_to) :
             symbol(symbolOnTransition), targets(states_to) {}
 
+    //Trying to make Move movable, does it make sense?
+    Move(Move&& rhs) = default;
+    Move(const Move& rhs) = default;
+    Move & operator=(Move&& rhs) = default;
+    Move & operator=(const Move& rhs) = default;
+
     inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
     inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
@@ -209,6 +215,12 @@ struct Post : private Util::OrdVector<Move> {
 
     virtual ~Post() = default;
 
+    //Trying to make Past movable, oes it make sense?
+    Post(Post&& rhs) = default;
+    Post(const Post& rhs) = default;
+    Post & operator=(Post&& rhs) = default;
+    Post & operator=(const Post& rhs) = default;
+
     inline const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
     inline iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
 
@@ -229,14 +241,10 @@ struct Post : private Util::OrdVector<Move> {
     inline bool empty() const override{ return Util::OrdVector<Move>::empty(); }
     inline size_t size() const override { return Util::OrdVector<Move>::size(); }
 
-    template<class Barray>
-    inline void filter(const Barray & predicate) { return Util::OrdVector<Move>::filter(predicate); }
-
-    // why?
-	const std::vector<Move>& ToVector() const
-	{
-		return Util::OrdVector<Move>::ToVector();
-	}
+    template<typename F>
+    inline void filter(const F & is_staying) {
+        return Util::OrdVector<Move>::filter(is_staying);
+    }
 };
 
 /**
@@ -299,12 +307,12 @@ public:
     };
 
     // TODO: why do we have the code of all these methods in the header file?
-    void shake_down(const Util::NumberPredicate<State> & predicate) {
-        Util::shake_down(post, predicate.get_elements());
+    const std::vector<State> defragment(const Util::NumberPredicate<State> & is_staying) {
+        Util::filter_indexes(post, [is_staying](State i) { return is_staying[i]; });
 
         std::vector<State> renaming(this->find_max_state()+1);
         size_t i = 0;
-        for (State q:predicate.get_elements()) {
+        for (State q:is_staying.get_elements()) {
             if (q >= renaming.size())
                 break;
             renaming[q] = i;
@@ -312,29 +320,13 @@ public:
         }
 
         for (State q=0;q<post.size();++q) {
+            //should we have a function Post::transform(Lambda) for this?
             Post & post = get_mutable_post(q);
             for (auto move = post.begin(); move < post.end();move++) {
-                std::vector<bool> pred_idx(move->targets.size(),false);
-                size_t i = 0;
-                for (State q: move->targets) {
-                //for (size_t i = 0;i<move->targets.size();++i) {
-                    if (predicate[q])
-                        pred_idx[i] = true;
-                    i++;
-                }
-                //move->targets.filter(predicate);
-                move->targets.filter(pred_idx);
+                move->targets.filter([is_staying](State q) { return is_staying[q]; });
                 move->targets.rename(renaming);
             }
-
-            std::vector<bool> nonempty(post.size(),false);
-            int i = 0;
-            for (Move & m: post) {
-                if (!m.empty())
-                    nonempty[i] = true;
-                i++;
-            }
-            post.filter(nonempty);
+            post.filter([](Move &m) { return !m.targets.empty(); });
         }
 
         //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
@@ -343,6 +335,7 @@ public:
         else
             m_num_of_states = 0;
 
+        return renaming;
     };
 
     // Get a constant reference to the post of a state. No side effects.
@@ -394,7 +387,7 @@ public:
      * Function removes empty indices in transition vector and renames states accordingly
      * @return Renaming of states where on index defined by old state number is a new number of the same state
      */
-    std::vector<State> defragment();
+    std::vector<State> defragment_old();
 
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
@@ -661,8 +654,8 @@ public:
     StateSet get_useful_states() const;
 
 
-    //Util::NumberPredicate<State> get_useful_states2() const;
-    const std::vector<bool> get_useful_states2() const;
+    Util::NumberPredicate<State> get_useful_states2() const;
+    //const std::vector<bool> get_useful_states2() const;
 
 
 
@@ -679,10 +672,6 @@ public:
     void trim2(StateToStateMap* state_map = nullptr);
     void trim(StateToStateMap* state_map = nullptr) {
         trim2(state_map);
-        //if (!state_map)
-        //    trim2();
-        //else
-        //    trim1(state_map);
     }
 
     /**
@@ -835,9 +824,10 @@ public:
      * containing transitions and decreases size.
      * TODO: once merged with new initial and final state predicate_, do renaming of these sets of states.
      * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
+     * TODO: This function is only used in tests!
      */
     void defragment() {
-        std::vector<State> renaming = delta.defragment();
+        std::vector<State> renaming = delta.defragment_old();
         initial.rename(renaming, delta.num_of_states());
         initial.truncate_domain();
         final.rename(renaming, delta.num_of_states());

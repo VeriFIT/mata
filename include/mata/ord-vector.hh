@@ -486,8 +486,13 @@ public:   // Public methods
         return vec_.empty();
     }
 
-    template<class BoolArray>
-    void filter(const BoolArray & predicate) {
+    template<typename Fun>
+    void filter_indexes(const Fun && predicate) {
+        Util::filter_indexes(vec_, predicate);
+    }
+
+    template<typename F>
+    void filter(const F & predicate) {
         Util::filter(vec_,predicate);
     }
 

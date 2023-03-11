@@ -31,6 +31,8 @@ template <class Number> class OrdVector;
  * predicate.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
  * but the size of the domain is going to be used to determine the number of states in the nfa automaton :(.
  * This is somewhat ugly, but don't know how else to do it efficiently (computing true maximum would be costly).
+ * TODO: rewrite this monstrosity! So far, it is not clear that remembering elements gains any speed (seem to cost more than it saves), so lets use a simple on which does not.
+ *  We can also implement another one, which does remember elements, and we can have move constructors to switch between them. It will be much simpler code.
  */
 template<typename Number> class NumberPredicate {
 private:
@@ -38,7 +40,7 @@ private:
     mutable std::vector <Number> elements = {};
     mutable bool elements_are_exact = true;
     mutable bool tracking_elements = true;
-    //TODO: if it is never used with tracking_elements = false, then we can remove that and simplify.
+    mutable Number card = 0;
 
     using const_iterator = typename std::vector<Number>::const_iterator;
 
@@ -85,27 +87,37 @@ private:
     }
 
 public:
-    NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(tracking_elements), predicate(size, val)
+    //Trying to make NumberPredicate movable, does it make sense?
+    NumberPredicate(NumberPredicate&& rhs) = default;
+    NumberPredicate(const NumberPredicate& rhs) = default;
+    NumberPredicate & operator=(NumberPredicate&& rhs) = default;
+    NumberPredicate & operator=(const NumberPredicate& rhs) = default;
+
+    NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), predicate(size, val)
     {
         if (tracking_elements && val) {
             elements.reserve(size);
             for (Number e = 0;e<size;++e)
                 elements.push_back(e);
         }
+        if (!val)
+            card = 0;
+        else
+            card = size;
     };
 
-    NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {};
+    NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {};
 
-    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
+    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
         for (auto q: list)
             add(q);
     }
 
-    NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
+    NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
         add(list);
     }
 
-    NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements) {
+    NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
         for (auto q: vec)
             add(q);
     }
@@ -123,27 +135,33 @@ public:
      * Note that it extends predicate if q is out of its current domain.
      */
     void add(Number q) {
-        if (predicate.size() <= q) {
-            reserve_on_insert(predicate, q);
-            predicate.resize(q+1,false);
-        }
-        if (tracking_elements) {
-            Number q_was_there = predicate[q];
-            predicate[q] = true;
-            if (!q_was_there) {
-                reserve_on_insert(elements);
-                elements.push_back(q);
+        if (!(*this)[q]) {
+            card++;
+            if (predicate.size() <= q) {
+                reserve_on_insert(predicate, q);
+                predicate.resize(q + 1, false);
             }
-        } else {
-            predicate[q] = true;
-            elements_are_exact = false;
+            if (tracking_elements) {
+                Number q_was_there = predicate[q];
+                predicate[q] = true;
+                if (!q_was_there) {
+                    reserve_on_insert(elements);
+                    elements.push_back(q);
+                }
+            } else {
+                predicate[q] = true;
+                elements_are_exact = false;
+            }
         }
     }
 
     void remove(Number q) {
-        elements_are_exact = false;
-        if (q < predicate.size() && predicate[q]) {
-            predicate[q] = false;
+        if ((*this)[q]) {
+            card--;
+            elements_are_exact = false;
+            if (q < predicate.size() && predicate[q]) {
+                predicate[q] = false;
+            }
         }
     }
 
@@ -171,6 +189,44 @@ public:
         tracking_elements = false;
     }
 
+    // Defragmentation:
+    // staying[q] == true if q is to stay in the domain, else it is to be removed from the domain,
+    // and the names of all r > q in the domain will get decremented.
+    // So far, I will make it efficient only for the case when elements are not tracked.
+    void defragment(const NumberPredicate<Number> & staying) {
+        Number max_positive = 0;//new maximum positive element of the domain
+        Number new_dom_max = 0;
+        card = 0;
+        for (Number i_old=0;i_old<predicate.size() && i_old < staying.domain_size();++i_old) {
+            if (staying[i_old]) {
+                predicate[new_dom_max] = predicate[i_old];
+                if (predicate[i_old]) {
+                    card++;
+                    max_positive = new_dom_max;
+                }
+                new_dom_max++;
+            }
+            else
+                elements_are_exact = false;
+        }
+        if (card>0)
+            predicate.resize(max_positive+1);
+        else
+            predicate.resize(0);
+        if (tracking_elements) {
+            compute_elements();
+        }
+    }
+
+    //void set_element_tracking(bool value) {
+    //    if (value && !tracking_elements) {
+    //        update_elements();
+    //        tracking_elements = true;
+    //    }
+    //    else if (!value)
+    //        tracking_elements = false;
+    //}
+
     /**
      * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
      */
@@ -185,19 +241,20 @@ public:
      * This is the number of the true elements, not the size of any data structure.
      */
     Number size() const {
-        if (elements_are_exact)
-            return elements.size();
-        if (tracking_elements) {
-            prune_elements();
-            return elements.size();
-        } else {
-            Number cnt = 0;
-            for (Number q = 0, size = predicate.size(); q < size; ++q) {
-                if (predicate[q])
-                    cnt++;
-            }
-            return cnt;
-        }
+        return card;
+        //if (elements_are_exact)
+        //    return elements.size();
+        //if (tracking_elements) {
+        //    prune_elements();
+        //    return elements.size();
+        //} else {
+        //    Number cnt = 0;
+        //    for (Number q = 0, size = predicate.size(); q < size; ++q) {
+        //        if (predicate[q])
+        //            cnt++;
+        //    }
+        //    return cnt;
+        //}
     }
 
     /*
@@ -215,6 +272,7 @@ public:
                 i = false;
         elements.clear();
         elements_are_exact = true;
+        card = 0;
     }
 
     void reserve(Number n) {
@@ -258,6 +316,7 @@ public:
 
     /*
      * Iterators to iterate through the true elements. No order can be assumed.
+     * This implementation is a lazy shit, for instance, when not tracking elements, we should not compute elements.
      */
     inline const_iterator begin() const {
         update_elements();
@@ -290,8 +349,6 @@ public:
     }
 
     const std::vector <Number> &get_elements() const {
-        static int bz = 0;
-        bz++;
         update_elements();
         return elements;
     }
@@ -307,15 +364,6 @@ public:
     bool empty() const {
         return (size() == 0);
     }
-
-    // written quickly without thinking
-    void intersect(const NumberPredicate<Number> & other_predicate) {
-        update_elements();
-        for (Number n: elements)
-            if (!other_predicate[n])
-                remove(n);
-    }
-
 
     // This is supposed to return something not smaller than the largest element in the set
     // the easiest is to return the size of the predicate, roughly, the largest element ever inserted.
@@ -358,6 +406,7 @@ public:
      * higher than number of states in Nfa delta so we rename the initial or final states not presented in delta
      * to numbers just after delta. Offset is then increased after encountering each of such states
      * not presented in delta.
+     * TODO: used only in the infamous first version of defragment_old, which is not used anywhere.
      */
     void rename(const std::vector<Number>& renaming, const Number base = 0) {
         if (renaming.empty())
