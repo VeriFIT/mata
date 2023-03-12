@@ -121,7 +121,7 @@ using Word = std::vector<Symbol>;
 // }}}
 
 
-// Automaton A
+// Automaton E
 #define FILL_WITH_AUT_E(x) \
 	x.initial = {1, 3}; \
 	x.final = {4}; \
