@@ -11695,9 +11695,9 @@ Floating::WithinRelMatcher WithinRel(float target) {
 
 std::string Catch::Matchers::Generic::Detail::finalizeDescription(const std::string& desc) {
     if (desc.empty()) {
-        return "matches undescribed predicate_";
+        return "matches undescribed predicate";
     } else {
-        return "matches predicate_: \"" + desc + '"';
+        return "matches predicate: \"" + desc + '"';
     }
 }
 // end catch_matchers_generic.cpp
