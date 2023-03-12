@@ -18,6 +18,8 @@
 #ifndef _MATA_NFA_HH_
 #define _MATA_NFA_HH_
 
+//#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algoroithms (like fragile_revert)
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
@@ -41,7 +43,11 @@ namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
 //using State = unsigned long;
-using State = unsigned; //unsigned long;
+using State = unsigned;
+//using State = int16_t;
+//using State = int8_t;
+//using State = short;
+//using State = int;
 
 using StateSet = Mata::Util::OrdVector<State>;
 
@@ -306,10 +312,13 @@ public:
         return post[q];
     };
 
-    // TODO: why do we have the code of all these methods in the header file?
+    // TODO: why do we have the code of all these methods in the header file? Should we move it out?
     const std::vector<State> defragment(const Util::NumberPredicate<State> & is_staying) {
+
+        //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
         Util::filter_indexes(post, [is_staying](State i) { return is_staying[i]; });
 
+        //get renaming of current states to new numbers:
         std::vector<State> renaming(this->find_max_state()+1);
         size_t i = 0;
         for (State q:is_staying.get_elements()) {
@@ -319,6 +328,8 @@ public:
             i++;
         }
 
+        //this iterates through every post and ever, filters and renames states,
+        //and finally removes moves that became empty from the post.
         for (State q=0;q<post.size();++q) {
             //should we have a function Post::transform(Lambda) for this?
             Post & post = get_mutable_post(q);
@@ -335,6 +346,7 @@ public:
         else
             m_num_of_states = 0;
 
+        //the renaming can be useful somewhere, computed anyway, we can as well return it.
         return renaming;
     };
 
@@ -651,11 +663,11 @@ public:
      * Useful states are reachable and terminating states.
      * @return Set of useful states.
      */
-    StateSet get_useful_states() const;
+    StateSet get_useful_states_old() const;
 
 
-    Util::NumberPredicate<State> get_useful_states2() const;
-    //const std::vector<bool> get_useful_states2() const;
+    const Util::NumberPredicate<State> get_useful_states() const;
+    //const std::vector<bool> get_useful_states() const;
 
 
 

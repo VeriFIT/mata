@@ -190,15 +190,15 @@ public:
     }
 
     // Defragmentation:
-    // staying[q] == true if q is to stay in the domain, else it is to be removed from the domain,
+    // is_staying[q] == true if q is to stay in the domain, else it is to be removed from the domain,
     // and the names of all r > q in the domain will get decremented.
     // So far, I will make it efficient only for the case when elements are not tracked.
-    void defragment(const NumberPredicate<Number> & staying) {
+    void defragment(const NumberPredicate<Number> & is_staying) {
         Number max_positive = 0;//new maximum positive element of the domain
         Number new_dom_max = 0;
         card = 0;
-        for (Number i_old=0;i_old<predicate.size() && i_old < staying.domain_size();++i_old) {
-            if (staying[i_old]) {
+        for (Number i_old=0;i_old<predicate.size() && i_old < is_staying.domain_size(); ++i_old) {
+            if (is_staying[i_old]) {
                 predicate[new_dom_max] = predicate[i_old];
                 if (predicate[i_old]) {
                     card++;

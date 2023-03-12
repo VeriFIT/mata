@@ -423,17 +423,20 @@ struct TuplePrinter<Tuple, 1> {
 };
 
 // This reserves space in a vector, to be used before push_back or insert.
-// So far it just reserves 20 more cells than currently needed, the 20 being sucked out of a finger.
+// Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the doubling.
 // Might be worth thinking about it.
 // It seems to help in revert:
 //  around 30% speedup for fragile revert,
 //  more than 50% for simple revert,
 // (when testing on a stupid test case)
 template<class Vector>
-void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 20) {
+void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 64) {
     //return; //Try this to see the effect of calling this. It should not affect functionality.
-    if (vec.capacity() < std::max(vec.size()+1,needed_capacity))
-        vec.reserve(vec.size()+extension);
+    if (vec.capacity() < extension) //if the size is already large enough, leave it to the default doubling strategy. This if seems to make a barely noticeable difference :).
+    {
+        if (vec.capacity() < std::max(vec.size() + 1, needed_capacity))
+            vec.reserve(vec.size() + extension);
+    }
 }
 
 // //This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].

@@ -25,6 +25,9 @@
 namespace Mata {
         //using Symbol = unsigned long;
         using Symbol = unsigned;
+        //using Symbol = int16_t;
+        //using Symbol = short;
+        //using Symbol = int;
         using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
          /**

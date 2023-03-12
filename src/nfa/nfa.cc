@@ -550,7 +550,13 @@ void Nfa::trim1(StateToStateMap* state_map)
 
 void Nfa::trim2(StateToStateMap* state_map)
 {
-    NumberPredicate<State> useful_states{ get_useful_states2() };
+#ifdef _STATIC_STRUCTURES_
+    static NumberPredicate<State> useful_states(false);
+    useful_states.clear();
+    useful_states = get_useful_states();
+#else
+    NumberPredicate<State> useful_states{ get_useful_states() };
+#endif
 
     initial.defragment(useful_states);
     final.defragment(useful_states);
@@ -565,10 +571,10 @@ void Nfa::trim2(StateToStateMap* state_map)
         state_map->reserve(useful_states.domain_size());
         StateSet us = StateSet(useful_states.get_elements());
         std::vector<State> usv = us.ToVector();
-        //for (State q=0;q<useful_states.size();q++)
-        //    (*state_map)[usv[q]] = q;
         for (State q=0;q<useful_states.size();q++)
-            (*state_map)[q] = renaming[q];
+            (*state_map)[usv[q]] = q;
+        //for (State q=0;q<useful_states.size();q++)
+        //    (*state_map)[q] = renaming[q];
     }
 }
 
@@ -581,8 +587,8 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     }
     state_map->clear();
 
-    const StateSet original_useful_states{ get_useful_states() };
-    //const StateSet original_useful_states{ get_useful_states2() };
+    const StateSet original_useful_states{get_useful_states_old() };
+    //const StateSet original_useful_states{ get_useful_states() };
     state_map->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
@@ -612,25 +618,35 @@ struct StackLevel {
     };
 };
 
-//const std::vector<bool> Nfa::get_useful_states2() const
-NumberPredicate<State> Nfa::get_useful_states2() const
+//const std::vector<bool> Nfa::get_useful_states() const
+const NumberPredicate<State> Nfa::get_useful_states() const
 {
-    std::vector<StackLevel> stack;
+#ifdef _STATIC_STRUCTURES_
+    // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
+    static std::vector<StackLevel> stack;
     //tracking elements seems to cost more than it saves, switching it off
-    NumberPredicate<State> reached(size(),false,false);
-    NumberPredicate<State> reached_and_reaching(size(),false,false);
-
-    // STATIC SEEMS TO GIVE LIKE 5-15% SPEEDUP
+    static NumberPredicate<State> reached(false);
+    static NumberPredicate<State> reached_and_reaching(false);
+    stack.clear();
+    reached.clear();
+    reached_and_reaching.clear();
+    // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
     // static std::vector<bool> reached;
     // static std::vector<bool> reached_and_reaching;
     // static std::vector<StackLevel> stack;
     // stack.clear();
     // reached.assign(size(),false);
     // reached_and_reaching.assign(size(),false);
+#else
+    std::vector<StackLevel> stack;
+    //tracking elements seems to cost more than it saves, switching it off
+    NumberPredicate<State> reached(size(),false,false);
+    NumberPredicate<State> reached_and_reaching(size(),false,false);
 
     //std::vector<bool> reached(size(),false);
     //std::vector<bool> reached_and_reaching(size(),false);
     //std::vector<StackLevel> stack;
+#endif
 
     for (const State q0: initial) {
 
@@ -678,7 +694,7 @@ NumberPredicate<State> Nfa::get_useful_states2() const
     return reached_and_reaching;
 }
 
-StateSet Nfa::get_useful_states() const
+StateSet Nfa::get_useful_states_old() const
 {
     if (initial.empty() || final.empty()) { return StateSet{}; }
 
@@ -874,6 +890,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     result.final = aut.initial;
 
     //COMPUTE NON-e SYMBOLS
+    //This stuff is ugly because of our handling of epsilon, what about negative numbers?
     OrdVector<Symbol> symbols = aut.get_used_symbols();
     if (symbols.empty())
         return result;
@@ -886,6 +903,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     // Symbol max_symbol = aut.get_max_symbol();
     // Symbol alphasize = max_symbol + 1;
 
+#ifdef _STATIC_STRUCTURES_
     //STATIC DATA STRUCTURES:
     // Not sure that it works ideally, whether the space for the inner vectors stays there.
     static std::vector<std::vector<State>> sources;
@@ -918,12 +936,13 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
             targets[symbol].clear();
         }
     }
-
-    // // NORMAL, NON STATIC DATA STRUCTURES:
-    // std::vector<std::vector<State>> sources (alphasize);
-    // std::vector<std::vector<State>> targets (alphasize);
-    // std::vector<State> e_sources;
-    // std::vector<State> e_targets;
+#else
+    // NORMAL, NON STATIC DATA STRUCTURES:
+    std::vector<std::vector<State>> sources (alphasize);
+    std::vector<std::vector<State>> targets (alphasize);
+    std::vector<State> e_sources;
+    std::vector<State> e_targets;
+#endif
 
     //initialise with this?
     //int avg_trans_per_symb  = aut.delta.size() / symbols.size();
@@ -1881,8 +1900,13 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
-    //static should prevent reallocation, seems to speed things up a little
-    static Util::NumberPredicate<Symbol>  symbols{};
+#ifdef _STATIC_STRUCTURES_
+    //static seems to speed things up a little
+    static Util::NumberPredicate<Symbol>  symbols;
+    symbols.clear();
+#else
+    Util::NumberPredicate<Symbol>  symbols{};
+#endif
     //symbols.dont_track_elements();
     for (State q = 0; q<delta.post_size(); ++q) {
         const Post & post = delta[q];
@@ -1890,6 +1914,7 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
             symbols.add(move.symbol);
         }
     }
+    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
     return OrdVector(symbols.get_elements());
 }
 
