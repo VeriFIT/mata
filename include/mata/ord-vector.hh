@@ -48,7 +48,7 @@ template <class Number> class NumberPredicate;
 template <class Key> class OrdVector;
 
 template <typename Number>
-bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
     for (auto q: lhs)
         if (rhs[q])
             return false;
@@ -57,7 +57,7 @@ bool are_disjoint(Mata::Util::OrdVector<Number> lhs, NumberPredicate<Number> rhs
 
 template <class T>
 bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
-{ // {{{
+{
     auto itLhs = lhs.begin();
     auto itRhs = rhs.begin();
     while (itLhs != lhs.end() && itRhs != rhs.end())
@@ -68,7 +68,7 @@ bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
     }
 
     return true;
-} // }}}
+}
 
 template <class Key> bool is_sorted(std::vector<Key> vec) {
     for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
@@ -115,6 +115,7 @@ private:  // Private methods
 
 public:   // Public methods
 
+    // To make it movable. Is this right?
     OrdVector(OrdVector&& rhs) = default;
     OrdVector & operator=(OrdVector&& rhs) = default;
 
@@ -399,8 +400,8 @@ public:   // Public methods
         return result;
     }
 
-    //TODO: having this code duplicated is not nice
-    // it would be useful as a function too
+    //TODO: this code of find was duplicated, not nice.
+    // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
     virtual const_iterator find(const Key& key) const
     {
         // Assertions
@@ -436,7 +437,7 @@ public:   // Public methods
 //         return end();
     }
 
-    //TODO: having this code duplicated is not nice
+    //TODO: the original code was duplicated, see comments above.
     virtual iterator find(const Key& key)
     {
         // Assertions
@@ -486,14 +487,16 @@ public:   // Public methods
         return vec_.empty();
     }
 
+    // Indexes which ar staying are shifted left to take place of those that are not staying.
     template<typename Fun>
-    void filter_indexes(const Fun && predicate) {
-        Util::filter_indexes(vec_, predicate);
+    void filter_indexes(const Fun && is_staying) {
+        Util::filter_indexes(vec_, is_staying);
     }
 
+    // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
     template<typename F>
-    void filter(const F & predicate) {
-        Util::filter(vec_,predicate);
+    void filter(const F & is_staying) {
+        Util::filter(vec_,is_staying);
     }
 
     virtual inline const_reference back() const
@@ -662,6 +665,7 @@ public:   // Public methods
         return true;
     }
 
+    // Renames numbers in the vector according to the renaming, q becomes renaming[q].
    void rename(const std::vector<Key> & renaming) {
         Util::rename(vec_,renaming);
     }

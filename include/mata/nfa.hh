@@ -186,8 +186,8 @@ struct Move {
     }
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
-    // very dangerous,
-    // but useful when I want to add states in a random order and sort later (more efficient than inserting in a random order)
+    // dangerous,
+    // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
     void inline push_back(const State s)
     {
         targets.push_back(s);
@@ -209,13 +209,13 @@ struct Post : private Util::OrdVector<Move> {
     using iterator = Util::OrdVector<Move>::iterator;
     using const_iterator = Util::OrdVector<Move>::const_iterator;
 
-    inline iterator begin() override { return Util::OrdVector<Move>::begin(); }
-    inline const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
-    inline iterator end() override { return Util::OrdVector<Move>::end(); }
-    inline const_iterator end() const override { return Util::OrdVector<Move>::end(); }
+    iterator begin() override { return Util::OrdVector<Move>::begin(); }
+    const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
+    iterator end() override { return Util::OrdVector<Move>::end(); }
+    const_iterator end() const override { return Util::OrdVector<Move>::end(); }
 
-    inline const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
-    inline const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
+    const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
+    const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
 
     Post() = default;
 
@@ -244,9 +244,10 @@ struct Post : private Util::OrdVector<Move> {
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
-    inline bool empty() const override{ return Util::OrdVector<Move>::empty(); }
-    inline size_t size() const override { return Util::OrdVector<Move>::size(); }
+    bool empty() const override{ return Util::OrdVector<Move>::empty(); }
+    size_t size() const override { return Util::OrdVector<Move>::size(); }
 
+    //Could we somehow use the && thingy here? It is supposed to be faster?
     template<typename F>
     inline void filter(const F & is_staying) {
         return Util::OrdVector<Move>::filter(is_staying);
@@ -267,7 +268,7 @@ private:
     ///
     /// These states are used in the transition relation, either on the left side or on the right side.
     /// The value is always consistent with the actual number of states in the transition relation.
-    // TODO: "number of state" is somehow misleading, it is the maximum state, no? (currently maybe maximum state + 1)
+    // TODO: the name of this is very bad, lets find another. What is it actually? What about tgt_domain_size, target_domain_size, domain_size.
     size_t m_num_of_states;
 
 public:
@@ -398,6 +399,7 @@ public:
     /**
      * Function removes empty indices in transition vector and renames states accordingly
      * @return Renaming of states where on index defined by old state number is a new number of the same state
+     * TODO: erase this function?
      */
     std::vector<State> defragment_old();
 
@@ -578,6 +580,7 @@ public:
      */
      size_t size() const {
         //return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
+        //This static casts somehow allow to use any number type for a state ...
         return std::max({ m_num_of_requested_states, delta.num_of_states(), static_cast<unsigned long>(initial.domain_size()), static_cast<unsigned long>(final.domain_size()) });
     }
 
@@ -621,10 +624,6 @@ public:
         bool deltacrap = delta.num_of_states() == aut.delta.num_of_states();
 
         return (init && fin && trans && crap && deltacrap);
-
-        //return (initial.get_elements() == aut.initial.get_elements()
-        //    && final.get_elements() == aut.final.get_elements()
-        //    && thisTrans == autTrans);
     };
 
     /**
@@ -632,12 +631,13 @@ public:
      *
      * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
      * @return Set of symbols used on the transitions.
-     * TODO: this could be a method of Delta
+     * TODO: this should be a method of Delta?
      */
     Util::OrdVector<Symbol> get_used_symbols() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
+     * TODO: this should be a method of Delta?
      */
     Symbol get_max_symbol() const;
     /**
@@ -645,7 +645,7 @@ public:
      *
      * Reachable states are states accessible from any initial state.
      * @return Set of reachable states.
-     * TODO: this could be a method of Delta
+     * TODO: with the new get_useful_states, it might be useless now.
      */
     StateSet get_reachable_states() const;
 
@@ -654,6 +654,7 @@ public:
      *
      * Terminating states are states leading to any final state.
      * @return Set of terminating states.
+     * TODO: with the new get_useful_states, it might be useless now.
      */
     StateSet get_terminating_states() const;
 
@@ -662,12 +663,13 @@ public:
      *
      * Useful states are reachable and terminating states.
      * @return Set of useful states.
+     * TODO: with the new get_useful_states, we can delete this probably.
      */
     StateSet get_useful_states_old() const;
 
 
+    //I just want to return something as constant reference to the thing, without copying anything, how?
     const Util::NumberPredicate<State> get_useful_states() const;
-    //const std::vector<bool> get_useful_states() const;
 
 
 
@@ -679,6 +681,7 @@ public:
      * the starting point of a path ending in a final state).
      *
      * @param[out] state_map Mapping of trimmed states to new states.
+     * TODO: we can probably keep just trim2, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
     void trim1(StateToStateMap* state_map = nullptr);
     void trim2(StateToStateMap* state_map = nullptr);
@@ -736,7 +739,7 @@ public:
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
-     * (slow, traverses entire delta ... ?)
+     * (!slow!, traverses the entire delta)
      */
     TransSequence get_transitions_to(State state_to) const;
 
@@ -785,7 +788,8 @@ public:
         static const_iterator for_begin(const Nfa* nfa);
         static const_iterator for_end(const Nfa* nfa);
 
-        //he, what is this?
+        //he, what is this? Some comment would help.
+        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition adds clutter and makes people write inefficient code.
         void refresh_trans()
         { // {{{
             this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
@@ -1091,24 +1095,26 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
 
-/// Reverting the automaton by one of the three functions below,
-/// currently simple_revert seems best (however, not tested enough).
+// Reverting the automaton by one of the three functions below,
+// currently simple_revert seems best (however, not tested enough).
 Nfa revert(const Nfa& aut);
 
-/// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
-/// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
-/// It should be faster assymptotically, or for dense automata,
-/// but in practice the overhead might be not worth it.
+// This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
+// and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
+// It is faster assymptoticaly and for somewhat dense automata,
+// the same or a litle bit slower than simple_revert otherwise.
+// Not affected by pre-reserving vectors.
 Nfa fragile_revert(const Nfa& aut);
 
-/// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
+// Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
+//  Much affected by pre-reserving vectors.
 Nfa simple_revert(const Nfa& aut);
 
-/// Reverting the automaton by a modification of the simple algorithm.
-/// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all.
+// Reverting the automaton by a modification of the simple algorithm.
+// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all, except on dense automata, where it is almost as slow as simple_revert. Candidate for removal.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
-/// Removing epsilon transitions
+// Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 /// Test whether an automaton is deterministic, i.e., whether it has exactly

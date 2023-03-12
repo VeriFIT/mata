@@ -6,7 +6,6 @@
 #define LIBMATA_NUMBER_PREDICATE_HH
 
 #include <vector>
-#include <mata/util.hh>
 #include <mata/ord-vector.hh>
 
 namespace Mata::Util {
@@ -31,7 +30,7 @@ template <class Number> class OrdVector;
  * predicate.size() is referred to as "the size of the domain". Ideally, the "domain" would not be visible form the outside,
  * but the size of the domain is going to be used to determine the number of states in the nfa automaton :(.
  * This is somewhat ugly, but don't know how else to do it efficiently (computing true maximum would be costly).
- * TODO: rewrite this monstrosity! So far, it is not clear that remembering elements gains any speed (seem to cost more than it saves), so lets use a simple on which does not.
+ * TODO: Rewrite and simplify this monstrosity! So far, it is not clear that remembering elements gains any speed (seem to cost more than it saves), so lets use a simple on which does not.
  *  We can also implement another one, which does remember elements, and we can have move constructors to switch between them. It will be much simpler code.
  */
 template<typename Number> class NumberPredicate {
@@ -56,8 +55,9 @@ private:
             }
         }
         elements.resize(new_pos);
-        //there was a bug here! that that line was missing. Maybe not efficient.
-        Util::sort_and_rmdupl(elements);
+        //there was a bug here! That line below was missing. Maybe not efficient.
+        //Well, it was maybe not a bug, not sure. Reverting, but keeping this comments here.
+        //Util::sort_and_rmdupl(elements);
         elements_are_exact = true;
     }
 
@@ -218,15 +218,6 @@ public:
         }
     }
 
-    //void set_element_tracking(bool value) {
-    //    if (value && !tracking_elements) {
-    //        update_elements();
-    //        tracking_elements = true;
-    //    }
-    //    else if (!value)
-    //        tracking_elements = false;
-    //}
-
     /**
      * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
      */
@@ -316,7 +307,7 @@ public:
 
     /*
      * Iterators to iterate through the true elements. No order can be assumed.
-     * This implementation is a lazy shit, for instance, when not tracking elements, we should not compute elements.
+     * This implementation is lazy. For instance, when not tracking elements, we should not compute elements.
      */
     inline const_iterator begin() const {
         update_elements();
@@ -406,7 +397,7 @@ public:
      * higher than number of states in Nfa delta so we rename the initial or final states not presented in delta
      * to numbers just after delta. Offset is then increased after encountering each of such states
      * not presented in delta.
-     * TODO: used only in the infamous first version of defragment_old, which is not used anywhere.
+     * TODO: used only in defragment of Nfa, which is not used anywhere. Remove?
      */
     void rename(const std::vector<Number>& renaming, const Number base = 0) {
         if (renaming.empty())

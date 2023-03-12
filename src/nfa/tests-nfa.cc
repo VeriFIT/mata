@@ -28,12 +28,11 @@ using Word = std::vector<Symbol>;
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
-	x.initial = {1, 3}; \
+    x.initial = {1, 3}; \
 	x.final = {5}; \
-	x.delta.add(1, 'b', 7); \
-	x.delta.add(7, 'a', 5); \
 	x.delta.add(1, 'a', 3); \
 	x.delta.add(1, 'a', 10); \
+	x.delta.add(1, 'b', 7); \
 	x.delta.add(3, 'a', 7); \
 	x.delta.add(3, 'b', 9); \
 	x.delta.add(9, 'a', 9); \
@@ -43,6 +42,7 @@ using Word = std::vector<Symbol>;
 	x.delta.add(10, 'a', 7); \
 	x.delta.add(10, 'b', 7); \
 	x.delta.add(10, 'c', 7); \
+	x.delta.add(7, 'a', 5); \
 	x.delta.add(5, 'a', 5); \
 	x.delta.add(5, 'c', 9); \
 
@@ -2111,7 +2111,6 @@ TEST_CASE("Mata::Nfa::revert()")
 		CHECK(res.delta.contains(12, 'b', 14));
 		CHECK(res.delta.contains(14, 'a', 12));
 	}
-
 } // }}}
 
 // These are speed test of variants of revert, they take some time though.
@@ -2460,62 +2459,62 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 		REQUIRE(state_map[2] != state_map[0]);
 	}
 
-	//SECTION("big automaton")
-	//{
-	//	aut.add_state(9);
-	//	aut.initial = {1, 2};
-	//	aut.delta.add(1, 'a', 2);
-	//	aut.delta.add(1, 'a', 3);
-	//	aut.delta.add(1, 'b', 4);
-	//	aut.delta.add(2, 'a', 2);
-	//	aut.delta.add(2, 'b', 2);
-	//	aut.delta.add(2, 'a', 3);
-	//	aut.delta.add(2, 'b', 4);
-	//	aut.delta.add(3, 'b', 4);
-	//	aut.delta.add(3, 'c', 7);
-	//	aut.delta.add(3, 'b', 2);
-	//	aut.delta.add(5, 'c', 3);
-	//	aut.delta.add(7, 'a', 8);
-	//	aut.delta.add(9, 'b', 2);
-	//	aut.delta.add(9, 'c', 0);
-	//	aut.delta.add(0, 'a', 4);
-	//	aut.final = {3, 9};
+	SECTION("big automaton")
+	{
+		aut.add_state(9);
+		aut.initial = {1, 2};
+		aut.delta.add(1, 'a', 2);
+		aut.delta.add(1, 'a', 3);
+		aut.delta.add(1, 'b', 4);
+		aut.delta.add(2, 'a', 2);
+		aut.delta.add(2, 'b', 2);
+		aut.delta.add(2, 'a', 3);
+		aut.delta.add(2, 'b', 4);
+		aut.delta.add(3, 'b', 4);
+		aut.delta.add(3, 'c', 7);
+		aut.delta.add(3, 'b', 2);
+		aut.delta.add(5, 'c', 3);
+		aut.delta.add(7, 'a', 8);
+		aut.delta.add(9, 'b', 2);
+		aut.delta.add(9, 'c', 0);
+		aut.delta.add(0, 'a', 4);
+		aut.final = {3, 9};
 
 
-	//	Nfa result = reduce(aut, false, &state_map);
+		Nfa result = reduce(aut, false, &state_map);
 
-	//	REQUIRE(result.size() == 6);
-	//	REQUIRE(result.initial[state_map[1]]);
-	//	REQUIRE(result.initial[state_map[2]]);
-	//	REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
-	//	REQUIRE(result.delta.contains(state_map[9], 'c', state_map[7]));
-	//	REQUIRE(result.delta.contains(state_map[3], 'c', state_map[0]));
-	//	REQUIRE(result.delta.contains(state_map[0], 'a', state_map[8]));
-	//	REQUIRE(result.delta.contains(state_map[7], 'a', state_map[4]));
-	//	REQUIRE(result.delta.contains(state_map[1], 'a', state_map[3]));
-	//	REQUIRE(!result.delta.contains(state_map[3], 'b', state_map[4]));
-	//	REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
-	//	REQUIRE(result.final[state_map[9]]);
-	//	REQUIRE(result.final[state_map[3]]);
+		REQUIRE(result.size() == 6);
+		REQUIRE(result.initial[state_map[1]]);
+		REQUIRE(result.initial[state_map[2]]);
+		REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
+		REQUIRE(result.delta.contains(state_map[9], 'c', state_map[7]));
+		REQUIRE(result.delta.contains(state_map[3], 'c', state_map[0]));
+		REQUIRE(result.delta.contains(state_map[0], 'a', state_map[8]));
+		REQUIRE(result.delta.contains(state_map[7], 'a', state_map[4]));
+		REQUIRE(result.delta.contains(state_map[1], 'a', state_map[3]));
+		REQUIRE(!result.delta.contains(state_map[3], 'b', state_map[4]));
+		REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
+		REQUIRE(result.final[state_map[9]]);
+		REQUIRE(result.final[state_map[3]]);
 
-    //    result = reduce(aut, true, &state_map);
-    //    CHECK(result.size() == 3);
-    //    CHECK(result.initial.size() == 2);
-    //    for (State initial : result.initial) {
-    //        CHECK(((initial == state_map[1]) || (initial == state_map[2])));
-    //    }
-    //    REQUIRE(result.final.size() == 1);
-    //    for (State final : result.final) {
-    //        CHECK(final == state_map[3]);
-    //    }
-    //    CHECK(result.delta.size() == 6);
-    //    CHECK(result.delta.contains(state_map[1], 'a', state_map[3]));
-    //    CHECK(result.delta.contains(state_map[1], 'a', state_map[2]));
-    //    CHECK(result.delta.contains(state_map[2], 'a', state_map[2]));
-    //    CHECK(result.delta.contains(state_map[2], 'b', state_map[2]));
-    //    CHECK(result.delta.contains(state_map[2], 'a', state_map[3]));
-    //    CHECK(result.delta.contains(state_map[3], 'b', state_map[2]));
-	//}
+        result = reduce(aut, true, &state_map);
+        CHECK(result.size() == 3);
+        CHECK(result.initial.size() == 2);
+        for (State initial : result.initial) {
+            CHECK(((initial == state_map[1]) || (initial == state_map[2])));
+        }
+        REQUIRE(result.final.size() == 1);
+        for (State final : result.final) {
+            CHECK(final == state_map[3]);
+        }
+        CHECK(result.delta.size() == 6);
+        CHECK(result.delta.contains(state_map[1], 'a', state_map[3]));
+        CHECK(result.delta.contains(state_map[1], 'a', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'a', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'b', state_map[2]));
+        CHECK(result.delta.contains(state_map[2], 'a', state_map[3]));
+        CHECK(result.delta.contains(state_map[3], 'b', state_map[2]));
+	}
 
 	SECTION("no transitions from non-final state")
 	{
@@ -2815,6 +2814,7 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
     }
 }
 
+//TODO: make this a test for the new version
 TEST_CASE("Mata::Nfa::get_useful_states_old() for profiling", "[.profiling],[useful_states]")
 {
     Nfa aut{20};
@@ -3119,6 +3119,7 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
 }
 
+//TODO: make this a test for the new version
 TEST_CASE("Mata::Nfa::Nfa::defragment_old()") {
     Nfa aut{};
     aut.delta.add(0, 42, 2);

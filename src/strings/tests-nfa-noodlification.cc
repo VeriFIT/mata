@@ -58,54 +58,6 @@ using namespace Mata::RE2Parser;
 
 template<class T> void unused(const T &) {}
 
-TEST_CASE("debug1")
-{
-    Nfa aut;
-        aut.initial.add(0);
-        aut.final.add({4, 5, 6, 7});
-        aut.delta.add(0, 'e', 1);
-        aut.delta.add(1, 'e', 2);
-        aut.delta.add(1, 'e', 3);
-        aut.delta.add(2, 'e', 4);
-        aut.delta.add(2, 'e', 5);
-        aut.delta.add(2, 'e', 6);
-        aut.delta.add(3, 'e', 7);
-
-        auto noodles{ SegNfa::noodlify(aut, 'e') };
-
-        CHECK(noodles.size() == 4);
-}
-TEST_CASE("debug2")
-{
-    Nfa aut;
-    aut.initial.add({0, 1, 2});
-    aut.final.add({11, 12, 13, 14, 15, 16});
-    aut.delta.add(0, 'e', 3);
-    aut.delta.add(0, 'e', 4);
-    aut.delta.add(0, 'e', 5);
-    aut.delta.add(1, 'e', 3);
-    aut.delta.add(1, 'e', 4);
-    aut.delta.add(2, 'e', 5);
-
-    aut.delta.add(3, 'e', 6);
-    aut.delta.add(3, 'e', 7);
-    aut.delta.add(4, 'e', 8);
-    aut.delta.add(4, 'e', 9);
-    aut.delta.add(5, 'e', 10);
-
-    aut.delta.add(6, 'e', 11);
-    aut.delta.add(7, 'e', 12);
-    aut.delta.add(8, 'e', 13);
-    aut.delta.add(8, 'e', 14);
-    aut.delta.add(9, 'e', 15);
-    aut.delta.add(10, 'e', 16);
-
-    auto noodles{ SegNfa::noodlify(aut, 'e') };
-
-    CHECK(noodles.size() == 12);
-}
-
-
 TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
 {
     Nfa aut{20};

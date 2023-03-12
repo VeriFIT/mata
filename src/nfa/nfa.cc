@@ -387,7 +387,7 @@ bool Delta::empty() const
     return this->begin() == this->end();
 }
 
-// TODO: This function is only used in a function which is used in tests!
+// TODO: This function is only used in a function (defragment Nfa) which is used in tests. Remove?
 std::vector<State> Delta::defragment_old()
 {
     std::vector<State> renaming(this->post.size());
@@ -506,7 +506,7 @@ State Delta::find_max_state() {
 State Nfa::add_state() {
     m_num_of_requested_states = size() + 1;
     return m_num_of_requested_states - 1;
-    //why the -1? omg, we have to remove this ...
+    //TODO: why the -1? omg. Removing this would be best. Or at least make it understandeable ...
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -536,11 +536,11 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
+//TODO: probably can be removed, trim2 faster.
 void Nfa::trim1(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
-        //TODO: does it always mean a copy?
         *this = get_trimmed_automaton(&tmp_state_map);
     } else {
         state_map->clear();
@@ -560,7 +560,7 @@ void Nfa::trim2(StateToStateMap* state_map)
 
     initial.defragment(useful_states);
     final.defragment(useful_states);
-    //this renaming can be used instead of the state map, it is computed there anyway
+    //this renaming can be used instead of the state map, it is computed there anyway, so far not used.
     std::vector<State> renaming = delta.defragment(useful_states);
 
     m_num_of_requested_states = 0;
@@ -573,6 +573,9 @@ void Nfa::trim2(StateToStateMap* state_map)
         std::vector<State> usv = us.ToVector();
         for (State q=0;q<useful_states.size();q++)
             (*state_map)[usv[q]] = q;
+
+        // Attempt to use the renaming for this, did not work ... but should work somehow ...
+        // I think we should just return the renaming in fact, it would need a little more refactoring.
         //for (State q=0;q<useful_states.size();q++)
         //    (*state_map)[q] = renaming[q];
     }
@@ -588,7 +591,6 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     state_map->clear();
 
     const StateSet original_useful_states{get_useful_states_old() };
-    //const StateSet original_useful_states{ get_useful_states() };
     state_map->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
@@ -599,6 +601,8 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     return create_trimmed_aut(*this, *state_map);
 }
 
+// A data structure to store things in the depth first search within dfs in the trim.
+// It stores a state and the state of the iteration through the successors of the state.
 struct StackLevel {
     State state;
     Post::const_iterator post_it;
@@ -618,7 +622,6 @@ struct StackLevel {
     };
 };
 
-//const std::vector<bool> Nfa::get_useful_states() const
 const NumberPredicate<State> Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_
@@ -638,10 +641,10 @@ const NumberPredicate<State> Nfa::get_useful_states() const
     // reached.assign(size(),false);
     // reached_and_reaching.assign(size(),false);
 #else
-    std::vector<StackLevel> stack;
+    std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    NumberPredicate<State> reached(size(),false,false);
-    NumberPredicate<State> reached_and_reaching(size(),false,false);
+    NumberPredicate<State> reached(size(),false,false); //what has been reached from the initial states
+    NumberPredicate<State> reached_and_reaching(size(),false,false);//what is reaching final states
 
     //std::vector<bool> reached(size(),false);
     //std::vector<bool> reached_and_reaching(size(),false);
@@ -658,6 +661,7 @@ const NumberPredicate<State> Nfa::get_useful_states() const
             //reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
+            //continue the iteration through the successors of q (shitty code. A better way, some interface for mata?)
             while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
                 if (level.targets_it == level.targets_end) {
                     level.post_it++;
@@ -677,7 +681,10 @@ const NumberPredicate<State> Nfa::get_useful_states() const
                 if (final[succ_state])
                     reached_and_reaching.add(succ_state);
                     //reached_and_reaching[succ_state]=true;
-                if (reached_and_reaching[succ_state]) {
+                if (reached_and_reaching[succ_state])
+                {
+                    //a major trick, because of one DFS is enough
+                    //on reaching a state which reaches finals states, everything in the stack reaches a final state.
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
                             reached_and_reaching.add(it->state);
                             //reached_and_reaching[it->state]=true;
@@ -700,7 +707,6 @@ StateSet Nfa::get_useful_states_old() const
 
     const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
-    // TODO: Here we could trim the final states before running the bckward reachability.
     const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
 
     const size_t num_of_states{size() };
@@ -899,10 +905,6 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     // size of the "used alphabet", i.e. max symbol+1 or 0
     Symbol alphasize =  (symbols.empty()) ? 0 : (symbols.back()+1);
 
-    //ONLY COMPUTE MAX SYMBOL
-    // Symbol max_symbol = aut.get_max_symbol();
-    // Symbol alphasize = max_symbol + 1;
-
 #ifdef _STATIC_STRUCTURES_
     //STATIC DATA STRUCTURES:
     // Not sure that it works ideally, whether the space for the inner vectors stays there.
@@ -938,15 +940,18 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     }
 #else
     // NORMAL, NON STATIC DATA STRUCTURES:
+    //All transition of delta are to be copied here, into two arrays of transition sources and targets indexed by the transition symbol.
+    // There is a special treatment for epsilon, since we want the arrays to be only as long as the largest symbol in the automaton,
+    // and epsilon is the maximum (so we don't want to have the maximum array lenght whenever epsilon is present)
     std::vector<std::vector<State>> sources (alphasize);
     std::vector<std::vector<State>> targets (alphasize);
     std::vector<State> e_sources;
     std::vector<State> e_targets;
 #endif
 
-    //initialise with this?
-    //int avg_trans_per_symb  = aut.delta.size() / symbols.size();
-
+    //Copy all transition with non-e symbols to the arrays of sources and targets indexed by symbols.
+    //Targets and sources of e-transitions go to the special place.
+    //Important: since we are going through delta in order of sources, the sources arrays are all ordered.
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &move: aut.delta[sourceState]) {
             if (move.symbol == EPSILON) {
@@ -968,15 +973,12 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         }
     }
 
+    //Now make the delta of the reversed automaton.
+    //Important: since sources are ordered, when adding them as targets, we can just push them back.
     result.delta.reserve(num_of_states);
 
     // adding non-e transitions
     for (const Symbol symbol: symbols) {
-    // WHEN ALL SYMBOLS ARE COMPUTED
-
-    //for (Symbol symbol = 0; symbol <= max_symbol; ++symbol) {
-    // WHEN ONLY MAX SYMBOL IS COMPUTED
-
         for (int i = 0; i<sources[symbol].size(); ++i) {
             State tgt_state =sources[symbol][i];
             State src_state =targets[symbol][i];
@@ -1000,11 +1002,12 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     }
 
     //sorting the targets
-    for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
-        for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
-            sort_and_rmdupl(m->targets);
-        }
-    }
+    //Hm I don't know why I put this here, but it should not be needed ...
+    //for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
+    //    for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
+    //        sort_and_rmdupl(m->targets);
+    //    }
+    //}
 
     return result;
 }
@@ -1030,6 +1033,7 @@ Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
     return result;
 }
 
+//not so great, can be removed
 Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     const size_t num_of_states{ aut.size() };
 
@@ -1869,6 +1873,7 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     os << " }";
 }
 
+// Other versions, maybe an interesting experiment with speed of data structures.
 // // returns symbols appearing in Delta, pushes back to vector and then sorts
 // Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
 //     static std::vector<Symbol>  symbols{};

@@ -20,7 +20,7 @@ TEST_CASE("Mata::Util::NumberPredicate") {
         if (val) p.track_elements();
         else p.dont_track_elements();
 
-        SECTION("basic functionality: add, remove, access, constructor, size, elements "+std::to_string(i)) {
+        SECTION("basic functionality: add, remove, access, constructor, size, get_elements "+std::to_string(i)) {
             std::vector<State> v = {1, 2, 3, 4, 5};
             p.add(v);
             p.truncate_domain();
