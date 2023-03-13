@@ -247,6 +247,8 @@ struct Post : private Util::OrdVector<Move> {
     bool empty() const override{ return Util::OrdVector<Move>::empty(); }
     size_t size() const override { return Util::OrdVector<Move>::size(); }
 
+    const std::vector<Move>& ToVector() const { return Util::OrdVector<Move>::ToVector(); }
+
     //Could we somehow use the && thingy here? It is supposed to be faster?
     template<typename F>
     inline void filter(F && is_staying) {

@@ -470,7 +470,7 @@ cdef class Nfa:
 
         :return: A set of useful states.
         """
-        cdef vector[State] return_value = self.thisptr.get().get_useful_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get().get_useful_states().get_elements()
         return {state for state in return_value}
 
     def get_reachable_states(self):
