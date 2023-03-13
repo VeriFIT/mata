@@ -27,8 +27,7 @@ bool Mata::Nfa::Algorithms::is_included_naive(
         const Nfa &smaller,
         const Nfa &bigger,
         const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
-        Run *cex,
-        const StringMap &  /* params*/) { // {{{
+        Run *cex) { // {{{
     Nfa bigger_cmpl;
     if (alphabet == nullptr) {
         bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
@@ -47,11 +46,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     const Nfa&             smaller,
     const Nfa&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
-    Run*                   cex,
-    const StringMap&      params) //TODO: why is this parameter there?
+    Run*                   cex) //TODO: why is this parameter there?
 { // {{{
     //TODO: what does this do?
-    (void)params;
     (void)alphabet;
 
     using ProdStateType = std::pair<State, StateSet>;
@@ -215,11 +212,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 namespace {
     using AlgoType = decltype(Algorithms::is_included_naive)*;
 
-    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Mata::Alphabet *const alphabet, const StringMap &params,
-                             const AlgoType &algo) {
+    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Mata::Alphabet *const alphabet, const AlgoType &algo) {
         //alphabet should not be needed as input parameter
-        if (algo(lhs, rhs, alphabet, nullptr, params)) {
-            if (algo(rhs, lhs, alphabet, nullptr, params)) {
+        if (algo(lhs, rhs, alphabet, nullptr)) {
+            if (algo(rhs, lhs, alphabet, nullptr)) {
                 return true;
             }
         }
@@ -258,7 +254,7 @@ bool Mata::Nfa::is_included(
         const Alphabet *const alphabet,
         const StringMap &params) { // {{{
     AlgoType algo{set_algorithm(std::to_string(__func__), params)};
-    return algo(smaller, bigger, alphabet, cex, params);
+    return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
 bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
@@ -269,11 +265,11 @@ bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
     if (params.at("algorithm") == "naive") {
         if (alphabet == nullptr) {
             const auto computed_alphabet{create_alphabet(lhs, rhs) };
-            return compute_equivalence(lhs, rhs, &computed_alphabet, params, algo);
+            return compute_equivalence(lhs, rhs, &computed_alphabet, algo);
         }
     }
 
-    return compute_equivalence(lhs, rhs, alphabet, params, algo);
+    return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
 bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params) {

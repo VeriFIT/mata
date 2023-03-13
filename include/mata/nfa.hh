@@ -864,23 +864,70 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
 
-/// makes the transition relation complete
-void make_complete(
+/**
+ * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ * on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to it,
+ * but only in the case that some transition to @p sink_state was added.
+ * 
+ * @param[in] aut Automaton to make complete.
+ * @param[in] alphabet Alphabet to use for computing "missing" symbols.
+ * @param[in] sink_state The state into which new transitions are added.
+ * @return True if some new transition was added to the automaton.
+ */
+bool make_complete(
         Nfa&             aut,
         const Alphabet&  alphabet,
         State            sink_state);
 
-/// Co
+/**
+ * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ * on transitions from given state) to new sink state (if no new transitions are added, this sink state is not created).
+ * 
+ * @param[in] aut Automaton to make complete.
+ * @param[in] alphabet Alphabet to use for computing "missing" symbols.
+ * @return True if some new transition (and sink state) was added to the automaton.
+ */
+inline bool make_complete(
+        Nfa&             aut,
+        const Alphabet&  alphabet)
+{
+    return make_complete(aut, alphabet, aut.size());
+}
+
+/**
+ * @brief Compute automaton accepting complement of @p aut.
+ * 
+ * @param[in] aut Automaton whose complement to compute.
+ * @param[in] alphabet Alphabet used for complementation.
+ * @param[in] params Optional parameters to control the complementation algorithm:
+ * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
+ * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * @return Complemented automaton.
+ */
 Nfa complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         const StringMap&  params = {{"algorithm", "classical"},
-                                    {"minimize", "false"}},
-        std::unordered_map<StateSet, State> *subset_map = nullptr);
+                                    {"minimize", "false"}});
+/**
+ * @brief Compute minimal deterministic automaton.
+ * 
+ * @param[in] aut Automaton whose minimal version to compute.
+ * @param[in] params Optional parameters to control the minimization algorithm:
+ * - "algorithm": "brzozowski"
+ * @return Minimal deterministic automaton.
+ */
+Nfa minimize(
+        const Nfa &aut,
+        const StringMap& params = {{"algorithm", "brzozowski"}});
 
-Nfa minimize(const Nfa &aut);
-
-/// Determinize an automaton
+/**
+ * @brief Determinize automaton.
+ * 
+ * @param[in] aut Automaton to determinize.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
+ * @return Determinized automaton. 
+ */
 Nfa determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map = nullptr);
@@ -891,7 +938,7 @@ Nfa determinize(
  * @param[in] aut Automaton to reduce.
  * @param[in] trim_input Whether to trim the input automaton first or not.
  * @param[out] state_map Mapping of trimmed states to new states.
- * @param params[in] Optional parameters to control the reduction algorithm:
+ * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
@@ -919,11 +966,11 @@ inline bool is_universal(
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
  *
- * @param smaller[in] First automaton to concatenate.
- * @param bigger[in] Second automaton to concatenate.
- * @param cex[out] Counterexample for the inclusion.
- * @param alphabet[in] Alphabet of both NFAs to compute with.
- * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * @param[in] smaller First automaton to concatenate.
+ * @param[in] bigger Second automaton to concatenate.
+ * @param[out] cex Counterexample for the inclusion.
+ * @param[in] alphabet Alphabet of both NFAs to compute with.
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
@@ -936,8 +983,13 @@ bool is_included(
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
- * @param params[in] Optional parameters to control the equivalence check algorithm:
+ *
+ * @param[in] smaller First automaton to concatenate.
+ * @param[in] bigger Second automaton to concatenate.
+ * @param[in] alphabet Alphabet of both NFAs to compute with.
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @return True if @p smaller is included in @p bigger, false otherwise.
  */
 inline bool is_included(
         const Nfa&             smaller,
@@ -951,10 +1003,10 @@ inline bool is_included(
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
- * @param lhs[in] First automaton to concatenate.
- * @param rhs[in] Second automaton to concatenate.
- * @param alphabet[in] Alphabet of both NFAs to compute with.
- * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] alphabet Alphabet of both NFAs to compute with.
+ * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
@@ -972,9 +1024,9 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * That way, alphabet has to be computed only once, as opposed to the current ad-hoc construction of the alphabet.
  * The use of the alternative with defined alphabet should be preferred.
  *
- * @param lhs[in] First automaton to concatenate.
- * @param rhs[in] Second automaton to concatenate.
- * @param params[in] Optional parameters to control the equivalence check algorithm:
+ * @param[in] lhs First automaton to concatenate.
+ * @param[in] rhs Second automaton to concatenate.
+ * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */

@@ -1245,7 +1245,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		cmpl = complement(aut, alph);
 
 		REQUIRE(is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.initial.size() == 0);
 		REQUIRE(cmpl.final.size() == 1);
 		REQUIRE(nothing_in_trans(cmpl));
 		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
@@ -1279,8 +1279,8 @@ TEST_CASE("Mata::Nfa::complement()")
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		aut.initial = {1};
-		aut.final = {1};
+		aut.initial = {0};
+		aut.final = {0};
 
 		cmpl = complement(aut, alph);
 

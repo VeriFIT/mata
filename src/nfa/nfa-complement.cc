@@ -25,51 +25,21 @@ using namespace Mata::Util;
 Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	std::unordered_map<StateSet, State>* subset_map,
-	bool minimize_after_determinization)
+	bool minimize_during_determinization)
 { // {{{
  	Nfa result;
 
- 	bool delete_subset_map = false;
-	if  (nullptr == subset_map)
-	{
-		subset_map = new std::unordered_map<StateSet, State>();
-		delete_subset_map = true;
-	}
-
-	if (minimize_after_determinization) {
-		result = minimize(aut); // minimization makes it deterministic
+	if (minimize_during_determinization) {
+		result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
 	} else {
-		result = determinize(aut, subset_map);
+		result = determinize(aut);
 	}
+
 	State sink_state = result.add_state();
-	auto it_inserted_pair = subset_map->insert({{}, sink_state});
-	if (!it_inserted_pair.second)
-	{
-		sink_state = it_inserted_pair.first->second;
-	}
-
 	make_complete(result, alphabet, sink_state);
-    NumberPredicate<State> old_fs = std::move(result.final);
-	result.final = NumberPredicate<State>{};
-	assert(result.initial.size() == 1);
 
-	auto make_final_if_not_in_old = [&](const State& state) {
-		if (!old_fs[state]) {
-			result.final.add(state);
-		}
-	};
-
-	make_final_if_not_in_old(*result.initial.begin());
-
-	for (const auto& trs : result) {
-                make_final_if_not_in_old(trs.tgt);
-	}
-
-	if (delete_subset_map)
-	{
-		delete subset_map;
-	}
+	// FIXME: result.size() resturns domain size of initial/final state sets, which might contain 'deleted' states, so non-existent states become final
+	result.final.complement(result.size());
 
 	return result;
 } // complement_classical }}}
@@ -80,8 +50,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 Nfa Mata::Nfa::complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params,
-        std::unordered_map<StateSet, State> *subset_map)
+        const StringMap&  params)
 {
 	Nfa result;
 	// setting the default algorithm
@@ -99,14 +68,16 @@ Nfa Mata::Nfa::complement(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	const std::string& minimize_arg = params.at("minimize");
 	bool minimize_after_determinization = false;
-	if ("true" == minimize_arg) { minimize_after_determinization = true; }
-	else if ("false" == minimize_arg) { minimize_after_determinization = false; }
-	else {
-		throw std::runtime_error(std::to_string(__func__) +
-			" received an unknown value of the \"minimize\" key: " + str_algo);
+	if (params.find("minimize") != params.end()) {
+		const std::string& minimize_arg = params.at("minimize");
+		if ("true" == minimize_arg) { minimize_after_determinization = true; }
+		else if ("false" == minimize_arg) { minimize_after_determinization = false; }
+		else {
+			throw std::runtime_error(std::to_string(__func__) +
+				" received an unknown value of the \"minimize\" key: " + str_algo);
+		}
 	}
 
-	return algo(aut, alphabet, subset_map, minimize_after_determinization);
+	return algo(aut, alphabet, minimize_after_determinization);
 } // complement
