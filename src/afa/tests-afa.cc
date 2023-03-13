@@ -622,6 +622,50 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         ++it;
         REQUIRE(it->count(state_map["QC0_0"]));
     }
+    
+    SECTION("AFA with a simple initial formula, just disjunction")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%Initial q1 | q2\n"
+                "%Final !q0 & !q1 & !q2 & !q3\n"
+                "q0 a1\n"
+                "q1 a2 & (q2 & q3)\n"
+                "q2 a2 & (q0 & q3)\n"
+                "q3 a1 & (q0 | q2)\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+
+        // Two initial nodes {q1} and {q2}
+        REQUIRE(aut.initialstates.size() == 2);
+        REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
+    }
+    
+    SECTION("AFA with a simple initial formula, just conjunction")
+    {
+        std::string file =
+                "@AFA-explicit\n"
+                "%Initial q1 & q2\n"
+                "%Final !q0 & !q1 & !q2 & !q3\n"
+                "q0 a1\n"
+                "q1 a2 & (q2 & q3)\n"
+                "q2 a2 & (q0 & q3)\n"
+                "q3 a1 & (q0 | q2)\n";
+
+        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        inter_aut = auts[0];
+
+        StringToStateMap state_map;
+        construct(&aut, inter_aut, &symbol_map, &state_map);
+
+        // One initial node {q1, q2}
+        REQUIRE(aut.initialstates.size() == 1);
+        REQUIRE(antichain_concrete_forward_emptiness_test_new(aut));
+    }
 
     SECTION("AFA final states from multiple negations")
     {
