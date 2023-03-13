@@ -2123,7 +2123,7 @@ TEST_CASE("Mata::Nfa::fragile_revert() speed", "[.profiling]") {
     //FILL_WITH_AUT_B(B);
     //FILL_WITH_AUT_C(B);
     //FILL_WITH_AUT_D(B);
-    for (int i=0;i<5000;i++) {
+    for (int i=0;i<100;i++) {
         B = fragile_revert(B);
     }
 }
@@ -2133,7 +2133,7 @@ TEST_CASE("Mata::Nfa::simple_revert() speed", "[.profiling]") {
     //this gives an interesting test case if the parser is not trimming and reducing
     create_nfa(&B, "((.*){10})*");
     //FILL_WITH_AUT_C(B);
-    for (int i=0;i<200;i++) {
+    for (int i=0;i<100;i++) {
         B = simple_revert(B);
     }
 }

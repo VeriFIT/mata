@@ -495,7 +495,7 @@ public:   // Public methods
 
     // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
     template<typename F>
-    void filter(const F & is_staying) {
+    void filter(F && is_staying) {
         Util::filter(vec_,is_staying);
     }
 

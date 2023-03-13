@@ -18,7 +18,7 @@
 #ifndef _MATA_NFA_HH_
 #define _MATA_NFA_HH_
 
-//#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algoroithms (like fragile_revert)
+#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algoroithms (like fragile_revert)
 
 #include <algorithm>
 #include <cassert>
@@ -249,7 +249,7 @@ struct Post : private Util::OrdVector<Move> {
 
     //Could we somehow use the && thingy here? It is supposed to be faster?
     template<typename F>
-    inline void filter(const F & is_staying) {
+    inline void filter(F && is_staying) {
         return Util::OrdVector<Move>::filter(is_staying);
     }
 };
@@ -314,7 +314,7 @@ public:
     };
 
     // TODO: why do we have the code of all these methods in the header file? Should we move it out?
-    const std::vector<State> defragment(const Util::NumberPredicate<State> & is_staying) {
+    const std::vector<State> defragment(Util::NumberPredicate<State> & is_staying) {
 
         //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
         Util::filter_indexes(post, [is_staying](State i) { return is_staying[i]; });
