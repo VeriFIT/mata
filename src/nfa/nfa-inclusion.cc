@@ -46,7 +46,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     const Nfa&             smaller,
     const Nfa&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
-    Run*                   cex) //TODO: why is this parameter there?
+    Run*                   cex)
 { // {{{
     //TODO: what does this do?
     (void)alphabet;
