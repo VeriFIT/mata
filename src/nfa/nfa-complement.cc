@@ -28,14 +28,28 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	bool minimize_during_determinization)
 { // {{{
  	Nfa result;
-
+	State sink_state;
 	if (minimize_during_determinization) {
 		result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
+		if (result.final.size() == 0) {
+			// if automaton does not accept anything, then there is only one (initial) state
+			// which can be the sink state (so we do not create unnecessary one)
+			sink_state = *result.initial.begin();
+		} else {
+			sink_state = result.size();
+		}
 	} else {
-		result = determinize(aut);
+		std::unordered_map<StateSet, State> subset_map;
+		result = determinize(aut, &subset_map);
+		// check if a sink state was not created during determinization
+		auto sink_state_iter = subset_map.find({});
+		if (sink_state_iter != subset_map.end()) {
+			sink_state = sink_state_iter->second;
+		} else {
+			sink_state = result.size();
+		}
 	}
 
-	State sink_state = result.add_state();
 	make_complete(result, alphabet, sink_state);
 
 	// FIXME: result.size() resturns domain size of initial/final state sets, which might contain 'deleted' states, so non-existent states become final

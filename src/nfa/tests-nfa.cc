@@ -1242,10 +1242,11 @@ TEST_CASE("Mata::Nfa::complement()")
 	{
 		OnTheFlyAlphabet alph{};
 
-		cmpl = complement(aut, alph);
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
 
 		REQUIRE(is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial.size() == 0);
+		REQUIRE(cmpl.initial.size() == 1);
 		REQUIRE(cmpl.final.size() == 1);
 		REQUIRE(nothing_in_trans(cmpl));
 		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
@@ -1255,7 +1256,8 @@ TEST_CASE("Mata::Nfa::complement()")
 	{
 		OnTheFlyAlphabet alph{"a", "b"};
 
-		cmpl = complement(aut, alph);
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
 
 		REQUIRE(is_in_lang(cmpl, {}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
@@ -1279,10 +1281,11 @@ TEST_CASE("Mata::Nfa::complement()")
 	SECTION("empty automaton accepting epsilon, empty alphabet")
 	{
 		OnTheFlyAlphabet alph{};
-		aut.initial = {0};
-		aut.final = {0};
+		aut.initial = {1};
+		aut.final = {1};
 
-		cmpl = complement(aut, alph);
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
 
 		REQUIRE(!is_in_lang(cmpl, { }));
 		REQUIRE(cmpl.initial.size() == 1);
@@ -1296,7 +1299,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		aut.initial = {1};
 		aut.final = {1};
 
-		cmpl = complement(aut, alph);
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
 
 		REQUIRE(!is_in_lang(cmpl, { }));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"]}, {}}));
@@ -1323,7 +1327,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		aut.delta.add(1, alph["a"], 2);
 		aut.delta.add(2, alph["b"], 2);
 
-		cmpl = complement(aut, alph);
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
 
 		REQUIRE(!is_in_lang(cmpl, { }));
 		REQUIRE(!is_in_lang(cmpl, {{ alph["a"] }, {}}));
@@ -1341,6 +1346,67 @@ TEST_CASE("Mata::Nfa::complement()")
             sum++;
 		}
 		REQUIRE(sum == 6);
+	}
+
+	SECTION("empty automaton, empty alphabet, minimization")
+	{
+		OnTheFlyAlphabet alph{};
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "true"}});
+
+		REQUIRE(is_in_lang(cmpl, { }));
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
+		REQUIRE(nothing_in_trans(cmpl));
+		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
+	}
+
+	SECTION("empty automaton, minimization")
+	{
+		OnTheFlyAlphabet alph{"a", "b"};
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "true"}});
+
+		REQUIRE(is_in_lang(cmpl, {}));
+		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
+		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
+		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
+		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+
+		REQUIRE(cmpl.initial.size() == 1);
+		REQUIRE(cmpl.final.size() == 1);
+
+		State init_state = *cmpl.initial.begin();
+		State fin_state = *cmpl.final.begin();
+		REQUIRE(init_state == fin_state);
+		REQUIRE(cmpl.get_moves_from(init_state).size() == 2);
+		REQUIRE(cmpl.delta.contains(init_state, alph["a"], init_state));
+		REQUIRE(cmpl.delta.contains(init_state, alph["b"], init_state));
+	}
+
+	SECTION("minimization vs no minimization")
+	{
+		OnTheFlyAlphabet alph{"a", "b"};
+		aut.initial = {0, 1};
+		aut.final = {1, 2};
+
+		aut.delta.add(1, alph["b"], 1);
+		aut.delta.add(1, alph["a"], 2);
+		aut.delta.add(2, alph["b"], 2);
+		aut.delta.add(0, alph["a"], 1);
+		aut.delta.add(0, alph["a"], 2);
+
+		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "false"}});
+
+		Nfa cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
+                                    {"minimize", "true"}});
+
+		CHECK(are_equivalent(cmpl, cmpl_min, &alph));
+		CHECK(cmpl_min.size() == 4);
+		CHECK(cmpl.size() == 5);
 	}
 
 } // }}}
