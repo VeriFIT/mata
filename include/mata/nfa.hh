@@ -868,6 +868,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  * on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to it,
  * but only in the case that some transition to @p sink_state was added.
+ * In the case that @p aut does not contain any states, this function does nothing.
  * 
  * @param[in] aut Automaton to make complete.
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
@@ -882,6 +883,7 @@ bool make_complete(
 /**
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  * on transitions from given state) to new sink state (if no new transitions are added, this sink state is not created).
+ * In the case that @p aut does not contain any states, this function does nothing.
  * 
  * @param[in] aut Automaton to make complete.
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
