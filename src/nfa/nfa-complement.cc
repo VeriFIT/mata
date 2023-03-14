@@ -83,16 +83,16 @@ Nfa Mata::Nfa::complement(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	bool minimize_after_determinization = false;
+	bool minimize_during_determinization = false;
 	if (params.find("minimize") != params.end()) {
 		const std::string& minimize_arg = params.at("minimize");
-		if ("true" == minimize_arg) { minimize_after_determinization = true; }
-		else if ("false" == minimize_arg) { minimize_after_determinization = false; }
+		if ("true" == minimize_arg) { minimize_during_determinization = true; }
+		else if ("false" == minimize_arg) { minimize_during_determinization = false; }
 		else {
 			throw std::runtime_error(std::to_string(__func__) +
 				" received an unknown value of the \"minimize\" key: " + str_algo);
 		}
 	}
 
-	return algo(aut, alphabet, minimize_after_determinization);
+	return algo(aut, alphabet, minimize_during_determinization);
 } // complement
