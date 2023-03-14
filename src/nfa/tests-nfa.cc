@@ -2113,32 +2113,45 @@ TEST_CASE("Mata::Nfa::revert()")
 	}
 } // }}}
 
-// These are speed test of variants of revert, they take some time though.
-TEST_CASE("Mata::Nfa::fragile_revert() speed", "[.profiling]") {
+/////////////////////////////
+// Profiling revert and trim
+/////////////////////////////
+
+TEST_CASE("Mata::Nfa::fragile_revert() speed, simple ", "[.profiling]") {
     Nfa B;
-    //this gives an interesting test case if the parser is not trimming and reducing
-    // (2 times faster than simple_revert)
-    create_nfa(&B, "((.*){10})*");
-    //FILL_WITH_AUT_C(B);
-    //FILL_WITH_AUT_B(B);
-    //FILL_WITH_AUT_C(B);
-    //FILL_WITH_AUT_D(B);
-    for (int i=0;i<100;i++) {
+    FILL_WITH_AUT_D(B);
+    for (int i=0;i<300000;i++) {
         B = fragile_revert(B);
     }
 }
 
-TEST_CASE("Mata::Nfa::simple_revert() speed", "[.profiling]") {
+TEST_CASE("Mata::Nfa::simple_revert() speed, simple ", "[.profiling]") {
     Nfa B;
-    //this gives an interesting test case if the parser is not trimming and reducing
-    create_nfa(&B, "((.*){10})*");
-    //FILL_WITH_AUT_C(B);
-    for (int i=0;i<100;i++) {
+    FILL_WITH_AUT_D(B);
+    for (int i=0;i<300000;i++) {
         B = simple_revert(B);
     }
 }
 
-TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed", "[.profiling]") {
+TEST_CASE("Mata::Nfa::simple_revert() speed, harder", "[.profiling]") {
+    Nfa B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<200;i++) {
+        B = simple_revert(B);
+    }
+}
+
+TEST_CASE("Mata::Nfa::fragile_revert() speed, harder", "[.profiling]") {
+    Nfa B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<200;i++) {
+        B = fragile_revert(B);
+    }
+}
+
+TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed, harder", "[.profiling]") {
     Nfa B;
     //this gives an interesting test case if the parser is not trimming and reducing
     create_nfa(&B, "((.*){10})*");
@@ -2148,28 +2161,48 @@ TEST_CASE("Mata::Nfa::somewhat_simple_revert() speed", "[.profiling]") {
     }
 }
 
-TEST_CASE("Mata::Nfa::trim1() speed", "[.profiling]") {
+TEST_CASE("Mata::Nfa::trim1() speed, simple", "[.profiling]") {
     Nfa A,B;
     //this gives an interesting test case if the parser is not trimming and reducing
-    create_nfa(&B, "((.*){10})*");
-    //FILL_WITH_AUT_B(B);
-    for (int i=0;i<1000;i++) {
+    FILL_WITH_AUT_B(B);
+    for (int i=0;i<300000;i++) {
         A = B;
         A.trim1();
     }
 }
 
-TEST_CASE("Mata::Nfa::trim2() speed", "[.profiling]") {
+TEST_CASE("Mata::Nfa::trim2() speed, simple", "[.profiling]") {
     Nfa A,B;
     //this gives an interesting test case if the parser is not trimming and reducing
-    create_nfa(&B, "((.*){10})*");
-    //FILL_WITH_AUT_B(B);
-    for (int i=0;i<1000;i++)
-    {
+    FILL_WITH_AUT_B(B);
+    for (int i=0;i<300000;i++) {
         A = B;
         A.trim2();
     }
 }
+
+TEST_CASE("Mata::Nfa::trim1() speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<200;i++) {
+        A = B;
+        A.trim1();
+    }
+}
+
+TEST_CASE("Mata::Nfa::trim2() speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<200;i++) {
+        A = B;
+        A.trim2();
+    }
+}
+
+/////////////////////////////
+/////////////////////////////
 
 TEST_CASE("Mata::Nfa::is_deterministic()")
 { // {{{

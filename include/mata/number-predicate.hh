@@ -66,6 +66,7 @@ private:
      */
     void compute_elements() const {
         elements.clear();
+        elements.resize(card);
         for (Number q = 0, size=predicate.size(); q < size; ++q) {
             if (predicate[q])
                 elements.push_back(q);

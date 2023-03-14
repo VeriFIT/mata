@@ -18,7 +18,7 @@
 #ifndef _MATA_NFA_HH_
 #define _MATA_NFA_HH_
 
-#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algoroithms (like fragile_revert)
+#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like fragile_revert)
 
 #include <algorithm>
 #include <cassert>
@@ -221,7 +221,7 @@ struct Post : private Util::OrdVector<Move> {
 
     virtual ~Post() = default;
 
-    //Trying to make Past movable, oes it make sense?
+    //Trying to make Past movable, does it make sense?
     Post(Post&& rhs) = default;
     Post(const Post& rhs) = default;
     Post & operator=(Post&& rhs) = default;
@@ -633,7 +633,16 @@ public:
      * @return Set of symbols used on the transitions.
      * TODO: this should be a method of Delta?
      */
-    Util::OrdVector<Symbol> get_used_symbols() const;
+    Util::OrdVector<Symbol> get_used_symbols() const {
+        //return get_used_symbols_vec();
+        //return get_used_symbols_set();
+        return get_used_symbols_np();
+    };
+
+    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const;
+    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_set() const;
+    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_np() const;
+    //Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_bv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.

@@ -633,13 +633,6 @@ const NumberPredicate<State> Nfa::get_useful_states() const
     stack.clear();
     reached.clear();
     reached_and_reaching.clear();
-    // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
-    // static std::vector<bool> reached;
-    // static std::vector<bool> reached_and_reaching;
-    // static std::vector<StackLevel> stack;
-    // stack.clear();
-    // reached.assign(size(),false);
-    // reached_and_reaching.assign(size(),false);
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
@@ -655,13 +648,11 @@ const NumberPredicate<State> Nfa::get_useful_states() const
 
         stack.emplace_back(q0,delta);
         reached.add(q0);
-        //reached[q0]=true;
         if (final[q0])
             reached_and_reaching.add(q0);
-            //reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
-            //continue the iteration through the successors of q (shitty code. A better way, some interface for mata?)
+            //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
             while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
                 if (level.targets_it == level.targets_end) {
                     level.post_it++;
@@ -680,19 +671,17 @@ const NumberPredicate<State> Nfa::get_useful_states() const
                 level.targets_it++;
                 if (final[succ_state])
                     reached_and_reaching.add(succ_state);
-                    //reached_and_reaching[succ_state]=true;
                 if (reached_and_reaching[succ_state])
                 {
-                    //a major trick, because of one DFS is enough
-                    //on reaching a state which reaches finals states, everything in the stack reaches a final state.
+                    //A major trick, because of which one DFS is enough for reached as well as reaching.
+                    //On touching a state which reaches finals states, everything in the stack below reaches a final state.
+                    //An invariant of the stack is that everything below a reaching state is reaching.
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
                             reached_and_reaching.add(it->state);
-                            //reached_and_reaching[it->state]=true;
                     }
                 }
                 if (!reached[succ_state]) {
                     reached.add(succ_state);
-                    //reached[succ_state]=true;
                     stack.emplace_back(succ_state,delta);
                 }
             }
@@ -810,6 +799,7 @@ void Mata::Nfa::make_complete(
     }
 }
 
+//TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
 {
     Nfa result;
@@ -862,6 +852,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     }
 
     // now we construct the automaton without epsilon transitions
+    //TODO: this is a stupid way of initialising it ...
     result.initial.add(aut.initial.get_elements());
     result.final.add(aut.final.get_elements());
     State max_state{};
@@ -1874,43 +1865,53 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
-// // returns symbols appearing in Delta, pushes back to vector and then sorts
-// Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
-//     static std::vector<Symbol>  symbols{};
-//     symbols.clear();
-//     for (State q = 0; q<delta.post_size(); ++q) {
-//         const Post & post = delta[q];
-//         for (const Move & move: post) {
-//             symbols.push_back(move.symbol);
-//         }
-//     }
-//     Util::OrdVector<Symbol>  sorted_symbols(symbols);
-//     return sorted_symbols;
-// }
+// returns symbols appearing in Delta, pushes back to vector and then sorts
+Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
+#ifdef _STATIC_STRUCTURES_
+    static std::vector<Symbol>  symbols{};
+    symbols.clear();
+#else
+    std::vector<Symbol>  symbols{};
+#endif
+    for (State q = 0; q<delta.post_size(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            Util::reserve_on_insert(symbols);
+            symbols.push_back(move.symbol);
+        }
+    }
+    Util::OrdVector<Symbol>  sorted_symbols(symbols);
+    return sorted_symbols;
+}
 
-// // returns symbols appearing in Delta, inserts to a std::set
-// Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
-//     //static should prevent reallocation, seems to speed things up a little
-//     static std::set<Symbol>  symbols{};
-//     for (State q = 0; q<delta.post_size(); ++q) {
-//         const Post & post = delta[q];
-//         for (const Move & move: post) {
-//             symbols.insert(move.symbol);
-//         }
-//     }
-//     Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
-//     return sorted_symbols;
-// }
+// returns symbols appearing in Delta, inserts to a std::set
+Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_set() const {
+    //static should prevent reallocation, seems to speed things up a little
+#ifdef _STATIC_STRUCTURES_
+    static std::set<Symbol>  symbols{};
+    symbols.clear();
+#else
+    static std::set<Symbol>  symbols{};
+#endif
+    for (State q = 0; q<delta.post_size(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            symbols.insert(move.symbol);
+        }
+    }
+    Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
+    return sorted_symbols;
+}
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
+Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_np() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static Util::NumberPredicate<Symbol>  symbols;
+    static Util::NumberPredicate<Symbol>  symbols(64,false,false);
     symbols.clear();
 #else
-    Util::NumberPredicate<Symbol>  symbols{};
+    Util::NumberPredicate<Symbol>  symbols(64,false,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q<delta.post_size(); ++q) {
