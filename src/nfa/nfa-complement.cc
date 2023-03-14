@@ -31,7 +31,8 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 	State sink_state;
 	if (minimize_during_determinization) {
 		result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
-		if (result.final.size() == 0) {
+		if (result.final.size() == 0 && result.initial.size() > 0) {
+			assert(result.initial.size() == 1);
 			// if automaton does not accept anything, then there is only one (initial) state
 			// which can be the sink state (so we do not create unnecessary one)
 			sink_state = *result.initial.begin();

@@ -59,7 +59,7 @@ namespace Algorithms {
      * it checks emptiness of intersection
      * @param[in] smaller Automaton which language should be included in the bigger one
      * @param[in] bigger Automaton which language should include the smaller one
-     * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more optimal to set it if you have it)
+     * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if you have it)
      * @param[out] cex A potential counterexample word which breaks inclusion
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
