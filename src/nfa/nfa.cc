@@ -633,8 +633,8 @@ bool Mata::Nfa::make_complete(
     auto num_of_states = aut.size();
     for (State state = 0; state < num_of_states; ++state) {
         std::set<Symbol> used_symbols;
-        for (auto const &tran : aut.delta[state]) {
-            used_symbols.insert(tran.symbol);
+        for (auto const &move : aut.delta[state]) {
+            used_symbols.insert(move.symbol);
         }
         auto unused_symbols = alphabet.get_complement(used_symbols);
         for (Symbol symb : unused_symbols)
