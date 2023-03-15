@@ -53,7 +53,6 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 
 	make_complete(result, alphabet, sink_state);
 
-	// FIXME: result.size() resturns domain size of initial/final state sets, which might contain 'deleted' states, so non-existent states become final
 	result.final.complement(result.size());
 
 	return result;
