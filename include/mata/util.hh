@@ -427,7 +427,7 @@ struct TuplePrinter<Tuple, 1> {
 // (when testing on a stupid test case)
 template<class Vector>
 void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 32) {
-    return; //Try this to see the effect of calling this. It should not affect functionality.
+    //return; //Try this to see the effect of calling this. It should not affect functionality.
     if (vec.capacity() < extension) //if the size is already large enough, leave it to the default doubling strategy. This if seems to make a barely noticeable difference :).
     {
         if (vec.capacity() < std::max(vec.size() + 1, needed_capacity))

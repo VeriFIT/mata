@@ -1885,10 +1885,10 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 }
 
 // returns symbols appearing in Delta, inserts to a std::set
-Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_set() const {
+std::set<Symbol> Nfa::get_used_symbols_set() const {
     //static should prevent reallocation, seems to speed things up a little
 #ifdef _STATIC_STRUCTURES_
-    static std::set<Symbol>  symbols{};
+    static std::set<Symbol>  symbols;
     symbols.clear();
 #else
     static std::set<Symbol>  symbols{};
@@ -1899,13 +1899,14 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_set() const {
             symbols.insert(move.symbol);
         }
     }
-    Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
-    return sorted_symbols;
+    return symbols;
+    //Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
+    //return sorted_symbols;
 }
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_np() const {
+Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
     static Util::NumberPredicate<Symbol>  symbols(64,false,false);
@@ -1921,7 +1922,29 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_np() const {
         }
     }
     //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
-    return OrdVector(symbols.get_elements());
+    return symbols;
+}
+
+// returns symbols appearing in Delta, adds to NumberPredicate,
+// Seems to be the fastest option, but could have problems with large maximum symbols
+std::vector<bool> Nfa::get_used_symbols_bv() const {
+#ifdef _STATIC_STRUCTURES_
+    //static seems to speed things up a little
+    static std::vector<bool>  symbols(64,false);
+    symbols.clear();
+#else
+    std::vector<bool> symbols(64,false);
+#endif
+    //symbols.dont_track_elements();
+    for (State q = 0; q<delta.post_size(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            reserve_on_insert(symbols,move.symbol);
+            symbols[move.symbol]=true;
+        }
+    }
+    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    return symbols;
 }
 
 // returns max non-e symbol in Delta

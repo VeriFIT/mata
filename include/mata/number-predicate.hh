@@ -118,6 +118,22 @@ public:
         add(list);
     }
 
+    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+        predicate.reserve(bv.size());
+        for (size_t i = 0;i<bv.size();i++) {
+            if (bv[i])
+                add(i);
+        }
+    }
+
+    //just a hot fix
+    NumberPredicate(std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+        predicate = std::move(bv);
+        card = std::count(bv.begin(), bv.end(), true);
+        elements.exact = false;
+        tracking_elements = false;
+    }
+
     NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
         for (auto q: vec)
             add(q);

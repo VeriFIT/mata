@@ -2127,7 +2127,7 @@ TEST_CASE("Mata::Nfa::fragile_revert() speed, simple ", "[.profiling]") {
 
 TEST_CASE("Mata::Nfa::simple_revert() speed, simple ", "[.profiling]") {
     Nfa B;
-    FILL_WITH_AUT_D(B);
+    FILL_WITH_AUT_B(B);
     for (int i=0;i<300000;i++) {
         B = simple_revert(B);
     }
@@ -2198,6 +2198,56 @@ TEST_CASE("Mata::Nfa::trim2() speed, harder", "[.profiling]") {
     for (int i=0;i<200;i++) {
         A = B;
         A.trim2();
+    }
+}
+
+
+//////////////////////////////
+// Profiling get_used_symbols
+//////////////////////////////
+
+TEST_CASE("Mata::Nfa::get_used_symbols speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<20000000;i++) {
+        A.get_used_symbols();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_used_symbols_bv speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<20000000;i++) {
+        A.get_used_symbols_bv();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_used_symbols_vec speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<20000000;i++) {
+        A.get_used_symbols_vec();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_used_symbols_set speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<20000000;i++) {
+        A.get_used_symbols_set();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_used_symbols_np speed, harder", "[.profiling]") {
+    Nfa A,B;
+    //this gives an interesting test case if the parser is not trimming and reducing
+    create_nfa(&B, "((.*){10})*");
+    for (int i=0;i<20000000;i++) {
+        A.get_used_symbols_np();
     }
 }
 

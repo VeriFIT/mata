@@ -18,7 +18,7 @@
 #ifndef _MATA_NFA_HH_
 #define _MATA_NFA_HH_
 
-#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like fragile_revert)
+//#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like fragile_revert)
 
 #include <algorithm>
 #include <cassert>
@@ -634,15 +634,33 @@ public:
      * TODO: this should be a method of Delta?
      */
     Util::OrdVector<Symbol> get_used_symbols() const {
+        //TODO: look at this
         //return get_used_symbols_vec();
-        //return get_used_symbols_set();
-        return get_used_symbols_np();
+
+        //auto from_set = get_used_symbols_set();
+        //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
+
+        //return Util::OrdVector(get_used_symbols_np().get_elements());
+
+        //THIS IS TERRIBLE, WHY?:
+        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
+
+        //THIS IS EVEN MORE TERRIBLE, WHY?:
+        //std::vector<bool> bv = get_used_symbols_bv();
+        //Util::OrdVector<Symbol> ov;
+        //for(Symbol i = 0;i<bv.size();i++) ov.push_back(i);
+        //return ov;
+
+        //THIS IS OK, WHY?:
+        std::vector<bool> bv = get_used_symbols_bv();
+        std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
+        return Util::OrdVector<Symbol>(v);
     };
 
     Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const;
-    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_set() const;
-    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_np() const;
-    //Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_bv() const;
+    std::set<Symbol> Nfa::get_used_symbols_set() const;
+    Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const;
+    std::vector<bool> Nfa::get_used_symbols_bv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
@@ -847,7 +865,7 @@ public:
     /**
      * Method defragments transition relation. It eventually clears empty space in vector
      * containing transitions and decreases size.
-     * TODO: once merged with new initial and final state predicate_, do renaming of these sets of states.
+     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
      * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
      * TODO: This function is only used in tests!
      */

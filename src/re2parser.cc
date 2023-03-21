@@ -580,7 +580,7 @@ void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool
     //TODO: in fact, maybe parser should not do trimming and reducing, maybe these operations should be done transparently.
     if(use_reduce) {
         //TODO: trimming might be unnecessary, regex->nfa construction should not produce useless states. Or does it?
-        //nfa->trim();
-        //*nfa = Mata::Nfa::reduce(*nfa);
+        nfa->trim();
+        *nfa = Mata::Nfa::reduce(*nfa);
     }
 }
