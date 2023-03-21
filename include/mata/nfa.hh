@@ -191,7 +191,7 @@ struct Move {
 
     const std::vector<State>::iterator find(State s) const { targets.find(s); }
 
-    std::vector<State>::iterator find(State s) { targets.find(s); }
+    std::vector<State>::iterator find(State s) { return targets.find(s); }
 };
 
 /**
