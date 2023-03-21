@@ -623,49 +623,34 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     return true;
 } // are_disjoint }}}
 
-void Mata::Nfa::make_complete(
+bool Mata::Nfa::make_complete(
         Nfa&             aut,
         const Alphabet&  alphabet,
         State            sink_state)
 {
-    std::list<State> worklist(aut.initial.begin(),
-                              aut.initial.end());
-    std::unordered_set<State> processed(aut.initial.begin(),
-                                        aut.initial.end());
+    bool was_something_added = false;
 
-    if (aut.size() <= sink_state) {
-        aut.add_state(sink_state);
-    }
-
-    worklist.push_back(sink_state);
-    processed.insert(sink_state);
-    while (!worklist.empty())
-    {
-        State state = *worklist.begin();
-        worklist.pop_front();
-
+    auto num_of_states = aut.size();
+    for (State state = 0; state < num_of_states; ++state) {
         std::set<Symbol> used_symbols;
-        if (!aut.delta.empty())
-        {
-            for (const auto &symb_stateset: aut[state]) {
-                // TODO: Possibly fix insert.
-                used_symbols.insert(symb_stateset.symbol);
-
-                const StateSet &stateset = symb_stateset.targets;
-                for (const auto &tgt_state: stateset) {
-                    bool inserted;
-                    tie(std::ignore, inserted) = processed.insert(tgt_state);
-                    if (inserted) { worklist.push_back(tgt_state); }
-                }
-            }
+        for (auto const &move : aut.delta[state]) {
+            used_symbols.insert(move.symbol);
         }
-
         auto unused_symbols = alphabet.get_complement(used_symbols);
         for (Symbol symb : unused_symbols)
         {
             aut.delta.add(state, symb, sink_state);
+            was_something_added = true;
         }
     }
+
+    if (was_something_added && num_of_states <= sink_state) {
+        for (Symbol symbol : alphabet.get_alphabet_symbols()) {
+            aut.delta.add(sink_state, symbol, sink_state);
+        }
+    }
+
+    return was_something_added;
 }
 
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
@@ -964,12 +949,33 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
     return true;
 } // is_lang_empty }}}
 
-Nfa Mata::Nfa::minimize(const Nfa& aut) {
+
+Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
-    Nfa inverted = revert(aut);
-    Nfa tmp = determinize(inverted);
-    Nfa deter = revert(tmp);
-    return determinize(deter);
+    return determinize(revert(determinize(revert(aut))));
+}
+
+Nfa Mata::Nfa::minimize(
+                const Nfa& aut,
+                const StringMap& params)
+{
+	Nfa result;
+	// setting the default algorithm
+	decltype(Algorithms::minimize_brzozowski)* algo = Algorithms::minimize_brzozowski;
+	if (!haskey(params, "algorithm")) {
+		throw std::runtime_error(std::to_string(__func__) +
+			" requires setting the \"algo\" key in the \"params\" argument; "
+			"received: " + std::to_string(params));
+	}
+
+	const std::string& str_algo = params.at("algorithm");
+	if ("brzozowski" == str_algo) {  /* default */ }
+	else {
+		throw std::runtime_error(std::to_string(__func__) +
+			" received an unknown value of the \"algo\" key: " + str_algo);
+	}
+
+	return algo(aut);
 }
 
 void Nfa::print_to_DOT(std::ostream &outputStream) const {

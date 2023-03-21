@@ -25,46 +25,35 @@ using namespace Mata::Util;
 Nfa Mata::Nfa::Algorithms::complement_classical(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	std::unordered_map<StateSet, State>* subset_map)
+	bool minimize_during_determinization)
 { // {{{
  	Nfa result;
-
- 	bool delete_subset_map = false;
-	if  (nullptr == subset_map)
-	{
-		subset_map = new std::unordered_map<StateSet, State>();
-		delete_subset_map = true;
-	}
-
-	result = determinize(aut, subset_map);
-	State sink_state = result.add_state();
-	auto it_inserted_pair = subset_map->insert({{}, sink_state});
-	if (!it_inserted_pair.second)
-	{
-		sink_state = it_inserted_pair.first->second;
+	State sink_state;
+	if (minimize_during_determinization) {
+		result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
+		if (result.final.size() == 0 && result.initial.size() > 0) {
+			assert(result.initial.size() == 1);
+			// if automaton does not accept anything, then there is only one (initial) state
+			// which can be the sink state (so we do not create unnecessary one)
+			sink_state = *result.initial.begin();
+		} else {
+			sink_state = result.size();
+		}
+	} else {
+		std::unordered_map<StateSet, State> subset_map;
+		result = determinize(aut, &subset_map);
+		// check if a sink state was not created during determinization
+		auto sink_state_iter = subset_map.find({});
+		if (sink_state_iter != subset_map.end()) {
+			sink_state = sink_state_iter->second;
+		} else {
+			sink_state = result.size();
+		}
 	}
 
 	make_complete(result, alphabet, sink_state);
-    NumberPredicate<State> old_fs = std::move(result.final);
-	result.final = NumberPredicate<State>{};
-	assert(result.initial.size() == 1);
 
-	auto make_final_if_not_in_old = [&](const State& state) {
-		if (!old_fs[state]) {
-			result.final.add(state);
-		}
-	};
-
-	make_final_if_not_in_old(*result.initial.begin());
-
-	for (const auto& trs : result) {
-                make_final_if_not_in_old(trs.tgt);
-	}
-
-	if (delete_subset_map)
-	{
-		delete subset_map;
-	}
+	result.final.complement(result.size());
 
 	return result;
 } // complement_classical }}}
@@ -75,8 +64,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(
 Nfa Mata::Nfa::complement(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params,
-        std::unordered_map<StateSet, State> *subset_map)
+        const StringMap&  params)
 {
 	Nfa result;
 	// setting the default algorithm
@@ -94,5 +82,16 @@ Nfa Mata::Nfa::complement(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	return algo(aut, alphabet, subset_map);
+	bool minimize_during_determinization = false;
+	if (params.find("minimize") != params.end()) {
+		const std::string& minimize_arg = params.at("minimize");
+		if ("true" == minimize_arg) { minimize_during_determinization = true; }
+		else if ("false" == minimize_arg) { minimize_during_determinization = false; }
+		else {
+			throw std::runtime_error(std::to_string(__func__) +
+				" received an unknown value of the \"minimize\" key: " + str_algo);
+		}
+	}
+
+	return algo(aut, alphabet, minimize_during_determinization);
 } // complement

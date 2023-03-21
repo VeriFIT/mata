@@ -39,10 +39,10 @@ namespace Plumbing {
             Nfa*               result,
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            const StringMap&  params = {{"algorithm", "classical"}},
-            std::unordered_map<StateSet, State> *subset_map = nullptr)
+            const StringMap&  params = {{"algorithm", "classical"},
+                                        {"minimize", "false"}})
     { // {{{
-        *result = complement(aut, alphabet, params, subset_map);
+        *result = complement(aut, alphabet, params);
     } // complement }}}
 
     inline void minimize(Nfa* res, const Nfa &aut)

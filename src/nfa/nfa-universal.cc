@@ -30,8 +30,7 @@ using namespace Mata::Util;
 bool Mata::Nfa::Algorithms::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Run*               cex,
-	const StringMap&  /* params*/)
+	Run*               cex)
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
 
@@ -43,10 +42,8 @@ bool Mata::Nfa::Algorithms::is_universal_naive(
 bool Mata::Nfa::Algorithms::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
-	Run*               cex,
-	const StringMap&  params)
+	Run*               cex)
 { // {{{
-	(void)params;
 
 	using WorklistType = std::list<StateSet>;
 	using ProcessedType = std::list<StateSet>;
@@ -171,5 +168,5 @@ bool Mata::Nfa::is_universal(
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
 
-	return algo(aut, alphabet, cex, params);
+	return algo(aut, alphabet, cex);
 } // is_universal }}}

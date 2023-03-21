@@ -35,92 +35,79 @@ namespace Nfa {
 namespace Algorithms {
 
     /**
+     * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
+     * @param[in] aut Automaton to be minimized.
+     * @return Minimized automaton.
+     */
+    Nfa minimize_brzozowski(const Nfa& aut);
+
+    /**
      * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
      * final states which were non final in the original automaton.
-     * @param aut Automaton to be complemented
-     * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
-     * @param subset_map Maps states to subsets created during complementation.
-     * @return Complemented automaton
+     * @param[in] aut Automaton to be complemented.
+     * @param[in] alphabet Alphabet is needed for making the automaton complete.
+     * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (brzozowski) minimization
+     * @return Complemented automaton.
      */
     Nfa complement_classical(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            std::unordered_map<StateSet, State>* subset_map);
-
-    /**
-     * Complement implemented by determization and making final states which were non final in the original automaton.
-     * @param aut Automaton to be complemented
-     * @param alphabet Alphabet is needed since no symbols needs to be in automaton transitions
-     * @param params Determines algorithms properties
-     * @param subset_map Maps states to subsets created during complementation.
-     * @return result Complemented automaton
-     */
-    Nfa complement_naive(
-            const Nfa&         aut,
-            const Alphabet&    alphabet,
-            const StringMap&  params,
-            std::unordered_map<StateSet, State>* subset_map);
+            bool minimize_during_determinization = false);
 
     /**
      * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then
      * it checks emptiness of intersection
-     * @param smaller Automaton which language should be included in the bigger one
-     * @param bigger Automaton which language should include the smaller one
-     * @param alphabet Alphabet of the both automaton
-     * @param cex A potential counterexample word which breaks inclusion
+     * @param[in] smaller Automaton which language should be included in the bigger one
+     * @param[in] bigger Automaton which language should include the smaller one
+     * @param[in] alphabet Alphabet of both automata (it is computed automatically, but it is more efficient to set it if you have it)
+     * @param[out] cex A potential counterexample word which breaks inclusion
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
     bool is_included_naive(
             const Nfa&             smaller,
             const Nfa&             bigger,
-            const Alphabet* const  alphabet,
-            Run*                   cex,
-            const StringMap&  /* params*/);
+            const Alphabet* const  alphabet = nullptr,
+            Run*                   cex = nullptr);
 
     /**
      * Inclusion implemented by antichain algorithms.
-     * @param smaller Automaton which language should be included in the bigger one
-     * @param bigger Automaton which language should include the smaller one
-     * @param alphabet Alphabet of the both automaton
-     * @param cex A potential counterexample word which breaks inclusion
-     * @param params The parameters used in algorithm. E.g., type of simulation relation
+     * @param[in] smaller Automaton which language should be included in the bigger one
+     * @param[in] bigger Automaton which language should include the smaller one
+     * @param[in] alphabet Alphabet of both automata (not needed for antichain algorithm)
+     * @param[out] cex A potential counterexample word which breaks inclusion
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
     bool is_included_antichains(
             const Nfa&             smaller,
             const Nfa&             bigger,
-            const Alphabet* const  alphabet,
-            Run*                   cex,
-            const StringMap&      params);
+            const Alphabet* const  alphabet = nullptr,
+            Run*                   cex = nullptr);
 
     /**
      * Universality check implemented by checking emptiness of complemented automaton
-     * @param aut Automaton which universality is checked
-     * @param alphabet Alphabet of the automaton
-     * @param cex Counterexample word which eventually breaks the universality
+     * @param[in] aut Automaton which universality is checked
+     * @param[in] alphabet Alphabet of the automaton
+     * @param[out] cex Counterexample word which eventually breaks the universality
      * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
      */
     bool is_universal_naive(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            Run*               cex,
-            const StringMap&  /* params*/);
+            Run*               cex);
 
     /**
      * Universality checking based on subset construction with antichain.
-     * @param aut Automaton which universality is checked
-     * @param alphabet Alphabet of the automaton
-     * @param cex Counterexample word which eventually breaks the universality
-     * @param params Parameters of the automaton, i.e., simulation relation to be used for antichains
+     * @param[in] aut Automaton which universality is checked
+     * @param[in] alphabet Alphabet of the automaton
+     * @param[out] cex Counterexample word which eventually breaks the universality
      * @return True if the automaton is universal, otherwise false.
      */
     bool is_universal_antichains(
             const Nfa&         aut,
             const Alphabet&    alphabet,
-            Run*              cex,
-            const StringMap&  params);
+            Run*              cex);
 
     Simlib::Util::BinaryRelation compute_relation(
             const Nfa& aut,

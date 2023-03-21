@@ -580,11 +580,10 @@ def test_complement(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
-    res, subset_map = mata.Nfa.complement_with_subset_map(fa_one_divisible_by_two, alph)
+    res = mata.Nfa.complement(fa_one_divisible_by_two, alph)
     assert not mata.Nfa.is_in_lang(res, [1, 1])
     assert mata.Nfa.is_in_lang(res, [1, 1, 1])
     assert not mata.Nfa.is_in_lang(res, [1, 1, 1, 1])
-    assert subset_map == {(): 3, (0,): 0, (1,): 1, (2,): 2}
 
 
 def test_revert():

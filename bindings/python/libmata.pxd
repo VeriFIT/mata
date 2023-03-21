@@ -318,7 +318,7 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
     cdef void concatenate(CNfa*, CNfa&, CNfa&, bool, StateToStateMap*, StateToStateMap*)
-    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringMap&, umap[StateSet, State]*) except +
+    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringMap&) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)
     cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +

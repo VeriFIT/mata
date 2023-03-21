@@ -868,40 +868,18 @@ cdef class Nfa:
         return noodle_segments
 
     @classmethod
-    def complement_with_subset_map(cls, Nfa lhs, Alphabet alphabet, params = None):
-        """Performs complement of lhs
-
-        :param Nfa lhs: complemented automaton
-        :param OnTheFlyAlphabet alphabet: alphabet of the lhs
-        :param dict params: additional params
-        :return: complemented automaton, map of subsets to states
-        """
-        result = Nfa()
-        params = params or {'algorithm': 'classical'}
-        cdef umap[StateSet, State] subset_map
-        mata.complement(
-            result.thisptr.get(),
-            dereference(lhs.thisptr.get()),
-            <CAlphabet&>dereference(alphabet.as_base()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            },
-            &subset_map
-        )
-        return result, subset_map_to_dictionary(subset_map)
-
-    @classmethod
     def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
         :param OnTheFlyAlphabet alphabet: alphabet of the lhs
         :param dict params: additional params
+          - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
+          - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
         :return: complemented automaton
         """
         result = Nfa()
-        params = params or {'algorithm': 'classical'}
+        params = params or {'algorithm': 'classical', 'minimize': 'false'}
         mata.complement(
             result.thisptr.get(),
             dereference(lhs.thisptr.get()),
@@ -910,7 +888,6 @@ cdef class Nfa:
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
                 for k, v in params.items()
             },
-            NULL
         )
         return result
 
