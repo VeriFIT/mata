@@ -1,10 +1,6 @@
 set(CMAKE_COLOR_MAKEFILE ON)
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 
-#adding just for profiling in clion, to disable asserts
-add_compile_options(-DNDEBUG -g)
-
-
 project(libmata)
 
 # Export compile commands to be used with YouCompleteMe
