@@ -327,10 +327,10 @@ public:
 
         //this iterates through every post and ever, filters and renames states,
         //and finally removes moves that became empty from the post.
-        for (State q=0;q<post.size();++q) {
+        for (State q=0,size=post.size();q<size;++q) {
             //should we have a function Post::transform(Lambda) for this?
             Post & post = get_mutable_post(q);
-            for (auto move = post.begin(); move < post.end();move++) {
+            for (auto move = post.begin(); move < post.end();++move) {
                 move->targets.filter([is_staying](State q) { return is_staying[q]; });
                 move->targets.rename(renaming);
             }

@@ -602,20 +602,20 @@ const NumberPredicate<State> Nfa::get_useful_states() const
             //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
             while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
                 if (level.targets_it == level.targets_end) {
-                    level.post_it++;
+                    ++level.post_it;
                     if (level.post_it != level.post_end) {
                         level.targets_it = level.post_it->cbegin();
                         level.targets_end = level.post_it->cend();
                     }
                 } else
-                    level.targets_it++;
+                    ++level.targets_it;
             }
             if (level.post_it == level.post_end) {
                 stack.pop_back();
             }
             else {
                 State succ_state = *(level.targets_it);
-                level.targets_it++;
+                ++level.targets_it;
                 if (final[succ_state])
                     reached_and_reaching.add(succ_state);
                 if (reached_and_reaching[succ_state])

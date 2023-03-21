@@ -39,7 +39,7 @@ private:
     mutable std::vector <Number> elements = {};
     mutable bool elements_are_exact = true;
     mutable bool tracking_elements = true;
-    mutable Number card = 0;
+    mutable Number cardinality = 0;
 
     using const_iterator = typename std::vector<Number>::const_iterator;
 
@@ -66,7 +66,7 @@ private:
      */
     void compute_elements() const {
         elements.clear();
-        elements.reserve(card);
+        elements.reserve(cardinality);
         for (Number q = 0, size=predicate.size(); q < size; ++q) {
             if (predicate[q])
                 elements.push_back(q);
@@ -102,23 +102,23 @@ public:
                 elements.push_back(e);
         }
         if (!val)
-            card = 0;
+            cardinality = 0;
         else
-            card = size;
+            cardinality = size;
     };
 
-    NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {};
+    NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {};
 
-    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         for (auto q: list)
             add(q);
     }
 
-    NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+    NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         add(list);
     }
 
-    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         predicate.reserve(bv.size());
         for (size_t i = 0;i<bv.size();i++) {
             if (bv[i])
@@ -127,14 +127,14 @@ public:
     }
 
     //just a hot fix
-    NumberPredicate(std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+    NumberPredicate(std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         predicate = std::move(bv);
-        card = std::count(bv.begin(), bv.end(), true);
+        cardinality = std::count(bv.begin(), bv.end(), true);
         elements.exact = false;
         tracking_elements = false;
     }
 
-    NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), card(0) {
+    NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         for (auto q: vec)
             add(q);
     }
@@ -153,7 +153,7 @@ public:
      */
     void add(Number q) {
         if (!(*this)[q]) {
-            card++;
+            cardinality++;
             if (predicate.size() <= q) {
                 reserve_on_insert(predicate, q);
                 predicate.resize(q + 1, false);
@@ -174,7 +174,7 @@ public:
 
     void remove(Number q) {
         if ((*this)[q]) {
-            card--;
+            cardinality--;
             elements_are_exact = false;
             if (q < predicate.size() && predicate[q]) {
                 predicate[q] = false;
@@ -213,12 +213,12 @@ public:
     void defragment(const NumberPredicate<Number> & is_staying) {
         Number max_positive = 0;//new maximum positive element of the domain
         Number new_dom_max = 0;
-        card = 0;
+        cardinality = 0;
         for (Number i_old=0;i_old<predicate.size() && i_old < is_staying.domain_size(); ++i_old) {
             if (is_staying[i_old]) {
                 predicate[new_dom_max] = predicate[i_old];
                 if (predicate[i_old]) {
-                    card++;
+                    cardinality++;
                     max_positive = new_dom_max;
                 }
                 new_dom_max++;
@@ -226,7 +226,7 @@ public:
             else
                 elements_are_exact = false;
         }
-        if (card>0)
+        if (cardinality > 0)
             predicate.resize(max_positive+1);
         else
             predicate.resize(0);
@@ -249,7 +249,7 @@ public:
      * This is the number of the true elements, not the size of any data structure.
      */
     Number size() const {
-        return card;
+        return cardinality;
         //if (elements_are_exact)
         //    return elements.size();
         //if (tracking_elements) {
@@ -280,7 +280,7 @@ public:
                 i = false;
         elements.clear();
         elements_are_exact = true;
-        card = 0;
+        cardinality = 0;
     }
 
     void reserve(Number n) {
@@ -313,12 +313,12 @@ public:
         if (domain_size > old_domain_size)
             for (Number q = old_domain_size; q < domain_size; ++q) {
                 predicate.push_back(true);
-                card++;
+                cardinality++;
             }
         else if (domain_size < old_domain_size)
             for (Number q = domain_size; q < old_domain_size; ++q) {
                 if (predicate[q])
-                    card--;
+                    cardinality--;
                 predicate[q]=false;
             }
         if (tracking_elements) {
