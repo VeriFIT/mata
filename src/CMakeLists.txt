@@ -70,7 +70,7 @@ add_library(libmata STATIC
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
 	rra/rrt.cc
-)
+        nfa/tests-nfa-profiling.cc)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata

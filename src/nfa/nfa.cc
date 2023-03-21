@@ -387,59 +387,6 @@ bool Delta::empty() const
     return this->begin() == this->end();
 }
 
-// TODO: This function is only used in a function (defragment Nfa) which is used in tests. Remove?
-std::vector<State> Delta::defragment_old()
-{
-    std::vector<State> renaming(this->post.size());
-    std::vector<State> removed{};
-
-    size_t last_empty = 0;
-    const size_t post_size = post.size();
-    for (size_t i = 0; i < post_size; ++i) {
-        if (post.at(i).empty()) {
-            last_empty = i;
-            removed.push_back(i);
-        } else if (last_empty < i) {
-            post[last_empty] = post[i];
-            renaming[i] = last_empty;
-            last_empty = i;
-        } else { // there was no empty space, last_empty is synchronized with i
-            renaming[i] = i; // nothing changed, no renaming needed
-            last_empty += 1;
-        }
-    }
-
-    if (!removed.empty())
-        post.resize(post.size() - removed.size());
-    else // no further renaming is needed, nothing contains been done
-        return renaming;
-
-    const size_t removed_size = removed.size();
-    for (size_t i = 0; i < removed_size; ++i) {
-        renaming[removed[i]] = post.size()+i;
-    }
-
-    // rename states according to reindexing done above
-    for (Post& p : this->post) {
-        for (Move& m : p) {
-            StateSet new_targets{};
-            const size_t renaming_size = renaming.size();
-            for (State i = 0; i < renaming_size; ++i) {
-                if (m.count(i)) {
-                    m.remove(i);
-                    new_targets.insert(renaming[i]);
-                }
-            }
-            m.insert(new_targets);
-        }
-    }
-
-    // finally we need to find the new max state
-    m_num_of_states = find_max_state() + 1;
-
-    return renaming;
-}
-
 Delta::const_iterator::const_iterator(const std::vector<Post>& post_p, bool ise) :
     post(post_p), current_state(0), is_end(ise)
 {
@@ -536,8 +483,8 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-//TODO: probably can be removed, trim2 faster.
-void Nfa::trim1(StateToStateMap* state_map)
+//TODO: probably can be removed, trim_reverting faster.
+void Nfa::trim_inplace(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
@@ -548,7 +495,7 @@ void Nfa::trim1(StateToStateMap* state_map)
     }
 }
 
-void Nfa::trim2(StateToStateMap* state_map)
+void Nfa::trim_reverting(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
     static NumberPredicate<State> useful_states(false);

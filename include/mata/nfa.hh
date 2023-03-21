@@ -42,13 +42,7 @@
 namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
-//using State = unsigned long;
 using State = unsigned;
-//using State = int16_t;
-//using State = int8_t;
-//using State = short;
-//using State = int;
-
 using StateSet = Mata::Util::OrdVector<State>;
 
 template<typename T> using Set = Mata::Util::OrdVector<T>;
@@ -397,13 +391,6 @@ public:
     size_t num_of_states() const { return m_num_of_states; }
 
     /**
-     * Function removes empty indices in transition vector and renames states accordingly
-     * @return Renaming of states where on index defined by old state number is a new number of the same state
-     * TODO: erase this function?
-     */
-    std::vector<State> defragment_old();
-
-    /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
     struct const_iterator {
@@ -626,51 +613,42 @@ public:
         return (init && fin && trans && crap && deltacrap);
     };
 
-// returns symbols appearing in Delta, adds to NumberPredicate,
-// Seems to be the fastest option, but could have problems with large maximum symbols
-    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
-        //static should prevent reallocation, seems to speed things up a little
-        static Util::NumberPredicate<Symbol>  symbols{};
-        //symbols.dont_track_elements();
-        for (State q = 0; q<delta.post_size(); ++q) {
-            const Post & post = delta[q];
-            for (const Move & move: post) {
-                symbols.add(move.symbol);
-            }
-        }
-        return Util::OrdVector(symbols.get_elements());
-    }
+    /**
+     * @brief Get the set of symbols used on the transitions in the automaton.
+     *
+     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+     * @return Set of symbols used on the transitions.
+     * TODO: this should be a method of Delta?
+     */
+    Util::OrdVector<Symbol> get_used_symbols() const {
+        //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
+        // for instance figure out why NumberPredicate and OrdVedctor are slow,
+        // try also with _STATIC_DATA_STRUCTURES_, it changes things.
 
-//    /**
-//     * @brief Get the set of symbols used on the transitions in the automaton.
-//     *
-//     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
-//     * @return Set of symbols used on the transitions.
-//     * TODO: this should be a method of Delta?
-//     */
-//    Util::OrdVector<Symbol> get_used_symbols() const {
-//        //TODO: look at this
-//        //return get_used_symbols_vec();
-//
-//        //auto from_set = get_used_symbols_set();
-//        //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
-//
-//        //return Util::OrdVector(get_used_symbols_np().get_elements());
-//
-//        //THIS IS TERRIBLE, WHY?:
-//        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
-//
-//        //THIS IS EVEN MORE TERRIBLE, WHY?:
-//        //std::vector<bool> bv = get_used_symbols_bv();
-//        //Util::OrdVector<Symbol> ov;
-//        //for(Symbol i = 0;i<bv.size();i++) ov.push_back(i);
-//        //return ov;
-//
-//        //THIS IS OK, WHY?:
-//        std::vector<bool> bv = get_used_symbols_bv();
-//        std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-//        return Util::OrdVector<Symbol>(v);
-//    };
+        //WITH VECTOR
+        //return get_used_symbols_vec();
+
+        //WITH SET
+        auto from_set = get_used_symbols_set();
+        return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
+
+        //WITH NUMBER PREDICATE
+        //return Util::OrdVector(get_used_symbols_np().get_elements());
+
+        //WITH BOOL VECTOR, TRANSFORMING TO ORDVECTOR IS TERRIBLE, WHY?:
+        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
+
+        //WITH BOOL VECTOR, TRANSFORMING TO ORDVECTOR IS EVEN MORE TERRIBLE, WHY?:
+        //std::vector<bool> bv = get_used_symbols_bv();
+        //Util::OrdVector<Symbol> ov;
+        //for(Symbol i = 0;i<bv.size();i++) ov.push_back(i);
+        //return ov;
+
+        ///WITH BOOL VECTOR, THIS WORKS OK, WHY?:
+        // std::vector<bool> bv = get_used_symbols_bv();
+        // std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
+        // return Util::OrdVector<Symbol>(v);
+    };
 
     Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const;
     std::set<Symbol> Nfa::get_used_symbols_set() const;
@@ -723,12 +701,12 @@ public:
      * the starting point of a path ending in a final state).
      *
      * @param[out] state_map Mapping of trimmed states to new states.
-     * TODO: we can probably keep just trim2, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
+     * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    void trim1(StateToStateMap* state_map = nullptr);
-    void trim2(StateToStateMap* state_map = nullptr);
+    void trim_inplace(StateToStateMap* state_map = nullptr);
+    void trim_reverting(StateToStateMap* state_map = nullptr);
     void trim(StateToStateMap* state_map = nullptr) {
-        trim2(state_map);
+        trim_reverting(state_map);
     }
 
     /**
@@ -876,22 +854,6 @@ public:
      * there are no epsilon transitions.
      */
     static Post::const_iterator get_epsilon_transitions(const Post& state_transitions, Symbol epsilon = EPSILON);
-
-    /**
-     * Method defragments transition relation. It eventually clears empty space in vector
-     * containing transitions and decreases size.
-     * TODO: once merged with new initial and final state predicate, do renaming of these sets of states.
-     * TODO: Modify Nfa::m_num_of_requested_states as well. Or not?
-     * TODO: This function is only used in tests!
-     */
-    void defragment() {
-        std::vector<State> renaming = delta.defragment_old();
-        initial.rename(renaming, delta.num_of_states());
-        initial.truncate_domain();
-        final.rename(renaming, delta.num_of_states());
-        final.truncate_domain();
-        m_num_of_requested_states = 0;
-    }
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
