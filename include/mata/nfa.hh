@@ -652,10 +652,10 @@ public:
         // return Util::OrdVector<Symbol>(v);
     };
 
-    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const;
-    std::set<Symbol> Nfa::get_used_symbols_set() const;
-    Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const;
-    std::vector<bool> Nfa::get_used_symbols_bv() const;
+    Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
+    std::set<Symbol> get_used_symbols_set() const;
+    Mata::Util::NumberPredicate<Symbol> get_used_symbols_np() const;
+    std::vector<bool> get_used_symbols_bv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
