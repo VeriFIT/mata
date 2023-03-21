@@ -626,36 +626,51 @@ public:
         return (init && fin && trans && crap && deltacrap);
     };
 
-    /**
-     * @brief Get the set of symbols used on the transitions in the automaton.
-     *
-     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
-     * @return Set of symbols used on the transitions.
-     * TODO: this should be a method of Delta?
-     */
-    Util::OrdVector<Symbol> get_used_symbols() const {
-        //TODO: look at this
-        //return get_used_symbols_vec();
+// returns symbols appearing in Delta, adds to NumberPredicate,
+// Seems to be the fastest option, but could have problems with large maximum symbols
+    Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols() const {
+        //static should prevent reallocation, seems to speed things up a little
+        static Util::NumberPredicate<Symbol>  symbols{};
+        //symbols.dont_track_elements();
+        for (State q = 0; q<delta.post_size(); ++q) {
+            const Post & post = delta[q];
+            for (const Move & move: post) {
+                symbols.add(move.symbol);
+            }
+        }
+        return Util::OrdVector(symbols.get_elements());
+    }
 
-        //auto from_set = get_used_symbols_set();
-        //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
-
-        //return Util::OrdVector(get_used_symbols_np().get_elements());
-
-        //THIS IS TERRIBLE, WHY?:
-        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
-
-        //THIS IS EVEN MORE TERRIBLE, WHY?:
-        //std::vector<bool> bv = get_used_symbols_bv();
-        //Util::OrdVector<Symbol> ov;
-        //for(Symbol i = 0;i<bv.size();i++) ov.push_back(i);
-        //return ov;
-
-        //THIS IS OK, WHY?:
-        std::vector<bool> bv = get_used_symbols_bv();
-        std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-        return Util::OrdVector<Symbol>(v);
-    };
+//    /**
+//     * @brief Get the set of symbols used on the transitions in the automaton.
+//     *
+//     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+//     * @return Set of symbols used on the transitions.
+//     * TODO: this should be a method of Delta?
+//     */
+//    Util::OrdVector<Symbol> get_used_symbols() const {
+//        //TODO: look at this
+//        //return get_used_symbols_vec();
+//
+//        //auto from_set = get_used_symbols_set();
+//        //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
+//
+//        //return Util::OrdVector(get_used_symbols_np().get_elements());
+//
+//        //THIS IS TERRIBLE, WHY?:
+//        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
+//
+//        //THIS IS EVEN MORE TERRIBLE, WHY?:
+//        //std::vector<bool> bv = get_used_symbols_bv();
+//        //Util::OrdVector<Symbol> ov;
+//        //for(Symbol i = 0;i<bv.size();i++) ov.push_back(i);
+//        //return ov;
+//
+//        //THIS IS OK, WHY?:
+//        std::vector<bool> bv = get_used_symbols_bv();
+//        std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
+//        return Util::OrdVector<Symbol>(v);
+//    };
 
     Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const;
     std::set<Symbol> Nfa::get_used_symbols_set() const;
