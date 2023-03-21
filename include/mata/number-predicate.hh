@@ -292,10 +292,10 @@ public:
 
     //TODO: or negate()?
     void flip(Number q) {
-        if (this[q])
-            add(q);
-        else
+        if ((*this)[q])
             remove(q);
+        else
+            add(q);
     }
 
     /*
@@ -307,14 +307,18 @@ public:
         predicate.reserve(domain_size);
         Number to_flip = std::min(domain_size,old_domain_size);
         for (Number q = 0; q < to_flip; ++q) {
-             predicate[q] = !predicate[q];
+            //predicate[q] = !predicate[q];
+            flip(q);
         }
         if (domain_size > old_domain_size)
             for (Number q = old_domain_size; q < domain_size; ++q) {
                 predicate.push_back(true);
+                card++;
             }
         else if (domain_size < old_domain_size)
             for (Number q = domain_size; q < old_domain_size; ++q) {
+                if (predicate[q])
+                    card--;
                 predicate[q]=false;
             }
         if (tracking_elements) {
