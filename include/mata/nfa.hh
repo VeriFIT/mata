@@ -599,7 +599,7 @@ public:
 
     // this is exact equality of automata, including state numbering (so even stronger than isomorphism)
     // essentially only useful for testing purposes
-    bool is_equal(const Nfa & aut) {
+    bool is_identical(const Nfa & aut) {
         std::vector<Trans> thisTrans;
         for (auto trans: *this) thisTrans.push_back(trans);
         std::vector<Trans> autTrans;
@@ -609,10 +609,10 @@ public:
         bool init = Util::OrdVector<State>(initial.get_elements()) == Util::OrdVector<State>(aut.initial.get_elements());
         bool fin = Util::OrdVector<State>(final.get_elements()) == Util::OrdVector<State>(aut.final.get_elements());
         bool trans = thisTrans == autTrans;
-        bool crap = m_num_of_requested_states == aut.m_num_of_requested_states;
-        bool deltacrap = delta.num_of_states() == aut.delta.num_of_states();
+        bool num_of_requested_states = m_num_of_requested_states == aut.m_num_of_requested_states;
+        bool delta_num_of_states = delta.num_of_states() == aut.delta.num_of_states();
 
-        return (init && fin && trans && crap && deltacrap);
+        return (init && fin && trans && num_of_requested_states && delta_num_of_states);
     };
 
     /**
