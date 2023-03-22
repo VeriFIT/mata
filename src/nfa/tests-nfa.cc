@@ -4,6 +4,8 @@
 
 #include "../3rdparty/catch.hpp"
 
+#include "tests-nfa-util.hh"
+
 #include <mata/nfa.hh>
 #include <mata/nfa-plumbing.hh>
 #include <mata/nfa-strings.hh>
@@ -16,54 +18,13 @@ using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::Util;
 using namespace Mata::Parser;
+using namespace Mata::RE2Parser;
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
 using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
-
-// Some common automata {{{
-
-// Automaton A
-#define FILL_WITH_AUT_A(x) \
-	x.initial = {1, 3}; \
-	x.final = {5}; \
-	x.delta.add(1, 'a', 3); \
-	x.delta.add(1, 'a', 10); \
-	x.delta.add(1, 'b', 7); \
-	x.delta.add(3, 'a', 7); \
-	x.delta.add(3, 'b', 9); \
-	x.delta.add(9, 'a', 9); \
-	x.delta.add(7, 'b', 1); \
-	x.delta.add(7, 'a', 3); \
-	x.delta.add(7, 'c', 3); \
-	x.delta.add(10, 'a', 7); \
-	x.delta.add(10, 'b', 7); \
-	x.delta.add(10, 'c', 7); \
-	x.delta.add(7, 'a', 5); \
-	x.delta.add(5, 'a', 5); \
-	x.delta.add(5, 'c', 9); \
-
-
-// Automaton B
-#define FILL_WITH_AUT_B(x) \
-	x.initial = {4}; \
-	x.final = {2, 12}; \
-	x.delta.add(4, 'c', 8); \
-	x.delta.add(4, 'a', 8); \
-	x.delta.add(8, 'b', 4); \
-	x.delta.add(4, 'a', 6); \
-	x.delta.add(4, 'b', 6); \
-	x.delta.add(6, 'a', 2); \
-	x.delta.add(2, 'b', 2); \
-	x.delta.add(2, 'a', 0); \
-	x.delta.add(0, 'a', 2); \
-	x.delta.add(2, 'c', 12); \
-	x.delta.add(12, 'a', 14); \
-	x.delta.add(14, 'b', 12); \
-
-// }}}
 
 template<class T> void unused(const T &) {}
 
@@ -2115,6 +2076,7 @@ TEST_CASE("Mata::Nfa::revert()")
 	}
 } // }}}
 
+
 TEST_CASE("Mata::Nfa::is_deterministic()")
 { // {{{
 	Nfa aut('s'+1);
@@ -2738,7 +2700,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(2) != reachable.end());
         CHECK(reachable.find(4) != reachable.end());
         CHECK(reachable.find(6) != reachable.end());
-        CHECK(aut.get_useful_states().empty());
+        CHECK(aut.get_useful_states_old().empty());
 
         aut.final.add(4);
         reachable = aut.get_reachable_states();
@@ -2758,15 +2720,23 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
     }
 }
 
-TEST_CASE("Mata::Nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
+//TODO: make this a test for the new version
+TEST_CASE("Mata::Nfa::get_useful_states_old() for profiling", "[.profiling],[useful_states]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        aut.get_useful_states();
+        aut.get_useful_states_old();
     }
+}
+
+TEST_CASE("Mata::Nfa::trim() trivial") {
+    Nfa aut{1};
+    aut.initial.add(0);
+    aut.final.add(0);
+    aut.trim();
 }
 
 TEST_CASE("Mata::Nfa::trim()")
@@ -3053,41 +3023,6 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
     state_transitions = aut.get_moves_from(19);
     CHECK(aut.get_epsilon_transitions(state_transitions) == state_transitions.end());
-}
-
-TEST_CASE("Mata::Nfa::Nfa::defragment()") {
-    Nfa aut{};
-    aut.delta.add(0, 42, 2);
-    aut.delta.add(0, 42, 1);
-    aut.delta.add(1, 42, 2);
-    aut.delta.add(1, 42, 4);
-    aut.delta.add(2, 42, 2);
-    aut.delta.add(4, 42, 2);
-    aut.delta.add(4, 42, 1);
-    aut.delta.add(5, 42, 4);
-    aut.initial.add(3);
-    aut.final.add(3);
-    aut.final.add(4);
-    CHECK(aut.initial[3]);
-    CHECK(aut.final[3]);
-    CHECK(aut.final[4]);
-    CHECK(aut.size() == 6);
-    CHECK(aut.delta.contains(1, 42, 2));
-    aut.defragment();
-    CHECK(aut.initial[5]);
-    CHECK(aut.final[5]);
-    CHECK(aut.final[3]);
-    CHECK(!aut.final[4]);
-    CHECK(aut.size() == 6);
-    CHECK(aut.delta.contains(1, 42, 3));
-    CHECK(aut.delta.contains(4, 42, 3)); // previously (5,42,4)
-    aut.defragment();
-    CHECK(aut.initial[5]);
-    CHECK(aut.final[5]);
-    CHECK(aut.size() == 6);
-    // transitions contains not been changed
-    CHECK(aut.delta.contains(1, 42, 3));
-    CHECK(aut.delta.contains(4, 42, 3));
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta()") {

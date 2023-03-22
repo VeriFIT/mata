@@ -47,24 +47,26 @@ namespace Mata::Util {
 template <class Number> class NumberPredicate;
 template <class Key> class OrdVector;
 
-template<typename Number> bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
-    for (auto q: lhs) {
-        if (rhs[q]) {
+template <typename Number>
+bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
+    for (auto q: lhs)
+        if (rhs[q])
             return false;
-        }
-    }
     return true;
 }
 
 template <class T>
-bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs) {
+bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
+{
     auto itLhs = lhs.begin();
     auto itRhs = rhs.begin();
-    while (itLhs != lhs.end() && itRhs != rhs.end()) {
+    while (itLhs != lhs.end() && itRhs != rhs.end())
+    {
         if (*itLhs == *itRhs) { return false; }
         else if (*itLhs < *itRhs) { ++itLhs; }
-        else { ++itRhs; }
+        else {++itRhs; }
     }
+
     return true;
 }
 
@@ -97,6 +99,7 @@ public:   // Public data types
     using iterator = typename VectorType::iterator ;
     using const_iterator = typename VectorType::const_iterator;
     using const_reference = typename VectorType::const_reference;
+    using reference = typename VectorType::reference;
 
 private:  // Private data members
 
@@ -110,8 +113,11 @@ private:  // Private methods
         return(Mata::Util::is_sorted(vec_));
     }
 
-
 public:   // Public methods
+
+    // To make it movable. Is this right?
+    OrdVector(OrdVector&& rhs) = default;
+    OrdVector & operator=(OrdVector&& rhs) = default;
 
     OrdVector() :
         vec_()
@@ -123,31 +129,13 @@ public:   // Public methods
     explicit OrdVector(const VectorType& vec) :
         vec_(vec)
     {
-        //if (vectorIsSorted()) return;//probably useless
-
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        Util::sort_and_rmdupl(vec_);
     }
 
     OrdVector(std::initializer_list<Key> list) :
         vec_(list)
     {
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        Util::sort_and_rmdupl(vec_);
     }
 
     OrdVector(const OrdVector& rhs) :
@@ -174,20 +162,11 @@ public:   // Public methods
 
     OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
 
-
     template <class InputIterator>
     OrdVector(InputIterator first, InputIterator last) :
         vec_(first, last)
     {
-        // sort
-        std::sort(vec_.begin(), vec_.end());
-
-        // remove duplicates
-        auto it = std::unique(vec_.begin(), vec_.end());
-        vec_.resize(it - vec_.begin());
-
-        // Assertions
-        assert(vectorIsSorted());
+        Util::sort_and_rmdupl(vec_);
     }
 
     virtual ~OrdVector() = default;
@@ -219,15 +198,27 @@ public:   // Public methods
         return *this;
     }
 
-
     void insert(iterator itr, const Key& x)
     {
         assert(itr == this->end() || x <= *itr);
         vec_.insert(itr,x);
     }
 
+    // PUSH_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    virtual inline void push_back(const Key& x) {
+        reserve_on_insert(vec_);
+        vec_.emplace_back(x);
+    }
+
+    virtual inline void resize(size_t  size) {
+        vec_.resize(size);
+    }
+
     virtual void insert(const Key& x)
     {
+        reserve_on_insert(vec_);
         // Assertions
         assert(vectorIsSorted());
 
@@ -240,6 +231,7 @@ public:   // Public methods
 
         if ((last != 0) && (vec_.back() < x))
         {	// for the case which would be prevalent
+            // that is, the added thing can is larger than the largest thing and can be just bushed back
             vec_.push_back(x);
             return;
         }
@@ -270,7 +262,6 @@ public:   // Public methods
         // Assertions
         assert(vectorIsSorted());
     }
-
 
     virtual void insert(const OrdVector& vec)
     {
@@ -356,6 +347,7 @@ public:   // Public methods
         return result;
     }
 
+    //TODO: why are some method names capitalised?
     OrdVector Union(const OrdVector& rhs) const
     {
         // Assertions
@@ -408,61 +400,31 @@ public:   // Public methods
         return result;
     }
 
+    //TODO: this code of find was duplicated, not nice.
+    // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
     virtual const_iterator find(const Key& key) const
     {
         // Assertions
         assert(vectorIsSorted());
 
-        size_t first = 0;
-        size_t last = vec_.size();
-
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == key)
-            {	// in case we found x
-//				return const_iterator(&vec_[middle]);
-                return vec_.cbegin() + middle;
-            }
-            else if (vec_[middle] < key)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
-
-        return end();
+        auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
+        if (it == vec_.end() || *it != key)
+            return vec_.end();
+        else
+            return it;
     }
 
+    //TODO: the original code was duplicated, see comments above.
     virtual iterator find(const Key& key)
     {
         // Assertions
         assert(vectorIsSorted());
 
-        size_t first = 0;
-        size_t last = vec_.size();
-
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == key)
-            {	// in case we found x
-                return vec_.begin() + middle;
-            }
-            else if (vec_[middle] < key)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
-
-        return end();
+        auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
+        if (it == vec_.end() || *it != key)
+            return vec_.end();
+        else
+            return it;
     }
 
     inline void remove(Key k)
@@ -480,6 +442,18 @@ public:   // Public methods
         return vec_.empty();
     }
 
+    // Indexes which ar staying are shifted left to take place of those that are not staying.
+    template<typename Fun>
+    void filter_indexes(const Fun && is_staying) {
+        Util::filter_indexes(vec_, is_staying);
+    }
+
+    // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
+    template<typename F>
+    void filter(F && is_staying) {
+        Util::filter(vec_,is_staying);
+    }
+
     virtual inline const_reference back() const
     {
         // Assertions
@@ -488,6 +462,19 @@ public:   // Public methods
         return vec_.back();
     }
 
+    //is adding the non-const version like this ok?
+    virtual inline reference back()
+    {
+        // Assertions
+        assert(vectorIsSorted());
+
+        return vec_.back();
+    }
+
+    virtual inline void pop_back()
+    {
+        return vec_.pop_back();
+    }
 
     virtual inline const_iterator begin() const
     {
@@ -631,6 +618,11 @@ public:   // Public methods
         }
 
         return true;
+    }
+
+    // Renames numbers in the vector according to the renaming, q becomes renaming[q].
+   void rename(const std::vector<Key> & renaming) {
+        Util::rename(vec_,renaming);
     }
 }; // Class OrdVector.
 

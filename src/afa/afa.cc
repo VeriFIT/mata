@@ -302,7 +302,7 @@ StateClosedSet Afa::post(Nodes nodes, Symbol symb) const
 */
 StateClosedSet Afa::post(StateClosedSet closed_set, Symbol symb) const
 {
-	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " && 
+	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " &&
 	" post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain(), symb);
 } // post }}}
@@ -369,7 +369,7 @@ StateClosedSet Afa::post(Nodes nodes) const
 */
 StateClosedSet Afa::post(StateClosedSet closed_set) const 
 {
-	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " && 
+	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " &&
 	" post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain());
 };

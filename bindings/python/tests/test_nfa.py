@@ -48,7 +48,6 @@ def test_adding_states():
         assert rhs.is_state(i)
 
     assert rhs.size() == 10
-    rhs.defragment()
     rhs.clear()
     assert rhs.size() == 0
 

@@ -124,6 +124,8 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     return noodles;
 }
 
+//todo: is this taking all final times all initial?
+// can it be done more efficiently? (only connected combinations through dfs)
 void SegNfa::segs_one_initial_final(
     const Mata::Nfa::AutSequence& segments,
     bool include_empty,

@@ -47,7 +47,7 @@ TEST_CASE("Mata::RE2Parser basic_parsing")
         REQUIRE(is_in_lang(aut, Word{127}));
     }
 
-    SECTION("Wild card")
+    SECTION("Wild cardinality")
     {
         Mata::RE2Parser::create_nfa(&aut, ".*");
         REQUIRE(!aut.delta.empty());

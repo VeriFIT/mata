@@ -26,6 +26,7 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <cassert>
 #include <unordered_map>
 #include <vector>
 
@@ -419,6 +420,97 @@ struct TuplePrinter<Tuple, 1> {
     }
 };
 
+// This reserves space in a vector, to be used before push_back or insert.
+// Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the doubling.
+// Might be worth thinking about it.
+//  around 30% speedup for fragile revert,
+//  more than 50% for simple revert,
+// (when testing on a stupid test case)
+template<class Vector>
+void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 32) {
+    //return; //Try this to see the effect of calling this. It should not affect functionality.
+    if (vec.capacity() < extension) //if the size is already large enough, leave it to the default doubling strategy. This if seems to make a barely noticeable difference :).
+    {
+        if (vec.capacity() < std::max(vec.size() + 1, needed_capacity))
+            vec.reserve(vec.size() + extension);
+    }
+}
+
+//This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
+// It might be useful in revert and trim, but so far it is useless. It was hard to get right, so I am reluctant to remove ....
+// It assumes that renaming[i] <= i.
+// It assumes that vec is not longer than renaming.
+// The function is very fragile.
+template<class Vector,typename Index>
+void defragment(Vector & vec, const std::vector<Index> & renaming) {
+    //assert(vec.size() <= renaming.size());
+    size_t i = 0;
+    for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
+        if (renaming[i] != i)
+        {
+            if(! (renaming[i]<vsize) )
+                break;
+            assert(renaming[i] < i);
+            vec[i] = std::move(vec[renaming[i]]);
+        }
+    }
+    vec.resize(i);
+}
+
+//In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
+template<class Vector,typename Index>
+void rename(Vector & vec, const std::vector<Index> & renaming) {
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (i != vec[i])
+            vec[i] = renaming[vec[i]];
+    }
+}
+
+template<class Vector, typename F>
+void filter_indexes(Vector & vec, F && is_staying) {
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (is_staying(i)) {
+            if (i!=last) {
+                vec[last] = std::move(vec[i]);
+            }
+            last++;
+        }
+    }
+    vec.resize(last);
+}
+
+template<class Vector, typename F>
+void filter(Vector & vec, F && is_staying) {
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (is_staying(vec[i])) {
+            if (i!=last) {
+                vec[last] = std::move(vec[i]);
+            }
+            last++;
+        }
+    }
+    vec.resize(last);
+}
+
+    template<class Vector>
+    void inline sort_and_rmdupl(Vector & vec)
+    {
+        //TODO: try this?
+        //if (vectorIsSorted()) return;//probably useless
+
+        // sort
+        //TODO: is this the best available sorting algo?
+        std::sort(vec.begin(), vec.end());
+
+        // remove duplicates
+        auto it = std::unique(vec.begin(), vec.end());
+        vec.resize(it - vec.begin());
+    }
 }
 }
 #endif /* _MATA_UTIL_HH_ */

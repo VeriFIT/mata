@@ -160,7 +160,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
 
@@ -395,7 +395,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.raw == "true");
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -421,7 +421,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
 
         parsed = parse_mf(file);
         std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const auto& aut= auts[0];
+        const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.node.is_operator());
         REQUIRE(aut.transitions[0].second.node.raw == "|");
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -484,6 +484,13 @@ TEST_CASE("Mata::Mintermization::mintermization")
         REQUIRE(res[1].transitions[0].second.children[1].node.name == "r");
         REQUIRE(res[1].transitions[1].second.children[1].node.name == "r");
     }
+}
+
+TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
+{
+
+    Parsed parsed;
+    Mata::Mintermization mintermization{};
 
     SECTION("AFA big")
     {
