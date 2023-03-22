@@ -126,14 +126,6 @@ public:
         }
     }
 
-    //just a hot fix
-    NumberPredicate(std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
-        predicate = std::move(bv);
-        cardinality = std::count(bv.begin(), bv.end(), true);
-        elements.exact = false;
-        tracking_elements = false;
-    }
-
     NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         for (auto q: vec)
             add(q);
