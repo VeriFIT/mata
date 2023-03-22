@@ -388,10 +388,6 @@ cdef class Nfa:
         """Clears all of the internals in the automaton"""
         self.thisptr.get().clear()
 
-    def defragment(self):
-        """Defragments the internal structures (needed, e.g., after resize."""
-        self.thisptr.get().defragment()
-
     def size(self) -> int:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
