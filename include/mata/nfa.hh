@@ -42,7 +42,7 @@
 namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 
-using State = unsigned;
+using State = unsigned long;
 using StateSet = Mata::Util::OrdVector<State>;
 
 template<typename T> using Set = Mata::Util::OrdVector<T>;
