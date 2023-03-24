@@ -243,6 +243,8 @@ struct Post : private Util::OrdVector<Move> {
 
     const std::vector<Move>& ToVector() const { return Util::OrdVector<Move>::ToVector(); }
 
+    inline void erase(const_iterator first, const_iterator last) { Util::OrdVector<Move>::erase(first, last); }
+
     //Could we somehow use the && thingy here? It is supposed to be faster?
     template<typename F>
     inline void filter(F && is_staying) {

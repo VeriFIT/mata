@@ -216,6 +216,10 @@ public:   // Public methods
         vec_.resize(size);
     }
 
+    virtual inline void erase(const_iterator first, const_iterator last) {
+        vec_.erase(first, last);
+    }
+
     virtual void insert(const Key& x)
     {
         reserve_on_insert(vec_);
