@@ -469,6 +469,7 @@ void rename(Vector & vec, const std::vector<Index> & renaming) {
 
 template<class Vector, typename F>
 void filter_indexes(Vector & vec, F && is_staying) {
+    // TODO: Rewrite with erase and remove_if.
     size_t last = 0;
     for (size_t i = 0,size = vec.size();i < size; ++i)
     {
@@ -484,6 +485,7 @@ void filter_indexes(Vector & vec, F && is_staying) {
 
 template<class Vector, typename F>
 void filter(Vector & vec, F && is_staying) {
+    // TODO: Rewrite with erase and remove_if.
     size_t last = 0;
     for (size_t i = 0,size = vec.size();i < size; ++i)
     {
