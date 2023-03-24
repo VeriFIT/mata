@@ -312,10 +312,18 @@ public:
     };
 
     // TODO: why do we have the code of all these methods in the header file? Should we move it out?
-    const std::vector<State> defragment(Util::NumberPredicate<State> & is_staying) {
-
+    // TODO: Explain what is returned from this method.
+    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying) {
         //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-        Util::filter_indexes(post, [is_staying](State i) { return is_staying[i]; });
+        size_t move_index{ 0 };
+        post.erase(
+            std::remove_if(post.begin(), post.end(), [&](Post& _post) -> bool {
+                size_t prev{ move_index };
+                ++move_index;
+                return !is_staying[prev];
+            }),
+            post.end()
+        );
 
         //get renaming of current states to new numbers:
         std::vector<State> renaming(this->find_max_state()+1);
@@ -331,12 +339,22 @@ public:
         //and finally removes moves that became empty from the post.
         for (State q=0,size=post.size();q<size;++q) {
             //should we have a function Post::transform(Lambda) for this?
-            Post & post = get_mutable_post(q);
-            for (auto move = post.begin(); move < post.end();++move) {
-                move->targets.filter([is_staying](State q) { return is_staying[q]; });
+            Post & p = get_mutable_post(q);
+            for (auto move = p.begin(); move < p.end(); ++move) {
+                move->targets.erase(
+                    std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
+                        return !is_staying[q];
+                    }),
+                    move->targets.end()
+                );
                 move->targets.rename(renaming);
             }
-            post.filter([](Move &m) { return !m.targets.empty(); });
+            p.erase(
+                std::remove_if(p.begin(), p.end(), [&](Move& move) -> bool {
+                    return move.targets.empty();
+                }),
+                p.end()
+            );
         }
 
         //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
@@ -993,7 +1011,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
  * on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to it,
  * but only in the case that some transition to @p sink_state was added.
  * In the case that @p aut does not contain any states, this function does nothing.
- * 
+ *
  * @param[in] aut Automaton to make complete.
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
  * @param[in] sink_state The state into which new transitions are added.
@@ -1008,7 +1026,7 @@ bool make_complete(
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  * on transitions from given state) to new sink state (if no new transitions are added, this sink state is not created).
  * In the case that @p aut does not contain any states, this function does nothing.
- * 
+ *
  * @param[in] aut Automaton to make complete.
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
  * @return True if some new transition (and sink state) was added to the automaton.
@@ -1022,7 +1040,7 @@ inline bool make_complete(
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
- * 
+ *
  * @param[in] aut Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
@@ -1037,7 +1055,7 @@ Nfa complement(
                                     {"minimize", "false"}});
 /**
  * @brief Compute minimal deterministic automaton.
- * 
+ *
  * @param[in] aut Automaton whose minimal version to compute.
  * @param[in] params Optional parameters to control the minimization algorithm:
  * - "algorithm": "brzozowski"
@@ -1049,10 +1067,10 @@ Nfa minimize(
 
 /**
  * @brief Determinize automaton.
- * 
+ *
  * @param[in] aut Automaton to determinize.
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
- * @return Determinized automaton. 
+ * @return Determinized automaton.
  */
 Nfa determinize(
         const Nfa&  aut,
