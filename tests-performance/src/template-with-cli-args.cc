@@ -1,4 +1,6 @@
+#include <mata/inter-aut.hh>
 #include <mata/nfa.hh>
+#include <mata/mintermization.hh>
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -34,12 +36,15 @@ int main(int argc, char *argv[])
 			throw std::runtime_error(
 				"The number of sections in the input file is not 1\n");
 		}
-		std::cout << parsed[0].type << std::endl;
 		if (strncmp(parsed[0].type.c_str(), nfa_str, strlen(nfa_str)) != 0) {
 			throw std::runtime_error("The type of input automaton is not NFA\n");
 		}
 
-		aut = construct(parsed[0], &stsm);
+        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        Mata::Mintermization mintermization;
+        auto mintermized = mintermization.mintermize(inter_auts);
+        assert(mintermized.size() == 1);
+		aut = construct(mintermized[0], &stsm);
 	}
 	catch (const std::exception& ex) {
 		fs.close();
