@@ -399,10 +399,10 @@ public:   // Public methods
             return it;
     }
 
-    inline void remove(Key k)
-    {
+    inline void remove(Key k) {
         assert(vectorIsSorted());
-        vec_.erase(std::remove(vec_.begin(), vec_.end(), k), vec_.end());
+        auto found_values_range = std::equal_range(vec_.begin(), vec_.end(), k);
+        vec_.erase(found_values_range.first, found_values_range.second);
         assert(vectorIsSorted());
     }
 
