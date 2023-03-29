@@ -399,6 +399,11 @@ public:   // Public methods
             return it;
     }
 
+    /**
+     * @brief Remove @p k from sorted vector.
+     *
+     * This function expects the vector to be sorted.
+     */
     inline void remove(Key k) {
         assert(vectorIsSorted());
         auto found_values_range = std::equal_range(vec_.begin(), vec_.end(), k);
@@ -421,7 +426,12 @@ public:   // Public methods
     }
 
     virtual inline const_reference back() const { return vec_.back(); }
-    //is adding the non-const version like this ok?
+
+    /**
+     * @brief Get reference to the last element in the vector.
+     *
+     * Modifying the underlying value in the reference could break sortedness.
+     */
     virtual inline reference back() { return vec_.back(); }
 
     virtual inline void pop_back() { return vec_.pop_back(); }
