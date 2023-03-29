@@ -108,10 +108,7 @@ private:  // Private data members
 
 private:  // Private methods
 
-    bool vectorIsSorted() const
-    {
-        return(Mata::Util::is_sorted(vec_));
-    }
+    bool vectorIsSorted() const { return(Mata::Util::is_sorted(vec_)); }
 
 public:   // Public methods
 
@@ -119,12 +116,7 @@ public:   // Public methods
     OrdVector(OrdVector&& rhs) = default;
     OrdVector & operator=(OrdVector&& rhs) = default;
 
-    OrdVector() :
-        vec_()
-    {
-        // Assertions
-        assert(vectorIsSorted());
-    }
+    OrdVector() : vec_() {}
 
     explicit OrdVector(const VectorType& vec) :
         vec_(vec)
@@ -141,16 +133,10 @@ public:   // Public methods
     OrdVector(const OrdVector& rhs) :
         vec_()
     {
-        // Assertions
-        assert(rhs.vectorIsSorted());
-
         if (&rhs != this)
         {
             vec_ = rhs.vec_;
         }
-
-        // Assertions
-        assert(vectorIsSorted());
     }
 
     explicit OrdVector(const Key& key) :
@@ -184,16 +170,10 @@ public:   // Public methods
 
     OrdVector& operator=(const OrdVector& rhs)
     {
-        // Assertions
-        assert(rhs.vectorIsSorted());
-
         if (&rhs != this)
         {
             vec_ = rhs.vec_;
         }
-
-        // Assertions
-        assert(vectorIsSorted());
 
         return *this;
     }
@@ -280,21 +260,9 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-    inline void clear()
-    {
-        // Assertions
-        assert(vectorIsSorted());
+    inline void clear() { vec_.clear(); }
 
-        vec_.clear();
-    }
-
-    virtual inline size_t size() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.size();
-    }
+    virtual inline size_t size() const { return vec_.size(); }
 
 
     inline size_t count(const Key& key) const
@@ -438,13 +406,7 @@ public:   // Public methods
         assert(vectorIsSorted());
     }
 
-    virtual inline bool empty() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.empty();
-    }
+    virtual inline bool empty() const { return vec_.empty(); }
 
     // Indexes which ar staying are shifted left to take place of those that are not staying.
     template<typename Fun>
@@ -458,76 +420,20 @@ public:   // Public methods
         Util::filter(vec_,is_staying);
     }
 
-    virtual inline const_reference back() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.back();
-    }
-
+    virtual inline const_reference back() const { return vec_.back(); }
     //is adding the non-const version like this ok?
-    virtual inline reference back()
-    {
-        // Assertions
-        assert(vectorIsSorted());
+    virtual inline reference back() { return vec_.back(); }
 
-        return vec_.back();
-    }
+    virtual inline void pop_back() { return vec_.pop_back(); }
 
-    virtual inline void pop_back()
-    {
-        return vec_.pop_back();
-    }
+    virtual inline const_iterator begin() const { return vec_.begin(); }
+    virtual inline const_iterator end() const { return vec_.end(); }
 
-    virtual inline const_iterator begin() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
+    virtual inline iterator begin() { return vec_.begin(); }
+    virtual inline iterator end() { return vec_.end(); }
 
-        return vec_.begin();
-    }
-
-    virtual inline const_iterator end() const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.end();
-    }
-
-
-    virtual inline iterator begin()
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.begin();
-    }
-
-    virtual inline iterator end()
-    {
-        // Assertions
-        assert(vectorIsSorted());
-
-        return vec_.end();
-    }
-
-	virtual inline const_iterator cbegin() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
-
-		return begin();
-	}
-
-	virtual inline const_iterator cend() const
-	{
-		// Assertions
-		assert(vectorIsSorted());
-
-		return end();
-	}
+	virtual inline const_iterator cbegin() const { return begin(); }
+	virtual inline const_iterator cend() const { return end(); }
 
 	/**
 	 * @brief  Overloaded << operator
@@ -543,9 +449,6 @@ public:   // Public methods
 	 */
 	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec)
 	{
-		// Assertions
-		assert(vec.vectorIsSorted());
-
 		std::string result = "{";
 
 		for (auto it = vec.cbegin(); it != vec.cend(); ++it)
@@ -584,10 +487,7 @@ public:   // Public methods
             rhs.vec_.begin(), rhs.vec_.end());
     }
 
-    const std::vector<Key>& ToVector() const
-    {
-        return vec_;
-    }
+    const std::vector<Key>& ToVector() const { return vec_; }
 
     bool IsSubsetOf(const OrdVector& bigger) const
     {
@@ -625,9 +525,7 @@ public:   // Public methods
     }
 
     // Renames numbers in the vector according to the renaming, q becomes renaming[q].
-   void rename(const std::vector<Key> & renaming) {
-        Util::rename(vec_,renaming);
-    }
+   void rename(const std::vector<Key> & renaming) { Util::rename(vec_,renaming); }
 }; // Class OrdVector.
 
 } // Namespace Mata::Util.
