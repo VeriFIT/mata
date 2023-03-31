@@ -33,6 +33,6 @@
        cmd: ./bin/new-binary $1
 ```
 
-5. Run `./pycobench -c jobs.yaml -o some.output`
-6. Run `./pyco_proc -o some.output`
+5. Run `./pycobench -c jobs.yaml -o some.output < single-automata.input`
+6. Run `./pyco_proc --csv some.output > some.csv`
 7. Alternatively run `make perftest`
