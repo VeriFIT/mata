@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     Mata::Parser::Parsed parsed;
     Nfa aut;
     Mata::StringToSymbolMap stsm;
-    const char* nfa_str = "NFA";
+    const std::string nfa_str = "NFA";
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
             throw std::runtime_error(
                 "The number of sections in the input file is not 1\n");
         }
-        if (strncmp(parsed[0].type.c_str(), nfa_str, strlen(nfa_str)) != 0) {
+        if (parsed[0].type.compare(0, nfa_str.length(), nfa_str) != 0) {
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
@@ -57,6 +57,9 @@ int main(int argc, char *argv[])
 
     /**************************************************
      *  HERE COMES YOUR CODE THAT YOU WANT TO PROFILE *
+     *   - Use alphabet alph as source alphabet       *
+     *   - Use Nfa aut as source automaton            *
+     *   - e.g. complement(aut, alph);                *
      **************************************************/
 
     auto end = std::chrono::system_clock::now();
