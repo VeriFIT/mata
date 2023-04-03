@@ -12,7 +12,8 @@ using namespace Mata::Nfa;
 int main(int argc, char *argv[])
 {
     /**
-     * Comment out automata, that you do not want to process
+     * Comment out automata, that you do not want to process or add your own automata.
+
      */
     static std::string automata[] = {
             "../automata/b-armc-incl-easiest/aut1.mata",
