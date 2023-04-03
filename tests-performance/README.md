@@ -10,7 +10,9 @@
   * `template.cc` contains basic template for arbitrary code to be profiled or performance tested.
   * `template-with-cli.args.cc` contains basic template that takes file as an command line argument, parses the automaton
      and computes minterms.
-  * `template-with-list-of-automata.cc` contains basic template that has a hardcoded list of input automata taken from `automata` directory.
+  * `template-with-list-of-automata.cc` contains basic template that without arugments takes a hardcoded list of input 
+     automata taken from `automata` directory; in case it is run with arguments, it reads the input files that contains
+     paths to source automata. 
 4. `pycobench`: a performance testing script
 5. `pyco_proc`: a parser of performance results
 

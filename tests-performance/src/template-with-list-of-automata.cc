@@ -6,6 +6,7 @@
 #include <chrono>
 #include <string>
 #include <cstring>
+#include <vector>
 
 using namespace Mata::Nfa;
 
@@ -14,7 +15,7 @@ int main(int argc, char *argv[])
     /**
      * Comment out automata, that you do not want to process or add your own automata.
      */
-    static std::string automata[] = {
+    std::vector<std::string> automata = {
             "../automata/b-armc-incl-easiest/aut1.mata",
             "../automata/b-armc-incl-easiest/aut2.mata",
             "../automata/b-armc-incl-easy/aut1.mata",
@@ -87,7 +88,27 @@ int main(int argc, char *argv[])
             "../automata/b-smt-easiest/aut2.mata",
     };
 
-    for (const auto& aut_file : automata) {
+    std::vector<std::string> source_automata;
+
+    if (argc > 1) {
+        for (int i = 1; i < argc; ++i) {
+            std::string filename = argv[i];
+            std::fstream fs(filename, std::ios::in);
+            if (!fs) {
+                std::cerr << "Could not open file \'" << filename << "'\n";
+                return EXIT_FAILURE;
+            }
+
+            std::string line;
+            while (std::getline(fs, line)) {
+                source_automata.push_back(line);
+            }
+        }
+    } else {
+        source_automata = automata;
+    }
+
+    for (const auto& aut_file : source_automata) {
         std::fstream fs(aut_file, std::ios::in);
         if (!fs) {
             std::cerr << "Could not open file \'" << aut_file << "'\n";
@@ -121,6 +142,8 @@ int main(int argc, char *argv[])
             std::cerr << "libMATA error: " << ex.what() << "\n";
             return EXIT_FAILURE;
         }
+
+        std::cout << "Processing " << aut_file << std::endl;
 
         Mata::OnTheFlyAlphabet alph{stsm};
         auto start = std::chrono::system_clock::now();
