@@ -15,6 +15,9 @@
      paths to source automata. 
 4. `pycobench`: a performance testing script
 5. `pyco_proc`: a parser of performance results
+6. `scripts/`: several helper scripts for profiling
+* `scripts/run_callgrind.sh` to print top functions (exclusive time, greater than 1%)
+* `scripts/run_massif.sh` to print memory peak in [B]
 
 #### How to profile
 
@@ -22,6 +25,9 @@
 2. Find comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill your code.
 3. Run `make` from `src` or compile your binary.
 4. Run `callgrind` or custom profile on the binary.
+5. You can use one of the scripts:
+  * `scripts/run_callgrind.sh` to print top functions (exclusive time, greater than 1%)
+  * `scripts/run_massif.sh` to print memory peak in [B]
 
 #### How to test performance
 
@@ -29,6 +35,9 @@
 2. Find comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill your code.
 3. Run `make` from `src` or compile your binary.
 4. Add the new binary to the `jobs.yaml` as follows:
+5. You can use one of the scripts:
+* `scripts/run_callgrind.sh` to print top functions (exclusive time, greater than 1%)
+* `scripts/run_massif.sh` to print memory peak in [B]
  
 ```
     new-binary:

@@ -12,7 +12,7 @@ CFLAGS=-std=c++17 \
   -Weffc++ \
   -Woverloaded-virtual \
   -fdiagnostics-show-option \
-	-g
+  -g
 
 
 INCLUDE=-I../../include -I../../3rdparty/simlib/include -I../../3rdparty/re2/include -I ../../3rdparty -I ../../3rdparty/cudd/cudd
