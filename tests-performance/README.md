@@ -46,5 +46,7 @@
 ```
 
 5. Run `./pycobench -c jobs.yaml -o some.output < single-automata.input`
+  * Alternatively, one can pass any shell command that returns list of automata,
+  e.g. `< ls -1 ./automata/**/aut1.mata`
 6. Run `./pyco_proc --csv some.output > some.csv`
 7. Alternatively run `make perftest`

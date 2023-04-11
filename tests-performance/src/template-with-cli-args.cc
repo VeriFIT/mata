@@ -1,3 +1,7 @@
+/**
+ * NOTE: Input automata, that are of type `NFA-bits` are mintermized!
+ *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
+ */
 #include <mata/inter-aut.hh>
 #include <mata/nfa.hh>
 #include <mata/mintermization.hh>
@@ -8,6 +12,8 @@
 #include <cstring>
 
 using namespace Mata::Nfa;
+
+const bool SKIP_MINTERMIZATION = false;
 
 int main(int argc, char *argv[])
 {
@@ -28,6 +34,7 @@ int main(int argc, char *argv[])
     Nfa aut;
     Mata::StringToSymbolMap stsm;
     const std::string nfa_str = "NFA";
+    const std::string bits_str = "-bits";
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
@@ -41,14 +48,23 @@ int main(int argc, char *argv[])
         }
 
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        Mata::Mintermization mintermization;
-        auto mintermized = mintermization.mintermize(inter_auts);
-        assert(mintermized.size() == 1);
-        aut = construct(mintermized[0], &stsm);
+
+        if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
+            aut = construct(inter_auts[0], &stsm);
+        } else {
+            Mata::Mintermization mintermization;
+            auto minterm_start = std::chrono::system_clock::now();
+            auto mintermized = mintermization.mintermize(inter_auts);
+            auto minterm_end = std::chrono::system_clock::now();
+            std::chrono::duration<double> elapsed = minterm_end - minterm_start;
+            assert(mintermized.size() == 1);
+            aut = construct(mintermized[0], &stsm);
+            std::cout << "mintermization:" << elapsed.count() << "\n";
+        }
     }
     catch (const std::exception& ex) {
         fs.close();
-        std::cerr << "libMATA error: " << ex.what() << "\n";
+        std::cerr << "error: " << ex.what() << "\n";
         return EXIT_FAILURE;
     }
 
@@ -63,8 +79,8 @@ int main(int argc, char *argv[])
      **************************************************/
 
     auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "time: " << elapsed.count() << "\n";
 
     return EXIT_SUCCESS;
 }

@@ -16,8 +16,8 @@ int main(int argc, char *argv[])
      **************************************************/
 
     auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
-    std::cout << "Elapsed time: " << elapsed.count() << " ms\n";
+    std::chrono::duration<double> elapsed = end - start;
+    std::cout << "time: " << elapsed.count() << "\n";
 
     return EXIT_SUCCESS;
 }
