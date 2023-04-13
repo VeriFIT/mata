@@ -26,11 +26,17 @@ namespace Mata {
 namespace Nfa {
 
 /**
- * The following namespace contains methods which would be otherwise in anonymous namespace
- * to make them accessible to users of library. Typically, that are different algorithms for
- * operations such as complement, inclusion, or universality checking.
- * In Nfa interface, there are dispatch functions calling these function according to parameters
- * provided by a user.
+ * NFA algorithms, includes implementations for operations such as complement, inclusion, or universality checking.
+ *
+ * Note, that in Mata::Nfa interface, there are dispatch functions calling these function
+ * according to parameters provided by a user.
+ *
+ * In particular, this includes algorithms for:
+ *   1. Complementation,
+ *   2. Inclusion,
+ *   3. Universality checking,
+ *   4. Intersection/concatenation with epsilon transitions, or,
+ *   5. Computing relation.
  */
 namespace Algorithms {
 

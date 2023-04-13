@@ -24,6 +24,12 @@ namespace Mata {
 
 namespace Nfa {
 
+/**
+ * Simplified NFA API, used in binding to call NFA algorithms.
+ *
+ * In particular, this mostly includes operations and checks, that do not return Automaton,
+ * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
+ */
 namespace Plumbing {
 
     /// Make the transition relation complete.

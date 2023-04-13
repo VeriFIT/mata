@@ -39,6 +39,17 @@
 #include <mata/inter-aut.hh>
 #include <mata/synchronized-iterator.hh>
 
+/**
+ * Nondeterministic Finite Automata including structures, transitions and algorithms.
+ *
+ * In particular, this includes:
+ *   1. Structures (Automaton, Transitions, Results, Delta),
+ *   2. Algorithms (operations, checks, tests),
+ *   3. Constructions.
+ *
+ * Other algorithms are including in Mata::Nfa::Plumbing (simplified API for, e.g., binding)
+ * and Mata::Nfa::Algorithms (concrete implementations of algorithms, such as for complement).
+ */
 namespace Mata::Nfa {
 extern const std::string TYPE_NFA;
 

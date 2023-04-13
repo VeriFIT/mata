@@ -25,6 +25,14 @@
 
 namespace Mata
 {
+/**
+ * Restricted Register Transducer (over finite words) including structures and algorithms.
+ *
+ * These are restricted version of a (nondeterministic) register automaton that still has some
+ * decidable properties and closure under operations.
+ *
+ * TODO: Quite obsolete, should we remove this?
+ */
 namespace Rrt
 {
 

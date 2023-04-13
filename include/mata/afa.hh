@@ -37,6 +37,14 @@
 
 namespace Mata
 {
+/**
+ * Alternating Finite Automata including structures, transitions and algorithms.
+ *
+ * In particular, this includes:
+ *   1. Structures (Automaton, Transitions, Results),
+ *   2. Algorithms (operations, checks, tests),
+ *   3. Constructions.
+ */
 namespace Afa
 {
 extern const std::string TYPE_AFA;

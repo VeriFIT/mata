@@ -31,6 +31,11 @@
 
 namespace Mata
 {
+/**
+ * Parser from `.mata` format to automata (currently `Nfa` and `Afa` are supported).
+ *
+ * This includes parsing either from files or from other streams (strings, etc.).
+ */
 namespace Parser
 {
 
