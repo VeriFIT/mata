@@ -124,6 +124,8 @@ public:   // Public methods
         Util::sort_and_rmdupl(vec_);
     }
 
+    explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
+
     OrdVector(std::initializer_list<Key> list) :
         vec_(list)
     {
