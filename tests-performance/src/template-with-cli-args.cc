@@ -15,15 +15,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int main(int argc, char *argv[])
-{
-    if (argc != 2) {
-        std::cerr << "Input file missing\n";
-        return EXIT_FAILURE;
-    }
-
-    std::string filename = argv[1];
-
+int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -31,8 +23,6 @@ int main(int argc, char *argv[])
     }
 
     Mata::Parser::Parsed parsed;
-    Nfa aut;
-    Mata::StringToSymbolMap stsm;
     const std::string nfa_str = "NFA";
     const std::string bits_str = "-bits";
     try {
@@ -41,7 +31,7 @@ int main(int argc, char *argv[])
 
         if (parsed.size() != 1) {
             throw std::runtime_error(
-                "The number of sections in the input file is not 1\n");
+                    "The number of sections in the input file is not 1\n");
         }
         if (parsed[0].type.compare(0, nfa_str.length(), nfa_str) != 0) {
             throw std::runtime_error("The type of input automaton is not NFA\n");
@@ -61,10 +51,27 @@ int main(int argc, char *argv[])
             aut = construct(mintermized[0], &stsm);
             std::cout << "mintermization:" << elapsed.count() << "\n";
         }
+        return EXIT_SUCCESS;
     }
     catch (const std::exception& ex) {
         fs.close();
         std::cerr << "error: " << ex.what() << "\n";
+        return EXIT_FAILURE;
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    if (argc != 2) {
+        std::cerr << "Input file missing\n";
+        return EXIT_FAILURE;
+    }
+
+    std::string filename = argv[1];
+
+    Nfa aut;
+    Mata::StringToSymbolMap stsm;
+    if (load_automaton(filename, aut, stsm) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
