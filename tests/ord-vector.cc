@@ -57,3 +57,41 @@ TEST_CASE("Mata::Util::OrdVector::intersection(}")
         REQUIRE(set1.intersection(set2).empty());
     }
 }
+
+TEST_CASE("Mata::Util::OrdVector::difference()") {
+    using OrdVectorT = OrdVector<int>;
+    OrdVectorT set1{};
+    OrdVectorT set2{};
+
+    SECTION("Empty sets") {
+        CHECK(set1.difference(set2).empty());
+    }
+
+    SECTION("Empty rhs set") {
+        set1 = { 1, 2, 3 };
+        CHECK(set1.difference(set2) == set1);
+    }
+
+    SECTION("Empty lhs set") {
+        set2 = { 1, 2, 3 };
+        CHECK(set1.difference(set2).empty());
+    }
+
+    SECTION("filled sets") {
+        set1 = { 1, 2, 3 };
+        set2 = { 1, 2, 3 };
+        CHECK(set1.difference(set2).empty());
+
+        set1 = { 1, 2, 3 };
+        set2 = { 1, 3 };
+        CHECK(set1.difference(set2) == Mata::Util::OrdVector<int>{ 2 });
+
+        set1 = { 1, 3 };
+        set2 = { 1, 2, 3 };
+        CHECK(set1.difference(set2).empty());
+
+        set1 = { 1, 2, 3 };
+        set2 = { 3 };
+        CHECK(set1.difference(set2) == Mata::Util::OrdVector<int>{ 1, 2 });
+    }
+}

@@ -281,6 +281,38 @@ public:   // Public methods
         return 0;
     }
 
+    /**
+     * Compute set difference as @c this minus @p rhs.
+     * @param rhs Other vector with symbols to be excluded.
+     * @return @c this minus @p rhs.
+     */
+    OrdVector difference(const OrdVector& rhs) const {
+        assert(vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        OrdVector result{};
+        auto lhs_it{ vec_.begin() };
+        auto rhs_it{ rhs.begin() };
+
+        while ((lhs_it != vec_.end())) {
+            if (rhs_it == rhs.end()) {
+                result.push_back(*lhs_it);
+                ++lhs_it;
+            } else if (*lhs_it == *rhs_it) {
+                ++lhs_it;
+                ++rhs_it;
+            } else if (*lhs_it < *rhs_it) {
+                result.push_back(*lhs_it);
+                ++lhs_it;
+            } else if (*lhs_it > *rhs_it) {
+                ++rhs_it;
+            }
+        }
+
+        assert(result.vectorIsSorted());
+        return result;
+    }
+
     OrdVector intersection(const OrdVector& rhs) const
     {
         // Assertions
@@ -319,9 +351,7 @@ public:   // Public methods
         return result;
     }
 
-    //TODO: why are some method names capitalised?
-    OrdVector Union(const OrdVector& rhs) const
-    {
+    OrdVector Union(const OrdVector& rhs) const {
         // Assertions
         assert(vectorIsSorted());
         assert(rhs.vectorIsSorted());
