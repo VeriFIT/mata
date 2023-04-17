@@ -28,7 +28,7 @@ Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
 
 Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& symbols) const {
     Mata::Util::OrdVector<Symbol> symbols_alphabet{};
-    symbols_alphabet.resize(symbol_map.size());
+    symbols_alphabet.reserve(symbol_map.size());
     for (const auto& str_sym_pair : symbol_map) {
         symbols_alphabet.insert(str_sym_pair.second);
     }

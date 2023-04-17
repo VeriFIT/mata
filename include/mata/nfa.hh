@@ -234,7 +234,7 @@ struct Post : private Util::OrdVector<Move> {
     // is adding this non-const version ok?
     inline Move& back() { return Util::OrdVector<Move>::back(); }
 
-    inline void resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
+    inline void reserve(size_t size) override { Util::OrdVector<Move>::reserve(size); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 

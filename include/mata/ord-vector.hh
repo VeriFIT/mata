@@ -194,8 +194,8 @@ public:   // Public methods
         vec_.emplace_back(x);
     }
 
-    virtual inline void resize(size_t  size) {
-        vec_.resize(size);
+    virtual inline void reserve(size_t  size) {
+        vec_.reserve(size);
     }
 
     virtual inline void erase(const_iterator first, const_iterator last) {

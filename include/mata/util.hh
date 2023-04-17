@@ -454,7 +454,7 @@ void defragment(Vector & vec, const std::vector<Index> & renaming) {
             vec[i] = std::move(vec[renaming[i]]);
         }
     }
-    vec.resize(i);
+        vec.reserve(i);
 }
 
 //In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
@@ -480,7 +480,7 @@ void filter_indexes(Vector & vec, F && is_staying) {
             last++;
         }
     }
-    vec.resize(last);
+    vec.reserve(last);
 }
 
 template<class Vector, typename F>
@@ -496,7 +496,7 @@ void filter(Vector & vec, F && is_staying) {
             last++;
         }
     }
-    vec.resize(last);
+    vec.reserve(last);
 }
 
     template<class Vector>
@@ -511,7 +511,7 @@ void filter(Vector & vec, F && is_staying) {
 
         // remove duplicates
         auto it = std::unique(vec.begin(), vec.end());
-        vec.resize(it - vec.begin());
+        vec.reserve(it - vec.begin());
     }
 }
 }
