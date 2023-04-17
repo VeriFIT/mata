@@ -255,8 +255,7 @@ public:   // Public methods
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
 
-        OrdVector result = this->Union(vec);
-        vec_ = result.vec_;
+        vec_ = OrdVector::Union(*this, vec).vec_;
 
         // Assertions
         assert(vectorIsSorted());
@@ -288,121 +287,11 @@ public:   // Public methods
      * @param rhs Other vector with symbols to be excluded.
      * @return @c this minus @p rhs.
      */
-    OrdVector difference(const OrdVector& rhs) const {
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+    OrdVector difference(const OrdVector& rhs) const { return difference(*this, rhs); }
 
-        OrdVector result{};
-        auto lhs_it{ vec_.begin() };
-        auto rhs_it{ rhs.begin() };
+    OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
-        while ((lhs_it != vec_.end())) {
-            if (rhs_it == rhs.end()) {
-                result.push_back(*lhs_it);
-                ++lhs_it;
-            } else if (*lhs_it == *rhs_it) {
-                ++lhs_it;
-                ++rhs_it;
-            } else if (*lhs_it < *rhs_it) {
-                result.push_back(*lhs_it);
-                ++lhs_it;
-            } else if (*lhs_it > *rhs_it) {
-                ++rhs_it;
-            }
-        }
-
-        assert(result.vectorIsSorted());
-        return result;
-    }
-
-    OrdVector intersection(const OrdVector& rhs) const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
-
-        VectorType newVector{};
-
-        auto lhsIt = vec_.begin();
-        auto rhsIt = rhs.vec_.begin();
-
-        while ((lhsIt != vec_.end()) && (rhsIt != rhs.vec_.end()))
-        {	// until we get to the end of both vectors
-            if (*lhsIt == *rhsIt)
-            {
-                newVector.push_back(*lhsIt);
-
-                ++lhsIt;
-                ++rhsIt;
-            }
-            else if (*lhsIt < *rhsIt)
-            {
-                ++lhsIt;
-            }
-            else if (*rhsIt < *lhsIt)
-            {
-                ++rhsIt;
-            }
-        }
-
-        OrdVector result(newVector);
-
-        // Assertions
-        assert(result.vectorIsSorted());
-
-        return result;
-    }
-
-    OrdVector Union(const OrdVector& rhs) const {
-        // Assertions
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
-
-        VectorType newVector;
-
-        auto lhsIt = vec_.begin();
-        auto rhsIt = rhs.vec_.begin();
-
-        while ((lhsIt != vec_.end()) || (rhsIt != rhs.vec_.end()))
-        {	// until we get to the end of both vectors
-            if (lhsIt == vec_.end())
-            {	// if we are finished with the left-hand side vector
-                newVector.push_back(*rhsIt);
-                ++rhsIt;
-            }
-            else if (rhsIt == rhs.vec_.end())
-            {	// if we are finished with the right-hand side vector
-                newVector.push_back(*lhsIt);
-                ++lhsIt;
-            }
-            else
-            {
-                if (*lhsIt < *rhsIt)
-                {
-                    newVector.push_back(*lhsIt);
-                    ++lhsIt;
-                }
-                else if (*rhsIt < *lhsIt)
-                {
-                    newVector.push_back(*rhsIt);
-                    ++rhsIt;
-                }
-                else
-                {	// in case they are equal
-                    newVector.push_back(*rhsIt);
-                    ++rhsIt;
-                    ++lhsIt;
-                }
-            }
-        }
-
-        OrdVector result(newVector);
-
-        // Assertions
-        assert(result.vectorIsSorted());
-
-        return result;
-    }
+    OrdVector Union(const OrdVector& rhs) const { return Union(*this, rhs); }
 
     //TODO: this code of find was duplicated, not nice.
     // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
@@ -568,6 +457,94 @@ public:   // Public methods
 
     // Renames numbers in the vector according to the renaming, q becomes renaming[q].
    void rename(const std::vector<Key> & renaming) { Util::rename(vec_,renaming); }
+
+
+    static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
+        assert(lhs.vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        OrdVector result{};
+        auto lhs_it{ lhs.begin() };
+        auto rhs_it{ rhs.begin() };
+
+        while ((lhs_it != lhs.end())) {
+            if (rhs_it == rhs.end()) {
+                result.push_back(*lhs_it);
+                ++lhs_it;
+            } else if (*lhs_it == *rhs_it) {
+                ++lhs_it;
+                ++rhs_it;
+            } else if (*lhs_it < *rhs_it) {
+                result.push_back(*lhs_it);
+                ++lhs_it;
+            } else if (*lhs_it > *rhs_it) {
+                ++rhs_it;
+            }
+        }
+
+        assert(result.vectorIsSorted());
+        return result;
+    }
+
+    static OrdVector Union(const OrdVector& lhs, const OrdVector& rhs) {
+        assert(lhs.vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        OrdVector result;
+
+        auto lhs_it = lhs.begin();
+        auto rhs_it = rhs.vec_.begin();
+
+        while ((lhs_it != lhs.end()) || (rhs_it != rhs.end())) { // Until we get to the end of both vectors.
+            if (lhs_it == lhs.end()) { // If we are finished with the left-hand side vector.
+                result.push_back(*rhs_it);
+                ++rhs_it;
+            } else if (rhs_it == rhs.end()) { // If we are finished with the right-hand side vector.
+                result.push_back(*lhs_it);
+                ++lhs_it;
+            } else {
+                if (*lhs_it < *rhs_it) {
+                    result.push_back(*lhs_it);
+                    ++lhs_it;
+                } else if (*rhs_it < *lhs_it) {
+                    result.push_back(*rhs_it);
+                    ++rhs_it;
+                } else { // In case they are equal.
+                    result.push_back(*rhs_it);
+                    ++rhs_it;
+                    ++lhs_it;
+                }
+            }
+        }
+
+        assert(result.vectorIsSorted());
+        return result;
+    }
+
+    static OrdVector intersection(const OrdVector& lhs, const OrdVector& rhs) {
+        assert(lhs.vectorIsSorted());
+        assert(rhs.vectorIsSorted());
+
+        OrdVector result{};
+
+        auto lhs_it = lhs.begin();
+        auto rhs_it = rhs.vec_.begin();
+
+        while ((lhs_it != lhs.end()) && (rhs_it != rhs.end())) {	// Until we get to the end of both vectors.
+            if (*lhs_it == *rhs_it) {
+                result.push_back(*lhs_it);
+                ++lhs_it;
+                ++rhs_it;
+            } else if (*lhs_it < *rhs_it) {
+                ++lhs_it;
+            } else if (*rhs_it < *lhs_it) {
+                ++rhs_it;
+            }
+        }
+
+        assert(result.vectorIsSorted());
+        return result;
+    }
 }; // Class OrdVector.
 
 } // Namespace Mata::Util.
