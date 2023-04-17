@@ -64,8 +64,8 @@ namespace Mata {
             } // }}}
 
             /// complement of a set of symbols wrt the alphabet
-            virtual std::list<Symbol> get_complement(const std::set<Symbol> &syms) const { // {{{
-                (void) syms;
+            virtual Util::OrdVector<Symbol> get_complement(const std::set<Symbol> &symbols) const { // {{{
+                (void) symbols;
                 throw std::runtime_error("Unimplemented");
             } // }}}
 
@@ -126,9 +126,9 @@ namespace Mata {
                 throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
             }
 
-            std::list<Symbol> get_complement(const std::set<Symbol> &syms) const override {
-                (void) syms;
-                throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
+            Util::OrdVector<Symbol> get_complement(const std::set<Symbol> &symbols) const override {
+                (void) symbols;
+                throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
             }
 
             IntAlphabet(const IntAlphabet &) = default;
@@ -192,7 +192,7 @@ namespace Mata {
                 : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
 
         Util::OrdVector<Symbol> get_alphabet_symbols() const override;
-        std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+        Util::OrdVector<Symbol> get_complement(const std::set<Symbol>& symbols) const override;
 
         std::string reverse_translate_symbol(const Symbol symbol) const override {
             for (const auto& symbol_mapping: symbol_map) {

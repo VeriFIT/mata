@@ -710,7 +710,7 @@ bool Mata::Nfa::make_complete(
 
     auto num_of_states = aut.size();
     for (State state = 0; state < num_of_states; ++state) {
-        std::set<Symbol> used_symbols;
+        std::set<Symbol> used_symbols{};
         for (auto const &move : aut.delta[state]) {
             used_symbols.insert(move.symbol);
         }
@@ -1953,7 +1953,7 @@ void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alpha
     }
 }
 
-void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) {
+void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) const {
     size_t aut_num_of_states{size() };
     for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const auto& state_transitions: delta[state]) {
