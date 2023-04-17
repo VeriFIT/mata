@@ -64,7 +64,7 @@ namespace Mata {
             } // }}}
 
             /// complement of a set of symbols wrt the alphabet
-            virtual Util::OrdVector<Symbol> get_complement(const std::set<Symbol> &symbols) const { // {{{
+            virtual Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const { // {{{
                 (void) symbols;
                 throw std::runtime_error("Unimplemented");
             } // }}}
@@ -126,7 +126,7 @@ namespace Mata {
                 throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
             }
 
-            Util::OrdVector<Symbol> get_complement(const std::set<Symbol> &symbols) const override {
+            Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
                 (void) symbols;
                 throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
             }
@@ -186,7 +186,7 @@ namespace Mata {
         EnumAlphabet(EnumAlphabet&& rhs) = default;
 
         Util::OrdVector<Symbol> get_alphabet_symbols() const override { return m_symbols; }
-        Util::OrdVector<Symbol> get_complement(const std::set<Symbol>& symbols) const override {
+        Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
             return m_symbols.difference(Util::OrdVector<Symbol>{ symbols });
         }
 
@@ -227,8 +227,7 @@ namespace Mata {
 
         EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
-        Symbol translate_symb(const std::string& str) override
-        {
+        Symbol translate_symb(const std::string& str) override {
             Symbol symbol;
             std::istringstream stream{ str };
             stream >> symbol;
@@ -311,10 +310,10 @@ namespace Mata {
         }
     }; // class EnumAlphabet.
 
-/**
- * An alphabet constructed 'on the fly'.
- * Should be use anytime the automata have a specific names for the symbols.
- */
+    /**
+     * An alphabet constructed 'on the fly'.
+     * Should be use anytime the automata have a specific names for the symbols.
+     */
     class OnTheFlyAlphabet : public Alphabet {
     public:
         using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
@@ -334,7 +333,7 @@ namespace Mata {
                 : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
 
         Util::OrdVector<Symbol> get_alphabet_symbols() const override;
-        Util::OrdVector<Symbol> get_complement(const std::set<Symbol>& symbols) const override;
+        Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override;
 
         std::string reverse_translate_symbol(const Symbol symbol) const override {
             for (const auto& symbol_mapping: symbol_map) {

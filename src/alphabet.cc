@@ -26,13 +26,13 @@ Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_alphabet_symbols() const {
     return result;
 } // OnTheFlyAlphabet::get_alphabet_symbols.
 
-Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const std::set<Symbol>& symbols) const {
+Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const Mata::Util::OrdVector<Symbol>& symbols) const {
     Mata::Util::OrdVector<Symbol> symbols_alphabet{};
     symbols_alphabet.reserve(symbol_map.size());
     for (const auto& str_sym_pair : symbol_map) {
         symbols_alphabet.insert(str_sym_pair.second);
     }
-    return symbols_alphabet.difference(Mata::Util::OrdVector<Symbol>{ symbols });
+    return symbols_alphabet.difference(symbols);
 }
 
 void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {

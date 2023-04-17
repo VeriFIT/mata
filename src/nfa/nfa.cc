@@ -710,7 +710,7 @@ bool Mata::Nfa::make_complete(
 
     auto num_of_states = aut.size();
     for (State state = 0; state < num_of_states; ++state) {
-        std::set<Symbol> used_symbols{};
+        OrdVector<Symbol> used_symbols{};
         for (auto const &move : aut.delta[state]) {
             used_symbols.insert(move.symbol);
         }
