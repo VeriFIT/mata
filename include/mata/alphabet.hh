@@ -202,7 +202,7 @@ namespace Mata {
 
     public:
         /**
-         * @brief Expand alphabet by symbols from the passed @p symbol_names.
+         * @brief Expand alphabet by symbols from the passed @p symbols.
          *
          * Adding a symbol name which already exists will throw an exception.
          * @param[in] symbols Vector of symbols to add.
