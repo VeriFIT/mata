@@ -72,16 +72,16 @@ TEST_CASE("Mata::EnumAlphabet") {
     CHECK(!alphabet.is_equal(alphabet2));
     CHECK(alphabet.get_complement({}).empty());
 
-    CHECK(alphabet.add_new_symbol(1));
-    CHECK(alphabet.add_new_symbol(1));
+    CHECK_NOTHROW(alphabet.add_new_symbol(1));
+    CHECK_NOTHROW(alphabet.add_new_symbol(1));
 
     CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{ 1 });
     CHECK(alphabet.get_number_of_symbols() == 1);
     CHECK(alphabet.get_next_value() == 2);
     CHECK(alphabet.get_complement({}) == OrdVector<Symbol>{ 1 });
 
-    CHECK(alphabet.add_new_symbol(2));
-    CHECK(alphabet.add_new_symbol(3));
+    CHECK_NOTHROW(alphabet.add_new_symbol(2));
+    CHECK_NOTHROW(alphabet.add_new_symbol(3));
 
     CHECK(alphabet.get_alphabet_symbols() == OrdVector<Symbol>{ 1, 2, 3 });
     CHECK(alphabet.get_number_of_symbols() == 3);
