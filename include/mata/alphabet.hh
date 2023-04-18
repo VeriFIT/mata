@@ -187,7 +187,7 @@ namespace Mata {
 
         Util::OrdVector<Symbol> get_alphabet_symbols() const override { return m_symbols; }
         Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
-            return m_symbols.difference(Util::OrdVector<Symbol>{ symbols });
+            return m_symbols.difference(symbols);
         }
 
         std::string reverse_translate_symbol(const Symbol symbol) const override {
