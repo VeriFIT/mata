@@ -6,11 +6,11 @@
 
 #include "tests-nfa-util.hh"
 
-#include <mata/nfa.hh>
-#include <mata/nfa-plumbing.hh>
-#include <mata/nfa-strings.hh>
-#include <mata/nfa-algorithms.hh>
-#include <mata/re2parser.hh>
+#include "mata/nfa.hh"
+#include "mata/nfa-plumbing.hh"
+#include "mata/nfa-strings.hh"
+#include "mata/nfa-algorithms.hh"
+#include "mata/re2parser.hh"
 
 using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;

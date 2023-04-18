@@ -1,7 +1,7 @@
 #include "../3rdparty/catch.hpp"
 
-#include <mata/nfa.hh>
-#include <mata/re2parser.hh>
+#include "mata/nfa.hh"
+#include "mata/re2parser.hh"
 using namespace Mata::Nfa;
 
 using Symbol = Mata::Symbol;

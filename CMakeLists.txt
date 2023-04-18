@@ -88,6 +88,7 @@ add_subdirectory(cli)
 add_subdirectory(3rdparty/re2)
 add_subdirectory(3rdparty/simlib)
 add_subdirectory(3rdparty/cudd)
+add_subdirectory(tests)
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")

@@ -18,8 +18,8 @@
 #include "catch.hpp"
 #include "mata/inter-aut.hh"
 
-#include <mata/parser.hh>
-#include <mata/util.hh>
+#include "mata/parser.hh"
+#include "mata/util.hh"
 
 using namespace Mata::Parser;
 using namespace Mata::Util;
@@ -784,7 +784,7 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(final_states.count("7"));
         REQUIRE(final_states.count("8"));
     }
-	
+
     SECTION("NFA - final states from one negation")
     {
         std::string file =

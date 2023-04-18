@@ -66,29 +66,11 @@ add_library(libmata STATIC
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
 	rra/rrt.cc
-        nfa/tests-nfa-profiling.cc)
+)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
   CLEAN_DIRECT_OUTPUT 1
-)
-
-add_executable(tests
-	tests-ord-vector.cc
-	tests-number-predicate.cc
-	tests-synchronized-iterator.cc
-	tests-main.cc
-	tests-parser.cc
-	tests-re2parser.cc
-	tests-mintermization.cc
-	afa/tests-afa.cc
-	nfa/tests-nfa.cc
-	nfa/tests-nfa-concatenation.cc
-	nfa/tests-nfa-intersection.cc
-	strings/tests-nfa-noodlification.cc
-	strings/tests-nfa-segmentation.cc
-	strings/tests-nfa-string-solving.cc
-	rra/tests-rrt.cc
 )
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -97,46 +79,9 @@ endif()
 
 add_dependencies(libmata cudd re2 simlib)
 target_link_libraries(libmata simlib cudd)
-target_link_libraries(tests libmata re2 simlib cudd)
-include(Catch)
-catch_discover_tests(tests)
-add_custom_command(
-	TARGET tests POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/unit-test-data
-	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
-)
 
 add_custom_command(TARGET libmata POST_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/merge_static_libraries.sh libcombined.a ${CMAKE_BINARY_DIR}/src/libmata.a
 		${CMAKE_BINARY_DIR}/3rdparty/simlib/libsimlib.a ${CMAKE_BINARY_DIR}/3rdparty/re2/libre2.a
 		${CMAKE_BINARY_DIR}/3rdparty/cudd/libcudd.a
 		COMMAND mv ${CMAKE_BINARY_DIR}/src/libcombined.a ${CMAKE_BINARY_DIR}/src/libmata.a)
-
-if(FALSE)
-
-# problems with valgrind under appleOS
-if(NOT APPLE)
-	add_test(
-		NAME "catch_tests_valgrind"
-		COMMAND ${VALGRIND_PROGRAM}
-			--tool=memcheck
-			--leak-check=yes
-			--show-reachable=yes
-			--error-exitcode=1
-			${CMAKE_CURRENT_BINARY_DIR}/tests
-	)
-else()    # for appleOS
-	add_test(
-		NAME "catch_tests_valgrind"
-		COMMAND ${VALGRIND_PROGRAM}
-			--tool=memcheck
-			--leak-check=yes
-			--show-reachable=yes
-			--error-exitcode=1
-			--suppressions=${CMAKE_SOURCE_DIR}/darwin17-7.suppressions
-			--gen-suppressions=all
-			${CMAKE_CURRENT_BINARY_DIR}/tests
-	)
-endif()
-
-endif()

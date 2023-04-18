@@ -4,7 +4,7 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <mata/nfa.hh>
+#include "mata/nfa.hh"
 
 using namespace Mata::Util;
 using namespace Mata::Nfa;

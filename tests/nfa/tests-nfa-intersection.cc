@@ -20,7 +20,7 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <mata/nfa.hh>
+#include "mata/nfa.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Util;
