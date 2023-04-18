@@ -181,6 +181,14 @@ namespace Mata {
      *
      * Therefore, calling member functions @c get_complement() and @c get_alphabet_symbols() makes sense in the context
      *  of @c EnumAlphabet and the functions give the expected results.
+     *
+     *  Example:
+     *  ```cpp
+     *  Alphabet alph{ EnumAlphabet{ 0, 4, 6, 8, 9 } };
+     *  CHECK(alph.translate_symb("6") == 6);
+     *  CHECK_THROWS(alph.translate_symb("5")); // Throws an exception about an unknown symbol.
+     *  CHECK(alph.get_complement({ Util::OrdVector<Symbol>{ 0, 6, 9 } }) == Util::OrdVector<Symbol>{ 4, 8 });
+     *  ```
      */
     class EnumAlphabet : public Alphabet {
     public:
