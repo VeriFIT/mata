@@ -90,4 +90,9 @@ TEST_CASE("Mata::EnumAlphabet") {
 
     CHECK_NOTHROW(alphabet.add_symbols_from(alphabet2));
     CHECK(alphabet.get_alphabet_symbols() == alphabet2.get_alphabet_symbols());
+
+    CHECK_THROWS(alphabet.translate_symb("3414"));
+    CHECK(alphabet.translate_symb("1") == 1);
+    CHECK_THROWS(alphabet.translate_symb("3414not a number"));
+    CHECK_THROWS(alphabet.translate_symb("not a number"));
 }

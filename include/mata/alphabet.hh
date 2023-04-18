@@ -115,6 +115,9 @@ namespace Mata {
                 Symbol symbol;
                 std::istringstream stream{ symb };
                 stream >> symbol;
+                if (stream.fail() || !stream.eof()) {
+                    throw std::runtime_error("Cannot translate string '" + symb + "' to symbol.");
+                }
                 return symbol;
             }
 
@@ -231,10 +234,14 @@ namespace Mata {
             Symbol symbol;
             std::istringstream stream{ str };
             stream >> symbol;
-            return symbol;
+            if (stream.fail() || !stream.eof()) {
+                throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
+            }
+            if (m_symbols.find(symbol) == m_symbols.end()) {
+                throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
+            }
 
-            // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
-            //  the alphabet should have only the previously fixed symbols?
+            return symbol;
         }
 
         std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override {
