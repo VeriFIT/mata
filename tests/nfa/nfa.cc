@@ -4,7 +4,7 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include "tests-nfa-util.hh"
+#include "nfa-util.hh"
 
 #include "mata/nfa.hh"
 #include "mata/nfa-plumbing.hh"

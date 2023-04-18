@@ -46,22 +46,22 @@ include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
 add_executable(tests
-		tests-ord-vector.cc
-		tests-number-predicate.cc
-		tests-synchronized-iterator.cc
-		tests-main.cc
-		tests-parser.cc
-		tests-re2parser.cc
-		tests-mintermization.cc
-		afa/tests-afa.cc
-		nfa/tests-nfa.cc
-		nfa/tests-nfa-concatenation.cc
-		nfa/tests-nfa-intersection.cc
-		nfa/tests-nfa-profiling.cc
-		strings/tests-nfa-noodlification.cc
-		strings/tests-nfa-segmentation.cc
-		strings/tests-nfa-string-solving.cc
-		rra/tests-rrt.cc
+		ord-vector.cc
+		number-predicate.cc
+        synchronized-iterator.cc
+		main.cc
+		parser.cc
+		re2parser.cc
+		mintermization.cc
+		afa/afa.cc
+		nfa/nfa.cc
+		nfa/nfa-concatenation.cc
+		nfa/nfa-intersection.cc
+		nfa/nfa-profiling.cc
+		strings/nfa-noodlification.cc
+		strings/nfa-segmentation.cc
+		strings/nfa-string-solving.cc
+		rra/rrt.cc
 )
 
 target_link_libraries(tests libmata re2 simlib cudd)
