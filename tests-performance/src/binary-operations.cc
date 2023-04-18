@@ -4,6 +4,8 @@
  */
 #include <mata/inter-aut.hh>
 #include <mata/nfa.hh>
+#include <mata/nfa-plumbing.hh>
+#include <mata/nfa-algorithms.hh>
 #include <mata/mintermization.hh>
 #include <iostream>
 #include <iomanip>
@@ -16,7 +18,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm) {
+int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm, std::string aut_name) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -50,7 +52,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
             std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
             aut = construct(mintermized[0], &stsm);
-            std::cout << "mintermization:" << elapsed.count() << "\n";
+            std::cout << "mintermization-" << aut_name<< ":" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;
     }
@@ -63,35 +65,64 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
 
 int main(int argc, char *argv[])
 {
-    if (argc != 2) {
-        std::cerr << "Input file missing\n";
+    if (argc != 3) {
+        std::cerr << "Input files missing\n";
         return EXIT_FAILURE;
     }
 
-    std::string filename = argv[1];
+    std::string lhs_filename = argv[1];
+    std::string rhs_filename = argv[2];
 
-    Nfa aut;
-    Mata::StringToSymbolMap stsm;
-    if (load_automaton(filename, aut, stsm) != EXIT_SUCCESS) {
+    Nfa lhs;
+    Nfa rhs;
+    Mata::StringToSymbolMap lhs_stsm;
+    Mata::StringToSymbolMap rhs_stsm;
+    if (load_automaton(lhs_filename, lhs, lhs_stsm, "lhs") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
+    if (load_automaton(rhs_filename, rhs, rhs_stsm, "rhs") != EXIT_SUCCESS) {
+        return EXIT_FAILURE;
+    }
+
+    Mata::OnTheFlyAlphabet alph{ lhs_stsm };
+    alph.add_symbols_from(rhs_stsm);
 
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    Mata::OnTheFlyAlphabet alph{ stsm };
+    Nfa intersect_aut;
     auto start = std::chrono::system_clock::now();
-
-    /**************************************************
-     *  HERE COMES YOUR CODE THAT YOU WANT TO PROFILE *
-     *   - Use alphabet alph as source alphabet       *
-     *   - Use Nfa aut as source automaton            *
-     *   - e.g. complement(aut, alph);                *
-     **************************************************/
-
+    Mata::Nfa::Plumbing::intersection(&intersect_aut, lhs, rhs);
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "time: " << elapsed.count() << "\n";
+    std::cout << "intersection: " << elapsed.count() << "\n";
+
+    Nfa concat_aut;
+    start = std::chrono::system_clock::now();
+    Mata::Nfa::Plumbing::concatenate(&concat_aut, lhs, rhs);
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "concatenation: " << elapsed.count() << "\n";
+
+    Nfa union_aut;
+    start = std::chrono::system_clock::now();
+    Mata::Nfa::Plumbing::uni(&union_aut, lhs, rhs);
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "union: " << elapsed.count() << "\n";
+
+    start = std::chrono::system_clock::now();
+    Mata::Nfa::Algorithms::is_included_naive(lhs, rhs, &alph);
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "naive-inclusion: " << elapsed.count() << "\n";
+
+    start = std::chrono::system_clock::now();
+    Mata::Nfa::Algorithms::is_included_antichains(lhs, rhs, &alph);
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "antichain-inclusion: " << elapsed.count() << "\n";
+
 
     return EXIT_SUCCESS;
 }

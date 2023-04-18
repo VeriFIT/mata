@@ -1,5 +1,6 @@
 #include <mata/nfa.hh>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <chrono>
 #include <string>
@@ -9,6 +10,9 @@ using namespace Mata::Nfa;
 
 int main(int argc, char *argv[])
 {
+    // Setting precision of the times to fixed points and 4 decimal places
+    std::cout << std::fixed << std::setprecision(4);
+
     auto start = std::chrono::system_clock::now();
 
     /**************************************************

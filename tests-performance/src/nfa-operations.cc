@@ -77,21 +77,36 @@ int main(int argc, char *argv[])
     }
 
     // Setting precision of the times to fixed points and 4 decimal places
-    std::cout << std::fixed << std::setprecision(4);
+    std::cout << std::fixed << std::setprecision(5);
 
     Mata::OnTheFlyAlphabet alph{ stsm };
+    Nfa trimmed_aut = aut;
     auto start = std::chrono::system_clock::now();
-
-    /**************************************************
-     *  HERE COMES YOUR CODE THAT YOU WANT TO PROFILE *
-     *   - Use alphabet alph as source alphabet       *
-     *   - Use Nfa aut as source automaton            *
-     *   - e.g. complement(aut, alph);                *
-     **************************************************/
-
+    trimmed_aut.trim();
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
-    std::cout << "time: " << elapsed.count() << "\n";
+    std::cout << "trim: " << elapsed.count() << "\n";
+
+    Nfa trimmed_aut2 = aut;
+    start = std::chrono::system_clock::now();
+    trimmed_aut.trim_inplace();
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "trim-inplace: " << elapsed.count() << "\n";
+
+    Nfa trimmed_aut3 = aut;
+    start = std::chrono::system_clock::now();
+    trimmed_aut.trim_reverting();
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "trim-reverting: " << elapsed.count() << "\n";
+
+    Nfa trimmed_aut4 = aut;
+    start = std::chrono::system_clock::now();
+    trimmed_aut.get_trimmed_automaton();
+    end = std::chrono::system_clock::now();
+    elapsed = end - start;
+    std::cout << "get-trimmed-automaton: " << elapsed.count() << "\n";
 
     return EXIT_SUCCESS;
 }

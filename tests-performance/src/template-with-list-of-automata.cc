@@ -6,6 +6,7 @@
 #include <mata/nfa.hh>
 #include <mata/mintermization.hh>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <chrono>
 #include <string>
@@ -18,6 +19,9 @@ const bool SKIP_MINTERMIZATION = false;
 
 int main(int argc, char *argv[])
 {
+    // Setting precision of the times to fixed points and 4 decimal places
+    std::cout << std::fixed << std::setprecision(4);
+
     /**
      * NOTE: Comment out automata, that you do not want to process or add your own automata.
      */
