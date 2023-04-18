@@ -11,7 +11,6 @@
   * `template-with-cli.args.cc` contains basic template that takes file as an command line argument, parses the automaton
      and computes minterms.
   * `template-with-list-of-automata.cc` contains basic template that without arguments takes a hardcoded list of input 
-
      automata taken from `automata` directory; in case it is run with arguments, it reads the input files that contains
      paths to source automata. 
 4. `pycobench`: a performance testing script
@@ -26,9 +25,7 @@
 2. Find comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill your code.
 3. Run `make` from `src` or compile your binary.
 4. Run `callgrind` or custom profile on the binary.
-5. You can use one of the scripts:
-  * `scripts/run_callgrind.sh` to print top functions (exclusive time, greater than 1%)
-  * `scripts/run_massif.sh` to print memory peak in [B]
+5. Note, you can use one of the scripts (`scripts/run_callgrind.sh` or `scripts/run_massif.sh`)
 
 #### How to test performance
 
