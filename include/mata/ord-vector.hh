@@ -327,9 +327,16 @@ public:   // Public methods
      */
     inline void remove(Key k) {
         assert(vectorIsSorted());
-        auto found_values_range = std::equal_range(vec_.begin(), vec_.end(), k);
-        vec_.erase(found_values_range.first, found_values_range.second);
-        assert(vectorIsSorted());
+        auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
+        if (found_value_it != vec_.end()) {
+            if (*found_value_it == k) {
+                vec_.erase(found_value_it);
+                assert(vectorIsSorted());
+                return;
+            }
+        }
+
+        throw std::runtime_error("Key is not in OrdVector.");
     }
 
     virtual inline bool empty() const { return vec_.empty(); }
