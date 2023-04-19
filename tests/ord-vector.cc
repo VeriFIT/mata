@@ -17,8 +17,8 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <mata/util.hh>
-#include <mata/ord-vector.hh>
+#include "mata/util.hh"
+#include "mata/ord-vector.hh"
 
 using namespace Mata::Util;
 

@@ -2,7 +2,7 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <mata/rrt.hh>
+#include "mata/rrt.hh"
 using namespace Mata::Rrt;
 using namespace Mata::Util;
 using namespace Mata::Parser;

@@ -17,9 +17,9 @@
 
 #include "../3rdparty/catch.hpp"
 
-#include <mata/inter-aut.hh>
-#include <mata/mintermization.hh>
-#include <mata/parser.hh>
+#include "mata/inter-aut.hh"
+#include "mata/mintermization.hh"
+#include "mata/parser.hh"
 
 using namespace Mata::Parser;
 

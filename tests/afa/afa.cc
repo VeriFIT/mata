@@ -4,7 +4,7 @@
 
 #include <unordered_set>
 
-#include <mata/afa.hh>
+#include "mata/afa.hh"
 using namespace Mata::Afa;
 using namespace Mata::Util;
 using namespace Mata::Parser;
@@ -37,13 +37,13 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	REQUIRE(!c1.contains(Node{0}));
 	REQUIRE(!c2.contains(Node{0}));
 
-	c1.insert(Node{0, 1});    
+	c1.insert(Node{0, 1});
 	c2.insert(Node{0, 1});
 
 	REQUIRE(!c1.contains(Node{0}));
 	REQUIRE(c2.contains(Node{0}));
 
-	c1.insert(Node{0, 2});    
+	c1.insert(Node{0, 2});
 	c2.insert(Node{0, 2});
 
 	REQUIRE(c1.contains(Node{0, 1, 2}));
@@ -98,7 +98,7 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 
 	StateClosedSet c9 = StateClosedSet(Mata::upward_closed_set, 0, 4, Nodes());
 
-	c9.insert(Node{1, 4});    
+	c9.insert(Node{1, 4});
 	c9.insert(Node{1, 2, 3});
 
 	REQUIRE(c9.complement().antichain() == Nodes{{0, 1, 2}, {0, 1, 3}, {0, 2, 3, 4}});
@@ -113,9 +113,9 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	c10.insert(Node{2, 3});
 
 	REQUIRE(c10.complement().antichain() == Nodes{{0}, {1, 3}});
-	
+
 	REQUIRE(c10.type() == Mata::downward_closed_set);
-	c10 = c10.complement();	
+	c10 = c10.complement();
 	REQUIRE(c10.type() == Mata::upward_closed_set);
 
 	StateClosedSet c11 = StateClosedSet(Mata::downward_closed_set, 0, 3, Nodes());
@@ -622,7 +622,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         ++it;
         REQUIRE(it->count(state_map["QC0_0"]));
     }
-    
+
     SECTION("AFA with a simple initial formula, just disjunction")
     {
         std::string file =
@@ -644,7 +644,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         REQUIRE(aut.initialstates.size() == 2);
         REQUIRE(!antichain_concrete_forward_emptiness_test_new(aut));
     }
-    
+
     SECTION("AFA with a simple initial formula, just conjunction")
     {
         std::string file =
