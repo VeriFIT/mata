@@ -234,7 +234,7 @@ struct Post : private Util::OrdVector<Move> {
     // is adding this non-const version ok?
     inline Move& back() { return Util::OrdVector<Move>::back(); }
 
-    inline void resize(size_t size) override { Util::OrdVector<Move>::resize(size); }
+    inline void reserve(size_t size) override { Util::OrdVector<Move>::reserve(size); }
 
     void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
 
@@ -543,7 +543,7 @@ public:
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{}, Alphabet* alphabet = new IntAlphabet())
+                 const StateSet& final_states = StateSet{}, Alphabet* alphabet = nullptr)
         : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_requested_states(0) {}
 
     /**
@@ -882,7 +882,7 @@ public:
      *
      * The value of the already existing symbols will NOT be overwritten.
      */
-    void add_symbols_to(OnTheFlyAlphabet& alphabet);
+    void add_symbols_to(OnTheFlyAlphabet& alphabet) const;
 }; // struct Nfa.
 
 /**

@@ -64,8 +64,8 @@ namespace Mata {
             } // }}}
 
             /// complement of a set of symbols wrt the alphabet
-            virtual std::list<Symbol> get_complement(const std::set<Symbol> &syms) const { // {{{
-                (void) syms;
+            virtual Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const { // {{{
+                (void) symbols;
                 throw std::runtime_error("Unimplemented");
             } // }}}
 
@@ -113,8 +113,11 @@ namespace Mata {
 
             Symbol translate_symb(const std::string &symb) override {
                 Symbol symbol;
-                std::istringstream stream(symb);
+                std::istringstream stream{ symb };
                 stream >> symbol;
+                if (stream.fail() || !stream.eof()) {
+                    throw std::runtime_error("Cannot translate string '" + symb + "' to symbol.");
+                }
                 return symbol;
             }
 
@@ -126,9 +129,9 @@ namespace Mata {
                 throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
             }
 
-            std::list<Symbol> get_complement(const std::set<Symbol> &syms) const override {
-                (void) syms;
-                throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
+            Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
+                (void) symbols;
+                throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
             }
 
             IntAlphabet(const IntAlphabet &) = default;
@@ -169,10 +172,163 @@ namespace Mata {
             IntAlphabetSingleton &alphabet_instance;
         }; // class IntAlphabet.
 
-/**
- * An alphabet constructed 'on the fly'.
- * Should be use anytime the automata have a specific names for the symbols.
- */
+    /**
+     * Enumerated alphabet using a set of integers as symbols maintaining a set of specified symbols.
+     *
+     * @c EnumAlphabet is a version of direct (identity) alphabet (does not give names to symbols, their name is their
+     *  integer value directly). However, unlike @c IntAlphabet, @c EnumAlphabet maintains an ordered set of symbols in
+     *  the alphabet.
+     *
+     * Therefore, calling member functions @c get_complement() and @c get_alphabet_symbols() makes sense in the context
+     *  of @c EnumAlphabet and the functions give the expected results.
+     *
+     *  Example:
+     *  ```cpp
+     *  Alphabet alph{ EnumAlphabet{ 0, 4, 6, 8, 9 } };
+     *  CHECK(alph.translate_symb("6") == 6);
+     *  CHECK_THROWS(alph.translate_symb("5")); // Throws an exception about an unknown symbol.
+     *  CHECK(alph.get_complement({ Util::OrdVector<Symbol>{ 0, 6, 9 } }) == Util::OrdVector<Symbol>{ 4, 8 });
+     *  ```
+     */
+    class EnumAlphabet : public Alphabet {
+    public:
+        explicit EnumAlphabet() = default;
+        EnumAlphabet(const EnumAlphabet& rhs) = default;
+        EnumAlphabet(EnumAlphabet&& rhs) = default;
+
+        Util::OrdVector<Symbol> get_alphabet_symbols() const override { return m_symbols; }
+        Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
+            return m_symbols.difference(symbols);
+        }
+
+        std::string reverse_translate_symbol(const Symbol symbol) const override {
+            if (m_symbols.find(symbol) == m_symbols.end()) {
+                throw std::runtime_error("Symbol '" + std::to_string(symbol) + "' is out of range of enumeration.");
+            }
+            return std::to_string(symbol);
+        }
+
+    private:
+        EnumAlphabet& operator=(const EnumAlphabet& rhs);
+
+    public:
+        /**
+         * @brief Expand alphabet by symbols from the passed @p symbols.
+         *
+         * Adding a symbol name which already exists will throw an exception.
+         * @param[in] symbols Vector of symbols to add.
+         */
+        void add_symbols_from(const Mata::Util::OrdVector<Symbol>& symbols) { m_symbols.insert(symbols); }
+
+        /**
+         * @brief Expand alphabet by symbols from the passed @p alphabet.
+         *
+         * @param[in] symbols_to_add Vector of symbols to add.
+         */
+        void add_symbols_from(const EnumAlphabet& alphabet) { m_symbols.insert(alphabet.get_alphabet_symbols()); }
+
+        EnumAlphabet(std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
+
+        template <class InputIt>
+        EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
+            for (; first != last; ++first) {
+                add_new_symbol(*first);
+            }
+        }
+
+        EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
+
+        Symbol translate_symb(const std::string& str) override {
+            Symbol symbol;
+            std::istringstream stream{ str };
+            stream >> symbol;
+            if (stream.fail() || !stream.eof()) {
+                throw std::runtime_error("Cannot translate string '" + str + "' to symbol.");
+            }
+            if (m_symbols.find(symbol) == m_symbols.end()) {
+                throw std::runtime_error("Unknown symbol'" + str + "' to be translated to Symbol.");
+            }
+
+            return symbol;
+        }
+
+        std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override {
+            const size_t word_size{ word.size() };
+            std::vector<Symbol> translated_symbols;
+            Symbol symbol;
+            std::stringstream stream;
+            translated_symbols.reserve(word_size);
+            for (const auto& str_symbol: word) {
+                stream << str_symbol;
+                stream >> symbol;
+                if (m_symbols.find(symbol) == m_symbols.end()) {
+                    throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'");
+                }
+                translated_symbols.push_back(symbol);
+            }
+            return translated_symbols;
+        }
+
+        /**
+         * @brief Add new symbol to the alphabet with the value identical to its string representation.
+         *
+         * @param[in] symbol User-space representation of the symbol.
+         * @return Result of the insertion as @c InsertionResult.
+         */
+        void add_new_symbol(const std::string& symbol) {
+            std::istringstream str_stream{ symbol };
+            Symbol converted_symbol;
+            str_stream >> converted_symbol;
+            add_new_symbol(converted_symbol);
+        }
+
+        /**
+         * @brief Add new symbol to the alphabet.
+         *
+         * @param[in] key User-space representation of the symbol.
+         * @param[in] symbol Number of the symbol to be used on transitions.
+         * @return Result of the insertion as @c InsertionResult.
+         */
+        void add_new_symbol(Symbol symbol) {
+            m_symbols.insert(symbol);
+            update_next_symbol_value(symbol);
+        }
+
+        /**
+         * Get the next value for a potential new symbol.
+         * @return Next Symbol value.
+         */
+        Symbol get_next_value() const { return next_symbol_value; }
+
+        /**
+         * Get the number of existing symbols, epsilon symbols excluded.
+         * @return The number of symbols.
+         */
+        size_t get_number_of_symbols() const { return m_symbols.size(); }
+
+    private:
+        Mata::Util::OrdVector<Symbol> m_symbols{}; ///< Map of string transition symbols to symbol values.
+        Symbol next_symbol_value{ 0 }; ///< Next value to be used for a newly added symbol.
+
+    public:
+        /**
+         * @brief Update next symbol value when appropriate.
+         *
+         * When the newly inserted value is larger or equal to the current next symbol value, update the next symbol
+         *  value to a value one larger than the new value.
+         * @param value The value of the newly added symbol.
+         */
+        void update_next_symbol_value(Symbol value) {
+            if (next_symbol_value <= value) {
+                next_symbol_value = value + 1;
+            }
+        }
+    }; // class EnumAlphabet.
+
+    /**
+     * An alphabet constructed 'on the fly'.
+     * Should be use anytime the automata have a specific names for the symbols.
+     */
     class OnTheFlyAlphabet : public Alphabet {
     public:
         using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>; ///< Result of the insertion of a new symbol.
@@ -192,7 +348,7 @@ namespace Mata {
                 : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
 
         Util::OrdVector<Symbol> get_alphabet_symbols() const override;
-        std::list<Symbol> get_complement(const std::set<Symbol>& syms) const override;
+        Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override;
 
         std::string reverse_translate_symbol(const Symbol symbol) const override {
             for (const auto& symbol_mapping: symbol_map) {

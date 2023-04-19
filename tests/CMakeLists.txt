@@ -50,6 +50,7 @@ add_executable(tests
 		number-predicate.cc
 		synchronized-iterator.cc
 		main.cc
+		alphabet.cc
 		parser.cc
 		re2parser.cc
 		mintermization.cc

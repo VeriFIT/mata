@@ -71,23 +71,6 @@ TEST_CASE("Mata::Nfa::Trans::operator<<")
 } // }}}
 */
 
-TEST_CASE("Mata::Nfa::IntAlphabet") {
-    auto alphabet1 = IntAlphabet();
-    auto alphabet2 = IntAlphabet();
-    CHECK(alphabet1.is_equal(alphabet2));
-
-    auto& alphabet3 = alphabet2;
-    CHECK(alphabet3.is_equal(&alphabet1));
-    const auto& alphabet4 = alphabet2;
-    CHECK(alphabet4.is_equal(alphabet1));
-
-    OnTheFlyAlphabet different_alphabet{};
-    OnTheFlyAlphabet different_alphabet2{};
-    CHECK(!alphabet1.is_equal(different_alphabet));
-    CHECK(!different_alphabet.is_equal(different_alphabet2));
-    CHECK(different_alphabet.is_equal(&different_alphabet));
-}
-
 TEST_CASE("Mata::Nfa::create_alphabet()") {
     Nfa a{1};
     a.delta.add(0, 'a', 0);
@@ -105,30 +88,6 @@ TEST_CASE("Mata::Nfa::create_alphabet()") {
 
     //Mata::Nfa::create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
     //Mata::Nfa::create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
-}
-
-TEST_CASE("Mata::Nfa::OnTheFlyAlphabet::add_symbols_from()") {
-    OnTheFlyAlphabet alphabet{};
-    StringToSymbolMap symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
-    alphabet.add_symbols_from(symbol_map);
-
-    auto symbols{alphabet.get_alphabet_symbols() };
-    Mata::Util::OrdVector<Symbol> expected{ 4, 2, 10 };
-    CHECK(symbols == expected);
-    CHECK(alphabet.get_next_value() == 11);
-    CHECK(alphabet.get_symbol_map() == symbol_map);
-
-    symbol_map["a"] = 6;
-	symbol_map["e"] = 7;
-    alphabet.add_symbols_from(symbol_map);
-
-    symbols = alphabet.get_alphabet_symbols();
-	expected = Mata::Util::OrdVector<Symbol>{ 7, 4, 2, 10 };
-    CHECK(symbols == expected);
-    CHECK(alphabet.get_next_value() == 11);
-    CHECK(alphabet.get_symbol_map() == StringToSymbolMap{
-		{ "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
-	});
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
