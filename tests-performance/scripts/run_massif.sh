@@ -34,7 +34,9 @@ then
     branch=$(git rev-parse --abbrev-ref HEAD)
     head=$(git rev-parse --short HEAD)
     escaped_cmd=$(printf '%q' "${cmd//[\/ ]/-}")
-    outfile="massif.out.$branch-$head-$escaped_cmd"
+    massif_file="massif.out.$branch-$head-$escaped_cmd"
+    existing_no=$(ls -1 $massif_file.* | wc -l)
+    outfile="$massif_file.$existing_no"
 fi
 
 valgrind --tool=massif --pages-as-heap=yes --massif-out-file="$outfile" $cmd

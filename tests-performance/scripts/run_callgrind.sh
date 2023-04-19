@@ -34,7 +34,9 @@ then
     branch=$(git rev-parse --abbrev-ref HEAD)
     head=$(git rev-parse --short HEAD)
     escaped_cmd=$(printf '%q' "${cmd//[\/ ]/-}")
-    outfile="callgrind.out.$branch-$head-$escaped_cmd"
+    callgrind_file="callgrind.out.$branch-$head-$escaped_cmd"
+    existing_no=$(ls -1 $callgrind_file.* | wc -l)
+    outfile="$callgrind_file.$existing_no"
 fi
 
 valgrind --tool=callgrind --callgrind-out-file="$outfile" $cmd
