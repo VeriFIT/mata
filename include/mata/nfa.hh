@@ -47,7 +47,7 @@
  *   2. Algorithms (operations, checks, tests),
  *   3. Constructions.
  *
- * Other algorithms are including in Mata::Nfa::Plumbing (simplified API for, e.g., binding)
+ * Other algorithms are included in Mata::Nfa::Plumbing (simplified API for, e.g., binding)
  * and Mata::Nfa::Algorithms (concrete implementations of algorithms, such as for complement).
  */
 namespace Mata::Nfa {
