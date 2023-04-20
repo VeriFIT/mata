@@ -22,6 +22,12 @@
 #include <mata/nfa.hh>
 
 namespace Mata {
+
+    /**
+     * Parser from regular expression to automata (currently `Nfa` and `Afa` are supported).
+     *
+     * TODO: Is this even needed? Could we move this to Mata::Parser?
+     */
     namespace RE2Parser {
         void create_nfa(Nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, int epsilon_value = 306, bool use_reduction = true);
     }

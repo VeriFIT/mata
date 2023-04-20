@@ -28,6 +28,9 @@ namespace {
 }
 
 namespace Mata {
+/**
+ * NFA Algorithms usable for solving string constraints.
+ */
 namespace Strings {
     /**
      * Class mapping states to the shortest words accepted by languages of the states.
@@ -143,13 +146,13 @@ namespace Strings {
     Nfa::Nfa create_single_word_nfa(const std::vector<std::string>& word, Alphabet* alphabet = nullptr);
 
 /**
- * Operations on segment automata.
+ * Segment Automata including structs and algorithms.
+ *
+ * These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
+ * No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
+ * Segment automaton can have initial states only in the first segment and final states only in the last segment.
  */
 namespace SegNfa {
-    /// Segment automaton.
-    /// These are automata whose state space can be split into several segments connected by ε-transitions in a chain.
-    /// No other ε-transitions are allowed. As a consequence, no ε-transitions can appear in a cycle.
-    /// Segment automaton can have initial states only in the first segment and final states only in the last segment.
     using SegNfa = Nfa::Nfa;
     using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 

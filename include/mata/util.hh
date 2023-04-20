@@ -50,12 +50,31 @@
 #define DEBUG_VM_LOW_PRINT_LN(x) { PRINT_VERBOSE_LVL_LN(4, "debug VM", x); }
 #define WARN_PRINT(x) { PRINT_VERBOSE_LVL(1, "warning", x); }
 
+/**
+ * Main namespace including structs and algorithms for all automata.
+ *
+ * In particular, this includes:
+ *   1. Alphabets,
+ *   2. Formula graphs and nodes,
+ *   3. Mintermization,
+ *   4. Closed sets.
+ */
 namespace Mata
 {
 
 /// log verbosity
 extern unsigned LOG_VERBOSITY;
 
+/**
+ * Non-automata-related structures and algorithms.
+ *
+ * In particular, this includes:
+ *   1. Predicates,
+ *   2. Ordered Vectors,
+ *   3. Iterators,
+ *   4. Printers,
+ *   5. Other helper functions.
+ */
 namespace Util
 {
 
