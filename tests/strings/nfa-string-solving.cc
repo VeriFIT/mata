@@ -28,7 +28,6 @@ using namespace Mata::Strings;
 using namespace Mata::Strings::SegNfa;
 using namespace Mata::Util;
 using namespace Mata::Parser;
-using namespace Mata::RE2Parser;
 
 using Symbol = Mata::Symbol;
 using Word = std::vector<Symbol>;
