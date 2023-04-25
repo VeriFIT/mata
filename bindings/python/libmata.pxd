@@ -345,6 +345,6 @@ cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
     cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringMap&)
 
 
-cdef extern from "mata/re2parser.hh" namespace "Mata::RE2Parser":
+cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
     cdef void create_nfa(CNfa*, string) except +
     cdef void create_nfa(CNfa*, string, bool) except +

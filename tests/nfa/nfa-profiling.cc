@@ -7,7 +7,7 @@
 #include "mata/re2parser.hh"
 
 using namespace Mata::Nfa;
-using namespace Mata::RE2Parser;
+using namespace Mata::Parser;
 
 /////////////////////////////
 // Profiling revert and trim
@@ -32,7 +32,7 @@ TEST_CASE("Mata::Nfa::simple_revert() speed, simple ", "[.profiling]") {
 TEST_CASE("Mata::Nfa::simple_revert() speed, harder", "[.profiling]") {
     Nfa B;
 //this gives an interesting test case if the parser is not trimming and reducing
-    Mata::RE2Parser::create_nfa(&B, "((.*){10})*");
+    Mata::Parser::create_nfa(&B, "((.*){10})*");
     for (int i = 0; i < 200; i++) {
         B = simple_revert(B);
     }

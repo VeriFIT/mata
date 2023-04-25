@@ -12,7 +12,6 @@ using namespace Mata::Nfa;
 using namespace Mata::Strings;
 using namespace Mata::Util;
 using namespace Mata::Parser;
-using namespace Mata::RE2Parser;
 
 // Some common automata {{{
 

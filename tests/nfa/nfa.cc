@@ -18,7 +18,7 @@ using namespace Mata::Strings;
 using namespace Mata::Nfa::Plumbing;
 using namespace Mata::Util;
 using namespace Mata::Parser;
-using namespace Mata::RE2Parser;
+using namespace Mata::Parser;
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
@@ -1847,9 +1847,9 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     SECTION("a* != (a|b)*, was throwing exception")
     {
         Mata::Nfa::Nfa aut;
-        Mata::RE2Parser::create_nfa(&aut, "a*");
+        Mata::Parser::create_nfa(&aut, "a*");
         Mata::Nfa::Nfa aut2;
-        Mata::RE2Parser::create_nfa(&aut2, "(a|b)*");
+        Mata::Parser::create_nfa(&aut2, "(a|b)*");
         CHECK(!Mata::Nfa::are_equivalent(aut, aut2));
     }
 
@@ -2932,7 +2932,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
 
     SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
         Nfa aut;
-        Mata::RE2Parser::create_nfa(&aut, "a*b*");
+        Mata::Parser::create_nfa(&aut, "a*b*");
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
             aut.unify_final();

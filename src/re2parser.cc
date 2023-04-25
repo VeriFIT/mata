@@ -561,7 +561,7 @@ namespace {
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
  * @return mata::Nfa::Nfa corresponding to pattern
  */
-void Mata::RE2Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value, bool use_reduce) {
+void Mata::Parser::create_nfa(Nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, int epsilon_value, bool use_reduce) {
     if (nfa == nullptr) {
         throw std::runtime_error("create_nfa: nfa should not be NULL");
     }
