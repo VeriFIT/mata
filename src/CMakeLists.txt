@@ -65,7 +65,6 @@ add_library(libmata STATIC
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
-	rra/rrt.cc
 )
 
 set_target_properties(libmata PROPERTIES
