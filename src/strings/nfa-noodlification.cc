@@ -135,37 +135,34 @@ void SegNfa::segs_one_initial_final(
     for (auto iter = segments.begin(); iter != segments.end(); ++iter) {
         if (iter == segments.begin()) { // first segment will always have all initial states in noodles
             for (const State final_state: iter->final) {
-                SharedPtrAut segment_one_final = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_final->final = {final_state };
-                /**
-                 * TODO: reduce
-                 */
-                segment_one_final->trim();
+                Nfa::Nfa segment_one_final = *iter;
+                segment_one_final.final = {final_state };
+                segment_one_final = reduce(segment_one_final);
 
-                if (segment_one_final->size() > 0 || include_empty) {
-                    out[std::make_pair(unused_state, final_state)] = segment_one_final;
+                if (segment_one_final.size() > 0 || include_empty) {
+                    out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_final);
                 }
             }
         } else if (iter + 1 == segments.end()) { // last segment will always have all final states in noodles
             for (const State init_state: iter->initial) {
-                SharedPtrAut segment_one_init = std::make_shared<Nfa::Nfa>(*iter);
-                segment_one_init->initial = {init_state };
-                segment_one_init->trim();
+                Nfa::Nfa segment_one_init = *iter;
+                segment_one_init.initial = {init_state };
+                segment_one_init = reduce(segment_one_init);
 
-                if (segment_one_init->size() > 0 || include_empty) {
-                    out[std::make_pair(init_state, unused_state)] = segment_one_init;
+                if (segment_one_init.size() > 0 || include_empty) {
+                    out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa::Nfa>(segment_one_init);
                 }
             }
         } else { // the segments in-between
             for (const State init_state: iter->initial) {
                 for (const State final_state: iter->final) {
-                    SharedPtrAut segment_one_init_final = std::make_shared<Nfa::Nfa>(*iter);
-                    segment_one_init_final->initial = {init_state };
-                    segment_one_init_final->final = {final_state };
-                    segment_one_init_final->trim();
+                    Nfa::Nfa segment_one_init_final = *iter;
+                    segment_one_init_final.initial = {init_state };
+                    segment_one_init_final.final = {final_state };
+                    segment_one_init_final = reduce(segment_one_init_final);
 
-                    if (segment_one_init_final->size() > 0 || include_empty) {
-                        out[std::make_pair(init_state, final_state)] = segment_one_init_final;
+                    if (segment_one_init_final.size() > 0 || include_empty) {
+                        out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_init_final);
                     }
                 }
             }
