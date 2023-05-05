@@ -16,7 +16,7 @@ CFLAGS=-std=c++17 \
 
 INCLUDE_DIR=../../include
 THIRD_PARTY_DIR=../../3rdparty
-BUILD_DIR=$(shell \
+BUILD_DIR := $(shell \
 	if [ -d "../../cmake-build-release" ]; then \
 		echo "../../cmake-build-release"; \
 	elif [ -d "../../cmake-build-debug" ]; then \
