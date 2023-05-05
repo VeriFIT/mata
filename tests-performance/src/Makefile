@@ -14,9 +14,20 @@ CFLAGS=-std=c++17 \
   -fdiagnostics-show-option \
   -g
 
+INCLUDE_DIR=../../include
+THIRD_PARTY_DIR=../../3rdparty
+BUILD_DIR=$(shell \
+	if [ -d "../../cmake-build-release" ]; then \
+		echo "../../cmake-build-release"; \
+	elif [ -d "../../cmake-build-debug" ]; then \
+		echo "../../cmake-build-debug"; \
+	else \
+		echo "../../build"; \
+	fi \
+)
 
-INCLUDE=-I../../include -I../../3rdparty/simlib/include -I../../3rdparty/re2/include -I ../../3rdparty -I ../../3rdparty/cudd/cudd
-LIBS_ADD=-L../../build/src -L../../build/3rdparty/re2 -L../../build/3rdparty/simlib -L../../build/3rdparty/cudd
+INCLUDE=-I$(INCLUDE_DIR) -I$(THIRD_PARTY_DIR)/simlib/include -I$(THIRD_PARTY_DIR)/re2/include -I $(THIRD_PARTY_DIR) -I $(THIRD_PARTY_DIR)/cudd/cudd
+LIBS_ADD=-L$(BUILD_DIR)/src -L$(BUILD_DIR)/3rdparty/re2 -L$(BUILD_DIR)/3rdparty/simlib -L$(BUILD_DIR)/3rdparty/cudd
 LIBS=-lmata -lsimlib -lre2 -lcudd
 
 
@@ -24,7 +35,7 @@ LIBS=-lmata -lsimlib -lre2 -lcudd
 
 .PHONY: all clean
 
-all: $(patsubst %.cc,%,$(wildcard *.cc)) ../../build/src/libmata.a
+all: $(patsubst %.cc,%,$(wildcard *.cc)) $(BUILD_DIR)/src/libmata.a
 
 %: %.cc
 	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< $(LIBS) -o ../bin/$@
