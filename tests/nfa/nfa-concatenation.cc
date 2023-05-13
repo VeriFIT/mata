@@ -976,6 +976,6 @@ TEST_CASE("Performance problem") {
 
     for (auto i=0;i<20;i++) {
         //concatenate(base, concat, true);
-        base = concatenate(base, concat, true);
+        base = concatenate(base, concat, false);
     }
 }

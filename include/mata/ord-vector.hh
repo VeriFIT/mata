@@ -70,7 +70,7 @@ bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
     return true;
 }
 
-template <class Key> bool is_sorted(std::vector<Key> vec) {
+template <class Key> bool is_sorted(const std::vector<Key> & vec) {
     for (auto itVec = vec.cbegin() + 1; itVec < vec.cend(); ++itVec)
     {	// check that the vector is sorted
         if (!(*(itVec - 1) < *itVec))
