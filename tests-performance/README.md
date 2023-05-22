@@ -24,6 +24,8 @@
 1. Copy one of the `template*.cc` files with boilerplate code.
 2. Find comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill your code.
 3. Run `make` from `src` or compile your binary.
+ * By default, `Makefile` looks up source build dir (either `../../build`, `../../cmake-build-debug` or `../../cmake-build-release`).
+ Run `make BUILD_DIR="..."` to pass different build directory.
 4. Run `callgrind` or custom profile on the binary.
 5. Note, you can use one of the scripts (`scripts/run_callgrind.sh` or `scripts/run_massif.sh`)
 
@@ -32,6 +34,8 @@
 1. Copy one of the `template*.cc` files with boilerplate code.
 2. Find comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` and fill your code.
 3. Run `make` from `src` or compile your binary.
+* By default, `Makefile` looks up source build dir (either `../../build`, `../../cmake-build-debug` or `../../cmake-build-release`).
+  Run `make BUILD_DIR="..."` to pass different build directory.
 4. Add the new binary to the `jobs.yaml` as follows:
 5. Note, you can use one of the scripts (`scripts/run_callgrind.sh` or `scripts/run_massif.sh`)
  
