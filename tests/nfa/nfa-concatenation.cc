@@ -974,8 +974,10 @@ TEST_CASE("Performance problem") {
     concat.delta.add(1, 122, 0);
     concat.delta.add(1, 124, 0);
 
-    for (auto i=0;i<20;i++) {
-        //concatenate(base, concat, true);
+    for (auto i=0;i<250;i++) {
         base = concatenate(base, concat, false);
+
+        //base = concatenate(base, concat, true);
     }
+    //base = remove_epsilon(base);
 }

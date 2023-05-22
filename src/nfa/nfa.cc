@@ -764,12 +764,12 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
     while (changed) { // compute the fixpoint
         changed = false;
         for (size_t i=0; i < num_of_states; ++i) {
-            const auto& state_transitions{ aut[i] };
-            const auto state_symbol_transitions{
-                state_transitions.find(Move{epsilon}) };
-            if (state_symbol_transitions != state_transitions.end()) {
+            const Post& post{ aut[i] };
+            const auto emove{
+                post.find(Move{epsilon}) };//TODO: make faster if default epsilon
+            if (emove != post.end()) {
                 StateSet &src_eps_cl = eps_closure[i];
-                for (const State tgt: state_symbol_transitions->targets) {
+                for (const State tgt: emove->targets) {
                     const StateSet &tgt_eps_cl = eps_closure[tgt];
                     for (const State st: tgt_eps_cl) {
                         if (src_eps_cl.count(st) == 0) {
@@ -792,16 +792,16 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
             if (aut.final[eps_cl_state]) result.final.add(src_state);
-            for (const auto& symb_set : aut[eps_cl_state]) {
-                if (symb_set.symbol == epsilon) continue;
+            for (const Move & move : aut[eps_cl_state]) {
+                if (move.symbol == epsilon) continue;
 
                 // TODO: this could be done more efficiently if we had a better add method
-                for (State tgt_state : symb_set.targets) {
+                for (State tgt_state : move.targets) {
                     max_state = std::max(src_state, tgt_state);
                     if (result.delta.post_size() < max_state) {
                         result.add_state(max_state);
                     }
-                    result.delta.add(src_state, symb_set.symbol, tgt_state);
+                    result.delta.add(src_state, move.symbol, tgt_state);
                 }
             }
         }

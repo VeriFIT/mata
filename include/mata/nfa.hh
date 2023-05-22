@@ -14,7 +14,7 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
-
+#define NDEBUG
 #ifndef _MATA_NFA_HH_
 #define _MATA_NFA_HH_
 
@@ -863,6 +863,7 @@ public:
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
 
+    //TODO: this should go away, should call delta[state]
     const Post& operator[](State state) const
     { // {{{
         assert(state < size());
