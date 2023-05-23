@@ -44,9 +44,9 @@ then
     fi
 fi
 
-valgrind --tool=callgrind --callgrind-out-file="$outfile" $cmd
+valgrind --tool=callgrind --callgrind-out-file="$outfile" "$cmd"
 echo ""
 echo "== Top functions ( > 1%) =="
-callgrind_annotate --inclusive=no --tree=none --show-percs=yes callgrind.out | grep "\(\w\w\|[1-9]\).\w\w%" | tail +1 | sed 's/\[[^][]*\]$//g'
+callgrind_annotate --inclusive=no --tree=none --show-percs=yes "$outfile" | grep "\(\w\w\|[1-9]\).\w\w%" | tail +1 | sed 's/\[[^][]*\]$//g'
 echo ""
 echo "== Output saved to '$outfile' =="
