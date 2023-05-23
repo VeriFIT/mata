@@ -27,7 +27,7 @@ do
             ;;
     esac
 done
-cmd=$@
+cmd=$*
 
 if [ -z "$outfile" ]
 then
@@ -35,13 +35,18 @@ then
     head=$(git rev-parse --short HEAD)
     escaped_cmd=$(printf '%q' "${cmd//[\/ ]/-}")
     callgrind_file="callgrind.out.$branch-$head-$escaped_cmd"
-    existing_no=$(ls -1 $callgrind_file.* | wc -l)
-    outfile="$callgrind_file.$existing_no"
+    if [ -e "$callgrind_file".0 ]; then
+        existing_files=("$callgrind_file".*)
+        number_of_existing_files=${#existing_files[@]}
+        outfile="$callgrind_file"."$number_of_existing_files"
+    else
+        outfile="$callgrind_file".0
+    fi
 fi
 
-valgrind --tool=callgrind --callgrind-out-file="$outfile" $cmd
+valgrind --tool=callgrind --callgrind-out-file="$outfile" "$cmd"
 echo ""
 echo "== Top functions ( > 1%) =="
-callgrind_annotate --inclusive=no --tree=none --show-percs=yes callgrind.out | grep "\(\w\w\|[1-9]\).\w\w%" | tail +1 | sed 's/\[[^][]*\]$//g'
+callgrind_annotate --inclusive=no --tree=none --show-percs=yes "$outfile" | grep "\(\w\w\|[1-9]\).\w\w%" | tail +1 | sed 's/\[[^][]*\]$//g'
 echo ""
 echo "== Output saved to '$outfile' =="
