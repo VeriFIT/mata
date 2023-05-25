@@ -21,10 +21,6 @@
 #include <mata/nfa.hh>
 #include <mata/simlib/util/binary_relation.hh>
 
-namespace Mata {
-
-namespace Nfa {
-
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
  *
@@ -41,8 +37,7 @@ namespace Nfa {
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace Algorithms {
-
+namespace Mata::Nfa::Algorithms {
     /**
      * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
      * @param[in] aut Automaton to be minimized.
@@ -149,8 +144,6 @@ namespace Algorithms {
          */
         Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
                         StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
-} // Algorithms
-} // Nfa
-}
+} // Namespace Mata::Nfa::Algorithms.
 
-#endif // MATA_NFA_INTERNALS_HH
+#endif // MATA_NFA_INTERNALS_HH_
