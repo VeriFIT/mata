@@ -701,29 +701,28 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     return true;
 } // are_disjoint }}}
 
-bool Mata::Nfa::make_complete(
-        Nfa&             aut,
-        const Alphabet&  alphabet,
-        State            sink_state)
-{
-    bool was_something_added = false;
+bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
+    return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
+}
 
-    auto num_of_states = aut.size();
+bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols, State sink_state) {
+    bool was_something_added{ false };
+
+    size_t num_of_states{ aut.size() };
     for (State state = 0; state < num_of_states; ++state) {
         OrdVector<Symbol> used_symbols{};
         for (auto const &move : aut.delta[state]) {
             used_symbols.insert(move.symbol);
         }
-        auto unused_symbols = alphabet.get_complement(used_symbols);
-        for (Symbol symb : unused_symbols)
-        {
+        Mata::Util::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
+        for (Symbol symb : unused_symbols) {
             aut.delta.add(state, symb, sink_state);
             was_something_added = true;
         }
     }
 
     if (was_something_added && num_of_states <= sink_state) {
-        for (Symbol symbol : alphabet.get_alphabet_symbols()) {
+        for (Symbol symbol : symbols) {
             aut.delta.add(sink_state, symbol, sink_state);
         }
     }
