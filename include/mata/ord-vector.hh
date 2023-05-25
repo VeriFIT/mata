@@ -102,20 +102,12 @@ public:   // Public data types
     using reference = typename VectorType::reference;
 
 private:  // Private data members
-
     VectorType vec_;
 
-
 private:  // Private methods
-
     bool vectorIsSorted() const { return(Mata::Util::is_sorted(vec_)); }
 
-public:   // Public methods
-
-    // To make it movable. Is this right?
-    OrdVector(OrdVector&& rhs) = default;
-    OrdVector & operator=(OrdVector&& rhs) = default;
-
+public:
     OrdVector() : vec_() {}
 
     explicit OrdVector(const VectorType& vec) :
@@ -132,18 +124,23 @@ public:   // Public methods
         Util::sort_and_rmdupl(vec_);
     }
 
-    OrdVector(const OrdVector& rhs) :
-        vec_()
-    {
-        if (&rhs != this)
-        {
-            vec_ = rhs.vec_;
-        }
+    OrdVector(const OrdVector& rhs) = default;
+    OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } { other.vec_ = {}; }
+
+    OrdVector& operator=(const OrdVector& other) {
+        if (&other != this) { vec_ = other.vec_; }
+        return *this;
     }
 
-    explicit OrdVector(const Key& key) :
-        vec_(1, key)
-    {
+    OrdVector& operator=(OrdVector&& other) noexcept {
+        if (&other != this) {
+            vec_ = std::move(other.vec_);
+            other.vec_ = {};
+        }
+        return *this;
+    }
+
+    explicit OrdVector(const Key& key) : vec_(1, key) {
         // Assertions
         assert(vectorIsSorted());
     }
@@ -168,16 +165,6 @@ public:   // Public methods
         OrdVector ord_vector{};
         ord_vector.vec_.reserve(capacity);
         return ord_vector;
-    }
-
-    OrdVector& operator=(const OrdVector& rhs)
-    {
-        if (&rhs != this)
-        {
-            vec_ = rhs.vec_;
-        }
-
-        return *this;
     }
 
     void insert(iterator itr, const Key& x)
