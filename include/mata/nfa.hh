@@ -1076,11 +1076,27 @@ inline bool make_complete(
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nfa complement(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+Nfa complement(const Nfa& aut, const Alphabet& alphabet,
+    const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+
+/**
+ * @brief Compute automaton accepting complement of @p aut.
+ *
+ * This overloaded version complements over an already created ordered set of @p symbols instead of an alphabet.
+ * This is a more efficient solution in case you already have @p symbols precomputed or want to complement multiple
+ *  automata over the same set of @c symbols: the function does not need to compute the ordered set of symbols from
+ *  the alphabet again (and for each automaton).
+ *
+ * @param[in] aut Automaton whose complement to compute.
+ * @param[in] symbols Symbols to complement over.
+ * @param[in] params Optional parameters to control the complementation algorithm:
+ * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
+ * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * @return Complemented automaton.
+ */
+Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
+   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+
 /**
  * @brief Compute minimal deterministic automaton.
  *

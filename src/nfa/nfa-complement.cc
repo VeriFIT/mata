@@ -22,76 +22,68 @@
 using namespace Mata::Nfa;
 using namespace Mata::Util;
 
-Nfa Mata::Nfa::Algorithms::complement_classical(
-	const Nfa&         aut,
-	const Alphabet&    alphabet,
-	bool minimize_during_determinization)
-{ // {{{
- 	Nfa result;
-	State sink_state;
-	if (minimize_during_determinization) {
-		result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
-		if (result.final.size() == 0 && result.initial.size() > 0) {
-			assert(result.initial.size() == 1);
-			// if automaton does not accept anything, then there is only one (initial) state
-			// which can be the sink state (so we do not create unnecessary one)
-			sink_state = *result.initial.begin();
-		} else {
-			sink_state = result.size();
-		}
-	} else {
-		std::unordered_map<StateSet, State> subset_map;
-		result = determinize(aut, &subset_map);
-		// check if a sink state was not created during determinization
-		auto sink_state_iter = subset_map.find({});
-		if (sink_state_iter != subset_map.end()) {
-			sink_state = sink_state_iter->second;
-		} else {
-			sink_state = result.size();
-		}
-	}
+Nfa Mata::Nfa::Algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols,
+                                                bool minimize_during_determinization) {
+    Nfa result;
+    State sink_state;
+    if (minimize_during_determinization) {
+        result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
+        if (result.final.empty() && !result.initial.empty()) {
+            assert(result.initial.size() == 1);
+            // if automaton does not accept anything, then there is only one (initial) state
+            // which can be the sink state (so we do not create unnecessary one)
+            sink_state = *result.initial.begin();
+        } else {
+            sink_state = result.size();
+        }
+    } else {
+        std::unordered_map<StateSet, State> subset_map;
+        result = determinize(aut, &subset_map);
+        // check if a sink state was not created during determinization
+        auto sink_state_iter = subset_map.find({});
+        if (sink_state_iter != subset_map.end()) {
+            sink_state = sink_state_iter->second;
+        } else {
+            sink_state = result.size();
+        }
+    }
 
-	make_complete(result, alphabet, sink_state);
+    make_complete(result, symbols, sink_state);
+    result.final.complement(result.size());
+    return result;
+}
 
-	result.final.complement(result.size());
+Nfa Mata::Nfa::complement(const Nfa& aut, const Alphabet& alphabet, const StringMap& params) {
+    return Mata::Nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
+}
 
-	return result;
-} // complement_classical }}}
+Nfa Mata::Nfa::complement(const Nfa& aut, const Mata::Util::OrdVector<Mata::Symbol>& symbols, const StringMap& params) {
+    Nfa result;
+    // Setting the requested algorithm.
+    decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"algo\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+    }
 
+    const std::string& str_algo = params.at("algorithm");
+    if ("classical" == str_algo) {  /* default */ }
+    else {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"algo\" key: " + str_algo);
+    }
 
-/// Complement
+    bool minimize_during_determinization = false;
+    if (params.find("minimize") != params.end()) {
+        const std::string& minimize_arg = params.at("minimize");
+        if ("true" == minimize_arg) { minimize_during_determinization = true; }
+        else if ("false" == minimize_arg) { minimize_during_determinization = false; }
+        else {
+            throw std::runtime_error(std::to_string(__func__) +
+                                     " received an unknown value of the \"minimize\" key: " + str_algo);
+        }
+    }
 
-Nfa Mata::Nfa::complement(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params)
-{
-	Nfa result;
-	// setting the default algorithm
-	decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
-	if (!haskey(params, "algorithm")) {
-		throw std::runtime_error(std::to_string(__func__) +
-			" requires setting the \"algo\" key in the \"params\" argument; "
-			"received: " + std::to_string(params));
-	}
-
-	const std::string& str_algo = params.at("algorithm");
-	if ("classical" == str_algo) {  /* default */ }
-	else {
-		throw std::runtime_error(std::to_string(__func__) +
-			" received an unknown value of the \"algo\" key: " + str_algo);
-	}
-
-	bool minimize_during_determinization = false;
-	if (params.find("minimize") != params.end()) {
-		const std::string& minimize_arg = params.at("minimize");
-		if ("true" == minimize_arg) { minimize_during_determinization = true; }
-		else if ("false" == minimize_arg) { minimize_during_determinization = false; }
-		else {
-			throw std::runtime_error(std::to_string(__func__) +
-				" received an unknown value of the \"minimize\" key: " + str_algo);
-		}
-	}
-
-	return algo(aut, alphabet, minimize_during_determinization);
-} // complement
+    return algo(aut, symbols, minimize_during_determinization);
+}
