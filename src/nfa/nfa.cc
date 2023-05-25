@@ -731,13 +731,8 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
-Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
-{
-    Nfa result;
-
-    result.clear();
-
-    result.add_state(aut.delta.post_size()-1);
+Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
+    Nfa result{ aut.delta.post_size() };
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
