@@ -68,11 +68,7 @@ namespace Mata::Nfa::Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_included_naive(
-            const Nfa&             smaller,
-            const Nfa&             bigger,
-            const Alphabet* const  alphabet = nullptr,
-            Run*                   cex = nullptr);
+    bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
     /**
      * Inclusion implemented by antichain algorithms.
@@ -83,11 +79,7 @@ namespace Mata::Nfa::Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_included_antichains(
-            const Nfa&             smaller,
-            const Nfa&             bigger,
-            const Alphabet* const  alphabet = nullptr,
-            Run*                   cex = nullptr);
+    bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
     /**
      * Universality check implemented by checking emptiness of complemented automaton
