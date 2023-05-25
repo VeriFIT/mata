@@ -49,7 +49,7 @@ namespace Mata::Nfa::Algorithms {
      * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
      * final states which were non final in the original automaton.
      * @param[in] aut Automaton to be complemented.
-     * @param[in] symbols Symbols to needed to make the automaton complete.
+     * @param[in] symbols Symbols needed to make the automaton complete.
      * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (brzozowski) minimization
      * @return Complemented automaton.
      */
