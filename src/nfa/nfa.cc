@@ -1521,7 +1521,7 @@ Nfa Mata::Nfa::determinize(
                 if (!are_disjoint(T, aut.final)) {
                     result.final.add(Tid);
                 }
-                worklist.emplace_back(std::make_pair(Tid, T));
+                worklist.emplace_back(Tid, T);
             }
             result.delta.get_mutable_post(Sid).insert(Move(currentSymbol, Tid));
         }
@@ -1531,96 +1531,6 @@ Nfa Mata::Nfa::determinize(
 
     return result;
 }
-
-// TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Nfa Mata::Nfa::construct(
-        const Mata::Parser::ParsedSection&   parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map)
-{ // {{{
-    Nfa aut;
-    assert(nullptr != alphabet);
-
-    if (parsec.type != Mata::Nfa::TYPE_NFA) {
-        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 Mata::Nfa::TYPE_NFA + "\"");
-    }
-
-    bool remove_state_map = false;
-    if (nullptr == state_map) {
-        state_map = new StringToStateMap();
-        remove_state_map = true;
-    }
-
-    // a lambda for translating state names to identifiers
-    auto get_state_name = [&state_map, &aut](const std::string& str) {
-        if (!state_map->count(str)) {
-            State state = aut.add_state();
-            state_map->insert({str, state});
-            return state;
-        } else {
-            return (*state_map)[str];
-        }
-    };
-
-    // a lambda for cleanup
-    auto clean_up = [&]() {
-        if (remove_state_map) { delete state_map; }
-    };
-
-
-    auto it = parsec.dict.find("Initial");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
-            aut.initial.add(state);
-        }
-    }
-
-
-    it = parsec.dict.find("Final");
-    if (parsec.dict.end() != it)
-    {
-        for (const auto& str : it->second)
-        {
-            State state = get_state_name(str);
-            aut.final.add(state);
-        }
-    }
-
-    for (const auto& body_line : parsec.body)
-    {
-        if (body_line.size() != 3)
-        {
-            // clean up
-            clean_up();
-
-            if (body_line.size() == 2)
-            {
-                throw std::runtime_error("Epsilon transitions not supported: " +
-                                         std::to_string(body_line));
-            }
-            else
-            {
-                throw std::runtime_error("Invalid transition: " +
-                                         std::to_string(body_line));
-            }
-        }
-
-        State src_state = get_state_name(body_line[0]);
-        Symbol symbol = alphabet->translate_symb(body_line[1]);
-        State tgt_state = get_state_name(body_line[2]);
-
-        aut.delta.add(src_state, symbol, tgt_state);
-    }
-
-    // do the dishes and take out garbage
-    clean_up();
-
-    return aut;
-} // construct }}}
 
 Nfa Mata::Nfa::construct(
         const Mata::IntermediateAut&         inter_aut,

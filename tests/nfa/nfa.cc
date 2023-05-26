@@ -617,31 +617,31 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
 	SECTION("construct an empty automaton")
 	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA + "-explicit";
 
-		aut = construct(parsec);
+		aut = construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0]);
 
 		REQUIRE(is_lang_empty(aut));
 	}
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
 	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA + "-explicit";
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
-		aut = construct(parsec);
+		aut = construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0]);
 
 		REQUIRE(!is_lang_empty(aut));
 	}
 
 	SECTION("construct an automaton with more than one initial/final states")
 	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA + "-explicit";
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-		aut = construct(parsec);
+		aut = construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0]);
 
 		REQUIRE(aut.initial.size() == 2);
 		REQUIRE(aut.final.size() == 3);
@@ -649,12 +649,12 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA + "-explicit";
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a", "q2"} };
 
-		aut = construct(parsec, &symbol_map);
+		aut = construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0], &symbol_map);
 
 		Run cex;
 		REQUIRE(!is_lang_empty(aut, &cex));
@@ -667,7 +667,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
 	SECTION("construct a more complicated non-empty automaton")
 	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+		parsec.type = Mata::Nfa::TYPE_NFA + "-explicit";
 		parsec.dict.insert({"Initial", {"q1", "q3"}});
 		parsec.dict.insert({"Final", {"q5"}});
 		parsec.body.push_back({"q1", "a", "q3"});
@@ -686,7 +686,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.body.push_back({"q5", "a", "q5"});
 		parsec.body.push_back({"q5", "c", "q9"});
 
-		aut = construct(parsec, &symbol_map);
+		aut = construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0], &symbol_map);
 
 		// some samples
 		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
@@ -700,37 +700,17 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 	}
 } // }}}
 
-TEST_CASE("Mata::Nfa::construct() invalid calls")
-{ // {{{
+TEST_CASE("Mata::Nfa::construct() invalid calls") {
 	Nfa aut;
 	Mata::Parser::ParsedSection parsec;
 
-	SECTION("construct() call with invalid ParsedSection object")
-	{
-		parsec.type = "FA";
+	SECTION("construct() call with invalid ParsedSection object") {
+		parsec.type = "FA-explicit";
 
-		CHECK_THROWS_WITH(construct(parsec),
+		CHECK_THROWS_WITH(construct(Mata::IntermediateAut::parse_from_mf({ parsec })[0]),
 			Catch::Contains("expecting type"));
 	}
-
-	SECTION("construct() call with an epsilon transition")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.body = { {"q1", "q2"} };
-
-		CHECK_THROWS_WITH(construct(parsec),
-			Catch::Contains("Epsilon transition"));
-	}
-
-	SECTION("construct() call with a nonsense transition")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.body = { {"q1", "a", "q2", "q3"} };
-
-		CHECK_THROWS_WITH(construct(&aut, parsec),
-			Catch::Contains("Invalid transition"));
-	}
-} // }}}
+}
 
 TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 { // {{{

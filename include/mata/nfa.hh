@@ -1273,12 +1273,6 @@ inline Run encode_word(
 
 /** Loads an automaton from Parsed object */
 Nfa construct(
-        const Mata::Parser::ParsedSection&   parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
-Nfa construct(
         const Mata::IntermediateAut&         inter_aut,
         Alphabet*                            alphabet,
         StringToStateMap*                    state_map = nullptr);
