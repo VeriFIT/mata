@@ -21,10 +21,6 @@
 #include <mata/nfa.hh>
 #include <mata/simlib/util/binary_relation.hh>
 
-namespace Mata {
-
-namespace Nfa {
-
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
  *
@@ -41,8 +37,7 @@ namespace Nfa {
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace Algorithms {
-
+namespace Mata::Nfa::Algorithms {
     /**
      * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
      * @param[in] aut Automaton to be minimized.
@@ -54,14 +49,12 @@ namespace Algorithms {
      * Complement implemented by determization, adding sink state and making automaton complete. Then it adds
      * final states which were non final in the original automaton.
      * @param[in] aut Automaton to be complemented.
-     * @param[in] alphabet Alphabet is needed for making the automaton complete.
+     * @param[in] symbols Symbols needed to make the automaton complete.
      * @param[in] minimize_during_determinization Whether the determinized automaton is computed by (brzozowski) minimization
      * @return Complemented automaton.
      */
-    Nfa complement_classical(
-            const Nfa&         aut,
-            const Alphabet&    alphabet,
-            bool minimize_during_determinization = false);
+    Nfa complement_classical(const Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols,
+                             bool minimize_during_determinization = false);
 
     /**
      * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then
@@ -73,11 +66,7 @@ namespace Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_included_naive(
-            const Nfa&             smaller,
-            const Nfa&             bigger,
-            const Alphabet* const  alphabet = nullptr,
-            Run*                   cex = nullptr);
+    bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
     /**
      * Inclusion implemented by antichain algorithms.
@@ -88,11 +77,7 @@ namespace Algorithms {
      * @return True if smaller language is included,
      * i.e., if the final intersection of smaller complement of bigger is empty.
      */
-    bool is_included_antichains(
-            const Nfa&             smaller,
-            const Nfa&             bigger,
-            const Alphabet* const  alphabet = nullptr,
-            Run*                   cex = nullptr);
+    bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
     /**
      * Universality check implemented by checking emptiness of complemented automaton
@@ -133,7 +118,7 @@ namespace Algorithms {
          * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
          */
         Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
-                        std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
         /**
          * @brief Concatenate two NFAs.
@@ -148,9 +133,7 @@ namespace Algorithms {
          * @return Concatenated automaton.
          */
         Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
-                        StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
-} // Algorithms
-} // Nfa
-}
+            StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+} // Namespace Mata::Nfa::Algorithms.
 
-#endif // MATA_NFA_INTERNALS_HH
+#endif // MATA_NFA_INTERNALS_HH_

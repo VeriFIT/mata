@@ -701,29 +701,28 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     return true;
 } // are_disjoint }}}
 
-bool Mata::Nfa::make_complete(
-        Nfa&             aut,
-        const Alphabet&  alphabet,
-        State            sink_state)
-{
-    bool was_something_added = false;
+bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
+    return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
+}
 
-    auto num_of_states = aut.size();
+bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols, State sink_state) {
+    bool was_something_added{ false };
+
+    size_t num_of_states{ aut.size() };
     for (State state = 0; state < num_of_states; ++state) {
         OrdVector<Symbol> used_symbols{};
         for (auto const &move : aut.delta[state]) {
             used_symbols.insert(move.symbol);
         }
-        auto unused_symbols = alphabet.get_complement(used_symbols);
-        for (Symbol symb : unused_symbols)
-        {
+        Mata::Util::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
+        for (Symbol symb : unused_symbols) {
             aut.delta.add(state, symb, sink_state);
             was_something_added = true;
         }
     }
 
     if (was_something_added && num_of_states <= sink_state) {
-        for (Symbol symbol : alphabet.get_alphabet_symbols()) {
+        for (Symbol symbol : symbols) {
             aut.delta.add(sink_state, symbol, sink_state);
         }
     }
@@ -732,13 +731,8 @@ bool Mata::Nfa::make_complete(
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
-Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon)
-{
-    Nfa result;
-
-    result.clear();
-
-    result.add_state(aut.delta.post_size()-1);
+Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
+    Nfa result{ aut.delta.post_size() };
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;

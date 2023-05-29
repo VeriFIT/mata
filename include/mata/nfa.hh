@@ -1016,11 +1016,12 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
-
 /**
+ * Make @c aut complete in place.
+ *
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
- * on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to it,
- * but only in the case that some transition to @p sink_state was added.
+ *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
+ *  it, but only in the case that some transition to @p sink_state was added.
  * In the case that @p aut does not contain any states, this function does nothing.
  *
  * @param[in] aut Automaton to make complete.
@@ -1028,10 +1029,26 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
  * @param[in] sink_state The state into which new transitions are added.
  * @return True if some new transition was added to the automaton.
  */
-bool make_complete(
-        Nfa&             aut,
-        const Alphabet&  alphabet,
-        State            sink_state);
+bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
+
+/**
+ * Make @c aut complete in place.
+ *
+ * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
+ *  it, but only in the case that some transition to @p sink_state was added.
+ * In the case that @p aut does not contain any states, this function does nothing.
+ *
+ * This overloaded version is a more efficient version which does not need to compute the set of symbols to complete to
+ *  from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan to complete
+ *  multiple automata over the same set of symbols.
+ *
+ * @param[in] aut Automaton to make complete.
+ * @param[in] symbols Symbols to compute missing symbols from.
+ * @param[in] sink_state The state into which new transitions are added.
+ * @return True if some new transition was added to the automaton.
+ */
+bool make_complete(Nfa& aut, const Util::OrdVector<Symbol>& symbols, State sink_state);
 
 /**
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
@@ -1059,11 +1076,27 @@ inline bool make_complete(
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nfa complement(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+Nfa complement(const Nfa& aut, const Alphabet& alphabet,
+    const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+
+/**
+ * @brief Compute automaton accepting complement of @p aut.
+ *
+ * This overloaded version complements over an already created ordered set of @p symbols instead of an alphabet.
+ * This is a more efficient solution in case you already have @p symbols precomputed or want to complement multiple
+ *  automata over the same set of @c symbols: the function does not need to compute the ordered set of symbols from
+ *  the alphabet again (and for each automaton).
+ *
+ * @param[in] aut Automaton whose complement to compute.
+ * @param[in] symbols Symbols to complement over.
+ * @param[in] params Optional parameters to control the complementation algorithm:
+ * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
+ * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * @return Complemented automaton.
+ */
+Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
+   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+
 /**
  * @brief Compute minimal deterministic automaton.
  *
