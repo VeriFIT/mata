@@ -135,8 +135,6 @@ public:
         : predicate{ std::move(other.predicate) }, elements{ std::move(other.elements) },
           elements_are_exact{ other.elements_are_exact}, tracking_elements{ other.tracking_elements },
           cardinality{ other.cardinality} {
-        other.elements = {};
-        other.predicate = {};
         other.cardinality = 0;
     }
 
@@ -148,11 +146,7 @@ public:
             elements_are_exact = other.elements_are_exact;
             tracking_elements = other.tracking_elements;
             cardinality = other.cardinality;
-
-            other.elements = {};
-            other.predicate = {};
             other.cardinality = 0;
-
         }
         return *this;
     }

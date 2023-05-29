@@ -153,9 +153,7 @@ struct Move {
     Move(Symbol symbolOnTransition, const StateSet& states_to) :
             symbol(symbolOnTransition), targets(states_to) {}
 
-    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {
-        rhs.targets.clear();
-    }
+    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     Move(const Move& rhs) = default;
     Move& operator=(Move&& rhs) noexcept {
         if (*this != rhs) {
@@ -543,10 +541,6 @@ public:
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) },
           m_num_of_requested_states{ other.m_num_of_requested_states } {
-        other.delta = {};
-        other.initial = {};
-        other.final = {};
-        other.attributes = {};
         other.alphabet = nullptr;
         other.m_num_of_requested_states = 0;
     }
@@ -561,10 +555,6 @@ public:
             attributes = std::move(other.attributes);
             m_num_of_requested_states = other.m_num_of_requested_states;
             other.alphabet = nullptr;
-            other.delta = {};
-            other.initial = {};
-            other.final = {};
-            other.attributes = {};
             other.m_num_of_requested_states = 0;
         }
         return *this;

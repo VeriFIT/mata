@@ -125,7 +125,7 @@ public:
     }
 
     OrdVector(const OrdVector& rhs) = default;
-    OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } { other.vec_ = {}; }
+    OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
 
     OrdVector& operator=(const OrdVector& other) {
         if (&other != this) { vec_ = other.vec_; }
@@ -133,10 +133,7 @@ public:
     }
 
     OrdVector& operator=(OrdVector&& other) noexcept {
-        if (&other != this) {
-            vec_ = std::move(other.vec_);
-            other.vec_ = {};
-        }
+        if (&other != this) { vec_ = std::move(other.vec_); }
         return *this;
     }
 
