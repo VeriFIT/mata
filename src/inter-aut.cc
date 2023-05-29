@@ -347,6 +347,8 @@ namespace
             aut.automaton_type = Mata::IntermediateAut::AutomatonType::NFA;
         } else if (section.type.find("AFA") != std::string::npos) {
             aut.automaton_type = Mata::IntermediateAut::AutomatonType::AFA;
+        } else {
+            throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type specification");
         }
         aut.alphabet_type = get_alphabet_type(section.type);
 
