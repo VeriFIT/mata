@@ -153,11 +153,16 @@ struct Move {
     Move(Symbol symbolOnTransition, const StateSet& states_to) :
             symbol(symbolOnTransition), targets(states_to) {}
 
-    //Trying to make Move movable, does it make sense?
-    Move(Move&& rhs) = default;
+    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     Move(const Move& rhs) = default;
-    Move & operator=(Move&& rhs) = default;
-    Move & operator=(const Move& rhs) = default;
+    Move& operator=(Move&& rhs) noexcept {
+        if (*this != rhs) {
+            symbol = rhs.symbol;
+            targets = std::move(rhs.targets);
+        }
+        return *this;
+    }
+    Move& operator=(const Move& rhs) = default;
 
     inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
     inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
@@ -211,56 +216,25 @@ struct Move {
  * Vector is ordered by symbols which are numbers.
  */
 struct Post : private Util::OrdVector<Move> {
-    using iterator = Util::OrdVector<Move>::iterator;
-    using const_iterator = Util::OrdVector<Move>::const_iterator;
-
-    iterator begin() override { return Util::OrdVector<Move>::begin(); }
-    const_iterator begin() const override { return Util::OrdVector<Move>::begin(); }
-    iterator end() override { return Util::OrdVector<Move>::end(); }
-    const_iterator end() const override { return Util::OrdVector<Move>::end(); }
-
-    const_iterator cbegin() const override { return Util::OrdVector<Move>::cbegin(); }
-    const_iterator cend() const override { return Util::OrdVector<Move>::cend(); }
-
-    Post() = default;
-
-    virtual ~Post() = default;
-
-    //Trying to make Past movable, does it make sense?
-    Post(Post&& rhs) = default;
-    Post(const Post& rhs) = default;
-    Post & operator=(Post&& rhs) = default;
-    Post & operator=(const Post& rhs) = default;
-
-    inline const_iterator find(const Move& m) const override { return Util::OrdVector<Move>::find(m);}
-    inline iterator find(const Move& m) override { return Util::OrdVector<Move>::find(m);}
-
-    void inline insert(const Move& m) override { Util::OrdVector<Move>::insert(m); }
-
+private:
+    using super = Util::OrdVector<Move>;
+public:
+    using super::iterator, super::const_iterator;
+    using super::begin, super::end, super::cbegin, super::cend;
+    using super::OrdVector;
+    using super::operator=;
+    using super::find;
+    using super::insert;
+    using super::reserve;
+    using super::remove;
+    using super::empty, super::size;
+    using super::ToVector;
+    using super::erase;
     // dangerous, breaks the sortedness invariant
-    void inline push_back(const Move& m) override { Util::OrdVector<Move>::push_back(m); }
-
-    inline const Move& back() const override { return Util::OrdVector<Move>::back(); }
-
-    // is adding this non-const version ok?
-    inline Move& back() { return Util::OrdVector<Move>::back(); }
-
-    inline void reserve(size_t size) override { Util::OrdVector<Move>::reserve(size); }
-
-    void remove(const Move& m)  { Util::OrdVector<Move>::remove(m); }
-
-    bool empty() const override{ return Util::OrdVector<Move>::empty(); }
-    size_t size() const override { return Util::OrdVector<Move>::size(); }
-
-    const std::vector<Move>& ToVector() const { return Util::OrdVector<Move>::ToVector(); }
-
-    inline void erase(const_iterator first, const_iterator last) { Util::OrdVector<Move>::erase(first, last); }
-
-    //Could we somehow use the && thingy here? It is supposed to be faster?
-    template<typename F>
-    inline void filter(F && is_staying) {
-        return Util::OrdVector<Move>::filter(is_staying);
-    }
+    using super::push_back;
+    // is adding non-const version as well ok?
+    using super::back;
+    using super::filter;
 };
 
 /**
@@ -469,7 +443,7 @@ public:
             return *this;
         }
 
-        friend bool operator== (const const_iterator& a, const const_iterator& b)
+        friend bool operator==(const const_iterator& a, const const_iterator& b)
         {
             if (a.is_end && b.is_end)
                 return true;
@@ -561,7 +535,29 @@ public:
      * @brief Construct a new explicit NFA from other NFA.
      */
     Nfa(const Mata::Nfa::Nfa& other) = default;
+
+    Nfa(Mata::Nfa::Nfa&& other) noexcept
+        : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
+          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) },
+          m_num_of_requested_states{ other.m_num_of_requested_states } {
+        other.alphabet = nullptr;
+        other.m_num_of_requested_states = 0;
+    }
+
     Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
+    Nfa& operator=(Mata::Nfa::Nfa&& other) noexcept {
+        if (this != &other) {
+            delta = std::move(other.delta);
+            initial = std::move(other.initial);
+            final = std::move(other.final);
+            alphabet = other.alphabet;
+            attributes = std::move(other.attributes);
+            m_num_of_requested_states = other.m_num_of_requested_states;
+            other.alphabet = nullptr;
+            other.m_num_of_requested_states = 0;
+        }
+        return *this;
+    }
 
     /**
      * Clear transitions but keep the automata states.

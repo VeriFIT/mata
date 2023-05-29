@@ -19,7 +19,7 @@
 
 using namespace Mata::Nfa;
 
-namespace Mata { namespace Nfa {
+namespace Mata::Nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
@@ -99,7 +99,5 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (lhs_result_states_map != nullptr) { *lhs_result_states_map = lhs_result_states_map_internal; }
     if (rhs_result_states_map != nullptr) { *rhs_result_states_map = rhs_result_states_map_internal; }
     return result;
-}
-
-} // Nfa
-} // Mata
+} // concatenate_eps().
+} // Namespace Mata::Nfa.

@@ -318,3 +318,25 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
         Nfa result{intersection(a, b, true) };
     }
 }
+
+TEST_CASE("Move semantics", "[.profiling][std::move]") {
+    Nfa b{10};
+    b.initial.add(0);
+    b.final.add({2, 4, 8, 7});
+    b.delta.add(0, 'b', 1);
+    b.delta.add(0, 'a', 2);
+    b.delta.add(2, 'a', 4);
+    b.delta.add(2, EPSILON, 3);
+    b.delta.add(3, 'b', 4);
+    b.delta.add(0, 'c', 5);
+    b.delta.add(5, 'a', 8);
+    b.delta.add(5, EPSILON, 6);
+    b.delta.add(6, 'a', 9);
+    b.delta.add(6, 'b', 7);
+
+    for (size_t i{ 0 }; i < 1'000'000; ++i) {
+        Nfa a{ std::move(b) };
+        a.initial.add(1);
+        b = std::move(a);
+    }
+}

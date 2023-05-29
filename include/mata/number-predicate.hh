@@ -36,7 +36,7 @@ template <class Number> class OrdVector;
 template<typename Number> class NumberPredicate {
 private:
     mutable std::vector<bool> predicate = {};
-    mutable std::vector <Number> elements = {};
+    mutable std::vector<Number> elements = {};
     mutable bool elements_are_exact = true;
     mutable bool tracking_elements = true;
     mutable Number cardinality = 0;
@@ -88,14 +88,8 @@ private:
     }
 
 public:
-    //Trying to make NumberPredicate movable, does it make sense?
-    NumberPredicate(NumberPredicate&& rhs) = default;
-    NumberPredicate(const NumberPredicate& rhs) = default;
-    NumberPredicate & operator=(NumberPredicate&& rhs) = default;
-    NumberPredicate & operator=(const NumberPredicate& rhs) = default;
-
-    NumberPredicate(Number size,bool val,bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), predicate(size, val)
-    {
+    NumberPredicate(Number size,bool val,bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), predicate(size, val) {
         if (tracking_elements && val) {
             elements.reserve(size);
             for (Number e = 0;e<size;++e)
@@ -107,18 +101,22 @@ public:
             cardinality = size;
     };
 
-    NumberPredicate(bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {};
+    NumberPredicate(bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {};
 
-    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         for (auto q: list)
             add(q);
     }
 
-    NumberPredicate(std::vector <Number> list, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(std::vector <Number> list, bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         add(list);
     }
 
-    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         predicate.reserve(bv.size());
         for (size_t i = 0;i<bv.size();i++) {
             if (bv[i])
@@ -126,9 +124,31 @@ public:
         }
     }
 
-    NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true) : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    explicit NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true)
+        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
         for (auto q: vec)
             add(q);
+    }
+
+    NumberPredicate(const NumberPredicate<Number>& rhs) = default;
+    NumberPredicate(NumberPredicate<Number>&& other) noexcept
+        : predicate{ std::move(other.predicate) }, elements{ std::move(other.elements) },
+          elements_are_exact{ other.elements_are_exact}, tracking_elements{ other.tracking_elements },
+          cardinality{ other.cardinality} {
+        other.cardinality = 0;
+    }
+
+    NumberPredicate<Number>& operator=(const NumberPredicate<Number>& rhs) = default;
+    NumberPredicate<Number>& operator=(NumberPredicate<Number>&& other) noexcept {
+        if (this != &other) {
+            elements = std::move(other.elements);
+            predicate = std::move(other.predicate);
+            elements_are_exact = other.elements_are_exact;
+            tracking_elements = other.tracking_elements;
+            cardinality = other.cardinality;
+            other.cardinality = 0;
+        }
+        return *this;
     }
 
     template <class InputIterator>
