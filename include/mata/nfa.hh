@@ -234,7 +234,6 @@ public:
     using super::push_back;
     // is adding non-const version as well ok?
     using super::back;
-    //Could we somehow use the && thingy here? It is supposed to be faster?
     using super::filter;
 };
 
