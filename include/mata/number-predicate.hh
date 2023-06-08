@@ -13,8 +13,9 @@ namespace Mata::Util {
 template <class Number> class OrdVector;
 
 /**
- * A sort of enhanced boolean array,
- * implementing a set of numbers, aka a unary predicate over numbers, that provides a constant test and update.
+ * @brief An enhanced boolean array, implementing a set of numbers, aka a unary predicate over numbers, that provides a
+ *  constant test and update.
+ *
  * A number that is explicitly added is in the set, all the other numbers are implicitly not in the set.
  *
  * Besides a vector of bools (predicate), it can also be asked to maintain a vector of elements (elements).
