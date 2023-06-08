@@ -289,7 +289,7 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
 size_t Delta::size() const
 {
     size_t size = 0;
-    for (State q = 0;q<post_size();++q)
+    for (State q = 0; q < posts_size(); ++q)
         for (const Move & m: (*this)[q])
             size = size + m.size();
 
@@ -298,9 +298,9 @@ size_t Delta::size() const
 
 void Delta::add(State state_from, Symbol symbol, State state_to)
 {
-    if (state_from >= post.size()) {
-        reserve_on_insert(post,state_from);
-        post.resize(state_from + 1);
+    if (state_from >= posts.size()) {
+        reserve_on_insert(posts, state_from);
+        posts.resize(state_from + 1);
     }
 
     if (state_from >= m_num_of_states) {
@@ -312,7 +312,7 @@ void Delta::add(State state_from, Symbol symbol, State state_to)
         m_num_of_states = state_to + 1;
     }
 
-    auto& state_transitions{ post[state_from] };
+    auto& state_transitions{ posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, state_to });
@@ -332,11 +332,11 @@ void Delta::add(State state_from, Symbol symbol, State state_to)
 }
 
 void Delta::remove(State src, Symbol symb, State tgt) {
-    if (src >= post.size()) {
+    if (src >= posts.size()) {
         return;
     }
 
-    auto& state_transitions{ post[src] };
+    auto& state_transitions{ posts[src] };
     if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -354,7 +354,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         } else {
             symbol_transitions->remove(tgt);
             if (symbol_transitions->empty()) {
-                post[src].remove(*symbol_transitions);
+                posts[src].remove(*symbol_transitions);
             }
             m_num_of_states = find_max_state() + 1;
         }
@@ -363,14 +363,14 @@ void Delta::remove(State src, Symbol symb, State tgt) {
 
 bool Delta::contains(State src, Symbol symb, State tgt) const
 { // {{{
-    if (post.empty()) {
+    if (posts.empty()) {
         return false;
     }
 
-    if (post.size() <= src)
+    if (posts.size() <= src)
         return false;
 
-    const Post& tl = post[src];
+    const Post& tl = posts[src];
     if (tl.empty()) {
         return false;
     }
@@ -435,7 +435,7 @@ Delta::const_iterator& Delta::const_iterator::operator++()
 State Delta::find_max_state() {
     size_t max = 0;
     State src = 0;
-    for (Post & p: post) {
+    for (Post & p: posts) {
         if (src > max)
             max = src;
         for (Move & m: p) {
@@ -666,7 +666,7 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     lhs_states.insert(lhs.initial.begin(), lhs.initial.end());
     lhs_states.insert(lhs.final.begin(), lhs.final.end());
 
-    const size_t delta_size = lhs.delta.post_size();
+    const size_t delta_size = lhs.delta.posts_size();
     for (size_t i = 0; i < delta_size; i++) {
         lhs_states.insert(i);
         for (const auto& symStates : lhs.delta[i])
@@ -684,7 +684,7 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
         if (haskey(lhs_states, rhs_st)) { return false; }
     }
 
-    const size_t lhs_post_size = lhs.delta.post_size();
+    const size_t lhs_post_size = lhs.delta.posts_size();
     for (size_t i = 0; i < lhs_post_size; i++) {
         if (haskey(lhs_states, i))
             return false;
@@ -732,7 +732,7 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
-    Nfa result{ aut.delta.post_size() };
+    Nfa result{ aut.delta.posts_size() };
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
@@ -977,7 +977,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     }
 
     //sorting the targets
-    for (State q = 0, states_num = result.delta.post_size(); q<states_num;++q) {
+    for (State q = 0, states_num = result.delta.posts_size(); q < states_num; ++q) {
         Post & post = result.delta.get_mutable_post(q);
         //Util::sort_and_rmdupl(post);
         for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
@@ -1229,7 +1229,7 @@ void Nfa::print_to_DOT(std::ostream &outputStream) const {
         outputStream << finalState << " [shape=doublecircle];" << std::endl;
     }
 
-    const size_t delta_size = delta.post_size();
+    const size_t delta_size = delta.posts_size();
     for (State s = 0; s != delta_size; ++s) {
         for (const Move &t: delta[s]) {
             outputStream << s << " -> {";
@@ -1252,7 +1252,7 @@ TransSequence Nfa::get_trans_as_sequence() const
 {
     TransSequence trans_sequence{};
 
-    for (State state_from{ 0 }; state_from < delta.post_size(); ++state_from)
+    for (State state_from{ 0 }; state_from < delta.posts_size(); ++state_from)
     {
         for (const auto& transition_from_state: delta[state_from])
         {
@@ -1306,7 +1306,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 
 TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
-    const size_t num_of_states{ delta.post_size() };
+    const size_t num_of_states{ delta.posts_size() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const auto& symbol_transitions: delta[state_from]) {
             const auto& symbol_states_to{ symbol_transitions.targets };
@@ -1718,7 +1718,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 
     result.nfa = nfa;
 
-    for (size_t trIt{ 0 }; trIt < nfa->delta.post_size(); ++trIt) {
+    for (size_t trIt{ 0 }; trIt < nfa->delta.posts_size(); ++trIt) {
         auto& moves{ nfa->get_moves_from(trIt) };
         if (!moves.empty()) {
             auto move{ moves.begin() };
@@ -1776,13 +1776,13 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     ++this->trIt;
     assert(this->nfa->delta.begin() != this->nfa->delta.end());
 
-    while (this->trIt < this->nfa->delta.post_size() &&
+    while (this->trIt < this->nfa->delta.posts_size() &&
            this->nfa->get_moves_from(this->trIt).empty())
     {
         ++this->trIt;
     }
 
-    if (this->trIt < this->nfa->delta.post_size())
+    if (this->trIt < this->nfa->delta.posts_size())
     {
         this->tlIt = this->nfa->get_moves_from(this->trIt).begin();
         assert(!this->nfa->get_moves_from(this->trIt).empty());
@@ -1820,7 +1820,7 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 #else
     std::vector<Symbol>  symbols{};
 #endif
-    for (State q = 0; q<delta.post_size(); ++q) {
+    for (State q = 0; q< delta.posts_size(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
             Util::reserve_on_insert(symbols);
@@ -1840,7 +1840,7 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
 #else
     static std::set<Symbol>  symbols{};
 #endif
-    for (State q = 0; q<delta.post_size(); ++q) {
+    for (State q = 0; q< delta.posts_size(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
             symbols.insert(move.symbol);
@@ -1862,7 +1862,7 @@ Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
     Util::NumberPredicate<Symbol>  symbols(64,false,false);
 #endif
     //symbols.dont_track_elements();
-    for (State q = 0; q<delta.post_size(); ++q) {
+    for (State q = 0; q< delta.posts_size(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
             symbols.add(move.symbol);
@@ -1883,7 +1883,7 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
     std::vector<bool> symbols(64,false);
 #endif
     //symbols.dont_track_elements();
-    for (State q = 0; q<delta.post_size(); ++q) {
+    for (State q = 0; q< delta.posts_size(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
             reserve_on_insert(symbols,move.symbol);
@@ -1897,7 +1897,7 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
 // returns max non-e symbol in Delta
 Symbol Nfa::get_max_symbol() const {
     Symbol max = 0;
-    for (State q = 0; q<delta.post_size(); ++q) {
+    for (State q = 0; q< delta.posts_size(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
             if (move.symbol > max)

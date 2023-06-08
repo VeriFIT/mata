@@ -245,7 +245,7 @@ public:
  */
 struct Delta {
 private:
-    std::vector<Post> post;
+    std::vector<Post> posts;
 
     /// Number of actual states occurring in the transition relation.
     ///
@@ -257,11 +257,11 @@ private:
 public:
     inline static const Post empty_post; //when post[q] is not allocated, then delta[q] returns this.
 
-    Delta() : post(), m_num_of_states(0) {}
-    explicit Delta(size_t n) : post(), m_num_of_states(n) {}
+    Delta() : posts(), m_num_of_states(0) {}
+    explicit Delta(size_t n) : posts(), m_num_of_states(n) {}
 
     void reserve(size_t n) {
-        post.reserve(n);
+        posts.reserve(n);
         if (n > m_num_of_states) {
             m_num_of_states = n;
         }
@@ -284,16 +284,16 @@ public:
     // But it feels fragile, before doing something like that, better think and talk to people.
     Post & get_mutable_post(State q)
     {
-        if (q >= post.size()) {
-            Util::reserve_on_insert(post,q);
+        if (q >= posts.size()) {
+            Util::reserve_on_insert(posts, q);
             const size_t new_size{ q + 1 };
-            post.resize(new_size);
+            posts.resize(new_size);
             if (new_size > m_num_of_states) {
                 m_num_of_states = new_size;
             }
         }
 
-        return post[q];
+        return posts[q];
     };
 
     // TODO: why do we have the code of all these methods in the header file? Should we move it out?
@@ -301,13 +301,13 @@ public:
     std::vector<State> defragment(Util::NumberPredicate<State> & is_staying) {
         //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
         size_t move_index{ 0 };
-        post.erase(
-            std::remove_if(post.begin(), post.end(), [&](Post& _post) -> bool {
+        posts.erase(
+            std::remove_if(posts.begin(), posts.end(), [&](Post& _post) -> bool {
                 size_t prev{ move_index };
                 ++move_index;
                 return !is_staying[prev];
             }),
-            post.end()
+            posts.end()
         );
 
         //get renaming of current states to new numbers:
@@ -322,7 +322,7 @@ public:
 
         //this iterates through every post and ever, filters and renames states,
         //and finally removes moves that became empty from the post.
-        for (State q=0,size=post.size();q<size;++q) {
+        for (State q=0,size=posts.size(); q < size; ++q) {
             //should we have a function Post::transform(Lambda) for this?
             Post & p = get_mutable_post(q);
             for (auto move = p.begin(); move < p.end(); ++move) {
@@ -343,7 +343,7 @@ public:
         }
 
         //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
-        if (post.size() > 0)
+        if (posts.size() > 0)
             m_num_of_states = find_max_state()+1;
         else
             m_num_of_states = 0;
@@ -353,34 +353,30 @@ public:
     };
 
     // Get a constant reference to the post of a state. No side effects.
-    const Post & operator[] (State q) const
-    {
-        if (q >= post.size())
+    const Post & operator[] (State q) const {
+        if (q >= posts.size())
             return empty_post;
         else
-            return post[q];
+            return posts[q];
     };
 
-    void emplace_back() {
-        post.emplace_back();
-        if (post.size() > m_num_of_states) { ++m_num_of_states; }
-    }
+    void emplace_back() { posts.emplace_back(); }
 
     void clear()
     {
-        post.clear();
+        posts.clear();
         m_num_of_states = 0;
     }
 
     void increase_size(size_t n)
     {
-        assert(n >= post.size());
-        post.resize(n);
-        if (post.size() > m_num_of_states)
-            m_num_of_states = post.size();
+        assert(n >= posts.size());
+        posts.resize(n);
+        if (posts.size() > m_num_of_states)
+            m_num_of_states = posts.size();
     }
 
-    size_t post_size() const { return post.size(); }
+    size_t post_size() const { return posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
@@ -459,12 +455,12 @@ public:
 
     struct const_iterator cbegin() const
     {
-        return const_iterator(post);
+        return const_iterator(posts);
     }
 
     struct const_iterator cend() const
     {
-        return const_iterator(post, true);
+        return const_iterator(posts, true);
     }
 
     struct const_iterator begin() const
