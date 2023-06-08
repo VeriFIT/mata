@@ -130,7 +130,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         }
 
         // process transitions leaving smaller_state
-        for (const auto& smaller_move : smaller[smaller_state]) {//TODO: this should become smaller.delta[smaller_state] after refactoring
+        for (const auto& smaller_move : smaller.delta[smaller_state]) {
             const Symbol& smaller_symbol = smaller_move.symbol;
 
             do {
