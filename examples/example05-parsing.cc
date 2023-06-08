@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     Mata::Parser::Parsed parsed;
     Nfa aut;
-    StringToSymbolMap stsm;
+    Mata::StringToSymbolMap stsm;
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
