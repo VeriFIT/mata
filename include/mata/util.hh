@@ -66,7 +66,7 @@ namespace Mata
 extern unsigned LOG_VERBOSITY;
 
 /// git sha
-extern const std::string Mata::g_GIT_SHA1;
+extern const std::string g_GIT_SHA1;
 
 /**
  * Non-automata-related structures and algorithms.
