@@ -47,11 +47,14 @@ include_directories(../3rdparty/cudd/include)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
+# create config.cc file that contains definitions of global variables
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
+
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	alphabet.cc
 	afa/afa.cc
-	config.cc
+	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
 	mintermization.cc
 	parser.cc
