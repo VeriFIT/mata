@@ -296,20 +296,11 @@ size_t Delta::size() const
     return size;
 }
 
-void Delta::add(State state_from, Symbol symbol, State state_to)
-{
-    if (state_from >= posts.size()) {
-        reserve_on_insert(posts, state_from);
-        posts.resize(state_from + 1);
-    }
-
-    if (state_from >= m_num_of_states) {
-        // state_from == 0 && m_num_of_states == 0 handles the case where delta is empty.
-
-        m_num_of_states = state_from + 1;
-    }
-    if (state_to >= m_num_of_states) {
-        m_num_of_states = state_to + 1;
+void Delta::add(State state_from, Symbol symbol, State state_to) {
+    const State max_state{ std::max(state_from, state_to) };
+    if (max_state >= posts.size()) {
+        reserve_on_insert(posts, max_state);
+        posts.resize(max_state + 1);
     }
 
     auto& state_transitions{ posts[state_from] };
@@ -356,7 +347,6 @@ void Delta::remove(State src, Symbol symb, State tgt) {
             if (symbol_transitions->empty()) {
                 posts[src].remove(*symbol_transitions);
             }
-            m_num_of_states = find_max_state() + 1;
         }
     }
 }
@@ -450,12 +440,6 @@ State Delta::find_max_state() {
 
 ///// Nfa structure related methods
 
-State Nfa::add_state() {
-    m_num_of_requested_states = size() + 1;
-    return m_num_of_requested_states - 1;
-    //TODO: why the -1? omg. Removing this would be best. Or at least make it understandeable ...
-}
-
 void Nfa::remove_epsilon(const Symbol epsilon)
 {
     *this = Mata::Nfa::remove_epsilon(*this, epsilon);
@@ -509,8 +493,6 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
     final.defragment(useful_states);
     //this renaming can be used instead of the state map, it is computed there anyway, so far not used.
     std::vector<State> renaming = delta.defragment(useful_states);
-
-    m_num_of_requested_states = 0;
 
     // TODO : this is actually ony used in one test, remove state map?
     if (state_map) {
@@ -791,10 +773,6 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
 
                 // TODO: this could be done more efficiently if we had a better add method
                 for (State tgt_state : symb_set.targets) {
-                    max_state = std::max(src_state, tgt_state);
-                    if (result.delta.post_size() < max_state) {
-                        result.add_state(max_state);
-                    }
                     result.delta.add(src_state, symb_set.symbol, tgt_state);
                 }
             }
@@ -934,7 +912,7 @@ Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
     result.clear();
 
     const size_t num_of_states{ aut.size() };
-    result.add_state(num_of_states - 1);
+    result.delta.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const Move &transition: aut.delta[sourceState]) {

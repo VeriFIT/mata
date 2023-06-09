@@ -247,24 +247,14 @@ struct Delta {
 private:
     std::vector<Post> posts;
 
-    /// Number of actual states occurring in the transition relation.
-    ///
-    /// These states are used in the transition relation, either on the left side or on the right side.
-    /// The value is always consistent with the actual number of states in the transition relation.
-    // TODO: the name of this is very bad, lets find another. What is it actually? What about tgt_domain_size, target_domain_size, domain_size.
-    size_t m_num_of_states;
-
 public:
-    inline static const Post empty_post; //when post[q] is not allocated, then delta[q] returns this.
+    inline static const Post empty_post; //when posts[q] is not allocated, then delta[q] returns this.
 
-    Delta() : posts(), m_num_of_states(0) {}
-    explicit Delta(size_t n) : posts(), m_num_of_states(n) {}
+    Delta() : posts() {}
+    explicit Delta(size_t n) : posts(n) {}
 
     void reserve(size_t n) {
         posts.reserve(n);
-        if (n > m_num_of_states) {
-            m_num_of_states = n;
-        }
     };
 
     /**
@@ -282,15 +272,11 @@ public:
     // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
-    Post & get_mutable_post(State q)
-    {
+    Post& get_mutable_post(State q) {
         if (q >= posts.size()) {
             Util::reserve_on_insert(posts, q);
             const size_t new_size{ q + 1 };
             posts.resize(new_size);
-            if (new_size > m_num_of_states) {
-                m_num_of_states = new_size;
-            }
         }
 
         return posts[q];
@@ -342,12 +328,6 @@ public:
             );
         }
 
-        //TODO: this is bad. m_num_of_states should be named differently and it should be the number of states, so that 0 means no states and 1 means at least state 0.
-        if (posts.size() > 0)
-            m_num_of_states = find_max_state()+1;
-        else
-            m_num_of_states = 0;
-
         //the renaming can be useful somewhere, computed anyway, we can as well return it.
         return renaming;
     };
@@ -362,21 +342,17 @@ public:
 
     void emplace_back() { posts.emplace_back(); }
 
-    void clear()
-    {
-        posts.clear();
-        m_num_of_states = 0;
-    }
+    void clear() { posts.clear(); }
 
-    void increase_size(size_t n)
-    {
+    void increase_size(size_t n) {
         assert(n >= posts.size());
         posts.resize(n);
-        if (posts.size() > m_num_of_states)
-            m_num_of_states = posts.size();
     }
 
-    size_t post_size() const { return posts.size(); }
+    /**
+     * @return Number of states with outgoing transitions.
+     */
+    size_t posts_size() const { return posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
@@ -390,8 +366,6 @@ public:
      * @return True if there are no transitions in the automaton, false otherwise.
      */
     bool empty() const;
-
-    size_t num_of_states() const { return m_num_of_states; }
 
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
@@ -453,25 +427,10 @@ public:
         friend bool operator!= (const const_iterator& a, const const_iterator& b) { return !(a == b); };
     };
 
-    struct const_iterator cbegin() const
-    {
-        return const_iterator(posts);
-    }
-
-    struct const_iterator cend() const
-    {
-        return const_iterator(posts, true);
-    }
-
-    struct const_iterator begin() const
-    {
-        return cbegin();
-    }
-
-    struct const_iterator end() const
-    {
-        return cend();
-    }
+    struct const_iterator cbegin() const { return const_iterator(posts); }
+    struct const_iterator cend() const { return const_iterator(posts, true); }
+    struct const_iterator begin() const { return cbegin(); }
+    struct const_iterator end() const { return cend(); }
 
 private:
     State find_max_state();
@@ -502,21 +461,8 @@ struct Nfa {
     //  dictionary in the attributes.
     std::unordered_map<std::string, void*> attributes{};
 
-    /// Number of pre-requested states in the automaton.
-    ///
-    /// These states may be unallocated and they might not be used anywhere in the automaton.
-    /// The value can be always less than the actual number of states in the whole automaton.
-    ///
-    /// This variable exists solely for the purpose of pre-requesting a certain number of states with
-    ///  'Nfa::Nfa::add_state(n)' where 'n' is the number of requested states. However, it does not make sense to
-    ///  allocate for these states space in Delta, nor in the sets of initial/final states. The variable should be
-    ///  therefore always zero (or less than the actual number of states in the whole automaton), unless
-    ///  'Nfa::Nfa::add_state(n)' was called. In that case, this variable will be set to n to store the information
-    ///  that the user manually added (requested) new states.
-    size_t m_num_of_requested_states{ 0 };
-
 public:
-    Nfa() : delta(), initial(), final(), m_num_of_requested_states(0) {}
+    Nfa() : delta(), initial(), final() {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
@@ -525,7 +471,7 @@ public:
      */
     explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
                  const StateSet& final_states = StateSet{}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet), m_num_of_requested_states(0) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -534,10 +480,8 @@ public:
 
     Nfa(Mata::Nfa::Nfa&& other) noexcept
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
-          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) },
-          m_num_of_requested_states{ other.m_num_of_requested_states } {
+          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } {
         other.alphabet = nullptr;
-        other.m_num_of_requested_states = 0;
     }
 
     Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
@@ -548,9 +492,7 @@ public:
             final = std::move(other.final);
             alphabet = other.alphabet;
             attributes = std::move(other.attributes);
-            m_num_of_requested_states = other.m_num_of_requested_states;
             other.alphabet = nullptr;
-            other.m_num_of_requested_states = 0;
         }
         return *this;
     }
@@ -559,28 +501,30 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        const size_t delta_size = delta.post_size();
+        const size_t delta_size = delta.posts_size();
         for (size_t i = 0; i < delta_size; ++i) {
             delta.get_mutable_post(i) = Post();
         }
     }
 
     /**
-     * Add a new state to the automaton.
+     * Add a new (fresh) state to the automaton.
      * @return The newly created state.
      */
-    State add_state();
+    State add_state() {
+        const size_t num_of_states{ size() };
+        delta.increase_size(num_of_states + 1 );
+        return num_of_states;
+    }
 
     /**
-     * Add a state provided by a user to the automaton. It increases size of NFA, if needed for adding the state.
-     * @param state State be added to automaton
-     * @return State added to automaton
+     * Add state @p state to @c delta if @p state is not in @c delta yet.
+     * @return The requested @p state.
      */
-    State add_state(State state)
-    {
-        if (state >= size())
-            m_num_of_requested_states = state + 1;
-
+    State add_state(State state) {
+        if (state >= delta.posts_size()) {
+            delta.increase_size(state + 1);
+        }
         return state;
     }
 
@@ -591,9 +535,9 @@ public:
      * @return The number of states.
      */
      size_t size() const {
-        //return std::max({m_num_of_requested_states, delta.num_of_states(), initial.domain_size(), final.domain_size() });
-        //This static casts somehow allow to use any number type for a state ...
-        return std::max({ m_num_of_requested_states, delta.num_of_states(), static_cast<unsigned long>(initial.domain_size()), static_cast<unsigned long>(final.domain_size()) });
+        return std::max({ static_cast<unsigned long>(initial.domain_size()),
+                          static_cast<unsigned long>(final.domain_size()),
+                          static_cast<unsigned long>(delta.posts_size()) });
     }
 
     /**
@@ -617,7 +561,6 @@ public:
         delta.clear();
         initial.clear();
         final.clear();
-        m_num_of_requested_states = 0;
     }
 
     // this is exact equality of automata, including state numbering (so even stronger than isomorphism)
@@ -632,10 +575,8 @@ public:
         bool init = Util::OrdVector<State>(initial.get_elements()) == Util::OrdVector<State>(aut.initial.get_elements());
         bool fin = Util::OrdVector<State>(final.get_elements()) == Util::OrdVector<State>(aut.final.get_elements());
         bool trans = thisTrans == autTrans;
-        bool num_of_requested_states = m_num_of_requested_states == aut.m_num_of_requested_states;
-        bool delta_num_of_states = delta.num_of_states() == aut.delta.num_of_states();
 
-        return (init && fin && trans && num_of_requested_states && delta_num_of_states);
+        return (init && fin && trans);
     };
 
     /**
@@ -728,8 +669,6 @@ public:
 
     //I just want to return something as constant reference to the thing, without copying anything, how?
     const Util::NumberPredicate<State> get_useful_states() const;
-
-
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
