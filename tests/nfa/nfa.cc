@@ -28,17 +28,6 @@ using Word = std::vector<Symbol>;
 
 template<class T> void unused(const T &) {}
 
-//TODO: we have already a method for this in nfa.hh - has_not_transitions, right?
-bool nothing_in_trans(const Nfa& nfa)
-{
-    bool all_empty = true;
-    for (size_t i = 0; i < nfa.size(); ++i) {
-        all_empty &= nfa.delta[i].empty();
-    }
-
-    return all_empty;
-}
-
 TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};
     CHECK(nfa.size() == 0);
@@ -128,7 +117,7 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 	}
 
     const size_t state_num = 'r'+1;
-    aut.add_state(state_num-1);
+    aut.delta.increase_size(state_num);
 
 	SECTION("a non-empty automaton")
 	{
@@ -521,7 +510,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 		result = determinize(aut);
 
 		REQUIRE(result.final.empty());
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
         CHECK(is_lang_empty(result));
 	}
 
@@ -533,7 +522,7 @@ TEST_CASE("Mata::Nfa::determinize()")
 
 		REQUIRE(result.initial[subset_map[{1}]]);
 		REQUIRE(result.final[subset_map[{1}]]);
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
 	}
 
 	SECTION("simple automaton 2")
@@ -1065,7 +1054,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
 		REQUIRE(aut.initial.empty());
 		REQUIRE(aut.final.empty());
-		REQUIRE(nothing_in_trans(aut));
+		REQUIRE(aut.delta.empty());
 	}
 
 	SECTION("empty automaton")
@@ -1091,7 +1080,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 		REQUIRE(aut.initial.size() == 1);
 		REQUIRE(*aut.initial.begin() == 1);
 		REQUIRE(aut.final.empty());
-		REQUIRE(nothing_in_trans(aut));
+		REQUIRE(aut.delta.empty());
 	}
 
 	SECTION("one-state automaton")
@@ -1168,7 +1157,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, { }));
 		REQUIRE(cmpl.initial.size() == 1);
 		REQUIRE(cmpl.final.size() == 1);
-		REQUIRE(nothing_in_trans(cmpl));
+		REQUIRE(cmpl.delta.empty());
 		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
 	}
 
@@ -1210,7 +1199,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(!is_in_lang(cmpl, { }));
 		REQUIRE(cmpl.initial.size() == 1);
 		REQUIRE(cmpl.final.size() == 0);
-		REQUIRE(nothing_in_trans(cmpl));
+		REQUIRE(cmpl.delta.empty());
 	}
 
 	SECTION("empty automaton accepting epsilon")
@@ -1278,7 +1267,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, { }));
 		REQUIRE(cmpl.initial.size() == 1);
 		REQUIRE(cmpl.final.size() == 1);
-		REQUIRE(nothing_in_trans(cmpl));
+		REQUIRE(cmpl.delta.empty());
 		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
 	}
 
@@ -1920,7 +1909,7 @@ TEST_CASE("Mata::Nfa::revert()")
 	{
 		Nfa result = revert(aut);
 
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
 		REQUIRE(result.initial.size() == 0);
 		REQUIRE(result.final.size() == 0);
 	}
@@ -1935,7 +1924,7 @@ TEST_CASE("Mata::Nfa::revert()")
 
 		Nfa result = revert(aut);
 
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
 		REQUIRE(result.initial[2]);
 		REQUIRE(result.initial[5]);
 		REQUIRE(result.final[1]);
@@ -2303,7 +2292,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 	{
 		Nfa result = reduce(aut, false, &state_map);
 
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
 		REQUIRE(result.initial.empty());
 		REQUIRE(result.final.empty());
 	}
@@ -2316,7 +2305,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.final.add(2);
 		Nfa result = reduce(aut, false, &state_map);
 
-		REQUIRE(nothing_in_trans(result));
+		REQUIRE(result.delta.empty());
 		REQUIRE(result.initial[state_map[1]]);
 		REQUIRE(result.final[state_map[2]]);
 		REQUIRE(result.size() == 2);
@@ -2536,11 +2525,11 @@ TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
     TransSequence expected{};
 
     aut.delta.add(1, 2, 3);
-    expected.push_back(Trans{1, 2, 3});
+    expected.emplace_back(1, 2, 3);
     aut.delta.add(1, 3, 4);
-    expected.push_back(Trans{1, 3, 4});
+    expected.emplace_back(1, 3, 4);
     aut.delta.add(2, 3, 4);
-    expected.push_back(Trans{2, 3, 4});
+    expected.emplace_back(2, 3, 4);
 
 
     REQUIRE(aut.get_trans_as_sequence() == expected);
