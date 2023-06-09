@@ -350,9 +350,9 @@ public:
     }
 
     /**
-     * @return Number of states with outgoing transitions.
+     * @return Number of states in the whole Delta, including both source and target states.
      */
-    size_t posts_size() const { return posts.size(); }
+    size_t num_of_states() const { return posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
@@ -501,7 +501,7 @@ public:
      * Clear transitions but keep the automata states.
      */
     void clear_transitions() {
-        const size_t delta_size = delta.posts_size();
+        const size_t delta_size = delta.num_of_states();
         for (size_t i = 0; i < delta_size; ++i) {
             delta.get_mutable_post(i) = Post();
         }
@@ -522,7 +522,7 @@ public:
      * @return The requested @p state.
      */
     State add_state(State state) {
-        if (state >= delta.posts_size()) {
+        if (state >= delta.num_of_states()) {
             delta.increase_size(state + 1);
         }
         return state;
@@ -537,7 +537,7 @@ public:
      size_t size() const {
         return std::max({ static_cast<unsigned long>(initial.domain_size()),
                           static_cast<unsigned long>(final.domain_size()),
-                          static_cast<unsigned long>(delta.posts_size()) });
+                          static_cast<unsigned long>(delta.num_of_states()) });
     }
 
     /**
