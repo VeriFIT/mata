@@ -35,14 +35,23 @@ void Nfa::concatenate_inplace(const Nfa& aut) {
     std::vector<Post> aut_post_cp = aut.delta.copy_posts_with(upd_fnc);
     this->delta.append(aut_post_cp);
 
+    // set accepting states
+    Util::NumberPredicate<State> new_fin{};
+    new_fin.reserve(n+aut.size());
+    for(const State& aut_fin : aut.final) {
+        new_fin.add(upd_fnc(aut_fin));
+    }
+
     // connect both parts
     for(const State& ini : aut.initial) {
         State ren_init = upd_fnc(ini);
-        if(aut.final[ini]) {
-            this->final.add(ren_init);
-        }
         const Post& ini_post = aut.delta[ini];
+        // is ini state also final?
+        bool is_final = aut.final[ini];
         for(const State& fin : this->final) {
+            if(is_final) {
+                new_fin.add(fin);
+            }
             for(const Move& ini_mv : ini_post) {
                 // TODO: this should be done efficiently in a delta method
                 for(const State& dest : ini_mv.targets) {
@@ -51,6 +60,7 @@ void Nfa::concatenate_inplace(const Nfa& aut) {
             }
         }
     }
+    this->final = new_fin;
 }
 
 Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
