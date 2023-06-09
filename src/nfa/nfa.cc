@@ -742,7 +742,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     const size_t num_of_states{aut.size() };
     for (size_t i{ 0 }; i < num_of_states; ++i)
     {
-        for (const auto& trans: aut[i])
+        for (const auto& trans: aut.delta[i])
         { // initialize
             const auto it_ins_pair = eps_closure.insert({i, {i}});
             if (trans.symbol == epsilon)
@@ -758,7 +758,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     while (changed) { // compute the fixpoint
         changed = false;
         for (size_t i=0; i < num_of_states; ++i) {
-            const auto& state_transitions{ aut[i] };
+            const auto& state_transitions{ aut.delta[i] };
             const auto state_symbol_transitions{
                 state_transitions.find(Move{epsilon}) };
             if (state_symbol_transitions != state_transitions.end()) {
@@ -786,7 +786,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
             if (aut.final[eps_cl_state]) result.final.add(src_state);
-            for (const auto& symb_set : aut[eps_cl_state]) {
+            for (const auto& symb_set : aut.delta[eps_cl_state]) {
                 if (symb_set.symbol == epsilon) continue;
 
                 // TODO: this could be done more efficiently if we had a better add method
@@ -1003,7 +1003,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
     const size_t aut_size = aut.size();
     for (size_t i = 0; i < aut_size; ++i)
     {
-        for (const auto& symStates : aut[i])
+        for (const auto& symStates : aut.delta[i])
         {
             if (symStates.size() != 1) { return false; }
         }
@@ -1030,7 +1030,7 @@ bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 
         size_t n = 0;      // counter of symbols
         if (!aut.delta.empty()) {
-            for (const auto &symb_stateset: aut[state]) {
+            for (const auto &symb_stateset: aut.delta[state]) {
                 ++n;
                 if (!haskey(symbs, symb_stateset.symbol)) {
                     throw std::runtime_error(std::to_string(__func__) +
@@ -1168,7 +1168,7 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
         if (aut.delta.empty())
             continue;
 
-        for (const auto& symb_stateset : aut[state])
+        for (const auto& symb_stateset : aut.delta[state])
         {
             for (const auto& tgt_state : symb_stateset.targets)
             {

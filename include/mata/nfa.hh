@@ -859,13 +859,6 @@ public:
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
 
-    const Post& operator[](State state) const
-    { // {{{
-        assert(state < size());
-        return delta[state];
-    } // operator[] }}}
-
-
     /**
      * Return all epsilon transitions from epsilon symbol under a given state.
      * @param[in] state State from which are epsilon transitions checked
@@ -1222,8 +1215,8 @@ Nfa revert(const Nfa& aut);
 
 // This revert algorithm is fragile, uses low level accesses to Nfa and static data structures,
 // and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
-// It is faster assymptoticaly and for somewhat dense automata,
-// the same or a litle bit slower than simple_revert otherwise.
+// It is faster asymptotically and for somewhat dense automata,
+// the same or a little bit slower than simple_revert otherwise.
 // Not affected by pre-reserving vectors.
 Nfa fragile_revert(const Nfa& aut);
 
