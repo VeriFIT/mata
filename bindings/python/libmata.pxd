@@ -182,7 +182,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void clear()
         bool empty()
         void resize(size_t)
-        size_t post_size()
+        size_t posts_size()
         void defragment()
         void add(CTrans) except +
         void add(State, Symbol, State) except +
