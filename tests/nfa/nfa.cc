@@ -1153,12 +1153,8 @@ TEST_CASE("Mata::Nfa::complement()")
 
 		cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
-
-		REQUIRE(is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-		REQUIRE(cmpl.delta.empty());
-		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
+        Nfa empty_string_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        CHECK(Mata::Nfa::are_equivalent(cmpl, empty_string_nfa));
 	}
 
 	SECTION("empty automaton")
@@ -1174,17 +1170,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-		// TODO: consider removing the structural tests (in case a more}
-		// sophisticated complementation algorithm is used)
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-
-		State init_state = *cmpl.initial.begin();
-		State fin_state = *cmpl.final.begin();
-		REQUIRE(init_state == fin_state);
-		REQUIRE(cmpl.get_moves_from(init_state).size() == 2);
-		REQUIRE(cmpl.delta.contains(init_state, alph["a"], init_state));
-		REQUIRE(cmpl.delta.contains(init_state, alph["b"], init_state));
+        Nfa sigma_star_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        CHECK(Mata::Nfa::are_equivalent(cmpl, sigma_star_nfa));
 	}
 
 	SECTION("empty automaton accepting epsilon, empty alphabet")
@@ -1196,10 +1183,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		REQUIRE(!is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 0);
-		REQUIRE(cmpl.delta.empty());
+		CHECK(is_lang_empty(cmpl));
 	}
 
 	SECTION("empty automaton accepting epsilon")
@@ -1263,12 +1247,8 @@ TEST_CASE("Mata::Nfa::complement()")
 
 		cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
-
-		REQUIRE(is_in_lang(cmpl, { }));
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-		REQUIRE(cmpl.delta.empty());
-		REQUIRE(*cmpl.initial.begin() == *cmpl.final.begin());
+        Nfa empty_string_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        CHECK(Mata::Nfa::are_equivalent(empty_string_nfa, cmpl));
 	}
 
 	SECTION("empty automaton, minimization")
@@ -1284,15 +1264,8 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-
-		State init_state = *cmpl.initial.begin();
-		State fin_state = *cmpl.final.begin();
-		REQUIRE(init_state == fin_state);
-		REQUIRE(cmpl.get_moves_from(init_state).size() == 2);
-		REQUIRE(cmpl.delta.contains(init_state, alph["a"], init_state));
-		REQUIRE(cmpl.delta.contains(init_state, alph["b"], init_state));
+        Nfa sigma_star_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        CHECK(Mata::Nfa::are_equivalent(sigma_star_nfa, cmpl));
 	}
 
 	SECTION("minimization vs no minimization")
