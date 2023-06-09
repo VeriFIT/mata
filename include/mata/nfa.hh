@@ -292,6 +292,28 @@ public:
     bool empty() const;
 
     /**
+     * @brief Append post vector to the delta.
+     * 
+     * @param post_vector Vector of posts to be appended.
+     */
+    void append(const std::vector<Post>& post_vector) {
+        for(const Post& pst : post_vector) {
+            this->post.push_back(pst);
+            this->m_num_of_states++;
+        }
+    }
+
+    /**
+     * @brief Copy posts of delta and apply a lambda update function on each state from 
+     * targets. IMPORTANT: In order to work properly, the lambda function needs to be 
+     * monotonic. 
+     * 
+     * @param lambda Monotonic lambda function mapping states to different states
+     * @return std::vector<Post> Copied posts.
+     */
+    std::vector<Post> copy_posts_with(const std::function<State(State)>& lambda) const;
+
+    /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
     struct const_iterator {

@@ -472,12 +472,25 @@ State Delta::find_max_state() {
     return max;
 }
 
-Post& Delta::get_mutable_post(State q) {
-    if (q >= posts.size()) {
-        Util::reserve_on_insert(posts, q);
-        const size_t new_size{ q + 1 };
-        posts.resize(new_size);
+std::vector<Post> Delta::copy_posts_with(const std::function<State(State)>& lambda) const {
+    std::vector<Post> cp_post_vector(this->post_size());
+    for(const Post& act_post: this->post) {
+        Post cp_post;
+        cp_post.reserve(act_post.size());
+        for(const Move& mv : act_post) {
+            StateSet cp_dest;
+            cp_dest.reserve(mv.size());
+            for(const State& state : mv.targets) {
+                cp_dest.push_back(state);
+            }
+            cp_post.push_back(Move(mv.symbol, cp_dest));
+        }
+        cp_post_vector.push_back(cp_post);
     }
+    return cp_post_vector;
+}
+
+///// Nfa structure related methods
 
     return posts[q];
 }
