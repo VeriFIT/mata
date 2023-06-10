@@ -654,32 +654,36 @@ public:
         // for instance figure out why NumberPredicate and OrdVedctor are slow,
         // try also with _STATIC_DATA_STRUCTURES_, it changes things.
 
-        //WITH VECTOR
-        //return get_used_symbols_vec();
+        //below are different variant, with different data structures for accumulating symbols,
+        //that then must be converted to an OrdVector
+        //measured are times with "Mata::Nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
 
-        //WITH SET
-        //auto from_set = get_used_symbols_set();
+        //WITH VECTOR (4.434 s)
+        return get_used_symbols_vec();
+
+        //WITH SET (26.5 s)
+        auto from_set = get_used_symbols_set();
         //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
 
-        //WITH NUMBER PREDICATE
+        //WITH NUMBER PREDICATE (4.857s)
         //return Util::OrdVector(get_used_symbols_np().get_elements());
 
-        //WITH BOOL VECTOR:
+        //WITH BOOL VECTOR (error !!!!!!!):
         //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
-        //WITH BOOL VECTOR:
-        std::vector<bool> bv = get_used_symbols_bv();
-        Util::OrdVector<Symbol> ov;
-        for(Symbol i = 0;i<bv.size();i++)
-            if (bv[i]) {
-                ov.push_back(i);
-            }
-        return ov;
+        //WITH BOOL VECTOR (1.9s):
+        //std::vector<bool> bv = get_used_symbols_bv();
+        //Util::OrdVector<Symbol> ov;
+        //for(Symbol i = 0;i<bv.size();i++)
+        //    if (bv[i]) {
+        //        ov.push_back(i);
+        //    }
+        //return ov;
 
-        ///WITH BOOL VECTOR, DIFFERENT VARIANT?:
-        // std::vector<bool> bv = get_used_symbols_bv();
-        // std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-        // return Util::OrdVector<Symbol>(v);
+        ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
+        //std::vector<bool> bv = get_used_symbols_bv();
+        //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
+        //return Util::OrdVector<Symbol>(v);
     };
 
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
