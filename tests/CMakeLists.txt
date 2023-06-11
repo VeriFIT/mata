@@ -62,7 +62,7 @@ add_executable(tests
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
-)
+        sparse-set.cc)
 
 target_link_libraries(tests libmata re2 simlib cudd)
 include(Catch)

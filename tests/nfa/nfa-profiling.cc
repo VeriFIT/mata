@@ -104,39 +104,47 @@ TEST_CASE("Mata::Nfa::trim_reverting() speed, harder", "[.profiling]") {
 TEST_CASE("Mata::Nfa::get_used_symbols speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
-    for (int i = 0; i < 2000000; i++) {
+    for (int i = 0; i < 20000000; i++) {
         A.get_used_symbols();
     }
 }
 
 TEST_CASE("Mata::Nfa::get_used_symbols_bv speed, harder", "[.profiling]") {
     Nfa A;
-    create_nfa(&A, "((.*){10})*");
-    for (int i = 0; i < 2000000; i++) {
+    create_nfa(&A, "((.*){100})*");
+    for (int i = 0; i < 20000000; i++) {
         A.get_used_symbols_bv();
+    }
+}
+
+TEST_CASE("Mata::Nfa::get_used_symbols_chv speed, harder", "[.profiling]") {
+    Nfa A;
+    create_nfa(&A, "((.*){100})*");
+    for (int i = 0; i < 20000000; i++) {
+        A.get_used_symbols_chv();
     }
 }
 
 TEST_CASE("Mata::Nfa::get_used_symbols_vec speed, harder", "[.profiling]") {
     Nfa A;
-    create_nfa(&A, "((.*){10})*");
-    for (int i = 0; i < 2000000; i++) {
+    create_nfa(&A, "((.*){50})*");
+    for (int i = 0; i < 20000000; i++) {
         A.get_used_symbols_vec();
     }
 }
 
 TEST_CASE("Mata::Nfa::get_used_symbols_set speed, harder", "[.profiling]") {
     Nfa A;
-    create_nfa(&A, "((.*){10})*");
-    for (int i = 0; i < 2000000; i++) {
+    create_nfa(&A, "((.*){50})*");
+    for (int i = 0; i < 20000000; i++) {
         A.get_used_symbols_set();
     }
 }
 
 TEST_CASE("Mata::Nfa::get_used_symbols_np speed, harder", "[.profiling]") {
     Nfa A;
-    create_nfa(&A, "((.*){10})*");
-    for (int i = 0; i < 2000000; i++) {
+    create_nfa(&A, "((.*){100})*");
+    for (int i = 0; i < 20000000; i++) {
         A.get_used_symbols_np();
     }
 }

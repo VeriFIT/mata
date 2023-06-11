@@ -68,7 +68,7 @@ add_library(libmata STATIC
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
-)
+		../include/mata/sparse-set.hh)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata

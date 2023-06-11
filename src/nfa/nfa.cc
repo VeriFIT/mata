@@ -512,7 +512,7 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
 
     m_num_of_requested_states = 0;
 
-    // TODO : this is actually ony used in one test, remove state map?
+    // TODO : this is actually only used in one test, remove state map?
     if (state_map) {
         state_map->clear();
         state_map->reserve(useful_states.domain_size());
@@ -583,20 +583,20 @@ const NumberPredicate<State> Nfa::get_useful_states() const
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    NumberPredicate<State> reached(size(),false,false); //what has been reached from the initial states
-    NumberPredicate<State> reached_and_reaching(size(),false,false);//what is reaching final states
+    //NumberPredicate<State> reached(size(),false); //bool vector is probably faster than np
+    //NumberPredicate<State> reached_and_reaching(size(),false);//what is reaching final states
 
-    //std::vector<bool> reached(size(),false);
-    //std::vector<bool> reached_and_reaching(size(),false);
+    std::vector<bool> reached(size(),false);
+    std::vector<bool> reached_and_reaching(size(),false);
     //std::vector<StackLevel> stack;
 #endif
 
     for (const State q0: initial) {
 
         stack.emplace_back(q0,delta);
-        reached.add(q0);
+        reached[q0]=true;
         if (final[q0])
-            reached_and_reaching.add(q0);
+            reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
             //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
@@ -617,18 +617,18 @@ const NumberPredicate<State> Nfa::get_useful_states() const
                 State succ_state = *(level.targets_it);
                 ++level.targets_it;
                 if (final[succ_state])
-                    reached_and_reaching.add(succ_state);
+                    reached_and_reaching[succ_state]=true;
                 if (reached_and_reaching[succ_state])
                 {
                     //A major trick, because of which one DFS is enough for reached as well as reaching.
                     //On touching a state which reaches finals states, everything in the stack below reaches a final state.
                     //An invariant of the stack is that everything below a reaching state is reaching.
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
-                            reached_and_reaching.add(it->state);
+                            reached_and_reaching[it->state]=true;
                     }
                 }
                 if (!reached[succ_state]) {
-                    reached.add(succ_state);
+                    reached[succ_state]=true;
                     stack.emplace_back(succ_state,delta);
                 }
             }
@@ -1859,7 +1859,7 @@ Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
     static Util::NumberPredicate<Symbol>  symbols(64,false,false);
     symbols.clear();
 #else
-    Util::NumberPredicate<Symbol>  symbols(64,false,false);
+    Util::NumberPredicate<Symbol>  symbols(100,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q<delta.post_size(); ++q) {
@@ -1877,10 +1877,34 @@ Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
 std::vector<bool> Nfa::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static std::vector<bool>  symbols(64,false);
+    static std::vector<bool>  symbols;
     symbols.clear();
 #else
-    std::vector<bool> symbols(64,false);
+    //std::vector<bool> symbols(64,false); //this is worse than declaring as empty
+    std::vector<bool> symbols;
+#endif
+    //symbols.dont_track_elements();
+    for (State q = 0; q<delta.post_size(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            reserve_on_insert(symbols,move.symbol);
+            symbols[move.symbol]=true;
+        }
+    }
+    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    return symbols;
+}
+
+// returns symbols appearing in Delta, adds to NumberPredicate,
+// Seems to be the fastest option, but could have problems with large maximum symbols
+std::vector<char> Nfa::get_used_symbols_chv() const {
+#ifdef _STATIC_STRUCTURES_
+    //static seems to speed things up a little
+    static std::vector<char>  symbols;
+    symbols.clear();
+#else
+    //std::vector<bool> symbols(64,false); //this is worse than declaring as empty
+    std::vector<char> symbols;
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q<delta.post_size(); ++q) {

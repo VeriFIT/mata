@@ -22,7 +22,6 @@ template <class Number> class OrdVector;
  * To keep constant test and set, new elements are pushed back to the vector but remove does not modify the vector.
  * Hence, after a remove, the vector contains a superset of the true elements.
  * Superset is still useful, to iterate through true elements, iterate through the vector and test membership in the bool array.
- * tracking_elements indicates that elements are tracked in the vector of elements as described above.
  * elements_are_exact indicates that the vector of elements contains the exact set of true elements.
  * INVARIANT:
  *  tracking_elements -> elements contains a superset of the true elements
@@ -36,10 +35,9 @@ template <class Number> class OrdVector;
  */
 template<typename Number> class NumberPredicate {
 private:
-    mutable std::vector<bool> predicate = {};
+    mutable std::vector<char> predicate = {};
     mutable std::vector<Number> elements = {};
     mutable bool elements_are_exact = true;
-    mutable bool tracking_elements = true;
     mutable Number cardinality = 0;
 
     using const_iterator = typename std::vector<Number>::const_iterator;
@@ -56,14 +54,11 @@ private:
             }
         }
         elements.resize(new_pos);
-        //there was a bug here! That line below was missing. Maybe not efficient.
-        //Well, it was maybe not a bug, not sure. Reverting, but keeping this comments here.
-        //Util::sort_and_rmdupl(elements);
         elements_are_exact = true;
     }
 
     /**
-     * assuming nothing, compute the true elements from scratch
+     * compute the true elements from scratch
      */
     void compute_elements() const {
         elements.clear();
@@ -80,18 +75,14 @@ private:
      */
     void update_elements() const {
         if (!elements_are_exact) {
-            if (!tracking_elements) {
-                compute_elements();
-            } else {
-                prune_elements();
-            }
+            prune_elements();
         }
     }
 
 public:
-    NumberPredicate(Number size,bool val,bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), predicate(size, val) {
-        if (tracking_elements && val) {
+    NumberPredicate(Number size,bool val)
+        : elements_are_exact(true), predicate(size, val) {
+        if (val) {
             elements.reserve(size);
             for (Number e = 0;e<size;++e)
                 elements.push_back(e);
@@ -102,22 +93,22 @@ public:
             cardinality = size;
     };
 
-    NumberPredicate(bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {};
+    NumberPredicate()
+        : elements_are_exact(true), cardinality(0) {};
 
-    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(std::initializer_list <Number> list)
+        : elements_are_exact(true), cardinality(0) {
         for (auto q: list)
             add(q);
     }
 
-    NumberPredicate(std::vector <Number> list, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(std::vector <Number> list)
+        : elements_are_exact(true), cardinality(0) {
         add(list);
     }
 
-    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    NumberPredicate(const std::vector<bool> & bv)
+        : elements_are_exact(true), cardinality(0) {
         predicate.reserve(bv.size());
         for (size_t i = 0;i<bv.size();i++) {
             if (bv[i])
@@ -125,8 +116,8 @@ public:
         }
     }
 
-    explicit NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    explicit NumberPredicate(Mata::Util::OrdVector<Number> vec)
+        : elements_are_exact(true), cardinality(0) {
         for (auto q: vec)
             add(q);
     }
@@ -134,7 +125,7 @@ public:
     NumberPredicate(const NumberPredicate<Number>& rhs) = default;
     NumberPredicate(NumberPredicate<Number>&& other) noexcept
         : predicate{ std::move(other.predicate) }, elements{ std::move(other.elements) },
-          elements_are_exact{ other.elements_are_exact}, tracking_elements{ other.tracking_elements },
+          elements_are_exact{ other.elements_are_exact},
           cardinality{ other.cardinality} {
         other.cardinality = 0;
     }
@@ -145,7 +136,6 @@ public:
             elements = std::move(other.elements);
             predicate = std::move(other.predicate);
             elements_are_exact = other.elements_are_exact;
-            tracking_elements = other.tracking_elements;
             cardinality = other.cardinality;
             other.cardinality = 0;
         }
@@ -171,16 +161,11 @@ public:
                 reserve_on_insert(predicate, q);
                 predicate.resize(q + 1, false);
             }
-            if (tracking_elements) {
-                Number q_was_there = predicate[q];
-                predicate[q] = true;
-                if (!q_was_there) {
-                    reserve_on_insert(elements);
-                    elements.push_back(q);
-                }
-            } else {
-                predicate[q] = true;
-                elements_are_exact = false;
+            Number q_was_there = predicate[q];
+            predicate[q] = true;
+            if (!q_was_there) {
+                reserve_on_insert(elements);
+                elements.push_back(q);
             }
         }
     }
@@ -205,24 +190,9 @@ public:
             remove(q);
     }
 
-    /**
-     * start tracking elements (might require updating them to establish the invariant)
-     */
-    void track_elements() {
-        if (!tracking_elements) {
-            update_elements();
-            tracking_elements = true;
-        }
-    }
-
-    void dont_track_elements() {
-        tracking_elements = false;
-    }
-
     // Defragmentation:
     // is_staying[q] == true if q is to stay in the domain, else it is to be removed from the domain,
     // and the names of all r > q in the domain will get decremented.
-    // So far, I will make it efficient only for the case when elements are not tracked.
     void defragment(const NumberPredicate<Number> & is_staying) {
         Number max_positive = 0;//new maximum positive element of the domain
         Number new_dom_max = 0;
@@ -243,9 +213,7 @@ public:
             predicate.resize(max_positive+1);
         else
             predicate.resize(0);
-        if (tracking_elements) {
             compute_elements();
-        }
     }
 
     /**
@@ -282,15 +250,8 @@ public:
      * Clears the set of true elements. Does not clear the predicate, only sets it false everywhere.
      */
     void clear() {
-        if (tracking_elements)
-            for (size_t i = 0, size = elements.size(); i < size; i++)
-                predicate[elements[i]] = false;
-        else
-            //for (size_t i = 0, size = predicate.size(); i < size; i++)
-            //    predicate[i] = false;
-            // Vysvetlete mi, co dela to && nize a zaplatim obed.
-            for (auto && i : predicate)
-                i = false;
+        for (size_t i = 0, size = elements.size(); i < size; i++)
+            predicate[elements[i]] = false;
         elements.clear();
         elements_are_exact = true;
         cardinality = 0;
@@ -298,9 +259,7 @@ public:
 
     void reserve(Number n) {
         predicate.reserve(n);
-        if (tracking_elements) {
-            elements.reserve(n);
-        }
+        elements.reserve(n);
     }
 
     //TODO: or negate()?
@@ -334,14 +293,12 @@ public:
                     cardinality--;
                 predicate[q]=false;
             }
-        if (tracking_elements) {
-            compute_elements();
-        }
+        compute_elements();
     }
 
     /*
      * Iterators to iterate through the true elements. No order can be assumed.
-     * This implementation is lazy. For instance, when not tracking elements, we should not compute elements.
+     * This implementation is lazy.
      */
     inline const_iterator begin() const {
         update_elements();
@@ -405,22 +362,14 @@ public:
             return;
 
         Number max;
-        if (tracking_elements) {
-            update_elements();
-            // if empty, max would be something strange
-            if (elements.empty()) {
-                predicate.resize(0);
-                return;
-            }
-            else
-                max = *std::max_element(elements.begin(), elements.end());
+        update_elements();
+        // if empty, max would be something strange
+        if (elements.empty()) {
+            predicate.resize(0);
+            return;
         }
-        else {
-            // one needs to be careful, Number can be unsigned, empty predicate would cause 0-1 below
-            for (max = predicate.size() - 1; max >= 0; --max)
-                if (predicate[max])
-                    break;
-        }
+        else
+            max = *std::max_element(elements.begin(), elements.end());
 
         predicate.resize(max + 1);
     }

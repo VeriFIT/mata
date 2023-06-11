@@ -695,6 +695,7 @@ public:
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
     Mata::Util::NumberPredicate<Symbol> get_used_symbols_np() const;
+    std::vector<char> get_used_symbols_chv() const;
     std::vector<bool> get_used_symbols_bv() const;
 
     /**
