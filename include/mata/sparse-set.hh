@@ -155,10 +155,6 @@ namespace Mata::Util {
             return has(q);
         }
 
-        std::vector <Number> get_elements() const {
-            return std::vector(begin(),end());
-        }
-
         void insert(const std::vector <Number> &elems) {
             for (Number q: elems)
                 insert(q);

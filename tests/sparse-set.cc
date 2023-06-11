@@ -16,13 +16,11 @@ TEST_CASE("Mata::Util::SparseSet") {
     SECTION("basic functionality: insert, erase, access, constructor, size, get_elements ") {
         std::vector<State> v = {1, 2, 3, 4, 5};
         p.insert(v);
-        auto elems = p.get_elements();
-        CHECK(elems == v);
+        CHECK(std::vector<State>(p.begin(),p.end()) == v);
         CHECK(p.size() == 5);
         p.erase({2, 4});
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
-        elems = p.get_elements();
-        CHECK(OrdVector<State>(elems) == OrdVector<State>({1,3,5}));
+        CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
         CHECK(p.size() == 3);
         p.insert({1, 3, 5});
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
@@ -91,7 +89,7 @@ TEST_CASE("Mata::Util::SparseSet") {
     SECTION("sort") {
         p = {1, 0, 2, 4, 6, 3, 5};
         p.sort();
-        CHECK( p.get_elements() == std::vector<State>{0,1,2,3,4,5,6});
+        CHECK( std::vector<State>(p.begin(),p.end()) == std::vector<State>{0,1,2,3,4,5,6});
     }
 
     SECTION("rename") {
@@ -107,7 +105,7 @@ TEST_CASE("Mata::Util::SparseSet") {
         CHECK(p.max() == 4);
     }
 
-    SECTION("sort") {
+    SECTION("truncate") {
         p = {1, 0, 2, 4, 6, 3, 5};
         p.erase(4);
         p.erase(6);
