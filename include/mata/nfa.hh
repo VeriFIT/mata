@@ -563,20 +563,26 @@ public:
         final.clear();
     }
 
-    // this is exact equality of automata, including state numbering (so even stronger than isomorphism)
-    // essentially only useful for testing purposes
+    /**
+     * @brief Check if @c this is exactly identical to @p aut.
+     *
+     * This is exact equality of automata, including state numbering (so even stronger than isomorphism),
+     *  essentially only useful for testing purposes.
+     * @return True if automata are exactly identical, false otherwise.
+     */
     bool is_identical(const Nfa & aut) {
-        std::vector<Trans> thisTrans;
-        for (auto trans: *this) thisTrans.push_back(trans);
-        std::vector<Trans> autTrans;
-        for (auto trans: aut) autTrans.push_back(trans);
+        if (Util::OrdVector<State>(initial.get_elements()) != Util::OrdVector<State>(aut.initial.get_elements())) {
+            return false;
+        }
+        if (Util::OrdVector<State>(final.get_elements()) != Util::OrdVector<State>(aut.final.get_elements())) {
+            return false;
+        }
 
-
-        bool init = Util::OrdVector<State>(initial.get_elements()) == Util::OrdVector<State>(aut.initial.get_elements());
-        bool fin = Util::OrdVector<State>(final.get_elements()) == Util::OrdVector<State>(aut.final.get_elements());
-        bool trans = thisTrans == autTrans;
-
-        return (init && fin && trans);
+        std::vector<Trans> this_trans;
+        for (auto trans: *this) { this_trans.push_back(trans); }
+        std::vector<Trans> aut_trans;
+        for (auto trans: aut) { aut_trans.push_back(trans); }
+        return this_trans == aut_trans;
     };
 
     /**
