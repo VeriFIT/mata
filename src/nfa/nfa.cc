@@ -528,7 +528,7 @@ const Post& Delta::operator[](State q) const {
     return posts[q];
 }
 
-///// Nfa structure related methods
+///// Nfa structure related methods.
 
 void Nfa::remove_epsilon(const Symbol epsilon)
 {

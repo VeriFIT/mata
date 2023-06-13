@@ -138,18 +138,17 @@ Mata::Parser::ParsedSection serialize(
 	const StateToStringMap*   state_map = nullptr);
 
 /**
- * Structure represents a move which is symbol and set of right-handed states of transitions.
+ * Structure represents a move which is a symbol and a set of target states of transitions.
  */
 struct Move {
+public:
     Symbol symbol{};
-    StateSet targets;
+    StateSet targets{};
 
     Move() = default;
-    explicit Move(Symbol symbolOnTransition) : symbol(symbolOnTransition), targets() {}
-    Move(Symbol symbolOnTransition, State states_to) :
-            symbol(symbolOnTransition), targets{states_to} {}
-    Move(Symbol symbolOnTransition, const StateSet& states_to) :
-            symbol(symbolOnTransition), targets(states_to) {}
+    explicit Move(Symbol symbol) : symbol{ symbol }, targets{} {}
+    Move(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
+    Move(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
     Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     Move(const Move& rhs) = default;
@@ -212,7 +211,7 @@ public:
     // is adding non-const version as well ok?
     using super::back;
     using super::filter;
-};
+}; // struct Post.
 
 /**
  * Delta is a data structure for representing transition relation.
@@ -325,7 +324,7 @@ public:
 
 private:
     State find_max_state();
-};
+}; // struct Delta.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::maxSymbol;
@@ -334,6 +333,7 @@ constexpr Symbol EPSILON = Limits::maxSymbol;
  * A struct representing an NFA.
  */
 struct Nfa {
+public:
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
      *
