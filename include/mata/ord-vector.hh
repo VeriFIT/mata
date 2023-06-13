@@ -1,12 +1,17 @@
-/*****************************************************************************
- *  Mata Tree Automata Library
+/* ord-vector.hh -- Implementation of a set (ordered vector) using std::vector.
  *
- *  Copyright (c) 2011  Ondra Lengal <ilengal@fit.vutbr.cz>
+ * This file is a part of libmata.
  *
- *  Description:
- *    File with the OrdVector class.
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
  *
- *****************************************************************************/
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 #ifndef MATA_ORD_VECTOR_HH_
 #define MATA_ORD_VECTOR_HH_
@@ -15,8 +20,8 @@
 #include <algorithm>
 #include <cassert>
 
-#include <mata/number-predicate.hh>
-#include <mata/util.hh>
+#include "mata/number-predicate.hh"
+#include "mata/util.hh"
 
 namespace {
 /**
@@ -30,8 +35,7 @@ namespace {
  * @returns  The string representation of the object
  */
 template <typename T>
-static std::string ToString(const T& n)
-{
+static std::string ToString(const T& n) {
     // the output stream for the string
     std::ostringstream oss;
     // insert the object into the stream
@@ -56,17 +60,14 @@ bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
 }
 
 template <class T>
-bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs)
-{
+bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs) {
     auto itLhs = lhs.begin();
     auto itRhs = rhs.begin();
-    while (itLhs != lhs.end() && itRhs != rhs.end())
-    {
+    while (itLhs != lhs.end() && itRhs != rhs.end()) {
         if (*itLhs == *itRhs) { return false; }
         else if (*itLhs < *itRhs) { ++itLhs; }
         else {++itRhs; }
     }
-
     return true;
 }
 
@@ -109,23 +110,15 @@ private:  // Private methods
 
 public:
     OrdVector() : vec_() {}
-
-    explicit OrdVector(const VectorType& vec) :
-        vec_(vec)
-    {
-        Util::sort_and_rmdupl(vec_);
-    }
-
+    explicit OrdVector(const VectorType& vec) : vec_(vec) { Util::sort_and_rmdupl(vec_); }
     explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
-
-    OrdVector(std::initializer_list<Key> list) :
-        vec_(list)
-    {
-        Util::sort_and_rmdupl(vec_);
-    }
-
+    OrdVector(std::initializer_list<Key> list) : vec_(list) { Util::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
+    explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
+    explicit OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
+    template <class InputIterator>
+    OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
 
     OrdVector& operator=(const OrdVector& other) {
         if (&other != this) { vec_ = other.vec_; }
@@ -135,20 +128,6 @@ public:
     OrdVector& operator=(OrdVector&& other) noexcept {
         if (&other != this) { vec_ = std::move(other.vec_); }
         return *this;
-    }
-
-    explicit OrdVector(const Key& key) : vec_(1, key) {
-        // Assertions
-        assert(vectorIsSorted());
-    }
-
-    OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
-
-    template <class InputIterator>
-    OrdVector(InputIterator first, InputIterator last) :
-        vec_(first, last)
-    {
-        Util::sort_and_rmdupl(vec_);
     }
 
     virtual ~OrdVector() = default;
@@ -164,8 +143,7 @@ public:
         return ord_vector;
     }
 
-    void insert(iterator itr, const Key& x)
-    {
+    void insert(iterator itr, const Key& x) {
         assert(itr == this->end() || x <= *itr);
         vec_.insert(itr,x);
     }
@@ -178,19 +156,14 @@ public:
         vec_.emplace_back(x);
     }
 
-    virtual inline void reserve(size_t  size) {
-        vec_.reserve(size);
-    }
+    virtual inline void reserve(size_t  size) { vec_.reserve(size); }
 
-    virtual inline void erase(const_iterator first, const_iterator last) {
-        vec_.erase(first, last);
-    }
+    virtual inline void erase(const_iterator first, const_iterator last) { vec_.erase(first, last); }
 
-    virtual void insert(const Key& x)
-    {
-        reserve_on_insert(vec_);
-        // Assertions
+    virtual void insert(const Key& x) {
         assert(vectorIsSorted());
+
+        reserve_on_insert(vec_);
 
         // perform binary search (cannot use std::binary_search because it is
         // ineffective due to not returning the iterator to the position of the
@@ -229,19 +202,13 @@ public:
         // insert the new element
         vec_[first] = x;
 
-        // Assertions
         assert(vectorIsSorted());
     }
 
-    virtual void insert(const OrdVector& vec)
-    {
-        // Assertions
+    virtual void insert(const OrdVector& vec) {
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
-
         vec_ = OrdVector::Union(*this, vec).vec_;
-
-        // Assertions
         assert(vectorIsSorted());
     }
 
@@ -249,20 +216,14 @@ public:
 
     virtual inline size_t size() const { return vec_.size(); }
 
-
-    inline size_t count(const Key& key) const
-    {
-        // Assertions
+    inline size_t count(const Key& key) const {
         assert(vectorIsSorted());
-
-        for (auto v : this->vec_)
-        {
+        for (auto v : this->vec_) {
             if (v == key)
                 return 1;
             else if (v > key)
                 return 0;
         }
-
         return 0;
     }
 
@@ -279,9 +240,7 @@ public:
 
     //TODO: this code of find was duplicated, not nice.
     // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
-    virtual const_iterator find(const Key& key) const
-    {
-        // Assertions
+    virtual const_iterator find(const Key& key) const {
         assert(vectorIsSorted());
 
         auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
@@ -292,9 +251,7 @@ public:
     }
 
     //TODO: the original code was duplicated, see comments above.
-    virtual iterator find(const Key& key)
-    {
-        // Assertions
+    virtual iterator find(const Key& key) {
         assert(vectorIsSorted());
 
         auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
@@ -369,57 +326,36 @@ public:
 	 *
 	 * @returns  Modified output stream
 	 */
-	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec)
-	{
+	friend std::ostream& operator<<(std::ostream& os, const OrdVector& vec) {
 		std::string result = "{";
 
-		for (auto it = vec.cbegin(); it != vec.cend(); ++it)
-		{
+		for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
 			result += ((it != vec.begin())? ", " : " ") + ToString(*it);
 		}
 
 		return os << (result + "}");
 	}
 
-	bool operator==(const OrdVector& rhs) const
-	{
-		// Assertions
+	bool operator==(const OrdVector& rhs) const {
 		assert(vectorIsSorted());
 		assert(rhs.vectorIsSorted());
-
 		return (vec_ == rhs.vec_);
 	}
+    bool operator!=(const OrdVector& rhs) const { return !(*this == rhs); }
 
-    bool operator!=(const OrdVector& rhs) const
-    {
-        // Assertions
+    bool operator<(const OrdVector& rhs) const {
         assert(vectorIsSorted());
         assert(rhs.vectorIsSorted());
-
-        return (vec_ != rhs.vec_);
-    }
-
-    bool operator<(const OrdVector& rhs) const
-    {
-        // Assertions
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
-
-        return std::lexicographical_compare(vec_.begin(), vec_.end(),
-            rhs.vec_.begin(), rhs.vec_.end());
+        return std::lexicographical_compare(vec_.begin(), vec_.end(), rhs.vec_.begin(), rhs.vec_.end());
     }
 
     const std::vector<Key>& ToVector() const { return vec_; }
 
-    bool IsSubsetOf(const OrdVector& bigger) const
-    {
-        return std::includes(bigger.cbegin(), bigger.cend(),
-            this->cbegin(), this->cend());
+    bool IsSubsetOf(const OrdVector& bigger) const {
+        return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
     }
 
-    bool HaveEmptyIntersection(const OrdVector& rhs) const
-    {
-        // Assertions
+    bool HaveEmptyIntersection(const OrdVector& rhs) const {
         assert(vectorIsSorted());
         assert(rhs.vectorIsSorted());
 
@@ -442,13 +378,11 @@ public:
                 ++itRhs;
             }
         }
-
         return true;
     }
 
     // Renames numbers in the vector according to the renaming, q becomes renaming[q].
-   void rename(const std::vector<Key> & renaming) { Util::rename(vec_,renaming); }
-
+    void rename(const std::vector<Key> & renaming) { Util::rename(vec_,renaming); }
 
     static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
         assert(lhs.vectorIsSorted());
@@ -542,10 +476,8 @@ public:
 
 namespace std {
     template <class Key>
-    struct hash<Mata::Util::OrdVector<Key>>
-    {
-        std::size_t operator()(const Mata::Util::OrdVector<Key>& vec) const
-        {
+    struct hash<Mata::Util::OrdVector<Key>> {
+        std::size_t operator()(const Mata::Util::OrdVector<Key>& vec) const {
             return std::hash<std::vector<Key>>{}(vec.ToVector());
         }
     };
