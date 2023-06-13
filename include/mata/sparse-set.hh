@@ -88,9 +88,17 @@ namespace Mata::Util {
             }
         }
 
+
+
 //////////////////////////////////////////////////////////////////////////////////
 ///     New Mata code
 //////////////////////////////////////////////////////////////////////////////////
+
+//Just to make it compatible with NumberPredicate, to make refactoring easier, to be removed.
+
+        void add(const Number val) {insert(val);}
+        void remove(const Number val) {erase(val);}
+        Number domain_size() const {return capacity();}
 
 // Constructors:
 
@@ -215,6 +223,8 @@ namespace Mata::Util {
             for (Number i = 0; i < size_; i++) {
                 if (dense[i] != renaming(dense[i])) {
                     dense[i] = renaming(dense[i]);
+                    if (dense[i] >= capacity_)
+                        reserve(dense[i]);
                     sparse[dense[i]] = i;
                 }
             }
@@ -233,6 +243,20 @@ namespace Mata::Util {
             capacity_ = max()+1;
         }
 
+        friend bool are_disjoint(SparseSet & A, SparseSet & B);
     };
+
+    template<typename Number>
+    bool are_disjoint(SparseSet<Number> & A, SparseSet<Number> & B) {
+        if (A.size() > B.size)
+            return are_disjoint(B,A);
+        else {
+            for (auto i: A)
+                if (B.contains(i))
+                    return false;
+        }
+        return true;
+    }
+
 }
 #endif //LIBMATA_SPARSE_SET_HH
