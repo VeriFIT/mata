@@ -422,6 +422,31 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
+const Delta::const_iterator Delta::const_iterator::operator++(int) {
+    const const_iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_iterator& x) {
+    this->post_iterator = x.post_iterator;
+    this->targets_position = x.targets_position;
+    this->current_state = x.current_state;
+    this->is_end = x.is_end;
+
+    return *this;
+}
+
+bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_iterator& b) {
+    if (a.is_end && b.is_end)
+        return true;
+    else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end))
+        return false;
+    else
+        return a.current_state == b.current_state && a.post_iterator == b.post_iterator
+               && a.targets_position == b.targets_position;
+}
+
 State Delta::find_max_state() {
     size_t max = 0;
     State src = 0;
@@ -436,6 +461,71 @@ State Delta::find_max_state() {
         src++;
     }
     return max;
+}
+
+Post& Delta::get_mutable_post(State q) {
+    if (q >= posts.size()) {
+        Util::reserve_on_insert(posts, q);
+        const size_t new_size{ q + 1 };
+        posts.resize(new_size);
+    }
+
+    return posts[q];
+}
+
+std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
+    //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
+    size_t move_index{ 0 };
+    posts.erase(
+            std::remove_if(posts.begin(), posts.end(), [&](Post& _post) -> bool {
+                size_t prev{ move_index };
+                ++move_index;
+                return !is_staying[prev];
+            }),
+            posts.end()
+    );
+
+    //get renaming of current states to new numbers:
+    std::vector<State> renaming(this->find_max_state()+1);
+    size_t i = 0;
+    for (State q:is_staying.get_elements()) {
+        if (q >= renaming.size())
+            break;
+        renaming[q] = i;
+        i++;
+    }
+
+    //this iterates through every post and ever, filters and renames states,
+    //and finally removes moves that became empty from the post.
+    for (State q=0,size=posts.size(); q < size; ++q) {
+        //should we have a function Post::transform(Lambda) for this?
+        Post & p = get_mutable_post(q);
+        for (auto move = p.begin(); move < p.end(); ++move) {
+            move->targets.erase(
+                    std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
+                        return !is_staying[q];
+                    }),
+                    move->targets.end()
+            );
+            move->targets.rename(renaming);
+        }
+        p.erase(
+                std::remove_if(p.begin(), p.end(), [&](Move& move) -> bool {
+                    return move.targets.empty();
+                }),
+                p.end()
+        );
+    }
+
+    //the renaming can be useful somewhere, computed anyway, we can as well return it.
+    return renaming;
+}
+
+const Post& Delta::operator[](State q) const {
+    if (q >= posts.size()) {
+        return empty_post;
+    }
+    return posts[q];
 }
 
 ///// Nfa structure related methods
@@ -1776,7 +1866,14 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     this->is_end = true;
 
     return *this;
-} // operator++ }}}
+}
+
+bool Nfa::const_iterator::operator==(const Nfa::const_iterator& rhs) const {
+    if (this->is_end && rhs.is_end) { return true; }
+    if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
+    return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
+}
+// operator++ }}}
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     os << "{ NFA: " << std::to_string(serialize(nfa));
@@ -1935,6 +2032,110 @@ void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) const {
     }
 }
 
+Nfa& Nfa::operator=(Nfa&& other) noexcept {
+    if (this != &other) {
+        delta = std::move(other.delta);
+        initial = std::move(other.initial);
+        final = std::move(other.final);
+        alphabet = other.alphabet;
+        attributes = std::move(other.attributes);
+        other.alphabet = nullptr;
+    }
+    return *this;
+}
+
+void Nfa::clear_transitions() {
+    const size_t delta_size = delta.num_of_states();
+    for (size_t i = 0; i < delta_size; ++i) {
+        delta.get_mutable_post(i) = Post();
+    }
+}
+
+State Nfa::add_state() {
+    const size_t num_of_states{ size() };
+    delta.increase_size(num_of_states + 1 );
+    return num_of_states;
+}
+
+State Nfa::add_state(State state) {
+    if (state >= delta.num_of_states()) {
+        delta.increase_size(state + 1);
+    }
+    return state;
+}
+
+size_t Nfa::size() const {
+    return std::max({
+        static_cast<unsigned long>(initial.domain_size()),
+        static_cast<unsigned long>(final.domain_size()),
+        static_cast<unsigned long>(delta.num_of_states())
+    });
+}
+
+void Nfa::clear() {
+    delta.clear();
+    initial.clear();
+    final.clear();
+}
+
+bool Nfa::is_identical(const Nfa& aut) {
+    if (Util::OrdVector<State>(initial.get_elements()) != Util::OrdVector<State>(aut.initial.get_elements())) {
+        return false;
+    }
+    if (Util::OrdVector<State>(final.get_elements()) != Util::OrdVector<State>(aut.final.get_elements())) {
+        return false;
+    }
+
+    std::vector<Trans> this_trans;
+    for (auto trans: *this) { this_trans.push_back(trans); }
+    std::vector<Trans> aut_trans;
+    for (auto trans: aut) { aut_trans.push_back(trans); }
+    return this_trans == aut_trans;
+}
+
+OrdVector<Symbol> Nfa::get_used_symbols() const {
+    //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
+    // for instance figure out why NumberPredicate and OrdVedctor are slow,
+    // try also with _STATIC_DATA_STRUCTURES_, it changes things.
+
+    //below are different variant, with different data structures for accumulating symbols,
+    //that then must be converted to an OrdVector
+    //measured are times with "Mata::Nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
+
+    //WITH VECTOR (4.434 s)
+    //return get_used_symbols_vec();
+
+    //WITH SET (26.5 s)
+    //auto from_set = get_used_symbols_set();
+    //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
+
+    //WITH NUMBER PREDICATE (4.857s)
+    //return Util::OrdVector(get_used_symbols_np().get_elements());
+
+    //WITH BOOL VECTOR (error !!!!!!!):
+    //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
+
+    //WITH BOOL VECTOR (1.9s):
+    std::vector<bool> bv = get_used_symbols_bv();
+    Util::OrdVector<Symbol> ov;
+    //int count = 0;
+    //for(Symbol i = 0;i<bv.size();i++)
+    //    if (bv[i]) {
+    //        count++;
+    //    }
+    //ov.reserve(count);
+    for(Symbol i = 0;i<bv.size();i++)
+        if (bv[i]) {
+            ov.push_back(i);
+        }
+    return ov;
+
+    ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
+    //std::vector<bool> bv = get_used_symbols_bv();
+    //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
+    //return Util::OrdVector<Symbol>(v);
+}
+
 Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
@@ -1977,4 +2178,30 @@ Nfa Mata::Nfa::create_sigma_star_nfa(Mata::Alphabet* alphabet) {
         nfa.delta.add(0, symbol, 0);
     }
     return nfa;
+}
+
+Run Mata::Nfa::encode_word(const Mata::StringToSymbolMap& symbol_map, const std::vector<std::string>& input) {
+    Run result;
+    for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
+    return result;
+}
+
+Move& Move::operator=(Move&& rhs) noexcept {
+    if (*this != rhs) {
+        symbol = rhs.symbol;
+        targets = std::move(rhs.targets);
+    }
+    return *this;
+}
+
+void Move::insert(State s) {
+    if (targets.find(s) == targets.end()) {
+        targets.insert(s);
+    }
+}
+
+void Move::insert(StateSet states) {
+    for (State s : states) {
+        insert(s);
+    }
 }

@@ -1,6 +1,4 @@
-/* nfa.hh -- nondeterministic finite automaton (over finite words)
- *
- * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
+/* nfa.hh -- Nondeterministic finite automaton (over finite words).
  *
  * This file is a part of libmata.
  *
@@ -15,10 +13,12 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _MATA_NFA_HH_
-#define _MATA_NFA_HH_
+#ifndef MATA_NFA_HH_
+#define MATA_NFA_HH_
 
-//#define _STATIC_STRUCTURES_ //static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like fragile_revert)
+// Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
+//  fragile_revert).
+//#define _STATIC_STRUCTURES_
 
 #include <algorithm>
 #include <cassert>
@@ -31,13 +31,12 @@
 #include <utility>
 #include <vector>
 
-// MATA headers
-#include <mata/alphabet.hh>
-#include <mata/parser.hh>
-#include <mata/util.hh>
-#include <mata/ord-vector.hh>
-#include <mata/inter-aut.hh>
-#include <mata/synchronized-iterator.hh>
+#include "mata/alphabet.hh"
+#include "mata/parser.hh"
+#include "mata/util.hh"
+#include "mata/ord-vector.hh"
+#include "mata/inter-aut.hh"
+#include "mata/synchronized-iterator.hh"
 
 /**
  * Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -79,7 +78,7 @@ using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 using StringMap = std::unordered_map<std::string, std::string>;
 
 /*TODO: What about to
- * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, State<UMap>, ...
+ * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, UMap<State>, ...
  * maybe something else is needed for the more complex maps*/
 
 struct Limits {
@@ -93,9 +92,8 @@ struct Limits {
  * unpack the trans. relation to transitions is inefficient, goes against the hairs of the library.
  * Do we want to support it?
  */
-/// A transition.
-struct Trans
-{
+/// A single transition.
+struct Trans {
 	State src;
 	Symbol symb;
 	State tgt;
@@ -155,13 +153,7 @@ struct Move {
 
     Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
     Move(const Move& rhs) = default;
-    Move& operator=(Move&& rhs) noexcept {
-        if (*this != rhs) {
-            symbol = rhs.symbol;
-            targets = std::move(rhs.targets);
-        }
-        return *this;
-    }
+    Move& operator=(Move&& rhs) noexcept;
     Move& operator=(const Move& rhs) = default;
 
     inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
@@ -181,32 +173,17 @@ struct Move {
     bool empty() const { return targets.empty(); }
     size_t size() const { return targets.size(); }
 
-    void insert(State s)
-    {
-        if (targets.find(s) == targets.end()) {
-            targets.insert(s);
-        }
-    }
-
-    void insert(StateSet states)
-    {
-        for (State s : states) {
-            insert(s);
-        }
-    }
+    void insert(State s);
+    void insert(StateSet states);
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
-    void inline push_back(const State s)
-    {
-        targets.push_back(s);
-    }
+    void inline push_back(const State s) { targets.push_back(s); }
 
     void remove(State s) { targets.remove(s); }
 
     const std::vector<State>::iterator find(State s) const { targets.find(s); }
-
     std::vector<State>::iterator find(State s) { return targets.find(s); }
 };
 
@@ -248,7 +225,7 @@ private:
     std::vector<Post> posts;
 
 public:
-    inline static const Post empty_post; //when posts[q] is not allocated, then delta[q] returns this.
+    inline static const Post empty_post; // When posts[q] is not allocated, then delta[q] returns this.
 
     Delta() : posts() {}
     explicit Delta(size_t n) : posts(n) {}
@@ -272,73 +249,14 @@ public:
     // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
-    Post& get_mutable_post(State q) {
-        if (q >= posts.size()) {
-            Util::reserve_on_insert(posts, q);
-            const size_t new_size{ q + 1 };
-            posts.resize(new_size);
-        }
-
-        return posts[q];
-    };
+    Post& get_mutable_post(State q);
 
     // TODO: why do we have the code of all these methods in the header file? Should we move it out?
     // TODO: Explain what is returned from this method.
-    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying) {
-        //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-        size_t move_index{ 0 };
-        posts.erase(
-            std::remove_if(posts.begin(), posts.end(), [&](Post& _post) -> bool {
-                size_t prev{ move_index };
-                ++move_index;
-                return !is_staying[prev];
-            }),
-            posts.end()
-        );
-
-        //get renaming of current states to new numbers:
-        std::vector<State> renaming(this->find_max_state()+1);
-        size_t i = 0;
-        for (State q:is_staying.get_elements()) {
-            if (q >= renaming.size())
-                break;
-            renaming[q] = i;
-            i++;
-        }
-
-        //this iterates through every post and ever, filters and renames states,
-        //and finally removes moves that became empty from the post.
-        for (State q=0,size=posts.size(); q < size; ++q) {
-            //should we have a function Post::transform(Lambda) for this?
-            Post & p = get_mutable_post(q);
-            for (auto move = p.begin(); move < p.end(); ++move) {
-                move->targets.erase(
-                    std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
-                        return !is_staying[q];
-                    }),
-                    move->targets.end()
-                );
-                move->targets.rename(renaming);
-            }
-            p.erase(
-                std::remove_if(p.begin(), p.end(), [&](Move& move) -> bool {
-                    return move.targets.empty();
-                }),
-                p.end()
-            );
-        }
-
-        //the renaming can be useful somewhere, computed anyway, we can as well return it.
-        return renaming;
-    };
+    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying);
 
     // Get a constant reference to the post of a state. No side effects.
-    const Post & operator[] (State q) const {
-        if (q >= posts.size())
-            return empty_post;
-        else
-            return posts[q];
-    };
+    const Post & operator[] (State q) const;
 
     void emplace_back() { posts.emplace_back(); }
 
@@ -387,50 +305,23 @@ public:
 
         const_iterator(const const_iterator& other) = default;
 
-        Trans operator*() const
-        {
-            return Trans{current_state, (*post_iterator).symbol, *targets_position};
-        }
+        Trans operator*() const { return Trans{current_state, (*post_iterator).symbol, *targets_position}; }
 
         // Prefix increment
         const_iterator& operator++();
-
         // Postfix increment
-        const const_iterator operator++(int)
-        {
-            const const_iterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
+        const const_iterator operator++(int);
 
-        const_iterator& operator=(const const_iterator& x)
-        {
-            this->post_iterator = x.post_iterator;
-            this->targets_position = x.targets_position;
-            this->current_state = x.current_state;
-            this->is_end = x.is_end;
+        const_iterator& operator=(const const_iterator& x);
 
-            return *this;
-        }
-
-        friend bool operator==(const const_iterator& a, const const_iterator& b)
-        {
-            if (a.is_end && b.is_end)
-                return true;
-            else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end))
-                return false;
-            else
-                return a.current_state == b.current_state && a.post_iterator == b.post_iterator
-                       && a.targets_position == b.targets_position;
-        }
-
-        friend bool operator!= (const const_iterator& a, const const_iterator& b) { return !(a == b); };
+        friend bool operator==(const const_iterator& a, const const_iterator& b);
+        friend bool operator!=(const const_iterator& a, const const_iterator& b) { return !(a == b); };
     };
 
-    struct const_iterator cbegin() const { return const_iterator(posts); }
-    struct const_iterator cend() const { return const_iterator(posts, true); }
-    struct const_iterator begin() const { return cbegin(); }
-    struct const_iterator end() const { return cend(); }
+    const_iterator cbegin() const { return const_iterator(posts); }
+    const_iterator cend() const { return const_iterator(posts, true); }
+    const_iterator begin() const { return cbegin(); }
+    const_iterator end() const { return cend(); }
 
 private:
     State find_max_state();
@@ -480,53 +371,27 @@ public:
 
     Nfa(Mata::Nfa::Nfa&& other) noexcept
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
-          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } {
-        other.alphabet = nullptr;
-    }
+          alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
     Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
-    Nfa& operator=(Mata::Nfa::Nfa&& other) noexcept {
-        if (this != &other) {
-            delta = std::move(other.delta);
-            initial = std::move(other.initial);
-            final = std::move(other.final);
-            alphabet = other.alphabet;
-            attributes = std::move(other.attributes);
-            other.alphabet = nullptr;
-        }
-        return *this;
-    }
+    Nfa& operator=(Mata::Nfa::Nfa&& other) noexcept;
 
     /**
      * Clear transitions but keep the automata states.
      */
-    void clear_transitions() {
-        const size_t delta_size = delta.num_of_states();
-        for (size_t i = 0; i < delta_size; ++i) {
-            delta.get_mutable_post(i) = Post();
-        }
-    }
+    void clear_transitions();
 
     /**
      * Add a new (fresh) state to the automaton.
      * @return The newly created state.
      */
-    State add_state() {
-        const size_t num_of_states{ size() };
-        delta.increase_size(num_of_states + 1 );
-        return num_of_states;
-    }
+    State add_state();
 
     /**
      * Add state @p state to @c delta if @p state is not in @c delta yet.
      * @return The requested @p state.
      */
-    State add_state(State state) {
-        if (state >= delta.num_of_states()) {
-            delta.increase_size(state + 1);
-        }
-        return state;
-    }
+    State add_state(State state);
 
     /**
      * @brief Get the current number of states in the whole automaton.
@@ -534,11 +399,7 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t size() const {
-        return std::max({ static_cast<unsigned long>(initial.domain_size()),
-                          static_cast<unsigned long>(final.domain_size()),
-                          static_cast<unsigned long>(delta.num_of_states()) });
-    }
+     size_t size() const;
 
     /**
      * Unify initial states into a single new initial state.
@@ -557,11 +418,7 @@ public:
      *
      * The whole NFA is cleared, each member is set to its zero value.
      */
-    void clear() {
-        delta.clear();
-        initial.clear();
-        final.clear();
-    }
+    void clear();
 
     /**
      * @brief Check if @c this is exactly identical to @p aut.
@@ -570,20 +427,7 @@ public:
      *  essentially only useful for testing purposes.
      * @return True if automata are exactly identical, false otherwise.
      */
-    bool is_identical(const Nfa & aut) {
-        if (Util::OrdVector<State>(initial.get_elements()) != Util::OrdVector<State>(aut.initial.get_elements())) {
-            return false;
-        }
-        if (Util::OrdVector<State>(final.get_elements()) != Util::OrdVector<State>(aut.final.get_elements())) {
-            return false;
-        }
-
-        std::vector<Trans> this_trans;
-        for (auto trans: *this) { this_trans.push_back(trans); }
-        std::vector<Trans> aut_trans;
-        for (auto trans: aut) { aut_trans.push_back(trans); }
-        return this_trans == aut_trans;
-    };
+    bool is_identical(const Nfa & aut);
 
     /**
      * @brief Get the set of symbols used on the transitions in the automaton.
@@ -592,48 +436,7 @@ public:
      * @return Set of symbols used on the transitions.
      * TODO: this should be a method of Delta?
      */
-    Util::OrdVector<Symbol> get_used_symbols() const {
-        //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
-        // for instance figure out why NumberPredicate and OrdVedctor are slow,
-        // try also with _STATIC_DATA_STRUCTURES_, it changes things.
-
-        //below are different variant, with different data structures for accumulating symbols,
-        //that then must be converted to an OrdVector
-        //measured are times with "Mata::Nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
-
-        //WITH VECTOR (4.434 s)
-        //return get_used_symbols_vec();
-
-        //WITH SET (26.5 s)
-        //auto from_set = get_used_symbols_set();
-        //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
-
-        //WITH NUMBER PREDICATE (4.857s)
-        //return Util::OrdVector(get_used_symbols_np().get_elements());
-
-        //WITH BOOL VECTOR (error !!!!!!!):
-        //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
-
-        //WITH BOOL VECTOR (1.9s):
-        std::vector<bool> bv = get_used_symbols_bv();
-        Util::OrdVector<Symbol> ov;
-        //int count = 0;
-        //for(Symbol i = 0;i<bv.size();i++)
-        //    if (bv[i]) {
-        //        count++;
-        //    }
-        //ov.reserve(count);
-        for(Symbol i = 0;i<bv.size();i++)
-            if (bv[i]) {
-                ov.push_back(i);
-            }
-        return ov;
-
-        ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
-        //std::vector<bool> bv = get_used_symbols_bv();
-        //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-        //return Util::OrdVector<Symbol>(v);
-    };
+    Util::OrdVector<Symbol> get_used_symbols() const;
 
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
@@ -672,7 +475,6 @@ public:
      */
     StateSet get_useful_states_old() const;
 
-
     //I just want to return something as constant reference to the thing, without copying anything, how?
     const Util::NumberPredicate<State> get_useful_states() const;
 
@@ -688,9 +490,7 @@ public:
      */
     void trim_inplace(StateToStateMap* state_map = nullptr);
     void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) {
-        trim_reverting(state_map);
-    }
+    void trim(StateToStateMap* state_map = nullptr) { trim_reverting(state_map); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -732,8 +532,7 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const Post& get_moves_from(const State state_from) const
-    {
+    const Post& get_moves_from(const State state_from) const {
         assert(state_from < size());
         return delta[state_from];
     }
@@ -778,8 +577,7 @@ public:
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
-    struct const_iterator
-    { // {{{
+    struct const_iterator {
         const Nfa* nfa;
         size_t trIt;
         Post::const_iterator tlIt;
@@ -791,21 +589,14 @@ public:
         static const_iterator for_begin(const Nfa* nfa);
         static const_iterator for_end(const Nfa* nfa);
 
-        //he, what is this? Some comment would help.
-        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition adds clutter and makes people write inefficient code.
-        void refresh_trans()
-        { // {{{
-            this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)};
-        } // }}}
+        // FIXME: He, what is this? Some comment would help.
+        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition
+        //  adds clutter and makes people write inefficient code.
+        void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
 
         const Trans& operator*() const { return this->trans; }
 
-        bool operator==(const const_iterator& rhs) const
-        { // {{{
-            if (this->is_end && rhs.is_end) { return true; }
-            if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
-            return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
-        } // }}}
+        bool operator==(const const_iterator& rhs) const;
         bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
         const_iterator& operator++();
     }; // }}}
@@ -1002,12 +793,7 @@ bool make_complete(Nfa& aut, const Util::OrdVector<Symbol>& symbols, State sink_
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
  * @return True if some new transition (and sink state) was added to the automaton.
  */
-inline bool make_complete(
-        Nfa&             aut,
-        const Alphabet&  alphabet)
-{
-    return make_complete(aut, alphabet, aut.size());
-}
+inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_complete(aut, alphabet, aut.size()); }
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -1020,7 +806,7 @@ inline bool make_complete(
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-    const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -1048,9 +834,7 @@ Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(
-        const Nfa &aut,
-        const StringMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa &aut, const StringMap& params = {{"algorithm", "brzozowski"}});
 
 /**
  * @brief Determinize automaton.
@@ -1059,9 +843,7 @@ Nfa minimize(
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
  * @return Determinized automaton.
  */
-Nfa determinize(
-        const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
  * Reduce the size of the automaton.
@@ -1073,11 +855,8 @@ Nfa determinize(
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(
-        const Nfa &aut,
-        bool trim_input = true,
-        StateToStateMap *state_map = nullptr,
-        const StringMap&  params = {{"algorithm", "simulation"}});
+Nfa reduce(const Nfa &aut, bool trim_input = true, StateToStateMap *state_map = nullptr,
+    const StringMap&  params = {{"algorithm", "simulation"}});
 
 /// Is the language of the automaton universal?
 bool is_universal(
@@ -1089,10 +868,9 @@ bool is_universal(
 inline bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params)
-{ // {{{
+        const StringMap&  params) {
     return is_universal(aut, alphabet, nullptr, params);
-} // }}}
+}
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -1126,10 +904,9 @@ inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algorithm", "antichains"}})
-{ // {{{
+        const StringMap&      params = {{"algorithm", "antichains"}}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
-} // }}}
+}
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -1209,14 +986,7 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // TODO: rename to something, but no idea to what.
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
-inline Run encode_word(
-	const StringToSymbolMap&         symbol_map,
-	const std::vector<std::string>&  input)
-{ // {{{
-	Run result;
-	for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
-	return result;
-} // encode_word }}}
+Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
 
 /** Loads an automaton from Parsed object */
 Nfa construct(
@@ -1234,8 +1004,7 @@ template <class ParsedObject>
 Nfa construct(
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr)
-{ // {{{
+        StringToStateMap*                    state_map = nullptr) {
     StringToSymbolMap tmp_symbol_map;
     if (symbol_map) {
         tmp_symbol_map = *symbol_map;
@@ -1248,17 +1017,14 @@ Nfa construct(
         *symbol_map = alphabet.get_symbol_map();
     }
     return aut;
-}
+} // construct().
 
 } // namespace Mata::Nfa.
 
-namespace std
-{ // {{{
+namespace std {
 template <>
-struct hash<Mata::Nfa::Trans>
-{
-	inline size_t operator()(const Mata::Nfa::Trans& trans) const
-	{
+struct hash<Mata::Nfa::Trans> {
+	inline size_t operator()(const Mata::Nfa::Trans& trans) const {
 		size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
 		accum = Mata::Util::hash_combine(accum, trans.symb);
 		accum = Mata::Util::hash_combine(accum, trans.tgt);
@@ -1268,7 +1034,6 @@ struct hash<Mata::Nfa::Trans>
 
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
-} // std }}}
+} // namespace std.
 
-
-#endif /* _MATA_NFA_HH_ */
+#endif /* MATA_NFA_HH_ */
