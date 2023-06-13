@@ -1,6 +1,4 @@
-/* re2parser.hh -- parser transforming re2 regular expressions to our Nfa
- *
- * Copyright (c) 2022 Michal Horky
+/* re2parser.hh -- Parser transforming re2 regular expressions to their corresponding automata representations.
  *
  * This file is a part of libmata.
  *
@@ -19,16 +17,17 @@
 #define MATA_RE2PARSER_HH
 
 #include <string>
-#include <mata/nfa.hh>
 
-namespace Mata {
+#include "mata/nfa.hh"
 
-    /**
-     * Parser from regular expression to automata (currently `Nfa` and `Afa` are supported).
-     */
-    namespace Parser {
-        void create_nfa(Nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, int epsilon_value = 306, bool use_reduction = true);
-    }
+/**
+ * @brief Parser from regular expression to automata.
+ *
+ * Currently supported automata types are NFA and AFA.
+ */
+namespace Mata::Parser {
+    void create_nfa(Nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, int epsilon_value = 306,
+                    bool use_reduction = true);
 }
 
 #endif // MATA_RE2PARSER_HH
