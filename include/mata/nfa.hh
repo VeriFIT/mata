@@ -82,12 +82,12 @@ using StringMap = std::unordered_map<std::string, std::string>;
  * have names Set, UMap/OMap, State, Symbol, Sequence... and name by Set<State>, State<UMap>, ...
  * maybe something else is needed for the more complex maps*/
 
-static constexpr struct Limits {
-    State maxState = std::numeric_limits<State>::max();
-    State minState = std::numeric_limits<State>::min();
-    Symbol maxSymbol = std::numeric_limits<Symbol>::max();
-    Symbol minSymbol = std::numeric_limits<Symbol>::min();
-} limits;
+struct Limits {
+    static const State maxState = std::numeric_limits<State>::max();
+    static const State minState = std::numeric_limits<State>::min();
+    static const Symbol maxSymbol = std::numeric_limits<Symbol>::max();
+    static const Symbol minSymbol = std::numeric_limits<Symbol>::min();
+};
 
 /*TODO: Ideally remove functions using this struct as a parameter.
  * unpack the trans. relation to transitions is inefficient, goes against the hairs of the library.
@@ -437,7 +437,7 @@ private:
 };
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = limits.maxSymbol;
+constexpr Symbol EPSILON = Limits::maxSymbol;
 
 /**
  * A struct representing an NFA.
