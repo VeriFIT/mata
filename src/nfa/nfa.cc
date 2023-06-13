@@ -804,8 +804,6 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
-    Nfa result{ aut.delta.num_of_states() };
-
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
 
@@ -827,16 +825,15 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     }
 
     bool changed = true;
-    while (changed) { // compute the fixpoint
+    while (changed) { // Compute the fixpoint.
         changed = false;
-        for (size_t i=0; i < num_of_states; ++i) {
-            const auto& state_transitions{ aut.delta[i] };
-            const auto state_symbol_transitions{
-                state_transitions.find(Move{epsilon}) };
-            if (state_symbol_transitions != state_transitions.end()) {
-                StateSet &src_eps_cl = eps_closure[i];
-                for (const State tgt: state_symbol_transitions->targets) {
-                    const StateSet &tgt_eps_cl = eps_closure[tgt];
+        for (size_t i = 0; i < num_of_states; ++i) {
+            const Post& post{ aut.delta[i] };
+            const auto eps_move_it { post.find(Move{ epsilon}) };//TODO: make faster if default epsilon
+            if (eps_move_it != post.end()) {
+                StateSet& src_eps_cl = eps_closure[i];
+                for (const State tgt: eps_move_it->targets) {
+                    const StateSet& tgt_eps_cl = eps_closure[tgt];
                     for (const State st: tgt_eps_cl) {
                         if (src_eps_cl.count(st) == 0) {
                             changed = true;
@@ -849,26 +846,21 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
         }
     }
 
-    // now we construct the automaton without epsilon transitions
-    //TODO: this is a stupid way of initialising it ...
-    result.initial.add(aut.initial.get_elements());
-    result.final.add(aut.final.get_elements());
-    State max_state{};
-    for (const auto& state_closure_pair : eps_closure) { // for every state
+    // Construct the automaton without epsilon transitions.
+    Nfa result{ Delta{}, aut.initial, aut.final, aut.alphabet };
+    for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
-        for (State eps_cl_state : state_closure_pair.second) { // for every state in its eps cl
+        for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
             if (aut.final[eps_cl_state]) result.final.add(src_state);
-            for (const auto& symb_set : aut.delta[eps_cl_state]) {
-                if (symb_set.symbol == epsilon) continue;
-
+            for (const Move& move : aut.delta[eps_cl_state]) {
+                if (move.symbol == epsilon) continue;
                 // TODO: this could be done more efficiently if we had a better add method
-                for (State tgt_state : symb_set.targets) {
-                    result.delta.add(src_state, symb_set.symbol, tgt_state);
+                for (State tgt_state : move.targets) {
+                    result.delta.add(src_state, move.symbol, tgt_state);
                 }
             }
         }
     }
-
     return result;
 }
 
