@@ -23,7 +23,7 @@ using namespace Mata::Strings;
 WordSet Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return Strings::ShortestWordsMap{ nfa }.get_shortest_words_for(nfa.initial);
+    return ShortestWordsMap{ nfa }.get_shortest_words_for(StateSet{ nfa.initial });
 }
 
 WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const

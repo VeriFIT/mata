@@ -1,8 +1,5 @@
-/*
- * mintermization.hh -- Mintermization of automaton
+/* mintermization.hh -- Mintermization of automaton.
  * It transforms an automaton with a bitvector formula used as a symbol to minterminized version of the automaton.
- *
- * Copyright (c) 2022 Martin Hruska <hruskamartin25@gmail.com>
  *
  * This file is a part of libmata.
  *
@@ -17,57 +14,30 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _MATA_MINTERM_HH
-#define _MATA_MINTERM_HH
+#ifndef MATA_MINTERM_HH
+#define MATA_MINTERM_HH
 
 #include <mata/cudd/cuddObj.hh>
 
-#include <mata/inter-aut.hh>
+#include "mata/inter-aut.hh"
 
-namespace Mata
-{
+namespace Mata {
 
-class Mintermization
-{
+class Mintermization {
 private: // data types
-    struct OptionalBdd
-    {
-        enum TYPE {NOTHING_E, BDD_E};
+    struct OptionalBdd {
+        enum class TYPE {NOTHING_E, BDD_E};
 
         TYPE type;
         BDD val;
 
         explicit OptionalBdd(TYPE t) : type(t) {}
-        explicit OptionalBdd(const BDD& bdd) : type(BDD_E), val(bdd) {}
+        explicit OptionalBdd(const BDD& bdd) : type(TYPE::BDD_E), val(bdd) {}
         OptionalBdd(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
 
-        OptionalBdd operator*(const OptionalBdd& b) const
-        {
-            if (this->type == NOTHING_E)
-                return b;
-            else if (b.type == NOTHING_E)
-                return *this;
-            else
-                return OptionalBdd{BDD_E, this->val * b.val};
-        }
-
-        OptionalBdd operator+(const OptionalBdd& b) const
-        {
-            if (this->type == NOTHING_E)
-                return b;
-            else if (b.type == NOTHING_E)
-                return *this;
-            else
-                return OptionalBdd{BDD_E, this->val + b.val};
-        }
-
-        OptionalBdd operator!() const
-        {
-            if (this->type == NOTHING_E)
-                return OptionalBdd(NOTHING_E);
-            else
-                return OptionalBdd{BDD_E, !this->val};
-        }
+        OptionalBdd operator*(const OptionalBdd& b) const;
+        OptionalBdd operator+(const OptionalBdd& b) const;
+        OptionalBdd operator!() const;
     };
 
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
@@ -134,7 +104,8 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
+    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+                             const std::unordered_set<BDD>& minterms);
 
     /**
      * The method for mintermization of alternating finite automaton using
@@ -143,12 +114,11 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_afa(Mata::IntermediateAut& res,
-                             const Mata::IntermediateAut& aut, const std::unordered_set<BDD>& minterms);
+    void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+                             const std::unordered_set<BDD>& minterms);
 
-    Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar()
-    {}
-};
+    Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar() {}
+}; // class Mintermization.
 
-}  // namespace Mata
-#endif //_MATA_MINTERM_HH
+} // namespace Mata
+#endif //MATA_MINTERM_HH

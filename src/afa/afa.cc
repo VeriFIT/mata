@@ -543,12 +543,7 @@ size_t Afa::trans_size() const
 	return result;
 } // trans_size() }}}
 
-/** This function returns an upward-closed set of all
-* the nodes which are non-final
-* @return closed set of non-final nodes
-*/
-StateClosedSet Afa::get_non_final_nodes(void) const
-{
+StateClosedSet Afa::get_non_final_nodes() const {
 	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
 	auto transSize = transitionrelation.size();
 	for(State state = 0; state < transSize; ++state)
@@ -556,10 +551,19 @@ StateClosedSet Afa::get_non_final_nodes(void) const
 		if(!has_final(state))
 		{
 			result.insert(state);
-		}    
+		}
 	}
 	return result;
-} // get_non_final_nodes() }}}
+}
+
+StateClosedSet Afa::get_initial_nodes() const {
+    StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
+    for(const auto& node : initialstates)
+    {
+        result.insert(node);
+    }
+    return result;
+}
 
 
 std::ostream& Mata::Afa::operator<<(std::ostream& os, const Afa& afa)
@@ -1027,7 +1031,7 @@ Afa Mata::Afa::construct(
 
 
     const FormulaGraph* init_graph = &inter_aut.initial_formula;
-    if (is_node_operator(init_graph->node, FormulaNode::AND)) { // initial formula is just conjunction
+    if (is_node_operator(init_graph->node, FormulaNode::OperatorType::AND)) { // initial formula is just conjunction
     	Node initial_node;
         for (const auto& str : init_graph->collect_node_names())
         {
@@ -1036,10 +1040,10 @@ Afa Mata::Afa::construct(
         }
         aut.add_initial(initial_node);
     } else { // initial formula is dnf
-        while (is_node_operator(init_graph->node, FormulaNode::OR))
+        while (is_node_operator(init_graph->node, FormulaNode::OperatorType::OR))
         {  // Processes each clause separately
             assert(init_graph->children[1].node.is_operand() ||
-                   is_node_operator(init_graph->children[1].node, FormulaNode::AND) ||
+                   is_node_operator(init_graph->children[1].node, FormulaNode::OperatorType::AND) ||
                    "Clause should be conjunction or single state");
             // Conjunction is the right son of initent node
             Node initial_node;
@@ -1051,7 +1055,7 @@ Afa Mata::Afa::construct(
             init_graph = &init_graph->children.front();
         }
         assert(init_graph->node.is_operand() ||
-               is_node_operator(init_graph->node, FormulaNode::AND) ||
+               is_node_operator(init_graph->node, FormulaNode::OperatorType::AND) ||
                        "Remaining clause should be conjunction or single element");
         Node initial_node;
         for (const auto s : init_graph->collect_node_names())
@@ -1062,7 +1066,7 @@ Afa Mata::Afa::construct(
     for (const auto& trans : inter_aut.transitions)
     {
         State src_state = get_state_name(trans.first.name);
-        if (trans.second.node.is_operand() && trans.second.node.operand_type == FormulaNode::SYMBOL)
+        if (trans.second.node.is_operand() && trans.second.node.operand_type == FormulaNode::OperandType::SYMBOL)
         {
             Symbol symbol = alphabet->translate_symb(trans.second.node.name);
             aut.add_trans(src_state, symbol, Node());
@@ -1080,17 +1084,17 @@ Afa Mata::Afa::construct(
             }
         }
 
-        assert(is_node_operator(trans.second.node, FormulaNode::AND) ||
+        assert(is_node_operator(trans.second.node, FormulaNode::OperatorType::AND) ||
             "Clause of DNF should be conjunction");
         assert(trans.second.children.front().node.is_operand() || "Node in conjunction should be operand");
         Symbol symbol = alphabet->translate_symb(trans.second.children.front().node.name);
 
         const FormulaGraph* curr_graph = &trans.second.children[1];
 
-        while (is_node_operator(curr_graph->node, FormulaNode::OR))
+        while (is_node_operator(curr_graph->node, FormulaNode::OperatorType::OR))
         {  // Processes each clause separately
             assert(curr_graph->children[1].node.is_operand() ||
-                   is_node_operator(curr_graph->children[1].node, FormulaNode::AND) ||
+                   is_node_operator(curr_graph->children[1].node, FormulaNode::OperatorType::AND) ||
                    "Clause should be conjunction");
             // Conjunction is the right son of current node
             aut.add_trans(src_state, symbol,
@@ -1102,7 +1106,7 @@ Afa Mata::Afa::construct(
 
         // process remaining conjunction
         assert(curr_graph->node.is_operand() ||
-               is_node_operator(curr_graph->node, FormulaNode::AND) ||
+               is_node_operator(curr_graph->node, FormulaNode::OperatorType::AND) ||
                "Remaining clause should be conjunction");
         aut.add_trans(src_state, symbol,
                       create_node(curr_graph->collect_node_names()));
@@ -1166,17 +1170,16 @@ bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
   assert(false);
 } // is_complete }}}
 
-bool Mata::Afa::accepts_epsilon(const Afa& aut)
-{ // {{{
-	for (const Node &node : aut.initialstates) {
-		if(node.IsSubsetOf(aut.finalstates))
-		{
-			return true;
-		}
-	}
+bool Mata::Afa::accepts_epsilon(const Afa& aut) {
+    return std::any_of(aut.initialstates.cbegin(), aut.initialstates.cend(),
+        [&aut](const Node& node) { return node.IsSubsetOf(aut.finalstates); });
+}
 
-	return false;
-} // accepts_epsilon }}}
+Word encode_word(const Mata::StringToSymbolMap &symbol_map, const std::vector<std::string> &input) {
+    Word result;
+    for (const auto& str : input) { result.insert(symbol_map.at(str)); }
+    return result;
+}
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap)
 { // {{{
@@ -1185,3 +1188,11 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa
 	return os;
 } // operator<<(AfaWrapper) }}}
 
+namespace std {
+    inline size_t hash<Mata::Afa::Trans>::operator()(const Mata::Afa::Trans& trans) const {
+        size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
+        accum = Mata::Util::hash_combine(accum, trans.symb);
+        accum = Mata::Util::hash_combine(accum, trans.dst);
+        return accum;
+    }
+}

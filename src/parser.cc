@@ -401,3 +401,43 @@ ParsedSection Mata::Parser::parse_mf_section(
 	ParsedSection result = parse_mf_section(stream, keepQuotes);
 	return result;
 } // parse_mf_section(std::string) }}}
+
+const std::vector<std::string>& Mata::Parser::ParsedSection::operator[](const std::string& key) const {
+    auto it = this->dict.find(key);
+    if (this->dict.end() == it) {
+        assert(false);
+        // return this->dict.at("");
+    }
+
+    return it->second;
+}
+
+bool Mata::Parser::ParsedSection::operator==(const ParsedSection& rhs) const {
+    return
+        this->type == rhs.type &&
+        this->dict == rhs.dict &&
+        this->body == rhs.body;
+}
+
+std::ostream& Mata::Parser::operator<<(std::ostream& os, const ParsedSection& parsec) {
+    os << "@" << parsec.type << "\n";
+    for (const auto& string_list_pair : parsec.dict) {
+        os << "%" << string_list_pair.first;
+        for (const std::string& str : string_list_pair.second) {
+            os << " " << str;
+        }
+        os << "\n";
+    }
+
+    os << "# Body:\n";
+    for (const auto& body_line : parsec.body) {
+        bool first = true;
+        for (const std::string& str : body_line) {
+            if (!first) { os << " ";}
+            first = false;
+            os << str;
+        }
+        os << "\n";
+    }
+    return os;
+}

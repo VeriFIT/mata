@@ -729,7 +729,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = Mata::IntermediateAut::NFA;
+        inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::NFA;
         REQUIRE(is_lang_empty(aut));
         aut = construct(inter_aut);
         REQUIRE(is_lang_empty(aut));

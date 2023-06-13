@@ -5,6 +5,7 @@
 #include <unordered_set>
 
 #include "mata/afa.hh"
+
 using namespace Mata::Afa;
 using namespace Mata::Util;
 using namespace Mata::Parser;
@@ -473,8 +474,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = Mata::IntermediateAut::AFA;
-        aut = Mata::Afa::construct(inter_aut);
+        inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::AFA;
+        aut = Mata::Afa::construct(inter_aut, &symbol_map);
         REQUIRE(true);
     }
 
