@@ -1,8 +1,6 @@
 /*
- * mintermization.hh -- Mintermization of automaton
+ * mintermization.hh -- Mintermization of automaton.
  * It transforms an automaton with a bitvector formula used a symbol to mintermized version of the automaton.
- *
- * Copyright (c) 2022 Martin Hruska <hruskamartin25@gmail.com>
  *
  * This file is a part of libmata.
  *
@@ -17,10 +15,9 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/mintermization.hh>
+#include "mata/mintermization.hh"
 
-namespace
-{
+namespace {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
     {
         if (node->node.is_state())
@@ -86,11 +83,11 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
         // split transition to disjuncts
         const FormulaGraph *act_graph = &trans.second;
 
-        if (!trans.second.node.is_state() && act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OR) // there are no disjuncts
+        if (!trans.second.node.is_state() && act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OperatorType::OR) // there are no disjuncts
             lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph, detect_state_part(
                     act_graph)));
         else if (!trans.second.node.is_state()) {
-            while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OR) {
+            while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OperatorType::OR) {
                 // map lhs to disjunct and its state formula. The content of disjunct is right son of actual graph
                 // since the left one is a rest of formula
                 lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&act_graph->children[1],
@@ -111,7 +108,7 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
             const auto bdd = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
                     OptionalBdd(bdd_mng.bddOne()) : // transition from state to states -> add true as symbol
                     graph_to_bdd_afa(*ds_pair.first);
-            assert(bdd.type == OptionalBdd::BDD_E);
+            assert(bdd.type == OptionalBdd::TYPE::BDD_E);
             if (bdd.val.IsZero())
                 continue;
             trans_to_bddvar[ds_pair.first] = bdd.val;
@@ -152,7 +149,7 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(c
 
     if (node.is_operand()) {
         if (node.is_state())
-            return OptionalBdd(OptionalBdd::NOTHING_E);
+            return OptionalBdd(OptionalBdd::TYPE::NOTHING_E);
         if (symbol_to_bddvar.count(node.name)) {
             return OptionalBdd(symbol_to_bddvar.at(node.name));
         } else {
@@ -162,17 +159,17 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(c
             return OptionalBdd(res);
         }
     } else if (node.is_operator()) {
-        if (node.operator_type == FormulaNode::AND) {
+        if (node.operator_type == FormulaNode::OperatorType::AND) {
             assert(graph.children.size() == 2);
             const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
             const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
             return op1 * op2;
-        } else if (node.operator_type == FormulaNode::OR) {
+        } else if (node.operator_type == FormulaNode::OperatorType::OR) {
             assert(graph.children.size() == 2);
             const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
             const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
             return op1 + op2;
-        } else if (node.operator_type == FormulaNode::NEG) {
+        } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
             assert(graph.children.size() == 1);
             const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
             return !op1;
@@ -197,17 +194,17 @@ const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
             return res;
         }
     } else if (node.is_operator()) {
-        if (node.operator_type == FormulaNode::AND) {
+        if (node.operator_type == FormulaNode::OperatorType::AND) {
             assert(graph.children.size() == 2);
             const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
             const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
             return op1 * op2;
-        } else if (node.operator_type == FormulaNode::OR) {
+        } else if (node.operator_type == FormulaNode::OperatorType::OR) {
             assert(graph.children.size() == 2);
             const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
             const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
             return op1 + op2;
-        } else if (node.operator_type == FormulaNode::NEG) {
+        } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
             assert(graph.children.size() == 1);
             const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
             return !op1;
@@ -262,7 +259,7 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
                     // if for symbol s of t is BDD_s < x
                     // add q1,x,q2 to transitions
                     const auto str_symbol = std::to_string(symbol);
-                    FormulaNode node_symbol(FormulaNode::OPERAND, str_symbol, str_symbol,
+                    FormulaNode node_symbol(FormulaNode::Type::OPERAND, str_symbol, str_symbol,
                                             Mata::FormulaNode::OperandType::SYMBOL);
                     if (ds_pair.second != nullptr)
                         res.add_transition(trans.first, node_symbol, *ds_pair.second);
@@ -282,7 +279,7 @@ Mata::IntermediateAut Mata::Mintermization::mintermize(const Mata::IntermediateA
 std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::vector<const Mata::IntermediateAut *> &auts)
 {
     for (const Mata::IntermediateAut *aut : auts) {
-        if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::BITVECTOR) {
+        if ((!aut->is_nfa() && !aut->is_afa()) || aut->alphabet_type != IntermediateAut::AlphabetType::BITVECTOR) {
             throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
         }
 
@@ -295,7 +292,7 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
     std::vector<Mata::IntermediateAut> res;
     for (const Mata::IntermediateAut *aut : auts) {
         IntermediateAut mintermized_aut = *aut;
-        mintermized_aut.alphabet_type = IntermediateAut::EXPLICIT;
+        mintermized_aut.alphabet_type = IntermediateAut::AlphabetType::EXPLICIT;
         mintermized_aut.transitions.clear();
 
         if (aut->is_nfa())
@@ -315,4 +312,34 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
         auts_pointers.push_back(&aut);
     }
     return mintermize(auts_pointers);
+}
+
+Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator*(
+    const Mata::Mintermization::OptionalBdd& b) const {
+    if (this->type == TYPE::NOTHING_E) {
+        return b;
+    } else if (b.type == TYPE::NOTHING_E) {
+        return *this;
+    } else {
+        return OptionalBdd{ TYPE::BDD_E, this->val * b.val };
+    }
+}
+
+Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator+(
+    const Mata::Mintermization::OptionalBdd& b) const {
+    if (this->type == TYPE::NOTHING_E) {
+        return b;
+    } else if (b.type == TYPE::NOTHING_E) {
+        return *this;
+    } else {
+        return OptionalBdd{ TYPE::BDD_E, this->val + b.val };
+    }
+}
+
+Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator!() const {
+    if (this->type == TYPE::NOTHING_E) {
+        return OptionalBdd(TYPE::NOTHING_E);
+    } else {
+        return OptionalBdd{ TYPE::BDD_E, !this->val };
+    }
 }
