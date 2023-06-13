@@ -17,16 +17,14 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/inter-aut.hh>
-#include <mata/util.hh>
+#include "mata/inter-aut.hh"
 
-namespace
-{
+namespace {
     bool has_atmost_one_auto_naming(const Mata::IntermediateAut& aut)
     {
         return !(!(aut.node_naming == Mata::IntermediateAut::Naming::AUTO &&
               aut.symbol_naming == Mata::IntermediateAut::Naming::AUTO) &&
-                 (aut.state_naming == Mata::IntermediateAut::AUTO));
+                 (aut.state_naming == Mata::IntermediateAut::Naming::AUTO));
     }
 
     bool is_logical_operator(char ch)
@@ -191,9 +189,9 @@ namespace
      * Checks if @p op1 has lower precedence than @p op2. Precedence from the lowest to highest is: | < & < !
      */
     bool lower_precedence(Mata::FormulaNode::OperatorType op1, Mata::FormulaNode::OperatorType op2) {
-        if (op1 == Mata::FormulaNode::NEG) {
+        if (op1 == Mata::FormulaNode::OperatorType::NEG) {
             return false;
-        } else if (op1 == Mata::FormulaNode::AND && op2 != Mata::FormulaNode::NEG) {
+        } else if (op1 == Mata::FormulaNode::OperatorType::AND && op2 != Mata::FormulaNode::OperatorType::NEG) {
             return false;
         }
 
@@ -214,20 +212,20 @@ namespace
         for (const auto& token : tokens) {
             Mata::FormulaNode node = create_node(aut, token);
             switch (node.type) {
-                case Mata::FormulaNode::OPERAND:
+                case Mata::FormulaNode::Type::OPERAND:
                     output.push_back(node);
                     break;
-                case Mata::FormulaNode::LEFT_PARENTHESIS:
+                case Mata::FormulaNode::Type::LEFT_PARENTHESIS:
                     opstack.push_back(node);
                     break;
-                case Mata::FormulaNode::RIGHT_PARENTHESIS:
+                case Mata::FormulaNode::Type::RIGHT_PARENTHESIS:
                     while (!opstack.back().is_leftpar()) {
                         output.push_back(opstack.back());
                         opstack.pop_back();
                     }
                     opstack.pop_back();
                     break;
-                case Mata::FormulaNode::OPERATOR:
+                case Mata::FormulaNode::Type::OPERATOR:
                     for (int j = opstack.size()-1; j >= 0; --j) {
                         assert(!opstack[j].is_operand());
                         if (opstack[j].is_leftpar())
@@ -269,12 +267,12 @@ namespace
         for (const auto& node : postfix) {
             Mata::FormulaGraph gr(node);
             switch (node.type) {
-                case Mata::FormulaNode::OPERAND:
+                case Mata::FormulaNode::Type::OPERAND:
                     opstack.push_back(gr);
                     break;
-                case Mata::FormulaNode::OPERATOR:
+                case Mata::FormulaNode::Type::OPERATOR:
                     switch (node.operator_type) {
-                        case Mata::FormulaNode::NEG:
+                        case Mata::FormulaNode::OperatorType::NEG:
                             assert(!opstack.empty());
                             gr.children.push_back(opstack.back());
                             opstack.pop_back();
@@ -320,13 +318,13 @@ namespace
             res.push_back(postfix[0]);
             res.push_back(postfix[1]);
             res.push_back(Mata::FormulaNode(
-                    Mata::FormulaNode::OPERATOR, "|", "|", Mata::FormulaNode::OR));
+                    Mata::FormulaNode::Type::OPERATOR, "|", "|", Mata::FormulaNode::OperatorType::OR));
         }
 
         for (size_t i = 2; i < postfix.size(); ++i) {
             res.push_back(postfix[i]);
             res.push_back(Mata::FormulaNode(
-                    Mata::FormulaNode::OPERATOR, "|", "|", Mata::FormulaNode::OR));
+                    Mata::FormulaNode::Type::OPERATOR, "|", "|", Mata::FormulaNode::OperatorType::OR));
         }
 
         return res;
@@ -415,7 +413,7 @@ size_t Mata::IntermediateAut::get_number_of_disjuncts() const
         while (!stack.empty()) {
             const FormulaGraph *gr = stack.back();
             stack.pop_back();
-            if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OR)
+            if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OperatorType::OR)
                 trans_disjuncts++;
             for (const auto &ch: gr->children)
                 stack.push_back(&ch);
@@ -441,15 +439,15 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
     std::vector<Mata::FormulaNode> postfix;
 
     // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
-    if (aut.automaton_type == Mata::IntermediateAut::NFA && tokens[tokens.size()-2] != "&") {
+    if (aut.automaton_type == Mata::IntermediateAut::AutomatonType::NFA && tokens[tokens.size()-2] != "&") {
         // we need to take care about this case manually since user does not need to determine
         // symbol and state naming and put conjunction to transition
-        if (aut.alphabet_type != Mata::IntermediateAut::BITVECTOR) {
+        if (aut.alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
             assert(rhs.size() == 2);
             postfix.push_back(Mata::FormulaNode{Mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0],
                                                 Mata::FormulaNode::OperandType::SYMBOL});
             postfix.push_back(create_node(aut,rhs[1]));
-        } else if (aut.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
+        } else if (aut.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // this is a case where rhs state not separated by conjunction from rest of trans
             postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
             postfix.push_back(create_node(aut,rhs.back()));
@@ -457,7 +455,7 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
             assert(false && "Unknown NFA type");
 
         postfix.push_back(Mata::FormulaNode(
-                Mata::FormulaNode::OPERATOR, "&", "&", Mata::FormulaNode::AND));
+                Mata::FormulaNode::Type::OPERATOR, "&", "&", Mata::FormulaNode::OperatorType::AND));
     } else
         postfix = infix_to_postfix(aut, rhs);
 
@@ -482,7 +480,7 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
         assert(g != nullptr);
         stack.pop_back();
 
-        if (g->node.type == FormulaNode::UNKNOWN)
+        if (g->node.type == FormulaNode::Type::UNKNOWN)
            continue; // skip undefined nodes
 
         if (g->node.is_operand()) {
@@ -538,7 +536,7 @@ const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
     if (!this->is_nfa()) {
         throw std::runtime_error("We currently support symbol extraction only for NFA");
     }
-    assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::STATE);
+    assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::OperandType::STATE);
     assert(trans.second.node.is_operator()); // conjunction with rhs state
     assert(trans.second.children[1].node.is_operand()); // rhs state
     return trans.second.children[0];
@@ -546,7 +544,7 @@ const Mata::FormulaGraph& Mata::IntermediateAut::get_symbol_part_of_transition(
 
 void Mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs)
 {
-    FormulaNode conjunction(FormulaNode::OPERATOR, "&", "&", FormulaNode::AND);
+    FormulaNode conjunction(FormulaNode::Type::OPERATOR, "&", "&", FormulaNode::OperatorType::AND);
     FormulaGraph graph(conjunction);
     graph.children.push_back(FormulaGraph(symbol));
     graph.children.push_back(rhs);
@@ -607,9 +605,9 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::IntermediateAut& int
 {
     std::string type = inter_aut.is_nfa() ? "NFA" : (inter_aut.is_afa() ? "AFA" : "Unknown");
     os << "Intermediate automaton type " << type << '\n';
-    os << "Naming - state: " << inter_aut.state_naming << " symbol: " << inter_aut.symbol_naming << " node: "
-        << inter_aut.node_naming << '\n';
-    os << "Alphabet " << inter_aut.alphabet_type << '\n';
+    os << "Naming - state: " << static_cast<size_t>(inter_aut.state_naming) << " symbol: "
+       << static_cast<size_t>(inter_aut.symbol_naming) << " node: " << static_cast<size_t>(inter_aut.node_naming) << '\n';
+    os << "Alphabet " << static_cast<size_t>(inter_aut.alphabet_type) << '\n';
 
     os << "Initial states: ";
     for (const auto& state : inter_aut.initial_formula.collect_node_names()) {
