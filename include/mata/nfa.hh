@@ -353,16 +353,18 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    Nfa() : delta(), initial(), final() {}
-
+    explicit Nfa(Delta delta = {}, Util::NumberPredicate<State> initial_states = {},
+                 Util::NumberPredicate<State> final_states = {}, Alphabet* alphabet = nullptr)
+        : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+        
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Nfa(const unsigned long num_of_states, const StateSet& initial_states = StateSet{},
-                 const StateSet& final_states = StateSet{}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
+    explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
+                 StateSet final_states = {}, Alphabet* alphabet = nullptr)
+        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
