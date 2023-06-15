@@ -92,7 +92,11 @@ protected:
     DD(Capsule *cap, DdNode *ddNode);
     DD(Cudd const & manager, DdNode *ddNode);
     DD(const DD &from);
+    DD(DD&& from) = default;
     ~DD();
+
+    DD& operator=(const DD& other) = default;
+    DD& operator=(DD&& other) = default;
 public:
     // This operator should be declared explicit, but there are still too many
     // compilers out there that do not support this C++11 feature.
