@@ -293,11 +293,17 @@ public:
     private:
         const std::vector<Post>& post;
         size_t current_state;
-        Post::const_iterator post_iterator;
-        StateSet::const_iterator targets_position;
+        Post::const_iterator post_iterator{};
+        StateSet::const_iterator targets_position{};
         bool is_end;
 
     public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = int;
+        using difference_type = int;
+        using pointer = int*;
+        using reference = int&;
+
         explicit const_iterator(const std::vector<Post>& post_p, bool ise = false);
 
         const_iterator(const std::vector<Post>& post_p, size_t as,
@@ -327,6 +333,8 @@ public:
 private:
     State find_max_state();
 }; // struct Delta.
+
+bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::maxSymbol;
@@ -480,7 +488,7 @@ public:
     StateSet get_useful_states_old() const;
 
     //I just want to return something as constant reference to the thing, without copying anything, how?
-    const Util::NumberPredicate<State> get_useful_states() const;
+    Util::NumberPredicate<State> get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -513,7 +521,8 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    size_t get_num_of_trans() const; ///< Number of transitions; contains linear time complexity.
+    /// Number of transitions; contains linear time complexity.
+    size_t get_num_of_trans() const { return std::distance(delta.begin(), delta.end()); }
 
     /**
      * Get transitions as a sequence of @c Trans.
