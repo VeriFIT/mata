@@ -58,7 +58,7 @@ void Afa::add_trans(const Trans& trans)
 			// Before the dst nodes are added to the transition, we want to get rid
 			// of redundant clauses. For example, in context of the formula
 			// (1 || (1 && 2)), the clause (1 && 2) could be deleted
-			auto cl = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, transVec.dst);
+			auto cl = StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1, transVec.dst);
 			cl.insert(trans.dst);
 			transVec.dst = cl.antichain();	
 			return;
@@ -227,7 +227,7 @@ State Afa::add_new_state() {
 */
 StateClosedSet Afa::post(State state, Symbol symb) const
 {
-	return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, 
+	return StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1,
 	get_trans_from_state(state, symb).dst);
 } // post }}}
 
@@ -244,7 +244,7 @@ StateClosedSet Afa::post(State state, Symbol symb) const
 StateClosedSet Afa::post(Node node, Symbol symb) const
 {
 	// initially, the result is empty
-	StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result = StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1);
 	if(node.empty())
 	{
 		result.insert(node);
@@ -280,8 +280,8 @@ StateClosedSet Afa::post(Node node, Symbol symb) const
 StateClosedSet Afa::post(Nodes nodes, Symbol symb) const
 {
 	// initially, the result is empty
-	StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
-	for(auto node : nodes)
+	StateClosedSet result = StateClosedSet{ ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1 };
+	for(const auto& node : nodes)
 	{
 		result.insert(post(node, symb).antichain());
 	}
@@ -299,7 +299,7 @@ StateClosedSet Afa::post(Nodes nodes, Symbol symb) const
 */
 StateClosedSet Afa::post(StateClosedSet closed_set, Symbol symb) const
 {
-	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " &&
+	assert(closed_set.type() == Mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
 	" post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain(), symb);
 } // post }}}
@@ -318,9 +318,9 @@ StateClosedSet Afa::post(Node node) const
 {
 	if(node.empty())
 	{
-		return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, Nodes{Node{}});
+		return StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1, Nodes{Node{}});
 	}
-	StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result = StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1);
 
 	// It is sufficient to access the first element of the node
 	// to collect all required symbols of the alphabet. If there is another symbol used
@@ -345,7 +345,7 @@ StateClosedSet Afa::post(Node node) const
 */
 StateClosedSet Afa::post(Nodes nodes) const
 {
-	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1);
 	for(auto node : nodes)
 	{
 		result.insert(post(node).antichain());
@@ -366,7 +366,7 @@ StateClosedSet Afa::post(Nodes nodes) const
 */
 StateClosedSet Afa::post(StateClosedSet closed_set) const 
 {
-	assert(closed_set.type() == Mata::upward_closed_set && "The predicate transformer " &&
+	assert(closed_set.type() == Mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
 	" post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain());
 };
@@ -443,7 +443,7 @@ StateClosedSet Afa::pre(Node node, Symbol symb) const
 			}
 		}
 	}
-	return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, result);
+	return StateClosedSet(ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1, result);
 } // pre }}}
 
 /** This function takes a set of nodes and a symbol and returns all the nodes
@@ -456,7 +456,7 @@ StateClosedSet Afa::pre(Node node, Symbol symb) const
 */
 StateClosedSet Afa::pre(Nodes nodes, Symbol symb) const
 {
-	StateClosedSet result(downward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result(ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1);
 	for(auto node : nodes)
 	{
 		result = result.Union(pre(node, symb));
@@ -472,7 +472,7 @@ StateClosedSet Afa::pre(Nodes nodes, Symbol symb) const
 */
 StateClosedSet Afa::pre(StateClosedSet closed_set, Symbol symb) const
 {
-	assert(closed_set.type() == downward_closed_set && "The predicate transformer " &&
+	assert(closed_set.type() == ClosedSetType::downward_closed_set && "The predicate transformer " &&
 	"pre can be computed only over downward-closed sets.");
 	return pre(closed_set.antichain(), symb);
 } // pre }}}
@@ -487,9 +487,9 @@ StateClosedSet Afa::pre(Node node) const
 {
 	if(node.empty())
 	{
-		return StateClosedSet(downward_closed_set, 0, transitionrelation.size()-1, Nodes{Node{}});
+		return StateClosedSet(ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1, Nodes{Node{}});
 	}
-	StateClosedSet result(downward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result(ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1);
 
 	// It is sufficient to access the first element of the node
 	// to collect all required symbols of the alphabet. If there is another symbol used
@@ -511,7 +511,7 @@ StateClosedSet Afa::pre(Node node) const
 */
 StateClosedSet Afa::pre(Nodes nodes) const
 {
-	StateClosedSet result(downward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result(ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1);
 	for(auto node : nodes)
 	{
 		result.insert(pre(node).antichain());
@@ -544,7 +544,7 @@ size_t Afa::trans_size() const
 } // trans_size() }}}
 
 StateClosedSet Afa::get_non_final_nodes() const {
-	StateClosedSet result(upward_closed_set, 0, transitionrelation.size()-1);
+	StateClosedSet result(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1);
 	auto transSize = transitionrelation.size();
 	for(State state = 0; state < transSize; ++state)
 	{
@@ -557,7 +557,7 @@ StateClosedSet Afa::get_non_final_nodes() const {
 }
 
 StateClosedSet Afa::get_initial_nodes() const {
-    StateClosedSet result = StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1);
+    StateClosedSet result = StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1);
     for(const auto& node : initialstates)
     {
         result.insert(node);
@@ -644,7 +644,7 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
     // We will perform each operation directly over antichains.
     // Note that the fixed point always exists so the while loop always terminates.
     StateClosedSet goal = aut.get_non_final_nodes();
-    StateClosedSet current = StateClosedSet(upward_closed_set, 0, aut.get_num_of_states()-1);
+    StateClosedSet current = StateClosedSet(ClosedSetType::upward_closed_set, 0, aut.get_num_of_states()-1);
     StateClosedSet next = aut.get_initial_nodes();
 
     while(current != next)
@@ -717,7 +717,7 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
 	// We will perform each operation directly over antichains
 	// Note that the fixed point always exists so the while loop always terminates
 	StateClosedSet goal = aut.get_non_initial_nodes();
-	StateClosedSet current = StateClosedSet(downward_closed_set, 0, aut.get_num_of_states()-1);
+	StateClosedSet current = StateClosedSet(ClosedSetType::downward_closed_set, 0, aut.get_num_of_states()-1);
 	StateClosedSet next = aut.get_final_nodes();
 
 	while(current != next)
@@ -955,14 +955,11 @@ Afa Mata::Afa::construct(
 
 	for (const auto& body_line : parsec.body) {
 		if (body_line.size() < 2) {
-			// clean up
-      clean_up();
+            clean_up();
 
-      throw std::runtime_error("Invalid transition: " +
-        std::to_string(body_line));
+            throw std::runtime_error("Invalid transition: " + std::to_string(body_line));
 		}
 
-		State src_state = get_state_name(body_line[0]);
     std::string formula;
     for (size_t i = 1; i < body_line.size(); ++i) {
       formula += body_line[i] + " ";

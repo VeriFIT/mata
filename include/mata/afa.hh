@@ -197,7 +197,7 @@ public:
     } // }}}
     bool has_initial(Node node) const
     { // {{{
-        return StateClosedSet(upward_closed_set, 0, transitionrelation.size()-1, initialstates).contains(node);
+        return StateClosedSet(ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1, initialstates).contains(node);
     } // }}}
     void add_final(State state) { this->finalstates.insert(state); }
     void add_final(const std::vector<State> vec)
@@ -276,10 +276,10 @@ public:
     StateClosedSet get_initial_nodes() const;
 
     StateClosedSet get_non_initial_nodes() const {
-        return StateClosedSet{ upward_closed_set, 0, transitionrelation.size()-1, initialstates }.complement();
+        return StateClosedSet{ ClosedSetType::upward_closed_set, 0, transitionrelation.size()-1, initialstates }.complement();
     };
     StateClosedSet get_final_nodes() const {
-        return { downward_closed_set, 0, transitionrelation.size()-1, finalstates };
+        return { ClosedSetType::downward_closed_set, 0, transitionrelation.size()-1, finalstates };
     };
 
     /**
