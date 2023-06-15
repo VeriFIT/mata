@@ -24,6 +24,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 #include <memory>
 
@@ -84,8 +85,8 @@ struct Trans
     Nodes dst; // a vector of vectors of states
 
     Trans() : src(), symb(), dst() { }
-    Trans(State src, Symbol symb, Node dst) : src(src), symb(symb), dst(Nodes(dst)) { }
-    Trans(State src, Symbol symb, Nodes dst) : src(src), symb(symb), dst(dst) { }
+    Trans(const State src, const Symbol symb, const Node& dst) : src(src), symb(symb), dst(Nodes{ dst }) {}
+    Trans(const State src, const Symbol symb, Nodes dst) : src(src), symb(symb), dst(std::move(dst)) {}
 
     bool operator==(const Trans& rhs) const
     { // {{{
@@ -105,11 +106,11 @@ struct InverseResults{
     Node result_node{};
     Node precondition{};
 
-    InverseResults() : result_node(), precondition() { }
-    InverseResults(State state, Node precondition) : result_node(Node(state)),
-    precondition(precondition) { }
-    InverseResults(Node result_node, Node precondition) : result_node(result_node),
-    precondition(precondition) { }
+    InverseResults() : result_node(), precondition() {}
+    InverseResults(State state, Node precondition)
+        : result_node(Node(state)), precondition(std::move(precondition)) {}
+    InverseResults(Node result_node, Node precondition)
+        : result_node(std::move(result_node)), precondition(std::move(precondition)) {}
 
     bool operator==(const InverseResults& rhs) const
     { // {{{
@@ -136,14 +137,14 @@ struct InverseResults{
  * The state 'state' is always part of all 'preconditions' and it is a minimal element of them.
  */
 struct InverseTrans {
-    State state;
-    Symbol symb;
+    State state{};
+    Symbol symb{};
     std::vector<InverseResults> inverseResults{};
 
-    InverseTrans() : symb(), inverseResults() { }
-    InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
-    InverseTrans(Symbol symb, InverseResults inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
-    InverseTrans(State state, Symbol symb, InverseResults inverseResults_)
+    InverseTrans() = default;
+    explicit InverseTrans(Symbol symb) : symb(symb), inverseResults(std::vector<InverseResults>()) { }
+    InverseTrans(Symbol symb, const InverseResults& inverseResults_) : symb(symb) { inverseResults.push_back(inverseResults_); }
+    InverseTrans(State state, Symbol symb, const InverseResults& inverseResults_)
         : state(state), symb(symb) { inverseResults.push_back(inverseResults_); }
 }; // struct InverseTrans
 
@@ -234,7 +235,7 @@ public:
     } // }}}
 
     std::vector<InverseResults> perform_inverse_trans(State src, Symbol symb) const;
-    std::vector<InverseResults> perform_inverse_trans(Node src, Symbol symb) const;
+    std::vector<InverseResults> perform_inverse_trans(const Node& src, Symbol symb) const;
 
     bool has_trans(const Trans& trans) const;
     bool has_trans(State src, Symbol symb, Node dst) const
@@ -249,27 +250,27 @@ public:
     std::vector<Trans> get_trans_from_state(State state) const;
     Trans get_trans_from_state(State state, Symbol symbol) const;
 
-    bool trans_empty() const {!transitionrelation.size();};// no transitions
+    bool trans_empty() const { return transitionrelation.empty(); }// no transitions
     size_t trans_size() const;/// number of transitions; has linear time complexity
 
 
     StateClosedSet post(State state, Symbol symb) const;
-    StateClosedSet post(Node node, Symbol symb) const;
-    StateClosedSet post(Nodes nodes, Symbol symb) const;
-    StateClosedSet post(StateClosedSet closed_set, Symbol symb) const;
+    StateClosedSet post(const Node& node, Symbol symb) const;
+    StateClosedSet post(const Nodes& nodes, Symbol symb) const;
+    StateClosedSet post(const StateClosedSet& closed_set, Symbol symb) const;
 
-    StateClosedSet post(Node node) const;
-    StateClosedSet post(Nodes nodes) const;
+    StateClosedSet post(const Node& node) const;
+    StateClosedSet post(const Nodes& nodes) const;
 
-    StateClosedSet post(StateClosedSet closed_set) const;
+    StateClosedSet post(const StateClosedSet& closed_set) const;
 
-    StateClosedSet pre(Node node, Symbol symb) const;
-    StateClosedSet pre(State state, Symbol symb) const { return pre(Node(state), symb); };
-    StateClosedSet pre(Nodes nodes, Symbol symb) const;
-    StateClosedSet pre(StateClosedSet closed_set, Symbol symb) const;
+    StateClosedSet pre(const Node& node, Symbol symb) const;
+    StateClosedSet pre(const State state, const Symbol symb) const { return pre(Node(state), symb); };
+    StateClosedSet pre(const Nodes& nodes, Symbol symb) const;
+    StateClosedSet pre(const StateClosedSet& closed_set, Symbol symb) const;
 
-    StateClosedSet pre(Node node) const;
-    StateClosedSet pre(Nodes nodes) const;
+    StateClosedSet pre(const Node& node) const;
+    StateClosedSet pre(const Nodes& nodes) const;
 
     StateClosedSet pre(StateClosedSet closed_set) const { return pre(closed_set.antichain()); };
 
@@ -395,7 +396,11 @@ inline Afa revert(const Afa& aut) {
 /// Removing epsilon transitions
 void remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon);
 
-inline Afa remove_epsilon(const Afa& aut, Symbol epsilon) { return remove_epsilon(aut, epsilon); }
+inline Afa remove_epsilon(const Afa& aut, Symbol epsilon) {
+    Afa result{};
+    remove_epsilon(&result, aut, epsilon);
+    return result;
+}
 
 /// Minimizes an AFA.  The method can be set using @p params
 void minimize(

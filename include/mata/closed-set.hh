@@ -112,14 +112,14 @@ struct ClosedSet {
        }
 
        // inserting a single vector of the datatype T
-       ClosedSet(ClosedSetType type, T min_val, T max_val, Node node)
+       ClosedSet(ClosedSetType type, const T& min_val, const T& max_val, const Node& node)
            : type_(type), min_val_(min_val), max_val_(max_val), antichain_(Node(node)) {
            assert(min_val <= max_val);
            assert(in_interval(node));
        }
 
        // inserting a whole antichain
-       ClosedSet(ClosedSetType type, T min_val, T max_val, Nodes antichain = Nodes())
+       ClosedSet(const ClosedSetType type, const T& min_val, const T& max_val, const Nodes& antichain = Nodes())
            : type_(type), min_val_(min_val), max_val_(max_val) {
            assert(min_val <= max_val);
            insert(antichain);
@@ -129,7 +129,7 @@ struct ClosedSet {
 
        // Two closed sets are equivalent iff their type, borders
        // and corresponding antichains are the same
-       bool operator==(ClosedSet<T> rhs) const
+       bool operator==(const ClosedSet<T>& rhs) const
         { // {{{
             return type_ == rhs.type && min_val_ == rhs.min_val &&
             max_val_ == rhs.max_val && antichain_ == rhs.antichain;
@@ -137,7 +137,7 @@ struct ClosedSet {
 
        // Two closed sets are not equivalent iff their type,
        // borders or corresponding antichains differ
-       bool operator!=(ClosedSet<T> rhs) const
+       bool operator!=(const ClosedSet<T>& rhs) const
         { // {{{
             return type_ != rhs.type_ || min_val_ != rhs.min_val_ ||
             max_val_ != rhs.max_val_ || antichain_ != rhs.antichain_;
@@ -147,7 +147,7 @@ struct ClosedSet {
         // it is a subset of the other one
         // It is not possible to perform <=-comparisons accros upward- and downward-closed
         // sets, each argument has to be upward- or downward-closed set
-        bool operator<=(ClosedSet<T> rhs) const
+        bool operator<=(const ClosedSet<T>& rhs) const
         { // {{{
             assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
             "Types and borders of given closed sets must be the same to perform their <=-comparison.");
@@ -159,7 +159,7 @@ struct ClosedSet {
         // It is not possible to perform <=-comparisons of accros upward-
         // and downward-closed sets, each argument
         // has to be upward- or downward-closed set
-        bool operator>=(ClosedSet<T> rhs) const
+        bool operator>=(const ClosedSet<T>& rhs) const
         { // {{{
             assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
             "Types and borders of given closed sets must be the same to perform their <=-comparison.");
@@ -172,29 +172,29 @@ struct ClosedSet {
         bool is_upward_closed() const { return type_ == ClosedSetType::upward_closed_set; };
         bool is_downward_closed() const { return type_ == ClosedSetType::downward_closed_set; };
 
-        ClosedSetType type() {return type_;}
-        const ClosedSetType type() const {return type_;}
+        ClosedSetType type() { return type_; }
+        ClosedSetType type() const { return type_; }
 
-        Nodes antichain() {return antichain_;}
-        const Nodes antichain() const {return antichain_;}
+        Nodes antichain() { return antichain_;}
+        Nodes antichain() const { return antichain_; }
 
-        T get_min() {return min_val_;}
-        const T get_min() const {return min_val_;}
+        T get_min() { return min_val_; }
+        T get_min() const { return min_val_; }
 
-        T get_max() {return max_val_;}
-        const T get_max() const {return max_val_;}
+        T get_max() { return max_val_; }
+        T get_max() const { return max_val_; }
 
-        bool contains (Node node) const;
-        bool contains (Nodes nodes) const;
+        bool contains (const Node& node) const;
+        bool contains (const Nodes& nodes) const;
 
-        bool in_interval (Node node) const;
+        bool in_interval (const Node& node) const;
 
-        void insert(T el) {insert(Node(el));};
-        void insert(Node node);
-        void insert(Nodes nodes) {for(auto node : nodes) insert(node);};
+        void insert(const T& el) { insert(Node(el)); }
+        void insert(const Node& node);
+        void insert(const Nodes& nodes) {for (const auto& node: nodes) insert(node); }
 
-        ClosedSet Union (const ClosedSet rhs) const;
-        ClosedSet intersection (const ClosedSet rhs) const;
+        ClosedSet Union (const ClosedSet& rhs) const;
+        ClosedSet intersection (const ClosedSet& rhs) const;
         ClosedSet complement () const;
 }; // class ClosedSet.
 
@@ -223,7 +223,7 @@ std::ostream& operator<<(std::ostream& os, const ClosedSet<T>& cs) {
 * @return true iff the given ordered vector belongs to the current closed set
 */
 template <typename T>
-bool ClosedSet<T>::contains(Node node) const {
+bool ClosedSet<T>::contains(const Node& node) const {
     if(type_ == ClosedSetType::upward_closed_set) {
         for(auto element : antichain_) {
             if(element.IsSubsetOf(node)) {
@@ -248,7 +248,7 @@ bool ClosedSet<T>::contains(Node node) const {
 * @return true iff the given ordered vector of ordered vectors belongs to the current closed set
 */
 template <typename T>
-bool ClosedSet<T>::contains(Nodes nodes) const {
+bool ClosedSet<T>::contains(const Nodes& nodes) const {
     for(auto node : nodes) {
         if(!contains(node)) {
             return false;
@@ -264,7 +264,7 @@ bool ClosedSet<T>::contains(Nodes nodes) const {
 * @return true iff the given ordered vector respects the borders
 */
 template <typename T>
-bool ClosedSet<T>::in_interval(Node node) const {
+bool ClosedSet<T>::in_interval(const Node& node) const {
     for(auto value : node) {
         if(value < min_val_ || value > max_val_) {
             return false;
@@ -279,7 +279,7 @@ bool ClosedSet<T>::in_interval(Node node) const {
 * @param node a given node which will be added to the closed set
 */
 template <typename T>
-void ClosedSet<T>::insert(Node node) {
+void ClosedSet<T>::insert(const Node& node) {
     assert(in_interval(node) && "Each element of the given node has to respect " &&
     "the carrier of the closed set.");
     // If the closed set is empty, the antichain could be simply changed
@@ -339,7 +339,7 @@ void ClosedSet<T>::insert(Node node) {
 * @return an union of the given closed sets
 */
 template <typename T>
-ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const {
+ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T>& rhs) const {
     assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
     "Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_, antichain_);
@@ -353,7 +353,7 @@ ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T> rhs) const {
 * @return an intersection of the given closed sets
 */
 template <typename T>
-ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T> rhs) const {
+ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
     assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
     "Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_);

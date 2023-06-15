@@ -925,7 +925,7 @@ TEST_CASE("parsing automata to intermediate representation")
         parsed = parse_mf(file);
         try {
             Mata::IntermediateAut::parse_from_mf(parsed);
-        } catch (std::runtime_error e) {
+        } catch (const std::runtime_error& e) {
             exception = true;
         }
 
