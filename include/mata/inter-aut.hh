@@ -120,8 +120,8 @@ public:
  * and q1 and s2 being children nodes of the root.
  */
 struct FormulaGraph {
-    FormulaNode node;
-    std::vector<FormulaGraph> children;
+    FormulaNode node{};
+    std::vector<FormulaGraph> children{};
 
     FormulaGraph() = default;
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
@@ -182,16 +182,16 @@ public:
     Naming state_naming = Naming::MARKED;
     Naming symbol_naming = Naming::MARKED;
     Naming node_naming = Naming::MARKED;
-    AlphabetType alphabet_type;
-    AutomatonType automaton_type;
+    AlphabetType alphabet_type{};
+    AutomatonType automaton_type{};
 
     // The vectors represent the given sets when enumeration is used.
-    std::vector<std::string> states_names;
-    std::vector<std::string> symbols_names;
-    std::vector<std::string> nodes_names;
+    std::vector<std::string> states_names{};
+    std::vector<std::string> symbols_names{};
+    std::vector<std::string> nodes_names{};
 
-    FormulaGraph initial_formula;
-    FormulaGraph final_formula;
+    FormulaGraph initial_formula{};
+    FormulaGraph final_formula{};
 
     bool initial_enumerated = false;
     bool final_enumerated = false;
@@ -200,7 +200,7 @@ public:
      * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
      * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
      */
-    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
+    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions{};
 
     /**
      * Returns symbolic part of transition. That may be just a symbol or bitvector formula.

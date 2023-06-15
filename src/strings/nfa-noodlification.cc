@@ -197,9 +197,9 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     const auto& epsilon_depths_map{ segmentation.get_epsilon_depth_trans_map() };
 
     struct SegItem {
-        NoodleSubst noodle;
-        State fin;
-        size_t seg_id;
+        NoodleSubst noodle{};
+        State fin{};
+        size_t seg_id{};
     };
 
     NoodleSubstSequence noodles{};

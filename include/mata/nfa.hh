@@ -59,8 +59,8 @@ template<typename T> using Set = Mata::Util::OrdVector<T>;
 
 using WordSet = std::set<std::vector<Symbol>>;
 struct Run {
-    std::vector<Symbol> word; ///< A finite-length word.
-    std::vector<State> path; ///< A finite-length path through automaton.
+    std::vector<Symbol> word{}; ///< A finite-length word.
+    std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
 using StringToStateMap = std::unordered_map<std::string, State>;

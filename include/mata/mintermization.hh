@@ -29,7 +29,7 @@ private: // data types
         enum class TYPE {NOTHING_E, BDD_E};
 
         TYPE type;
-        BDD val;
+        BDD val{};
 
         explicit OptionalBdd(TYPE t) : type(t) {}
         explicit OptionalBdd(const BDD& bdd) : type(TYPE::BDD_E), val(bdd) {}
@@ -43,11 +43,11 @@ private: // data types
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
-    Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-    std::unordered_map<std::string, BDD> symbol_to_bddvar;
-    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
-    std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
-    std::unordered_set<BDD> bdds; // bdds created from transitions
+    Cudd bdd_mng{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+    std::unordered_map<std::string, BDD> symbol_to_bddvar{};
+    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar{};
+    std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
+    std::unordered_set<BDD> bdds{}; // bdds created from transitions
 
 private:
     void trans_to_bdd_nfa(const IntermediateAut& aut);
