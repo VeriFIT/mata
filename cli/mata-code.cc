@@ -36,11 +36,11 @@ int main(int argc, const char* argv[])
 	try {
 		arg_parser.ParseCLI(argc, argv);
 	}
-	catch (args::Help) {
+	catch (const args::Help&) {
 		std::cout << arg_parser;
 		return EXIT_SUCCESS;
 	}
-	catch (args::Error e) {
+	catch (const args::Error& e) {
 		std::cerr << e.what() << std::endl;
 		return EXIT_FAILURE;
 	}
