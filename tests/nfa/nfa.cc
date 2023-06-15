@@ -2347,7 +2347,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 	{
 		aut.delta.add(0, 'a', 1);
 		aut.initial = { 0 };
-		Nfa result = reduce(aut, &state_map);
+		Nfa result = reduce(aut, true, &state_map);
 		CHECK(Mata::Nfa::are_equivalent(result, aut));
 	}
 }
