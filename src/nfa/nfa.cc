@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <list>
 #include <unordered_set>
+#include <iterator>
 
 // MATA headers
 #include <mata/nfa.hh>
@@ -378,7 +379,7 @@ bool Delta::empty() const
 }
 
 Delta::const_iterator::const_iterator(const std::vector<Post>& post_p, bool ise) :
-    post(post_p), current_state(0), is_end(ise)
+    post(post_p), current_state(0), is_end{ ise }
 {
     const size_t post_size = post.size();
     for (size_t i = 0; i < post_size; ++i) {
@@ -438,13 +439,14 @@ Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_itera
 }
 
 bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_iterator& b) {
-    if (a.is_end && b.is_end)
+    if (a.is_end && b.is_end) {
         return true;
-    else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end))
+    } else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end)) {
         return false;
-    else
+    } else {
         return a.current_state == b.current_state && a.post_iterator == b.post_iterator
                && a.targets_position == b.targets_position;
+    }
 }
 
 State Delta::find_max_state() {
@@ -477,7 +479,7 @@ std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
     size_t move_index{ 0 };
     posts.erase(
-            std::remove_if(posts.begin(), posts.end(), [&](Post& _post) -> bool {
+            std::remove_if(posts.begin(), posts.end(), [&](Post&) -> bool {
                 size_t prev{ move_index };
                 ++move_index;
                 return !is_staying[prev];
@@ -626,14 +628,10 @@ struct StackLevel {
     State state;
     Post::const_iterator post_it;
     Post::const_iterator post_end;
-    StateSet::const_iterator targets_it;
-    StateSet::const_iterator targets_end;
+    StateSet::const_iterator targets_it{};
+    StateSet::const_iterator targets_end{};
 
-    StackLevel(State q, const Delta & delta):
-            state(q),
-            post_it(delta[q].cbegin()),
-            post_end(delta[q].cend())
-    {
+    StackLevel(State q, const Delta & delta) : state(q), post_it(delta[q].cbegin()), post_end(delta[q].cend()) {
         if (post_it != post_end) {
             targets_it = post_it->cbegin();
             targets_end = post_it->cend();
@@ -641,7 +639,7 @@ struct StackLevel {
     };
 };
 
-const NumberPredicate<State> Nfa::get_useful_states() const
+NumberPredicate<State> Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_
     // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
@@ -956,7 +954,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
 
     // adding non-e transitions
     for (const Symbol symbol: symbols) {
-        for (int i = 0; i<sources[symbol].size(); ++i) {
+        for (size_t i{ 0 }; i < sources[symbol].size(); ++i) {
             State tgt_state =sources[symbol][i];
             State src_state =targets[symbol][i];
             Post & src_post = result.delta.get_mutable_post(src_state);
@@ -968,7 +966,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     }
 
     // adding e-transitions
-    for (int i = 0; i<e_sources.size(); ++i) {
+    for (size_t i{ 0 }; i < e_sources.size(); ++i) {
         State tgt_state =e_sources[i];
         State src_state =e_targets[i];
         Post & src_post = result.delta.get_mutable_post(src_state);
@@ -1038,7 +1036,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
 
     //sorting the targets
     for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
-        Post & post = result.delta.get_mutable_post(q);
+        //Post & post = result.delta.get_mutable_post(q);
         //Util::sort_and_rmdupl(post);
         for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
             sort_and_rmdupl(m->targets);
@@ -1183,8 +1181,10 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const Nfa&                aut,
         const SymbolToStringMap*  symbol_map,
-        const StateToStringMap*   state_map)
-{assert(false);}
+        const StateToStringMap*   state_map) {
+    (void)aut; (void)symbol_map; (void)state_map;
+    assert(false);
+}
 
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
@@ -1334,24 +1334,11 @@ TransSequence Nfa::get_trans_from_as_sequence(State state_from) const
     {
         for (State state_to: transition_from_state.targets)
         {
-            trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+            trans_sequence.emplace_back(state_from, transition_from_state.symbol, state_to);
         }
     }
 
     return trans_sequence;
-}
-
-
-size_t Nfa::get_num_of_trans() const
-{
-    size_t num_of_transitions{};
-
-    for (const auto& state_transitions: delta)
-    {
-        ++num_of_transitions;
-    }
-
-    return num_of_transitions;
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
@@ -1876,13 +1863,14 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     //  std::to_string(<state_dict_object>);
 
     os << " }";
+    return os;
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
-// returns symbols appearing in Delta, pushes back to vector and then sorts
+// Returns symbols appearing in Delta, pushes back to vector and then sorts
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 #ifdef _STATIC_STRUCTURES_
-    static std::vector<Symbol>  symbols{};
+    static std::vector<Symbol> symbols{};
     symbols.clear();
 #else
     std::vector<Symbol>  symbols{};
