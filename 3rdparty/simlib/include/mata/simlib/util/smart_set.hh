@@ -51,8 +51,7 @@ private:
 	};
 
 	GCC_DIAG_OFF(effc++)
-	class Iterator : public std::iterator<std::input_iterator_tag, Key>
-	{
+	class Iterator {
 	GCC_DIAG_ON(effc++)
 
 	private:
@@ -60,8 +59,13 @@ private:
 		const Element* element_;
 
 	public:
+        using iterator_category = std::input_iterator_tag;
+        using value_type = int;
+        using difference_type = int;
+        using pointer = int*;
+        using reference = int&;
 
-		explicit Iterator(const Element* element) :
+        explicit Iterator(const Element* element) :
 			element_(element)
 		{ }
 

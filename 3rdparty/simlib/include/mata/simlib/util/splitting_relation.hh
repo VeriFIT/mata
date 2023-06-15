@@ -128,8 +128,13 @@ class Simlib::Util::SplittingRelation {
 public:
 
 	GCC_DIAG_OFF(effc++)
-	struct IteratorBase : public std::iterator<std::input_iterator_tag, size_t> {
+	struct IteratorBase {
 	GCC_DIAG_ON(effc++)
+        using iterator_category = std::input_iterator_tag;
+        using value_type = int;
+        using difference_type = int;
+        using pointer = int*;
+        using reference = int&;
 
 		Element* el_;
 
