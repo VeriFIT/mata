@@ -182,7 +182,7 @@ public:
 
     void remove(State s) { targets.remove(s); }
 
-    const std::vector<State>::iterator find(State s) const { targets.find(s); }
+    std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
 };
 
