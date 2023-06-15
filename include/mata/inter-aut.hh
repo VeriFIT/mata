@@ -107,6 +107,9 @@ public:
 
     FormulaNode(const FormulaNode& n)
         : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type), operand_type(n.operand_type) {}
+
+    FormulaNode& operator=(const FormulaNode& other) = default;
+    FormulaNode& operator=(FormulaNode&& other) = default;
 };
 
 /**
@@ -120,9 +123,12 @@ struct FormulaGraph {
     FormulaNode node;
     std::vector<FormulaGraph> children;
 
-    FormulaGraph() : node(), children() {}
+    FormulaGraph() = default;
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
+
+    FormulaGraph& operator=(const Mata::FormulaGraph& other) = default;
+    FormulaGraph& operator=(Mata::FormulaGraph&& other) noexcept = default;
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
@@ -135,6 +141,7 @@ struct FormulaGraph {
  * states. The formulas are represented as tree where nodes are either operands or operators.
  */
 struct IntermediateAut {
+public:
     /**
      * Type of automaton. So far we support nondeterministic finite automata (NFA) and
      * alternating finite automata (AFA)
@@ -172,7 +179,6 @@ struct IntermediateAut {
         INTERVALS
     };
 
-public:
     Naming state_naming = Naming::MARKED;
     Naming symbol_naming = Naming::MARKED;
     Naming node_naming = Naming::MARKED;
