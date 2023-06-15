@@ -77,6 +77,9 @@ template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 // A closed set could be upward-closed or downward-closed.
 enum class ClosedSetType { upward_closed_set, downward_closed_set };
 
+template <typename T> struct ClosedSet;
+template <typename T> std::ostream& operator<<(std::ostream& os, const ClosedSet<T>& cs);
+
 /**
  * @brief Closed set.
  *
@@ -164,7 +167,7 @@ struct ClosedSet {
         } // operator<= }}}
 
         // Text representation of a closed set
-        friend std::ostream& operator<<(std::ostream& os, const ClosedSet<T> cs);
+        friend std::ostream& operator<< <> (std::ostream& os, const ClosedSet<T>& cs);
 
         bool is_upward_closed() const { return type_ == ClosedSetType::upward_closed_set; };
         bool is_downward_closed() const { return type_ == ClosedSetType::downward_closed_set; };
@@ -196,7 +199,7 @@ struct ClosedSet {
 }; // class ClosedSet.
 
 template<typename T>
-std::ostream& operator<<(std::ostream& os, const ClosedSet<T> cs) {
+std::ostream& operator<<(std::ostream& os, const ClosedSet<T>& cs) {
     std::string strType = "TYPE: ";
     strType += cs.type() == ClosedSetType::upward_closed_set ? "UPWARD CLOSED" : "DOWNWARD CLOSED";
     strType += "\n";
