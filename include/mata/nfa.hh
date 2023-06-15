@@ -199,7 +199,6 @@ public:
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
-    using super::find;
     using super::insert;
     using super::reserve;
     using super::remove;
@@ -211,6 +210,10 @@ public:
     // is adding non-const version as well ok?
     using super::back;
     using super::filter;
+
+    using super::find;
+    iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
+    const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 }; // struct Post.
 
 /**
@@ -245,12 +248,11 @@ public:
     // Namely, it allocates the post of the state if it was not allocated yet. This in turn may cause that
     // the entire post data structure is re-allocated, iterators to it get invalidated ...
     // Use the constant [] operator below if possible.
-    // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
+    // Or, to prevent the side effect from happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
     Post& get_mutable_post(State q);
 
-    // TODO: why do we have the code of all these methods in the header file? Should we move it out?
     // TODO: Explain what is returned from this method.
     std::vector<State> defragment(Util::NumberPredicate<State> & is_staying);
 
@@ -356,7 +358,7 @@ public:
     explicit Nfa(Delta delta = {}, Util::NumberPredicate<State> initial_states = {},
                  Util::NumberPredicate<State> final_states = {}, Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
-        
+
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      *
