@@ -376,7 +376,7 @@ public:
      */
     explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states.begin(),initial_states.end()), final(final_states.begin(),final_states.end()), alphabet(alphabet) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.

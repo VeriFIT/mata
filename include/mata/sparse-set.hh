@@ -145,6 +145,16 @@ namespace Mata::Util {
             assert(consistent());
         }
 
+        template <class T>
+        explicit SparseSet(T & container)
+        {
+            for (auto i = container.begin();i<container.end();i++) {
+                insert(*i);
+            }
+
+            assert(consistent());
+        }
+
         explicit SparseSet(const std::vector<char> &bv) {
             reserve(bv.size());
             for (size_t i = 0; i < bv.size(); i++) {

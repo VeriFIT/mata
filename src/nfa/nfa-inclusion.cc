@@ -157,7 +157,6 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 if (smaller.final[smaller_succ] &&
                     !bigger.final.intersects(bigger_succ))
-                    //bigger_succ.filter([&bigger](State q){return bigger.final[q];}) )
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();
