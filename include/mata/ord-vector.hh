@@ -48,7 +48,6 @@ std::string ToString(const T& n) {
 
 namespace Mata::Util {
 
-template <class Number> class NumberPredicate;
 template <class Key> class OrdVector;
 
 template <class T>
@@ -107,7 +106,6 @@ public:
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
     explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
-    explicit OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
     template <class InputIterator>
     OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
     template <class T>

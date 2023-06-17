@@ -256,7 +256,7 @@ public:
     Post& get_mutable_post(State q);
 
     // TODO: Explain what is returned from this method.
-    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying);
+    void defragment(const std::vector<char>& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
     const Post & operator[] (State q) const;
@@ -454,8 +454,9 @@ public:
 
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
-    Mata::Util::NumberPredicate<Symbol> get_used_symbols_np() const;
+    Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
+    std::vector<char> get_used_symbols_chv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
@@ -489,8 +490,7 @@ public:
      */
     StateSet get_useful_states_old() const;
 
-    //I just want to return something as constant reference to the thing, without copying anything, how?
-    Util::NumberPredicate<State> get_useful_states() const;
+    std::vector<char> get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.

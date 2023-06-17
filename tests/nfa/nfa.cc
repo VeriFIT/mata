@@ -2662,18 +2662,18 @@ TEST_CASE("Mata::Nfa::trim() trivial") {
 
 TEST_CASE("Mata::Nfa::trim()")
 {
-    Nfa aut{20};
-    FILL_WITH_AUT_A(aut);
-    aut.delta.remove(1, 'a', 10);
+    Nfa orig_aut{20};
+    FILL_WITH_AUT_A(orig_aut);
+    orig_aut.delta.remove(1, 'a', 10);
 
-    Nfa old_aut{aut};
 
     SECTION("Without state map") {
+        Nfa aut{orig_aut};
         aut.trim();
-        CHECK(aut.initial.size() == old_aut.initial.size());
-        CHECK(aut.final.size() == old_aut.final.size());
+        CHECK(aut.initial.size() == orig_aut.initial.size());
+        CHECK(aut.final.size() == orig_aut.final.size());
         CHECK(aut.size() == 4);
-        for (const Word& word: get_shortest_words(old_aut))
+        for (const Word& word: get_shortest_words(orig_aut))
         {
             CHECK(is_in_lang(aut, Run{word,{}}));
         }
@@ -2685,12 +2685,13 @@ TEST_CASE("Mata::Nfa::trim()")
     }
 
     SECTION("With state map") {
+        Nfa aut{orig_aut};
         StateToStateMap state_map{};
         aut.trim(&state_map);
-        CHECK(aut.initial.size() == old_aut.initial.size());
-        CHECK(aut.final.size() == old_aut.final.size());
+        CHECK(aut.initial.size() == orig_aut.initial.size());
+        CHECK(aut.final.size() == orig_aut.final.size());
         CHECK(aut.size() == 4);
-        for (const Word& word: get_shortest_words(old_aut))
+        for (const Word& word: get_shortest_words(orig_aut))
         {
             CHECK(is_in_lang(aut, Run{word,{}}));
         }

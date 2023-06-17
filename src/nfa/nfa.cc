@@ -22,6 +22,7 @@
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/sparse-set.hh>
 #include <mata/nfa-algorithms.hh>
 #include <mata/simlib/explicit_lts.hh>
 
@@ -480,11 +481,12 @@ Post& Delta::get_mutable_post(State q) {
     return posts[q];
 }
 
-std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
+void Delta::defragment(const std::vector<char>& is_staying, const std::vector<State>& renaming) {
     //TODO: this function seems to be a mess, I don't remember what I was doing a the renaming returned is something weird
     //TODO: should be refactored
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
+    // Why would anyone write such horrible code? I don't know.
     size_t move_index{ 0 };
     posts.erase(
             std::remove_if(posts.begin(), posts.end(), [&](Post&) -> bool {
@@ -495,20 +497,9 @@ std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
             posts.end()
     );
 
-    //get renaming of current states to new numbers:
-    std::vector<State> renaming(this->find_max_state()+1);
-    size_t i = 0;
-    for (State q:is_staying.get_elements()) {
-        if (q >= renaming.size())
-            break;
-        renaming[q] = i;
-        i++;
-    }
-
-    //this iterates through every post and ever, filters and renames states,
-    //and finally removes moves that became empty from the post.
+    //this iterates through every post and every move, filters and renames states,
+    //and then removes moves that became empty.
     for (State q=0,size=posts.size(); q < size; ++q) {
-        //should we have a function Post::transform(Lambda) for this?
         Post & p = get_mutable_post(q);
         for (auto move = p.begin(); move < p.end(); ++move) {
             move->targets.erase(
@@ -526,9 +517,6 @@ std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
                 p.end()
         );
     }
-
-    //the renaming can be useful somewhere, computed anyway, we can as well return it.
-    return renaming;
 }
 
 const Post& Delta::operator[](State q) const {
@@ -582,52 +570,41 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
 void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
-    static NumberPredicate<State> useful_states(false);
+    std::vector<char> useful_states{ get_useful_states() };
     useful_states.clear();
     useful_states = get_useful_states();
 #else
-    NumberPredicate<State> useful_states{ get_useful_states() };
+    std::vector<char> useful_states{ get_useful_states() };
 #endif
 
-    //this renaming can be used instead of the state map, it is computed there anyway, so far not used.
-    delta.defragment(useful_states);
-
-    std::vector<State> renaming(this->size());
+    std::vector<State> renaming(useful_states.size());
 
     State j=0;
-    for(State i = 0; i<this->size(); i++) {
+    for(State i = 0; i<useful_states.size(); i++) {
         if (useful_states[i]) {
             renaming[i] = j;
             j++;
         }
     }
 
+    delta.defragment(useful_states, renaming);
+
     auto is_state_useful = [&useful_states](State q){return useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
     auto rename_state = [&renaming](State q){return renaming[q];};
-    if (renaming.size() < initial.max())
-        std::cout<<"INITIAL";
-    if (renaming.size() < final.max())
-        std::cout<<"FINAL";
     initial.rename(rename_state);
     final.rename(rename_state);
     initial.truncate();
     final.truncate();
 
-    // TODO : this is actually ony used in one test, remove state map?
+    // TODO : this is actually only used in one test, remove state map?
     if (state_map) {
         state_map->clear();
-        state_map->reserve(useful_states.domain_size());
-        StateSet us = StateSet(useful_states.get_elements());
-        std::vector<State> usv = us.ToVector();
+        state_map->reserve(useful_states.size());
         for (State q=0;q<useful_states.size();q++)
-            (*state_map)[usv[q]] = q;
-
-        // Attempt to use the renaming for this, did not work ... but should work somehow ...
-        // I think we should just return the renaming in fact, it would need a little more refactoring.
-        //for (State q=0;q<useful_states.size();q++)
-        //    (*state_map)[q] = renaming[q];
+            if (useful_states[q])
+                (*state_map)[q] = renaming[q];
     }
 }
 
@@ -668,34 +645,30 @@ struct StackLevel {
     };
 };
 
-NumberPredicate<State> Nfa::get_useful_states() const
+std::vector<char> Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_
     // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
     static std::vector<StackLevel> stack;
     //tracking elements seems to cost more than it saves, switching it off
-    static NumberPredicate<State> reached(false);
-    static NumberPredicate<State> reached_and_reaching(false);
+    std::vector<char> reached(size(),false);
+    std::vector<char> reached_and_reaching(size(),false);
     stack.clear();
     reached.clear();
     reached_and_reaching.clear();
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    NumberPredicate<State> reached(size(),false,false); //what has been reached from the initial states
-    NumberPredicate<State> reached_and_reaching(size(),false,false);//what is reaching final states
-
-    //std::vector<bool> reached(size(),false);
-    //std::vector<bool> reached_and_reaching(size(),false);
-    //std::vector<StackLevel> stack;
+    std::vector<char> reached(size(),false);
+    std::vector<char> reached_and_reaching(size(),false);
 #endif
 
     for (const State q0: initial) {
 
         stack.emplace_back(q0,delta);
-        reached.add(q0);
+        reached[q0]=true;
         if (final[q0])
-            reached_and_reaching.add(q0);
+            reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
             //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
@@ -716,18 +689,18 @@ NumberPredicate<State> Nfa::get_useful_states() const
                 State succ_state = *(level.targets_it);
                 ++level.targets_it;
                 if (final[succ_state])
-                    reached_and_reaching.add(succ_state);
+                    reached_and_reaching[succ_state]=true;
                 if (reached_and_reaching[succ_state])
                 {
                     //A major trick, because of which one DFS is enough for reached as well as reaching.
                     //On touching a state which reaches finals states, everything in the stack below reaches a final state.
                     //An invariant of the stack is that everything below a reaching state is reaching.
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
-                            reached_and_reaching.add(it->state);
+                            reached_and_reaching[it->state]=true;
                     }
                 }
                 if (!reached[succ_state]) {
-                    reached.add(succ_state);
+                    reached[succ_state]=true;
                     stack.emplace_back(succ_state,delta);
                 }
             }
@@ -1940,13 +1913,13 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
+Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static Util::NumberPredicate<Symbol>  symbols(64,false,false);
+    static Util::SparseSet<Symbol>  symbols(64,false);
     symbols.clear();
 #else
-    Util::NumberPredicate<Symbol>  symbols(64,false,false);
+    Util::SparseSet<Symbol>  symbols(64,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -1968,6 +1941,26 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
     symbols.clear();
 #else
     std::vector<bool> symbols(64,false);
+#endif
+    //symbols.dont_track_elements();
+    for (State q = 0; q< delta.num_of_states(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            reserve_on_insert(symbols,move.symbol);
+            symbols[move.symbol]=true;
+        }
+    }
+    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    return symbols;
+}
+
+std::vector<char> Nfa::get_used_symbols_chv() const {
+#ifdef _STATIC_STRUCTURES_
+    //static seems to speed things up a little
+    static std::vector<char>  symbols(64,false);
+    symbols.clear();
+#else
+    std::vector<char> symbols(64,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -2122,31 +2115,38 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //auto from_set = get_used_symbols_set();
     //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
 
-    //WITH NUMBER PREDICATE (4.857s)
+    //WITH NUMBER PREDICATE (4.857s) (NP removed)
     //return Util::OrdVector(get_used_symbols_np().get_elements());
+
+    //WITH SPARSE SET (haven't tried)
+    //return Util::OrdVector<State>(get_used_symbols_sps());
 
     //WITH BOOL VECTOR (error !!!!!!!):
     //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
     //WITH BOOL VECTOR (1.9s):
-    std::vector<bool> bv = get_used_symbols_bv();
-    Util::OrdVector<Symbol> ov;
-    //int count = 0;
+    //std::vector<bool> bv = get_used_symbols_bv();
+    //Util::OrdVector<Symbol> ov;
     //for(Symbol i = 0;i<bv.size();i++)
     //    if (bv[i]) {
-    //        count++;
+    //        ov.push_back(i);
     //    }
-    //ov.reserve(count);
-    for(Symbol i = 0;i<bv.size();i++)
-        if (bv[i]) {
-            ov.push_back(i);
-        }
-    return ov;
+    //return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
     //std::vector<bool> bv = get_used_symbols_bv();
     //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
     //return Util::OrdVector<Symbol>(v);
+
+    //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
+    std::vector<char> chv = get_used_symbols_chv();
+    Util::OrdVector<Symbol> ov;
+    for(Symbol i = 0;i<chv.size();i++)
+        if (chv[i]) {
+            ov.push_back(i);
+        }
+    return ov;
+
 }
 
 Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
