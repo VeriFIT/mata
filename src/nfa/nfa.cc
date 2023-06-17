@@ -482,11 +482,10 @@ Post& Delta::get_mutable_post(State q) {
 }
 
 void Delta::defragment(const std::vector<char>& is_staying, const std::vector<State>& renaming) {
-    //TODO: this function seems to be a mess, I don't remember what I was doing a the renaming returned is something weird
-    //TODO: should be refactored
+    //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-    // Why would anyone write such horrible code? I don't know.
+    // Why would anyone write such horrible code?
     size_t move_index{ 0 };
     posts.erase(
             std::remove_if(posts.begin(), posts.end(), [&](Post&) -> bool {
@@ -555,7 +554,7 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-//TODO: probably can be removed, trim_inplace.
+//TODO: probably can be removed, trim_inplace is faster.
 void Nfa::trim_reverting(StateToStateMap* state_map)
 {
     if (!state_map) {
@@ -1173,12 +1172,12 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 
     for (Symbol sym : run.word)
     {
-        if (aut.final.has_one(cur)) { return true; }
+        if (aut.final.intersects(cur)) { return true; }
         cur = aut.post(cur, sym);
         if (cur.empty()) { return false; }
     }
 
-    return aut.final.has_one(cur);
+    return aut.final.intersects(cur);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1524,7 +1523,7 @@ Nfa Mata::Nfa::determinize(
     const State S0id = result.add_state();
     result.initial.add(S0id);
 
-    if (aut.final.has_one(S0)) {
+    if (aut.final.intersects(S0)) {
         result.final.add(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
@@ -1570,7 +1569,7 @@ Nfa Mata::Nfa::determinize(
             } else {
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
-                if (aut.final.has_one(T)) {
+                if (aut.final.intersects(T)) {
                     result.final.add(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));

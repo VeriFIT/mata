@@ -91,7 +91,7 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols) {
 			StateSet succ = aut.post(state, symb);
-			if (!aut.final.has_one(succ)) {
+			if (!aut.final.intersects(succ)) {
 				if (nullptr != cex) {
 					cex->word.clear();
 					cex->word.push_back(symb);

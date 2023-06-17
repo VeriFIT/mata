@@ -239,8 +239,9 @@ namespace Mata::Util {
             assert(consistent());
         }
 
+        //call this (instead of the fried are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
         template<class T>
-        bool has_one(const T & set) const {
+        bool intersects(const T & set) const {
             for (auto i=set.begin();i<set.end();i++) {
                 if (has(*i))
                     return true;

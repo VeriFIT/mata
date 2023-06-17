@@ -156,7 +156,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&
-                    !bigger.final.has_one(bigger_succ))
+                    !bigger.final.intersects(bigger_succ))
                     //bigger_succ.filter([&bigger](State q){return bigger.final[q];}) )
                 {
                     if (cex  != nullptr) {

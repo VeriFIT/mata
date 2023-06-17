@@ -101,15 +101,14 @@ private:  // Private methods
 public:
     OrdVector() : vec_() {}
     explicit OrdVector(const VectorType& vec) : vec_(vec) { Util::sort_and_rmdupl(vec_); }
-    //explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
+    template <class T>
+    OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); }
     OrdVector(std::initializer_list<Key> list) : vec_(list) { Util::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
     explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
     template <class InputIterator>
     OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
-    template <class T>
-    OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); }
 
     OrdVector& operator=(const OrdVector& other) {
         if (&other != this) { vec_ = other.vec_; }

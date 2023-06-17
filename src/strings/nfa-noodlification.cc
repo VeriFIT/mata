@@ -234,7 +234,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
         }
 
         for(const Trans& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-            //TODO: the use of SparseSet here (originally NumberPredicate) seems weird, what about StateSet?
+            //TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise what about StateSet?
             Mata::Util::SparseSet<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
             if(item.seg_id + 1 == segments.size() - 1) { // last segment
                 fins = Mata::Util::SparseSet<Mata::Nfa::State>({unused_state});
