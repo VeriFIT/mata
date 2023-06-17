@@ -101,11 +101,10 @@ namespace Mata::Util {
 ///     New Mata code
 //////////////////////////////////////////////////////////////////////////////////
 
-//Just to make it compatible with NumberPredicate, to make refactoring easier, to be removed.
+//Just to make it compatible with the previously used NumberPredicate and other data structures
 
         void add(const Number val) {insert(val);}
         void remove(const Number val) {erase(val);}
-        Number domain_size() const {return capacity();}
         bool consistent() {
             return ( capacity_ >= size_ &&
                      (max() < capacity_ || (size_ == 0 && capacity_ == 0) ) &&
@@ -334,18 +333,5 @@ namespace Mata::Util {
         }
 
     };
-
-    //template<typename Number>
-    //bool are_disjoint(const SparseSet<Number> & A, const SparseSet<Number> & B) {
-    //    if (A.size() > B.size)
-    //        return are_disjoint(B,A);
-    //    else {
-    //        for (auto i: A)
-    //            if (B.contains(i))
-    //                return false;
-    //    }
-    //    return true;
-    //}
-
 }
 #endif //LIBMATA_SPARSE_SET_HH

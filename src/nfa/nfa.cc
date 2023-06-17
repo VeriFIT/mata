@@ -2072,8 +2072,8 @@ State Nfa::add_state(State state) {
 
 size_t Nfa::size() const {
     return std::max({
-        static_cast<unsigned long>(initial.domain_size()),
-        static_cast<unsigned long>(final.domain_size()),
+        static_cast<unsigned long>(initial.capacity()),
+        static_cast<unsigned long>(final.capacity()),
         static_cast<unsigned long>(delta.num_of_states())
     });
 }
@@ -2125,13 +2125,13 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
     //WITH BOOL VECTOR (1.9s):
-    //std::vector<bool> bv = get_used_symbols_bv();
-    //Util::OrdVector<Symbol> ov;
-    //for(Symbol i = 0;i<bv.size();i++)
-    //    if (bv[i]) {
-    //        ov.push_back(i);
-    //    }
-    //return ov;
+    std::vector<bool> bv = get_used_symbols_bv();
+    Util::OrdVector<Symbol> ov;
+    for(Symbol i = 0;i<bv.size();i++)
+        if (bv[i]) {
+            ov.push_back(i);
+        }
+    return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
     //std::vector<bool> bv = get_used_symbols_bv();
@@ -2139,13 +2139,14 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //return Util::OrdVector<Symbol>(v);
 
     //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
-    std::vector<char> chv = get_used_symbols_chv();
-    Util::OrdVector<Symbol> ov;
-    for(Symbol i = 0;i<chv.size();i++)
-        if (chv[i]) {
-            ov.push_back(i);
-        }
-    return ov;
+    //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
+    //std::vector<char> chv = get_used_symbols_chv();
+    //Util::OrdVector<Symbol> ov;
+    //for(Symbol i = 0;i<chv.size();i++)
+    //    if (chv[i]) {
+    //        ov.push_back(i);
+    //    }
+    //return ov;
 
 }
 

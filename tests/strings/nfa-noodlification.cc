@@ -403,11 +403,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
-                //CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                bool equiv = are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr);
-                CHECK(equiv);
-                if (!equiv) //11,21,32
-                    std::cout<<"HERE BUG "<<i<<" "<<j<<"\n";
+                CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
                 auto used_symbols{ noodles[i][j].first->get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
