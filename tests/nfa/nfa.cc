@@ -1935,7 +1935,7 @@ TEST_CASE("Mata::Nfa::revert()")
 
 		Nfa result = revert(aut);
 		//REQUIRE(result.final == StateSet({1, 2}));
-        REQUIRE(StateSet(result.final.get_elements()) == StateSet({1, 2}));
+        REQUIRE(StateSet(result.final) == StateSet({1, 2}));
 		REQUIRE(result.delta.contains(2, 'a', 1));
 		REQUIRE(result.delta.contains(3, 'a', 1));
 		REQUIRE(result.delta.contains(4, 'b', 1));
@@ -1946,7 +1946,7 @@ TEST_CASE("Mata::Nfa::revert()")
 		REQUIRE(result.delta.contains(7, 'c', 3));
 		REQUIRE(result.delta.contains(2, 'b', 3));
 		REQUIRE(result.delta.contains(8, 'a', 7));
-		REQUIRE(StateSet(result.initial.get_elements()) == StateSet({3}));
+		REQUIRE(StateSet(result.initial) == StateSet({3}));
 	}
 
 	SECTION("Automaton A") {

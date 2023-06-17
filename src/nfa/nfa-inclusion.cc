@@ -18,6 +18,7 @@
 // MATA headers
 #include <mata/nfa.hh>
 #include <mata/nfa-algorithms.hh>
+#include <mata/sparse-set.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::Util;
@@ -155,7 +156,8 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&
-                    are_disjoint(bigger_succ, bigger.final))
+                    !bigger.final.has_one(bigger_succ))
+                    //bigger_succ.filter([&bigger](State q){return bigger.final[q];}) )
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();

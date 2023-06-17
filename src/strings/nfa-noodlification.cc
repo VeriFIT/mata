@@ -234,9 +234,10 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
         }
 
         for(const Trans& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
-            Mata::Util::NumberPredicate<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
+            //TODO: the use of SparseSet here (originally NumberPredicate) seems weird, what about StateSet?
+            Mata::Util::SparseSet<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
             if(item.seg_id + 1 == segments.size() - 1) { // last segment
-                fins = Mata::Util::NumberPredicate<Mata::Nfa::State>({unused_state});
+                fins = Mata::Util::SparseSet<Mata::Nfa::State>({unused_state});
             }
 
             for(const State& fn : fins) {
@@ -397,6 +398,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
+            //TODO: what is this? !!!
             product_pres_eps_trans = revert(product_pres_eps_trans);
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);

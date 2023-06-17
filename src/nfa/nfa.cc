@@ -141,7 +141,7 @@ namespace {
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
     StateBoolArray compute_reachability(const Nfa& nfa) {
-        std::vector<State> worklist{ nfa.initial.get_elements()};
+        std::vector<State> worklist{ nfa.initial.begin(),nfa.initial.end() };
 
         StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial)
@@ -481,6 +481,9 @@ Post& Delta::get_mutable_post(State q) {
 }
 
 std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
+    //TODO: this function seems to be a mess, I don't remember what I was doing a the renaming returned is something weird
+    //TODO: should be refactored
+
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
     size_t move_index{ 0 };
     posts.erase(
@@ -564,8 +567,8 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-//TODO: probably can be removed, trim_reverting faster.
-void Nfa::trim_inplace(StateToStateMap* state_map)
+//TODO: probably can be removed, trim_inplace.
+void Nfa::trim_reverting(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
@@ -576,7 +579,7 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     }
 }
 
-void Nfa::trim_reverting(StateToStateMap* state_map)
+void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
     static NumberPredicate<State> useful_states(false);
@@ -586,10 +589,31 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
     NumberPredicate<State> useful_states{ get_useful_states() };
 #endif
 
-    initial.defragment(useful_states);
-    final.defragment(useful_states);
     //this renaming can be used instead of the state map, it is computed there anyway, so far not used.
-    std::vector<State> renaming = delta.defragment(useful_states);
+    delta.defragment(useful_states);
+
+    std::vector<State> renaming(this->size());
+
+    State j=0;
+    for(State i = 0; i<this->size(); i++) {
+        if (useful_states[i]) {
+            renaming[i] = j;
+            j++;
+        }
+    }
+
+    auto is_state_useful = [&useful_states](State q){return useful_states[q];};
+    initial.filter(is_state_useful);
+    final.filter(is_state_useful);
+    auto rename_state = [&renaming](State q){return renaming[q];};
+    if (renaming.size() < initial.max())
+        std::cout<<"INITIAL";
+    if (renaming.size() < final.max())
+        std::cout<<"FINAL";
+    initial.rename(rename_state);
+    final.rename(rename_state);
+    initial.truncate();
+    final.truncate();
 
     // TODO : this is actually ony used in one test, remove state map?
     if (state_map) {
@@ -1077,7 +1101,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
     Util::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
-    Util::OrdVector<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
+    Util::OrdVector<Symbol> symbs(symbs_ls);
 
     // TODO: make a general function for traversal over reachable states that can
     // be shared by other functions?
@@ -1154,6 +1178,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
     return {word, true};
 }
 
+//TODO: this is not efficient
 bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur(aut.initial);
@@ -1164,22 +1189,23 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
         if (cur.empty()) { return false; }
     }
 
-    return !are_disjoint(cur, aut.final);
+    return !are_disjoint(cur, StateSet(aut.final));
 }
 
 /// Checks whether the prefix of a string is in the language of an automaton
+// TODO: slow and it should share code with is_in_lang
 bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 {
-    StateSet cur = (StateSet(aut.initial));
+    StateSet cur =  { aut.initial };
 
     for (Symbol sym : run.word)
     {
-        if (!are_disjoint(cur, aut.final)) { return true; }
+        if (aut.final.has_one(cur)) { return true; }
         cur = aut.post(cur, sym);
         if (cur.empty()) { return false; }
     }
 
-    return !are_disjoint(cur, aut.final);
+    return aut.final.has_one(cur);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1525,7 +1551,7 @@ Nfa Mata::Nfa::determinize(
     const State S0id = result.add_state();
     result.initial.add(S0id);
 
-    if (!are_disjoint(S0, aut.final)) {
+    if (aut.final.has_one(S0)) {
         result.final.add(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
@@ -1571,7 +1597,7 @@ Nfa Mata::Nfa::determinize(
             } else {
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
-                if (!are_disjoint(T, aut.final)) {
+                if (aut.final.has_one(T)) {
                     result.final.add(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
@@ -2066,10 +2092,10 @@ void Nfa::clear() {
 }
 
 bool Nfa::is_identical(const Nfa& aut) {
-    if (Util::OrdVector<State>(initial.get_elements()) != Util::OrdVector<State>(aut.initial.get_elements())) {
+    if (Util::OrdVector<State>(initial) != Util::OrdVector<State>(aut.initial)) {
         return false;
     }
-    if (Util::OrdVector<State>(final.get_elements()) != Util::OrdVector<State>(aut.final.get_elements())) {
+    if (Util::OrdVector<State>(final) != Util::OrdVector<State>(aut.final)) {
         return false;
     }
 
