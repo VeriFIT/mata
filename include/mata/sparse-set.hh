@@ -27,9 +27,7 @@ namespace Mata::Util {
 
     template<typename Number>
     class SparseSet {
-
-        // This static assertion would be very nice, but does not compile on ubuntu, can't be bothered now
-        // static_assert(std::is_unsigned<Number>::value, "SparseSet can only contain unsigned integers");
+        static_assert(std::is_unsigned<Number>::value, "SparseSet can only contain unsigned integers");
 
     private:
         std::vector<Number> dense;    //Dense set of elements
