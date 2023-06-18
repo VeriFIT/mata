@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <cassert>
 
-#include "mata/number-predicate.hh"
 #include "mata/util.hh"
 
 namespace {
