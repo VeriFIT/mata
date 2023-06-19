@@ -324,6 +324,7 @@ namespace Mata::Util {
             assert(consistent());
         }
 
+        // This could be a template with types of A and B both as parameters, in Util?
         friend bool are_disjoint(const SparseSet & A, const SparseSet & B) {
             if (A.size() > B.size())
                 return are_disjoint(B,A);
