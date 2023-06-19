@@ -98,7 +98,7 @@ namespace {
             // Vectors are saved in this->state_cache after this
             this->create_state_cache(prog, use_epsilon);
             // If there are more potential start states, the one without a self-loop should be chosen as a new start state
-            int initial_state_index = 0;
+            size_t initial_state_index = 0;
             int out_state;
             bool self_loop;
             if (this->state_cache.state_mapping[start_state].size() > 1) {
@@ -106,9 +106,9 @@ namespace {
               // more than one state. The new start state should be without a self loop if there is such a state. The new
               // start state can't be a state that was originally final, because it does not have any outgoing edges.
               re2::Prog::Inst *inst;
-              for (auto potential_start_state: this->state_cache.state_mapping[start_state]) {
+              for (Mata::Nfa::State potential_start_state: this->state_cache.state_mapping[start_state]) {
                 self_loop = false;
-                inst = prog->inst(potential_start_state);
+                inst = prog->inst(static_cast<int>(potential_start_state));
                 if (inst->opcode() == re2::kInstMatch) {
                   initial_state_index++;
                   continue;
@@ -140,7 +140,7 @@ namespace {
             // start state as one of the states reachable by epsilon from the start state. We must also include
             // transitions of the other epsilon reachable states to the new start state.
             if (this->state_cache.is_state_nop_or_cap[start_state] && this->state_cache.state_mapping[start_state].size() > 1) {
-                for (int index = 0; index < this->state_cache.state_mapping[start_state].size(); index++) {
+                for (size_t index = 0; index < this->state_cache.state_mapping[start_state].size(); index++) {
                     for (auto state: this->state_cache.state_mapping[this->state_cache.state_mapping[start_state][index]]) {
                         copyEdgesFromTo.emplace_back(state, this->state_cache.state_mapping[start_state][initial_state_index]);
                     }
@@ -206,6 +206,7 @@ namespace {
                             // TODO Symbol?
                             symbols.push_back(304);
                         }
+                        break;
                     // kInstByteRange represents states with a "byte range" on the outgoing transition(s)
                     // (it can also be a single byte)
                     case re2::kInstByteRange:
@@ -339,8 +340,8 @@ namespace {
                 // has_state_incoming_edge holds true for states with an incoming edge, false for the rest
                 default_false_vec,
             };
-            const int start_state = prog->start();
-            const int prog_size = prog->size();
+            const size_t start_state = prog->start();
+            const size_t prog_size = prog->size();
 
             // Used for the first loop through states
             std::vector<Mata::Nfa::State> tmp_state_mapping(prog_size);
@@ -355,13 +356,13 @@ namespace {
             std::vector<int> states_for_second_check(prog_size);
 
             for (Mata::Nfa::State state = start_state; state < prog_size; state++) {
-                re2::Prog::Inst *inst = prog->inst(state);
+                re2::Prog::Inst *inst = prog->inst(static_cast<int>(state));
                 if (inst->last()) {
                     this->state_cache.is_last[state] = true;
                 }
 
                 if (inst->opcode() == re2::kInstCapture || inst->opcode() == re2::kInstNop) {
-                    this->state_cache.state_mapping[state] = this->get_mapped_states(prog, state, inst);
+                    this->state_cache.state_mapping[state] = this->get_mapped_states(prog, static_cast<int>(state), inst);
                     this->state_cache.is_state_nop_or_cap[state] = true;
                     mapped_parget_state = tmp_state_mapping[static_cast<Mata::Nfa::State>(inst->out())];
                     tmp_state_mapping[state] = mapped_parget_state;
@@ -373,7 +374,7 @@ namespace {
                         }
                         tmp_state_mapping[append_to_state] = mapped_parget_state;
                     } else {
-                        append_to_state = state;
+                        append_to_state = static_cast<int>(state);
                     }
                 } else if (inst->opcode() == re2::kInstMatch) {
                     this->state_cache.is_final_state[state] = true;
@@ -384,7 +385,7 @@ namespace {
                 } else {
                     // Other types of states will always have an incoming edge so the target state will always have it too
                     this->state_cache.has_state_incoming_edge[inst->out()] = true;
-                    if (inst->out() < state) {
+                    if (static_cast<size_t>(inst->out()) < state) {
                       for (auto mapped_state: this->state_cache.state_mapping[inst->out()]) {
                         if (mapped_state == state) {
                           this->state_cache.has_state_incoming_edge[state] = true;
@@ -423,11 +424,11 @@ namespace {
                     defaultFalseVec, // is_last holds true for states that are last, false for the rest
                     defaultTrueVec, // has_state_incoming_edge holds true all states
             };
-            const int progSize = prog->size();
+            const size_t progSize = prog->size();
 
             for (Mata::Nfa::State state = 0; state < progSize; state++) {
                 this->state_cache.state_mapping.push_back({state});
-                re2::Prog::Inst *inst = prog->inst(state);
+                re2::Prog::Inst *inst = prog->inst(static_cast<int>(state));
                 if (inst->last()) {
                     this->state_cache.is_last[state] = true;
                 }

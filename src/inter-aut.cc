@@ -418,7 +418,7 @@ size_t Mata::IntermediateAut::get_number_of_disjuncts() const
             for (const auto &ch: gr->children)
                 stack.push_back(&ch);
         }
-        res += std::max(trans_disjuncts, (size_t) 1);
+        res += std::max(trans_disjuncts, 1ul);
     }
 
     return res;
@@ -466,7 +466,7 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
     }
     const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
-    aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
+    aut.transitions.emplace_back(lhs, graph);
 }
 
 std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
@@ -474,7 +474,7 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     std::unordered_set<std::string> res;
     std::vector<const Mata::FormulaGraph *> stack;
 
-    stack.push_back(reinterpret_cast<const FormulaGraph *const>(&(this->node)));
+    stack.push_back(reinterpret_cast<const FormulaGraph*>(&(this->node)));
     while (!stack.empty()) {
         const FormulaGraph* g = stack.back();
         assert(g != nullptr);
