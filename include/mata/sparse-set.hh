@@ -201,7 +201,7 @@ namespace Mata::Util {
         }
 
         template<typename T>
-        bool insert_all(const T & set) {
+        void insert_all(const T & set) {
             for (auto i=set.begin();i<set.end();i++) {
                 insert(static_cast<const Number&>(*i));
             }
@@ -209,7 +209,7 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        bool add(const std::vector<Number> & set) {
+        void add(const std::vector<Number> & set) {
             for (auto i=set.begin();i<set.end();i++) {
                 insert(*i);
             }
@@ -217,7 +217,7 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        bool add(const std::initializer_list<Number> & list) {
+        void add(const std::initializer_list<Number> & list) {
             for (auto i=list.begin();i<list.end();i++) {
                 insert(*i);
             }
@@ -225,7 +225,7 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        bool insert_all(const std::initializer_list<Number> & list) {
+        void insert_all(const std::initializer_list<Number> & list) {
             for (auto i=list.begin();i<list.end();i++) {
                 insert(*i);
             }
@@ -234,7 +234,7 @@ namespace Mata::Util {
         }
 
         template<class T>
-        bool erase_all(const T & set) {
+        void erase_all(const T & set) {
             for (auto i=set.begin();i<set.end();i++) {
                 erase(*i);
             }
@@ -242,7 +242,7 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        bool erase_all(const std::initializer_list<Number> & list) {
+        void erase_all(const std::initializer_list<Number> & list) {
             for (auto i=list.begin();i<list.end();i++) {
                 erase(*i);
             }
