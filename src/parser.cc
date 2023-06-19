@@ -419,7 +419,7 @@ bool Mata::Parser::ParsedSection::operator==(const ParsedSection& rhs) const {
         this->body == rhs.body;
 }
 
-std::ostream& Mata::Parser::operator<<(std::ostream& os, const ParsedSection& parsec) {
+std::ostream& std::operator<<(std::ostream& os, const ParsedSection& parsec) {
     os << "@" << parsec.type << "\n";
     for (const auto& string_list_pair : parsec.dict) {
         os << "%" << string_list_pair.first;
