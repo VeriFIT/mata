@@ -261,7 +261,6 @@ public:
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {
             if (*found_value_it == k) {
-                vec_.erase(found_value_it);
                 assert(vectorIsSorted());
                 return;
             }

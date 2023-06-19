@@ -25,6 +25,19 @@
 
 namespace Mata::Util {
 
+/**
+ * @brief  Implementation of a set of non-negative numbers using sparse-set.
+ *
+ *
+ * This class implements the interface of a set (similar to std::set) using sparse-set date structure,
+ * that is, a pair of vectors dense and sparse (... google it).
+ * Importantly
+ * - Insertion and removal are constant time.
+ * - Iteration is linear in the number of stored elements.
+ * - It takes a lot of space, the sparse and dense vectors allocate as many indexes as the maximal stored number.
+ *
+ * @tparam  Number  Number type: type of numbers contained in the container.
+ */
     template<typename Number>
     class SparseSet {
         static_assert(std::is_unsigned<Number>::value, "SparseSet can only contain unsigned integers");
@@ -34,7 +47,7 @@ namespace Mata::Util {
         std::vector<Number> sparse;    //Map of elements to dense set indices
 
         size_t size_ = 0;    //Current size (number of elements)
-        size_t capacity_ = 0;    //Current capacity (maximum value + 1)
+        size_t capacity_ = 0;    //Current capacity (maximum value + 1 or more (can be more when maximum is removed))
 
     public:
         using iterator = typename std::vector<Number>::const_iterator;
@@ -56,6 +69,8 @@ namespace Mata::Util {
 
         void clear() { size_ = 0;  }
 
+        // TODO: maybe we could reserve space more efficiently, by something as doubling?
+        //  But we should not create havoc with capacity, which is used outside, namely for determining the states of an automaton.
         void reserve(size_t u) {
             if (u > capacity_) {
                 dense.resize(u, 0);
