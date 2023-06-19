@@ -232,6 +232,7 @@ class RE2 {
   // We convert user-passed pointers into special Arg objects
   class Options;
 
+  RE2() = default;
   ~RE2();
 
   // If RE2 could not be created properly, returns an error string.
@@ -372,19 +373,19 @@ class RE2 {
  private:
 
   std::string pattern_;         // string regular expression
-  re2::Regexp* entire_regexp_;  // parsed regular expression
-  const std::string* error_;    // error indicator (or points to empty string)
+  re2::Regexp* entire_regexp_{};  // parsed regular expression
+  const std::string* error_{};    // error indicator (or points to empty string)
   std::string error_arg_;       // fragment of regexp showing error
   std::string prefix_;          // required prefix (before suffix_regexp_)
-  re2::Regexp* suffix_regexp_;  // parsed regular expression, prefix_ removed
-  re2::Prog* prog_;             // compiled program for regexp
+  re2::Regexp* suffix_regexp_{};  // parsed regular expression, prefix_ removed
+  re2::Prog* prog_{};             // compiled program for regexp
 
   // Reverse Prog for DFA execution only
-  mutable re2::Prog* rprog_;
+  mutable re2::Prog* rprog_{};
   // Map from capture names to indices
-  mutable const std::map<std::string, int>* named_groups_;
+  mutable const std::map<std::string, int>* named_groups_{};
   // Map from capture indices to names
-  mutable const std::map<int, std::string>* group_names_;
+  mutable const std::map<int, std::string>* group_names_{};
 
   RE2(const RE2&) = delete;
   RE2& operator=(const RE2&) = delete;
