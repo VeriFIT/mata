@@ -30,6 +30,41 @@ endif()
 option(USE_CLANG "build with clang" OFF)
 # option(USE_CLANG "build with clang" ON)
 
+# Common compiler flags.
+set(COMMON_COMPILER_FLAGS
+        -fms-extensions
+        -fdiagnostics-show-option
+        -fPIC
+        -fno-strict-aliasing
+        )
+
+# Common warnings compiler flags.
+set(COMMON_WARNINGS
+        -Wextra
+        -Wall
+        -Wfloat-equal
+        -Wctor-dtor-privacy
+        -Weffc++
+        -Woverloaded-virtual
+        -Wold-style-cast
+        -Wunused-parameter
+        -Wsign-compare
+        -Wunused-parameter
+
+        -Wpedantic
+        #-pedantic-errors
+
+        -Wconversion
+        #-Wsign-conversion
+        -Wreturn-type
+        )
+# Clang-specific warnings compiler flags.
+set(CLANG_WARNINGS
+        -Winconsistent-missing-override
+        -Wgnu-anonymous-struct
+        -Wnested-anon-types
+        )
+
 ##############################################################################
 #                                DEPENDENCIES
 ##############################################################################
@@ -85,9 +120,9 @@ enable_testing()
 # Process subdirectories
 add_subdirectory(src)
 add_subdirectory(cli)
-add_subdirectory(3rdparty/re2)
-add_subdirectory(3rdparty/simlib)
-add_subdirectory(3rdparty/cudd)
+add_subdirectory(3rdparty/re2 SYSTEM)
+add_subdirectory(3rdparty/simlib SYSTEM)
+add_subdirectory(3rdparty/cudd SYSTEM)
 add_subdirectory(tests)
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)
