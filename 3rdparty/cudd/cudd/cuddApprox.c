@@ -85,7 +85,7 @@
  ** user; the number of minterms of the complement; the impact of the
  ** number of minterms of this function on the number of minterms of
  ** the root function; the reference count of the node from within the
- ** root function; the flag that says whether the node intersects the
+ ** root function; the flag that says whether the node intersects_with the
  ** care set; the flag that says whether the node should be replaced
  ** and how; the results of subsetting in both phases.
  */
@@ -93,7 +93,7 @@ typedef struct NodeData {
     double mintermsP;		/**< minterms for the regular node */
     double mintermsN;		/**< minterms for the complemented node */
     int functionRef;		/**< references from within this function */
-    char care;			/**< node intersects care set */
+    char care;			/**< node intersects_with care set */
     char replace;		/**< replacement decision */
     short int parity;		/**< 1: even; 2: odd; 3: both */
     DdNode *resultP;		/**< result for even parity */

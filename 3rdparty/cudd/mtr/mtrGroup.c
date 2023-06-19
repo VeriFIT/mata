@@ -117,7 +117,7 @@ Mtr_InitGroupTree(
 /**
   @brief Makes a new group with size leaves starting at low.
 
-  @details If the new group intersects an existing group, it must
+  @details If the new group intersects_with an existing group, it must
   either contain it or be contained by it.  This procedure relies on
   the low and size fields of each node. It also assumes that the
   children of each node are sorted in order of increasing low.  In

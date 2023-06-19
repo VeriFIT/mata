@@ -1172,12 +1172,12 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 
     for (Symbol sym : run.word)
     {
-        if (aut.final.intersects(cur)) { return true; }
+        if (aut.final.intersects_with(cur)) { return true; }
         cur = aut.post(cur, sym);
         if (cur.empty()) { return false; }
     }
 
-    return aut.final.intersects(cur);
+    return aut.final.intersects_with(cur);
 }
 
 /// serializes Nfa into a ParsedSection
@@ -1523,7 +1523,7 @@ Nfa Mata::Nfa::determinize(
     const State S0id = result.add_state();
     result.initial.add(S0id);
 
-    if (aut.final.intersects(S0)) {
+    if (aut.final.intersects_with(S0)) {
         result.final.add(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
@@ -1569,7 +1569,7 @@ Nfa Mata::Nfa::determinize(
             } else {
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
-                if (aut.final.intersects(T)) {
+                if (aut.final.intersects_with(T)) {
                     result.final.add(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));

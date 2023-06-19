@@ -101,18 +101,6 @@ namespace Mata::Util {
 ///     New Mata code
 //////////////////////////////////////////////////////////////////////////////////
 
-//Just to make it compatible with the previously used NumberPredicate and other data structures
-
-        void add(const Number val) {insert(val);}
-        void remove(const Number val) {erase(val);}
-        bool consistent() {
-            return ( capacity_ >= size_ &&
-                     (max() < capacity_ || (size_ == 0 && capacity_ == 0) ) &&
-                     dense.size() >= capacity_ &&
-                     sparse.size() >= capacity_
-                   );
-        }
-
 // Constructors:
 
         SparseSet(Number size = 0, bool val = false): sparse(size, val), dense(size) {
@@ -130,6 +118,7 @@ namespace Mata::Util {
         //TODO: should this be explicit too? it would mean a lot of fixing expecially in tests, unfortunatelly
         SparseSet(std::initializer_list<Number> list) {
             insert(list.begin(),list.end());
+
             assert(consistent());
         }
 
@@ -137,6 +126,7 @@ namespace Mata::Util {
         explicit SparseSet(InputIterator first, InputIterator last)
         {
             insert(first,last);
+
             assert(consistent());
         }
 
@@ -186,6 +176,15 @@ namespace Mata::Util {
         }
 
 // Things
+
+        bool consistent() {
+            return ( capacity_ >= size_ &&
+                     (max() < capacity_ || (size_ == 0 && capacity_ == 0) ) &&
+                     dense.size() >= capacity_ &&
+                     sparse.size() >= capacity_
+            );
+        }
+
         /**
          * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
          */
@@ -207,18 +206,9 @@ namespace Mata::Util {
             insert(set.begin(),set.end());
         }
 
-        void add(const std::vector<Number> & set) {
-            insert_all(set);
-        }
-
         void insert_all(const std::initializer_list<Number> & list) {
             insert(list.begin(),list.end());
         }
-
-        void add(const std::initializer_list<Number> & list) {
-            insert_all(list);
-        }
-
 
         template <class InputIterator>
         void erase(InputIterator first, InputIterator last) {
@@ -240,7 +230,7 @@ namespace Mata::Util {
 
         //call this (instead of the fried are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
         template<class T>
-        bool intersects(const T & set) const {
+        bool intersects_with(const T & set) const {
             for (auto i=set.begin();i<set.end();i++) {
                 if (has(*i))
                     return true;
@@ -329,6 +319,20 @@ namespace Mata::Util {
             }
             return true;
         }
+
+
+//Alternative names to make it compatible with the previously used NumberPredicate and other data structures. Let's choose just one naming.
+
+        void add(const Number val) {insert(val);}
+        void add(const std::initializer_list<Number> & list) {
+            insert_all(list);
+        }
+        void add(const std::vector<Number> & set) {
+            insert_all(set);
+        }
+
+        void remove(const Number val) {erase(val);}
+
 
     };
 }

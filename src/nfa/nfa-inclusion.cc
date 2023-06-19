@@ -156,7 +156,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
                 if (smaller.final[smaller_succ] &&
-                    !bigger.final.intersects(bigger_succ))
+                    !bigger.final.intersects_with(bigger_succ))
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();
