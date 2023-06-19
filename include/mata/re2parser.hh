@@ -26,8 +26,8 @@
  * Currently supported automata types are NFA and AFA.
  */
 namespace Mata::Parser {
-    void create_nfa(Nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, int epsilon_value = 306,
-                    bool use_reduction = true);
+    void create_nfa(Nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, Mata::Symbol epsilon_value = 306,
+                    bool use_reduce = true);
 }
 
 #endif // MATA_RE2PARSER_HH

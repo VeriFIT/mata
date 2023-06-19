@@ -165,7 +165,7 @@ using EpsCntVector = std::vector<unsigned>;
 */
 class Segmentation {
 public:
-    using EpsilonDepth = unsigned; ///< Depth of ε-transitions.
+    using EpsilonDepth = size_t; ///< Depth of ε-transitions.
     /// Dictionary of lists of ε-transitions grouped by their depth.
     /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
     using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;

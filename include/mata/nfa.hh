@@ -82,10 +82,11 @@ using StringMap = std::unordered_map<std::string, std::string>;
  * maybe something else is needed for the more complex maps*/
 
 struct Limits {
-    static const State maxState = std::numeric_limits<State>::max();
-    static const State minState = std::numeric_limits<State>::min();
-    static const Symbol maxSymbol = std::numeric_limits<Symbol>::max();
-    static const Symbol minSymbol = std::numeric_limits<Symbol>::min();
+public:
+    static const State min_state = std::numeric_limits<State>::min();
+    static const State max_state = std::numeric_limits<State>::max();
+    static const Symbol min_symbol = std::numeric_limits<Symbol>::min();
+    static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
 /*TODO: Ideally remove functions using this struct as a parameter.
@@ -337,7 +338,7 @@ private:
 bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = Limits::maxSymbol;
+constexpr Symbol EPSILON = Limits::max_symbol;
 
 /**
  * A struct representing an NFA.

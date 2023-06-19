@@ -35,6 +35,11 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
 
+const State Limits::min_state;
+const State Limits::max_state;
+const Symbol Limits::min_symbol;
+const Symbol Limits::max_symbol;
+
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Symbol maxSymbol = 0;

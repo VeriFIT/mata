@@ -226,12 +226,13 @@ namespace {
                     opstack.pop_back();
                     break;
                 case Mata::FormulaNode::Type::OPERATOR:
-                    for (int j = opstack.size()-1; j >= 0; --j) {
-                        assert(!opstack[j].is_operand());
-                        if (opstack[j].is_leftpar())
+                    for (int j = static_cast<int>(opstack.size())-1; j >= 0; --j) {
+                        size_t j_size_t{ static_cast<size_t>(j) };
+                        assert(!opstack[j_size_t].is_operand());
+                        if (opstack[j_size_t].is_leftpar())
                             break;
-                        if (lower_precedence(node.operator_type, opstack[j].operator_type)) {
-                            output.push_back(opstack[j]);
+                        if (lower_precedence(node.operator_type, opstack[j_size_t].operator_type)) {
+                            output.push_back(opstack[j_size_t]);
                             opstack.erase(opstack.begin()+j);
                         }
                     }

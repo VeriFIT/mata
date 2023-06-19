@@ -333,7 +333,7 @@ cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
     cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
         CSegmentation(CNfa&, cset[Symbol]) except +
 
-        ctypedef unsigned EpsilonDepth
+        ctypedef size_t EpsilonDepth
         ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
 
         EpsilonDepthTransitions get_epsilon_depths()
