@@ -127,6 +127,7 @@ namespace Mata::Util {
             assert(consistent());
         };
 
+        //TODO: should this be explicit too? it would mean a lot of fixing expecially in tests, unfortunatelly
         SparseSet(std::initializer_list<Number> list) {
             for (auto q: list)
                 insert(q);
@@ -135,7 +136,7 @@ namespace Mata::Util {
         }
 
         template <class InputIterator>
-        SparseSet(InputIterator first, InputIterator last)
+        explicit SparseSet(InputIterator first, InputIterator last)
         {
             while (first < last) {
                 insert(*first);

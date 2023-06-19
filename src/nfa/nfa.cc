@@ -1168,7 +1168,7 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 // TODO: slow and it should share code with is_in_lang
 bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 {
-    StateSet cur =  { aut.initial };
+    StateSet cur =  StateSet{ aut.initial };
 
     for (Symbol sym : run.word)
     {
