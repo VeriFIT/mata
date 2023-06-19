@@ -129,33 +129,26 @@ namespace Mata::Util {
 
         //TODO: should this be explicit too? it would mean a lot of fixing expecially in tests, unfortunatelly
         SparseSet(std::initializer_list<Number> list) {
-            for (auto q: list)
-                insert(q);
-
+            insert(list.begin(),list.end());
             assert(consistent());
         }
 
         template <class InputIterator>
         explicit SparseSet(InputIterator first, InputIterator last)
         {
-            while (first < last) {
-                insert(*first);
-                ++first;
-            }
-
+            insert(first,last);
             assert(consistent());
         }
 
         template <class T>
         explicit SparseSet(T & container)
         {
-            for (auto i = container.begin();i<container.end();i++) {
-                insert(*i);
-            }
+            insert(container.begin(),container.end());
 
             assert(consistent());
         }
 
+        //This is actually weird, what if the vector is not boolean valaues but values themselves?
         explicit SparseSet(const std::vector<char> &bv) {
             reserve(bv.size());
             for (size_t i = 0; i < bv.size(); i++) {
@@ -200,54 +193,49 @@ namespace Mata::Util {
             return has(q);
         }
 
+        template <class InputIterator>
+        void insert(InputIterator first, InputIterator last) {
+            while (first != last) {
+                insert(*first);
+                first++;
+            }
+            assert(consistent());
+        }
+
         template<typename T>
         void insert_all(const T & set) {
-            for (auto i=set.begin();i<set.end();i++) {
-                insert(static_cast<const Number&>(*i));
-            }
-
-            assert(consistent());
+            insert(set.begin(),set.end());
         }
 
         void add(const std::vector<Number> & set) {
-            for (auto i=set.begin();i<set.end();i++) {
-                insert(*i);
-            }
-
-            assert(consistent());
-        }
-
-        void add(const std::initializer_list<Number> & list) {
-            for (auto i=list.begin();i<list.end();i++) {
-                insert(*i);
-            }
-
-            assert(consistent());
+            insert_all(set);
         }
 
         void insert_all(const std::initializer_list<Number> & list) {
-            for (auto i=list.begin();i<list.end();i++) {
-                insert(*i);
-            }
+            insert(list.begin(),list.end());
+        }
 
+        void add(const std::initializer_list<Number> & list) {
+            insert_all(list);
+        }
+
+
+        template <class InputIterator>
+        void erase(InputIterator first, InputIterator last) {
+            while (first != last) {
+                erase(*first);
+                first++;
+            }
             assert(consistent());
         }
 
         template<class T>
         void erase_all(const T & set) {
-            for (auto i=set.begin();i<set.end();i++) {
-                erase(*i);
-            }
-
-            assert(consistent());
+            erase(set.begin(),set.end());
         }
 
         void erase_all(const std::initializer_list<Number> & list) {
-            for (auto i=list.begin();i<list.end();i++) {
-                erase(*i);
-            }
-
-            assert(consistent());
+            erase(list.begin(),list.end());
         }
 
         //call this (instead of the fried are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
@@ -301,8 +289,6 @@ namespace Mata::Util {
 
         template<typename F>
         void rename(F && renaming) {
-            //if not sorted, we could later rename a result of a former renaming
-            sort();
             for (Number i = 0; i < size_; i++) {
                 if (dense[i] != renaming(dense[i])) {
                     dense[i] = renaming(dense[i]);
