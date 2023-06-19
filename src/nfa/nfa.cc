@@ -1161,7 +1161,7 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
         if (cur.empty()) { return false; }
     }
 
-    return !are_disjoint(cur, StateSet(aut.final));
+    return aut.final.intersects_with(cur);
 }
 
 /// Checks whether the prefix of a string is in the language of an automaton
