@@ -50,10 +50,8 @@ set(COMMON_WARNINGS
         -Wunused-parameter
         -Wsign-compare
         -Wunused-parameter
-
-        -Wpedantic
+        #-Wpedantic
         #-pedantic-errors
-
         -Wconversion
         #-Wsign-conversion
         -Wreturn-type
