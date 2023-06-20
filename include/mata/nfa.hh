@@ -299,7 +299,7 @@ public:
         bool is_end;
 
     public:
-        using iterator_category = std::forward_iterator_tag;
+        using iterator_category = std::bidirectional_iterator_tag;
         using value_type = int;
         using difference_type = int;
         using pointer = int*;
@@ -522,8 +522,12 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    /// Number of transitions; contains linear time complexity.
-    size_t get_num_of_trans() const { return std::distance(delta.begin(), delta.end()); }
+    /**
+     * @brief Get a number of transitions in the whole automaton.
+     *
+     * The operation has constant time complexity.
+     */
+    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.begin(), delta.end())); }
 
     /**
      * Get transitions as a sequence of @c Trans.
