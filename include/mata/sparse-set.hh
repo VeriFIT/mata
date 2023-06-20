@@ -47,7 +47,7 @@ namespace Mata::Util {
         std::vector<Number> sparse;    //Map of elements to dense set indices
 
         size_t size_ = 0;    //Current size (number of elements)
-        size_t capacity_ = 0;    //Current capacity (maximum value + 1 or more (can be more when maximum is removed))
+        size_t domain_size_ = 0;    //Current domain size (maximum value + 1 or more (can be more when maximum is removed))
 
     public:
         using iterator = typename std::vector<Number>::const_iterator;
@@ -63,26 +63,26 @@ namespace Mata::Util {
 
         size_t size() const { return size_; }
 
-        size_t capacity() const { return capacity_; }
+        size_t domain_size() const { return domain_size_; }
 
         bool empty() const { return size_ == 0; }
 
         void clear() { size_ = 0;  }
 
         // TODO: maybe we could reserve space more efficiently, by something as doubling?
-        //  But we should not create havoc with capacity, which is used outside, namely for determining the states of an automaton.
+        //  But we should not create havoc with domain_size, which is used outside, namely for determining the states of an automaton.
         void reserve(size_t u) {
-            if (u > capacity_) {
+            if (u > domain_size_) {
                 dense.resize(u, 0);
                 sparse.resize(u, 0);
-                capacity_ = u;
+                domain_size_ = u;
             }
 
             assert(consistent());
         }
 
-        bool has(const Number val) const {
-            return val < capacity_ &&
+        bool contains(const Number val) const {
+            return val < domain_size_ &&
                    sparse[val] < size_ &&
                    dense[sparse[val]] == val;
         }
@@ -90,8 +90,8 @@ namespace Mata::Util {
         void insert(const Number val) {
             assert(consistent());
 
-            if (!has(val)) {
-                if (val >= capacity_)
+            if (!contains(val)) {
+                if (val >= domain_size_)
                     reserve(val + 1);
 
                 dense[size_] = val;
@@ -103,7 +103,7 @@ namespace Mata::Util {
         }
 
         void erase(const Number val) {
-            if (has(val)) {
+            if (contains(val)) {
                 dense[sparse[val]] = dense[size_ - 1];
                 sparse[dense[size_ - 1]] = sparse[val];
                 --size_;
@@ -118,19 +118,11 @@ namespace Mata::Util {
 
 // Constructors:
 
-        SparseSet(Number size = 0, bool val = false): sparse(size, val), dense(size) {
-            if (val) {
-                size_ = size;
-                for (Number e = 0; e < size; ++e)
-                    dense.push_back(e);
-            }
-            else
-                size_ = 0;
-
+        //basic constructor, you may reserve a domain size
+        SparseSet(Number domain_size = 0): sparse(domain_size, 0), dense(domain_size), size_(0), domain_size_(domain_size) {
             assert(consistent());
         };
 
-        //TODO: should this be explicit too? it would mean a lot of fixing expecially in tests, unfortunatelly
         SparseSet(std::initializer_list<Number> list) {
             insert(list.begin(),list.end());
 
@@ -167,9 +159,9 @@ namespace Mata::Util {
         SparseSet(const SparseSet<Number>& rhs) = default;
         SparseSet(SparseSet<Number>&& other) noexcept
                 : sparse{ std::move(other.sparse) }, dense{ std::move(other.dense) },
-                  size_{ other.size_}, capacity_{ other.capacity_} {
+                  size_{ other.size_}, domain_size_{other.domain_size_} {
             other.size_ = 0;
-            other.capacity_ = 0;
+            other.domain_size_ = 0;
 
             assert(consistent());
         }
@@ -180,9 +172,9 @@ namespace Mata::Util {
                 dense = std::move(other.dense);
                 sparse = std::move(other.sparse);
                 size_ = other.size_;
-                capacity_ = other.capacity_;
+                domain_size_ = other.domain_size_;
                 other.size_ = 0;
-                other.capacity_ = 0;
+                other.domain_size_ = 0;
             }
 
             assert(consistent());
@@ -192,11 +184,12 @@ namespace Mata::Util {
 
 // Things
 
+        // Tests the basic invariant of the sparse set.
         bool consistent() {
-            return ( capacity_ >= size_ &&
-                     (max() < capacity_ || (size_ == 0 && capacity_ == 0) ) &&
-                     dense.size() >= capacity_ &&
-                     sparse.size() >= capacity_
+            return (domain_size_ >= size_ &&
+                    (max() < domain_size_ || (size_ == 0 && domain_size_ == 0) ) &&
+                    dense.size() >= domain_size_ &&
+                    sparse.size() >= domain_size_
             );
         }
 
@@ -204,7 +197,7 @@ namespace Mata::Util {
          * @return True if predicate for @p q is set. False otherwise (even if q is out of range of the predicate).
          */
         bool operator[](Number q) const {
-            return has(q);
+            return contains(q);
         }
 
         template <class InputIterator>
@@ -243,11 +236,11 @@ namespace Mata::Util {
             erase(list.begin(),list.end());
         }
 
-        //call this (instead of the fried are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
+        //call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
         template<class T>
         bool intersects_with(const T & set) const {
             for (auto i=set.begin();i<set.end();i++) {
-                if (has(*i))
+                if (contains(*i))
                     return true;
             }
             return false;
@@ -256,16 +249,15 @@ namespace Mata::Util {
         /*
          * Complements the set with respect to a given number of elements = the maximum number + 1.
          */
-        //probably can be done little faster
-        void complement(Number domain_size) {
-            Number orig_capacity = capacity_;
-            for (Number i = 0; i<domain_size; ++i) {
-                if (has(i))
+        void complement(Number new_domain_size) {
+            Number old_domain_size = domain_size_;
+            for (Number i = 0; i < new_domain_size; ++i) {
+                if (contains(i))
                     erase(i);
                 else
                     insert(i);
             }
-            for (Number i = domain_size; i<orig_capacity; ++i) {
+            for (Number i = new_domain_size; i < old_domain_size; ++i) {
                 erase(i);
             }
 
@@ -297,7 +289,7 @@ namespace Mata::Util {
             for (Number i = 0; i < size_; i++) {
                 if (dense[i] != renaming(dense[i])) {
                     dense[i] = renaming(dense[i]);
-                    if (dense[i] >= capacity_)
+                    if (dense[i] >= domain_size_)
                         reserve(dense[i]+1);
                     sparse[dense[i]] = i;
                 }
@@ -317,9 +309,9 @@ namespace Mata::Util {
 
         void truncate() {
             if (size_ == 0)
-                capacity_ = 0;
+                domain_size_ = 0;
             else
-                capacity_ = max()+1;
+                domain_size_ = max() + 1;
 
             assert(consistent());
         }
@@ -330,7 +322,7 @@ namespace Mata::Util {
                 return are_disjoint(B,A);
             else {
                 for (auto i: A)
-                    if (B.has(i))
+                    if (B.contains(i))
                         return false;
             }
             return true;

@@ -102,7 +102,7 @@ public:
     explicit OrdVector(const VectorType& vec) : vec_(vec) { Util::sort_and_rmdupl(vec_); }
     explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
     template <class T>
-    explicit OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); } //when this is not explicit, bad things happen
+    explicit OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); }
     OrdVector(std::initializer_list<Key> list) : vec_(list) { Util::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}

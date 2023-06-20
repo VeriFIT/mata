@@ -111,6 +111,6 @@ TEST_CASE("Mata::Util::SparseSet") {
         p.erase(6);
         p.erase(5);
         p.truncate();
-        CHECK( p.capacity() == 4);
+        CHECK( p.domain_size() == 4);
     }
 }

@@ -22,7 +22,7 @@ include_directories(../3rdparty/simlib/include)
 add_executable(tests
 		ord-vector.cc
 		sparse-set.cc
-        synchronized-iterator.cc
+		synchronized-iterator.cc
 		main.cc
 		alphabet.cc
 		parser.cc

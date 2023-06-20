@@ -398,7 +398,6 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
-            //TODO: what is this? !!!
             product_pres_eps_trans = revert(product_pres_eps_trans);
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);

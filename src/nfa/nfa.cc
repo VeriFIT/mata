@@ -1918,7 +1918,7 @@ Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
     static Util::SparseSet<Symbol>  symbols(64,false);
     symbols.clear();
 #else
-    Util::SparseSet<Symbol>  symbols(64,false);
+    Util::SparseSet<Symbol>  symbols(64);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -2071,8 +2071,8 @@ State Nfa::add_state(State state) {
 
 size_t Nfa::size() const {
     return std::max({
-        static_cast<unsigned long>(initial.capacity()),
-        static_cast<unsigned long>(final.capacity()),
+        static_cast<unsigned long>(initial.domain_size()),
+        static_cast<unsigned long>(final.domain_size()),
         static_cast<unsigned long>(delta.num_of_states())
     });
 }
