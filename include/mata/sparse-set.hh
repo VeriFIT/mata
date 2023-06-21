@@ -18,12 +18,20 @@
 #ifndef LIBMATA_SPARSE_SET_HH
 #define LIBMATA_SPARSE_SET_HH
 
+#include <concepts>
+#include <iterator>
 #include <cassert>
 #include <vector>
 #include <type_traits>
 #include <mata/ord-vector.hh>
 
 namespace Mata::Util {
+
+template <typename T>
+concept Iterable = requires(T t) {
+    typename std::iterator_traits<decltype(begin(t))>::value_type;
+    { begin(t) } -> std::same_as<decltype(end(t))>;
+};
 
 /**
  * @brief  Implementation of a set of non-negative numbers using sparse-set.
@@ -145,8 +153,8 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        //This is actually weird, what if the vector is not boolean valaues but values themselves?
-        explicit SparseSet(const std::vector<char> &bv) {
+        //This is actually weird, what if the vector is not boolean values but values themselves?
+        explicit SparseSet(const BoolVector &bv) {
             reserve(bv.size());
             for (size_t i = 0; i < bv.size(); i++) {
                 if (bv[i])
@@ -209,12 +217,12 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        template<typename T>
-        void insert_all(const T & set) {
+        template<Iterable T>
+        void insert(const T & set) {
             insert(set.begin(),set.end());
         }
 
-        void insert_all(const std::initializer_list<Number> & list) {
+        void insert(const std::initializer_list<Number> & list) {
             insert(list.begin(),list.end());
         }
 
@@ -227,12 +235,12 @@ namespace Mata::Util {
             assert(consistent());
         }
 
-        template<class T>
-        void erase_all(const T & set) {
+        template<Iterable T>
+        void erase(const T & set) {
             erase(set.begin(),set.end());
         }
 
-        void erase_all(const std::initializer_list<Number> & list) {
+        void erase(const std::initializer_list<Number> & list) {
             erase(list.begin(),list.end());
         }
 
@@ -333,10 +341,10 @@ namespace Mata::Util {
 
         void add(const Number val) {insert(val);}
         void add(const std::initializer_list<Number> & list) {
-            insert_all(list);
+            insert(list);
         }
         void add(const std::vector<Number> & set) {
-            insert_all(set);
+            insert(set);
         }
 
         void remove(const Number val) {erase(val);}

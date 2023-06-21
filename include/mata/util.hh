@@ -62,6 +62,9 @@
 namespace Mata
 {
 
+/// Representation of bool vector by a vector of char.
+struct BoolVector : public std::vector<char> {};
+
 /// log verbosity
 extern unsigned LOG_VERBOSITY;
 

@@ -15,23 +15,23 @@ TEST_CASE("Mata::Util::SparseSet") {
 
     SECTION("basic functionality: insert, erase, access, constructor, size, get_elements ") {
         std::vector<State> v = {1, 2, 3, 4, 5};
-        p.insert_all(v);
+        p.insert(v);
         CHECK(std::vector<State>(p.begin(),p.end()) == v);
         CHECK(p.size() == 5);
-        p.erase_all({2, 4});
+        p.erase({ 2, 4 });
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
         CHECK(p.size() == 3);
-        p.insert_all({1, 3, 5});
+        p.insert({ 1, 3, 5 });
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({1,3,5}));
-        p.erase_all({1, 2, 3, 4, 5});
+        p.erase({ 1, 2, 3, 4, 5 });
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({}));
         for (State q = 0; q < 10; q++) CHECK(!p[q]);
         CHECK(p.size() == 0);
     }
 
     SECTION("iterator ") {
-        p.insert_all({1, 2, 3, 4, 5});
+        p.insert({ 1, 2, 3, 4, 5 });
         State i = 1;
         for (auto q: p) {
             CHECK(q == i);
