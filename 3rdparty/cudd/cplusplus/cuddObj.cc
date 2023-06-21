@@ -185,6 +185,21 @@ DD::DD(const DD &from) {
 
 } // DD::DD
 
+DD& DD::operator=(const DD& other) {
+    if (this != &other) {
+        this->p = other.p;
+        if (this->node) { Cudd_Deref(this->node); }
+        this->node = other.node;
+        if (this->node) {
+            Cudd_Ref(this->node);
+            if (this->p->verbose) {
+                cout << "Copy DD assignment for node " << hex << node << dec <<
+                     " ref = " << Cudd_Regular(node)->ref << "\n";
+            }
+        }
+    }
+    return *this;
+} // DD::operator=
 
 DD::~DD() {}
 
