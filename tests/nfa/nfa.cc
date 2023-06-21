@@ -2982,3 +2982,24 @@ TEST_CASE("Mata::Nfa:: create simple automata") {
     CHECK(is_in_lang(nfa, { { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
     CHECK(!is_in_lang(nfa, { { 3 }, {} }));
 }
+
+TEST_CASE("Mata::Nfa:: print_to_mata") {
+	Nfa aut_big;
+	aut_big.initial = {1, 2};
+	aut_big.delta.add(1, 'a', 2);
+	aut_big.delta.add(1, 'a', 3);
+	aut_big.delta.add(1, 'b', 4);
+	aut_big.delta.add(2, 'a', 2);
+	aut_big.delta.add(2, 'b', 2);
+	aut_big.delta.add(2, 'a', 3);
+	aut_big.delta.add(2, 'b', 4);
+	aut_big.delta.add(3, 'b', 4);
+	aut_big.delta.add(3, 'c', 7);
+	aut_big.delta.add(3, 'b', 2);
+	aut_big.delta.add(5, 'c', 3);
+	aut_big.delta.add(7, 'a', 8);
+	aut_big.final = {3};
+
+	IntAlphabet int_alph;
+	CHECK(are_equivalent(aut_big, construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big.print_to_mata()))[0], &int_alph)));
+}
