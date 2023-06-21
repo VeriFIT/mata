@@ -177,6 +177,13 @@ public:
     void insert(State s);
     void insert(const StateSet& states);
 
+    void insert(const StateSet& states)
+    {
+        for (State s : states) {
+            insert(s);
+        }
+    }
+
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
@@ -312,6 +319,15 @@ public:
      * @return std::vector<Post> Copied posts.
      */
     std::vector<Post> copy_posts_with(const std::function<State(State)>& lambda) const;
+
+    /**
+     * @brief Add transitions to multiple destinations
+     * 
+     * @param state_from From
+     * @param symbol Symbol
+     * @param states Set of states to
+     */
+    void add_set(State state_from, Symbol symbol, const StateSet& states);
 
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.

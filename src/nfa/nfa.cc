@@ -330,6 +330,46 @@ void Delta::add(State state_from, Symbol symbol, State state_to) {
     }
 }
 
+void Delta::add_set(State state_from, Symbol symbol, const StateSet& states) {
+    if(states.size() == 0) {
+        return;
+    }
+     if (state_from >= post.size()) {
+        reserve_on_insert(post,state_from);
+        post.resize(state_from + 1);
+    }
+
+    if (state_from >= m_num_of_states) {
+        m_num_of_states = state_from + 1;
+    }
+
+    for(auto it = states.begin(); it != states.end(); it++) {
+        if(*it >= this->m_num_of_states) {
+            this->m_num_of_states += states.end() - it;
+            break;
+        }
+    }
+
+    Post& state_transitions{ post[state_from] };
+
+    if (state_transitions.empty()) {
+        state_transitions.insert({ symbol, states });
+    } else if (state_transitions.back().symbol < symbol) {
+        state_transitions.insert({ symbol, states });
+    } else {
+        const auto symbol_transitions{ state_transitions.find(Move{ symbol }) };
+        if (symbol_transitions != state_transitions.end()) {
+            // Add transition with symbolOnTransition already used on transitions from stateFrom.
+            symbol_transitions->insert(states);
+
+        } else {
+            // Add transition to a new Move struct with symbolOnTransition yet unused on transitions from stateFrom.
+            const Move new_symbol_transitions{ symbol, states };
+            state_transitions.insert(new_symbol_transitions);
+        }
+    }
+}
+
 void Delta::remove(State src, Symbol symb, State tgt) {
     if (src >= posts.size()) {
         return;
