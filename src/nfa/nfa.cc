@@ -1189,6 +1189,7 @@ Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const StateToStringMap*   state_map) {
     (void)aut; (void)symbol_map; (void)state_map;
     assert(false);
+    return {};
 }
 
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)

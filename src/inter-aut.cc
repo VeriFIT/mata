@@ -51,6 +51,7 @@ namespace {
 
         assert(false && "Unknown naming type - a naming type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
+        return {};
     }
 
     Mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string &type)
@@ -68,6 +69,7 @@ namespace {
 
         assert(false && "Unknown alphabet type - an alphabet type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
+        return {};
     }
 
     bool is_naming_marker(const Mata::IntermediateAut::Naming naming)
@@ -247,11 +249,13 @@ namespace {
             opstack.pop_back();
         }
 
+        #ifndef NDEBUG
         for (const auto& node : output) {
             assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
             assert(node.is_leftpar() || node.name != "(");
             assert(node.is_rightpar() || node.name != ")");
         }
+        #endif // #ifndef NDEBUG.
 
         return output;
     }
@@ -460,11 +464,13 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
     } else
         postfix = infix_to_postfix(aut, rhs);
 
+    #ifndef NDEBUG
     for (const auto& node : postfix) {
         assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
         assert(node.is_leftpar() || node.name != "(");
         assert(node.is_rightpar() || node.name != ")");
     }
+    #endif // #ifndef NDEBUG.
     const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
     aut.transitions.emplace_back(lhs, graph);
