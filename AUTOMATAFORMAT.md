@@ -14,7 +14,7 @@
   * `\` for escaping characters. `\` is also used to concatenate lines.
   * `a`,`q`,`n`,`t`,`f` are token type specifiers (alphabet, state, node, attribute, formula). 
   * `#` starts a comment line.
-* There are **words with a special meaning**: `true`,`false`, `\min`, `\max`. First two represents true/false in Boolean formulas.
+* There are **words with a special meaning**: `\true`,`\false`, `\min`, `\max`. First two represents true/false in Boolean formulas.
 * The parser may recognise the special symbols as standalone tokens (does not apply to `q`,`a`,`n`,`t`,`f`,`#`) only if they appear in the special context where their special meaning applies, otherwise they should be treated as normal symbols.
 
 We categorise automata according to their **transition type**, that is, the structure of their transitions, and by their **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
