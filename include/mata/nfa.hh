@@ -174,7 +174,7 @@ public:
     size_t size() const { return targets.size(); }
 
     void insert(State s);
-    void insert(StateSet states);
+    void insert(const StateSet& states);
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,

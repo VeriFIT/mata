@@ -1928,7 +1928,7 @@ Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
             symbols.add(move.symbol);
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
     return symbols;
 }
 
@@ -1970,8 +1970,8 @@ Symbol Nfa::get_max_symbol() const {
  void Nfa::unify_initial() {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
-    for (const auto& orig_initial_state: initial) {
-        const auto moves{ get_moves_from(orig_initial_state) };
+    for (const State orig_initial_state: initial) {
+        const Post& moves{ get_moves_from(orig_initial_state) };
         for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
@@ -1998,9 +1998,10 @@ void Nfa::unify_final() {
 }
 
 void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-    size_t nfa_num_of_states{nfa.size() };
+    const size_t nfa_num_of_states{ nfa.size() };
     for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
-        for (const auto state_transitions: nfa.delta) {
+        // TODO: Rewrite to not create 'Trans' instances and iterate over same symbols all the time.
+        for (const Trans& state_transitions: nfa.delta) {
             alphabet.update_next_symbol_value(state_transitions.symb);
             alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
         }
@@ -2038,7 +2039,7 @@ void Nfa::clear_transitions() {
 
 State Nfa::add_state() {
     const size_t num_of_states{ size() };
-    delta.increase_size(num_of_states + 1 );
+    delta.increase_size(num_of_states + 1);
     return num_of_states;
 }
 
@@ -2185,7 +2186,7 @@ void Move::insert(State s) {
     }
 }
 
-void Move::insert(StateSet states) {
+void Move::insert(const StateSet& states) {
     for (State s : states) {
         insert(s);
     }
