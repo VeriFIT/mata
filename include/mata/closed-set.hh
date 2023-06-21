@@ -415,12 +415,13 @@ ClosedSet<T> ClosedSet<T>::complement() const {
         // created using this procedure.
         for(const auto& element : antichain()) {
             ClosedSet preparingAntichain(ClosedSetType::downward_closed_set, get_min(), get_max());
-            for(int i = 0; i <= static_cast<int>(max_val_); ++i) {
+            const int max_val{ static_cast<int>(max_val_) };
+            for(int i = 0; i <= max_val; ++i) {
                 if(!element.count(i)) {
                     continue;
                 }
                 Node candidates{};
-                for(int j = 0; j <= static_cast<int>(max_val_); ++j) {
+                for(int j = 0; j <= max_val; ++j) {
                     if(i!=j) {
                         candidates.insert(j);
                     }

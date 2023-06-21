@@ -1188,7 +1188,7 @@ Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const SymbolToStringMap*  symbol_map,
         const StateToStringMap*   state_map) {
     (void)aut; (void)symbol_map; (void)state_map;
-    assert(false);
+    assert(false && "Unimplemented.");
     return {};
 }
 
