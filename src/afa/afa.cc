@@ -570,6 +570,7 @@ bool Mata::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
 
   // TODO
   assert(false);
+  return {};
 } // are_disjoint }}}
 
 
@@ -578,13 +579,13 @@ void Mata::Afa::union_norename(
 	const Afa&  lhs,
 	const Afa&  rhs)
 { // {{{
-	assert(nullptr != result);
+    assert(nullptr != result);
 
-  assert(&lhs);
-  assert(&rhs);
+    assert(&lhs);
+    assert(&rhs);
 
-  // TODO
-  assert(false);
+    // TODO
+    assert(false);
 } // union_norename }}}
 
 
@@ -597,6 +598,7 @@ Afa Mata::Afa::union_rename(
 
   // TODO
   assert(false);
+  return {};
 } // union_rename }}}
 
 
@@ -607,6 +609,7 @@ bool Mata::Afa::is_lang_empty(const Afa& aut, Path* cex)
 
   // TODO
   assert(false);
+  return {};
 } // is_lang_empty }}}
 
 
@@ -619,6 +622,7 @@ bool Mata::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
 
   // TODO
   assert(false);
+  return {};
 } // is_lang_empty_cex }}}
 
 /** This function decides whether the given automaton is empty using
@@ -1156,6 +1160,7 @@ bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
 
   // TODO
   assert(false);
+  return {};
 } // is_complete }}}
 
 bool Mata::Afa::accepts_epsilon(const Afa& aut) {
