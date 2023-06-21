@@ -177,13 +177,6 @@ public:
     void insert(State s);
     void insert(const StateSet& states);
 
-    void insert(const StateSet& states)
-    {
-        for (State s : states) {
-            insert(s);
-        }
-    }
-
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
@@ -304,10 +297,8 @@ public:
      * @param post_vector Vector of posts to be appended.
      */
     void append(const std::vector<Post>& post_vector) {
-        this->post.resize(this->m_num_of_states);
         for(const Post& pst : post_vector) {
-            this->post.push_back(pst);
-            this->m_num_of_states++;
+            this->posts.push_back(pst);
         }
     }
 

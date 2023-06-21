@@ -334,23 +334,14 @@ void Delta::add_set(State state_from, Symbol symbol, const StateSet& states) {
     if(states.size() == 0) {
         return;
     }
-     if (state_from >= post.size()) {
-        reserve_on_insert(post,state_from);
-        post.resize(state_from + 1);
+
+    const State max_state{ std::max(state_from, states.back()) };
+    if (max_state >= posts.size()) {
+        reserve_on_insert(posts, max_state);
+        posts.resize(max_state + 1);
     }
 
-    if (state_from >= m_num_of_states) {
-        m_num_of_states = state_from + 1;
-    }
-
-    for(auto it = states.begin(); it != states.end(); it++) {
-        if(*it >= this->m_num_of_states) {
-            this->m_num_of_states += states.end() - it;
-            break;
-        }
-    }
-
-    Post& state_transitions{ post[state_from] };
+    Post& state_transitions{ posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, states });
@@ -514,8 +505,8 @@ State Delta::find_max_state() {
 
 std::vector<Post> Delta::copy_posts_with(const std::function<State(State)>& lambda) const {
     std::vector<Post> cp_post_vector;
-    cp_post_vector.reserve(this->post_size());
-    for(const Post& act_post: this->post) {
+    cp_post_vector.reserve(num_of_states());
+    for(const Post& act_post: this->posts) {
         Post cp_post;
         cp_post.reserve(act_post.size());
         for(const Move& mv : act_post) {
@@ -531,7 +522,12 @@ std::vector<Post> Delta::copy_posts_with(const std::function<State(State)>& lamb
     return cp_post_vector;
 }
 
-///// Nfa structure related methods
+Post& Delta::get_mutable_post(State q) {
+    if (q >= posts.size()) {
+        Util::reserve_on_insert(posts, q);
+        const size_t new_size{ q + 1 };
+        posts.resize(new_size);
+    }
 
     return posts[q];
 }
@@ -2292,8 +2288,11 @@ Move& Move::operator=(Move&& rhs) noexcept {
 }
 
 void Move::insert(State s) {
-    if (targets.find(s) == targets.end()) {
-        targets.insert(s);
+    // Find the place where to put the element (if not present).
+    // insert to OrdVector without the searching of a proper position inside insert(const Key&x).
+    auto it = std::lower_bound(targets.begin(), targets.end(), s);
+    if (it == targets.end() || *it != s) {
+        targets.insert(it, s);
     }
 }
 
