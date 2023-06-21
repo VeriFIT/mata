@@ -217,7 +217,7 @@ cdef class Nfa:
     def initial_states(self, vector[State] value):
         self.thisptr.get().initial.clear()
         for state in value:
-            self.thisptr.get().initial.add(state)
+            self.thisptr.get().initial.insert(state)
 
     @property
     def final_states(self):
@@ -228,7 +228,7 @@ cdef class Nfa:
     def final_states(self, vector[State] value):
         self.thisptr.get().final.clear()
         for state in value:
-            self.thisptr.get().final.add(state)
+            self.thisptr.get().final.insert(state)
 
     def is_state(self, state):
         """Tests if state is in the automaton
@@ -257,7 +257,7 @@ cdef class Nfa:
 
         :param State state: State to be made initial.
         """
-        self.thisptr.get().initial.add(state)
+        self.thisptr.get().initial.insert(state)
 
     def make_initial_states(self, vector[State] states):
         """Makes specified states from the automaton initial.
@@ -265,7 +265,7 @@ cdef class Nfa:
         :param list states: List of states to be made initial.
         """
         for state in states:
-            self.thisptr.get().initial.add(state)
+            self.thisptr.get().initial.insert(state)
 
     def has_initial_state(self, State st):
         """Tests if automaton contains given state
@@ -280,7 +280,7 @@ cdef class Nfa:
 
         :param State state: State to be removed from initial states.
         """
-        self.thisptr.get().initial.remove(state)
+        self.thisptr.get().initial.erase(state)
 
     def clear_initial(self):
         """Clears initial state set of the automaton."""
@@ -291,7 +291,7 @@ cdef class Nfa:
 
         :param State state: State to be made final.
         """
-        self.thisptr.get().final.add(state)
+        self.thisptr.get().final.insert(state)
 
     def make_final_states(self, vector[State] states):
         """Makes specified states from the automaton final.
@@ -299,7 +299,7 @@ cdef class Nfa:
         :param vector[State] states: List of states to be made final.
         """
         for state in states:
-            self.thisptr.get().final.add(state)
+            self.thisptr.get().final.insert(state)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state
@@ -314,7 +314,7 @@ cdef class Nfa:
 
         :param State state: State to be removed from final states.
         """
-        self.thisptr.get().final.remove(state)
+        self.thisptr.get().final.erase(state)
 
     def clear_final(self):
         """Clears final state set of the automaton."""

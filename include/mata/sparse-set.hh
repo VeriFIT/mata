@@ -118,8 +118,6 @@ concept Iterable = requires(T t) {
             }
         }
 
-
-
 //////////////////////////////////////////////////////////////////////////////////
 ///     New Mata code
 //////////////////////////////////////////////////////////////////////////////////
@@ -335,21 +333,6 @@ concept Iterable = requires(T t) {
             }
             return true;
         }
-
-
-//Alternative names to make it compatible with the previously used NumberPredicate and other data structures. Let's choose just one naming.
-
-        void add(const Number val) {insert(val);}
-        void add(const std::initializer_list<Number> & list) {
-            insert(list);
-        }
-        void add(const std::vector<Number> & set) {
-            insert(set);
-        }
-
-        void remove(const Number val) {erase(val);}
-
-
     };
 }
 #endif //LIBMATA_SPARSE_SET_HH

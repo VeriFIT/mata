@@ -93,7 +93,7 @@ namespace {
             const State q_class_state = state_map.at(q);
 
             if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
-                result.initial.add(q_class_state);
+                result.initial.insert(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
@@ -127,7 +127,7 @@ namespace {
                 }
 
                 if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
-                    result.final.add(q_class_state);
+                    result.final.insert(q_class_state);
                 }
             }
         }
@@ -250,14 +250,14 @@ namespace {
         {
             if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
             {
-                trimmed_aut.initial.add(original_to_new_states_map.at(old_initial_state));
+                trimmed_aut.initial.insert(original_to_new_states_map.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final)
         {
             if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
             {
-                trimmed_aut.final.add(original_to_new_states_map.at(old_final_state));
+                trimmed_aut.final.insert(original_to_new_states_map.at(old_final_state));
             }
         }
 
@@ -850,7 +850,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
-            if (aut.final[eps_cl_state]) result.final.add(src_state);
+            if (aut.final[eps_cl_state]) result.final.insert(src_state);
             for (const Move& move : aut.delta[eps_cl_state]) {
                 if (move.symbol == epsilon) continue;
                 // TODO: this could be done more efficiently if we had a better add method
@@ -1416,11 +1416,11 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisInitialState : lhs.initial) {
-        unionAutomaton.initial.add(thisStateToUnionState[thisInitialState]);
+        unionAutomaton.initial.insert(thisStateToUnionState[thisInitialState]);
     }
 
     for (State thisFinalState : lhs.final) {
-        unionAutomaton.final.add(thisStateToUnionState[thisFinalState]);
+        unionAutomaton.final.insert(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < size; ++thisState) {
@@ -1521,10 +1521,10 @@ Nfa Mata::Nfa::determinize(
 
     const StateSet S0 =  StateSet(aut.initial);
     const State S0id = result.add_state();
-    result.initial.add(S0id);
+    result.initial.insert(S0id);
 
     if (aut.final.intersects_with(S0)) {
-        result.final.add(S0id);
+        result.final.insert(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
@@ -1570,7 +1570,7 @@ Nfa Mata::Nfa::determinize(
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
                 if (aut.final.intersects_with(T)) {
-                    result.final.add(Tid);
+                    result.final.insert(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
@@ -1626,7 +1626,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : it->second)
         {
             State state = get_state_name(str);
-            aut.initial.add(state);
+            aut.initial.insert(state);
         }
     }
 
@@ -1637,7 +1637,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : it->second)
         {
             State state = get_state_name(str);
-            aut.final.add(state);
+            aut.final.insert(state);
         }
     }
 
@@ -1705,7 +1705,7 @@ Nfa Mata::Nfa::construct(
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
         State state = get_state_name(str);
-        aut.initial.add(state);
+        aut.initial.insert(state);
     }
 
     for (const auto& trans : inter_aut.transitions)
@@ -1741,7 +1741,7 @@ Nfa Mata::Nfa::construct(
         // we add all states NOT in final_formula_nodes to final states
         for (const auto &state_name_and_id : *state_map) {
             if (!final_formula_nodes.count(state_name_and_id.first)) {
-                aut.final.add(state_name_and_id.second);
+                aut.final.insert(state_name_and_id.second);
             }
         }
     } else {
@@ -1749,7 +1749,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : final_formula_nodes)
         {
             State state = get_state_name(str);
-            aut.final.add(state);
+            aut.final.insert(state);
         }
     }
 
@@ -1924,7 +1924,7 @@ Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
-            symbols.add(move.symbol);
+            symbols.insert(move.symbol);
         }
     }
     //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
@@ -1996,10 +1996,10 @@ Symbol Nfa::get_max_symbol() const {
                 delta.add(new_initial_state, transitions.symbol, state_to);
             }
         }
-        if (final[orig_initial_state]) { final.add(new_initial_state); }
+        if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
     initial.clear();
-    initial.add(new_initial_state);
+    initial.insert(new_initial_state);
 }
 
 void Nfa::unify_final() {
@@ -2010,10 +2010,10 @@ void Nfa::unify_final() {
         for (const auto& transitions: transitions_to) {
             delta.add(transitions.src, transitions.symb, new_final_state);
         }
-        if (initial[orig_final_state]) { initial.add(new_final_state); }
+        if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
     final.clear();
-    final.add(new_final_state);
+    final.insert(new_final_state);
 }
 
 void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
