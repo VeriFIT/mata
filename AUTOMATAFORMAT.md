@@ -1,4 +1,4 @@
-# The file format for automata
+# The file format for automata (.mata format)
 
 ## Top-level file structure
 * The format is **line**-based. Lines can be connected by `\`.
