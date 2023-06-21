@@ -49,6 +49,42 @@ cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void restrict_to_symmetric()
         void get_quotient_projection(ivector&)
 
+cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
+    cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
+        vector[T] dense
+        vector[T] sparse
+        size_t size
+        size_t domain_size
+
+        CSparseSet()
+        CSparseSet(T)
+        CSparseSet(vector[T])
+
+        size_t domain_size()
+        bool empty()
+        void clear()
+        void reserve(size_t)
+        bool contains(T)
+        void insert(T)
+        void erase(T)
+        bool consistent()
+        bool operator[](T)
+
+        cppclass const_iterator:
+            const T operator *()
+            const_iterator operator++()
+            bint operator ==(const_iterator)
+            bint operator !=(const_iterator)
+        const_iterator cbegin()
+        const_iterator cend()
+
+        cppclass iterator:
+            T operator *()
+            iterator operator++()
+            bint operator ==(iterator)
+            bint operator !=(iterator)
+        iterator begin()
+        iterator end()
 
 cdef extern from "mata/number-predicate.hh" namespace "Mata::Util":
     cdef cppclass CNumberPredicate "Mata::Util::NumberPredicate" [T]:
@@ -241,8 +277,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
             void refresh_trans()
 
         # Public Attributes
-        CNumberPredicate[State] initial
-        CNumberPredicate[State] final
+        CSparseSet[State] initial
+        CSparseSet[State] final
         CDelta delta
         umap[string, void*] attributes
         CAlphabet* alphabet
@@ -281,7 +317,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void trim(StateToStateMap*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
-        CNumberPredicate[State] get_useful_states()
+        CSparseSet[State] get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +

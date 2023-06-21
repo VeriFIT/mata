@@ -210,8 +210,7 @@ cdef class Nfa:
 
     @property
     def initial_states(self):
-        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
-        return [initial_state for initial_state in initial_states]
+        return [initial_state for initial_state in self.thisptr.get().initial]
 
     @initial_states.setter
     def initial_states(self, vector[State] value):
@@ -221,8 +220,7 @@ cdef class Nfa:
 
     @property
     def final_states(self):
-        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
-        return [final_state for final_state in final_states]
+        return [final_state for final_state in self.thisptr.get().final]
 
     @final_states.setter
     def final_states(self, vector[State] value):
@@ -466,8 +464,7 @@ cdef class Nfa:
 
         :return: A set of useful states.
         """
-        cdef vector[State] return_value = self.thisptr.get().get_useful_states().get_elements()
-        return {state for state in return_value}
+        return {state for state in self.thisptr.get().get_useful_states()}
 
     def get_reachable_states(self):
         """Get reachable states.
@@ -530,10 +527,8 @@ cdef class Nfa:
 
         :return: string representation of the automaton
         """
-        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
-        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
-        result = "initial_states: {}\n".format([s for s in initial_states])
-        result += "final_states: {}\n".format([s for s in final_states])
+        result = "initial_states: {}\n".format([s for s in self.thisptr.get().initial])
+        result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
             symbol = trans.symb if self.thisptr.get().alphabet == NULL \
@@ -1210,8 +1205,7 @@ cdef class Nfa:
         :param Nfa lhs: tested automaton
         :return: true if automaton accepts epsilon
         """
-        cdef vector[State] initial_states = lhs.thisptr.get().initial.get_elements()
-        for state in initial_states:
+        for state in lhs.thisptr.get().initial:
             if lhs.has_final_state(state):
                 return True
         return False
