@@ -53,12 +53,11 @@ void Nfa::concatenate_inplace(const Nfa& aut) {
                 new_fin.add(fin);
             }
             for(const Move& ini_mv : ini_post) {
-                this->delta.add_set(fin, ini_mv.symbol, ini_mv.targets);
                 // TODO: this should be done efficiently in a delta method
-                // TODO: in fact it is not efficient now
-                // for(const State& dest : ini_mv.targets) {
-                //     this->delta.add(fin, ini_mv.symbol, dest);
-                // }
+                // TODO: in fact it is not efficient for now
+                for(const State& dest : ini_mv.targets) {
+                    this->delta.add(fin, ini_mv.symbol, upd_fnc(dest));
+                }
             }
         }
     }

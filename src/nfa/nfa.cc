@@ -513,7 +513,8 @@ State Delta::find_max_state() {
 }
 
 std::vector<Post> Delta::copy_posts_with(const std::function<State(State)>& lambda) const {
-    std::vector<Post> cp_post_vector(this->post_size());
+    std::vector<Post> cp_post_vector;
+    cp_post_vector.reserve(this->post_size());
     for(const Post& act_post: this->post) {
         Post cp_post;
         cp_post.reserve(act_post.size());
@@ -521,7 +522,7 @@ std::vector<Post> Delta::copy_posts_with(const std::function<State(State)>& lamb
             StateSet cp_dest;
             cp_dest.reserve(mv.size());
             for(const State& state : mv.targets) {
-                cp_dest.push_back(state);
+                cp_dest.push_back(lambda(state));
             }
             cp_post.push_back(Move(mv.symbol, cp_dest));
         }

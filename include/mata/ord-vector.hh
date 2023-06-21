@@ -133,7 +133,8 @@ public:
         return ord_vector;
     }
 
-    void insert(iterator itr, const Key& x) {
+    void insert(iterator itr, const Key& x)
+    {
         assert(itr == this->end() || x <= *itr);
         vec_.insert(itr,x);
     }
@@ -198,6 +199,8 @@ public:
     virtual void insert(const OrdVector& vec) {
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
+
+        // TODO: sometimes it is not efficient to copy both vectors to create a new one
         vec_ = OrdVector::Union(*this, vec).vec_;
         assert(vectorIsSorted());
     }
