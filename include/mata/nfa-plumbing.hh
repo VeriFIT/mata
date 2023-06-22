@@ -26,21 +26,13 @@
  */
 namespace Mata::Nfa::Plumbing {
 
-template<typename T>
-T* get_elements(T* element_set, const BoolVector& bool_vec) {
-    element_set->clear();
-    element_set->reserve(bool_vec.count());
-    for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
-        element_set->push_back(i);
-    }
-    return element_set;
-}
-
 void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     element_set->clear();
     element_set->reserve(bool_vec.count());
     for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
-        element_set->push_back(i);
+        if (bool_vec[i] == 1) {
+            element_set->push_back(i);
+        }
     }
 }
 

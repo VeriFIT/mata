@@ -6,7 +6,7 @@ from libcpp.set cimport set as cset
 from libcpp.utility cimport pair
 from libcpp.memory cimport shared_ptr, make_shared
 from libc.stdint cimport uint8_t
-from cython.operator import dereference, reference, postincrement as postinc, preincrement as preinc
+from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
 import sys
@@ -465,10 +465,10 @@ cdef class Nfa:
 
         :return: A set of useful states.
         """
-        # TODO: fix this, get_useful_states() returns vector of chars, which represents bitvector
-        # Hence, we will need to translate it to actual states or fix the master function
-        cdef vector[char] useful_states = self.thisptr.get().get_useful_states()
-        return {state for state in useful_states}
+        cdef CBoolVector useful_states_bool_vec = self.thisptr.get().get_useful_states()
+        cdef StateSet useful_states
+        mata.get_elements(&useful_states, useful_states_bool_vec)
+        return { state for state in useful_states }
 
     def get_reachable_states(self):
         """Get reachable states.
@@ -1688,7 +1688,7 @@ cdef class Segmentation:
         return segments
 
 
-def get_elements_from_bool_vec(bool_vec: vector[uint8_t]):
+def get_elements_from_bool_vec(bool_vec: list[int]):
     cdef CBoolVector c_bool_vec = CBoolVector(bool_vec)
     cdef StateSet c_states
     mata.get_elements(&c_states, c_bool_vec)

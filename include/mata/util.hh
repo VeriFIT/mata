@@ -72,12 +72,12 @@ public:
     BoolVector(BoolVector&&) = default;
     BoolVector() = default;
     BoolVector(std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
+    explicit BoolVector(const std::vector<uint8_t>& uint8_ts): std::vector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;
     BoolVector& operator=(BoolVector&&) = default;
 
-
-    size_t count() const { return std::ranges::count_if(*this, [](uint8_t val){ return val == 1; }); }
+    size_t count() const { return std::ranges::count_if(*this, [](const uint8_t val){ return val == 1; }); }
 
     template<typename T>
     T& get_elements(T& element_set) {
@@ -88,6 +88,17 @@ public:
         }
         return element_set;
     }
+
+    template<typename T>
+    static T* get_elements(T* element_set, const BoolVector& bool_vec) {
+        element_set->clear();
+        element_set->reserve(bool_vec.count());
+        for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
+            element_set->push_back(i);
+        }
+        return element_set;
+    }
+
 };
 
 /// log verbosity
