@@ -7,7 +7,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
-from libc.stdint cimport uintptr_t
+from libc.stdint cimport uintptr_t, uint8_t
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -48,6 +48,17 @@ cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void build_index(IndexType&, IndexType&)
         void restrict_to_symmetric()
         void get_quotient_projection(ivector&)
+
+
+cdef extern from "mata/util.hh" namespace "Mata":
+    cdef cppclass CBoolVector "Mata::BoolVector":
+        CBoolVector()
+        CBoolVector(size_t, bool)
+        CBoolVector(vector[uint8_t])
+
+        size_t count()
+
+
 
 cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
     cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
@@ -304,6 +315,7 @@ cdef extern from "mata/nfa-algorithms.hh" namespace "Mata::Nfa::Algorithms":
     cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
 
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
+    cdef void get_elements(StateSet*, CBoolVector)
     cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)

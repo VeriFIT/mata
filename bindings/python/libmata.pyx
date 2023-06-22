@@ -5,7 +5,8 @@ from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
 from libcpp.utility cimport pair
 from libcpp.memory cimport shared_ptr, make_shared
-from cython.operator import dereference, postincrement as postinc, preincrement as preinc
+from libc.stdint cimport uint8_t
+from cython.operator import dereference, reference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
 import sys
@@ -1685,6 +1686,13 @@ cdef class Segmentation:
             segments.append(segment)
 
         return segments
+
+
+def get_elements_from_bool_vec(bool_vec: vector[uint8_t]):
+    cdef CBoolVector c_bool_vec = CBoolVector(bool_vec)
+    cdef StateSet c_states
+    mata.get_elements(&c_states, c_bool_vec)
+    return { state for state in c_states }
 
 
 def plot(

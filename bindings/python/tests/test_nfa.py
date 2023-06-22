@@ -869,13 +869,13 @@ def test_get_states(prepare_automaton_a, prepare_automaton_b):
     assert 4 in reachable
     assert 6 in reachable
 
-    useful = nfa.get_useful_states()
-    assert len(useful) == 0
+    useful_states = get_elements_from_bool_vec(nfa.get_useful_states())
+    assert len(useful_states) == 0
 
     nfa.make_final_state(4)
-    useful = nfa.get_useful_states()
-    assert len(useful) == 1
-    assert 4 in useful
+    useful_states = get_elements_from_bool_vec(nfa.get_useful_states())
+    assert len(useful_states) == 1
+    assert 4 in useful_states
 
 
 def test_segmentation(prepare_automaton_a):
