@@ -464,7 +464,10 @@ cdef class Nfa:
 
         :return: A set of useful states.
         """
-        return {state for state in self.thisptr.get().get_useful_states()}
+        # TODO: fix this, get_useful_states() returns vector of chars, which represents bitvector
+        # Hence, we will need to translate it to actual states or fix the master function
+        cdef vector[char] useful_states = self.thisptr.get().get_useful_states()
+        return {state for state in useful_states}
 
     def get_reachable_states(self):
         """Get reachable states.

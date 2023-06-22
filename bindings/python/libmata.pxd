@@ -272,7 +272,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void trim(StateToStateMap*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
-        CSparseSet[State] get_useful_states()
+        vector[char] get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
