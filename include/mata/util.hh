@@ -65,6 +65,13 @@ namespace Mata
 /// Representation of bool vector by a vector of char.
 struct BoolVector : public std::vector<char> {
     BoolVector(size_t size, bool value) : std::vector<char>(size, value ? '1' : '0') {}
+    BoolVector(const BoolVector&) = default;
+    BoolVector(BoolVector&&) = default;
+    BoolVector() = default;
+    BoolVector(std::initializer_list<char> chars): std::vector<char>(chars) {}
+
+    BoolVector& operator=(const BoolVector&) = default;
+    BoolVector& operator=(BoolVector&&) = default;
 };
 
 /// log verbosity

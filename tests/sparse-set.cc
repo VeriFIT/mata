@@ -38,7 +38,6 @@ TEST_CASE("Mata::Util::SparseSet") {
             i++;
         }
         CHECK(i == 6);
-        p.clear();
     }
 
     SECTION("accessing stuff outside current domain ") {
@@ -67,7 +66,7 @@ TEST_CASE("Mata::Util::SparseSet") {
 
     SECTION("filter") {
         p = {0, 1, 2, 3, 4, 5, 6};
-        std::vector<char> v = {0, 1, 1};
+        Mata::BoolVector v = {0, 1, 1};
         auto f = [&v](State x) { return v[x] && x<v.size(); };
         p.filter(f);
         CHECK(OrdVector<State>(p.begin(), p.end()) == OrdVector<State>({1, 2}));

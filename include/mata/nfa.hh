@@ -256,7 +256,7 @@ public:
     Post& get_mutable_post(State q);
 
     // TODO: Explain what is returned from this method.
-    void defragment(const std::vector<char>& is_staying, const std::vector<State>& renaming);
+    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
     const Post & operator[] (State q) const;
@@ -456,7 +456,7 @@ public:
     std::set<Symbol> get_used_symbols_set() const;
     Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
-    std::vector<char> get_used_symbols_chv() const;
+    BoolVector get_used_symbols_chv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
@@ -490,7 +490,7 @@ public:
      */
     StateSet get_useful_states_old() const;
 
-    std::vector<char> get_useful_states() const;
+    BoolVector get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.

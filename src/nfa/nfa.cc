@@ -31,6 +31,7 @@ using std::tie;
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
+using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -481,7 +482,7 @@ Post& Delta::get_mutable_post(State q) {
     return posts[q];
 }
 
-void Delta::defragment(const std::vector<char>& is_staying, const std::vector<State>& renaming) {
+void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
     //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
@@ -569,11 +570,11 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
 void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
-    std::vector<char> useful_states{ get_useful_states() };
+    BoolVector useful_states{ get_useful_states() };
     useful_states.clear();
     useful_states = get_useful_states();
 #else
-    std::vector<char> useful_states{ get_useful_states() };
+    BoolVector useful_states{ get_useful_states() };
 #endif
 
     std::vector<State> renaming(useful_states.size());
@@ -644,22 +645,22 @@ struct StackLevel {
     };
 };
 
-std::vector<char> Nfa::get_useful_states() const
+BoolVector Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_
     // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
     static std::vector<StackLevel> stack;
     //tracking elements seems to cost more than it saves, switching it off
-    std::vector<char> reached(size(),false);
-    std::vector<char> reached_and_reaching(size(),false);
+    BoolVector reached(size(),false);
+    BoolVector reached_and_reaching(size(),false);
     stack.clear();
     reached.clear();
     reached_and_reaching.clear();
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    std::vector<char> reached(size(),false);
-    std::vector<char> reached_and_reaching(size(),false);
+    BoolVector reached(size(),false);
+    BoolVector reached_and_reaching(size(),false);
 #endif
 
     for (const State q0: initial) {
@@ -1953,13 +1954,13 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
     return symbols;
 }
 
-std::vector<char> Nfa::get_used_symbols_chv() const {
+BoolVector Nfa::get_used_symbols_chv() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static std::vector<char>  symbols(64,false);
+    static BoolVector  symbols(64,false);
     symbols.clear();
 #else
-    std::vector<char> symbols(64,false);
+    BoolVector symbols(64,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -2139,7 +2140,7 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
 
     //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
     //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
-    //std::vector<char> chv = get_used_symbols_chv();
+    //BoolVector chv = get_used_symbols_chv();
     //Util::OrdVector<Symbol> ov;
     //for(Symbol i = 0;i<chv.size();i++)
     //    if (chv[i]) {
