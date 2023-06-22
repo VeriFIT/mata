@@ -586,6 +586,7 @@ public:
     void print_to_DOT(std::ostream &output) const;
     /**
      * @brief Prints the automaton in mata format
+     *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      * 
      * @return automaton in mata format 
@@ -593,6 +594,7 @@ public:
     std::string print_to_mata() const;
     /**
      * @brief Prints the automaton to the output stream in mata format
+     *
      * If you need to parse the automaton again, use IntAlphabet in construct()
      */
     void print_to_mata(std::ostream &output) const;

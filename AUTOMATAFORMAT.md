@@ -1,4 +1,4 @@
-# The file format for automata (.mata format)
+# The Mata file format for automata (.mata format)
 
 ## Top-level file structure
 * The format is **line**-based. Lines can be connected by `\`.
@@ -14,7 +14,7 @@
   * `\` for escaping characters. `\` is also used to concatenate lines.
   * `a`,`q`,`n`,`t`,`f` are token type specifiers (alphabet, state, node, attribute, formula). 
   * `#` starts a comment line.
-* There are **words with a special meaning**: `\true`,`\false`, `\min`, `\max`. First two represents true/false in Boolean formulas.
+* There are **words with a special meaning**: `\true`,`\false`, `\min`, `\max`. The first two represent true/false in Boolean formulas.
 * The parser may recognise the special symbols as standalone tokens (does not apply to `q`,`a`,`n`,`t`,`f`,`#`) only if they appear in the special context where their special meaning applies, otherwise they should be treated as normal symbols.
 
 We categorise automata according to their **transition type**, that is, the structure of their transitions, and by their **alphabet type**, i.e., how alphabet symbols on transitions are represented. It is expected that different parameters would be parsed into different data structures. These parameters should determine the name of the automata section.
@@ -23,7 +23,7 @@ We categorise automata according to their **transition type**, that is, the stru
 We categorise automata by the **alphabet type**, i.e., the representation of symbols on transitions. We will consider propositional formulae (over bit vectors), explicit symbols, intervals of numbers or unicode or ascii, or user-defined alphabet.
 * **Explicit**: Just plain symbols. May be given implicitly or enumerated, or one can have some predefined alphabet, numbers, ascii, utf.
 * **Bitvector**: Propositional variables, the syntax is the same as for explicit symbols.
-* **Character class**: Character classes, i.e. sets of symbols as used in normal regular expressions, are of the form `[bla]` or `[^bla]` where bla is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` denote the first repsective the last letter the alphabet.
+* **Character class**: Character classes, i.e. sets of symbols as used in normal regular expressions, are of the form `[bla]` or `[^bla]` where `bla` is a sequence of symbols and intervals of symbols such as `a-z`, for instance `abcd-hij-z` denotes all lower case alphabet symbols. The `^` in front complements the entire class. The character `-` in sincluded as `\-`, analogously `\` and `^`. The special keywords `\min` and `\max` denote the first repsective the last letter the alphabet.
 ## Automata by their transition type
 
 ### NFA (Nondeterministic finite automata)
@@ -32,11 +32,11 @@ We categorise automata by the **alphabet type**, i.e., the representation of sym
 * Initial (final) states are defined by key-value line `%Initial"` (`%Final`) followed by an enumeration of states.
 
 ### AFA (Alternating finite automata)
-* Transition lines are of the form `"<State> <Formula>"` representing the source state and the transition formula - a Booelan formula over symbol literals, states, and nodes.
+* Transition lines are of the form `"<State> <Formula>"` representing the source state and the transition formula - a Boolean formula over symbol literals, states, and nodes.
 * Several lines starting with the same state mean the disjunciton of the formulae. No line for the state means false. 
 * Initial (final) states are defined by key-value line `%Initial <Formula>"` (`"%Final <Formula>"`) where the Boolean formula is given over states.
 
-The transition and alphabet type is encoded in the name of a section, e.g., `@NFA-explicit` denotes a nondeterministic finite automaton over explicit alphabet is given.
+The transition and alphabet type is encoded in the name of a section, e.g., `@NFA-explicit` denotes that a nondeterministic finite automaton over an explicit alphabet is given.
 ## Distinguishing between states, symbols, and nodes
 * When the general formulas are used in transition (as in case of AFA), the type of a token cannot be determined by its position. We therefore require one of the three schemes for distinguishing token types:
   * By **enumeration**.
