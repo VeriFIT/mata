@@ -21,7 +21,7 @@ namespace Simlib { class ExplicitLTS; }
 
 class Simlib::ExplicitLTS {
 
-	size_t states_;
+	size_t states_{};
 	size_t transitions_;
 	std::vector<
 		std::pair<

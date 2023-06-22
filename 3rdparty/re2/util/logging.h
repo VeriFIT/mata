@@ -65,7 +65,7 @@ class LogMessage {
 
  private:
   bool flushed_;
-  std::ostringstream str_;
+  std::ostringstream str_{};
 
   LogMessage(const LogMessage&) = delete;
   LogMessage& operator=(const LogMessage&) = delete;

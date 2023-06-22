@@ -107,6 +107,9 @@ public:
 
     FormulaNode(const FormulaNode& n)
         : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type), operand_type(n.operand_type) {}
+
+    FormulaNode& operator=(const FormulaNode& other) = default;
+    FormulaNode& operator=(FormulaNode&& other) = default;
 };
 
 /**
@@ -117,12 +120,15 @@ public:
  * and q1 and s2 being children nodes of the root.
  */
 struct FormulaGraph {
-    FormulaNode node;
-    std::vector<FormulaGraph> children;
+    FormulaNode node{};
+    std::vector<FormulaGraph> children{};
 
-    FormulaGraph() : node(), children() {}
+    FormulaGraph() = default;
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
+
+    FormulaGraph& operator=(const Mata::FormulaGraph& other) = default;
+    FormulaGraph& operator=(Mata::FormulaGraph&& other) noexcept = default;
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
@@ -135,6 +141,7 @@ struct FormulaGraph {
  * states. The formulas are represented as tree where nodes are either operands or operators.
  */
 struct IntermediateAut {
+public:
     /**
      * Type of automaton. So far we support nondeterministic finite automata (NFA) and
      * alternating finite automata (AFA)
@@ -172,20 +179,19 @@ struct IntermediateAut {
         INTERVALS
     };
 
-public:
     Naming state_naming = Naming::MARKED;
     Naming symbol_naming = Naming::MARKED;
     Naming node_naming = Naming::MARKED;
-    AlphabetType alphabet_type;
-    AutomatonType automaton_type;
+    AlphabetType alphabet_type{};
+    AutomatonType automaton_type{};
 
     // The vectors represent the given sets when enumeration is used.
-    std::vector<std::string> states_names;
-    std::vector<std::string> symbols_names;
-    std::vector<std::string> nodes_names;
+    std::vector<std::string> states_names{};
+    std::vector<std::string> symbols_names{};
+    std::vector<std::string> nodes_names{};
 
-    FormulaGraph initial_formula;
-    FormulaGraph final_formula;
+    FormulaGraph initial_formula{};
+    FormulaGraph final_formula{};
 
     bool initial_enumerated = false;
     bool final_enumerated = false;
@@ -194,7 +200,7 @@ public:
      * Transitions are pairs where the first member is left-hand side of transition (i.e., a state)
      * and the second item is a graph representing transition formula (which can contain symbols, nodes, and states).
      */
-    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions;
+    struct std::vector<std::pair<FormulaNode, FormulaGraph>> transitions{};
 
     /**
      * Returns symbolic part of transition. That may be just a symbol or bitvector formula.

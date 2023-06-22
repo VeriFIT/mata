@@ -150,6 +150,11 @@ public:
 		} while (states != this->states_);
 	}
 
+    Block(Block&) = default;
+
+    Block& operator=(const Block&) = delete;
+    Block& operator=(Block&&) = delete;
+
 	void move_to_tmp(StateListElem* elem)
 	{
 		this->tmp_.push_back(elem);

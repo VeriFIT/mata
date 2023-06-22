@@ -327,7 +327,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
         SECTION("Simple word with alphabet") {
             std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
             Mata::OnTheFlyAlphabet alphabet{};
-            for (unsigned long symbol{ 0 }; symbol < word.size(); ++symbol) {
+            for (Mata::Symbol symbol{ 0 }; symbol < word.size(); ++symbol) {
                 alphabet.add_new_symbol(word[symbol], symbol);
             }
             auto nfa{ Mata::Strings::create_single_word_nfa(word) };

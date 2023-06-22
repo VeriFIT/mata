@@ -91,11 +91,11 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 				} else if ('#' == ch) { // clear the rest of the line
 					std::string aux;
 					std::getline(input, aux);
-					return std::string();
+					return {};
 				} else if ('(' == ch || ')' == ch) {
 					return std::to_string(static_cast<char>(ch));
 				} else {
-					result += ch;
+					result += static_cast<char>(ch);
 					state = TokenizerState::UNQUOTED;
 				}
 				break;
@@ -109,8 +109,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 				} else if ('"' == ch) {
 					std::string context;
 					std::getline(input, context);
-					throw std::runtime_error("misplaced quotes: " + result + "_\"_" +
-						context);
+					throw std::runtime_error("misplaced quotes: " + result + "_\"_" + context);
 				} else if ('(' == ch || ')' == ch) {
 					input.unget();
 					return result;
@@ -121,7 +120,7 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 						static_cast<char>(ch) + "\' in string \"" + result +
 						static_cast<char>(ch) + context + "\"");
 				} else {
-					result += ch;
+					result += static_cast<char>(ch);
 				}
 				break;
 			}
@@ -140,12 +139,12 @@ std::string get_token_from_line(std::istream& input, bool* quoted)
 					return result;
 				} else if ('\\' == ch) {
 					state = TokenizerState::QUOTED_ESCAPE;
-				} else { result += ch; }
+				} else { result += static_cast<char>(ch); }
 				break;
 			}
 			case TokenizerState::QUOTED_ESCAPE: {
 				if ('"' != ch) { result += '\\'; }
-				result += ch;
+				result += static_cast<char>(ch);
 				state = TokenizerState::QUOTED;
 				break;
 			}
@@ -179,7 +178,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 		std::string token = get_token_from_line(stream, &quoted);
 		if (!quoted && token.empty()) { break; }
 
-		result.push_back({ token, quoted });
+		result.emplace_back(token, quoted);
 
 		if (!first && !quoted)
 		{
@@ -200,7 +199,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 	return result;
 } // tokenize_line(string) }}}
 
-std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens)
+std::vector<std::pair<std::string, bool>> split_tokens(const std::vector<std::pair<std::string, bool>>& tokens)
 { // {{{
     std::vector<std::pair<std::string, bool>> result;
     for (const auto& token : tokens) {
@@ -218,8 +217,8 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
 
                 // there is token before logical operator (this is case of binary operators, e.g., a&b)
                 if (!token_candidate.empty())
-                    result.push_back(std::make_pair(token_candidate, false));
-                result.push_back(std::make_pair(std::string(1,token_string[i]), false));
+                    result.emplace_back(token_candidate, false);
+                result.emplace_back(std::string(1,token_string[i]), false);
                 last_operator = i+1;
             }
         }
@@ -228,9 +227,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std
         if (last_operator == 0) {
             result.push_back(token);
         } else if (last_operator != length){ // operator was not last, we need parse rest of token
-            result.push_back(std::make_pair(
-                    token_string.substr(last_operator, length-last_operator), false));
-        }
+            result.emplace_back(token_string.substr(last_operator, length-last_operator), false); }
     }
 
     return result;
@@ -376,7 +373,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 			std::vector<std::string>& val_list = it->second;
 			std::transform(token_line.begin() + 1, token_line.end(),
 				std::back_inserter(val_list),
-				[](const std::pair<std::string, bool> token) { return token.first; });
+				[](const std::pair<std::string, bool>& token) { return token.first; });
 		} else {
 			BodyLine stripped_token_line;
 			std::transform(token_line.begin(), token_line.end(),
@@ -419,7 +416,7 @@ bool Mata::Parser::ParsedSection::operator==(const ParsedSection& rhs) const {
         this->body == rhs.body;
 }
 
-std::ostream& Mata::Parser::operator<<(std::ostream& os, const ParsedSection& parsec) {
+std::ostream& std::operator<<(std::ostream& os, const ParsedSection& parsec) {
     os << "@" << parsec.type << "\n";
     for (const auto& string_list_pair : parsec.dict) {
         os << "%" << string_list_pair.first;

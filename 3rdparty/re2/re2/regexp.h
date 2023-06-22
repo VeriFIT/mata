@@ -209,7 +209,7 @@ class RegexpStatus {
 
  private:
   RegexpStatusCode code_;  // Kind of error
-  StringPiece error_arg_;  // Piece of regexp containing syntax error.
+  StringPiece error_arg_{};  // Piece of regexp containing syntax error.
   std::string* tmp_;       // Temporary storage, possibly where error_arg_ is.
 
   RegexpStatus(const RegexpStatus&) = delete;

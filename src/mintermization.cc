@@ -78,28 +78,28 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
     for (const auto& trans : aut.transitions) {
         lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
         if (trans.second.node.is_state()) { // node from state to state
-            lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&trans.second, &trans.second));
+            lhs_to_disjuncts_and_states[&trans.first].emplace_back(&trans.second, &trans.second);
         }
         // split transition to disjuncts
         const FormulaGraph *act_graph = &trans.second;
 
         if (!trans.second.node.is_state() && act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OperatorType::OR) // there are no disjuncts
-            lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph, detect_state_part(
-                    act_graph)));
+            lhs_to_disjuncts_and_states[&trans.first].emplace_back(act_graph, detect_state_part(
+                    act_graph));
         else if (!trans.second.node.is_state()) {
             while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OperatorType::OR) {
                 // map lhs to disjunct and its state formula. The content of disjunct is right son of actual graph
                 // since the left one is a rest of formula
-                lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(&act_graph->children[1],
+                lhs_to_disjuncts_and_states[&trans.first].emplace_back(&act_graph->children[1],
                                                                                        detect_state_part(
-                                                                                           &act_graph->children[1])));
+                                                                                           &act_graph->children[1]));
                 act_graph = &(act_graph->children.front());
             }
 
             // take care of last disjunct
-            lhs_to_disjuncts_and_states[&trans.first].push_back(DisjunctStatesPair(act_graph,
+            lhs_to_disjuncts_and_states[&trans.first].emplace_back(act_graph,
                                                                                    detect_state_part(
-                                                                                           act_graph)));
+                                                                                           act_graph));
         }
 
         // Foreach disjunct create a BDD
@@ -117,10 +117,10 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
     }
 }
 
-std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& bdds)
+std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& source_bdds)
 {
     std::unordered_set<BDD> stack{ bdd_mng.bddOne() };
-    for (BDD b : bdds) {
+    for (const BDD& b: source_bdds) {
         std::unordered_set<BDD> next;
         /**
          * TODO: Possible optimization - we can remember which transition belongs to the currently processed bdds
@@ -143,7 +143,7 @@ std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unorde
     return stack;
 }
 
-const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(const FormulaGraph &graph)
+Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
@@ -178,9 +178,10 @@ const Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(c
     }
 
     assert(false);
+    return {};
 }
 
-const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
+BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
@@ -213,6 +214,7 @@ const BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
     }
 
     assert(false);
+    return {};
 }
 
 void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,

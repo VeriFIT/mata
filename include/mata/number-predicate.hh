@@ -89,8 +89,8 @@ private:
     }
 
 public:
-    NumberPredicate(Number size,bool val,bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), predicate(size, val) {
+    NumberPredicate(Number size, bool val, bool track_elements = true)
+        : predicate(size, val), elements_are_exact(true), tracking_elements(track_elements) {
         if (tracking_elements && val) {
             elements.reserve(size);
             for (Number e = 0;e<size;++e)
@@ -100,35 +100,29 @@ public:
             cardinality = 0;
         else
             cardinality = size;
-    };
-
-    NumberPredicate(bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {};
-
-    NumberPredicate(std::initializer_list <Number> list, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
-        for (auto q: list)
-            add(q);
     }
 
-    NumberPredicate(std::vector <Number> list, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
-        add(list);
+    NumberPredicate() = default;
+    explicit NumberPredicate(const bool track_elements) : tracking_elements(track_elements) {}
+    NumberPredicate(std::initializer_list<Number> list, bool track_elements = true)
+        : tracking_elements(track_elements) {
+        for (const auto& q: list) { add(q); }
     }
 
-    NumberPredicate(const std::vector<bool> & bv, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
+    explicit NumberPredicate(const std::vector<Number>& list, const bool track_elements = true)
+        : tracking_elements(track_elements) { add(list); }
+
+    explicit NumberPredicate(const std::vector<bool>& bv, bool track_elements = true)
+        : tracking_elements(track_elements) {
         predicate.reserve(bv.size());
         for (size_t i = 0;i<bv.size();i++) {
-            if (bv[i])
-                add(i);
+            if (bv[i]) { add(i); }
         }
     }
 
-    explicit NumberPredicate(Mata::Util::OrdVector<Number> vec, bool track_elements = true)
-        : elements_are_exact(true), tracking_elements(track_elements), cardinality(0) {
-        for (auto q: vec)
-            add(q);
+    explicit NumberPredicate(const Mata::Util::OrdVector<Number>& vec, bool track_elements = true)
+        : tracking_elements(track_elements) {
+        for (const auto& q: vec) { add(q); }
     }
 
     NumberPredicate(const NumberPredicate<Number>& rhs) = default;

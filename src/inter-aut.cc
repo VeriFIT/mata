@@ -51,6 +51,7 @@ namespace {
 
         assert(false && "Unknown naming type - a naming type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
+        return {};
     }
 
     Mata::IntermediateAut::AlphabetType get_alphabet_type(const std::string &type)
@@ -68,6 +69,7 @@ namespace {
 
         assert(false && "Unknown alphabet type - an alphabet type should be always defined correctly otherwise it is"
                         "impossible to parse automaton correctly");
+        return {};
     }
 
     bool is_naming_marker(const Mata::IntermediateAut::Naming naming)
@@ -226,12 +228,13 @@ namespace {
                     opstack.pop_back();
                     break;
                 case Mata::FormulaNode::Type::OPERATOR:
-                    for (int j = opstack.size()-1; j >= 0; --j) {
-                        assert(!opstack[j].is_operand());
-                        if (opstack[j].is_leftpar())
+                    for (int j = static_cast<int>(opstack.size())-1; j >= 0; --j) {
+                        size_t j_size_t{ static_cast<size_t>(j) };
+                        assert(!opstack[j_size_t].is_operand());
+                        if (opstack[j_size_t].is_leftpar())
                             break;
-                        if (lower_precedence(node.operator_type, opstack[j].operator_type)) {
-                            output.push_back(opstack[j]);
+                        if (lower_precedence(node.operator_type, opstack[j_size_t].operator_type)) {
+                            output.push_back(opstack[j_size_t]);
                             opstack.erase(opstack.begin()+j);
                         }
                     }
@@ -246,11 +249,13 @@ namespace {
             opstack.pop_back();
         }
 
+        #ifndef NDEBUG
         for (const auto& node : output) {
             assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
             assert(node.is_leftpar() || node.name != "(");
             assert(node.is_rightpar() || node.name != ")");
         }
+        #endif // #ifndef NDEBUG.
 
         return output;
     }
@@ -418,7 +423,7 @@ size_t Mata::IntermediateAut::get_number_of_disjuncts() const
             for (const auto &ch: gr->children)
                 stack.push_back(&ch);
         }
-        res += std::max(trans_disjuncts, (size_t) 1);
+        res += std::max(trans_disjuncts, 1ul);
     }
 
     return res;
@@ -459,14 +464,16 @@ void Mata::IntermediateAut::parse_transition(Mata::IntermediateAut &aut, const s
     } else
         postfix = infix_to_postfix(aut, rhs);
 
+    #ifndef NDEBUG
     for (const auto& node : postfix) {
         assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
         assert(node.is_leftpar() || node.name != "(");
         assert(node.is_rightpar() || node.name != ")");
     }
+    #endif // #ifndef NDEBUG.
     const Mata::FormulaGraph graph = postfix_to_graph(postfix);
 
-    aut.transitions.push_back(std::pair<Mata::FormulaNode,Mata::FormulaGraph>(lhs, graph));
+    aut.transitions.emplace_back(lhs, graph);
 }
 
 std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
@@ -474,7 +481,7 @@ std::unordered_set<std::string> Mata::FormulaGraph::collect_node_names() const
     std::unordered_set<std::string> res;
     std::vector<const Mata::FormulaGraph *> stack;
 
-    stack.push_back(reinterpret_cast<const FormulaGraph *const>(&(this->node)));
+    stack.push_back(reinterpret_cast<const FormulaGraph*>(&(this->node)));
     while (!stack.empty()) {
         const FormulaGraph* g = stack.back();
         assert(g != nullptr);

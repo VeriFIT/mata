@@ -1660,7 +1660,7 @@ cdef class Segmentation:
 
         :return: Map of depths to lists of ε-transitions.
         """
-        cdef umap[unsigned, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
+        cdef umap[size_t, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
         result = {}
         for epsilon_depth_pair in c_epsilon_transitions:
             for trans in epsilon_depth_pair.second:

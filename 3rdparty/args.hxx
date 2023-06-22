@@ -1586,7 +1586,7 @@ namespace args
     {
         private:
             T value;
-            Reader reader;
+            Reader reader{};
 
         public:
 
