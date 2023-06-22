@@ -187,7 +187,7 @@ public:
         }
 
         vec_.resize(vec_.size() + 1);
-        std::copy_backward(vec_.begin() + first, vec_.end() - 1, vec_.end());
+        std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
 
         // insert the new element
         vec_[first] = x;

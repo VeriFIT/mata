@@ -61,6 +61,7 @@ set(CLANG_WARNINGS
         -Winconsistent-missing-override
         -Wgnu-anonymous-struct
         -Wnested-anon-types
+        -Wno-system-headers
         )
 
 ##############################################################################

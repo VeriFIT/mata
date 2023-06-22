@@ -14,6 +14,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wreturn-type"
+#pragma clang diagnostic ignored "-Wstring-conversion"
 
 #include <algorithm>
 #include <list>
@@ -1189,3 +1193,5 @@ namespace std {
         return accum;
     }
 }
+
+#pragma clang diagnostic pop
