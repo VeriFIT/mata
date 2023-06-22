@@ -46,10 +46,10 @@ namespace {
         /**
          * Default RE2 options
          */
-        RE2::Options options;
-        StateCache state_cache;
+        RE2::Options options{};
+        StateCache state_cache{};
 
-        std::vector<std::vector<std::pair<Mata::Symbol, Mata::Nfa::State>>> outgoingEdges;
+        std::vector<std::vector<std::pair<Mata::Symbol, Mata::Nfa::State>>> outgoingEdges{};
 
         RegexParser() = default;
 
