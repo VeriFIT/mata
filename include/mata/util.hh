@@ -29,6 +29,8 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
+#include <ranges>
+#include <cstdint>
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
@@ -62,17 +64,30 @@
 namespace Mata
 {
 
-/// Representation of bool vector by a vector of char.
-class BoolVector : public std::vector<char> {
+/// Representation of bool vector by a vector of uint8_t.
+class BoolVector : public std::vector<uint8_t> {
 public:
-    BoolVector(size_t size, bool value) : std::vector<char>(size, value ? 1 : 0) {}
+    BoolVector(size_t size, bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
     BoolVector(const BoolVector&) = default;
     BoolVector(BoolVector&&) = default;
     BoolVector() = default;
-    BoolVector(std::initializer_list<char> chars): std::vector<char>(chars) {}
+    BoolVector(std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;
     BoolVector& operator=(BoolVector&&) = default;
+
+
+    size_t count() const { return std::ranges::count_if(*this, [](uint8_t val){ return val == 1; }); }
+
+    template<typename T>
+    T& get_elements(T& element_set) {
+        element_set.clear();
+        element_set.resize(count());
+        for (size_t i{ 0 }; i < size(); ++i) {
+            element_set.push_back(i);
+        }
+        return element_set;
+    }
 };
 
 /// log verbosity

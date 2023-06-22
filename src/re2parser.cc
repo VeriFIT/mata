@@ -82,7 +82,7 @@ namespace {
          * @param epsilon_value value, that will represent epsilon on transitions
          * @return mata::Nfa::Nfa created from prog
          */
-        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog, bool use_epsilon, Mata::Symbol epsilon_value) {
+        void convert_pro_to_nfa(Mata::Nfa::Nfa* output_nfa, re2::Prog* prog, const bool use_epsilon, const Mata::Symbol epsilon_value) {
             const auto start_state = static_cast<size_t>(prog->start());
             const auto prog_size = static_cast<size_t>(prog->size());
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII

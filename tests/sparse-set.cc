@@ -5,7 +5,6 @@
 #include "../3rdparty/catch.hpp"
 
 #include "mata/nfa.hh"
-#include "mata/sparse-set.hh"
 
 using namespace Mata::Util;
 using namespace Mata::Nfa;
@@ -27,7 +26,7 @@ TEST_CASE("Mata::Util::SparseSet") {
         p.erase({ 1, 2, 3, 4, 5 });
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({}));
         for (State q = 0; q < 10; q++) CHECK(!p[q]);
-        CHECK(p.size() == 0);
+        CHECK(p.empty());
     }
 
     SECTION("iterator ") {
@@ -67,7 +66,7 @@ TEST_CASE("Mata::Util::SparseSet") {
     SECTION("filter") {
         p = {0, 1, 2, 3, 4, 5, 6};
         Mata::BoolVector v = {0, 1, 1};
-        auto f = [&v](State x) { return v[x] && x<v.size(); };
+        auto f = [&v](State x) { return x < v.size() ? v[x] : 0; };
         p.filter(f);
         CHECK(OrdVector<State>(p.begin(), p.end()) == OrdVector<State>({1, 2}));
         v={1,1,1,1,1};
@@ -88,7 +87,7 @@ TEST_CASE("Mata::Util::SparseSet") {
     SECTION("sort") {
         p = {1, 0, 2, 4, 6, 3, 5};
         p.sort();
-        CHECK( std::vector<State>(p.begin(),p.end()) == std::vector<State>{0,1,2,3,4,5,6});
+        CHECK(std::vector<State>(p.begin(),p.end()) == std::vector<State>{0,1,2,3,4,5,6});
     }
 
     SECTION("rename") {

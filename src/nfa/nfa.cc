@@ -589,7 +589,7 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&useful_states](State q){return useful_states[q];};
+    auto is_state_useful = [&useful_states](State q){return q < useful_states.size() && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
     auto rename_state = [&renaming](State q){return renaming[q];};
@@ -659,8 +659,8 @@ BoolVector Nfa::get_useful_states() const
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    BoolVector reached(size(),false);
-    BoolVector reached_and_reaching(size(),false);
+    BoolVector reached(size(),false); // Reachable from initial state.
+    BoolVector reached_and_reaching(size(),false); // Reachable from initial state and reaches final state.
 #endif
 
     for (const State q0: initial) {
