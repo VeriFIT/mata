@@ -486,15 +486,13 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
     //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
-    // Why would anyone write such horrible code?
     size_t move_index{ 0 };
-    posts.erase(
-            std::remove_if(posts.begin(), posts.end(), [&](Post&) -> bool {
-                size_t prev{ move_index };
-                ++move_index;
-                return !is_staying[prev];
-            }),
-            posts.end()
+    std::erase_if(posts,
+         [&](Post&) -> bool {
+             size_t prev{ move_index };
+             ++move_index;
+             return !is_staying[prev];
+         }
     );
 
     //this iterates through every post and every move, filters and renames states,
