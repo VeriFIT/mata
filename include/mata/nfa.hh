@@ -37,6 +37,7 @@
 #include "mata/ord-vector.hh"
 #include "mata/inter-aut.hh"
 #include "mata/synchronized-iterator.hh"
+#include "mata/sparse-set.hh"
 
 /**
  * Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -254,8 +255,7 @@ public:
     // But it feels fragile, before doing something like that, better think and talk to people.
     Post& get_mutable_post(State q);
 
-    // TODO: Explain what is returned from this method.
-    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying);
+    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
     const Post & operator[] (State q) const;
@@ -351,8 +351,8 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     Delta delta;
-    Util::NumberPredicate<State> initial{};
-    Util::NumberPredicate<State> final{};
+    Util::SparseSet<State> initial{};
+    Util::SparseSet<State> final{};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -364,8 +364,8 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    explicit Nfa(Delta delta = {}, Util::NumberPredicate<State> initial_states = {},
-                 Util::NumberPredicate<State> final_states = {}, Alphabet* alphabet = nullptr)
+    explicit Nfa(Delta delta = {}, Util::SparseSet<State> initial_states = {},
+                 Util::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
@@ -375,7 +375,7 @@ public:
      */
     explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -453,8 +453,9 @@ public:
 
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
-    Mata::Util::NumberPredicate<Symbol> get_used_symbols_np() const;
+    Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
+    BoolVector get_used_symbols_chv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
@@ -488,8 +489,7 @@ public:
      */
     StateSet get_useful_states_old() const;
 
-    //I just want to return something as constant reference to the thing, without copying anything, how?
-    Util::NumberPredicate<State> get_useful_states() const;
+    BoolVector get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -503,7 +503,7 @@ public:
      */
     void trim_inplace(StateToStateMap* state_map = nullptr);
     void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) { trim_reverting(state_map); }
+    void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.

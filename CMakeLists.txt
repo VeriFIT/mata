@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25.0)
 project(libMATA)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")

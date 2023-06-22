@@ -18,6 +18,7 @@
 // MATA headers
 #include <mata/nfa.hh>
 #include <mata/nfa-algorithms.hh>
+#include <mata/sparse-set.hh>
 
 using namespace Mata::Nfa;
 using namespace Mata::Util;
@@ -90,7 +91,7 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 		// process it
 		for (Symbol symb : alph_symbols) {
 			StateSet succ = aut.post(state, symb);
-			if (are_disjoint(succ, aut.final)) {
+			if (!aut.final.intersects_with(succ)) {
 				if (nullptr != cex) {
 					cex->word.clear();
 					cex->word.push_back(symb);

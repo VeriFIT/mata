@@ -20,7 +20,6 @@
 #include <algorithm>
 #include <cassert>
 
-#include "mata/number-predicate.hh"
 #include "mata/util.hh"
 
 namespace {
@@ -48,16 +47,7 @@ std::string ToString(const T& n) {
 
 namespace Mata::Util {
 
-template <class Number> class NumberPredicate;
 template <class Key> class OrdVector;
-
-template <typename Number>
-bool are_disjoint(OrdVector<Number> lhs, NumberPredicate<Number> rhs) {
-    for (auto q: lhs)
-        if (rhs[q])
-            return false;
-    return true;
-}
 
 template <class T>
 bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs) {
@@ -111,13 +101,14 @@ public:
     OrdVector() : vec_() {}
     explicit OrdVector(const VectorType& vec) : vec_(vec) { Util::sort_and_rmdupl(vec_); }
     explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
+    template <class T>
+    explicit OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); }
     OrdVector(std::initializer_list<Key> list) : vec_(list) { Util::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
     explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
-    explicit OrdVector(const NumberPredicate<Key>& p) : OrdVector(p.get_elements()) {};
     template <class InputIterator>
-    OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
+    explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
 
     OrdVector& operator=(const OrdVector& other) {
         if (&other != this) { vec_ = other.vec_; }

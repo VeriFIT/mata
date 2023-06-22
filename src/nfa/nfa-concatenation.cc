@@ -76,7 +76,7 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // Make result final states.
     for (const auto& rhs_final_state: rhs.final)
     {
-        result.final.add(rhs_result_states_map_internal[rhs_final_state]);
+        result.final.insert(rhs_result_states_map_internal[rhs_final_state]);
     }
 
     // Add rhs transitions to the result.

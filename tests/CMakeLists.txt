@@ -21,7 +21,7 @@ include_directories(../3rdparty/simlib/include)
 
 add_executable(tests
 		ord-vector.cc
-		number-predicate.cc
+		sparse-set.cc
 		synchronized-iterator.cc
 		main.cc
 		alphabet.cc
@@ -36,7 +36,7 @@ add_executable(tests
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
-)
+		)
 
 target_link_libraries(tests libmata re2 simlib cudd)
 
