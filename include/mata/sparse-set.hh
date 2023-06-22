@@ -51,8 +51,8 @@ concept Iterable = requires(T t) {
         static_assert(std::is_unsigned<Number>::value, "SparseSet can only contain unsigned integers");
 
     private:
-        std::vector<Number> dense;    //Dense set of elements
-        std::vector<Number> sparse;    //Map of elements to dense set indices
+        std::vector<Number> dense{};    //Dense set of elements
+        std::vector<Number> sparse{};    //Map of elements to dense set indices
 
         size_t size_ = 0;    //Current size (number of elements)
         size_t domain_size_ = 0;    //Current domain size (maximum value + 1 or more (can be more when maximum is removed))
@@ -103,7 +103,7 @@ concept Iterable = requires(T t) {
                     reserve(val + 1);
 
                 dense[size_] = val;
-                sparse[val] = size_;
+                sparse[val] = static_cast<Number>(size_);
                 ++size_;
             }
 
@@ -124,8 +124,9 @@ concept Iterable = requires(T t) {
 
 // Constructors:
 
-        //basic constructor, you may reserve a domain size
-        SparseSet(Number domain_size = 0): sparse(domain_size, 0), dense(domain_size), size_(0), domain_size_(domain_size) {
+        SparseSet() = default;
+        /// Basic constructor where you may reserve a domain size.
+        explicit SparseSet(Number domain_size): dense(domain_size), sparse(domain_size, 0), size_(0), domain_size_(domain_size) {
             assert(consistent());
         };
 
@@ -164,7 +165,7 @@ concept Iterable = requires(T t) {
 
         SparseSet(const SparseSet<Number>& rhs) = default;
         SparseSet(SparseSet<Number>&& other) noexcept
-                : sparse{ std::move(other.sparse) }, dense{ std::move(other.dense) },
+                : dense{ std::move(other.dense) }, sparse{ std::move(other.sparse) },
                   size_{ other.size_}, domain_size_{other.domain_size_} {
             other.size_ = 0;
             other.domain_size_ = 0;
