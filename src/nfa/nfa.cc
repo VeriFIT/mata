@@ -1297,12 +1297,12 @@ void Nfa::print_to_DOT(std::ostream &output) const {
 
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
-        for (const Move &tran: delta[source]) {
+        for (const Move &move: delta[source]) {
             output << source << " -> {";
-            for (State target: tran.targets) {
+            for (State target: move.targets) {
                 output << target << " ";
             }
-            output << "} [label=" << tran.symbol << "];" << std::endl;
+            output << "} [label=" << move.symbol << "];" << std::endl;
         }
     }
 

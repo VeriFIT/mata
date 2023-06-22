@@ -3000,6 +3000,10 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
 	aut_big.delta.add(7, 'a', 8);
 	aut_big.final = {3};
 
+	std::string aut_big_mata = aut_big.print_to_mata();
+	// for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
 	IntAlphabet int_alph;
-	CHECK(are_equivalent(aut_big, construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big.print_to_mata()))[0], &int_alph)));
+	Nfa aut_big_from_mata = construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+	
+	CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
