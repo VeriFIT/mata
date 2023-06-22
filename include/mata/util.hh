@@ -77,7 +77,15 @@ public:
     BoolVector& operator=(const BoolVector&) = default;
     BoolVector& operator=(BoolVector&&) = default;
 
-    size_t count() const { return std::ranges::count_if(*this, [](const uint8_t val){ return val == 1; }); }
+    size_t count() const {
+        size_t cnt{ 0 };
+        for (const uint8_t value : *this) {
+            if (value == 1) {
+                ++cnt;
+            }
+        }
+        return cnt;
+    }
 
     template<typename T>
     T& get_elements(T& element_set) {
