@@ -975,7 +975,7 @@ TEST_CASE("Concat_inplace performance") {
     concat.delta.add(1, 124, 0);
 
     for (auto i=0;i<1000;i++) {
-        base.concatenate_inplace(concat);
+        base.concatenate(concat);
     }
 }
 

@@ -304,13 +304,15 @@ public:
 
     /**
      * @brief Copy posts of delta and apply a lambda update function on each state from 
-     * targets. IMPORTANT: In order to work properly, the lambda function needs to be 
+     * targets. 
+     * 
+     * IMPORTANT: In order to work properly, the lambda function needs to be 
      * monotonic. 
      * 
      * @param lambda Monotonic lambda function mapping states to different states
      * @return std::vector<Post> Copied posts.
      */
-    std::vector<Post> copy_posts_with(const std::function<State(State)>& lambda) const;
+    std::vector<Post> transform(const std::function<State(State)>& lambda) const;
 
     /**
      * @brief Add transitions to multiple destinations
@@ -319,7 +321,7 @@ public:
      * @param symbol Symbol
      * @param states Set of states to
      */
-    void add_set(State state_from, Symbol symbol, const StateSet& states);
+    void add(const State state_from, const Symbol symbol, const StateSet& states);
 
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.

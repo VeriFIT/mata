@@ -133,8 +133,7 @@ public:
         return ord_vector;
     }
 
-    void insert(iterator itr, const Key& x)
-    {
+    void insert(iterator itr, const Key& x) {
         assert(itr == this->end() || x <= *itr);
         vec_.insert(itr,x);
     }

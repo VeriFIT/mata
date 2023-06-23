@@ -26,13 +26,13 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
 }
 
-void Nfa::concatenate_inplace(const Nfa& aut) {
+Nfa& Nfa::concatenate(const Nfa& aut) {
     size_t n = this->size();
     auto upd_fnc = [&](State st) {
         return st + n;
     };
 
-    std::vector<Post> aut_post_cp = aut.delta.copy_posts_with(upd_fnc);
+    std::vector<Post> aut_post_cp = aut.delta.transform(upd_fnc);
     this->delta.append(aut_post_cp);
 
     // set accepting states
@@ -44,7 +44,6 @@ void Nfa::concatenate_inplace(const Nfa& aut) {
 
     // connect both parts
     for(const State& ini : aut.initial) {
-        State ren_init = upd_fnc(ini);
         const Post& ini_post = aut.delta[ini];
         // is ini state also final?
         bool is_final = aut.final[ini];
@@ -62,6 +61,7 @@ void Nfa::concatenate_inplace(const Nfa& aut) {
         }
     }
     this->final = new_fin;
+    return *this;
 }
 
 Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
