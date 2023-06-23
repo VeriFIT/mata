@@ -5,6 +5,9 @@
 #ifndef RE2_SPARSE_SET_H_
 #define RE2_SPARSE_SET_H_
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+
 // DESCRIPTION
 //
 // SparseSet(m) is a set of integers in [0, m).
@@ -221,4 +224,5 @@ typedef SparseSetT<void> SparseSet;
 
 }  // namespace re2
 
+#pragma clang diagnostic pop
 #endif  // RE2_SPARSE_SET_H_

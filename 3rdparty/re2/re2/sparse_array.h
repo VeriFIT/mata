@@ -5,6 +5,8 @@
 #ifndef RE2_SPARSE_ARRAY_H_
 #define RE2_SPARSE_ARRAY_H_
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
 // DESCRIPTION
 //
 // SparseArray<T>(m) is a map from integers in [0, m) to T values.
@@ -342,4 +344,5 @@ template<typename Value> bool SparseArray<Value>::less(const IndexValue& a,
 
 }  // namespace re2
 
+#pragma clang diagnostic pop
 #endif  // RE2_SPARSE_ARRAY_H_

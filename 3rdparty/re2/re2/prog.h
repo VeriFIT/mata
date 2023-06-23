@@ -5,6 +5,11 @@
 #ifndef RE2_PROG_H_
 #define RE2_PROG_H_
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma clang diagnostic ignored "-Wnested-anon-types"
+#pragma clang diagnostic ignored "-Wsign-conversion"
+
 // Compiled representation of regular expressions.
 // See regexp.h for the Regexp class, which represents a regular
 // expression symbolically.
@@ -273,4 +278,5 @@ class Prog {
 
 }  // namespace re2
 
+#pragma clang diagnostic pop
 #endif  // RE2_PROG_H_
