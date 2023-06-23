@@ -89,8 +89,8 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
     SECTION("Small automaton with depths")
     {
-        aut.initial.add(1);
-        aut.final.add(8);
+        aut.initial.insert(1);
+        aut.final.insert(8);
         aut.delta.add(1, epsilon, 2);
         aut.delta.add(2, 'a', 3);
         aut.delta.add(2, 'b', 4);
@@ -116,8 +116,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
     const std::set<Symbol> epsilons({epsilon}); 
     SECTION("Large automaton") {
         Nfa aut(100);
-        aut.initial.add(1);
-        aut.final.add(11);
+        aut.initial.insert(1);
+        aut.final.insert(11);
         aut.delta.add(1, 'a', 2);
         aut.delta.add(1, 'b', 3);
         aut.delta.add(3, 'c', 4);
@@ -162,8 +162,8 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
 
     SECTION("Correctly make states final and initial") {
         Nfa aut(100);
-        aut.initial.add(0);
-        aut.final.add({4, 6});
+        aut.initial.insert(0);
+        aut.final.insert({4, 6});
         aut.delta.add(0, epsilon, 2);
         aut.delta.add(0, 'a', 1);
         aut.delta.add(1, epsilon, 3);

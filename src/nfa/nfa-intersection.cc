@@ -70,7 +70,7 @@ void create_product_state_and_trans(
         pairs_to_process.insert(intersect_state_pair_to);
 
         if (lhs.final[lhs_state_to] && rhs.final[rhs_state_to]) {
-            product.final.add(intersect_state_to);
+            product.final.insert(intersect_state_to);
         }
     } else {
         intersect_state_to = product_map[intersect_state_pair_to];
@@ -109,9 +109,9 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(const Nfa& lhs, const Nfa& rhs, bool
             product_map[this_and_other_initial_state_pair] = new_intersection_state;
             pairs_to_process.insert(this_and_other_initial_state_pair);
 
-            product.initial.add(new_intersection_state);
+            product.initial.insert(new_intersection_state);
             if (lhs.final[lhs_initial_state] && rhs.final[rhs_initial_state]) {
-                product.final.add(new_intersection_state);
+                product.final.insert(new_intersection_state);
             }
         }
     }

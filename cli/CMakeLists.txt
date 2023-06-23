@@ -3,26 +3,6 @@ set(CMAKE_COLOR_MAKEFILE ON)
 
 project(mata-cli)
 
-# Flags
-set(cxx_compiler_flags
-  -pedantic-errors
-  -Wextra
-  -Wall
-  -Wfloat-equal
-  -fdiagnostics-show-option
-  -std=c++11
-  -Wctor-dtor-privacy
-  -Weffc++
-  -fPIC
-  -fno-strict-aliasing
-  -Woverloaded-virtual
-  -Wold-style-cast
-)
-
-foreach(flag ${cxx_compiler_flags})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach()
-
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
 endif()
@@ -41,3 +21,15 @@ add_executable(mata-code
 )
 
 target_link_libraries(mata-code libmata)
+
+# Add common compile warnings.
+target_compile_options(libmata PRIVATE "$<$<CONFIG:DEBUG>:${COMMON_WARNINGS}>")
+target_compile_options(libmata PRIVATE "$<$<CONFIG:RELEASE>:${COMMON_WARNINGS}>")
+
+# Optionally, also add Clang-specific warnings.
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") # Using regular Clang or AppleClang.
+	target_compile_options(libmata PRIVATE "$<$<CONFIG:DEBUG>:${CLANG_WARNINGS}>")
+	target_compile_options(libmata PRIVATE "$<$<CONFIG:RELEASE>:${CLANG_WARNINGS}>")
+endif()
+
+target_compile_options(libmata PRIVATE "${COMMON_COMPILER_FLAGS}")

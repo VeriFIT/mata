@@ -306,7 +306,7 @@ bool SparseArray<Value>::has_index(int i) const {
     return false;
   }
   // Unsigned comparison avoids checking sparse_[i] < 0.
-  return (uint32_t)sparse_[i] < (uint32_t)size_ &&
+  return static_cast<uint32_t>(sparse_[i]) < static_cast<uint32_t>(size_) &&
          dense_[sparse_[i]].index_ == i;
 }
 

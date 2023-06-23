@@ -54,11 +54,11 @@ namespace Mata::Util {
 template<typename Iterator> class SynchronizedIterator {
 public:
 
-    std::vector<Iterator> positions;
-    std::vector<Iterator> ends;
+    std::vector<Iterator> positions{};
+    std::vector<Iterator> ends{};
 
     /// @param size Number of elements to reserve up-front for positions and ends.
-    explicit SynchronizedIterator(const int size = 0) {
+    explicit SynchronizedIterator(const size_t size = 0) {
         positions.reserve(size);
         ends.reserve(size);
     };
@@ -68,7 +68,7 @@ public:
      * Calling after advance breaks the iterator.
      * Specifies begin and end of one vector, to initialise before the iteration starts.
      */
-    virtual void push_back (const Iterator &begin, const Iterator &end) {
+    virtual void push_back(const Iterator& begin, const Iterator& end) {
         // Btw, I don't know what I am doing with the const & parameter passing,
         // begin is actually incremented in advance ...? But tests do pass ...
         this->positions.emplace_back(begin);
@@ -80,7 +80,7 @@ public:
      * Though they should keep the allocated space.
      * @param size Number of elements to reserve up-front for positions and ends.
      */
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         positions.clear();
         ends.clear();
         if (size > 0) {
@@ -90,8 +90,10 @@ public:
     };
 
     virtual bool advance() = 0;
-    virtual const std::vector<Iterator> get_current() = 0;
-};
+    virtual std::vector<Iterator> get_current() = 0;
+
+    virtual ~SynchronizedIterator() = default;
+}; // class SynchronizedIterator.
 
 
 
@@ -160,28 +162,26 @@ public:
     }
 
     /// Returns the vector of current positions.
-    const std::vector<Iterator> get_current() {
+    std::vector<Iterator> get_current() {
         // How to return so that things don't get copied?
         // Or maybe we should return a copy of positions anyway, to prevent a side effect of advance?
         // Instead of returning a vector, we could also provide iterators through the result.
         return this->positions;
     };
 
-    explicit SynchronizedUniversalIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {};
+    explicit SynchronizedUniversalIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {};
 
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         SynchronizedIterator < Iterator > ::reset(size);
         this->synchronized_at_current_minimum = false;
     };
-};
+}; // class SynchronizedUniversalIterator.
 
 template<typename Iterator>
 class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
 public:
-
-    std::vector<Iterator> currently_synchronized; // Positions that are currently synchronized.
-
-    Iterator next_minimum; // the value we should synchronise on after the first next call of advance().
+    std::vector<Iterator> currently_synchronized{}; // Positions that are currently synchronized.
+    Iterator next_minimum{}; // The value we should synchronise on after the first next call of advance().
 
     bool is_synchronized() { return !currently_synchronized.empty(); }
 
@@ -250,7 +250,7 @@ public:
      * Beware, thy will be ordered differently from how there were input into the iterator.
      * This is due to swapping of the emptied positions with positions at the end.
      */
-    const std::vector<Iterator> get_current() { return this->currently_synchronized; };
+    std::vector<Iterator> get_current() { return this->currently_synchronized; };
 
     void push_back (const Iterator &begin, const Iterator &end) {
 
@@ -271,11 +271,11 @@ public:
         this->ends.emplace_back(end);
     }
 
-    explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {
+    explicit SynchronizedExistentialIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {
         this->currently_synchronized.reserve(size);
     }
 
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         SynchronizedIterator < Iterator > ::reset(size);
         if (size > 0) {
             this->currently_synchronized.reserve(size);

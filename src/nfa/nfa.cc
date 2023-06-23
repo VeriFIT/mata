@@ -18,9 +18,11 @@
 #include <algorithm>
 #include <list>
 #include <unordered_set>
+#include <iterator>
 
 // MATA headers
 #include <mata/nfa.hh>
+#include <mata/sparse-set.hh>
 #include <mata/nfa-algorithms.hh>
 #include <mata/simlib/explicit_lts.hh>
 
@@ -29,10 +31,16 @@ using std::tie;
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
+using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 const std::string Mata::Nfa::TYPE_NFA = "NFA";
+
+const State Limits::min_state;
+const State Limits::max_state;
+const Symbol Limits::min_symbol;
+const Symbol Limits::max_symbol;
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
@@ -86,7 +94,7 @@ namespace {
             const State q_class_state = state_map.at(q);
 
             if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
-                result.initial.add(q_class_state);
+                result.initial.insert(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
@@ -120,7 +128,7 @@ namespace {
                 }
 
                 if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
-                    result.final.add(q_class_state);
+                    result.final.insert(q_class_state);
                 }
             }
         }
@@ -135,7 +143,7 @@ namespace {
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
     StateBoolArray compute_reachability(const Nfa& nfa) {
-        std::vector<State> worklist{ nfa.initial.get_elements()};
+        std::vector<State> worklist{ nfa.initial.begin(),nfa.initial.end() };
 
         StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial)
@@ -243,14 +251,14 @@ namespace {
         {
             if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
             {
-                trimmed_aut.initial.add(original_to_new_states_map.at(old_initial_state));
+                trimmed_aut.initial.insert(original_to_new_states_map.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final)
         {
             if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
             {
-                trimmed_aut.final.add(original_to_new_states_map.at(old_final_state));
+                trimmed_aut.final.insert(original_to_new_states_map.at(old_final_state));
             }
         }
 
@@ -378,7 +386,7 @@ bool Delta::empty() const
 }
 
 Delta::const_iterator::const_iterator(const std::vector<Post>& post_p, bool ise) :
-    post(post_p), current_state(0), is_end(ise)
+    post(post_p), current_state(0), is_end{ ise }
 {
     const size_t post_size = post.size();
     for (size_t i = 0; i < post_size; ++i) {
@@ -438,13 +446,14 @@ Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_itera
 }
 
 bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_iterator& b) {
-    if (a.is_end && b.is_end)
+    if (a.is_end && b.is_end) {
         return true;
-    else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end))
+    } else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end)) {
         return false;
-    else
+    } else {
         return a.current_state == b.current_state && a.post_iterator == b.post_iterator
                && a.targets_position == b.targets_position;
+    }
 }
 
 State Delta::find_max_state() {
@@ -473,32 +482,22 @@ Post& Delta::get_mutable_post(State q) {
     return posts[q];
 }
 
-std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
+void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
+    //TODO: this function seems to be unreadable, should be refactored, maybe into several functions with a clear functionality?
+
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
     size_t move_index{ 0 };
-    posts.erase(
-            std::remove_if(posts.begin(), posts.end(), [&](Post& _post) -> bool {
-                size_t prev{ move_index };
-                ++move_index;
-                return !is_staying[prev];
-            }),
-            posts.end()
+    std::erase_if(posts,
+         [&](Post&) -> bool {
+             size_t prev{ move_index };
+             ++move_index;
+             return !is_staying[prev];
+         }
     );
 
-    //get renaming of current states to new numbers:
-    std::vector<State> renaming(this->find_max_state()+1);
-    size_t i = 0;
-    for (State q:is_staying.get_elements()) {
-        if (q >= renaming.size())
-            break;
-        renaming[q] = i;
-        i++;
-    }
-
-    //this iterates through every post and ever, filters and renames states,
-    //and finally removes moves that became empty from the post.
+    //this iterates through every post and every move, filters and renames states,
+    //and then removes moves that became empty.
     for (State q=0,size=posts.size(); q < size; ++q) {
-        //should we have a function Post::transform(Lambda) for this?
         Post & p = get_mutable_post(q);
         for (auto move = p.begin(); move < p.end(); ++move) {
             move->targets.erase(
@@ -516,9 +515,6 @@ std::vector<State> Delta::defragment(NumberPredicate<State>& is_staying) {
                 p.end()
         );
     }
-
-    //the renaming can be useful somewhere, computed anyway, we can as well return it.
-    return renaming;
 }
 
 const Post& Delta::operator[](State q) const {
@@ -557,8 +553,8 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-//TODO: probably can be removed, trim_reverting faster.
-void Nfa::trim_inplace(StateToStateMap* state_map)
+//TODO: probably can be removed, trim_inplace is faster.
+void Nfa::trim_reverting(StateToStateMap* state_map)
 {
     if (!state_map) {
         StateToStateMap tmp_state_map{};
@@ -569,34 +565,44 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     }
 }
 
-void Nfa::trim_reverting(StateToStateMap* state_map)
+void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
-    static NumberPredicate<State> useful_states(false);
+    BoolVector useful_states{ get_useful_states() };
     useful_states.clear();
     useful_states = get_useful_states();
 #else
-    NumberPredicate<State> useful_states{ get_useful_states() };
+    BoolVector useful_states{ get_useful_states() };
 #endif
 
-    initial.defragment(useful_states);
-    final.defragment(useful_states);
-    //this renaming can be used instead of the state map, it is computed there anyway, so far not used.
-    std::vector<State> renaming = delta.defragment(useful_states);
+    std::vector<State> renaming(useful_states.size());
 
-    // TODO : this is actually ony used in one test, remove state map?
+    State j=0;
+    for(State i = 0; i<useful_states.size(); i++) {
+        if (useful_states[i]) {
+            renaming[i] = j;
+            j++;
+        }
+    }
+
+    delta.defragment(useful_states, renaming);
+
+    auto is_state_useful = [&useful_states](State q){return q < useful_states.size() && useful_states[q];};
+    initial.filter(is_state_useful);
+    final.filter(is_state_useful);
+    auto rename_state = [&renaming](State q){return renaming[q];};
+    initial.rename(rename_state);
+    final.rename(rename_state);
+    initial.truncate();
+    final.truncate();
+
+    // TODO : this is actually only used in one test, remove state map?
     if (state_map) {
         state_map->clear();
-        state_map->reserve(useful_states.domain_size());
-        StateSet us = StateSet(useful_states.get_elements());
-        std::vector<State> usv = us.ToVector();
+        state_map->reserve(useful_states.size());
         for (State q=0;q<useful_states.size();q++)
-            (*state_map)[usv[q]] = q;
-
-        // Attempt to use the renaming for this, did not work ... but should work somehow ...
-        // I think we should just return the renaming in fact, it would need a little more refactoring.
-        //for (State q=0;q<useful_states.size();q++)
-        //    (*state_map)[q] = renaming[q];
+            if (useful_states[q])
+                (*state_map)[q] = renaming[q];
     }
 }
 
@@ -626,14 +632,10 @@ struct StackLevel {
     State state;
     Post::const_iterator post_it;
     Post::const_iterator post_end;
-    StateSet::const_iterator targets_it;
-    StateSet::const_iterator targets_end;
+    StateSet::const_iterator targets_it{};
+    StateSet::const_iterator targets_end{};
 
-    StackLevel(State q, const Delta & delta):
-            state(q),
-            post_it(delta[q].cbegin()),
-            post_end(delta[q].cend())
-    {
+    StackLevel(State q, const Delta & delta) : state(q), post_it(delta[q].cbegin()), post_end(delta[q].cend()) {
         if (post_it != post_end) {
             targets_it = post_it->cbegin();
             targets_end = post_it->cend();
@@ -641,34 +643,30 @@ struct StackLevel {
     };
 };
 
-const NumberPredicate<State> Nfa::get_useful_states() const
+BoolVector Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_
     // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
     static std::vector<StackLevel> stack;
     //tracking elements seems to cost more than it saves, switching it off
-    static NumberPredicate<State> reached(false);
-    static NumberPredicate<State> reached_and_reaching(false);
+    BoolVector reached(size(),false);
+    BoolVector reached_and_reaching(size(),false);
     stack.clear();
     reached.clear();
     reached_and_reaching.clear();
 #else
     std::vector<StackLevel> stack;//the DFS stack
     //tracking elements seems to cost more than it saves, switching it off
-    NumberPredicate<State> reached(size(),false,false); //what has been reached from the initial states
-    NumberPredicate<State> reached_and_reaching(size(),false,false);//what is reaching final states
-
-    //std::vector<bool> reached(size(),false);
-    //std::vector<bool> reached_and_reaching(size(),false);
-    //std::vector<StackLevel> stack;
+    BoolVector reached(size(),false); // Reachable from initial state.
+    BoolVector reached_and_reaching(size(),false); // Reachable from initial state and reaches final state.
 #endif
 
     for (const State q0: initial) {
 
         stack.emplace_back(q0,delta);
-        reached.add(q0);
+        reached[q0]=true;
         if (final[q0])
-            reached_and_reaching.add(q0);
+            reached_and_reaching[q0]=true;
         while (!stack.empty()) {
             StackLevel & level = stack.back();
             //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
@@ -689,18 +687,18 @@ const NumberPredicate<State> Nfa::get_useful_states() const
                 State succ_state = *(level.targets_it);
                 ++level.targets_it;
                 if (final[succ_state])
-                    reached_and_reaching.add(succ_state);
+                    reached_and_reaching[succ_state]=true;
                 if (reached_and_reaching[succ_state])
                 {
                     //A major trick, because of which one DFS is enough for reached as well as reaching.
                     //On touching a state which reaches finals states, everything in the stack below reaches a final state.
                     //An invariant of the stack is that everything below a reaching state is reaching.
                     for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
-                            reached_and_reaching.add(it->state);
+                            reached_and_reaching[it->state]=true;
                     }
                 }
                 if (!reached[succ_state]) {
-                    reached.add(succ_state);
+                    reached[succ_state]=true;
                     stack.emplace_back(succ_state,delta);
                 }
             }
@@ -851,7 +849,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
-            if (aut.final[eps_cl_state]) result.final.add(src_state);
+            if (aut.final[eps_cl_state]) result.final.insert(src_state);
             for (const Move& move : aut.delta[eps_cl_state]) {
                 if (move.symbol == epsilon) continue;
                 // TODO: this could be done more efficiently if we had a better add method
@@ -956,7 +954,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
 
     // adding non-e transitions
     for (const Symbol symbol: symbols) {
-        for (int i = 0; i<sources[symbol].size(); ++i) {
+        for (size_t i{ 0 }; i < sources[symbol].size(); ++i) {
             State tgt_state =sources[symbol][i];
             State src_state =targets[symbol][i];
             Post & src_post = result.delta.get_mutable_post(src_state);
@@ -968,7 +966,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     }
 
     // adding e-transitions
-    for (int i = 0; i<e_sources.size(); ++i) {
+    for (size_t i{ 0 }; i < e_sources.size(); ++i) {
         State tgt_state =e_sources[i];
         State src_state =e_targets[i];
         Post & src_post = result.delta.get_mutable_post(src_state);
@@ -1038,7 +1036,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
 
     //sorting the targets
     for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
-        Post & post = result.delta.get_mutable_post(q);
+        //Post & post = result.delta.get_mutable_post(q);
         //Util::sort_and_rmdupl(post);
         for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
             sort_and_rmdupl(m->targets);
@@ -1074,7 +1072,7 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
     Util::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
-    Util::OrdVector<Symbol> symbs(symbs_ls.cbegin(), symbs_ls.cend());
+    Util::OrdVector<Symbol> symbs(symbs_ls);
 
     // TODO: make a general function for traversal over reachable states that can
     // be shared by other functions?
@@ -1151,6 +1149,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
     return {word, true};
 }
 
+//TODO: this is not efficient
 bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur(aut.initial);
@@ -1161,30 +1160,34 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
         if (cur.empty()) { return false; }
     }
 
-    return !are_disjoint(cur, aut.final);
+    return aut.final.intersects_with(cur);
 }
 
 /// Checks whether the prefix of a string is in the language of an automaton
+// TODO: slow and it should share code with is_in_lang
 bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 {
-    StateSet cur = (StateSet(aut.initial));
+    StateSet cur =  StateSet{ aut.initial };
 
     for (Symbol sym : run.word)
     {
-        if (!are_disjoint(cur, aut.final)) { return true; }
+        if (aut.final.intersects_with(cur)) { return true; }
         cur = aut.post(cur, sym);
         if (cur.empty()) { return false; }
     }
 
-    return !are_disjoint(cur, aut.final);
+    return aut.final.intersects_with(cur);
 }
 
 /// serializes Nfa into a ParsedSection
 Mata::Parser::ParsedSection Mata::Nfa::serialize(
         const Nfa&                aut,
         const SymbolToStringMap*  symbol_map,
-        const StateToStringMap*   state_map)
-{assert(false);}
+        const StateToStringMap*   state_map) {
+    (void)aut; (void)symbol_map; (void)state_map;
+    assert(false && "Unimplemented.");
+    return {};
+}
 
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
@@ -1373,24 +1376,11 @@ TransSequence Nfa::get_trans_from_as_sequence(State state_from) const
     {
         for (State state_to: transition_from_state.targets)
         {
-            trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+            trans_sequence.emplace_back(state_from, transition_from_state.symbol, state_to);
         }
     }
 
     return trans_sequence;
-}
-
-
-size_t Nfa::get_num_of_trans() const
-{
-    size_t num_of_transitions{};
-
-    for (const auto& state_transitions: delta)
-    {
-        ++num_of_transitions;
-    }
-
-    return num_of_transitions;
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
@@ -1464,11 +1454,11 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     }
 
     for (State thisInitialState : lhs.initial) {
-        unionAutomaton.initial.add(thisStateToUnionState[thisInitialState]);
+        unionAutomaton.initial.insert(thisStateToUnionState[thisInitialState]);
     }
 
     for (State thisFinalState : lhs.final) {
-        unionAutomaton.final.add(thisStateToUnionState[thisFinalState]);
+        unionAutomaton.final.insert(thisStateToUnionState[thisFinalState]);
     }
 
     for (State thisState = 0; thisState < size; ++thisState) {
@@ -1569,10 +1559,10 @@ Nfa Mata::Nfa::determinize(
 
     const StateSet S0 =  StateSet(aut.initial);
     const State S0id = result.add_state();
-    result.initial.add(S0id);
+    result.initial.insert(S0id);
 
-    if (!are_disjoint(S0, aut.final)) {
-        result.final.add(S0id);
+    if (aut.final.intersects_with(S0)) {
+        result.final.insert(S0id);
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
@@ -1617,8 +1607,8 @@ Nfa Mata::Nfa::determinize(
             } else {
                 Tid = result.add_state();
                 (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
-                if (!are_disjoint(T, aut.final)) {
-                    result.final.add(Tid);
+                if (aut.final.intersects_with(T)) {
+                    result.final.insert(Tid);
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
@@ -1674,7 +1664,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : it->second)
         {
             State state = get_state_name(str);
-            aut.initial.add(state);
+            aut.initial.insert(state);
         }
     }
 
@@ -1685,7 +1675,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : it->second)
         {
             State state = get_state_name(str);
-            aut.final.add(state);
+            aut.final.insert(state);
         }
     }
 
@@ -1753,7 +1743,7 @@ Nfa Mata::Nfa::construct(
     for (const auto& str : inter_aut.initial_formula.collect_node_names())
     {
         State state = get_state_name(str);
-        aut.initial.add(state);
+        aut.initial.insert(state);
     }
 
     for (const auto& trans : inter_aut.transitions)
@@ -1789,7 +1779,7 @@ Nfa Mata::Nfa::construct(
         // we add all states NOT in final_formula_nodes to final states
         for (const auto &state_name_and_id : *state_map) {
             if (!final_formula_nodes.count(state_name_and_id.first)) {
-                aut.final.add(state_name_and_id.second);
+                aut.final.insert(state_name_and_id.second);
             }
         }
     } else {
@@ -1797,7 +1787,7 @@ Nfa Mata::Nfa::construct(
         for (const auto& str : final_formula_nodes)
         {
             State state = get_state_name(str);
-            aut.final.add(state);
+            aut.final.insert(state);
         }
     }
 
@@ -1911,10 +1901,10 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
 }
 
 // Other versions, maybe an interesting experiment with speed of data structures.
-// returns symbols appearing in Delta, pushes back to vector and then sorts
+// Returns symbols appearing in Delta, pushes back to vector and then sorts
 Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 #ifdef _STATIC_STRUCTURES_
-    static std::vector<Symbol>  symbols{};
+    static std::vector<Symbol> symbols{};
     symbols.clear();
 #else
     std::vector<Symbol>  symbols{};
@@ -1952,22 +1942,22 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-Mata::Util::NumberPredicate<Symbol> Nfa::get_used_symbols_np() const {
+Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static Util::NumberPredicate<Symbol>  symbols(64,false,false);
+    static Util::SparseSet<Symbol>  symbols(64,false);
     symbols.clear();
 #else
-    Util::NumberPredicate<Symbol>  symbols(64,false,false);
+    Util::SparseSet<Symbol>  symbols(64);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
         for (const Move & move: post) {
-            symbols.add(move.symbol);
+            symbols.insert(move.symbol);
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
     return symbols;
 }
 
@@ -1980,6 +1970,26 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
     symbols.clear();
 #else
     std::vector<bool> symbols(64,false);
+#endif
+    //symbols.dont_track_elements();
+    for (State q = 0; q< delta.num_of_states(); ++q) {
+        const Post & post = delta[q];
+        for (const Move & move: post) {
+            reserve_on_insert(symbols,move.symbol);
+            symbols[move.symbol]=true;
+        }
+    }
+    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    return symbols;
+}
+
+BoolVector Nfa::get_used_symbols_chv() const {
+#ifdef _STATIC_STRUCTURES_
+    //static seems to speed things up a little
+    static BoolVector  symbols(64,false);
+    symbols.clear();
+#else
+    BoolVector symbols(64,false);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -2009,17 +2019,17 @@ Symbol Nfa::get_max_symbol() const {
  void Nfa::unify_initial() {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
-    for (const auto& orig_initial_state: initial) {
-        const auto moves{ get_moves_from(orig_initial_state) };
+    for (const State orig_initial_state: initial) {
+        const Post& moves{ get_moves_from(orig_initial_state) };
         for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
             }
         }
-        if (final[orig_initial_state]) { final.add(new_initial_state); }
+        if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
     initial.clear();
-    initial.add(new_initial_state);
+    initial.insert(new_initial_state);
 }
 
 void Nfa::unify_final() {
@@ -2030,16 +2040,17 @@ void Nfa::unify_final() {
         for (const auto& transitions: transitions_to) {
             delta.add(transitions.src, transitions.symb, new_final_state);
         }
-        if (initial[orig_final_state]) { initial.add(new_final_state); }
+        if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
     final.clear();
-    final.add(new_final_state);
+    final.insert(new_final_state);
 }
 
 void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-    size_t nfa_num_of_states{nfa.size() };
+    const size_t nfa_num_of_states{ nfa.size() };
     for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
-        for (const auto state_transitions: nfa.delta) {
+        // TODO: Rewrite to not create 'Trans' instances and iterate over same symbols all the time.
+        for (const Trans& state_transitions: nfa.delta) {
             alphabet.update_next_symbol_value(state_transitions.symb);
             alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
         }
@@ -2077,7 +2088,7 @@ void Nfa::clear_transitions() {
 
 State Nfa::add_state() {
     const size_t num_of_states{ size() };
-    delta.increase_size(num_of_states + 1 );
+    delta.increase_size(num_of_states + 1);
     return num_of_states;
 }
 
@@ -2103,10 +2114,10 @@ void Nfa::clear() {
 }
 
 bool Nfa::is_identical(const Nfa& aut) {
-    if (Util::OrdVector<State>(initial.get_elements()) != Util::OrdVector<State>(aut.initial.get_elements())) {
+    if (Util::OrdVector<State>(initial) != Util::OrdVector<State>(aut.initial)) {
         return false;
     }
-    if (Util::OrdVector<State>(final.get_elements()) != Util::OrdVector<State>(aut.final.get_elements())) {
+    if (Util::OrdVector<State>(final) != Util::OrdVector<State>(aut.final)) {
         return false;
     }
 
@@ -2133,8 +2144,11 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //auto from_set = get_used_symbols_set();
     //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
 
-    //WITH NUMBER PREDICATE (4.857s)
+    //WITH NUMBER PREDICATE (4.857s) (NP removed)
     //return Util::OrdVector(get_used_symbols_np().get_elements());
+
+    //WITH SPARSE SET (haven't tried)
+    //return Util::OrdVector<State>(get_used_symbols_sps());
 
     //WITH BOOL VECTOR (error !!!!!!!):
     //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
@@ -2142,12 +2156,6 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //WITH BOOL VECTOR (1.9s):
     std::vector<bool> bv = get_used_symbols_bv();
     Util::OrdVector<Symbol> ov;
-    //int count = 0;
-    //for(Symbol i = 0;i<bv.size();i++)
-    //    if (bv[i]) {
-    //        count++;
-    //    }
-    //ov.reserve(count);
     for(Symbol i = 0;i<bv.size();i++)
         if (bv[i]) {
             ov.push_back(i);
@@ -2158,6 +2166,17 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     //std::vector<bool> bv = get_used_symbols_bv();
     //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
     //return Util::OrdVector<Symbol>(v);
+
+    //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
+    //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
+    //BoolVector chv = get_used_symbols_chv();
+    //Util::OrdVector<Symbol> ov;
+    //for(Symbol i = 0;i<chv.size();i++)
+    //    if (chv[i]) {
+    //        ov.push_back(i);
+    //    }
+    //return ov;
+
 }
 
 Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
@@ -2224,7 +2243,7 @@ void Move::insert(State s) {
     }
 }
 
-void Move::insert(StateSet states) {
+void Move::insert(const StateSet& states) {
     for (State s : states) {
         insert(s);
     }

@@ -94,14 +94,14 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
         SECTION("Additional initial state with longer words")
         {
-            aut.initial.add(8);
+            aut.initial.insert(8);
             REQUIRE(get_shortest_words(aut) == expected);
         }
 
         SECTION("Change initial state")
         {
             aut.initial.clear();
-            aut.initial.add(8);
+            aut.initial.insert(8);
 
             word.clear();
             word.push_back('b');
@@ -125,11 +125,11 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
 
     SECTION("One-state automaton accepting an empty language")
     {
-        aut.initial.add(0);
+        aut.initial.insert(0);
         REQUIRE(get_shortest_words(aut).empty());
-        aut.final.add(1);
+        aut.final.insert(1);
         REQUIRE(get_shortest_words(aut).empty());
-        aut.final.add(0);
+        aut.final.insert(0);
         REQUIRE(get_shortest_words(aut) == WordSet{Word{}});
     }
 
@@ -189,7 +189,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
     Nfa aut('q' + 1);
     FILL_WITH_AUT_B(aut);
     aut.initial.clear();
-    aut.initial.add(8);
+    aut.initial.insert(8);
     Word word{};
     word.push_back('b');
     word.push_back('b');
@@ -327,7 +327,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
         SECTION("Simple word with alphabet") {
             std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
             Mata::OnTheFlyAlphabet alphabet{};
-            for (unsigned long symbol{ 0 }; symbol < word.size(); ++symbol) {
+            for (Mata::Symbol symbol{ 0 }; symbol < word.size(); ++symbol) {
                 alphabet.add_new_symbol(word[symbol], symbol);
             }
             auto nfa{ Mata::Strings::create_single_word_nfa(word) };

@@ -191,8 +191,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
     Nfa a{6};
-    a.initial.add(0);
-    a.final.add({1, 4, 5});
+    a.initial.insert(0);
+    a.final.insert({1, 4, 5});
     a.delta.add(0, EPSILON, 1);
     a.delta.add(1, 'a', 1);
     a.delta.add(1, 'b', 1);
@@ -202,8 +202,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     a.delta.add(3, 'a', 5);
 
     Nfa b{10};
-    b.initial.add(0);
-    b.final.add({2, 4, 8, 7});
+    b.initial.insert(0);
+    b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
     b.delta.add(2, 'a', 4);
@@ -290,8 +290,8 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
 TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
 {
     Nfa a{6};
-    a.initial.add(0);
-    a.final.add({1, 4, 5});
+    a.initial.insert(0);
+    a.final.insert({1, 4, 5});
     a.delta.add(0, EPSILON, 1);
     a.delta.add(1, 'a', 1);
     a.delta.add(1, 'b', 1);
@@ -301,8 +301,8 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
     a.delta.add(3, 'a', 5);
 
     Nfa b{10};
-    b.initial.add(0);
-    b.final.add({2, 4, 8, 7});
+    b.initial.insert(0);
+    b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
     b.delta.add(2, 'a', 4);
@@ -321,8 +321,8 @@ TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection
 
 TEST_CASE("Move semantics", "[.profiling][std::move]") {
     Nfa b{10};
-    b.initial.add(0);
-    b.final.add({2, 4, 8, 7});
+    b.initial.insert(0);
+    b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
     b.delta.add(2, 'a', 4);
@@ -336,7 +336,7 @@ TEST_CASE("Move semantics", "[.profiling][std::move]") {
 
     for (size_t i{ 0 }; i < 1'000'000; ++i) {
         Nfa a{ std::move(b) };
-        a.initial.add(1);
+        a.initial.insert(1);
         b = std::move(a);
     }
 }

@@ -92,8 +92,8 @@ TEST_CASE("Mata::Parser basic_parsing")
 
     SECTION("Additional parenthesis") {
         Nfa expected{2};
-        expected.initial.add(0);
-        expected.final.add(1);
+        expected.initial.insert(0);
+        expected.final.insert(1);
         expected.delta.add(0, 'a', 0);
         expected.delta.add(0, 'b', 1);
 
@@ -970,8 +970,8 @@ TEST_CASE("Mata::Parser basic_parsing")
 
     SECTION("Star iteration") {
         Nfa expected{2};
-        expected.initial.add(0);
-        expected.final.add({0, 1});
+        expected.initial.insert(0);
+        expected.final.insert({0, 1});
         expected.delta.add(0, 'c', 0);
         expected.delta.add(0, 'a', 1);
         expected.delta.add(1, 'a', 1);
@@ -1076,8 +1076,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1100,8 +1100,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1124,8 +1124,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1148,8 +1148,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1172,8 +1172,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1196,8 +1196,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);
@@ -1220,8 +1220,8 @@ TEST_CASE("Mata::Parser basic_parsing")
             CHECK(is_in_lang(aut, Word{'c', 'a', 'a'}));
             CHECK(is_in_lang(aut, Word{'c', 'c', 'a', 'a'}));
             Nfa expected_plus_iteration{ 3 };
-            expected_plus_iteration.initial.add(0);
-            expected_plus_iteration.final.add(2);
+            expected_plus_iteration.initial.insert(0);
+            expected_plus_iteration.final.insert(2);
             expected_plus_iteration.delta.add(0, 'c', 1);
             expected_plus_iteration.delta.add(1, 'c', 1);
             expected_plus_iteration.delta.add(1, 'a', 2);

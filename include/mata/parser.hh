@@ -47,9 +47,6 @@ struct ParsedSection {
 	/// Is the section empty?
 	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
 
-	/// Output stream operator
-	friend std::ostream& operator<<(std::ostream& os, const ParsedSection& parsec);
-
 	/// Equality operator
 	bool operator==(const ParsedSection& rhs) const;
 	bool operator!=(const ParsedSection& rhs) const { return !(*this == rhs); }
@@ -80,5 +77,10 @@ ParsedSection parse_mf_section(const std::string& input, bool keepQuotes = false
 void init();
 
 } // namespace Mata::Parser.
+
+namespace std {
+    /// Output stream operator
+    std::ostream& operator<<(std::ostream& os, const Mata::Parser::ParsedSection& parsec);
+}
 
 #endif /* MATA_PARSER_HH_ */

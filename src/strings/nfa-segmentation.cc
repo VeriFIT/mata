@@ -135,7 +135,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     assert(this->epsilons.find(transition.symb) != this->epsilons.end());
     assert(segments_raw[current_depth].delta.contains(transition.src, transition.symb, transition.tgt));
 
-    segments_raw[current_depth].final.add(transition.src);
+    segments_raw[current_depth].final.insert(transition.src);
     // we need to remove this transition so that the language of the current segment does not accept too much
     segments_raw[current_depth].delta.remove(transition);
 }
@@ -149,7 +149,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
-    segments_raw[next_depth].initial.add(transition.tgt);
+    segments_raw[next_depth].initial.insert(transition.tgt);
 }
 
 const AutSequence& SegNfa::Segmentation::get_segments()

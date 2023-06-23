@@ -7,7 +7,7 @@ from libcpp.memory cimport shared_ptr
 from libcpp.string cimport string
 from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
-from libc.stdint cimport uintptr_t
+from libc.stdint cimport uintptr_t, uint8_t
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -50,35 +50,36 @@ cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void get_quotient_projection(ivector&)
 
 
-cdef extern from "mata/number-predicate.hh" namespace "Mata::Util":
-    cdef cppclass CNumberPredicate "Mata::Util::NumberPredicate" [T]:
-        vector[bool] predicate
-        vector[T] elements
-        bool elements_are_exact
-        bool tracking_elements
+cdef extern from "mata/util.hh" namespace "Mata":
+    cdef cppclass CBoolVector "Mata::BoolVector":
+        CBoolVector()
+        CBoolVector(size_t, bool)
+        CBoolVector(vector[uint8_t])
 
-        CNumberPredicate(bool)
-        CNumberPredicate(vector[T], bool)
+        size_t count()
 
-        void prune_elements()
-        void update_elements()
-        void compute_elements()
 
-        void add(T)
-        void remove(T)
-        void track_elements()
-        void dont_track_elements()
-        bool operator[](T)
-        T size()
-        void clear()
-        void reserve(T)
-        void flip(T)
-        void complement(T)
-        vector[T] get_elements()
-        bool are_disjoint(CNumberPredicate[T])
+
+cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
+    cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
+        vector[T] dense
+        vector[T] sparse
+        size_t size
+        size_t domain_size
+
+        CSparseSet()
+        CSparseSet(T)
+        CSparseSet(vector[T])
+
+        size_t domain_size()
         bool empty()
-        T domain_size()
-        void truncate_domain()
+        void clear()
+        void reserve(size_t)
+        bool contains(T)
+        void insert(T)
+        void erase(T)
+        bool consistent()
+        bool operator[](T)
 
         cppclass const_iterator:
             const T operator *()
@@ -95,6 +96,7 @@ cdef extern from "mata/number-predicate.hh" namespace "Mata::Util":
             bint operator !=(iterator)
         iterator begin()
         iterator end()
+
 
 cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
     cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
@@ -241,8 +243,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
             void refresh_trans()
 
         # Public Attributes
-        CNumberPredicate[State] initial
-        CNumberPredicate[State] final
+        CSparseSet[State] initial
+        CSparseSet[State] final
         CDelta delta
         umap[string, void*] attributes
         CAlphabet* alphabet
@@ -281,7 +283,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         void trim(StateToStateMap*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
-        CNumberPredicate[State] get_useful_states()
+        CBoolVector get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
@@ -313,6 +315,7 @@ cdef extern from "mata/nfa-algorithms.hh" namespace "Mata::Nfa::Algorithms":
     cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
 
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
+    cdef void get_elements(StateSet*, CBoolVector)
     cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void uni(CNfa*, CNfa&, CNfa&)
     cdef void intersection(CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
@@ -333,7 +336,7 @@ cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
     cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
         CSegmentation(CNfa&, cset[Symbol]) except +
 
-        ctypedef unsigned EpsilonDepth
+        ctypedef size_t EpsilonDepth
         ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
 
         EpsilonDepthTransitions get_epsilon_depths()

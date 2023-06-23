@@ -4,32 +4,6 @@ set(CMAKE_COLOR_MAKEFILE ON)
 # Export compile commands to be used with YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# Flags
-set(cxx_compiler_flags
-  -Wextra
-  -Wall
-  -Wfloat-equal
-  -fms-extensions
-  -fdiagnostics-show-option
-  -Wctor-dtor-privacy
-  -Weffc++
-  -fPIC
-  -fno-strict-aliasing
-  -Woverloaded-virtual
-  -Wold-style-cast
-)
-
-foreach(flag ${cxx_compiler_flags})
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach()
-
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	# using regular Clang or AppleClang
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pedantic-errors")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wgnu-anonymous-struct")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wnested-anon-types")
-endif()
-
 # if DEBUG, also test coverage
 if(CMAKE_BUILD_TYPE MATCHES "Coverage")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
@@ -47,7 +21,7 @@ include_directories(../3rdparty/simlib/include)
 
 add_executable(tests
 		ord-vector.cc
-		number-predicate.cc
+		sparse-set.cc
 		synchronized-iterator.cc
 		main.cc
 		alphabet.cc
@@ -62,9 +36,22 @@ add_executable(tests
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
-)
+		)
 
 target_link_libraries(tests libmata re2 simlib cudd)
+
+# Add common compile warnings.
+target_compile_options(tests PRIVATE "$<$<CONFIG:DEBUG>:${COMMON_WARNINGS}>")
+target_compile_options(tests PRIVATE "$<$<CONFIG:RELEASE>:${COMMON_WARNINGS}>")
+
+# Optionally, also add Clang-specific warnings.
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang") # Using regular Clang or AppleClang.
+	target_compile_options(tests PRIVATE "$<$<CONFIG:DEBUG>:${CLANG_WARNINGS}>")
+    target_compile_options(tests PRIVATE "$<$<CONFIG:RELEASE>:${CLANG_WARNINGS}>")
+endif()
+
+target_compile_options(tests PRIVATE "${COMMON_COMPILER_FLAGS}")
+
 include(Catch)
 catch_discover_tests(tests)
 add_custom_command(

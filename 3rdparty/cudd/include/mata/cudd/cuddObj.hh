@@ -93,6 +93,8 @@ protected:
     DD(Cudd const & manager, DdNode *ddNode);
     DD(const DD &from);
     ~DD();
+
+    DD& operator=(const DD& other);
 public:
     // This operator should be declared explicit, but there are still too many
     // compilers out there that do not support this C++11 feature.

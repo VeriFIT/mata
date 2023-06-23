@@ -133,11 +133,11 @@ TEST_CASE("Mata::Nfa::get_used_symbols_set speed, harder", "[.profiling]") {
     }
 }
 
-TEST_CASE("Mata::Nfa::get_used_symbols_np speed, harder", "[.profiling]") {
+TEST_CASE("Mata::Nfa::get_used_symbols_sps speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols_np();
+        A.get_used_symbols_sps();
     }
 }
 

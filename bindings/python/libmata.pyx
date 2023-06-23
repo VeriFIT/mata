@@ -5,6 +5,7 @@ from libcpp.list cimport list as clist
 from libcpp.set cimport set as cset
 from libcpp.utility cimport pair
 from libcpp.memory cimport shared_ptr, make_shared
+from libc.stdint cimport uint8_t
 from cython.operator import dereference, postincrement as postinc, preincrement as preinc
 from libcpp.unordered_map cimport unordered_map as umap
 
@@ -210,25 +211,23 @@ cdef class Nfa:
 
     @property
     def initial_states(self):
-        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
-        return [initial_state for initial_state in initial_states]
+        return [initial_state for initial_state in self.thisptr.get().initial]
 
     @initial_states.setter
     def initial_states(self, vector[State] value):
         self.thisptr.get().initial.clear()
         for state in value:
-            self.thisptr.get().initial.add(state)
+            self.thisptr.get().initial.insert(state)
 
     @property
     def final_states(self):
-        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
-        return [final_state for final_state in final_states]
+        return [final_state for final_state in self.thisptr.get().final]
 
     @final_states.setter
     def final_states(self, vector[State] value):
         self.thisptr.get().final.clear()
         for state in value:
-            self.thisptr.get().final.add(state)
+            self.thisptr.get().final.insert(state)
 
     def is_state(self, state):
         """Tests if state is in the automaton
@@ -257,7 +256,7 @@ cdef class Nfa:
 
         :param State state: State to be made initial.
         """
-        self.thisptr.get().initial.add(state)
+        self.thisptr.get().initial.insert(state)
 
     def make_initial_states(self, vector[State] states):
         """Makes specified states from the automaton initial.
@@ -265,7 +264,7 @@ cdef class Nfa:
         :param list states: List of states to be made initial.
         """
         for state in states:
-            self.thisptr.get().initial.add(state)
+            self.thisptr.get().initial.insert(state)
 
     def has_initial_state(self, State st):
         """Tests if automaton contains given state
@@ -280,7 +279,7 @@ cdef class Nfa:
 
         :param State state: State to be removed from initial states.
         """
-        self.thisptr.get().initial.remove(state)
+        self.thisptr.get().initial.erase(state)
 
     def clear_initial(self):
         """Clears initial state set of the automaton."""
@@ -291,7 +290,7 @@ cdef class Nfa:
 
         :param State state: State to be made final.
         """
-        self.thisptr.get().final.add(state)
+        self.thisptr.get().final.insert(state)
 
     def make_final_states(self, vector[State] states):
         """Makes specified states from the automaton final.
@@ -299,7 +298,7 @@ cdef class Nfa:
         :param vector[State] states: List of states to be made final.
         """
         for state in states:
-            self.thisptr.get().final.add(state)
+            self.thisptr.get().final.insert(state)
 
     def has_final_state(self, State st):
         """Tests if automaton contains given state
@@ -314,7 +313,7 @@ cdef class Nfa:
 
         :param State state: State to be removed from final states.
         """
-        self.thisptr.get().final.remove(state)
+        self.thisptr.get().final.erase(state)
 
     def clear_final(self):
         """Clears final state set of the automaton."""
@@ -466,8 +465,10 @@ cdef class Nfa:
 
         :return: A set of useful states.
         """
-        cdef vector[State] return_value = self.thisptr.get().get_useful_states().get_elements()
-        return {state for state in return_value}
+        cdef CBoolVector useful_states_bool_vec = self.thisptr.get().get_useful_states()
+        cdef StateSet useful_states
+        mata.get_elements(&useful_states, useful_states_bool_vec)
+        return { state for state in useful_states }
 
     def get_reachable_states(self):
         """Get reachable states.
@@ -530,10 +531,8 @@ cdef class Nfa:
 
         :return: string representation of the automaton
         """
-        cdef vector[State] initial_states = self.thisptr.get().initial.get_elements()
-        cdef vector[State] final_states = self.thisptr.get().final.get_elements()
-        result = "initial_states: {}\n".format([s for s in initial_states])
-        result += "final_states: {}\n".format([s for s in final_states])
+        result = "initial_states: {}\n".format([s for s in self.thisptr.get().initial])
+        result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
             symbol = trans.symb if self.thisptr.get().alphabet == NULL \
@@ -1210,8 +1209,7 @@ cdef class Nfa:
         :param Nfa lhs: tested automaton
         :return: true if automaton accepts epsilon
         """
-        cdef vector[State] initial_states = lhs.thisptr.get().initial.get_elements()
-        for state in initial_states:
+        for state in lhs.thisptr.get().initial:
             if lhs.has_final_state(state):
                 return True
         return False
@@ -1660,7 +1658,7 @@ cdef class Segmentation:
 
         :return: Map of depths to lists of ε-transitions.
         """
-        cdef umap[unsigned, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
+        cdef umap[size_t, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
         result = {}
         for epsilon_depth_pair in c_epsilon_transitions:
             for trans in epsilon_depth_pair.second:
@@ -1688,6 +1686,13 @@ cdef class Segmentation:
             segments.append(segment)
 
         return segments
+
+
+def get_elements_from_bool_vec(bool_vec: list[int]):
+    cdef CBoolVector c_bool_vec = CBoolVector(bool_vec)
+    cdef StateSet c_states
+    mata.get_elements(&c_states, c_bool_vec)
+    return { state for state in c_states }
 
 
 def plot(

@@ -417,7 +417,7 @@ TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
 		REQUIRE(ref->size() == 0);
 
 		// check what remains
-		std::string remains = stream.str().substr(stream.tellg());
+		std::string remains = stream.str().substr(static_cast<size_t>(stream.tellg()));
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
 } // parse_mf_section correct }}}
@@ -925,7 +925,7 @@ TEST_CASE("parsing automata to intermediate representation")
         parsed = parse_mf(file);
         try {
             Mata::IntermediateAut::parse_from_mf(parsed);
-        } catch (std::runtime_error e) {
+        } catch (const std::runtime_error& e) {
             exception = true;
         }
 

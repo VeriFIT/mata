@@ -37,6 +37,7 @@
 #include "mata/ord-vector.hh"
 #include "mata/inter-aut.hh"
 #include "mata/synchronized-iterator.hh"
+#include "mata/sparse-set.hh"
 
 /**
  * Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -59,8 +60,8 @@ template<typename T> using Set = Mata::Util::OrdVector<T>;
 
 using WordSet = std::set<std::vector<Symbol>>;
 struct Run {
-    std::vector<Symbol> word; ///< A finite-length word.
-    std::vector<State> path; ///< A finite-length path through automaton.
+    std::vector<Symbol> word{}; ///< A finite-length word.
+    std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
 using StringToStateMap = std::unordered_map<std::string, State>;
@@ -82,10 +83,11 @@ using StringMap = std::unordered_map<std::string, std::string>;
  * maybe something else is needed for the more complex maps*/
 
 struct Limits {
-    static const State maxState = std::numeric_limits<State>::max();
-    static const State minState = std::numeric_limits<State>::min();
-    static const Symbol maxSymbol = std::numeric_limits<Symbol>::max();
-    static const Symbol minSymbol = std::numeric_limits<Symbol>::min();
+public:
+    static const State min_state = std::numeric_limits<State>::min();
+    static const State max_state = std::numeric_limits<State>::max();
+    static const Symbol min_symbol = std::numeric_limits<Symbol>::min();
+    static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
 /*TODO: Ideally remove functions using this struct as a parameter.
@@ -173,7 +175,7 @@ public:
     size_t size() const { return targets.size(); }
 
     void insert(State s);
-    void insert(StateSet states);
+    void insert(const StateSet& states);
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
@@ -182,7 +184,7 @@ public:
 
     void remove(State s) { targets.remove(s); }
 
-    const std::vector<State>::iterator find(State s) const { targets.find(s); }
+    std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
 };
 
@@ -199,7 +201,6 @@ public:
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
-    using super::find;
     using super::insert;
     using super::reserve;
     using super::remove;
@@ -211,6 +212,10 @@ public:
     // is adding non-const version as well ok?
     using super::back;
     using super::filter;
+
+    using super::find;
+    iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
+    const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 }; // struct Post.
 
 /**
@@ -245,14 +250,12 @@ public:
     // Namely, it allocates the post of the state if it was not allocated yet. This in turn may cause that
     // the entire post data structure is re-allocated, iterators to it get invalidated ...
     // Use the constant [] operator below if possible.
-    // Or, to prevent the side effect form happening, one might want to make sure that posts of all states in the automaton
+    // Or, to prevent the side effect from happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
     Post& get_mutable_post(State q);
 
-    // TODO: why do we have the code of all these methods in the header file? Should we move it out?
-    // TODO: Explain what is returned from this method.
-    std::vector<State> defragment(Util::NumberPredicate<State> & is_staying);
+    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
     const Post & operator[] (State q) const;
@@ -291,11 +294,17 @@ public:
     private:
         const std::vector<Post>& post;
         size_t current_state;
-        Post::const_iterator post_iterator;
-        StateSet::const_iterator targets_position;
+        Post::const_iterator post_iterator{};
+        StateSet::const_iterator targets_position{};
         bool is_end;
 
     public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = int;
+        using difference_type = int;
+        using pointer = int*;
+        using reference = int&;
+
         explicit const_iterator(const std::vector<Post>& post_p, bool ise = false);
 
         const_iterator(const std::vector<Post>& post_p, size_t as,
@@ -326,8 +335,10 @@ private:
     State find_max_state();
 }; // struct Delta.
 
+bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
+
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
-constexpr Symbol EPSILON = Limits::maxSymbol;
+constexpr Symbol EPSILON = Limits::max_symbol;
 
 /**
  * A struct representing an NFA.
@@ -340,8 +351,8 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     Delta delta;
-    Util::NumberPredicate<State> initial{};
-    Util::NumberPredicate<State> final{};
+    Util::SparseSet<State> initial{};
+    Util::SparseSet<State> final{};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -353,10 +364,10 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    explicit Nfa(Delta delta = {}, Util::NumberPredicate<State> initial_states = {},
-                 Util::NumberPredicate<State> final_states = {}, Alphabet* alphabet = nullptr)
+    explicit Nfa(Delta delta = {}, Util::SparseSet<State> initial_states = {},
+                 Util::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
-        
+
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      *
@@ -364,7 +375,7 @@ public:
      */
     explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -442,8 +453,9 @@ public:
 
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
-    Mata::Util::NumberPredicate<Symbol> get_used_symbols_np() const;
+    Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
+    BoolVector get_used_symbols_chv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.
@@ -477,8 +489,7 @@ public:
      */
     StateSet get_useful_states_old() const;
 
-    //I just want to return something as constant reference to the thing, without copying anything, how?
-    const Util::NumberPredicate<State> get_useful_states() const;
+    BoolVector get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -492,7 +503,7 @@ public:
      */
     void trim_inplace(StateToStateMap* state_map = nullptr);
     void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) { trim_reverting(state_map); }
+    void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -511,7 +522,12 @@ public:
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
 
-    size_t get_num_of_trans() const; ///< Number of transitions; contains linear time complexity.
+    /**
+     * @brief Get a number of transitions in the whole automaton.
+     *
+     * The operation has constant time complexity.
+     */
+    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.begin(), delta.end())); }
 
     /**
      * Get transitions as a sequence of @c Trans.

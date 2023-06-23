@@ -28,9 +28,10 @@ private: // data types
     struct OptionalBdd {
         enum class TYPE {NOTHING_E, BDD_E};
 
-        TYPE type;
-        BDD val;
+        TYPE type{};
+        BDD val{};
 
+        OptionalBdd() = default;
         explicit OptionalBdd(TYPE t) : type(t) {}
         explicit OptionalBdd(const BDD& bdd) : type(TYPE::BDD_E), val(bdd) {}
         OptionalBdd(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
@@ -43,11 +44,11 @@ private: // data types
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
-    Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-    std::unordered_map<std::string, BDD> symbol_to_bddvar;
-    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar;
-    std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states;
-    std::unordered_set<BDD> bdds; // bdds created from transitions
+    Cudd bdd_mng{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+    std::unordered_map<std::string, BDD> symbol_to_bddvar{};
+    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar{};
+    std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
+    std::unordered_set<BDD> bdds{}; // bdds created from transitions
 
 private:
     void trans_to_bdd_nfa(const IntermediateAut& aut);
@@ -57,17 +58,17 @@ public:
     /**
      * Takes a set of BDDs and build a minterm tree over it.
      * The leaves of BDDs, which are minterms of input set, are returned
-     * @param bdds BDDs for which minterms are computed
+     * @param source_bdds BDDs for which minterms are computed
      * @return Computed minterms
      */
-    std::unordered_set<BDD> compute_minterms(const std::unordered_set<BDD>& bdds);
+    std::unordered_set<BDD> compute_minterms(const std::unordered_set<BDD>& source_bdds);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    const BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+    BDD graph_to_bdd_nfa(const FormulaGraph& graph);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
@@ -76,7 +77,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    const OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
+    OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
 
     /**
      * Method mintermizes given automaton which has bitvector alphabet.

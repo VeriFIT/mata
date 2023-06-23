@@ -186,7 +186,7 @@ public:
         return m_symbols.difference(symbols);
     }
 
-    std::string reverse_translate_symbol(const Symbol symbol) const override;
+    std::string reverse_translate_symbol(Symbol symbol) const override;
 
 private:
     EnumAlphabet& operator=(const EnumAlphabet& rhs);
@@ -283,7 +283,7 @@ public:
     Util::OrdVector<Symbol> get_alphabet_symbols() const override;
     Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override;
 
-    std::string reverse_translate_symbol(const Symbol symbol) const override;
+    std::string reverse_translate_symbol(Symbol symbol) const override;
 
 private:
     OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
@@ -314,7 +314,7 @@ public:
 
     Symbol translate_symb(const std::string& str) override;
 
-    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const;
+    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
