@@ -32,8 +32,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
         return st + n;
     };
 
-    std::vector<Post> aut_post_cp = aut.delta.transform(upd_fnc);
-    this->delta.append(aut_post_cp);
+    this->delta.append(aut.delta.transform(upd_fnc));
 
     // set accepting states
     Util::NumberPredicate<State> new_fin{};
