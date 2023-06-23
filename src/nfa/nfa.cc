@@ -292,7 +292,7 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
     std::string result = "(" + std::to_string(trans.src) + ", " +
                          std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
     return os << result;
-} // operator<<(ostream, Trans) }}}
+}
 
 size_t Delta::size() const
 {
@@ -1284,31 +1284,70 @@ Nfa Mata::Nfa::minimize(
 	return algo(aut);
 }
 
-void Nfa::print_to_DOT(std::ostream &outputStream) const {
-    outputStream << "digraph finiteAutomaton {" << std::endl
+std::string Nfa::print_to_DOT() const {
+    std::stringstream output;
+    print_to_DOT(output);
+    return output.str();
+}
+
+void Nfa::print_to_DOT(std::ostream &output) const {
+    output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
-    for (State finalState: final) {
-        outputStream << finalState << " [shape=doublecircle];" << std::endl;
+    for (State final_state: final) {
+        output << final_state << " [shape=doublecircle];" << std::endl;
     }
 
     const size_t delta_size = delta.num_of_states();
-    for (State s = 0; s != delta_size; ++s) {
-        for (const Move &t: delta[s]) {
-            outputStream << s << " -> {";
-            for (State sTo: t.targets) {
-                outputStream << sTo << " ";
+    for (State source = 0; source != delta_size; ++source) {
+        for (const Move &move: delta[source]) {
+            output << source << " -> {";
+            for (State target: move.targets) {
+                output << target << " ";
             }
-            outputStream << "} [label=" << t.symbol << "];" << std::endl;
+            output << "} [label=" << move.symbol << "];" << std::endl;
         }
     }
 
-    outputStream << "node [shape=none, label=\"\"];" << std::endl;
-    for (State initialState: initial) {
-        outputStream << "i" << initialState << " -> " << initialState << ";" << std::endl;
+    output << "node [shape=none, label=\"\"];" << std::endl;
+    for (State init_state: initial) {
+        output << "i" << init_state << " -> " << init_state << ";" << std::endl;
     }
 
-    outputStream << "}" << std::endl;
+    output << "}" << std::endl;
+}
+
+std::string Nfa::print_to_mata() const {
+    std::stringstream output;
+    print_to_mata(output);
+    return output.str();
+}
+
+void Nfa::print_to_mata(std::ostream &output) const {
+    output << "@NFA-explicit" << std::endl
+           << "%Alphabet-auto" << std::endl;
+           // TODO should be this, but we cannot parse %Alphabet-numbers yet
+           //<< "%Alphabet-numbers" << std::endl;
+
+    if (!initial.empty()) {
+        output << "%Initial";
+        for (State init_state: initial) {
+            output << " q" << init_state;
+        }
+        output << std::endl;
+    }
+
+    if (!final.empty()) {
+        output << "%Final";
+        for (State final_state: final) {
+            output << " q" << final_state;
+        }
+        output << std::endl;
+    }
+
+    for (Trans trans : delta) {
+        output << "q" << trans.src << " " << trans.symb << " q" << trans.tgt << std::endl;
+    }
 }
 
 TransSequence Nfa::get_trans_as_sequence() const
@@ -1855,17 +1894,9 @@ bool Nfa::const_iterator::operator==(const Nfa::const_iterator& rhs) const {
     if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
     return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
 }
-// operator++ }}}
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
-    os << "{ NFA: " << std::to_string(serialize(nfa));
-    if (nfa.alphabet != nullptr) {
-        os << "|alphabet: " << *(nfa.alphabet);
-    }
-    // TODO: If the default implementation for state_dict is implemented, consider printing the state dictionary with
-    //  std::to_string(<state_dict_object>);
-
-    os << " }";
+    nfa.print_to_mata(os);
     return os;
 }
 
