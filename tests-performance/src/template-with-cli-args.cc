@@ -10,7 +10,6 @@
 #include <fstream>
 #include <chrono>
 #include <string>
-#include <cstring>
 
 using namespace Mata::Nfa;
 

@@ -21,6 +21,9 @@
 #include "util/utf.h"
 #include "re2/pod_array.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 namespace re2 {
 
 // Constructor.  Allocates vectors as appropriate for operator.
@@ -778,3 +781,4 @@ CharClass* CharClassBuilder::GetCharClass() {
 }
 
 }  // namespace re2
+#pragma GCC diagnostic pop

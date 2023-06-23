@@ -38,6 +38,9 @@
 #include "unicode/utypes.h"
 #endif
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 namespace re2 {
 
 // Controls the maximum repeat count permitted by the parser.
@@ -2474,3 +2477,4 @@ Regexp* Regexp::Parse(const StringPiece& s, ParseFlags global_flags,
 }
 
 }  // namespace re2
+#pragma GCC diagnostic pop

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.0)
+cmake_minimum_required(VERSION 3.0.0)
 project(libMATA)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -104,8 +104,8 @@ message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 ##############################################################################
 
 # Include CTest so that sophisticated testing can be done now
-#include(CTest)
-#enable_testing()
+include(CTest)
+enable_testing()
 
 # if(CMAKE_COMPILER_IS_GNUCXX)
 #    include(CodeCoverage)
@@ -119,9 +119,9 @@ message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 # Process subdirectories
 add_subdirectory(src)
 add_subdirectory(cli)
-add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL SYSTEM)
-add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL SYSTEM)
-add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL SYSTEM)
+add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
+add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
+add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 add_subdirectory(tests)
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)

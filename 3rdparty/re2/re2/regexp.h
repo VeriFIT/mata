@@ -5,6 +5,12 @@
 #ifndef RE2_REGEXP_H_
 #define RE2_REGEXP_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma GCC diagnostic ignored "-Wnested-anon-types"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 // --- SPONSORED LINK --------------------------------------------------
 // If you want to use this library for regular expression matching,
 // you should use re2/re2.h, which provides a class RE2 that
@@ -86,7 +92,6 @@
 // form accessible to clients, so that client code can analyze the
 // parsed regular expressions.
 
-#include <stddef.h>
 #include <stdint.h>
 #include <map>
 #include <set>
@@ -596,4 +601,5 @@ inline Regexp::ParseFlags operator~(Regexp::ParseFlags a) {
 
 }  // namespace re2
 
+#pragma GCC diagnostic pop
 #endif  // RE2_REGEXP_H_

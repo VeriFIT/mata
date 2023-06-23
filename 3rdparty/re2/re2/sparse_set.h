@@ -5,6 +5,10 @@
 #ifndef RE2_SPARSE_SET_H_
 #define RE2_SPARSE_SET_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 // DESCRIPTION
 //
 // SparseSet(m) is a set of integers in [0, m).
@@ -221,4 +225,5 @@ typedef SparseSetT<void> SparseSet;
 
 }  // namespace re2
 
+#pragma GCC diagnostic pop
 #endif  // RE2_SPARSE_SET_H_

@@ -18,10 +18,11 @@
 // NOTE: AFA implementation is in an unmaintained state at the moment.
 // We hide warnings from the AFA implementation until we rewrite the whole AFA module from scratch.
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#pragma clang diagnostic ignored "-Wreturn-type"
-#pragma clang diagnostic ignored "-Wstring-conversion"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wreturn-type"
+#pragma GCC diagnostic ignored "-Wstring-conversion"
 
 #include <algorithm>
 #include <list>
@@ -1198,4 +1199,4 @@ namespace std {
     }
 }
 
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop

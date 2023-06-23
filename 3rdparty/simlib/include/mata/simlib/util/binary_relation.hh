@@ -11,6 +11,9 @@
 #ifndef _SIMLIB_BINARY_RELATION_HH_
 #define _SIMLIB_BINARY_RELATION_HH_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 #include <mata/simlib/util/convert.hh>
 #include <mata/simlib/util/simlib.hh>
 #include <mata/simlib/util/transl_weak.hh>
@@ -914,5 +917,7 @@ public:   // methods
 		}
 	}
 };
+
+#pragma GCC diagnostic pop
 
 #endif

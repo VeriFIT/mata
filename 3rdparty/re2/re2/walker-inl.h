@@ -5,6 +5,9 @@
 #ifndef RE2_WALKER_INL_H_
 #define RE2_WALKER_INL_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 // Helper class for traversing Regexps without recursion.
 // Clients should declare their own subclasses that override
 // the PreVisit and PostVisit methods, which are called before
@@ -244,4 +247,5 @@ template<typename T> T Regexp::Walker<T>::WalkExponential(Regexp* re, T top_arg,
 
 }  // namespace re2
 
+#pragma GCC diagnostic pop
 #endif  // RE2_WALKER_INL_H_
