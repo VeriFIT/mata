@@ -590,7 +590,33 @@ public:
      */
     void get_one_letter_aut(Nfa& result) const;
 
-    void print_to_DOT(std::ostream &outputStream) const;
+    /**
+     * @brief Prints the automaton in DOT format
+     * 
+     * @return automaton in DOT format
+     */
+    std::string print_to_DOT() const;
+    /**
+     * @brief Prints the automaton to the output stream in DOT format
+     */
+    void print_to_DOT(std::ostream &output) const;
+    /**
+     * @brief Prints the automaton in mata format
+     *
+     * If you need to parse the automaton again, use IntAlphabet in construct()
+     * 
+     * @return automaton in mata format
+     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     */
+    std::string print_to_mata() const;
+    /**
+     * @brief Prints the automaton to the output stream in mata format
+     *
+     * If you need to parse the automaton again, use IntAlphabet in construct()
+     * 
+     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     */
+    void print_to_mata(std::ostream &output) const;
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
