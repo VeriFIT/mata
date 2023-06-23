@@ -634,6 +634,85 @@ TEST_CASE("Bug with epsilon transitions") {
     CHECK(are_equivalent(result, expected));
 }
 
+TEST_CASE("Mata::Nfa::concatenate() inplace") {
+
+
+    SECTION("Empty automaton without states") {
+        Nfa lhs{};
+        Nfa rhs{};
+        Nfa result{};
+        result = lhs.concatenate(rhs);
+
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
+        CHECK(result.delta.empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("One empty automaton without states") {
+        Nfa lhs{};
+        Nfa rhs{};
+        Nfa result{};
+        rhs.add_state();
+        result = lhs.concatenate(rhs);
+
+        CHECK(result.initial.empty());
+        CHECK(result.final.empty());
+        CHECK(result.delta.empty());
+        CHECK(is_lang_empty(result));
+    }
+
+    SECTION("Automaton A concatenate automaton B") {
+        Nfa lhs{};
+        Nfa rhs{};
+        Nfa result{};
+        lhs.add_state(10);
+        FILL_WITH_AUT_A(lhs);
+        rhs.add_state(14);
+        FILL_WITH_AUT_B(rhs);
+
+        result = lhs.concatenate(rhs);
+
+        auto shortest_words{ get_shortest_words(result) };
+        CHECK(shortest_words.size() == 4);
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'b', 'a', 'b', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'a', 'a' }) != shortest_words.end());
+        CHECK(shortest_words.find(std::vector<Symbol>{ 'a', 'a', 'b', 'a' }) != shortest_words.end());
+    }
+
+    SECTION("Sample automata") {
+        Nfa lhs{};
+        Nfa rhs{};
+        Nfa result{};
+        lhs.add_state();
+        lhs.initial.add(0);
+        lhs.final.add(0);
+        lhs.delta.add(0, 58, 0);
+        lhs.delta.add(0, 65, 0);
+        lhs.delta.add(0, 102, 0);
+        lhs.delta.add(0, 112, 0);
+        lhs.delta.add(0, 115, 0);
+        lhs.delta.add(0, 116, 0);
+
+        rhs.add_state(5);
+        rhs.final.add({0, 5});
+        rhs.initial.add(5);
+        rhs.delta.add(1, 112, 0);
+        rhs.delta.add(2, 116, 1);
+        rhs.delta.add(3, 102, 2);
+        rhs.delta.add(4, 115, 3);
+        rhs.delta.add(5, 102, 2);
+        rhs.delta.add(5, 112, 0);
+        rhs.delta.add(5, 115, 3);
+        rhs.delta.add(5, 116, 1);
+
+        result = lhs.concatenate(rhs);
+        CHECK(!is_lang_empty(result));
+        // TODO: Add more checks.
+    }
+}
+
 TEST_CASE("Concat_inplace performance") {
     Nfa base;
     base.initial.add(0);
