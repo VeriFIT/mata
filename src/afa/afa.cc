@@ -14,6 +14,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  */
+
+// NOTE: AFA implementation is in an unmaintained state at the moment.
+// We hide warnings from the AFA implementation until we rewrite the whole AFA module from scratch.
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-parameter"
 #pragma clang diagnostic ignored "-Wreturn-type"
