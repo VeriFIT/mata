@@ -201,6 +201,10 @@ public:
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
+    Post(const Post&) = default;
+    Post(Post&&) = default;
+    Post& operator=(const Post&) = default;
+    Post& operator=(Post&&) = default;
     using super::insert;
     using super::reserve;
     using super::remove;
@@ -592,7 +596,7 @@ public:
 
     /**
      * @brief Prints the automaton in DOT format
-     * 
+     *
      * @return automaton in DOT format
      */
     std::string print_to_DOT() const;
@@ -604,7 +608,7 @@ public:
      * @brief Prints the automaton in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
-     * 
+     *
      * @return automaton in mata format
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
@@ -613,7 +617,7 @@ public:
      * @brief Prints the automaton to the output stream in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
-     * 
+     *
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     void print_to_mata(std::ostream &output) const;
