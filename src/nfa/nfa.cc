@@ -348,7 +348,7 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
     } else if (state_transitions.back().symbol < symbol) {
         state_transitions.insert({ symbol, states });
     } else {
-        const auto symbol_transitions{ state_transitions.find(Move{ symbol }) };
+        const auto symbol_transitions{ state_transitions.find(symbol) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbolOnTransition already used on transitions from state_from.
             symbol_transitions->insert(states);

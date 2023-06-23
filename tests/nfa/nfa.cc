@@ -113,7 +113,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
 		REQUIRE(a.delta.contains(2, 'b', 2));
 		REQUIRE(!a.delta.contains(0, 'b', 0));
 
-		a.delta.add(0, 'b', {0});
+		a.delta.add(0, 'b', StateSet({0}));
 		REQUIRE(a.delta.contains(0, 'b', 0));
 	}
 
