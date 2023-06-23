@@ -58,7 +58,7 @@ public:
     std::vector<Iterator> ends{};
 
     /// @param size Number of elements to reserve up-front for positions and ends.
-    explicit SynchronizedIterator(const int size = 0) {
+    explicit SynchronizedIterator(const size_t size = 0) {
         positions.reserve(size);
         ends.reserve(size);
     };
@@ -80,7 +80,7 @@ public:
      * Though they should keep the allocated space.
      * @param size Number of elements to reserve up-front for positions and ends.
      */
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         positions.clear();
         ends.clear();
         if (size > 0) {
@@ -169,9 +169,9 @@ public:
         return this->positions;
     };
 
-    explicit SynchronizedUniversalIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {};
+    explicit SynchronizedUniversalIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {};
 
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         SynchronizedIterator < Iterator > ::reset(size);
         this->synchronized_at_current_minimum = false;
     };
@@ -271,11 +271,11 @@ public:
         this->ends.emplace_back(end);
     }
 
-    explicit SynchronizedExistentialIterator(const int size=0) : SynchronizedIterator<Iterator>(size) {
+    explicit SynchronizedExistentialIterator(const size_t size=0) : SynchronizedIterator<Iterator>(size) {
         this->currently_synchronized.reserve(size);
     }
 
-    void reset(const int size = 0) {
+    void reset(const size_t size = 0) {
         SynchronizedIterator < Iterator > ::reset(size);
         if (size > 0) {
             this->currently_synchronized.reserve(size);

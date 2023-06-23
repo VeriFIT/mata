@@ -580,7 +580,7 @@ void filter(Vector & vec, F && is_staying) {
 
         // remove duplicates
         auto it = std::unique(vec.begin(), vec.end());
-        vec.reserve(it - vec.begin());
+        vec.reserve(static_cast<size_t>(it - vec.begin()));
     }
 }
 }

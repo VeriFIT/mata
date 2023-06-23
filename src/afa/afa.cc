@@ -15,6 +15,14 @@
  * GNU General Public License for more details.
  */
 
+// NOTE: AFA implementation is in an unmaintained state at the moment.
+// We hide warnings from the AFA implementation until we rewrite the whole AFA module from scratch.
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wreturn-type"
+#pragma clang diagnostic ignored "-Wstring-conversion"
+
 #include <algorithm>
 #include <list>
 #include <unordered_set>
@@ -1189,3 +1197,5 @@ namespace std {
         return accum;
     }
 }
+
+#pragma clang diagnostic pop
