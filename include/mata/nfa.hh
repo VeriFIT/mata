@@ -559,6 +559,11 @@ public:
     void remove_epsilon(Symbol epsilon = EPSILON);
 
     /**
+     * @brief In-place concatenation.
+     */
+    Mata::Nfa::Nfa& concatenate(const Mata::Nfa::Nfa& aut);
+
+    /**
      * @brief Get a number of transitions in the whole automaton.
      *
      * The operation has constant time complexity.

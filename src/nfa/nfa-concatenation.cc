@@ -35,10 +35,10 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     this->delta.append(aut.delta.transform(upd_fnc));
 
     // set accepting states
-    Util::NumberPredicate<State> new_fin{};
+    Util::SparseSet<State> new_fin{};
     new_fin.reserve(n+aut.size());
     for(const State& aut_fin : aut.final) {
-        new_fin.add(upd_fnc(aut_fin));
+        new_fin.insert(upd_fnc(aut_fin));
     }
 
     // connect both parts
@@ -48,7 +48,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
         bool is_final = aut.final[ini];
         for(const State& fin : this->final) {
             if(is_final) {
-                new_fin.add(fin);
+                new_fin.insert(fin);
             }
             for(const Move& ini_mv : ini_post) {
                 // TODO: this should be done efficiently in a delta method

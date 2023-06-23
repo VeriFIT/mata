@@ -686,8 +686,8 @@ TEST_CASE("Mata::Nfa::concatenate() inplace") {
         Nfa rhs{};
         Nfa result{};
         lhs.add_state();
-        lhs.initial.add(0);
-        lhs.final.add(0);
+        lhs.initial.insert(0);
+        lhs.final.insert(0);
         lhs.delta.add(0, 58, 0);
         lhs.delta.add(0, 65, 0);
         lhs.delta.add(0, 102, 0);
@@ -696,8 +696,8 @@ TEST_CASE("Mata::Nfa::concatenate() inplace") {
         lhs.delta.add(0, 116, 0);
 
         rhs.add_state(5);
-        rhs.final.add({0, 5});
-        rhs.initial.add(5);
+        rhs.final.insert({0, 5});
+        rhs.initial.insert(5);
         rhs.delta.add(1, 112, 0);
         rhs.delta.add(2, 116, 1);
         rhs.delta.add(3, 102, 2);
@@ -715,8 +715,8 @@ TEST_CASE("Mata::Nfa::concatenate() inplace") {
 
 TEST_CASE("Concat_inplace performance") {
     Nfa base;
-    base.initial.add(0);
-    base.final.add(4);
+    base.initial.insert(0);
+    base.final.insert(4);
     base.delta.add(0, 45, 1);
     base.delta.add(0, 46, 1);
     base.delta.add(0, 48, 1);
@@ -983,9 +983,9 @@ TEST_CASE("Concat_inplace performance") {
     base.delta.add(3, 124, 4);
 
     Nfa concat;
-    concat.initial.add(1);
-    concat.final.add(0);
-    concat.final.add(1);
+    concat.initial.insert(1);
+    concat.final.insert(0);
+    concat.final.insert(1);
     concat.delta.add(1, 45, 0);
     concat.delta.add(1, 46, 0);
     concat.delta.add(1, 48, 0);
