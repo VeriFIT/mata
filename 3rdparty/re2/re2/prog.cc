@@ -24,6 +24,9 @@
 #include "util/strutil.h"
 #include "re2/bitmap256.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 namespace re2 {
 
 // Constructors per Inst opcode
@@ -996,3 +999,4 @@ static int FindLSBSet(uint32_t n) {
 #endif
 
 }  // namespace re2
+#pragma GCC diagnostic pop

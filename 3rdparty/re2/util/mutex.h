@@ -5,6 +5,9 @@
 #ifndef UTIL_MUTEX_H_
 #define UTIL_MUTEX_H_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 /*
  * A simple mutex wrapper, supporting locks and read-write locks.
  * You should assume the locks are *not* re-entrant.
@@ -112,4 +115,5 @@ class MutexLock {
 
 }  // namespace re2
 
+#pragma GCC diagnostic pop
 #endif  // UTIL_MUTEX_H_

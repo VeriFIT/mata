@@ -21,6 +21,9 @@
 #include "re2/regexp.h"
 #include "re2/walker-inl.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+
 namespace re2 {
 
 // List of pointers to Inst* that need to be filled in (patched).
@@ -1185,3 +1188,4 @@ Frag Compiler::DotStar() {
 }
 
 }  // namespace re2
+#pragma GCC diagnostic pop

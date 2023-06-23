@@ -5,8 +5,9 @@
 #ifndef RE2_SPARSE_SET_H_
 #define RE2_SPARSE_SET_H_
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 // DESCRIPTION
 //
@@ -224,5 +225,5 @@ typedef SparseSetT<void> SparseSet;
 
 }  // namespace re2
 
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 #endif  // RE2_SPARSE_SET_H_

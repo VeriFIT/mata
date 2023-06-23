@@ -5,10 +5,11 @@
 #ifndef RE2_REGEXP_H_
 #define RE2_REGEXP_H_
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
-#pragma clang diagnostic ignored "-Wnested-anon-types"
-#pragma clang diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wgnu-anonymous-struct"
+#pragma GCC diagnostic ignored "-Wnested-anon-types"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
 
 // --- SPONSORED LINK --------------------------------------------------
 // If you want to use this library for regular expression matching,
@@ -600,5 +601,5 @@ inline Regexp::ParseFlags operator~(Regexp::ParseFlags a) {
 
 }  // namespace re2
 
-#pragma clang diagnostic pop
+#pragma GCC diagnostic pop
 #endif  // RE2_REGEXP_H_
