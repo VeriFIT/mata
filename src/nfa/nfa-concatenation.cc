@@ -43,7 +43,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 
     // connect both parts
     for(const State& ini : aut.initial) {
-        const Post& ini_post = aut.delta[ini];
+        const Post& ini_post = this->delta[upd_fnc(ini)];
         // is ini state also final?
         bool is_final = aut.final[ini];
         for(const State& fin : this->final) {
@@ -54,7 +54,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
                 // TODO: this should be done efficiently in a delta method
                 // TODO: in fact it is not efficient for now
                 for(const State& dest : ini_mv.targets) {
-                    this->delta.add(fin, ini_mv.symbol, upd_fnc(dest));
+                    this->delta.add(fin, ini_mv.symbol, dest);
                 }
             }
         }
