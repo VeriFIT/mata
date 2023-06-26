@@ -35,11 +35,11 @@
 # the build directory
 build/
 Testing/
+
 # documentation
 doc/api/
 doc/xml/
 doc/_build
-
 
 coverage.info
 cov_html
@@ -50,9 +50,15 @@ VERSION
 .vscode/
 .idea/
 .venv
+.cache/*
 
 # Python binding related
 bindings/python/**/*.cpp
 .ipynb_checkpoints/
-__pycache__/
+**/__pycache__/
 bindings/python/.coverage
+bindings/python/dist
+bindings/python/libmata.egg-info
+bindings/python/libmata.cpp
+bindings/python/test.dot
+bindings/python/test.dot.pdf
