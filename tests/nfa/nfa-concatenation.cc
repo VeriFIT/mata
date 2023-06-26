@@ -713,7 +713,7 @@ TEST_CASE("Mata::Nfa::concatenate() inplace") {
     }
 }
 
-TEST_CASE("Concat_inplace performance") {
+TEST_CASE("Concat_inplace performance", "[.profiling]") {
     Nfa base;
     base.initial.insert(0);
     base.final.insert(4);
@@ -1057,4 +1057,3 @@ TEST_CASE("Concat_inplace performance") {
         base.concatenate(concat);
     }
 }
-
