@@ -50,10 +50,10 @@ set(COMMON_WARNINGS
         -Wunused-parameter
         -Wsign-compare
         -Wunused-parameter
-        #-Wpedantic
+        -Wpedantic
         #-pedantic-errors
         -Wconversion
-        #-Wsign-conversion
+        -Wsign-conversion
         -Wreturn-type
         )
 # Clang-specific warnings compiler flags.
