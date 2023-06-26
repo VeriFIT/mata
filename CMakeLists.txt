@@ -64,6 +64,13 @@ set(CLANG_WARNINGS
         -Wno-system-headers
         )
 
+# Set whether to treat warnings as errors.
+option(WERROR "WERROR" OFF)
+message("-- Treating warnings as errors: ${WERROR}")
+if (WERROR)
+    set(COMMON_WARNINGS "${COMMON_WARNINGS}" -Werror)
+endif ()
+
 ##############################################################################
 #                                DEPENDENCIES
 ##############################################################################

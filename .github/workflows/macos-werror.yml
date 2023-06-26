@@ -1,4 +1,4 @@
-name: MacOS (build-&-test)
+name: MacOS (build-werror)
 
 on:
   push:
@@ -18,6 +18,4 @@ jobs:
       - name: Building MacOS dependencies
         run: brew install lcov gcovr automake
       - name: Compile the static and shared libraries
-        run: make release
-      - name: Test the library
-        run: make test
+        run: make release-werror
