@@ -1,4 +1,4 @@
-name: Ubuntu (build-werror)
+name: Warnings (build-macos-werror)
 
 on:
   push:
@@ -12,10 +12,10 @@ on:
 
 jobs:
   setup:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Building Unix dependencies
-        run: sudo apt-get install -y build-essential lcov gcovr xdg-utils
+      - name: Building MacOS dependencies
+        run: brew install lcov gcovr automake
       - name: Compile the static and shared libraries
         run: make release-werror
