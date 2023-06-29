@@ -70,15 +70,15 @@ jobs:
           path: ./base_warnings
           key: warnings-base-${{ runner.os }}-${{ github.sha }}
 
-      - name: Create comparison diff file
-        run: diff base_warnings new_warnings  | grep "^> *" | sed "s/^> //g" > comparison
-
       - name: Print base warnings
         run: cat base_warnings
       - name: Print new warnings
         run: cat new_warnings
-      - name: Print comparison
-        run: cat comparison
+
+      - name: Create comparison diff file
+        run: |
+          diff base_warnings new_warnings  | grep "^> *" | sed "s/^> //g" > comparison
+          cat comparison
 
       - name: Count number of warnings
         run: |
