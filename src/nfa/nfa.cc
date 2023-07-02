@@ -320,12 +320,43 @@ void Delta::add(State state_from, Symbol symbol, State state_to) {
     } else {
         const auto symbol_transitions{ state_transitions.find(Move{ symbol }) };
         if (symbol_transitions != state_transitions.end()) {
-            // Add transition with symbolOnTransition already used on transitions from stateFrom.
+            // Add transition with symbol already used on transitions from state_from.
             symbol_transitions->insert(state_to);
         } else {
-            // Add transition to a new Move struct with symbolOnTransition yet unused on transitions from stateFrom.
+            // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
             const Move new_symbol_transitions{ symbol, state_to };
             state_transitions.insert(new_symbol_transitions);
+        }
+    }
+}
+
+void Delta::add(const State state_from, const Symbol symbol, const StateSet& states) {
+    if(states.empty()) {
+        return;
+    }
+
+    const State max_state{ std::max(state_from, states.back()) };
+    if (max_state >= posts.size()) {
+        reserve_on_insert(posts, max_state + 1);
+        posts.resize(max_state + 1);
+    }
+
+    Post& state_transitions{ posts[state_from] };
+
+    if (state_transitions.empty()) {
+        state_transitions.insert({ symbol, states });
+    } else if (state_transitions.back().symbol < symbol) {
+        state_transitions.insert({ symbol, states });
+    } else {
+        const auto symbol_transitions{ state_transitions.find(symbol) };
+        if (symbol_transitions != state_transitions.end()) {
+            // Add transition with symbolOnTransition already used on transitions from state_from.
+            symbol_transitions->insert(states);
+
+        } else {
+            // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
+            // Move new_symbol_transitions{ symbol, states };
+            state_transitions.insert(Move{symbol, states});
         }
     }
 }
@@ -470,6 +501,25 @@ State Delta::find_max_state() {
         src++;
     }
     return max;
+}
+
+std::vector<Post> Delta::transform(const std::function<State(State)>& lambda) const {
+    std::vector<Post> cp_post_vector;
+    cp_post_vector.reserve(num_of_states());
+    for(const Post& act_post: this->posts) {
+        Post cp_post;
+        cp_post.reserve(act_post.size());
+        for(const Move& mv : act_post) {
+            StateSet cp_dest;
+            cp_dest.reserve(mv.size());
+            for(const State& state : mv.targets) {
+                cp_dest.push_back(std::move(lambda(state)));
+            }
+            cp_post.push_back(std::move(Move(mv.symbol, cp_dest)));
+        }
+        cp_post_vector.emplace_back(cp_post);
+    }
+    return cp_post_vector;
 }
 
 Post& Delta::get_mutable_post(State q) {
@@ -2238,8 +2288,15 @@ Move& Move::operator=(Move&& rhs) noexcept {
 }
 
 void Move::insert(State s) {
-    if (targets.find(s) == targets.end()) {
-        targets.insert(s);
+    if(targets.empty() || targets.back() < s) {
+        targets.push_back(s);
+        return;
+    }
+    // Find the place where to put the element (if not present).
+    // insert to OrdVector without the searching of a proper position inside insert(const Key&x).
+    auto it = std::lower_bound(targets.begin(), targets.end(), s);
+    if (it == targets.end() || *it != s) {
+        targets.insert(it, s);
     }
 }
 

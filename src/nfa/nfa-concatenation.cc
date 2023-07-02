@@ -26,6 +26,43 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
     return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
 }
 
+Nfa& Nfa::concatenate(const Nfa& aut) {
+    size_t n = this->size();
+    auto upd_fnc = [&](State st) {
+        return st + n;
+    };
+
+    this->delta.append(aut.delta.transform(upd_fnc));
+
+    // set accepting states
+    Util::SparseSet<State> new_fin{};
+    new_fin.reserve(n+aut.size());
+    for(const State& aut_fin : aut.final) {
+        new_fin.insert(upd_fnc(aut_fin));
+    }
+
+    // connect both parts
+    for(const State& ini : aut.initial) {
+        const Post& ini_post = this->delta[upd_fnc(ini)];
+        // is ini state also final?
+        bool is_final = aut.final[ini];
+        for(const State& fin : this->final) {
+            if(is_final) {
+                new_fin.insert(fin);
+            }
+            for(const Move& ini_mv : ini_post) {
+                // TODO: this should be done efficiently in a delta method
+                // TODO: in fact it is not efficient for now
+                for(const State& dest : ini_mv.targets) {
+                    this->delta.add(fin, ini_mv.symbol, dest);
+                }
+            }
+        }
+    }
+    this->final = new_fin;
+    return *this;
+}
+
 Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
                 StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
     // Compute concatenation of given automata.

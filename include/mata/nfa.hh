@@ -292,6 +292,38 @@ public:
     bool empty() const;
 
     /**
+     * @brief Append post vector to the delta.
+     * 
+     * @param post_vector Vector of posts to be appended.
+     */
+    void append(const std::vector<Post>& post_vector) {
+        for(const Post& pst : post_vector) {
+            this->posts.push_back(pst);
+        }
+    }
+
+    /**
+     * @brief Copy posts of delta and apply a lambda update function on each state from 
+     * targets. 
+     * 
+     * IMPORTANT: In order to work properly, the lambda function needs to be 
+     * monotonic. 
+     * 
+     * @param lambda Monotonic lambda function mapping states to different states
+     * @return std::vector<Post> Copied posts.
+     */
+    std::vector<Post> transform(const std::function<State(State)>& lambda) const;
+
+    /**
+     * @brief Add transitions to multiple destinations
+     * 
+     * @param state_from From
+     * @param symbol Symbol
+     * @param states Set of states to
+     */
+    void add(const State state_from, const Symbol symbol, const StateSet& states);
+
+    /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
     struct const_iterator {
@@ -525,6 +557,11 @@ public:
      * Remove epsilon transitions from the automaton.
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
+
+    /**
+     * @brief In-place concatenation.
+     */
+    Mata::Nfa::Nfa& concatenate(const Mata::Nfa::Nfa& aut);
 
     /**
      * @brief Get a number of transitions in the whole automaton.

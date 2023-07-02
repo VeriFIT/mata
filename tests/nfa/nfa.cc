@@ -104,6 +104,41 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
 		REQUIRE(!a.delta.contains(1, 'b', 2));
 		REQUIRE(!a.delta.contains(2, 'a', 1));
 	}
+
+	SECTION("Adding multiple transitions")
+	{
+		a.delta.add(2, 'b', {2,1,0});
+		REQUIRE(a.delta.contains(2, 'b', 0));
+		REQUIRE(a.delta.contains(2, 'b', 1));
+		REQUIRE(a.delta.contains(2, 'b', 2));
+		REQUIRE(!a.delta.contains(0, 'b', 0));
+
+		a.delta.add(0, 'b', StateSet({0}));
+		REQUIRE(a.delta.contains(0, 'b', 0));
+	}
+
+} // }}}
+
+TEST_CASE("Mata::Nfa::Delta.transform/append")
+{ // {{{
+	Nfa a(3);
+	a.delta.add(1, 'a', 1);
+	a.delta.add(2, 'b', {2,1,0});
+
+	SECTION("transform")
+	{
+		auto upd_fnc = [&](State st) {
+			return st + 5;
+		};
+		std::vector<Post> posts = a.delta.transform(upd_fnc);
+		a.delta.append(posts);
+
+		REQUIRE(a.delta.contains(4, 'a', 6));
+		REQUIRE(a.delta.contains(5, 'b', 7));
+		REQUIRE(a.delta.contains(5, 'b', 5));
+		REQUIRE(a.delta.contains(5, 'b', 6));
+	}	
+
 } // }}}
 
 TEST_CASE("Mata::Nfa::Nfa iteration")
