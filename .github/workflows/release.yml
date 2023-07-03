@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout latest version
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           ref: devel
 
@@ -146,3 +146,46 @@ jobs:
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
+
+  setup-ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Building Unix dependencies
+        run: sudo apt-get install -y build-essential lcov gcovr xdg-utils
+
+  # Build and test warnings.
+  setup-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Building MacOS dependencies
+        run: brew install lcov gcovr automake
+
+  compile-base:
+    needs: [ setup-ubuntu, setup-macos ]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+      - name: Compile base version of the static and shared libraries
+        run: make release 2>base_warnings
+      - name: Cache file with warnings
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-warnings
+        with:
+          path: ./base_warnings
+          key: warnings-base-${{ runner.os }}-${{ github.sha }}
+      - name: Print base warnings
+        run: cat base_warnings
+      - name: Count number of warnings
+        run: |
+          number_of_warnings=`cat base_warnings | grep "warning:" | wc -l`
+          echo $number_of_warnings
+          if [ $number_of_warnings -gt 0 ]; then
+            exit 1
+          fi
