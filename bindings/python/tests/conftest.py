@@ -3,7 +3,7 @@
 import os
 import shutil
 import pytest
-import libmata as mata
+import libmata.nfa as mata
 
 __author__ = 'Tomas Fiedor'
 
