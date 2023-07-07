@@ -461,7 +461,7 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
-const Delta::const_iterator Delta::const_iterator::operator++(int) {
+Delta::const_iterator Delta::const_iterator::operator++(int) {
     const const_iterator tmp = *this;
     ++(*this);
     return tmp;
