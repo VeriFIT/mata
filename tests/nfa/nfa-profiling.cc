@@ -3,8 +3,8 @@
 #include "../3rdparty/catch.hpp"
 #include "nfa-util.hh"
 
-#include "mata/nfa.hh"
-#include "mata/re2parser.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/parser/re2parser.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Parser;
@@ -143,4 +143,3 @@ TEST_CASE("Mata::Nfa::get_used_symbols_sps speed, harder", "[.profiling]") {
 
 /////////////////////////////
 /////////////////////////////
-

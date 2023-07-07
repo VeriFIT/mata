@@ -1,8 +1,8 @@
 // example6.cc - mintermization of automaton
 
-#include <mata/inter-aut.hh>
-#include <mata/mintermization.hh>
-#include <mata/nfa.hh>
+#include "mata/parser/inter-aut.hh"
+#include "mata/parser/mintermization.hh"
+#include "mata/nfa/nfa.hh"
 #include <iostream>
 #include <fstream>
 

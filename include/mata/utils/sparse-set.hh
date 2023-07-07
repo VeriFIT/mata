@@ -24,7 +24,7 @@
 #include <vector>
 #include <type_traits>
 
-#include "mata/ord-vector.hh"
+#include "ord-vector.hh"
 
 namespace Mata::Util {
 

@@ -4,9 +4,9 @@
 
 #include "catch.hpp"
 
-#include "mata/nfa.hh"
-#include "mata/nfa-strings.hh"
-#include "mata/re2parser.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/strings.hh"
+#include "mata/parser/re2parser.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;

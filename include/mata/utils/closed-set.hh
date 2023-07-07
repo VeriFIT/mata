@@ -66,8 +66,8 @@
 
 #include <cassert>
 
-#include "mata/util.hh"
-#include "mata/ord-vector.hh"
+#include "util.hh"
+#include "ord-vector.hh"
 
 namespace Mata {
 

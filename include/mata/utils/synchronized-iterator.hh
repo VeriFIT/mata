@@ -16,7 +16,7 @@
 #ifndef MATA_SYNCHRONIZED_ITERATOR_HH
 #define MATA_SYNCHRONIZED_ITERATOR_HH
 
-#include "mata/ord-vector.hh"
+#include "ord-vector.hh"
 
 namespace Mata::Util {
 

@@ -27,7 +27,7 @@
 #include <utility>
 #include <vector>
 
-#include "mata/parser.hh"
+#include "parser.hh"
 
 namespace Mata {
 

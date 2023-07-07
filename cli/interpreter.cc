@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#include <mata/parser.hh>
+#include "mata/parser/parser.hh"
 
 int interpret_input(std::istream& is)
 {

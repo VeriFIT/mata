@@ -6,7 +6,8 @@
 #define LIBMATA_NUMBER_PREDICATE_HH
 
 #include <vector>
-#include <mata/ord-vector.hh>
+
+#include "ord-vector.hh"
 
 namespace Mata::Util {
 

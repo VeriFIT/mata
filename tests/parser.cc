@@ -16,11 +16,10 @@
  */
 
 #include "catch.hpp"
-#include "mata/inter-aut.hh"
+#include "mata/parser/inter-aut.hh"
 
-#include "mata/parser.hh"
-#include "mata/util.hh"
-#include "mata/nfa.hh"
+#include "mata/parser/parser.hh"
+#include "mata/utils/util.hh"
 
 using namespace Mata::Parser;
 using namespace Mata::Util;

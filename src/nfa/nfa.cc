@@ -21,9 +21,9 @@
 #include <iterator>
 
 // MATA headers
-#include <mata/nfa.hh>
-#include <mata/sparse-set.hh>
-#include <mata/nfa-algorithms.hh>
+#include "mata/utils/sparse-set.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;

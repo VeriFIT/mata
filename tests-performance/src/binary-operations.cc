@@ -2,11 +2,11 @@
  * NOTE: Input automata, that are of type `NFA-bits` are mintermized!
  *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
  */
-#include <mata/inter-aut.hh>
-#include <mata/nfa.hh>
-#include <mata/nfa-plumbing.hh>
-#include <mata/nfa-algorithms.hh>
-#include <mata/mintermization.hh>
+#include "mata/parser/inter-aut.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/plumbing.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/parser/mintermization.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>

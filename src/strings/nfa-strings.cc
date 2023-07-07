@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/nfa-strings.hh"
+#include "mata/nfa/strings.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;

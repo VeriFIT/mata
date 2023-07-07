@@ -1,4 +1,4 @@
-#include <mata/nfa.hh>
+#include "mata/nfa/nfa.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>

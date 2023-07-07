@@ -18,7 +18,7 @@
 
 #include <string>
 
-#include "mata/nfa.hh"
+#include "mata/nfa/nfa.hh"
 
 /**
  * @brief Parser from regular expression to automata.

@@ -32,12 +32,12 @@
 #include <vector>
 
 #include "mata/alphabet.hh"
-#include "mata/parser.hh"
-#include "mata/util.hh"
-#include "mata/ord-vector.hh"
-#include "mata/inter-aut.hh"
-#include "mata/synchronized-iterator.hh"
-#include "mata/sparse-set.hh"
+#include "mata/parser/parser.hh"
+#include "mata/utils/util.hh"
+#include "mata/utils/ord-vector.hh"
+#include "mata/parser/inter-aut.hh"
+#include "mata/utils/synchronized-iterator.hh"
+#include "mata/utils/sparse-set.hh"
 
 /**
  * Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -293,7 +293,7 @@ public:
 
     /**
      * @brief Append post vector to the delta.
-     * 
+     *
      * @param post_vector Vector of posts to be appended.
      */
     void append(const std::vector<Post>& post_vector) {
@@ -303,12 +303,12 @@ public:
     }
 
     /**
-     * @brief Copy posts of delta and apply a lambda update function on each state from 
-     * targets. 
-     * 
-     * IMPORTANT: In order to work properly, the lambda function needs to be 
-     * monotonic. 
-     * 
+     * @brief Copy posts of delta and apply a lambda update function on each state from
+     * targets.
+     *
+     * IMPORTANT: In order to work properly, the lambda function needs to be
+     * monotonic.
+     *
      * @param lambda Monotonic lambda function mapping states to different states
      * @return std::vector<Post> Copied posts.
      */
@@ -316,7 +316,7 @@ public:
 
     /**
      * @brief Add transitions to multiple destinations
-     * 
+     *
      * @param state_from From
      * @param symbol Symbol
      * @param states Set of states to

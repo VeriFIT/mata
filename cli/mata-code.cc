@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iomanip>
 
-#include <mata/util.hh>
+#include "mata/utils/util.hh"
 
 #include "../3rdparty/args.hxx"
 

@@ -16,7 +16,7 @@
 #ifndef MATA_NFA_PLUMBING_HH_
 #define MATA_NFA_PLUMBING_HH_
 
-#include <mata/nfa.hh>
+#include "nfa.hh"
 
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.

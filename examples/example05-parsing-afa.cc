@@ -1,7 +1,7 @@
 // example5-parsing-afa.cc - parsing AFA from file
 
-#include <mata/afa.hh>
-#include <mata/inter-aut.hh>
+#include "mata/afa/afa.hh"
+#include "mata/parser/inter-aut.hh"
 #include <iostream>
 #include <fstream>
 

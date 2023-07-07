@@ -6,11 +6,11 @@
 
 #include "nfa-util.hh"
 
-#include "mata/nfa.hh"
-#include "mata/nfa-plumbing.hh"
-#include "mata/nfa-strings.hh"
-#include "mata/nfa-algorithms.hh"
-#include "mata/re2parser.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/plumbing.hh"
+#include "mata/nfa/strings.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/parser/re2parser.hh"
 
 using namespace Mata::Nfa::Algorithms;
 using namespace Mata::Nfa;
@@ -137,7 +137,7 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
 		REQUIRE(a.delta.contains(5, 'b', 7));
 		REQUIRE(a.delta.contains(5, 'b', 5));
 		REQUIRE(a.delta.contains(5, 'b', 6));
-	}	
+	}
 
 } // }}}
 

@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "mata/util.hh"
+#include "mata/utils/util.hh"
 
 /**
  * Parser from `.mata` format to automata (currently `Nfa` and `Afa` are supported).

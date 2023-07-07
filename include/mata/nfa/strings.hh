@@ -19,7 +19,7 @@
 #include <memory>
 #include <optional>
 
-#include "mata/nfa.hh"
+#include "nfa.hh"
 
 namespace {
     using namespace Mata::Nfa;

@@ -1,7 +1,7 @@
 // example5.cc - parsing a NFA from file
 
-#include <mata/nfa.hh>
-#include <mata/inter-aut.hh>
+#include "mata/nfa/nfa.hh"
+#include "mata/parser/inter-aut.hh"
 #include <iostream>
 #include <fstream>
 
