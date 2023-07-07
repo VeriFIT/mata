@@ -34,12 +34,12 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
     if (intersection_transition.empty()) { return; }
 
     auto& intersect_state_transitions{ product.delta.get_mutable_post(product_map[pair_to_process]) };
-    auto symbol_transitions_iter{ intersect_state_transitions.find(intersection_transition) };
-    if (symbol_transitions_iter == intersect_state_transitions.end()) {
+    auto move_iter{ intersect_state_transitions.find(intersection_transition) };
+    if (move_iter == intersect_state_transitions.end()) {
         intersect_state_transitions.insert(intersection_transition);
     } else {
         // Product already has some target states for the given symbol from the current product state.
-        symbol_transitions_iter->insert(intersection_transition.targets);
+        move_iter->insert(intersection_transition.targets);
     }
 }
 
@@ -151,9 +151,9 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(const Nfa& lhs, const Nfa& rhs, bool
             // Add transitions of the current state pair for an epsilon preserving product.
 
             // Check for lhs epsilon transitions.
-            const auto& lhs_state_symbol_transitions{ lhs.delta[pair_to_process.first] };
-            if (!lhs_state_symbol_transitions.empty()) {
-                const auto& lhs_state_last_transitions{ lhs_state_symbol_transitions.back() };
+            const Post& lhs_post{ lhs.delta[pair_to_process.first] };
+            if (!lhs_post.empty()) {
+                const auto& lhs_state_last_transitions{ lhs_post.back() };
                 if (epsilons.find(lhs_state_last_transitions.symbol) != epsilons.end()) {
                     // Compute product for state transitions with lhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition
@@ -169,9 +169,9 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(const Nfa& lhs, const Nfa& rhs, bool
             }
 
             // Check for rhs epsilon transitions in case only rhs has any transitions and add them.
-            const auto& rhs_state_symbol_transitions{ rhs.delta[pair_to_process.second]};
-            if (!rhs_state_symbol_transitions.empty()) {
-                const auto& rhs_state_last_transitions{rhs_state_symbol_transitions.back()};
+            const Post& rhs_post{ rhs.delta[pair_to_process.second]};
+            if (!rhs_post.empty()) {
+                const auto& rhs_state_last_transitions{ rhs_post.back()};
                 if (epsilons.find(rhs_state_last_transitions.symbol) != epsilons.end()) {
                     // Compute product for state transitions with rhs state epsilon transition.
                     // Create transition from the pair_to_process to all pairs between states to which first transition

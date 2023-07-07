@@ -700,19 +700,19 @@ public:
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
-     * @param[in] state_transitions State transitions from which are epsilon transitions checked.
+     * @param[in] post Post from which are epsilon transitions checked.
      * @param[in] epsilon User can define his favourite epsilon or used default
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static Post::const_iterator get_epsilon_transitions(const Post& state_transitions, Symbol epsilon = EPSILON);
+    static Post::const_iterator get_epsilon_transitions(const Post& post, Symbol epsilon = EPSILON);
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
      *
      * The value of the already existing symbols will NOT be overwritten.
      */
-    void add_symbols_to(OnTheFlyAlphabet& alphabet) const;
+    void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
 }; // struct Nfa.
 
 /**
