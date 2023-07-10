@@ -9,6 +9,9 @@ from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
+from libmata.utils cimport CSparseSet, COrdVector, CBoolVector
+from libmata.alphabets cimport CAlphabet
+
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
         ostream& write(const char*, int) except +
@@ -49,100 +52,9 @@ cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
         void restrict_to_symmetric()
         void get_quotient_projection(ivector&)
 
-
-cdef extern from "mata/util.hh" namespace "Mata":
-    cdef cppclass CBoolVector "Mata::BoolVector":
-        CBoolVector()
-        CBoolVector(size_t, bool)
-        CBoolVector(vector[uint8_t])
-
-        size_t count()
-
-
-
-cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
-    cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
-        vector[T] dense
-        vector[T] sparse
-        size_t size
-        size_t domain_size
-
-        CSparseSet()
-        CSparseSet(T)
-        CSparseSet(vector[T])
-
-        size_t domain_size()
-        bool empty()
-        void clear()
-        void reserve(size_t)
-        bool contains(T)
-        void insert(T)
-        void erase(T)
-        bool consistent()
-        bool operator[](T)
-
-        cppclass const_iterator:
-            const T operator *()
-            const_iterator operator++()
-            bint operator ==(const_iterator)
-            bint operator !=(const_iterator)
-        const_iterator cbegin()
-        const_iterator cend()
-
-        cppclass iterator:
-            T operator *()
-            iterator operator++()
-            bint operator ==(iterator)
-            bint operator !=(iterator)
-        iterator begin()
-        iterator end()
-
-
-cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
-    cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
-        COrdVector() except+
-        COrdVector(vector[T]) except+
-        vector[T] ToVector()
-
-        cppclass const_iterator:
-            const T operator *()
-            const_iterator operator++()
-            bint operator ==(const_iterator)
-            bint operator !=(const_iterator)
-        const_iterator cbegin()
-        const_iterator cend()
-
-        cppclass iterator:
-            T operator *()
-            iterator operator++()
-            bint operator ==(iterator)
-            bint operator !=(iterator)
-        iterator begin()
-        iterator end()
-
 cdef extern from "mata/alphabet.hh" namespace "Mata":
     ctypedef uintptr_t Symbol
     ctypedef umap[string, Symbol] StringToSymbolMap
-
-    cdef cppclass CAlphabet "Mata::Alphabet":
-        CAlphabet() except +
-
-        Symbol translate_symb(string)
-        string reverse_translate_symbol(Symbol)
-
-    cdef cppclass CIntAlphabet "Mata::IntAlphabet" (CAlphabet):
-        COrdVector[Symbol] get_alphabet_symbols()
-
-    cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap) except +
-        COnTheFlyAlphabet(Symbol) except +
-        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
-        COnTheFlyAlphabet(vector[string]) except +
-        COrdVector[Symbol] get_alphabet_symbols()
-        StringToSymbolMap get_symbol_map()
-        StringToSymbolMap add_symbols_from(StringToSymbolMap)
-        StringToSymbolMap add_symbols_from(vector[string])
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs

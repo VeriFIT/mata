@@ -55,24 +55,28 @@ def get_cpp_sources(src_dir):
     return sorted(sources)
 
 
+project_sources = get_cpp_sources(mata_source_dir) \
+    + get_cpp_sources(re2_source_dir) \
+    + get_cpp_sources(simlib_source_dir) \
+    + get_cpp_sources(cudd_source_dir)
+project_includes = [
+    mata_include_dir,
+    third_party_include_dir,
+    re2_include_dir,
+    simlib_include_dir,
+    cudd_include_dir
+]
+
 extensions = [
     Extension(
-        "libmata.nfa",
-        sources=["libmata/nfa.pyx"]
-                + get_cpp_sources(mata_source_dir)
-                + get_cpp_sources(re2_source_dir)
-                + get_cpp_sources(simlib_source_dir)
-                + get_cpp_sources(cudd_source_dir),
-        include_dirs=[
-            mata_include_dir,
-            third_party_include_dir,
-            re2_include_dir,
-            simlib_include_dir,
-            cudd_include_dir,
-        ],
+        f"libmata.{pkg}",
+        sources=[f"libmata/{pkg}.pyx"] + project_sources,
+        include_dirs=project_includes,
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
-    ),
+    ) for pkg in (
+        'nfa', 'alphabets', 'utils'
+    )
 ]
 
 
