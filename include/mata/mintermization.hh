@@ -46,7 +46,7 @@ private: // data types
 private: // private data members
     Cudd bdd_mng{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
     std::unordered_map<std::string, BDD> symbol_to_bddvar{};
-    std::unordered_map<const FormulaGraph *, BDD> trans_to_bddvar{};
+    std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar{};
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
     std::unordered_set<BDD> bdds{}; // bdds created from transitions
 

@@ -34,12 +34,12 @@ void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,Sta
     if (intersection_transition.empty()) { return; }
 
     auto& intersect_state_transitions{ product.delta.get_mutable_post(product_map[pair_to_process]) };
-    auto move_iter{ intersect_state_transitions.find(intersection_transition) };
-    if (move_iter == intersect_state_transitions.end()) {
+    auto intersection_move_iter{ intersect_state_transitions.find(intersection_transition) };
+    if (intersection_move_iter == intersect_state_transitions.end()) {
         intersect_state_transitions.insert(intersection_transition);
     } else {
         // Product already has some target states for the given symbol from the current product state.
-        move_iter->insert(intersection_transition.targets);
+        intersection_move_iter->insert(intersection_transition.targets);
     }
 }
 

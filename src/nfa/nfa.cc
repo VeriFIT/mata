@@ -311,21 +311,21 @@ void Delta::add(State state_from, Symbol symbol, State state_to) {
         posts.resize(max_state + 1);
     }
 
-    Post& post{ posts[state_from] };
+    Post& post_to_add_to{ posts[state_from] };
 
-    if (post.empty()) {
-        post.insert({ symbol, state_to });
-    } else if (post.back().symbol < symbol) {
-        post.insert({ symbol, state_to });
+    if (post_to_add_to.empty()) {
+        post_to_add_to.insert({ symbol, state_to });
+    } else if (post_to_add_to.back().symbol < symbol) {
+        post_to_add_to.insert({ symbol, state_to });
     } else {
-        const auto move_it{ post.find(symbol) };
-        if (move_it != post.end()) {
+        const auto move_it{ post_to_add_to.find(symbol) };
+        if (move_it != post_to_add_to.end()) {
             // Add transition with symbol already used on transitions from state_from.
             move_it->insert(state_to);
         } else {
             // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
             const Move new_move{ symbol, state_to };
-            post.insert(new_move);
+            post_to_add_to.insert(new_move);
         }
     }
 }
@@ -341,22 +341,22 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
         posts.resize(max_state + 1);
     }
 
-    Post& state_transitions{ posts[state_from] };
+    Post& state_from_post{ posts[state_from] };
 
-    if (state_transitions.empty()) {
-        state_transitions.insert({ symbol, states });
-    } else if (state_transitions.back().symbol < symbol) {
-        state_transitions.insert({ symbol, states });
+    if (state_from_post.empty()) {
+        state_from_post.insert({ symbol, states });
+    } else if (state_from_post.back().symbol < symbol) {
+        state_from_post.insert({ symbol, states });
     } else {
-        const auto move_it{ state_transitions.find(symbol) };
-        if (move_it != state_transitions.end()) {
+        const auto move_it{ state_from_post.find(symbol) };
+        if (move_it != state_from_post.end()) {
             // Add transition with symbolOnTransition already used on transitions from state_from.
             move_it->insert(states);
 
         } else {
             // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
             // Move new_symbol_transitions{ symbol, states };
-            state_transitions.insert(Move{symbol, states});
+            state_from_post.insert(Move{ symbol, states});
         }
     }
 }
@@ -366,18 +366,18 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         return;
     }
 
-    Post& post{ posts[src] };
-    if (post.empty()) {
+    Post& post_to_remove_from{ posts[src] };
+    if (post_to_remove_from.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
-    } else if (post.back().symbol < symb) {
+    } else if (post_to_remove_from.back().symbol < symb) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                 std::to_string(tgt) + "] does not exist.");
     } else {
-        const auto move_it{ post.find(symb) };
-        if (move_it == post.end()) {
+        const auto move_it{ post_to_remove_from.find(symb) };
+        if (move_it == post_to_remove_from.end()) {
             throw std::invalid_argument(
                     "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                     std::to_string(tgt) + "] does not exist.");
@@ -856,15 +856,12 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     std::unordered_map<State, StateSet> eps_closure;
 
     // TODO: grossly inefficient
-    // first we compute the epsilon closure
-    const size_t num_of_states{aut.size() };
-    for (size_t i{ 0 }; i < num_of_states; ++i)
-    {
-        for (const Move& move: aut.delta[i])
-        { // initialize
-            const auto it_ins_pair = eps_closure.insert({i, {i}});
-            if (move.symbol == epsilon)
-            {
+    // First we compute the epsilon closure.
+    const size_t num_of_states{ aut.size() };
+    for (size_t i{ 0 }; i < num_of_states; ++i) {
+        for (const Move& move: aut.delta[i]) {
+            const auto it_ins_pair = eps_closure.insert({i, {i}});  // Initialize.
+            if (move.symbol == epsilon) {
                 StateSet& closure = it_ins_pair.first->second;
                 // TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to resize each time);
                 closure.insert(move.targets);
@@ -1447,10 +1444,10 @@ TransSequence Nfa::get_transitions_to(State state_to) const {
     TransSequence transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const Move& move: delta[state_from]) {
-            const auto target_state{ move.targets.find(state_to) };
-            if (target_state != move.targets.end()) {
-                transitions_to_state.emplace_back(state_from, move.symbol, state_to );
+        for (const Move& state_from_move: delta[state_from]) {
+            const auto target_state{ state_from_move.targets.find(state_to) };
+            if (target_state != state_from_move.targets.end()) {
+                transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to );
             }
         }
     }

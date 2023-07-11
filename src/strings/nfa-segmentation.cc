@@ -21,18 +21,13 @@ using namespace Mata::Nfa;
 using namespace Mata::Strings;
 
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
-                                                    std::deque<StateDepthTuple>& worklist)
-{
+                                                    std::deque<StateDepthTuple>& worklist) {
     auto outgoing_post{ automaton.delta[state_depth_pair.state] };
-    for (const Move& move: outgoing_post)
-    {
-        if (this->epsilons.find(move.symbol) != this->epsilons.end())
-        {
-            handle_epsilon_transitions(state_depth_pair, move, worklist);
-        }
-        else // Handle other transitions.
-        {
-            add_transitions_to_worklist(state_depth_pair, move, worklist);
+    for (const Move& outgoing_move: outgoing_post) {
+        if (this->epsilons.find(outgoing_move.symbol) != this->epsilons.end()) {
+            handle_epsilon_transitions(state_depth_pair, outgoing_move, worklist);
+        } else { // Handle other transitions.
+            add_transitions_to_worklist(state_depth_pair, outgoing_move, worklist);
         }
     }
 }
