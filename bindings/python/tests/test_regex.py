@@ -2,13 +2,14 @@ __author__ = 'Tomas Fiedor'
 
 import pytest
 import libmata.nfa as mata
+import libmata.parser as parser
 
 
 def test_regex():
     """Test basic functionality of regex conversion"""
     symbol_map = {"a": ord("a"), "b": ord("b"), "c": ord("c")}
-    lhs = mata.Nfa.from_regex("a|b")
-    rhs = mata.Nfa.from_regex("b|c")
+    lhs = parser.from_regex("a|b")
+    rhs = parser.from_regex("b|c")
 
     union = mata.Nfa.union(lhs, rhs)
     assert mata.Nfa.is_in_lang(union, mata.Nfa.encode_word(symbol_map, "a"))
@@ -22,7 +23,7 @@ def test_regex():
 
 
 def test_stars_concatenation():
-    aut = mata.Nfa.from_regex("(((c)*)((a)*))")
+    aut = parser.from_regex("(((c)*)((a)*))")
     expected = mata.Nfa(2)
     expected.make_initial_state(0)
     expected.make_final_states([0, 1])

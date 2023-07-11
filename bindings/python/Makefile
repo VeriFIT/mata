@@ -1,5 +1,5 @@
 build-ext:
-	python setup.py build_ext -fi
+	python setup.py build_ext -fi -j8
 
 build-dist:
 	python setup.py sdist

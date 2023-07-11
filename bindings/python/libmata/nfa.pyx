@@ -189,14 +189,10 @@ cdef class Move:
 
 
 cdef class Nfa:
-    """Wrapper over NFA"""
+    """Wrapper over NFA
 
-    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
-    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
-    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
-    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
-    cdef shared_ptr[mata.CNfa] thisptr
-    cdef label
+    Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
+    """
 
     def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
         """Constructor of the NFA.
@@ -208,8 +204,9 @@ cdef class Nfa:
         cdef StateSet empty_default_state_set
         if alphabet:
             c_alphabet = alphabet.as_base()
-        self.thisptr = make_shared[CNfa](mata.CNfa(state_number, empty_default_state_set, empty_default_state_set,
-                                                   c_alphabet))
+        self.thisptr = make_shared[CNfa](
+            mata.CNfa(state_number, empty_default_state_set, empty_default_state_set, c_alphabet)
+        )
         self.label = label
 
     @property
@@ -647,21 +644,6 @@ cdef class Nfa:
         cdef StateSet input_states = StateSet(states)
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
-
-    # External Constructors
-    @classmethod
-    def from_regex(cls, regex, encoding='utf-8'):
-        """Creates automaton from the regular expression
-
-        The format of the regex conforms to google RE2 regular expression library.
-
-        :param str regex: regular expression
-        :param str encoding: encoding of the string
-        :return: Nfa automaton
-        """
-        result = Nfa()
-        mata.create_nfa(result.thisptr.get(), regex.encode(encoding))
-        return result
 
     # Operations
     @classmethod

@@ -75,7 +75,7 @@ extensions = [
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
     ) for pkg in (
-        'nfa', 'alphabets', 'utils'
+        'nfa', 'alphabets', 'utils', 'parser'
     )
 ]
 

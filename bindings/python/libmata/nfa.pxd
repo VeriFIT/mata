@@ -260,6 +260,13 @@ cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
     cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringMap&)
 
 
-cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
-    cdef void create_nfa(CNfa*, string) except +
-    cdef void create_nfa(CNfa*, string, bool) except +
+# Forward declarations of classes
+#
+# This is needed in order for these classes to be used in other packages.
+cdef class Nfa:
+    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
+    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
+    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
+    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
+    cdef shared_ptr[CNfa] thisptr
+    cdef label
