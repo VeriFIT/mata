@@ -42,6 +42,10 @@ add_library(libmata STATIC
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
+	nfa/delta.cc
+	nfa/post.cc
+	nfa/move.cc
+	nfa/operations.cc
 )
 
 set_target_properties(libmata PROPERTIES
