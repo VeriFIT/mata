@@ -20,6 +20,7 @@
 
 #include "mata/parser.hh"
 #include "mata/util.hh"
+#include "mata/nfa.hh"
 
 using namespace Mata::Parser;
 using namespace Mata::Util;
@@ -420,6 +421,23 @@ TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
 		std::string remains = stream.str().substr(static_cast<size_t>(stream.tellg()));
 		REQUIRE("@Type2\n%key2\n" == remains);
 	}
+
+    SECTION("Correctly parse with missing newline at the end of the file") {
+        std::string file =
+        "@NFA-explicit\n"
+        "%Alphabet-auto\n"
+        "%Initial q0\n"
+        "%Final q0\n"
+        "q0 0 q0";
+        std::istringstream stream(file);
+        Mata::Nfa::Nfa aut = Mata::Nfa::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
+        CHECK(aut.initial.size() == 1);
+        CHECK(aut.initial.contains(0));
+        CHECK(aut.final.size() == 1);
+        CHECK(aut.initial.contains(0));
+        CHECK(aut.delta.contains(0, 0, 0) == 1);
+        CHECK(aut.delta.size() == 1);
+    }
 } // parse_mf_section correct }}}
 
 
