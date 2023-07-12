@@ -39,8 +39,6 @@
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/utils/sparse-set.hh"
 #include "types.hh"
-#include "move.hh"
-#include "post.hh"
 #include "delta.hh"
 
 /**

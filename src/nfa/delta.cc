@@ -19,6 +19,53 @@ using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
+Move& Move::operator=(Move&& rhs) noexcept {
+    if (*this != rhs) {
+        symbol = rhs.symbol;
+        targets = std::move(rhs.targets);
+    }
+    return *this;
+}
+
+void Move::insert(State s) {
+    if(targets.empty() || targets.back() < s) {
+        targets.push_back(s);
+        return;
+    }
+    // Find the place where to put the element (if not present).
+    // insert to OrdVector without the searching of a proper position inside insert(const Key&x).
+    auto it = std::lower_bound(targets.begin(), targets.end(), s);
+    if (it == targets.end() || *it != s) {
+        targets.insert(it, s);
+    }
+}
+
+void Move::insert(const StateSet& states) {
+    for (State s : states) {
+        insert(s);
+    }
+}
+
+Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
+    assert(is_state(state));
+    return get_epsilon_transitions(get_moves_from(state), epsilon);
+}
+
+Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const Post& state_transitions, const Symbol epsilon) {
+    if (!state_transitions.empty()) {
+        if (epsilon == EPSILON) {
+            const auto& back = state_transitions.back();
+            if (back.symbol == epsilon) {
+                return std::prev(state_transitions.end());
+            }
+        } else {
+            return state_transitions.find(Move(epsilon));
+        }
+    }
+
+    return state_transitions.end();
+}
+
 size_t Delta::size() const
 {
     size_t size = 0;

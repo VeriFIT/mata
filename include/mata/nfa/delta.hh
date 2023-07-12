@@ -3,16 +3,98 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
-#include "post.hh"
-
 namespace Mata::Nfa {
+
+/**
+ * Structure represents a move which is a symbol and a set of target states of transitions.
+ */
+class Move {
+public:
+    Symbol symbol{};
+    StateSet targets{};
+
+    Move() = default;
+    explicit Move(Symbol symbol) : symbol{ symbol }, targets{} {}
+    Move(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
+    Move(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
+
+    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
+    Move(const Move& rhs) = default;
+    Move& operator=(Move&& rhs) noexcept;
+    Move& operator=(const Move& rhs) = default;
+
+    inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
+    inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
+    inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
+    inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
+    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
+    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+
+    StateSet::iterator begin() { return targets.begin(); }
+    StateSet::iterator end() { return targets.end(); }
+
+    StateSet::const_iterator cbegin() const { return targets.cbegin(); }
+    StateSet::const_iterator cend() const { return targets.cend(); }
+
+    size_t count(State s) const { return targets.count(s); }
+    bool empty() const { return targets.empty(); }
+    size_t size() const { return targets.size(); }
+
+    void insert(State s);
+    void insert(const StateSet& states);
+
+    // THIS BREAKS THE SORTEDNESS INVARIANT,
+    // dangerous,
+    // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
+    void inline push_back(const State s) { targets.push_back(s); }
+
+    void remove(State s) { targets.remove(s); }
+
+    std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
+    std::vector<State>::iterator find(State s) { return targets.find(s); }
+}; // class Mata::Nfa::Move.
+
+/**
+ * Post is a data structure representing possible transitions over different symbols.
+ * It is an ordered vector containing possible Moves (i.e., pair of symbol and target states.
+ * Vector is ordered by symbols which are numbers.
+ */
+class Post : private Util::OrdVector<Move> {
+private:
+    using super = Util::OrdVector<Move>;
+public:
+    using super::iterator, super::const_iterator;
+    using super::begin, super::end, super::cbegin, super::cend;
+    using super::OrdVector;
+    using super::operator=;
+    Post(const Post&) = default;
+    Post(Post&&) = default;
+    Post& operator=(const Post&) = default;
+    Post& operator=(Post&&) = default;
+    using super::insert;
+    using super::reserve;
+    using super::remove;
+    using super::empty, super::size;
+    using super::ToVector;
+    using super::erase;
+    // dangerous, breaks the sortedness invariant
+    using super::push_back;
+    // is adding non-const version as well ok?
+    using super::back;
+    using super::filter;
+
+    using super::find;
+    iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
+    const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+}; // struct Post.
+
 /**
  * Delta is a data structure for representing transition relation.
  * Its underlying data structure is vector of Post structures.
  * Each index of vector corresponds to one state, that is a number of
  * state is an index to the vector of Posts.
  */
-struct Delta {
+class Delta {
 private:
     std::vector<Post> posts;
 
