@@ -250,8 +250,7 @@ Parsed Mata::Parser::parse_mf(
 { // {{{
 	Parsed result;
 
-	while (input)
-	{
+	while (input.good()) {
 		ParsedSection parsec = parse_mf_section(input, keepQuotes);
 		if (!parsec.empty())
 		{
