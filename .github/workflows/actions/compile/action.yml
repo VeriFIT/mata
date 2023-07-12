@@ -15,4 +15,4 @@ runs:
       uses: actions/cache@v3
       with:
         path: ./build_log
-        key: build-log-${{ github.event.inputs.build-log-output-file }}-${{ runner.os }}-${{ github.sha }}
+        key: build-log-${{ inputs.build-log-output-file }}-${{ runner.os }}-${{ github.sha }}

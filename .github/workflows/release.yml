@@ -1,4 +1,4 @@
-name: Release
+name: Release and Stable Branch Code Quality Checks
 
 permissions: write-all
 
@@ -153,7 +153,6 @@ jobs:
       - name: Building Unix dependencies
         run: sudo apt-get install -y build-essential lcov gcovr xdg-utils
 
-  # Build and test warnings.
   setup-macos:
     runs-on: macos-latest
     steps:
@@ -189,3 +188,20 @@ jobs:
           if [ $number_of_warnings -gt 0 ]; then
             exit 1
           fi
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-new'
+      - name: Test the library
+        run: make test

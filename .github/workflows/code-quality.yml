@@ -1,16 +1,10 @@
-name: Check for Warnings
+name: Check Code Quality
 
 on:
   pull_request:
-  push:
-    branches:
-      - master
-      - devel
-      - test
 
 jobs:
   warnings-base:
-    if: github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -41,26 +35,25 @@ jobs:
       - uses: ./.github/workflows/actions/compile
         with:
           build-log-output-file: 'warnings-new'
+
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-new'
       - name: Test the library
         run: make test
 
-  #test:
-  #  runs-on: ${{ matrix.os }}
-  #  strategy:
-  #    fail-fast: false
-  #    matrix:
-  #      os: [ ubuntu-latest, macos-latest ]
-  #  steps:
-  #    - uses: actions/checkout@v3
-  #    - uses: ./.github/workflows/actions/setup
-  #      with:
-  #        os: ${{ matrix.os }}
-  #    - uses: ./.github/workflows/actions/compile
-  #      with:
-  #        build-log-output-file: 'warnings-new'
-
   compare-versions:
-    if: github.event_name == 'pull_request'
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -88,7 +81,7 @@ jobs:
 
       - name: Create comparison diff file
         run: |
-          diff base_warnings new_warnings  | grep "^> *" | sed "s/^> //g" > comparison
+          diff base_warnings new_warnings | grep "^> *" | sed "s/^> //g" > comparison
           cat comparison
 
       - name: Count number of warnings
