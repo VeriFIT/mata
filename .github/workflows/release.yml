@@ -1,4 +1,4 @@
-name: Release and Stable Branch Code Quality Checks
+name: Release
 
 permissions: write-all
 
@@ -189,7 +189,7 @@ jobs:
             exit 1
           fi
 
-  test:
+  run-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
