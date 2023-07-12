@@ -1,0 +1,100 @@
+name: Check for Warnings
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - devel
+      - test
+
+jobs:
+  warnings-base:
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base_ref }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-base'
+
+  warnings-new:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-new'
+      - name: Test the library
+        run: make test
+
+  #test:
+  #  runs-on: ${{ matrix.os }}
+  #  strategy:
+  #    fail-fast: false
+  #    matrix:
+  #      os: [ ubuntu-latest, macos-latest ]
+  #  steps:
+  #    - uses: actions/checkout@v3
+  #    - uses: ./.github/workflows/actions/setup
+  #      with:
+  #        os: ${{ matrix.os }}
+  #    - uses: ./.github/workflows/actions/compile
+  #      with:
+  #        build-log-output-file: 'warnings-new'
+
+  compare-versions:
+    if: github.event_name == 'pull_request'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    needs: [ warnings-base, warnings-new ]
+    steps:
+      - name: Restore new cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ./build_log
+          key: build-log-warnings-new-${{ runner.os }}-${{ github.sha }}
+      - run: mv build_log new_warnings
+      - name: Restore base cache
+        uses: actions/cache/restore@v3
+        with:
+          path: ./build_log
+          key: build-log-warnings-base-${{ runner.os }}-${{ github.sha }}
+      - run: mv build_log base_warnings
+
+      - name: Print base warnings
+        run: cat base_warnings
+      - name: Print new warnings
+        run: cat new_warnings
+
+      - name: Create comparison diff file
+        run: |
+          diff base_warnings new_warnings  | grep "^> *" | sed "s/^> //g" > comparison
+          cat comparison
+
+      - name: Count number of warnings
+        run: |
+          number_of_warnings=`cat comparison | grep "warning:" | wc -l`
+          echo $number_of_warnings
+          if [ $number_of_warnings -gt 0 ]; then
+            exit 1
+          fi
