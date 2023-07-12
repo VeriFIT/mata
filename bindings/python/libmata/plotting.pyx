@@ -1,7 +1,7 @@
 cimport libmata.alphabets as alph
-cimport libmata.nfa as mata
+cimport libmata.nfa.nfa as mata
 
-from libmata.nfa import store, _store
+from libmata.nfa.nfa import store, _store
 
 import networkx as nx
 import graphviz

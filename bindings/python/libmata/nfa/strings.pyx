@@ -1,9 +1,9 @@
-cimport libmata.nfa as mata
-cimport libmata.strings as mata_strings
+cimport libmata.nfa.nfa as mata
+cimport libmata.nfa.strings as mata_strings
 from cython.operator import dereference, postincrement as postinc
 
-from libmata.strings cimport AutSequence, NoodleSequence, AutPtrSequence, CSegmentation
-from libmata.nfa cimport CTrans
+from libmata.nfa.strings cimport AutSequence, NoodleSequence, AutPtrSequence, CSegmentation
+from libmata.nfa.nfa cimport CTrans
 
 cdef class Segmentation:
     """Wrapper over Segmentation."""

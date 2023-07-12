@@ -1,7 +1,7 @@
-cimport libmata.nfa as mata
+cimport libmata.nfa.nfa as mata
 cimport libmata.alphabets as alph
 
-from libmata.nfa cimport \
+from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateToStateMap, StringToSymbolMap, \
     CDelta, CRun, CTrans, CNfa, CMove, CEPSILON
 

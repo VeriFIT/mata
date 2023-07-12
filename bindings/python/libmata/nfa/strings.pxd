@@ -6,7 +6,7 @@ from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 
-from libmata.nfa cimport CNfa, CTrans
+from libmata.nfa.nfa cimport CNfa, CTrans
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef vector[CTrans] TransitionSequence

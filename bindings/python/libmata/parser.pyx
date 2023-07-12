@@ -1,7 +1,7 @@
 from libcpp.memory cimport shared_ptr, make_shared
-from libmata.nfa cimport CNfa
+from libmata.nfa.nfa cimport CNfa
 
-cimport libmata.nfa as mata
+cimport libmata.nfa.nfa as mata
 cimport libmata.parser as parser
 
 # External Constructors
@@ -15,6 +15,5 @@ def from_regex(regex, encoding='utf-8'):
     :return: Nfa automaton
     """
     result = mata.Nfa()
-    #parser.create_nfa(result.as_ptr(), regex.encode(encoding))
     parser.create_nfa((<mata.Nfa>result).thisptr.get(), regex.encode(encoding))
     return result

@@ -70,12 +70,12 @@ project_includes = [
 extensions = [
     Extension(
         f"libmata.{pkg}",
-        sources=[f"libmata/{pkg}.pyx"] + project_sources,
+        sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"] + project_sources,
         include_dirs=project_includes,
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
     ) for pkg in (
-        'nfa', 'alphabets', 'utils', 'parser', 'strings', 'plotting'
+        'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting'
     )
 ]
 
