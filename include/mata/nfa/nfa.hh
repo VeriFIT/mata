@@ -394,19 +394,6 @@ public:
 }; // struct Nfa.
 
 /**
- * Create automaton accepting only epsilon string.
- */
-Nfa create_empty_string_nfa();
-
-/**
- * Create automaton accepting sigma star over the passed alphabet.
- *
- * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
- *  alphabet is used, creating an automaton accepting only the empty string.
- */
-Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
-
-/**
   * Fill @p alphabet with symbols from @p nfa.
   * @param[in] nfa NFA with symbols to fill @p alphabet with.
   * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
@@ -750,37 +737,6 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
 Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
-
-/** Loads an automaton from Parsed object */
-Nfa construct(
-        const Mata::Parser::ParsedSection&   parsec,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-/** Loads an automaton from Parsed object */
-Nfa construct(
-        const Mata::IntermediateAut&         inter_aut,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map = nullptr);
-
-template <class ParsedObject>
-Nfa construct(
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr) {
-    StringToSymbolMap tmp_symbol_map;
-    if (symbol_map) {
-        tmp_symbol_map = *symbol_map;
-    }
-    Mata::OnTheFlyAlphabet alphabet(tmp_symbol_map);
-
-    Nfa aut = construct(parsed, &alphabet, state_map);
-
-    if (symbol_map) {
-        *symbol_map = alphabet.get_symbol_map();
-    }
-    return aut;
-} // construct().
 
 } // namespace Mata::Nfa.
 

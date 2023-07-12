@@ -17,6 +17,7 @@
 #define MATA_NFA_PLUMBING_HH_
 
 #include "nfa.hh"
+#include "builder.hh"
 
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
@@ -67,7 +68,7 @@ void construct(
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
         StringToStateMap*                    state_map = nullptr) {
-    *result = Mata::Nfa::construct(parsed, symbol_map, state_map);
+    *result = Builder::construct(parsed, symbol_map, state_map);
 }
 
 inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }

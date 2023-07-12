@@ -22,6 +22,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/parser/re2parser.hh"
+#include "mata/nfa/builder.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
@@ -286,7 +287,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
     SECTION("From numbers") {
         SECTION("Simple word") {
             std::vector<Mata::Symbol> word{ 10, 20, 30, 40, 50, 60 };
-            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            auto nfa{ Builder::create_single_word_nfa(word) };
             CHECK(is_in_lang(nfa, { word, {} }));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
@@ -295,7 +296,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
 
         SECTION("Empty string") {
             std::vector<Mata::Symbol> word{};
-            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            auto nfa{ Builder::create_single_word_nfa(word) };
             CHECK(is_in_lang(nfa, { word, {} }));
             CHECK(Mata::Strings::is_lang_eps(nfa));
             CHECK(nfa.final.size() == 1);
@@ -307,7 +308,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
     SECTION("From symbol names") {
         SECTION("Simple word") {
             std::vector<std::string> word{ "zero", "one", "two", "three", "four", "five" };
-            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            auto nfa{ Builder::create_single_word_nfa(word) };
             CHECK(is_in_lang(nfa, { nfa.alphabet->translate_word(word), {} }));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);
@@ -316,7 +317,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
 
         SECTION("Empty string") {
             std::vector<Mata::Symbol> word{};
-            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            auto nfa{ Builder::create_single_word_nfa(word) };
             CHECK(is_in_lang(nfa, { word, {} }));
             CHECK(Mata::Strings::is_lang_eps(nfa));
             CHECK(nfa.final.size() == 1);
@@ -330,7 +331,7 @@ TEST_CASE("Mata::Nfa::create_single_word_nfa()") {
             for (Mata::Symbol symbol{ 0 }; symbol < word.size(); ++symbol) {
                 alphabet.add_new_symbol(word[symbol], symbol);
             }
-            auto nfa{ Mata::Strings::create_single_word_nfa(word) };
+            auto nfa{ Builder::create_single_word_nfa(word) };
             CHECK(is_in_lang(nfa, { nfa.alphabet->translate_word(word), {} }));
             CHECK(nfa.final.size() == 1);
             CHECK(nfa.initial.size() == 1);

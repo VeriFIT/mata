@@ -7,8 +7,9 @@
 #include "nfa-util.hh"
 
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/plumbing.hh"
 #include "mata/nfa/strings.hh"
+#include "mata/nfa/builder.hh"
+#include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/re2parser.hh"
 
@@ -643,7 +644,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 	{
 		parsec.type = Mata::Nfa::TYPE_NFA;
 
-		aut = construct(parsec);
+		aut = Builder::construct(parsec);
 
 		REQUIRE(is_lang_empty(aut));
 	}
@@ -654,7 +655,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
-		aut = construct(parsec);
+		aut = Builder::construct(parsec);
 
 		REQUIRE(!is_lang_empty(aut));
 	}
@@ -665,7 +666,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-		aut = construct(parsec);
+		aut = Builder::construct(parsec);
 
 		REQUIRE(aut.initial.size() == 2);
 		REQUIRE(aut.final.size() == 3);
@@ -678,7 +679,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a", "q2"} };
 
-		aut = construct(parsec, &symbol_map);
+		aut = Builder::construct(parsec, &symbol_map);
 
 		Run cex;
 		REQUIRE(!is_lang_empty(aut, &cex));
@@ -710,7 +711,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 		parsec.body.push_back({"q5", "a", "q5"});
 		parsec.body.push_back({"q5", "c", "q9"});
 
-		aut = construct(parsec, &symbol_map);
+		aut = Builder::construct(parsec, &symbol_map);
 
 		// some samples
 		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
@@ -733,8 +734,8 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 	{
 		parsec.type = "FA";
 
-		CHECK_THROWS_WITH(construct(parsec),
-			Catch::Contains("expecting type"));
+		CHECK_THROWS_WITH(Builder::construct(parsec),
+                          Catch::Contains("expecting type"));
 	}
 
 	SECTION("construct() call with an epsilon transition")
@@ -742,8 +743,8 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "q2"} };
 
-		CHECK_THROWS_WITH(construct(parsec),
-			Catch::Contains("Epsilon transition"));
+		CHECK_THROWS_WITH(Builder::construct(parsec),
+                          Catch::Contains("Epsilon transition"));
 	}
 
 	SECTION("construct() call with a nonsense transition")
@@ -751,7 +752,7 @@ TEST_CASE("Mata::Nfa::construct() invalid calls")
 		parsec.type = Mata::Nfa::TYPE_NFA;
 		parsec.body = { {"q1", "a", "q2", "q3"} };
 
-		CHECK_THROWS_WITH(construct(&aut, parsec),
+		CHECK_THROWS_WITH(Plumbing::construct(&aut, parsec),
 			Catch::Contains("Invalid transition"));
 	}
 } // }}}
@@ -766,7 +767,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
     {
         inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::NFA;
         REQUIRE(is_lang_empty(aut));
-        aut = construct(inter_aut);
+        aut = Builder::construct(inter_aut);
         REQUIRE(is_lang_empty(aut));
     }
 
@@ -781,7 +782,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        aut = construct(inter_aut);
+        aut = Builder::construct(inter_aut);
 
         REQUIRE(!is_lang_empty(aut));
     }
@@ -797,7 +798,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut);
+        Plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 2);
         REQUIRE(aut.final.size() == 3);
@@ -814,7 +815,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut);
+        Plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 2);
         REQUIRE(aut.final.size() == 3);
@@ -831,7 +832,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut);
+        Plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 3);
         REQUIRE(aut.final.size() == 4);
@@ -849,7 +850,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
-        construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &symbol_map);
 
         Run cex;
         REQUIRE(!is_lang_empty(aut, &cex));
@@ -886,7 +887,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &symbol_map);
 
         // some samples
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
@@ -917,7 +918,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &symbol_map);
         REQUIRE(aut.final.size() == 4);
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2"})));
         REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
@@ -944,7 +945,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         inter_aut = auts[0];
 
 		Mata::Nfa::StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
         CHECK(aut.final.size() == 9);
 		CHECK(aut.final[state_map.at("0")]);
 		CHECK(aut.final[state_map.at("1")]);
@@ -976,8 +977,8 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         inter_aut = auts[0];
 
 		Mata::Nfa::StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
-        CHECK(aut.final.size() == 0);
+        Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
+        CHECK(aut.final.empty());
     }
 } // }}}
 
@@ -1188,7 +1189,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 		cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
-        Nfa empty_string_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(cmpl, empty_string_nfa));
 	}
 
@@ -1205,7 +1206,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(cmpl, sigma_star_nfa));
 	}
 
@@ -1282,7 +1283,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 		cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
-        Nfa empty_string_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(empty_string_nfa, cmpl));
 	}
 
@@ -1299,7 +1300,7 @@ TEST_CASE("Mata::Nfa::complement()")
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
 		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ Mata::Nfa::create_sigma_star_nfa(&alph) };
+        Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(sigma_star_nfa, cmpl));
 	}
 
@@ -3000,14 +3001,14 @@ TEST_CASE("A segmentation fault in the make_complement") {
 }
 
 TEST_CASE("Mata::Nfa:: create simple automata") {
-    Nfa nfa{ create_empty_string_nfa() };
+    Nfa nfa{ Builder::create_empty_string_nfa() };
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{};
     StringToSymbolMap symbol_map{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     alphabet.add_symbols_from(symbol_map);
-    nfa = create_sigma_star_nfa(&alphabet);
+    nfa = Builder::create_sigma_star_nfa(&alphabet);
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(is_in_lang(nfa, { { 0 }, {} }));
     CHECK(is_in_lang(nfa, { { 1 }, {} }));
@@ -3039,7 +3040,7 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
 	std::string aut_big_mata = aut_big.print_to_mata();
 	// for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
 	IntAlphabet int_alph;
-	Nfa aut_big_from_mata = construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+	Nfa aut_big_from_mata = Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }

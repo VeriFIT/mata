@@ -44,6 +44,7 @@ add_library(libmata STATIC
 	strings/nfa-strings.cc
 	nfa/delta.cc
 	nfa/operations.cc
+	nfa/builder.cc
 )
 
 set_target_properties(libmata PROPERTIES
