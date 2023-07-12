@@ -69,9 +69,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringMap
-    ctypedef vector[CNfa] AutSequence
-    ctypedef vector[CNfa*] AutPtrSequence
-    ctypedef vector[const CNfa*] ConstAutPtrSequence
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
 
@@ -125,8 +122,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Functions
         bool operator==(CTrans)
         bool operator!=(CTrans)
-
-    ctypedef vector[CTrans] TransitionSequence
 
     cdef cppclass CMove "Mata::Nfa::Move":
         # Public Attributes
@@ -240,25 +235,6 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void reduce(CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
 
 
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":
-    cdef cset[vector[Symbol]] get_shortest_words(CNfa&)
-
-
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
-    cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
-        CSegmentation(CNfa&, cset[Symbol]) except +
-
-        ctypedef size_t EpsilonDepth
-        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
-
-        EpsilonDepthTransitions get_epsilon_depths()
-        AutSequence get_segments()
-
-    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
-
-    cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
-    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringMap&)
-
 
 # Forward declarations of classes
 #
@@ -270,3 +246,7 @@ cdef class Nfa:
     #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
     cdef shared_ptr[CNfa] thisptr
     cdef label
+
+cdef class Trans:
+    cdef CTrans* thisptr
+    cdef copy_from(self, CTrans trans)

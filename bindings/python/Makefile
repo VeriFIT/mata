@@ -1,4 +1,7 @@
 build-ext:
+	python setup.py build_ext -i -j8
+
+build-ext-force:
 	python setup.py build_ext -fi -j8
 
 build-dist:
