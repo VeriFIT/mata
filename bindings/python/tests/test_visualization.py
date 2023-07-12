@@ -1,6 +1,6 @@
 __author__ = 'Tomas Fiedor'
 
-import libmata.nfa as mata
+import libmata.nfa.nfa as mata
 
 
 def test_conversions(fa_one_divisible_by_two):

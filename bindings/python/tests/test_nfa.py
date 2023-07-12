@@ -1,7 +1,8 @@
 """Basic tests for utility package and sanity checks"""
 
 import pytest
-import libmata.nfa as mata
+import libmata.nfa.nfa as mata
+import libmata.nfa.strings as mata_strings
 import libmata.alphabets as alphabets
 import os
 
@@ -367,7 +368,7 @@ def test_concatenate():
     result = mata.Nfa.concatenate(lhs, rhs)
 
     assert not mata.Nfa.is_lang_empty(result)
-    shortest_words = mata.Nfa.get_shortest_words(result)
+    shortest_words = mata_strings.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
@@ -662,7 +663,7 @@ def test_to_str():
 
 def test_shortest(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
-    shortest = mata.Nfa.get_shortest_words(lhs)
+    shortest = mata_strings.get_shortest_words(lhs)
     assert shortest == [[1, 1]]
 
 
@@ -687,7 +688,7 @@ def test_trim(prepare_automaton_a):
     assert len(nfa.initial_states) == len(old_nfa.initial_states)
     assert len(nfa.final_states) == len(old_nfa.final_states)
 
-    for word in mata.Nfa.get_shortest_words(old_nfa):
+    for word in mata_strings.get_shortest_words(old_nfa):
         assert mata.Nfa.is_in_lang(nfa, word)
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
@@ -883,7 +884,7 @@ def test_segmentation(prepare_automaton_a):
     nfa = prepare_automaton_a()
     epsilon = ord('c')
 
-    segmentation = mata.Segmentation(nfa, [epsilon])
+    segmentation = mata_strings.Segmentation(nfa, [epsilon])
     epsilon_depths = segmentation.get_epsilon_depths()
     assert len(epsilon_depths) == 1
     assert 0 in epsilon_depths
@@ -903,7 +904,7 @@ def test_segmentation(prepare_automaton_a):
     nfa.add_transition(6, epsilon, 7)
     nfa.add_transition(7, epsilon, 8)
 
-    segmentation = mata.Segmentation(nfa, [epsilon])
+    segmentation = mata_strings.Segmentation(nfa, [epsilon])
     epsilon_depths = segmentation.get_epsilon_depths()
     assert len(epsilon_depths) == 3
     assert 0 in epsilon_depths
@@ -1038,7 +1039,7 @@ def test_noodlify():
     right_side.make_final_states([3, 6])
 
     left_side: list[Nfa] = [left1, left2, left3]
-    result = mata.Nfa.noodlify_for_equation(left_side, right_side)
+    result = mata_strings.noodlify_for_equation(left_side, right_side)
     assert len(result) == 2
     assert mata.Nfa.equivalence_check(result[0][0], noodle1_segment1)
     assert mata.Nfa.equivalence_check(result[0][1], noodle1_segment2)
