@@ -71,3 +71,35 @@ cdef extern from "mata/util.hh" namespace "Mata":
 
         size_t count()
 
+
+cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
+    ctypedef vector[size_t] ivector
+    ctypedef vector[bool] bvector
+    ctypedef vector[ivector] IndexType
+
+    cdef cppclass CBinaryRelation "Simlib::Util::BinaryRelation":
+        CBinaryRelation()
+        CBinaryRelation(size_t, bool, size_t)
+        CBinaryRelation(vector[bvector])
+
+        void reset(bool)
+        void resize(size_t, bool)
+        size_t alloc()
+        size_t split(size_t, bool)
+        bool get(size_t, size_t)
+        bool set(size_t, size_t, bool)
+        size_t size()
+        bool sym(size_t, size_t)
+        void build_equivalence_classes(ivector&)
+        void build_equivalence_classes(ivector&, ivector&)
+        CBinaryRelation transposed(CBinaryRelation&)
+        void build_index(IndexType&)
+        void build_inv_index(IndexType&)
+        void build_index(IndexType&, IndexType&)
+        void restrict_to_symmetric()
+        void get_quotient_projection(ivector&)
+
+# Forward declarations
+cdef class BinaryRelation:
+    """Wrapper for binary relation."""
+    cdef CBinaryRelation *thisptr

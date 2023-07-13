@@ -6,6 +6,7 @@ import pytest
 import libmata.alphabets as alphabets
 import libmata.nfa.nfa as mata_nfa
 import libmata.nfa.strings as mata_strings
+import libmata.utils as mata_utils
 
 __author__ = 'Tomas Fiedor'
 
@@ -792,7 +793,7 @@ def test_simulation_other_features(fa_one_divisible_by_two):
 
 
 def test_simulation_equivalence():
-    r = mata_nfa.BinaryRelation(3, True, 3)
+    r = mata_utils.BinaryRelation(3, True, 3)
     classes, heads = r.build_equivalence_classes()
     assert classes == [0, 0, 0]
     assert heads == [0]
