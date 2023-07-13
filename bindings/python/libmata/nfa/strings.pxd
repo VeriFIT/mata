@@ -7,6 +7,7 @@ from libcpp.unordered_map cimport unordered_map as umap
 from libcpp.vector cimport vector
 
 from libmata.nfa.nfa cimport CNfa, CTrans
+from libmata.alphabets cimport Symbol
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef vector[CTrans] TransitionSequence
@@ -14,9 +15,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef vector[CNfa*] AutPtrSequence
     ctypedef vector[const CNfa*] ConstAutPtrSequence
     ctypedef umap[string, string] StringMap
-
-cdef extern from "mata/alphabet.hh" namespace "Mata":
-    ctypedef uintptr_t Symbol
 
 cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":
     cdef cset[vector[Symbol]] c_get_shortest_words "Mata::Strings::get_shortest_words" (CNfa&)
