@@ -15,15 +15,16 @@
  * GNU General Public License for more details.
  */
 
-#include "catch.hpp"
-#include "mata/parser/inter-aut.hh"
-
-#include "mata/parser/parser.hh"
 #include "mata/utils/util.hh"
+#include "mata/parser/parser.hh"
+#include "mata/parser/inter-aut.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/builder.hh"
+
+#include "catch.hpp"
 
 using namespace Mata::Parser;
 using namespace Mata::Util;
-
 
 TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
 { // {{{
@@ -429,7 +430,7 @@ TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
         "%Final q0\n"
         "q0 0 q0";
         std::istringstream stream(file);
-        Mata::Nfa::Nfa aut = Mata::Nfa::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
+        Mata::Nfa::Nfa aut = Mata::Nfa::Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
         CHECK(aut.initial.size() == 1);
         CHECK(aut.initial.contains(0));
         CHECK(aut.final.size() == 1);

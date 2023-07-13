@@ -3,6 +3,7 @@
 #ifndef MATA_TYPES_HH
 #define MATA_TYPES_HH
 
+#include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
 
 #include <memory>
