@@ -27,6 +27,7 @@ cdef class Alphabet:
 
 cdef class OnTheFlyAlphabet(Alphabet):
     """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
+    
     cdef COnTheFlyAlphabet *thisptr
 
     def __cinit__(self, State initial_symbol = 0):
