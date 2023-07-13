@@ -161,24 +161,11 @@ jobs:
       - uses: ./.github/workflows/actions/compile
         with:
           build-log-output-file: 'warnings-release'
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          ref: ${{ github.base_ref }}
-      - name: Compile base version of the static and shared libraries
-        run: make release 2>base_warnings
-      - name: Cache file with warnings
-        uses: actions/cache@v3
-        env:
-          cache-name: cache-warnings
-        with:
-          path: ./base_warnings
-          key: warnings-base-${{ runner.os }}-${{ github.sha }}
-      - name: Print base warnings
-        run: cat base_warnings
+      - name: Print release warnings
+        run: cat build_log
       - name: Count number of warnings
         run: |
-          number_of_warnings=`cat base_warnings | grep "warning:" | wc -l`
+          number_of_warnings=`cat build_log | grep "warning:" | wc -l`
           echo $number_of_warnings
           if [ $number_of_warnings -gt 0 ]; then
             exit 1

@@ -7,6 +7,8 @@ jobs:
   warnings-base:
     runs-on: ${{ matrix.os }}
     strategy:
+      # Ensures that if the task on one system fails, other systems (the rest of the matrix) will be
+      #  still executed.
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest ]
