@@ -147,25 +147,20 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
 
-  setup-ubuntu:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Building Unix dependencies
-        run: sudo apt-get install -y build-essential lcov gcovr xdg-utils
-
-  setup-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Building MacOS dependencies
-        run: brew install lcov gcovr automake
-
   compile-base:
-    needs: [ setup-ubuntu, setup-macos ]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-release'
     steps:
       - uses: actions/checkout@v3
         with:
