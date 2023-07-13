@@ -3,10 +3,10 @@ cimport libmata.alphabets as alph
 from libmata.alphabets cimport State, CAlphabet, CIntAlphabet, COnTheFlyAlphabet
 
 cdef class Alphabet:
-    """
-    Base class for alphabets
-    """
+    """Base class for alphabets."""
+    
     def __cinit__(self):
+
         pass
 
     cdef CAlphabet* as_base(self):
