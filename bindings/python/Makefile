@@ -1,8 +1,11 @@
+# Increase the jobs to more to speed up the compilation time.
+jobs=6
+
 build-ext:
-	python setup.py build_ext -i -j8
+	python setup.py build_ext -i -j$(jobs)
 
 build-ext-force:
-	python setup.py build_ext -fi -j8
+	python setup.py build_ext -fi -j$(jobs)
 
 build-dist:
 	python setup.py sdist
