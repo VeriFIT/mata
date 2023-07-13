@@ -9,6 +9,9 @@ from libcpp.list cimport list as clist
 from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
+from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
+from libmata.alphabets cimport CAlphabet, StringToSymbolMap, Symbol
+
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
         ostream& write(const char*, int) except +
@@ -22,127 +25,6 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-cdef extern from "mata/simlib/util/binary_relation.hh" namespace "Simlib::Util":
-    ctypedef vector[size_t] ivector
-    ctypedef vector[bool] bvector
-    ctypedef vector[ivector] IndexType
-
-    cdef cppclass CBinaryRelation "Simlib::Util::BinaryRelation":
-        CBinaryRelation()
-        CBinaryRelation(size_t, bool, size_t)
-        CBinaryRelation(vector[bvector])
-
-        void reset(bool)
-        void resize(size_t, bool)
-        size_t alloc()
-        size_t split(size_t, bool)
-        bool get(size_t, size_t)
-        bool set(size_t, size_t, bool)
-        size_t size()
-        bool sym(size_t, size_t)
-        void build_equivalence_classes(ivector&)
-        void build_equivalence_classes(ivector&, ivector&)
-        CBinaryRelation transposed(CBinaryRelation&)
-        void build_index(IndexType&)
-        void build_inv_index(IndexType&)
-        void build_index(IndexType&, IndexType&)
-        void restrict_to_symmetric()
-        void get_quotient_projection(ivector&)
-
-
-cdef extern from "mata/util.hh" namespace "Mata":
-    cdef cppclass CBoolVector "Mata::BoolVector":
-        CBoolVector()
-        CBoolVector(size_t, bool)
-        CBoolVector(vector[uint8_t])
-
-        size_t count()
-
-
-
-cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
-    cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
-        vector[T] dense
-        vector[T] sparse
-        size_t size
-        size_t domain_size
-
-        CSparseSet()
-        CSparseSet(T)
-        CSparseSet(vector[T])
-
-        size_t domain_size()
-        bool empty()
-        void clear()
-        void reserve(size_t)
-        bool contains(T)
-        void insert(T)
-        void erase(T)
-        bool consistent()
-        bool operator[](T)
-
-        cppclass const_iterator:
-            const T operator *()
-            const_iterator operator++()
-            bint operator ==(const_iterator)
-            bint operator !=(const_iterator)
-        const_iterator cbegin()
-        const_iterator cend()
-
-        cppclass iterator:
-            T operator *()
-            iterator operator++()
-            bint operator ==(iterator)
-            bint operator !=(iterator)
-        iterator begin()
-        iterator end()
-
-
-cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
-    cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
-        COrdVector() except+
-        COrdVector(vector[T]) except+
-        vector[T] ToVector()
-
-        cppclass const_iterator:
-            const T operator *()
-            const_iterator operator++()
-            bint operator ==(const_iterator)
-            bint operator !=(const_iterator)
-        const_iterator cbegin()
-        const_iterator cend()
-
-        cppclass iterator:
-            T operator *()
-            iterator operator++()
-            bint operator ==(iterator)
-            bint operator !=(iterator)
-        iterator begin()
-        iterator end()
-
-cdef extern from "mata/alphabet.hh" namespace "Mata":
-    ctypedef uintptr_t Symbol
-    ctypedef umap[string, Symbol] StringToSymbolMap
-
-    cdef cppclass CAlphabet "Mata::Alphabet":
-        CAlphabet() except +
-
-        Symbol translate_symb(string)
-        string reverse_translate_symbol(Symbol)
-
-    cdef cppclass CIntAlphabet "Mata::IntAlphabet" (CAlphabet):
-        COrdVector[Symbol] get_alphabet_symbols()
-
-    cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap) except +
-        COnTheFlyAlphabet(Symbol) except +
-        COnTheFlyAlphabet(COnTheFlyAlphabet) except +
-        COnTheFlyAlphabet(vector[string]) except +
-        COrdVector[Symbol] get_alphabet_symbols()
-        StringToSymbolMap get_symbol_map()
-        StringToSymbolMap add_symbols_from(StringToSymbolMap)
-        StringToSymbolMap add_symbols_from(vector[string])
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
@@ -157,9 +39,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[State, State] StateToStateMap
     ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] StringMap
-    ctypedef vector[CNfa] AutSequence
-    ctypedef vector[CNfa*] AutPtrSequence
-    ctypedef vector[const CNfa*] ConstAutPtrSequence
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
 
@@ -213,8 +92,6 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         # Public Functions
         bool operator==(CTrans)
         bool operator!=(CTrans)
-
-    ctypedef vector[CTrans] TransitionSequence
 
     cdef cppclass CMove "Mata::Nfa::Move":
         # Public Attributes
@@ -328,26 +205,18 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void reduce(CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
 
 
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":
-    cdef cset[vector[Symbol]] get_shortest_words(CNfa&)
 
+# Forward declarations of classes
+#
+# This is needed in order for these classes to be used in other packages.
+cdef class Nfa:
+    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
+    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
+    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
+    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
+    cdef shared_ptr[CNfa] thisptr
+    cdef label
 
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
-    cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
-        CSegmentation(CNfa&, cset[Symbol]) except +
-
-        ctypedef size_t EpsilonDepth
-        ctypedef umap[EpsilonDepth, TransitionSequence] EpsilonDepthTransitions
-
-        EpsilonDepthTransitions get_epsilon_depths()
-        AutSequence get_segments()
-
-    ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
-
-    cdef NoodleSequence noodlify(CNfa&, Symbol, bool)
-    cdef NoodleSequence noodlify_for_equation(const AutPtrSequence&, CNfa&, bool, StringMap&)
-
-
-cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
-    cdef void create_nfa(CNfa*, string) except +
-    cdef void create_nfa(CNfa*, string, bool) except +
+cdef class Trans:
+    cdef CTrans* thisptr
+    cdef copy_from(self, CTrans trans)

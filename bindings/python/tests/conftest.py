@@ -3,7 +3,9 @@
 import os
 import shutil
 import pytest
-import libmata as mata
+
+import libmata.alphabets as alphabets
+import libmata.nfa.nfa as mata_nfa
 
 __author__ = 'Tomas Fiedor'
 
@@ -19,7 +21,7 @@ def cleandir():
 
 @pytest.fixture(scope="function")
 def dfa_one_state_uni():
-    lhs = mata.Nfa(1)
+    lhs = mata_nfa.Nfa(1)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     lhs.add_transition(0, 1, 0)
@@ -29,7 +31,7 @@ def dfa_one_state_uni():
 
 @pytest.fixture(scope="function")
 def dfa_one_state_empty():
-    lhs = mata.Nfa(1)
+    lhs = mata_nfa.Nfa(1)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     lhs.add_transition(0, 1, 0)
@@ -38,7 +40,7 @@ def dfa_one_state_empty():
 
 @pytest.fixture(scope="function")
 def nfa_two_states_uni():
-    lhs = mata.Nfa(2)
+    lhs = mata_nfa.Nfa(2)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     lhs.add_transition(0, 1, 0)
@@ -54,7 +56,7 @@ def divisible_by(k: int):
     Constructs automaton accepting strings containing ones divisible by "k"
     """
     assert k > 1
-    lhs = mata.Nfa(k+1)
+    lhs = mata_nfa.Nfa(k+1)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     for i in range(1, k + 1):
@@ -82,7 +84,7 @@ def fa_one_divisible_by_eight():
 
 @pytest.fixture(scope="function")
 def fa_odd_ones():
-    lhs = mata.Nfa(2)
+    lhs = mata_nfa.Nfa(2)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     lhs.add_transition(0, 1, 1)
@@ -93,7 +95,7 @@ def fa_odd_ones():
 
 @pytest.fixture(scope="function")
 def fa_even_ones():
-    lhs = mata.Nfa(2)
+    lhs = mata_nfa.Nfa(2)
     lhs.make_initial_state(0)
     lhs.add_transition(0, 0, 0)
     lhs.add_transition(0, 1, 1)
@@ -104,7 +106,7 @@ def fa_even_ones():
 
 @pytest.fixture(scope="function")
 def binary_alphabet():
-    alph = mata.OnTheFlyAlphabet()
+    alph = alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("0")
     alph.translate_symbol("1")
     yield alph
@@ -117,7 +119,7 @@ def prepare_automaton_a():
     """
 
     def _prepare_automaton_a():
-        nfa = mata.Nfa(100)
+        nfa = mata_nfa.Nfa(100)
         nfa.make_initial_states([1, 3])
         nfa.make_final_state(5)
         nfa.add_transition(1, ord('a'), 3)
@@ -147,7 +149,7 @@ def prepare_automaton_b():
     """
 
     def _prepare_automaton_b():
-        nfa = mata.Nfa(100)
+        nfa = mata_nfa.Nfa(100)
         nfa.make_initial_states([4])
         nfa.make_final_states([2, 12])
         nfa.add_transition(4, ord('c'), 8)

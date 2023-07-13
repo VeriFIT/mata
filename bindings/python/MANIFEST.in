@@ -1,5 +1,5 @@
-include *.pyx
-include *.pxd
+recursive-include *.pyx
+recursive-include *.pxd
 include pyproject.toml
 include mata/LICENSE
 include mata/VERSION

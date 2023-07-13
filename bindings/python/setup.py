@@ -55,24 +55,28 @@ def get_cpp_sources(src_dir):
     return sorted(sources)
 
 
+project_sources = get_cpp_sources(mata_source_dir) \
+    + get_cpp_sources(re2_source_dir) \
+    + get_cpp_sources(simlib_source_dir) \
+    + get_cpp_sources(cudd_source_dir)
+project_includes = [
+    mata_include_dir,
+    third_party_include_dir,
+    re2_include_dir,
+    simlib_include_dir,
+    cudd_include_dir
+]
+
 extensions = [
     Extension(
-        "libmata",
-        sources=["libmata.pyx"]
-                + get_cpp_sources(mata_source_dir)
-                + get_cpp_sources(re2_source_dir)
-                + get_cpp_sources(simlib_source_dir)
-                + get_cpp_sources(cudd_source_dir),
-        include_dirs=[
-            mata_include_dir,
-            third_party_include_dir,
-            re2_include_dir,
-            simlib_include_dir,
-            cudd_include_dir,
-        ],
+        f"libmata.{pkg}",
+        sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"] + project_sources,
+        include_dirs=project_includes,
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
-    ),
+    ) for pkg in (
+        'nfa.nfa', 'alphabets', 'utils', 'parser', 'nfa.strings', 'plotting'
+    )
 ]
 
 
@@ -201,8 +205,13 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     name="libmata",
+    packages=["libmata"],
+    package_dir={'libmata': 'libmata'},
     version=get_version(),
-    ext_modules=cythonize(extensions),
+    ext_modules=cythonize(
+        extensions,
+        compiler_directives={'language_level': "3"}
+    ),
     description="The automata library",
     author="Lukáš Holík <holik@fit.vutbr.cz>, "
                 "Ondřej Lengál <lengal@fit.vutbr.cz>, "

@@ -1,25 +1,29 @@
-cimport libmata as mata
-
-from libcpp.vector cimport vector
-from libcpp.list cimport list as clist
-from libcpp.set cimport set as cset
-from libcpp.utility cimport pair
-from libcpp.memory cimport shared_ptr, make_shared
-from libc.stdint cimport uint8_t
-from cython.operator import dereference, postincrement as postinc, preincrement as preinc
-from libcpp.unordered_map cimport unordered_map as umap
-
-import sys
 import shlex
 import subprocess
-import tabulate
 import pandas
 import networkx as nx
-import graphviz
-import IPython
-import collections
 
-from IPython.display import display, HTML
+from libc.stdint cimport uint8_t
+from libcpp cimport bool
+from libcpp.list cimport list as clist
+from libcpp.memory cimport shared_ptr, make_shared
+from libcpp.set cimport set as cset
+from libcpp.string cimport string
+from libcpp.unordered_map cimport unordered_map as umap
+from libcpp.utility cimport pair
+from libcpp.vector cimport vector
+
+from cython.operator import dereference, postincrement as postinc, preincrement as preinc
+
+cimport libmata.nfa.nfa as mata_nfa
+cimport libmata.alphabets as alph
+
+from libmata.nfa.nfa cimport \
+    Symbol, State, StateSet, StateToStateMap, StringToSymbolMap, \
+    CDelta, CRun, CTrans, CNfa, CMove, CEPSILON
+
+from libmata.alphabets cimport CAlphabet
+from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
 
 cdef Symbol EPSILON = CEPSILON
 
@@ -28,7 +32,7 @@ def epsilon():
 
 cdef class Run:
     """Wrapper over the run in NFA."""
-    cdef mata.CRun *thisptr
+    cdef mata_nfa.CRun *thisptr
 
     def __cinit__(self):
         """Constructor of the transition
@@ -37,7 +41,7 @@ cdef class Run:
         :param Symbol s: symbol
         :param State tgt: target state
         """
-        self.thisptr = new mata.CRun()
+        self.thisptr = new mata_nfa.CRun()
 
     def __dealloc__(self):
         """Destructor"""
@@ -62,7 +66,6 @@ cdef class Run:
 
 cdef class Trans:
     """Wrapper over the transitions in NFA."""
-    cdef mata.CTrans *thisptr
 
     @property
     def src(self):
@@ -92,7 +95,7 @@ cdef class Trans:
         :param Symbol s: symbol
         :param State tgt: target state
         """
-        self.thisptr = new mata.CTrans(src, s, tgt)
+        self.thisptr = new mata_nfa.CTrans(src, s, tgt)
 
     def __dealloc__(self):
         """Destructor"""
@@ -123,7 +126,7 @@ cdef class Trans:
 
 cdef class Move:
     """Wrapper over pair of symbol and states for transitions"""
-    cdef mata.CMove *thisptr
+    cdef mata_nfa.CMove *thisptr
 
     @property
     def symbol(self):
@@ -145,7 +148,7 @@ cdef class Move:
 
     def __cinit__(self, Symbol symbol, vector[State] states):
         cdef StateSet targets = StateSet(states)
-        self.thisptr = new mata.CMove(symbol, targets)
+        self.thisptr = new mata_nfa.CMove(symbol, targets)
 
     def __dealloc__(self):
         if self.thisptr != NULL:
@@ -178,27 +181,24 @@ cdef class Move:
 
 
 cdef class Nfa:
-    """Wrapper over NFA"""
+    """Wrapper over NFA
 
-    # TODO: Shared pointers are not ideal as they bring some overhead which could be substantial in theory. We are not
-    #  sure whether the shared pointers will be a problem in this case, but it would be good to pay attention to this and
-    #  potentially create some kind of Factory/Allocator/Pool class, that would take care of management of the pointers
-    #  to optimize the shared pointers away if we find that the overhead is becoming too significant to ignore.
-    cdef shared_ptr[mata.CNfa] thisptr
-    cdef label
+    Note: In order to add more properties to Nfa, see `nfa.pxd`, where there is forward declaration
+    """
 
-    def __cinit__(self, state_number = 0, Alphabet alphabet = None, label=None):
+    def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
         """Constructor of the NFA.
 
         :param int state_number: number of states in automaton
-        :param Alphabet alphabet: alphabet corresponding to the automaton
+        :param alph.Alphabet alphabet: alphabet corresponding to the automaton
         """
         cdef CAlphabet* c_alphabet = NULL
         cdef StateSet empty_default_state_set
         if alphabet:
             c_alphabet = alphabet.as_base()
-        self.thisptr = make_shared[CNfa](mata.CNfa(state_number, empty_default_state_set, empty_default_state_set,
-                                                   c_alphabet))
+        self.thisptr = make_shared[CNfa](
+            mata_nfa.CNfa(state_number, empty_default_state_set, empty_default_state_set, c_alphabet)
+        )
         self.label = label
 
     @property
@@ -334,13 +334,13 @@ cdef class Nfa:
         """
         self.thisptr.get().delta.add(dereference(tr.thisptr))
 
-    def add_transition(self, State src, symb, State tgt, Alphabet alphabet = None):
+    def add_transition(self, State src, symb, State tgt, alph.Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
         :param State src: source state
         :param Symbol symb: symbol
         :param State tgt: target state
-        :param Alphabet alphabet: alphabet of the transition
+        :param alph.Alphabet alphabet: alphabet of the transition
         """
         if isinstance(symb, str):
             alphabet = alphabet or store().get('alphabet')
@@ -412,11 +412,11 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: Move
         """
-        cdef mata.CPost transitions = self.thisptr.get().get_moves_from(state)
-        cdef vector[mata.CMove] transitions_list = transitions.ToVector()
+        cdef mata_nfa.CPost transitions = self.thisptr.get().get_moves_from(state)
+        cdef vector[mata_nfa.CMove] transitions_list = transitions.ToVector()
 
-        cdef vector[mata.CMove].iterator it = transitions_list.begin()
-        cdef vector[mata.CMove].iterator end = transitions_list.end()
+        cdef vector[mata_nfa.CMove].iterator it = transitions_list.begin()
+        cdef vector[mata_nfa.CMove].iterator end = transitions_list.end()
         transsymbols = []
         while it != end:
             t = Move(
@@ -430,7 +430,7 @@ cdef class Nfa:
     def get_transitions_to_state(self, State state_to):
         """Get transitions leading to state_to (state_to is their target state).
 
-        :return: List mata.CTrans: List of transitions leading to state_to.
+        :return: List mata_nfa.CTrans: List of transitions leading to state_to.
         """
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
         trans = []
@@ -467,7 +467,7 @@ cdef class Nfa:
         """
         cdef CBoolVector useful_states_bool_vec = self.thisptr.get().get_useful_states()
         cdef StateSet useful_states
-        mata.get_elements(&useful_states, useful_states_bool_vec)
+        mata_nfa.get_elements(&useful_states, useful_states_bool_vec)
         return { state for state in useful_states }
 
     def get_reachable_states(self):
@@ -512,9 +512,9 @@ cdef class Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
          one letter for all transitions).
 
-        :return: mata.Nfa: One letter automaton representing a directed graph.
+        :return: mata_nfa.Nfa: One letter automaton representing a directed graph.
         """
-        cdef Nfa one_letter_aut = mata.Nfa()
+        cdef Nfa one_letter_aut = mata_nfa.Nfa()
         self.thisptr.get().get_one_letter_aut(dereference(one_letter_aut.thisptr.get()))
         return one_letter_aut
 
@@ -553,8 +553,8 @@ cdef class Nfa:
         :param str output_file: name of the output file where the automaton will be stored
         :param str output_format: format of the output file (pdf/png/etc)
         """
-        cdef mata.ofstream* output
-        output = new mata.ofstream(output_file.encode('utf-8'))
+        cdef mata_nfa.ofstream* output
+        output = new mata_nfa.ofstream(output_file.encode('utf-8'))
         try:
             self.thisptr.get().print_to_DOT(dereference(output))
         finally:
@@ -571,8 +571,8 @@ cdef class Nfa:
         :param str encoding: encoding of the dot string
         :return: string with dot representation of the automaton
         """
-        cdef mata.stringstream* output_stream
-        output_stream = new mata.stringstream("")
+        cdef mata_nfa.stringstream* output_stream
+        output_stream = new mata_nfa.stringstream("".encode('ascii'))
         cdef string result
         try:
             self.thisptr.get().print_to_DOT(dereference(output_stream))
@@ -613,11 +613,11 @@ cdef class Nfa:
             G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
         return G
 
-    def post_map_of(self, State st, Alphabet alphabet):
+    def post_map_of(self, State st, alph.Alphabet alphabet):
         """Returns mapping of symbols to set of states.
 
         :param State st: source state
-        :param Alphabet alphabet: alphabet of the post
+        :param alph.Alphabet alphabet: alphabet of the post
         :return: dictionary mapping symbols to set of reachable states from the symbol
         """
         symbol_map = {}
@@ -637,21 +637,6 @@ cdef class Nfa:
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
-    # External Constructors
-    @classmethod
-    def from_regex(cls, regex, encoding='utf-8'):
-        """Creates automaton from the regular expression
-
-        The format of the regex conforms to google RE2 regular expression library.
-
-        :param str regex: regular expression
-        :param str encoding: encoding of the string
-        :return: Nfa automaton
-        """
-        result = Nfa()
-        mata.create_nfa(result.thisptr.get(), regex.encode(encoding))
-        return result
-
     # Operations
     @classmethod
     def determinize_with_subset_map(cls, Nfa lhs):
@@ -662,7 +647,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef umap[StateSet, State] subset_map
-        mata.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
+        mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
         return result, subset_map_to_dictionary(subset_map)
 
     @classmethod
@@ -673,7 +658,7 @@ cdef class Nfa:
         :return: deterministic finite automaton
         """
         result = Nfa()
-        mata.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
+        mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
         return result
 
     @classmethod
@@ -685,7 +670,7 @@ cdef class Nfa:
         :return: union of lhs and rhs
         """
         result = Nfa()
-        mata.uni(
+        mata_nfa.uni(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
         )
         return result
@@ -709,7 +694,7 @@ cdef class Nfa:
         :return: Intersection of lhs and rhs.
         """
         result = Nfa()
-        mata.intersection(
+        mata_nfa.intersection(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
         )
         return result
@@ -734,7 +719,7 @@ cdef class Nfa:
         """
         result = Nfa()
         cdef umap[pair[State, State], State] c_product_map
-        mata.intersection(
+        mata_nfa.intersection(
             result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
             &c_product_map
         )
@@ -751,7 +736,7 @@ cdef class Nfa:
         :return: Nfa: Concatenated automaton.
         """
         result = Nfa()
-        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+        mata_nfa.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
                          use_epsilon, NULL, NULL)
         return result
 
@@ -768,7 +753,7 @@ cdef class Nfa:
         result = Nfa()
         cdef StateToStateMap c_lhs_map
         cdef StateToStateMap c_rhs_map
-        mata.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+        mata_nfa.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
                          use_epsilon, &c_lhs_map, &c_rhs_map)
         lhs_map = {}
         for key, value in c_lhs_map:
@@ -779,91 +764,9 @@ cdef class Nfa:
 
         return result, lhs_map, rhs_map
 
-    @classmethod
-    def noodlify(cls, Nfa aut, Symbol symbol, include_empty = False):
-        """Create noodles from segment automaton.
-
-        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
-        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
-
-        :param: Nfa aut: Segment automaton to noodlify.
-        :param: Symbol epsilon: Epsilon symbol to noodlify for.
-        :param: bool include_empty: Whether to also include empty noodles.
-        :return: List of automata: A list of all (non-empty) noodles.
-        """
-        noodle_segments = []
-        cdef NoodleSequence c_noodle_segments = mata.noodlify(dereference(aut.thisptr.get()), symbol, include_empty)
-        for c_noodle in c_noodle_segments:
-            noodle = []
-            for c_noodle_segment in c_noodle:
-                noodle_segment = Nfa()
-                noodle_segment.thisptr = c_noodle_segment
-                noodle.append(noodle_segment)
-
-            noodle_segments.append(noodle)
-
-        return noodle_segments
 
     @classmethod
-    def get_shortest_words(cls, Nfa nfa):
-        """Returns set of the shortest words accepted by the automaton."""
-        cdef cset[vector[Symbol]] shortest
-        shortest = mata.get_shortest_words(dereference(nfa.thisptr.get()))
-        result = []
-        cdef cset[vector[Symbol]].iterator it = shortest.begin()
-        cdef cset[vector[Symbol]].iterator end = shortest.end()
-        while it != end:
-            short = dereference(it)
-            result.append(short)
-            postinc(it)
-        return result
-
-    @classmethod
-    def noodlify_for_equation(cls, left_side_automata: list, Nfa right_side_automaton, include_empty = False, params = None):
-        """Create noodles for equation.
-
-        Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
-        A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
-
-        Mata cannot work with equations, queries etc. Hence, we compute the noodles for the equation, but represent
-         the equation in a way that libMata understands. The left side automata represent the left side of the equation
-         and the right automaton represents the right side of the equation. To create noodles, we need a segment automaton
-         representing the intersection. That can be achieved by computing a product of both sides. First, the left side
-         has to be concatenated over an epsilon transition into a single automaton to compute the intersection on, though.
-
-        :param: list[Nfa] aut: Segment automata representing the left side of the equation to noodlify.
-        :param: Nfa aut: Segment automaton representing the right side of the equation to noodlify.
-        :param: bool include_empty: Whether to also include empty noodles.
-        :param: dict params: Additional parameters for the noodlification:
-            - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
-                        minimization before noodlification.
-        :return: List of automata: A list of all (non-empty) noodles.
-        """
-        cdef AutPtrSequence c_left_side_automata
-        for lhs_aut in left_side_automata:
-            c_left_side_automata.push_back((<Nfa>lhs_aut).thisptr.get())
-        noodle_segments = []
-        params = params or {}
-        cdef NoodleSequence c_noodle_segments = mata.noodlify_for_equation(
-            c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            },
-        )
-        for c_noodle in c_noodle_segments:
-            noodle = []
-            for c_noodle_segment in c_noodle:
-                noodle_segment = Nfa()
-                noodle_segment.thisptr = c_noodle_segment
-                noodle.append(noodle_segment)
-
-            noodle_segments.append(noodle)
-
-        return noodle_segments
-
-    @classmethod
-    def complement(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def complement(cls, Nfa lhs, alph.Alphabet alphabet, params = None):
         """Performs complement of lhs
 
         :param Nfa lhs: complemented automaton
@@ -875,7 +778,7 @@ cdef class Nfa:
         """
         result = Nfa()
         params = params or {'algorithm': 'classical', 'minimize': 'false'}
-        mata.complement(
+        mata_nfa.complement(
             result.thisptr.get(),
             dereference(lhs.thisptr.get()),
             <CAlphabet&>dereference(alphabet.as_base()),
@@ -887,7 +790,7 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def make_complete(cls, Nfa lhs, State sink_state, Alphabet alphabet):
+    def make_complete(cls, Nfa lhs, State sink_state, alph.Alphabet alphabet):
         """Makes lhs complete
 
         :param Nfa lhs: automaton that will be made complete
@@ -896,7 +799,7 @@ cdef class Nfa:
         """
         if not lhs.thisptr.get().is_state(sink_state):
             lhs.thisptr.get().add_state(lhs.size())
-        mata.make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
+        mata_nfa.make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     @classmethod
     def revert(cls, Nfa lhs):
@@ -906,7 +809,7 @@ cdef class Nfa:
         :return: automaton with reversed transitions
         """
         result = Nfa()
-        mata.revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
+        mata_nfa.revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
         return result
 
     @classmethod
@@ -918,7 +821,7 @@ cdef class Nfa:
         :return: Nfa: Automaton with epsilon transitions removed.
         """
         result = Nfa()
-        mata.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+        mata_nfa.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
         return result
 
     def remove_epsilon(self, Symbol epsilon = CEPSILON):
@@ -955,7 +858,7 @@ cdef class Nfa:
         :return: minimized automaton
         """
         result = Nfa()
-        mata.minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
+        mata_nfa.minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
         return result
 
     @classmethod
@@ -971,7 +874,7 @@ cdef class Nfa:
         params = params or {"algorithm": "simulation"}
         cdef StateToStateMap state_map
         result = Nfa()
-        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
+        mata_nfa.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
             {
                 k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
             }
@@ -991,7 +894,7 @@ cdef class Nfa:
         """
         params = params or {"algorithm": "simulation"}
         result = Nfa()
-        mata.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
+        mata_nfa.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
             {
                 k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
             }
@@ -1007,7 +910,7 @@ cdef class Nfa:
         :return: computd relation
         """
         params = params or {'relation': 'simulation', 'direction': 'forward'}
-        cdef mata.CBinaryRelation relation = mata.compute_relation(
+        cdef CBinaryRelation relation = mata_nfa.compute_relation(
             dereference(lhs.thisptr.get()),
             {
                 k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
@@ -1031,7 +934,7 @@ cdef class Nfa:
         :param Nfa lhs: non-determinstic finite automaton
         :return: true if the lhs is deterministic
         """
-        return mata.is_deterministic(dereference(lhs.thisptr.get()))
+        return mata_nfa.is_deterministic(dereference(lhs.thisptr.get()))
 
     @classmethod
     def is_lang_empty(cls, Nfa lhs, Run run = None):
@@ -1042,12 +945,12 @@ cdef class Nfa:
         :return: true if the lhs is empty, counter example if lhs is not empty
         """
         if run:
-            return mata.is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
+            return mata_nfa.is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
         else:
-            return mata.is_lang_empty(dereference(lhs.thisptr.get()), NULL)
+            return mata_nfa.is_lang_empty(dereference(lhs.thisptr.get()), NULL)
 
     @classmethod
-    def is_universal(cls, Nfa lhs, Alphabet alphabet, params = None):
+    def is_universal(cls, Nfa lhs, alph.Alphabet alphabet, params = None):
         """Tests if lhs is universal wrt given alphabet
 
         :param Nfa lhs: automaton tested for universality
@@ -1057,7 +960,7 @@ cdef class Nfa:
         :return: true if lhs is universal
         """
         params = params or {'algorithm': 'antichains'}
-        return mata.is_universal(
+        return mata_nfa.is_universal(
             dereference(lhs.thisptr.get()),
             <CAlphabet&>dereference(alphabet.as_base()),
             {
@@ -1068,13 +971,13 @@ cdef class Nfa:
 
     @classmethod
     def is_included_with_cex(
-            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
         :param Nfa lhs: smaller automaton
         :param Nfa rhs: bigger automaton
-        :param Alphabet alphabet: alpabet shared by two automata
+        :param alph.Alphabet alphabet: alpabet shared by two automata
         :param dict params: additional params
         :return: true if lhs is included by rhs, counter example word if not
         """
@@ -1083,7 +986,7 @@ cdef class Nfa:
         if alphabet:
             c_alphabet = alphabet.as_base()
         params = params or {'algorithm': 'antichains'}
-        result = mata.is_included(
+        result = mata_nfa.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
             run.thisptr,
@@ -1097,13 +1000,13 @@ cdef class Nfa:
 
     @classmethod
     def is_included(
-            cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None
+            cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None
     ):
         """Test inclusion between two automata
 
         :param Nfa lhs: smaller automaton
         :param Nfa rhs: bigger automaton
-        :param Alphabet alphabet: alpabet shared by two automata
+        :param alph.Alphabet alphabet: alpabet shared by two automata
         :param dict params: additional params
         :return: true if lhs is included by rhs, counter example word if not
         """
@@ -1111,7 +1014,7 @@ cdef class Nfa:
         if alphabet:
             c_alphabet = alphabet.as_base()
         params = params or {'algorithm': 'antichains'}
-        result = mata.is_included(
+        result = mata_nfa.is_included(
             dereference(lhs.thisptr.get()),
             dereference(rhs.thisptr.get()),
             NULL,
@@ -1124,12 +1027,12 @@ cdef class Nfa:
         return result
 
     @classmethod
-    def equivalence_check(cls, Nfa lhs, Nfa rhs, Alphabet alphabet = None, params = None) -> bool:
+    def equivalence_check(cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
         """Test equivalence of two automata.
 
         :param Nfa lhs: Smaller automaton.
         :param Nfa rhs: Bigger automaton.
-        :param Alphabet alphabet: Alphabet shared by two automata.
+        :param alph.Alphabet alphabet: Alphabet shared by two automata.
         :param dict params: Additional params:
             - "algorithm": "antichains"
         :return: True if lhs is equivalent to rhs, False otherwise.
@@ -1138,7 +1041,7 @@ cdef class Nfa:
         cdef CAlphabet * c_alphabet = NULL
         if alphabet:
             c_alphabet = alphabet.as_base()
-            return mata.are_equivalent(
+            return mata_nfa.are_equivalent(
                 dereference(lhs.thisptr.get()),
                 dereference(rhs.thisptr.get()),
                 c_alphabet,
@@ -1148,7 +1051,7 @@ cdef class Nfa:
                 }
             )
         else:
-            return mata.are_equivalent(
+            return mata_nfa.are_equivalent(
                 dereference(lhs.thisptr.get()),
                 dereference(rhs.thisptr.get()),
                 {
@@ -1166,14 +1069,14 @@ cdef class Nfa:
         return {s for s in symbols}
 
     @classmethod
-    def is_complete(cls, Nfa lhs, Alphabet alphabet):
+    def is_complete(cls, Nfa lhs, alph.Alphabet alphabet):
         """Test if automaton is complete
 
         :param Nf lhs: tested automaton
         :param OnTheFlyAlphabet alphabet: alphabet of the automaton
         :return: true if the automaton is complete
         """
-        return mata.is_complete(
+        return mata_nfa.is_complete(
             dereference(lhs.thisptr.get()),
             <CAlphabet&>dereference(alphabet.as_base())
         )
@@ -1188,7 +1091,7 @@ cdef class Nfa:
         """
         run = Run()
         run.thisptr.word = word
-        return mata.is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
+        return mata_nfa.is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
     @classmethod
     def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
@@ -1200,7 +1103,7 @@ cdef class Nfa:
         """
         run = Run()
         run.thisptr.word = word
-        return mata.is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
+        return mata_nfa.is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
     @classmethod
     def accepts_epsilon(cls, Nfa lhs):
@@ -1220,7 +1123,7 @@ cdef class Nfa:
     def get_word_for_path(cls, Nfa lhs, path):
         """For a given path (set of states) returns a corresponding word
 
-        >>> mata.Nfa.get_word_for_path(lhs, [0, 1, 2])
+        >>> mata_nfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
         ([1, 1], True)
 
         :param Nfa lhs: source automaton
@@ -1230,304 +1133,26 @@ cdef class Nfa:
         cdef pair[CRun, bool] result
         input = Run()
         input.path = path
-        result = mata.get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
+        result = mata_nfa.get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
         return result.first.word, result.second
 
     @classmethod
     def encode_word(cls, string_to_symbol, word):
         """Encodes word based on a string to symbol map
 
-        >>> mata.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
+        >>> mata_nfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
         [1, 2, 0, 1]
 
         :param dict string_to_symbol: dictionary of strings to integers
         :param word: list of strings representing a encoded word
         :return:
         """
-        result = mata.encode_word(
+        result = mata_nfa.encode_word(
             {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
             [s.encode('utf-8') for s in word]
         )
         return result.word
 
-
-cdef class OnTheFlyAlphabet(Alphabet):
-    """OnTheFlyAlphabet represents alphabet that is not known before hand and is constructed on-the-fly."""
-    cdef mata.COnTheFlyAlphabet *thisptr
-
-    def __cinit__(self, State initial_symbol = 0):
-        self.thisptr = new mata.COnTheFlyAlphabet(initial_symbol)
-
-    @classmethod
-    def from_symbol_map(cls, symbol_map: dict[str, int]) -> OnTheFlyAlphabet:
-        """Create on the fly alphabet filled with symbol_map.
-
-        :param symbol_map: Map mapping symbol names to symbol values.
-        :return: On the fly alphabet.
-        """
-        alphabet = cls()
-        alphabet.add_symbols_from_symbol_map(symbol_map)
-        return alphabet
-
-    @classmethod
-    def for_symbol_names(cls, symbol_map: list[str]) -> OnTheFlyAlphabet:
-        alphabet = cls()
-        alphabet.add_symbols_for_names(symbol_map)
-        return alphabet
-
-    def add_symbols_from_symbol_map(self, symbol_map: dict[str, int]) -> None:
-        """Add symbols from symbol_map to the current alphabet.
-
-        :param symbol_map: Map mapping strings to symbols.
-        """
-        cdef StringToSymbolMap c_symbol_map
-        for symbol, value in symbol_map.items():
-            c_symbol_map[symbol.encode('utf-8')] = value
-        self.thisptr.add_symbols_from(c_symbol_map)
-
-    def add_symbols_for_names(self, symbol_names: list[str]) -> None:
-        """Add symbols for symbol names to the current alphabet.
-
-        :param symbol_names: Vector of symbol names.
-        """
-        cdef vector[string] c_symbol_names
-        for symbol_name in symbol_names:
-            c_symbol_names.push_back(symbol_name.encode('utf-8'))
-        self.thisptr.add_symbols_from(c_symbol_names)
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def get_symbol_map(self) -> dict[str, int]:
-        """Get map mapping strings to symbols.
-
-        :return: Map of strings to symbols.
-        """
-        cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
-        symbol_map = {}
-        for symbol, value in c_symbol_map:
-            symbol_map[symbol.encode('utf-8')] = value
-        return symbol_map
-
-    def translate_symbol(self, str symbol):
-        """Translates symbol to the position of the seen values
-
-        :param str symbol: translated symbol
-        :return: order of the symbol as was seen during the construction
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol) -> str:
-        """Translate internal symbol value to the original symbol name.
-
-        Throw an exception when the symbol is missing in the alphabet.
-        :param Symbol symbol: Internal symbol value to be translated.
-        :return str: Original symbol string name.
-        """
-        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
-
-    cpdef get_alphabet_symbols(self):
-        """Returns a set of supported symbols.
-
-        :return: Set of supported symbols.
-        """
-        cdef COrdVector[Symbol] symbols = self.thisptr.get_alphabet_symbols()
-        return {s for s in symbols}
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
-
-cdef class IntAlphabet(Alphabet):
-    """IntAlphabet represents integer alphabet that directly maps integer string to their values."""
-
-    cdef mata.CIntAlphabet *thisptr
-
-    def __cinit__(self):
-        self.thisptr = new mata.CIntAlphabet()
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def translate_symbol(self, str symbol):
-        """Translates symbol to the position of the seen values
-
-        :param str symbol: translated symbol
-        :return: order of the symbol as was seen during the construction
-        """
-        return self.thisptr.translate_symb(symbol.encode('utf-8'))
-
-    def reverse_translate_symbol(self, Symbol symbol) -> str:
-        """Translate internal symbol value to the original symbol name.
-
-        :param Symbol symbol: Internal symbol value to be translated.
-        :return str: Original symbol string name.
-        """
-        return self.thisptr.reverse_translate_symbol(symbol).decode('utf-8')
-
-    cdef mata.CAlphabet* as_base(self):
-        """Retypes the alphabet to its base class
-
-        :return: alphabet as CAlphabet*
-        """
-        return <mata.CAlphabet*> self.thisptr
-
-cdef class BinaryRelation:
-    """Wrapper for binary relation."""
-    cdef mata.CBinaryRelation *thisptr
-
-    def __cinit__(self, size_t size=0, bool defVal=False, size_t rowSize=16):
-        self.thisptr = new mata.CBinaryRelation(size, defVal, rowSize)
-
-    def __dealloc__(self):
-        if self.thisptr != NULL:
-            del self.thisptr
-
-    def size(self):
-        """Returns the size of the relation
-
-        :return: size of the relation
-        """
-        return self.thisptr.size()
-
-    def resize(self, size_t size, bool defValue=False):
-        """Resizes the binary relation to size
-
-        :param size_t size: new size of the binary relation
-        :param bool defValue: default value that is set after resize
-        """
-        self.thisptr.resize(size, defValue)
-
-    def get(self, size_t row, size_t col):
-        """Gets the value of the relation at [row, col]
-
-        :param size_t row: row of the relation
-        :param size_t col: col of the relation
-        :return: value of the binary relation at [row, col]
-        """
-        return self.thisptr.get(row, col)
-
-    def set(self, size_t row, size_t col, bool value):
-        """Sets the value of the relation at [row, col]
-
-        :param size_t row: row of the relation
-        :param size_t col: col of the relation
-        :param bool value: value that is set
-        """
-        self.thisptr.set(row, col, value)
-
-    def to_matrix(self):
-        """Converts the relation to list of lists of booleans
-
-        :return: relation of list of lists to booleans
-        """
-        size = self.size()
-        result = []
-        for i in range(0, size):
-            sub_result = []
-            for j in range(0, size):
-                sub_result.append(self.get(i, j))
-            result.append(sub_result)
-        return result
-
-    def reset(self, bool defValue = False):
-        """Resets the relation to defValue
-
-        :param bool defValue: value to which the relation will be reset
-        """
-        self.thisptr.reset(defValue)
-
-    def split(self, size_t at, bool reflexive=True):
-        """Creates new row corresponding to the row/col at given index (i think)
-
-        :param size_t at: where the splitting will commence
-        :param bool reflexive: whether the relation should stay reflexive
-        """
-        self.thisptr.split(at, reflexive)
-
-    def alloc(self):
-        """Increases the size of the relation by one
-
-        :return: previsous size of the relation
-        """
-        return self.thisptr.alloc()
-
-    def is_symmetric_at(self, size_t row, size_t col):
-        """Checks if the relation is symmetric at [row, col] and [col, row]
-
-        :param size_t row: checked row
-        :param size_t col: checked col
-        :return: true if [row, col] and [col, row] are symmetric
-        """
-        return self.thisptr.sym(row, col)
-
-    def restrict_to_symmetric(self):
-        """Restricts the relation to its symmetric fragment"""
-        self.thisptr.restrict_to_symmetric()
-
-    def build_equivalence_classes(self):
-        """Builds equivalence classes w.r.t relation
-
-        :return: mapping of state to its equivalence class,
-            first states corresponding to a equivalence class?
-        """
-        cdef vector[size_t] index
-        cdef vector[size_t] head
-        self.thisptr.build_equivalence_classes(index, head)
-        return index, head
-
-    def build_index(self):
-        """Builds index mapping states to their images
-
-        :return: index mapping states to their images, i.e. x -> {y | xRy}
-        """
-        cdef vector[vector[size_t]] index
-        self.thisptr.build_index(index)
-        return [[v for v in i] for i in index]
-
-    def build_inverse_index(self):
-        """Builds index mapping states to their co-images
-
-        :return: index mapping states to their co-images, i.e. x -> {y | yRx}
-        """
-        cdef vector[vector[size_t]] index
-        self.thisptr.build_inv_index(index)
-        return [[v for v in i] for i in index]
-
-    def build_indexes(self):
-        """Builds index mapping states to their images/co-images
-
-        :return: index mapping states to their images/co-images, i.e. x -> {y | yRx}
-        """
-        cdef vector[vector[size_t]] index
-        cdef vector[vector[size_t]] inv_index
-        self.thisptr.build_index(index, inv_index)
-        return [[v for v in i] for i in index], [[v for v in i] for i in inv_index]
-
-    def transpose(self):
-        """Transpose the relation
-
-        :return: transposed relation
-        """
-        result = BinaryRelation()
-        self.thisptr.transposed(dereference(result.thisptr))
-        return result
-
-    def get_quotient_projection(self):
-        """Gets quotient projection of the relation
-
-        :return: quotient projection
-        """
-        cdef vector[size_t] projection
-        self.thisptr.get_quotient_projection(projection)
-        return projection
-
-    def __str__(self):
-        return str(tabulate.tabulate(self.to_matrix()))
 
 
 cdef subset_map_to_dictionary(umap[StateSet, State] subset_map):
@@ -1622,267 +1247,13 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
     return cmdout, cmderr
 
 
-cdef class Alphabet:
-    """
-    Base class for alphabets
-    """
-    cdef CAlphabet* as_base(self):
-        pass
-
-    def translate_symbol(self, str symbol):
-        pass
-
-    def reverse_translate_symbol(self, Symbol symbol):
-        pass
-
-    cdef get_symbols(self):
-        pass
-
-cdef class Segmentation:
-    """Wrapper over Segmentation."""
-    cdef mata.CSegmentation* thisptr
-
-    def __cinit__(self, Nfa aut, cset[Symbol] symbols):
-        """Compute segmentation.
-
-        :param aut: Segment automaton to compute epsilon depths for.
-        :param symbol: Symbol to execute segmentation for.
-        """
-        self.thisptr = new mata.CSegmentation(dereference(aut.thisptr), symbols)
-
-    def __dealloc__(self):
-        del self.thisptr
-
-    def get_epsilon_depths(self):
-        """Get segmentation depths for ε-transitions.
-
-        :return: Map of depths to lists of ε-transitions.
-        """
-        cdef umap[size_t, vector[CTrans]] c_epsilon_transitions = self.thisptr.get_epsilon_depths()
-        result = {}
-        for epsilon_depth_pair in c_epsilon_transitions:
-            for trans in epsilon_depth_pair.second:
-                if epsilon_depth_pair.first not in result:
-                    result[epsilon_depth_pair.first] = []
-
-                result[epsilon_depth_pair.first].append(Trans(trans.src, trans.symb, trans.tgt))
-
-        return result
-
-    def get_segments(self):
-        """Get segment automata.
-
-        :return: A vector of segments for the segment automaton in the order from the left (initial state in segment
-                 automaton) to the right (final states of segment automaton).
-        """
-        segments = []
-        cdef AutSequence c_segments = self.thisptr.get_segments()
-        for c_segment in c_segments:
-            segment = Nfa(c_segment.size())
-            segment.thisptr.get().initial = c_segment.initial
-            segment.thisptr.get().final = c_segment.final
-            segment.thisptr.get().delta = c_segment.delta
-
-            segments.append(segment)
-
-        return segments
-
-
 def get_elements_from_bool_vec(bool_vec: list[int]):
     cdef CBoolVector c_bool_vec = CBoolVector(bool_vec)
     cdef StateSet c_states
-    mata.get_elements(&c_states, c_bool_vec)
+    mata_nfa.get_elements(&c_states, c_bool_vec)
     return { state for state in c_states }
 
-
-def plot(
-        *automata: Nfa,
-        with_scc: bool = False,
-        node_highlight: list = None,
-        edge_highlight: list = None,
-        alphabet: Alphabet = None
-):
-    """Plots the stream of automata
-
-    :param bool with_scc: whether the SCC should be displayed
-    :param list automata: stream of automata that will be plotted using graphviz
-    :param list node_highlight: list of rules for changing style of nodes
-    :param list edge_highlight: list of rules for changing style of edges
-    :param Alphabet alphabet: alphabet for printing the symbols
-    """
-    dots = []
-    for aut in automata:
-        dot = plot_using_graphviz(aut, with_scc, node_highlight, edge_highlight, alphabet)
-        if get_interactive_mode() == 'notebook':
-            dots.append(dot)
-        else:
-            dot.view()
-    if get_interactive_mode() == 'notebook':
-        display_inline(*dots)
-
-
-def _plot_state(aut, dot, state, configuration):
-    """Plots the state
-
-    :param aut: base automaton
-    :param dot: output digraph
-    :param state: plotted state
-    :param configuration: configuration of the state
-    """
-    if aut.has_initial_state(state):
-        dot.node(f"q{state}", "", shape="plaintext", fontsize="1")
-    dot.node(
-        f"{state}", label=f"{state}", **configuration,
-        shape='doublecircle' if aut.has_final_state(state) else 'circle',
-    )
-
-
-def get_configuration_for(default, rules, *args):
-    """For given node or edge, processes the list of rules and applies them.
-
-    :param dict default: default style of the primitive
-    :param list rules: list of rules in form of condition and style
-    """
-    conf = {}
-    conf.update(default)
-    for rule, style in rules or []:
-        if rule(*args):
-            conf.update(style)
-    return conf
-
-
-def plot_using_graphviz(
-        aut: Nfa,
-        with_scc: bool = False,
-        node_highlight: list = None,
-        edge_highlight: list = None,
-        alphabet: Alphabet = None
-):
-    """Plots automaton using graphviz
-
-    :param list node_highlight: list of rules for changing style of nodes
-    :param list edge_highlight: list of rules for changing style of edges
-    :param Nfa aut: plotted automaton
-    :param bool with_scc: will plot with strongly connected components
-    :param Alphabet alphabet: alphabet for reverse translation of symbols
-    :return: automaton in graphviz
-    """
-    # Configuration
-    base_configuration = store()['node_style']
-    edge_configuration = store()['edge_style']
-    alphabet = alphabet or store()['alphabet']
-    if not alphabet:
-        print("warning: missing alphabet necessary to translate the symbols")
-    dot = graphviz.Digraph("dot")
-    if aut.label:
-        dot.attr(
-            label=aut.label, labelloc="t", kw="graph",
-            fontname="Helvetica", fontsize="14"
-        )
-
-    if with_scc:
-        G = aut.to_networkx_graph()
-        for i, scc in enumerate(nx.strongly_connected_components(G)):
-            with dot.subgraph(name=f"cluster_{i}") as c:
-                c.attr(color='black', style='filled', fillcolor="lightgray", label="")
-                for state in scc:
-                    _plot_state(
-                        aut, c, state,
-                        get_configuration_for(base_configuration, node_highlight, aut, state)
-                    )
-    else:
-        # Only print reachable states
-        for state in range(0, aut.size()):
-            # Helper node to simulate initial automaton
-            _plot_state(
-                aut, dot, state,
-                get_configuration_for(base_configuration, node_highlight, aut, state)
-            )
-
-    # Plot edges
-    for state in aut.initial_states:
-        dot.edge(f"q{state}", f"{state}", **edge_configuration)
-    edges = {}
-    for trans in aut.iterate():
-        key = f"{trans.src},{trans.tgt}"
-        if key not in edges.keys():
-            edges[key] = []
-        symbol = "{}".format(
-            alphabet.reverse_translate_symbol(trans.symb) if alphabet else trans.symb
-        )
-        edges[key].append((
-            f"{trans.src}", f"{trans.tgt}", symbol,
-            get_configuration_for(
-                edge_configuration, edge_highlight, aut, trans
-            )
-        ))
-    for edge in edges.values():
-        src = edge[0][0]
-        tgt = edge[0][1]
-        label = "<" + " | ".join(sorted(t[2] for t in edge)) + ">"
-        style = {}
-        for val in edge:
-            style.update(val[3])
-        dot.edge(src, tgt, label=label, **style)
-
-    return dot
-
-
-def get_interactive_mode() -> str:
-    """Checks and returns, which interactive mode (if any) the code is run in
-
-    The function returns:
-      1. 'none' if the code is not run in any interactive mode
-      2. 'notebook' if the code is run in the jupyter notebook
-      3. 'terminal' if the code is run in the interactive terminal
-
-    :return: type of the interactive mode
-    """
-    if 'ipykernel' in sys.modules:
-        return 'notebook'
-    elif 'IPython' in sys.modules:
-        return 'terminal'
-    else:
-        return 'none'
-
-
-def display_inline(*args, per_row=None, show=None):
-    """
-    This is a wrapper around IPython's `display()` to display multiple
-    elements in a row, without forced line break between them.
-
-    Copyright (C) 2018 Laboratoire de Recherche et Développement de l'Epita
-    (LRDE).
-
-    This function is part of Spot, a model checking library.
-
-    If the `per_row` argument is given, at most `per_row` arguments are
-    displayed on each row, each one taking 1/per_row of the line width.
-    """
-    width = res = ''
-    if per_row:
-        width = 'width:{}%;'.format(100//per_row)
-    for arg in args:
-        dpy = 'inline-block'
-        if show is not None and hasattr(arg, 'show'):
-            rep = arg.show(show)._repr_svg_()
-        elif hasattr(arg, '_repr_image_svg_xml'):
-            rep = arg._repr_image_svg_xml()
-        elif hasattr(arg, '_repr_svg_'):
-            rep = arg._repr_svg_()
-        elif hasattr(arg, '_repr_html_'):
-            rep = arg._repr_html_()
-        elif hasattr(arg, '_repr_latex_'):
-            rep = arg._repr_latex_()
-            if not per_row:
-                dpy = 'inline'
-        else:
-            rep = str(arg)
-        res += ("<div style='vertical-align:text-top;display:{};{}'>{}</div>"
-                .format(dpy, width, rep))
-    display(HTML(res))
-
-
+# On the fly configuration of the library
 _store = {
     'node_style': {
         "style": "filled",
@@ -1908,61 +1279,3 @@ def store():
     Returns the configuration of the library
     """
     return _store
-
-
-def setup(**kwargs):
-    """
-    Provides the setup of the configuration of the mata library
-    """
-    _store.update(kwargs)
-
-
-class Style:
-    """
-    Collection of helper styles for coloring nodes and edges in automata
-    """
-    @classmethod
-    def filled(cls, fillcolor, edgecolor=None):
-        """Style that fills the primitive with color"""
-        style = {'fillcolor': fillcolor}
-        if edgecolor:
-            style['color'] = edgecolor
-        return style
-
-    @classmethod
-    def colored(cls, color):
-        """Style that make primitive colored"""
-        return {'color': color}
-
-    @classmethod
-    def dashed(cls, color=None):
-        """Style that makes lines dashed"""
-        style = {'style': 'dashed'}
-        if color:
-            style['color'] = color
-        return style
-
-    @classmethod
-    def hidden(cls):
-        """Style that hides the primitive"""
-        return {'style': 'invis'}
-
-
-class Condition:
-    """
-    Collection of helper functions that can be used as conditions in highlighting rule
-    """
-    @classmethod
-    def state_is_initial(cls, automaton, state):
-        """Tests if state in automaton is initial"""
-        return automaton.has_initial_state(state)
-
-    @classmethod
-    def state_is_final(cls, automaton, state):
-        """Tests if state in automaton is final"""
-        return automaton.has_final_state(state)
-
-    @classmethod
-    def transition_is_cycle(cls, _, trans):
-        """Tests if transition is self cycle"""
-        return trans.src == trans.tgt

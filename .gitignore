@@ -45,7 +45,14 @@ coverage.info
 cov_html
 VERSION
 
+# Environment related
 .DS_Store
 .vscode/
+.idea/
 .venv
-bindings/python/libmata.cpp
+
+# Python binding related
+bindings/python/**/*.cpp
+.ipynb_checkpoints/
+__pycache__/
+bindings/python/.coverage
