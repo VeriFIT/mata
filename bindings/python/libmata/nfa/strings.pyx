@@ -1,5 +1,6 @@
-cimport libmata.nfa.nfa as mata
+cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.nfa.strings as mata_strings
+
 from cython.operator import dereference, postincrement as postinc
 
 from libmata.nfa.strings cimport AutSequence, NoodleSequence, AutPtrSequence, CSegmentation
@@ -7,9 +8,10 @@ from libmata.nfa.nfa cimport CTrans
 
 cdef class Segmentation:
     """Wrapper over Segmentation."""
+
     cdef CSegmentation* thisptr
 
-    def __cinit__(self, mata.Nfa aut, cset[Symbol] symbols):
+    def __cinit__(self, mata_nfa.Nfa aut, cset[Symbol] symbols):
         """Compute segmentation.
 
         :param aut: Segment automaton to compute epsilon depths for.
@@ -32,7 +34,7 @@ cdef class Segmentation:
                 if epsilon_depth_pair.first not in result:
                     result[epsilon_depth_pair.first] = []
 
-                result[epsilon_depth_pair.first].append(mata.Trans(trans.src, trans.symb, trans.tgt))
+                result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
 
         return result
 
@@ -45,23 +47,23 @@ cdef class Segmentation:
         segments = []
         cdef AutSequence c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
-            segment = mata.Nfa(c_segment.size())
-            (<mata.Nfa>segment).thisptr.get().initial = c_segment.initial
-            (<mata.Nfa>segment).thisptr.get().final = c_segment.final
-            (<mata.Nfa>segment).thisptr.get().delta = c_segment.delta
+            segment = mata_nfa.Nfa(c_segment.size())
+            (<mata_nfa.Nfa>segment).thisptr.get().initial = c_segment.initial
+            (<mata_nfa.Nfa>segment).thisptr.get().final = c_segment.final
+            (<mata_nfa.Nfa>segment).thisptr.get().delta = c_segment.delta
 
             segments.append(segment)
 
         return segments
 
 
-def noodlify(mata.Nfa aut, Symbol symbol, include_empty = False):
+def noodlify(mata_nfa.Nfa aut, Symbol symbol, include_empty = False):
     """Create noodles from segment automaton.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
     A noodle is a copy of the segment automaton with exactly one ε-transition between each two consecutive segments.
 
-    :param: mata.Nfa aut: Segment automaton to noodlify.
+    :param: mata_nfa.Nfa aut: Segment automaton to noodlify.
     :param: Symbol epsilon: Epsilon symbol to noodlify for.
     :param: bool include_empty: Whether to also include empty noodles.
     :return: List of automata: A list of all (non-empty) noodles.
@@ -73,15 +75,15 @@ def noodlify(mata.Nfa aut, Symbol symbol, include_empty = False):
     for c_noodle in c_noodle_segments:
         noodle = []
         for c_noodle_segment in c_noodle:
-            noodle_segment = mata.Nfa()
-            (<mata.Nfa>noodle_segment).thisptr = c_noodle_segment
+            noodle_segment = mata_nfa.Nfa()
+            (<mata_nfa.Nfa>noodle_segment).thisptr = c_noodle_segment
             noodle.append(noodle_segment)
 
         noodle_segments.append(noodle)
 
     return noodle_segments
 
-def get_shortest_words(mata.Nfa nfa):
+def get_shortest_words(mata_nfa.Nfa nfa):
     """Returns set of the shortest words accepted by the automaton."""
     cdef cset[vector[Symbol]] shortest
     shortest = mata_strings.c_get_shortest_words(dereference(nfa.thisptr.get()))
@@ -94,7 +96,7 @@ def get_shortest_words(mata.Nfa nfa):
         postinc(it)
     return result
 
-def noodlify_for_equation(left_side_automata: list, mata.Nfa right_side_automaton, include_empty = False, params = None):
+def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_automaton, include_empty = False, params = None):
     """Create noodles for equation.
 
     Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
@@ -106,8 +108,8 @@ def noodlify_for_equation(left_side_automata: list, mata.Nfa right_side_automato
      representing the intersection. That can be achieved by computing a product of both sides. First, the left side
      has to be concatenated over an epsilon transition into a single automaton to compute the intersection on, though.
 
-    :param: list[mata.Nfa] aut: Segment automata representing the left side of the equation to noodlify.
-    :param: mata.Nfa aut: Segment automaton representing the right side of the equation to noodlify.
+    :param: list[mata_nfa.Nfa] aut: Segment automata representing the left side of the equation to noodlify.
+    :param: mata_nfa.Nfa aut: Segment automaton representing the right side of the equation to noodlify.
     :param: bool include_empty: Whether to also include empty noodles.
     :param: dict params: Additional parameters for the noodlification:
         - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
@@ -116,7 +118,7 @@ def noodlify_for_equation(left_side_automata: list, mata.Nfa right_side_automato
     """
     cdef AutPtrSequence c_left_side_automata
     for lhs_aut in left_side_automata:
-        c_left_side_automata.push_back((<mata.Nfa>lhs_aut).thisptr.get())
+        c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
     noodle_segments = []
     params = params or {}
     cdef NoodleSequence c_noodle_segments = mata_strings.c_noodlify_for_equation(
@@ -129,8 +131,8 @@ def noodlify_for_equation(left_side_automata: list, mata.Nfa right_side_automato
     for c_noodle in c_noodle_segments:
         noodle = []
         for c_noodle_segment in c_noodle:
-            noodle_segment = mata.Nfa()
-            (<mata.Nfa>noodle_segment).thisptr = c_noodle_segment
+            noodle_segment = mata_nfa.Nfa()
+            (<mata_nfa.Nfa>noodle_segment).thisptr = c_noodle_segment
             noodle.append(noodle_segment)
 
         noodle_segments.append(noodle)

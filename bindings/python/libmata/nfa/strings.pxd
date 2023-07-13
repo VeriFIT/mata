@@ -1,9 +1,9 @@
+from libc.stdint cimport uintptr_t
 from libcpp cimport bool
+from libcpp.memory cimport shared_ptr
 from libcpp.set cimport set as cset
 from libcpp.string cimport string
-from libc.stdint cimport uintptr_t
 from libcpp.unordered_map cimport unordered_map as umap
-from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 
 from libmata.nfa.nfa cimport CNfa, CTrans

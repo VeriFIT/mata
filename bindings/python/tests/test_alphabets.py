@@ -1,8 +1,8 @@
 __author__ = 'Tomas Fiedor'
 
-import libmata.nfa.nfa as mata
-import libmata.alphabets as alph
 import pytest
+
+import libmata.alphabets as alph
 
 
 def test_on_the_fly_alphabet_with_character_symbols():

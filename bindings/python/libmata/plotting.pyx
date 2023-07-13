@@ -1,8 +1,3 @@
-cimport libmata.alphabets as alph
-cimport libmata.nfa.nfa as mata
-
-from libmata.nfa.nfa import store, _store
-
 import networkx as nx
 import graphviz
 import IPython
@@ -10,8 +5,14 @@ import sys
 
 from IPython.display import display, HTML
 
+cimport libmata.alphabets as alph
+cimport libmata.nfa.nfa as mata_nfa
+
+from libmata.nfa.nfa import store, _store
+
+
 def plot(
-        *automata: mata.Nfa,
+        *automata: mata_nfa.Nfa,
         with_scc: bool = False,
         node_highlight: list = None,
         edge_highlight: list = None,
@@ -67,7 +68,7 @@ def get_configuration_for(default, rules, *args):
 
 
 def plot_using_graphviz(
-        aut: mata.Nfa,
+        aut: mata_nfa.Nfa,
         with_scc: bool = False,
         node_highlight: list = None,
         edge_highlight: list = None,
@@ -77,7 +78,7 @@ def plot_using_graphviz(
 
     :param list node_highlight: list of rules for changing style of nodes
     :param list edge_highlight: list of rules for changing style of edges
-    :param mata.Nfa aut: plotted automaton
+    :param mata_nfa.Nfa aut: plotted automaton
     :param bool with_scc: will plot with strongly connected components
     :param alph.Alphabet alphabet: alphabet for reverse translation of symbols
     :return: automaton in graphviz

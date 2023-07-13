@@ -1,6 +1,6 @@
+from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
-from libc.stdint cimport uint8_t
 
 cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
     cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:

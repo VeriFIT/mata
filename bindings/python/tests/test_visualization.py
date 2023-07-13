@@ -1,6 +1,6 @@
 __author__ = 'Tomas Fiedor'
 
-import libmata.nfa.nfa as mata
+import libmata.nfa.nfa as mata_nfa
 
 
 def test_conversions(fa_one_divisible_by_two):
@@ -22,7 +22,7 @@ def test_conversions(fa_one_divisible_by_two):
     assert list(G.edges) == [(0, 0), (0, 1), (1, 1), (1, 2), (2, 2), (2, 1)]
 
     # Test empty automaton
-    empty = mata.Nfa()
+    empty = mata_nfa.Nfa()
     df = empty.to_dataframe()
     assert df.empty
 

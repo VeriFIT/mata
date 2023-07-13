@@ -1,7 +1,7 @@
-from libcpp.vector cimport vector
-from libcpp.string cimport string
-from libcpp.unordered_map cimport unordered_map as umap
 from libc.stdint cimport uintptr_t
+from libcpp.string cimport string
+from libcpp.vector cimport vector
+from libcpp.unordered_map cimport unordered_map as umap
 from libmata.utils cimport COrdVector
 
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
