@@ -165,7 +165,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
         COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& state_transitions, Symbol epsilon)
+        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& post, Symbol epsilon)
         void clear()
         size_t size()
 

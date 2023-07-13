@@ -21,24 +21,19 @@ using namespace Mata::Nfa;
 using namespace Mata::Strings;
 
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
-                                                    std::deque<StateDepthTuple>& worklist)
-{
-    auto outgoing_transitions{automaton.get_moves_from(state_depth_pair.state) };
-    for (const auto& state_transitions: outgoing_transitions)
-    {
-        if (this->epsilons.find(state_transitions.symbol) != this->epsilons.end())
-        {
-            handle_epsilon_transitions(state_depth_pair, state_transitions, worklist);
-        }
-        else // Handle other transitions.
-        {
-            add_transitions_to_worklist(state_depth_pair, state_transitions, worklist);
+                                                    std::deque<StateDepthTuple>& worklist) {
+    auto outgoing_post{ automaton.delta[state_depth_pair.state] };
+    for (const Move& outgoing_move: outgoing_post) {
+        if (this->epsilons.find(outgoing_move.symbol) != this->epsilons.end()) {
+            handle_epsilon_transitions(state_depth_pair, outgoing_move, worklist);
+        } else { // Handle other transitions.
+            add_transitions_to_worklist(state_depth_pair, outgoing_move, worklist);
         }
     }
 }
 
 void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& state_depth_pair,
-                                                      const Move& state_transitions,
+                                                      const Move& move,
                                                       std::deque<StateDepthTuple>& worklist)
 {
     /// TODO: Maybe we don't need to keep the transitions in both structures
@@ -46,15 +41,15 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
     this->eps_depth_trans_map.insert({ state_depth_pair.depth, {{state_depth_pair.state, TransSequence{}}} });
 
     std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
-    visited_eps_aux[state_transitions.symbol]++; 
+    visited_eps_aux[move.symbol]++;
 
-    for (State target_state: state_transitions.targets)
+    for (State target_state: move.targets)
     {
         this->epsilon_depth_transitions[state_depth_pair.depth].push_back(
-                Trans{ state_depth_pair.state, state_transitions.symbol, target_state }
+                Trans{ state_depth_pair.state, move.symbol, target_state }
         );
         this->eps_depth_trans_map[state_depth_pair.depth][state_depth_pair.state].push_back(
-            Trans{ state_depth_pair.state, state_transitions.symbol, target_state }
+            Trans{ state_depth_pair.state, move.symbol, target_state }
         );
         worklist.push_back(StateDepthTuple{ target_state, state_depth_pair.depth + 1, visited_eps_aux });
         this->visited_eps[target_state] = visited_eps_aux;
@@ -62,10 +57,10 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
 }
 
 void SegNfa::Segmentation::add_transitions_to_worklist(const StateDepthTuple& state_depth_pair,
-                                                      const Move& state_transitions,
+                                                      const Move& move,
                                                       std::deque<StateDepthTuple>& worklist)
 {
-    for (State target_state: state_transitions.targets)
+    for (State target_state: move.targets)
     {
         worklist.push_back(StateDepthTuple{ target_state, state_depth_pair.depth, state_depth_pair.eps });
         this->visited_eps[target_state] = state_depth_pair.eps;

@@ -273,20 +273,20 @@ private:
 
     /**
      * Add states with non-epsilon transitions to the @p worklist.
-     * @param state_transitions[in] Transitions from current state.
+     * @param move[in] Move from current state.
      * @param depth[in] Current depth.
      * @param worklist[out] Worklist of state and depth pairs to process.
      */
-    void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const Move& state_transitions,
+    void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const Move& move,
                                      std::deque<StateDepthTuple>& worklist);
 
     /**
      * Process epsilon transitions for the current state.
      * @param[in] state_depth_pair Current state depth pair.
-     * @param[in] state_transitions Transitions from current state.
+     * @param[in] move Move from current state.
      * @param[out] worklist Worklist of state and depth pairs to process.
      */
-    void handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const Move& state_transitions,
+    void handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const Move& move,
                                     std::deque<StateDepthTuple>& worklist);
 
     /**
