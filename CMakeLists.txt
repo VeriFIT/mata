@@ -50,10 +50,10 @@ set(COMMON_WARNINGS
         -Wunused-parameter
         -Wsign-compare
         -Wunused-parameter
-        #-Wpedantic
+        -Wpedantic
         #-pedantic-errors
         -Wconversion
-        #-Wsign-conversion
+        -Wsign-conversion
         -Wreturn-type
         )
 # Clang-specific warnings compiler flags.
@@ -63,6 +63,13 @@ set(CLANG_WARNINGS
         -Wnested-anon-types
         -Wno-system-headers
         )
+
+# Set whether to treat warnings as errors.
+option(WERROR "WERROR" OFF)
+message("-- Treating warnings as errors: ${WERROR}")
+if (WERROR)
+    set(COMMON_WARNINGS "${COMMON_WARNINGS}" -Werror)
+endif ()
 
 ##############################################################################
 #                                DEPENDENCIES

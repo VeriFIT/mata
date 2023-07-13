@@ -2,7 +2,7 @@ BUILD_DIR=build
 MAKE_FLAGS=-j 4
 TEST_FLAGS=-j 50 --output-on-failure
 
-.PHONY: all debug release coverage doc clean test
+.PHONY: all debug debug-werror release release-werror coverage doc clean test
 
 all:
 	./clean_gcda.sh
@@ -11,8 +11,14 @@ all:
 debug:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
 
+debug-werror:
+	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
+
 release:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
+
+release-werror:
+	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
 
 coverage: clean
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Coverage .. && $(MAKE) $(MAKE_FLAGS)
