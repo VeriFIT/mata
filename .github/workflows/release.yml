@@ -147,7 +147,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
 
-  compile-base:
+  warnings:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
