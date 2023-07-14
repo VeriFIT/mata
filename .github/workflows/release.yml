@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload to TestPypi
         run: |
-          python3 -m twine upload bindings/python/dist/*
+          python3 -m twine upload bindings/python/dist/*.tar.gz
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload to Pypi
         run: |
-          python3 -m twine upload bindings/python/dist/*
+          python3 -m twine upload bindings/python/dist/*.tar.gz
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_SECRET_TOKEN }}
