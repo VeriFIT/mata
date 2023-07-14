@@ -36,6 +36,14 @@ simlib_source_dir = os.path.join(src_dir, "3rdparty", "simlib", "src")
 cudd_include_dir = os.path.join(src_dir, "3rdparty", "cudd-min", "include")
 cudd_source_dir = os.path.join(src_dir, "3rdparty", "cudd-min")
 
+# Build stuff
+project_library_dirs = [
+    os.path.join(src_dir, "build", "src"),
+    os.path.join(src_dir, "build", "3rdparty", "cudd"),
+    os.path.join(src_dir, "build", "3rdparty", "simlib"),
+    os.path.join(src_dir, "build", "3rdparty", "re2"),
+]
+
 with open(os.path.join(src_dir, "README.md")) as readme_handle:
     README_MD = readme_handle.read()
 
@@ -70,8 +78,10 @@ project_includes = [
 extensions = [
     Extension(
         f"libmata.{pkg}",
-        sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"] + project_sources,
+        sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"],
         include_dirs=project_includes,
+        libraries=['mata', 're2', 'cudd', 'simlib'],
+        library_dirs=project_library_dirs,
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
     ) for pkg in (
