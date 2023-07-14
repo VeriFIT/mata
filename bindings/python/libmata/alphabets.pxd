@@ -4,10 +4,6 @@ from libcpp.vector cimport vector
 from libcpp.unordered_map cimport unordered_map as umap
 from libmata.utils cimport COrdVector
 
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    # Typedefs
-    ctypedef uintptr_t State
-
 cdef extern from "mata/alphabet.hh" namespace "Mata":
     ctypedef uintptr_t Symbol
     ctypedef umap[string, Symbol] StringToSymbolMap
