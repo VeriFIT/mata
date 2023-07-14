@@ -782,7 +782,7 @@ void Nfa::unify_final() {
     final.insert(new_final_state);
 }
 
-void Nfa::add_symbols_to(OnTheFlyAlphabet& alphabet) const {
+void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
     size_t aut_num_of_states{size() };
     for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const Move& move: delta[state]) {
