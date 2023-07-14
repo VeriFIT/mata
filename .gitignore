@@ -62,3 +62,7 @@ bindings/python/libmata.egg-info
 bindings/python/libmata.cpp
 bindings/python/test.dot
 bindings/python/test.dot.pdf
+
+# Performance and profiling tests
+tests-performance/pycobench.tasks
+
