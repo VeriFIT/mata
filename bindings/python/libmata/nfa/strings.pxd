@@ -9,17 +9,17 @@ from libcpp.vector cimport vector
 from libmata.nfa.nfa cimport CNfa, CTrans
 from libmata.alphabets cimport Symbol
 
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
+cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     ctypedef vector[CTrans] TransitionSequence
     ctypedef vector[CNfa] AutSequence
     ctypedef vector[CNfa*] AutPtrSequence
     ctypedef vector[const CNfa*] ConstAutPtrSequence
     ctypedef umap[string, string] StringMap
 
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings":
+cdef extern from "mata/nfa/strings.hh" namespace "Mata::Strings":
     cdef cset[vector[Symbol]] c_get_shortest_words "Mata::Strings::get_shortest_words" (CNfa&)
 
-cdef extern from "mata/nfa-strings.hh" namespace "Mata::Strings::SegNfa":
+cdef extern from "mata/nfa/strings.hh" namespace "Mata::Strings::SegNfa":
     cdef cppclass CSegmentation "Mata::Strings::SegNfa::Segmentation":
         CSegmentation(CNfa&, cset[Symbol]) except +
 
