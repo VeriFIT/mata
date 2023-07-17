@@ -9,6 +9,7 @@ import re
 from setuptools import setup, Extension
 from Cython.Build import cythonize
 from distutils.command.sdist import sdist as _sdist
+from distutils.command.build_ext import build_ext as _build_ext
 
 if 'microsoft' in platform.uname().release.lower():
     """Patch for calling the python from WSL. The copystat fails on copied directories"""
@@ -111,21 +112,17 @@ def _copy_sources():
     shutil.copy(version_file, sdist_dir)
     shutil.copy(os.path.join(project_dir, 'LICENSE'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'README.md'), sdist_dir)
-    shutil.copytree(
-        os.path.join(project_dir, 'src'),
-        os.path.join(sdist_dir, 'src'),
-        ignore=shutil.ignore_patterns("*.txt")
-    )
-    shutil.copytree(
-        os.path.join(project_dir, 'include'),
-        os.path.join(sdist_dir, 'include'),
-        ignore=shutil.ignore_patterns("*.txt")
-    )
-    shutil.copytree(
-        os.path.join(project_dir, '3rdparty'),
-        os.path.join(sdist_dir, '3rdparty'),
-        ignore=shutil.ignore_patterns("*.txt")
-    )
+    shutil.copy(os.path.join(project_dir, 'Makefile'), sdist_dir)
+    shutil.copy(os.path.join(project_dir, 'CMakeLists.txt'), sdist_dir)
+    shutil.copy(os.path.join(project_dir, 'Doxyfile.in'), sdist_dir)
+    shutil.copy(os.path.join(project_dir, 'merge_static_libraries.sh'), sdist_dir)
+    for mata_dir in (
+            'src', 'include', '3rdparty', 'cmake', 'cli', 'tests', 'unit-test-data'
+    ):
+        shutil.copytree(
+            os.path.join(project_dir, mata_dir),
+            os.path.join(sdist_dir, mata_dir),
+        )
     if version_file_was_created:
         os.remove(version_file)
 
@@ -134,6 +131,12 @@ class sdist(_sdist):
     def run(self):
         self.execute(_copy_sources, (), msg="Copying source files")
         _sdist.run(self)
+
+
+class build_ext(_build_ext):
+    def run(self):
+        self.execute(_build_mata, (), msg="Building libmata library")
+        _build_ext.run(self)
 
 
 def get_version():
@@ -150,6 +153,16 @@ def get_version():
         version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
         assert re.match(r"\d+\.\d+\.\d+(.*)", version)
         return version.strip()
+
+
+def _build_mata():
+    """Builds mata library"""
+    with subprocess.Popen(
+        shlex.split("make release"),
+        cwd=project_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
+    ) as p:
+        for line in p.stdout:
+            print(line, end='')
 
 
 def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeout=None, **kwargs):
@@ -235,7 +248,10 @@ setup(
     long_description_content_type="text/markdown",
     keywords="automata, finite automata, alternating automata",
     url="https://github.com/verifit/mata",
-    cmdclass={'sdist': sdist},
+    cmdclass={
+        'sdist': sdist,
+        'build_ext': build_ext
+    },
     # Requirements from install for pip
     install_requires=[
         'Cython>=0.29.32',
