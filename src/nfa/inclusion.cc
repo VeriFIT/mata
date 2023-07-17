@@ -16,9 +16,9 @@
  */
 
 // MATA headers
-#include <mata/nfa.hh>
-#include <mata/nfa-algorithms.hh>
-#include <mata/sparse-set.hh>
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/utils/sparse-set.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Util;

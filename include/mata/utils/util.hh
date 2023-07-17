@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#ifndef _MATA_UTIL_HH_
-#define _MATA_UTIL_HH_
+#ifndef MATA_UTIL_HH_
+#define MATA_UTIL_HH_
 
 #include <algorithm>
 #include <functional>
@@ -584,4 +584,4 @@ void filter(Vector & vec, F && is_staying) {
     }
 }
 }
-#endif /* _MATA_UTIL_HH_ */
+#endif /* MATA_UTIL_HH_ */

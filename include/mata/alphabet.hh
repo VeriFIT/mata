@@ -20,8 +20,8 @@
 #include <string>
 #include <utility>
 
-#include "mata/util.hh"
-#include "mata/ord-vector.hh"
+#include "utils/util.hh"
+#include "utils/ord-vector.hh"
 
 namespace Mata {
 

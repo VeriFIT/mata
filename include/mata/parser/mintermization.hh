@@ -17,9 +17,9 @@
 #ifndef MATA_MINTERM_HH
 #define MATA_MINTERM_HH
 
-#include <mata/cudd/cuddObj.hh>
+#include "mata/cudd/cuddObj.hh"
 
-#include "mata/inter-aut.hh"
+#include "inter-aut.hh"
 
 namespace Mata {
 

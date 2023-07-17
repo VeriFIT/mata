@@ -1,6 +1,6 @@
 // example1.cc - constructing an automaton, then dumping it
 
-#include <mata/nfa.hh>
+#include "mata/nfa/nfa.hh"
 #include <iostream>
 
 using namespace Mata::Nfa;

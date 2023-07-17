@@ -15,10 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/nfa.hh"
-#include "mata/nfa-strings.hh"
-#include "mata/util.hh"
-#include <mata/nfa-algorithms.hh>
+#include "mata/utils/util.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/strings.hh"
+#include "mata/nfa/algorithms.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;

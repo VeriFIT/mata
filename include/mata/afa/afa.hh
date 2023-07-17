@@ -29,11 +29,11 @@
 #include <memory>
 
 #include "mata/alphabet.hh"
-#include "mata/nfa.hh"
-#include "mata/parser.hh"
-#include "mata/util.hh"
-#include "mata/ord-vector.hh"
-#include "mata/closed-set.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/parser/parser.hh"
+#include "mata/utils/util.hh"
+#include "mata/utils/ord-vector.hh"
+#include "mata/utils/closed-set.hh"
 
 /**
  * Alternating Finite Automata including structures, transitions and algorithms.

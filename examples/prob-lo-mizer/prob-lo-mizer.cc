@@ -2,8 +2,8 @@
 // constructs a probabilistic automaton obtained by assigning transitions in 'A'
 // probabilities respecting choices of 'A' on the input from the PCAP file
 
-#include <mata/util.hh>
-#include <mata/nfa.hh>
+#include "mata/utils/util.hh"
+#include "mata/nfa/nfa.hh"
 
 #include <chrono>
 #include <iostream>

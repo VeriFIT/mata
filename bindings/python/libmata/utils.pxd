@@ -2,7 +2,7 @@ from libc.stdint cimport uint8_t
 from libcpp cimport bool
 from libcpp.vector cimport vector
 
-cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
+cdef extern from "mata/utils/sparse-set.hh" namespace "Mata::Util":
     cdef cppclass CSparseSet "Mata::Util::SparseSet" [T]:
         vector[T] dense
         vector[T] sparse
@@ -40,7 +40,7 @@ cdef extern from "mata/sparse-set.hh" namespace "Mata::Util":
         iterator end()
 
 
-cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
+cdef extern from "mata/utils/ord-vector.hh" namespace "Mata::Util":
     cdef cppclass COrdVector "Mata::Util::OrdVector" [T]:
         COrdVector() except+
         COrdVector(vector[T]) except+
@@ -63,7 +63,7 @@ cdef extern from "mata/ord-vector.hh" namespace "Mata::Util":
         iterator end()
 
 
-cdef extern from "mata/util.hh" namespace "Mata":
+cdef extern from "mata/utils/util.hh" namespace "Mata":
     cdef cppclass CBoolVector "Mata::BoolVector":
         CBoolVector()
         CBoolVector(size_t, bool)

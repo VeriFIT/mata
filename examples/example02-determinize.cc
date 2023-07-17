@@ -1,6 +1,6 @@
 // example02.cc - determinizing an automaton
 
-#include <mata/nfa.hh>
+#include "mata/nfa/nfa.hh"
 #include <iostream>
 
 using namespace Mata::Nfa;

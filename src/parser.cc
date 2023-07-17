@@ -15,8 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#include <mata/parser.hh>
-#include <mata/util.hh>
+#include "mata/parser/parser.hh"
+#include "mata/utils/util.hh"
 
 #include <algorithm>
 #include <cstring>

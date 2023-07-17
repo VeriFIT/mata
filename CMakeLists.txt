@@ -132,6 +132,6 @@ add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 add_subdirectory(tests)
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "**/*.hh")
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd/include/mata DESTINATION include FILES_MATCHING PATTERN "*.h*")
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/simlib/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")

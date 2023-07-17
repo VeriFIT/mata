@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/mintermization.hh"
+#include "mata/parser/mintermization.hh"
 
 namespace {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)

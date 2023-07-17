@@ -17,7 +17,7 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/inter-aut.hh"
+#include "mata/parser/inter-aut.hh"
 
 namespace {
     bool has_atmost_one_auto_naming(const Mata::IntermediateAut& aut)

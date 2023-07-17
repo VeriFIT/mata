@@ -2,8 +2,8 @@
 // in the pcap format, and tests how many packets from P lie in the symmetric
 // difference of the languages of A1 and A2
 
-#include <mata/util.hh>
-#include <mata/nfa.hh>
+#include "mata/utils/util.hh"
+#include "mata/nfa/nfa.hh"
 
 #include <chrono>
 #include <iostream>
