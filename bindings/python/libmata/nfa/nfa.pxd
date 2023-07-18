@@ -25,7 +25,6 @@ cdef extern from "<sstream>" namespace "std":
         stringstream(string) except +
         string str()
 
-
 cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
