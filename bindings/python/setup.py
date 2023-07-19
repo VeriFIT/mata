@@ -91,6 +91,11 @@ extensions = [
 ]
 
 
+def _clean_up():
+    """Removes old files"""
+    shutil.rmtree(sdist_dir, ignore_errors=True)
+
+
 def _copy_sources():
     """Copies sources to specified `mata` folder.
 
@@ -99,7 +104,7 @@ def _copy_sources():
 
     Inspired by z3 setup.py
     """
-    shutil.rmtree(sdist_dir, ignore_errors=True)
+    _clean_up()
     os.mkdir(sdist_dir)
 
     version_file = os.path.join(project_dir, 'VERSION')
@@ -131,6 +136,7 @@ class sdist(_sdist):
     def run(self):
         self.execute(_copy_sources, (), msg="Copying source files")
         _sdist.run(self)
+        self.execute(_clean_up, (), msg="Cleaning up")
 
 
 class build_ext(_build_ext):
@@ -159,7 +165,7 @@ def _build_mata():
     """Builds mata library"""
     with subprocess.Popen(
         shlex.split("make release"),
-        cwd=project_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
+        cwd=src_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
     ) as p:
         for line in p.stdout:
             print(line, end='')
