@@ -200,7 +200,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void complement(CNfa*, CNfa&, CAlphabet&, StringMap&) except +
     cdef void make_complete(CNfa*, CAlphabet&, State) except +
     cdef void revert(CNfa*, CNfa&)
-    cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
+    cdef void c_remove_epsilon "Mata::Nfa::Plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void minimize(CNfa*, CNfa&)
     cdef void reduce(CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
 

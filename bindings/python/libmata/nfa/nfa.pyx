@@ -833,6 +833,7 @@ cdef class Nfa:
 
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
+        print("fuck me, this is not called, right?")
         self.thisptr.get().remove_epsilon(epsilon)
 
     def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> Move | None:
