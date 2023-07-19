@@ -821,19 +821,16 @@ cdef class Nfa:
         :return: Nfa: Automaton with epsilon transitions removed.
         """
         result = Nfa()
-        print(f"result = {result}")
-        mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
-        print(f"result (after_epsilon) = {result}")
+        mata_nfa.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
         return result
 
-    def remove_epsilon(self, Symbol epsilon = CEPSILON):
+    def remove_epsilon_inplace(self, Symbol epsilon = CEPSILON):
         """Removes transitions which contain epsilon symbol.
 
         TODO: Possibly there may be issue with setting the size of the automaton beforehand?
 
         :param Symbol epsilon: Symbol representing the epsilon symbol.
         """
-        print("fuck me, this is not called, right?")
         self.thisptr.get().remove_epsilon(epsilon)
 
     def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> Move | None:
