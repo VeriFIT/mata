@@ -1,8 +1,8 @@
 // pcap-filter.cc - filters packets from a PCAP file that belong (or do not)
 // into the language of a provided NFA
 
-#include <mata/util.hh>
-#include <mata/nfa.hh>
+#include "mata/utils/util.hh"
+#include "mata/nfa/nfa.hh"
 
 #include <chrono>
 #include <iostream>

@@ -15,10 +15,10 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/nfa.hh"
-#include "mata/nfa-strings.hh"
-#include "mata/util.hh"
-#include <mata/nfa-algorithms.hh>
+#include "mata/utils/util.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/strings.hh"
+#include "mata/nfa/algorithms.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
@@ -209,7 +209,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
         SegItem new_item;
         Mata::Nfa::SharedPtrAut seg = segments_one_initial_final[{unused_state, fn}];
         if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
-            new_item.noodle.push_back({seg, def_eps_vector});
+            new_item.noodle.emplace_back(seg, def_eps_vector);
         }
         new_item.seg_id = 0;
         new_item.fin = fn;
@@ -249,7 +249,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
                 new_item.seg_id++;
                 // do not include segmets with trivial epsilon language
                 if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
-                    new_item.noodle.push_back({seg_iter->second, process_eps_map(visited_eps[tr.tgt])});
+                    new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.tgt]));
                 }
                 new_item.fin = fn;
                 lifo.push_back(new_item);

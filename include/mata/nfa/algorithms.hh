@@ -16,8 +16,8 @@
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
-#include <mata/nfa.hh>
-#include <mata/simlib/util/binary_relation.hh>
+#include "nfa.hh"
+#include "mata/simlib/util/binary_relation.hh"
 
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.

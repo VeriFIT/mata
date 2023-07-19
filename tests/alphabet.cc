@@ -5,8 +5,8 @@
 #include "../3rdparty/catch.hpp"
 
 #include "mata/alphabet.hh"
-#include "mata/nfa.hh"
-#include "mata/nfa-algorithms.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/algorithms.hh"
 
 using namespace Mata;
 using namespace Mata::Nfa::Algorithms;

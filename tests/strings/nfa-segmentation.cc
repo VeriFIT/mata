@@ -20,8 +20,8 @@
 
 #include "catch.hpp"
 
-#include "mata/nfa.hh"
-#include "mata/nfa-strings.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/strings.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
@@ -113,7 +113,7 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
 TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
     Symbol epsilon{ 'c' };
-    const std::set<Symbol> epsilons({epsilon}); 
+    const std::set<Symbol> epsilons({epsilon});
     SECTION("Large automaton") {
         Nfa aut(100);
         aut.initial.insert(1);

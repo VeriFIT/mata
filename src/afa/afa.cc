@@ -31,7 +31,7 @@
 #include <queue>
 
 // MATA headers
-#include <mata/afa.hh>
+#include "mata/afa/afa.hh"
 
 using std::tie;
 

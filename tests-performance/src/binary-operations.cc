@@ -2,11 +2,11 @@
  * NOTE: Input automata, that are of type `NFA-bits` are mintermized!
  *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
  */
-#include <mata/inter-aut.hh>
-#include <mata/nfa.hh>
-#include <mata/nfa-plumbing.hh>
-#include <mata/nfa-algorithms.hh>
-#include <mata/mintermization.hh>
+#include "mata/parser/inter-aut.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nfa/plumbing.hh"
+#include "mata/nfa/algorithms.hh"
+#include "mata/parser/mintermization.hh"
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -43,7 +43,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
-            aut = construct(inter_auts[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
         } else {
             Mata::Mintermization mintermization;
             auto minterm_start = std::chrono::system_clock::now();
@@ -51,7 +51,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
             auto minterm_end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
-            aut = construct(mintermized[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
             std::cout << "mintermization-" << aut_name<< ":" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;

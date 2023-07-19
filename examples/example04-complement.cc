@@ -1,6 +1,6 @@
 // example04-complement.cc - complementing an automaton
 
-#include <mata/nfa.hh>
+#include "mata/nfa/nfa.hh"
 #include <iostream>
 #include <fstream>
 

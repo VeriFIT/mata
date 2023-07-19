@@ -26,7 +26,7 @@ cdef extern from "<sstream>" namespace "std":
         string str()
 
 
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
+cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     # Typedefs
     ctypedef uintptr_t State
     ctypedef COrdVector[State] StateSet
@@ -165,7 +165,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
         COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& state_transitions, Symbol epsilon)
+        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& post, Symbol epsilon)
         void clear()
         size_t size()
 
@@ -188,10 +188,10 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
     cdef pair[CRun, bool] get_word_for_path(CNfa&, CRun&)
     cdef CRun encode_word(StringToSymbolMap&, vector[string])
 
-cdef extern from "mata/nfa-algorithms.hh" namespace "Mata::Nfa::Algorithms":
+cdef extern from "mata/nfa/algorithms.hh" namespace "Mata::Nfa::Algorithms":
     cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
 
-cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
+cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void get_elements(StateSet*, CBoolVector)
     cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void uni(CNfa*, CNfa&, CNfa&)

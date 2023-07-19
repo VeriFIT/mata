@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "mata/util.hh"
+#include "util.hh"
 
 namespace {
 /**

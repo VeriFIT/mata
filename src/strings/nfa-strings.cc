@@ -15,7 +15,8 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/nfa-strings.hh"
+#include "mata/nfa/strings.hh"
+#include "mata/nfa/builder.hh"
 
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
@@ -210,27 +211,4 @@ bool Mata::Strings::is_lang_eps(const Nfa::Nfa& aut) {
             return false;
     }
     return true;
-}
-
-Nfa Mata::Strings::create_single_word_nfa(const std::vector<Mata::Symbol>& word) {
-    const size_t word_size{ word.size() };
-    Nfa::Nfa nfa{ word_size + 1, { 0 }, { word_size } };
-
-    for (State state{ 0 }; state < word_size; ++state) {
-        nfa.delta.add(state, word[state], state + 1);
-    }
-    return nfa;
-}
-
-Nfa Mata::Strings::create_single_word_nfa(const std::vector<std::string>& word, Mata::Alphabet *alphabet) {
-    if (!alphabet) {
-        alphabet = new OnTheFlyAlphabet{ word };
-    }
-    const size_t word_size{ word.size() };
-    Nfa::Nfa nfa{ word_size + 1, { 0 }, { word_size }, alphabet };
-
-    for (State state{ 0 }; state < word_size; ++state) {
-        nfa.delta.add(state, alphabet->translate_symb(word[state]), state + 1);
-    }
-    return nfa;
 }

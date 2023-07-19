@@ -228,8 +228,8 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
 
 setup(
     name="libmata",
-    packages=["libmata"],
-    package_dir={'libmata': 'libmata'},
+    packages=["libmata", "libmata.nfa"],
+    package_dir={'libmata': 'libmata', 'libmata.nfa': os.path.join('libmata', 'nfa')},
     version=get_version(),
     ext_modules=cythonize(
         extensions,

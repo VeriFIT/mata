@@ -34,14 +34,17 @@ add_library(libmata STATIC
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
-	nfa/nfa-inclusion.cc
-	nfa/nfa-universal.cc
-	nfa/nfa-complement.cc
-	nfa/nfa-intersection.cc
-	nfa/nfa-concatenation.cc
+	nfa/inclusion.cc
+	nfa/universal.cc
+	nfa/complement.cc
+	nfa/intersection.cc
+	nfa/concatenation.cc
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc
 	strings/nfa-strings.cc
+	nfa/delta.cc
+	nfa/operations.cc
+	nfa/builder.cc
 )
 
 set_target_properties(libmata PROPERTIES

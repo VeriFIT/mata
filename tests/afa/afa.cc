@@ -4,7 +4,7 @@
 
 #include <unordered_set>
 
-#include "mata/afa.hh"
+#include "mata/afa/afa.hh"
 
 using namespace Mata::Afa;
 using namespace Mata::Util;
