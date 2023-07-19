@@ -822,7 +822,7 @@ cdef class Nfa:
         """
         result = Nfa()
         print(result)
-        mata_nfa.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+        mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
         print(result)
         return result
 
