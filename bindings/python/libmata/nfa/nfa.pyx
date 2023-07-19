@@ -821,9 +821,9 @@ cdef class Nfa:
         :return: Nfa: Automaton with epsilon transitions removed.
         """
         result = Nfa()
-        print(result)
-        mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
-        print(result)
+        print(f"result = {result}")
+        mata_nfa.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+        print(f"result (after_epsilon) = {result}")
         return result
 
     def remove_epsilon(self, Symbol epsilon = CEPSILON):

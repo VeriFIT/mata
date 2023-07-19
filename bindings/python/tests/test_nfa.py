@@ -612,7 +612,7 @@ def test_removing_epsilon():
     lhs.make_final_state(2)
 
     rhs = mata_nfa.Nfa.remove_epsilon(lhs, 2)
-    print(rhs)
+    print(f"rhs = {rhs}")
     assert rhs.has_transition(0, 0, 1)
     assert rhs.has_transition(1, 1, 2)
     assert not rhs.has_transition(0, 2, 2)
