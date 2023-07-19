@@ -1,6 +1,9 @@
 // TODO: Insert header file.
 
 #include "mata/nfa/builder.hh"
+#include "mata/parser/mintermization.hh"
+
+#include <fstream>
 
 using namespace Mata::Nfa;
 using Mata::Nfa::Nfa;
@@ -203,4 +206,37 @@ Nfa Builder::create_sigma_star_nfa(Mata::Alphabet* alphabet) {
         nfa.delta.add(0, symbol, 0);
     }
     return nfa;
+}
+
+Nfa Builder::parse_from_mata(std::istream& nfa_stream) {
+    const std::string nfa_str = "NFA";
+    Parser::Parsed parsed{ Parser::parse_mf(nfa_stream) };
+    if (parsed.size() != 1) {
+        throw std::runtime_error("The number of sections in the input file is not 1\n");
+    }
+    if (parsed[0].type.compare(0, nfa_str.length(), nfa_str) != 0) {
+        throw std::runtime_error("The type of input automaton is not NFA\n");
+    }
+    return construct(IntermediateAut::parse_from_mf(parsed)[0]);
+}
+
+Nfa Builder::parse_from_mata(const std::filesystem::path& nfa_file) {
+    std::ifstream file_stream{ nfa_file };
+    if (!file_stream) {
+        throw std::runtime_error("Could not open file \'" + nfa_file.string() + "'\n");
+    }
+
+    Nfa nfa;
+    try {
+        nfa = parse_from_mata(file_stream);
+    } catch (const std::exception& ex) {
+        file_stream.close();
+        throw;
+    }
+    return nfa;
+}
+
+Nfa Builder::parse_from_mata(const std::string& nfa_in_mata) {
+    std::istringstream nfa_stream(nfa_in_mata);
+    return parse_from_mata(nfa_stream);
 }

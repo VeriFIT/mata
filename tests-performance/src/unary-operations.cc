@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
         Mata::Mintermization mintermization;
         auto mintermized = mintermization.mintermize(inter_auts);
         assert(mintermized.size() == 1);
-        aut = construct(mintermized[0], &stsm);
+        aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
     }
     catch (const std::exception& ex) {
         fs.close();
