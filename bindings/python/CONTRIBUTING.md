@@ -474,7 +474,7 @@ dereference(it).symbol
 
 * **Problem**: You want to use null pointer in your `pyx` code.
 * **Solution**: You simply use `NULL` constant, that does not need to be imported and is supported
-  by Cython. There seems to be no support for `nullptr`, though.
+  by Cython. `nullptr` is trivially replaced with C-style `NULL`
 
 ## Defining C variables in code
 
