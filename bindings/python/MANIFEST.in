@@ -1,9 +1,17 @@
-recursive-include *.pyx
-recursive-include *.pxd
+recursive-include libmata *.pyx
+recursive-include libmata *.pxd
 include pyproject.toml
+include mata/CMakeLists.txt
+include mata/Doxyfile.in
 include mata/LICENSE
-include mata/VERSION
+include mata/Makefile
+include mata/merge_static_libraries.sh
 include mata/README.md
-recursive-include mata/src *
-recursive-include mata/include *
+include mata/VERSION
 recursive-include mata/3rdparty *
+recursive-include mata/cli *
+recursive-include mata/cmake *
+recursive-include mata/include *
+recursive-include mata/src *
+recursive-include mata/tests *
+recursive-include mata/unit-test-data *
