@@ -637,192 +637,6 @@ cdef class Nfa:
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
-    # Operations
-    @classmethod
-    def determinize_with_subset_map(cls, Nfa lhs):
-        """Determinize the lhs automaton
-
-        :param Nfa lhs: non-deterministic finite automaton
-        :return: deterministic finite automaton, subset map
-        """
-        result = Nfa()
-        cdef umap[StateSet, State] subset_map
-        mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
-        return result, subset_map_to_dictionary(subset_map)
-
-    @classmethod
-    def determinize(cls, Nfa lhs):
-        """Determinize the lhs automaton
-
-        :param Nfa lhs: non-deterministic finite automaton
-        :return: deterministic finite automaton
-        """
-        result = Nfa()
-        mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
-        return result
-
-    @classmethod
-    def union(cls, Nfa lhs, Nfa rhs):
-        """Performs union of lhs and rhs
-
-        :param Nfa lhs: first automaton
-        :param Nfa rhs: second automaton
-        :return: union of lhs and rhs
-        """
-        result = Nfa()
-        mata_nfa.uni(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
-        )
-        return result
-
-    @classmethod
-    def intersection(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
-        """Performs intersection of lhs and rhs.
-
-        Supports epsilon symbols when preserve_epsilon is set to True.
-
-        When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
-         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
-         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
-         a product state `(s,a)-ε->(p,b)` is created.
-
-        Automata must share alphabets.
-
-        :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
-        :param Nfa lhs: First automaton.
-        :param Nfa rhs: Second automaton.
-        :return: Intersection of lhs and rhs.
-        """
-        result = Nfa()
-        mata_nfa.intersection(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
-        )
-        return result
-
-    @classmethod
-    def intersection_with_product_map(cls, Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
-        """Performs intersection of lhs and rhs.
-
-        Supports epsilon symbols when preserve_epsilon is set to True.
-
-        When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
-         of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
-         an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
-         a product state `(s,a)-ε->(p,b)` is created.
-
-        Automata must share alphabets.
-
-        :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
-        :param Nfa lhs: First automaton.
-        :param Nfa rhs: Second automaton.
-        :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
-        """
-        result = Nfa()
-        cdef umap[pair[State, State], State] c_product_map
-        mata_nfa.intersection(
-            result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
-            &c_product_map
-        )
-        return result, {tuple(k): v for k, v in c_product_map}
-
-    @classmethod
-    def concatenate(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
-        """Concatenate two NFAs.
-
-        Supports epsilon symbols when @p use_epsilon is set to true.
-        :param Nfa lhs: First automaton to concatenate.
-        :param Nfa rhs: Second automaton to concatenate.
-        :param use_epsilon: Whether to concatenate over an epsilon symbol.
-        :return: Nfa: Concatenated automaton.
-        """
-        result = Nfa()
-        mata_nfa.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, NULL, NULL)
-        return result
-
-    @classmethod
-    def concatenate_with_result_state_maps(cls, Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
-            -> tuple[Nfa, dict[str, str], dict[str, str]]:
-        """Concatenate two NFAs.
-
-        :param Nfa lhs: First automaton to concatenate.
-        :param Nfa rhs: Second automaton to concatenate.
-        :param use_epsilon: Whether to concatenate over an epsilon symbol.
-        :return: Nfa: Concatenated automaton.
-        """
-        result = Nfa()
-        cdef StateToStateMap c_lhs_map
-        cdef StateToStateMap c_rhs_map
-        mata_nfa.concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
-                         use_epsilon, &c_lhs_map, &c_rhs_map)
-        lhs_map = {}
-        for key, value in c_lhs_map:
-            lhs_map[key] = value
-        rhs_map = {}
-        for key, value in c_rhs_map:
-            rhs_map[key] = value
-
-        return result, lhs_map, rhs_map
-
-
-    @classmethod
-    def complement(cls, Nfa lhs, alph.Alphabet alphabet, params = None):
-        """Performs complement of lhs
-
-        :param Nfa lhs: complemented automaton
-        :param OnTheFlyAlphabet alphabet: alphabet of the lhs
-        :param dict params: additional params
-          - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
-          - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
-        :return: complemented automaton
-        """
-        result = Nfa()
-        params = params or {'algorithm': 'classical', 'minimize': 'false'}
-        mata_nfa.complement(
-            result.thisptr.get(),
-            dereference(lhs.thisptr.get()),
-            <CAlphabet&>dereference(alphabet.as_base()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            },
-        )
-        return result
-
-    @classmethod
-    def make_complete(cls, Nfa lhs, State sink_state, alph.Alphabet alphabet):
-        """Makes lhs complete
-
-        :param Nfa lhs: automaton that will be made complete
-        :param Symbol sink_state: sink state of the automaton
-        :param OnTheFlyAlphabet alphabet: alphabet of the
-        """
-        if not lhs.thisptr.get().is_state(sink_state):
-            lhs.thisptr.get().add_state(lhs.size())
-        mata_nfa.make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
-
-    @classmethod
-    def revert(cls, Nfa lhs):
-        """Reverses transitions in the lhs
-
-        :param Nfa lhs: source automaton
-        :return: automaton with reversed transitions
-        """
-        result = Nfa()
-        mata_nfa.revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
-        return result
-
-    @classmethod
-    def remove_epsilon(cls, Nfa lhs, Symbol epsilon = CEPSILON):
-        """Removes transitions that contain epsilon symbol.
-
-        :param Nfa lhs: Automaton, where epsilon transitions will be removed.
-        :param Symbol epsilon: Symbol representing the epsilon.
-        :return: Nfa: Automaton with epsilon transitions removed.
-        """
-        result = Nfa()
-        mata_nfa.remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
-        return result
 
     def remove_epsilon_inplace(self, Symbol epsilon = CEPSILON):
         """Removes transitions which contain epsilon symbol.
@@ -850,215 +664,6 @@ cdef class Nfa:
         return Move(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
-    @classmethod
-    def minimize(cls, Nfa lhs):
-        """Minimizes the automaton lhs
-
-        :param Nfa lhs: automaton to be minimized
-        :return: minimized automaton
-        """
-        result = Nfa()
-        mata_nfa.minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
-        return result
-
-    @classmethod
-    def reduce_with_state_map(cls, Nfa aut, bool trim_input = True, params = None):
-        """Reduce the automaton.
-
-        :param Nfa aut: Original automaton to reduce.
-        :param bool trim_input: Whether to trim the input automaton first or not.
-        :param Dict params: Additional parameters for the reduction algorithm:
-            - "algorithm": "simulation"
-        :return: (Reduced automaton, state map of original to new states)
-        """
-        params = params or {"algorithm": "simulation"}
-        cdef StateToStateMap state_map
-        result = Nfa()
-        mata_nfa.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
-            {
-                k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-            }
-        )
-
-        return result, {k: v for k, v in state_map}
-
-    @classmethod
-    def reduce(cls, Nfa aut, bool trim_input = True, params = None):
-        """Reduce the automaton.
-
-        :param bool trim_input: Whether to trim the input automaton first or not.
-        :param Nfa aut: Original automaton to reduce.
-        :param Dict params: Additional parameters for the reduction algorithm:
-            - "algorithm": "simulation"
-        :return: Reduced automaton
-        """
-        params = params or {"algorithm": "simulation"}
-        result = Nfa()
-        mata_nfa.reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
-            {
-                k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
-            }
-        )
-        return result
-
-    @classmethod
-    def compute_relation(cls, Nfa lhs, params = None):
-        """Computes the relation for the automaton
-
-        :param Nfa lhs: automaton
-        :param Dict params: parameters of the computed relation
-        :return: computd relation
-        """
-        params = params or {'relation': 'simulation', 'direction': 'forward'}
-        cdef CBinaryRelation relation = mata_nfa.compute_relation(
-            dereference(lhs.thisptr.get()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
-        result = BinaryRelation()
-        cdef size_t relation_size = relation.size()
-        result.resize(relation_size)
-        for i in range(0, relation_size):
-            for j in range(0, relation_size):
-                val = relation.get(i, j)
-                result.set(i, j, val)
-        return result
-
-    # Tests
-    @classmethod
-    def is_deterministic(cls, Nfa lhs):
-        """Tests if the lhs is determinstic
-
-        :param Nfa lhs: non-determinstic finite automaton
-        :return: true if the lhs is deterministic
-        """
-        return mata_nfa.is_deterministic(dereference(lhs.thisptr.get()))
-
-    @classmethod
-    def is_lang_empty(cls, Nfa lhs, Run run = None):
-        """Checks if language of automaton lhs is empty, if not, returns path of states as counter
-        example.
-
-        :param Nfa lhs:
-        :return: true if the lhs is empty, counter example if lhs is not empty
-        """
-        if run:
-            return mata_nfa.is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
-        else:
-            return mata_nfa.is_lang_empty(dereference(lhs.thisptr.get()), NULL)
-
-    @classmethod
-    def is_universal(cls, Nfa lhs, alph.Alphabet alphabet, params = None):
-        """Tests if lhs is universal wrt given alphabet
-
-        :param Nfa lhs: automaton tested for universality
-        :param OnTheFlyAlphabet alphabet: on the fly alphabet
-        :param dict params: additional params to the function, currently supports key 'algorithm',
-            which determines used universality test
-        :return: true if lhs is universal
-        """
-        params = params or {'algorithm': 'antichains'}
-        return mata_nfa.is_universal(
-            dereference(lhs.thisptr.get()),
-            <CAlphabet&>dereference(alphabet.as_base()),
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
-
-    @classmethod
-    def is_included_with_cex(
-            cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None
-    ):
-        """Test inclusion between two automata
-
-        :param Nfa lhs: smaller automaton
-        :param Nfa rhs: bigger automaton
-        :param alph.Alphabet alphabet: alpabet shared by two automata
-        :param dict params: additional params
-        :return: true if lhs is included by rhs, counter example word if not
-        """
-        run = Run()
-        cdef CAlphabet* c_alphabet = NULL
-        if alphabet:
-            c_alphabet = alphabet.as_base()
-        params = params or {'algorithm': 'antichains'}
-        result = mata_nfa.is_included(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            run.thisptr,
-            c_alphabet,
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
-        return result, run
-
-    @classmethod
-    def is_included(
-            cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None
-    ):
-        """Test inclusion between two automata
-
-        :param Nfa lhs: smaller automaton
-        :param Nfa rhs: bigger automaton
-        :param alph.Alphabet alphabet: alpabet shared by two automata
-        :param dict params: additional params
-        :return: true if lhs is included by rhs, counter example word if not
-        """
-        cdef CAlphabet* c_alphabet = NULL
-        if alphabet:
-            c_alphabet = alphabet.as_base()
-        params = params or {'algorithm': 'antichains'}
-        result = mata_nfa.is_included(
-            dereference(lhs.thisptr.get()),
-            dereference(rhs.thisptr.get()),
-            NULL,
-            c_alphabet,
-            {
-                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                for k, v in params.items()
-            }
-        )
-        return result
-
-    @classmethod
-    def equivalence_check(cls, Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
-        """Test equivalence of two automata.
-
-        :param Nfa lhs: Smaller automaton.
-        :param Nfa rhs: Bigger automaton.
-        :param alph.Alphabet alphabet: Alphabet shared by two automata.
-        :param dict params: Additional params:
-            - "algorithm": "antichains"
-        :return: True if lhs is equivalent to rhs, False otherwise.
-        """
-        params = params or {'algorithm': 'antichains'}
-        cdef CAlphabet * c_alphabet = NULL
-        if alphabet:
-            c_alphabet = alphabet.as_base()
-            return mata_nfa.are_equivalent(
-                dereference(lhs.thisptr.get()),
-                dereference(rhs.thisptr.get()),
-                c_alphabet,
-                {
-                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                    for k, v in params.items()
-                }
-            )
-        else:
-            return mata_nfa.are_equivalent(
-                dereference(lhs.thisptr.get()),
-                dereference(rhs.thisptr.get()),
-                {
-                    k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-                    for k, v in params.items()
-                }
-            )
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
@@ -1068,92 +673,457 @@ cdef class Nfa:
         cdef COrdVector[Symbol] symbols = self.thisptr.get().get_used_symbols()
         return {s for s in symbols}
 
-    @classmethod
-    def is_complete(cls, Nfa lhs, alph.Alphabet alphabet):
-        """Test if automaton is complete
 
-        :param Nf lhs: tested automaton
-        :param OnTheFlyAlphabet alphabet: alphabet of the automaton
-        :return: true if the automaton is complete
-        """
-        return mata_nfa.is_complete(
+
+# Operations
+def determinize_with_subset_map(Nfa lhs):
+    """Determinize the lhs automaton
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :return: deterministic finite automaton, subset map
+    """
+    result = Nfa()
+    cdef umap[StateSet, State] subset_map
+    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
+    return result, subset_map_to_dictionary(subset_map)
+
+def determinize(Nfa lhs):
+    """Determinize the lhs automaton
+
+    :param Nfa lhs: non-deterministic finite automaton
+    :return: deterministic finite automaton
+    """
+    result = Nfa()
+    mata_nfa.c_determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), NULL)
+    return result
+
+def union(Nfa lhs, Nfa rhs):
+    """Performs union of lhs and rhs
+
+    :param Nfa lhs: first automaton
+    :param Nfa rhs: second automaton
+    :return: union of lhs and rhs
+    """
+    result = Nfa()
+    mata_nfa.c_uni(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
+    )
+    return result
+
+def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
+    """Performs intersection of lhs and rhs.
+
+    Supports epsilon symbols when preserve_epsilon is set to True.
+
+    When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+     of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
+     an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
+     a product state `(s,a)-ε->(p,b)` is created.
+
+    Automata must share alphabets.
+
+    :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
+    :param Nfa lhs: First automaton.
+    :param Nfa rhs: Second automaton.
+    :return: Intersection of lhs and rhs.
+    """
+    result = Nfa()
+    mata_nfa.c_intersection(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
+    )
+    return result
+
+def intersection_with_product_map(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
+    """Performs intersection of lhs and rhs.
+
+    Supports epsilon symbols when preserve_epsilon is set to True.
+
+    When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can contain ε-transitions. The product preserves the ε-transitions
+     of both automata. This means that for each ε-transition of the form `s-ε->p` and each product state `(s,a)`,
+     an ε-transition `(s,a)-ε->(p,a)` is created. Furthermore, for each ε-transition `s-ε->p` and `a-ε->b`,
+     a product state `(s,a)-ε->(p,b)` is created.
+
+    Automata must share alphabets.
+
+    :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
+    :param Nfa lhs: First automaton.
+    :param Nfa rhs: Second automaton.
+    :return: Intersection of lhs and rhs, product map of original pairs of states to new states.
+    """
+    result = Nfa()
+    cdef umap[pair[State, State], State] c_product_map
+    mata_nfa.c_intersection(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
+        &c_product_map
+    )
+    return result, {tuple(k): v for k, v in c_product_map}
+
+def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:
+    """Concatenate two NFAs.
+
+    Supports epsilon symbols when @p use_epsilon is set to true.
+    :param Nfa lhs: First automaton to concatenate.
+    :param Nfa rhs: Second automaton to concatenate.
+    :param use_epsilon: Whether to concatenate over an epsilon symbol.
+    :return: Nfa: Concatenated automaton.
+    """
+    result = Nfa()
+    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, NULL, NULL)
+    return result
+
+def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = False) \
+        -> tuple[Nfa, dict[str, str], dict[str, str]]:
+    """Concatenate two NFAs.
+
+    :param Nfa lhs: First automaton to concatenate.
+    :param Nfa rhs: Second automaton to concatenate.
+    :param use_epsilon: Whether to concatenate over an epsilon symbol.
+    :return: Nfa: Concatenated automaton.
+    """
+    result = Nfa()
+    cdef StateToStateMap c_lhs_map
+    cdef StateToStateMap c_rhs_map
+    mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
+                         use_epsilon, &c_lhs_map, &c_rhs_map)
+    lhs_map = {}
+    for key, value in c_lhs_map:
+        lhs_map[key] = value
+    rhs_map = {}
+    for key, value in c_rhs_map:
+        rhs_map[key] = value
+
+    return result, lhs_map, rhs_map
+
+
+def complement(Nfa lhs, alph.Alphabet alphabet, params = None):
+    """Performs complement of lhs
+
+    :param Nfa lhs: complemented automaton
+    :param OnTheFlyAlphabet alphabet: alphabet of the lhs
+    :param dict params: additional params
+      - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
+      - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+    :return: complemented automaton
+    """
+    result = Nfa()
+    params = params or {'algorithm': 'classical', 'minimize': 'false'}
+    mata_nfa.c_complement(
+        result.thisptr.get(),
+        dereference(lhs.thisptr.get()),
+        <CAlphabet&>dereference(alphabet.as_base()),
+        {
+            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+            for k, v in params.items()
+        },
+    )
+    return result
+
+def make_complete(Nfa lhs, State sink_state, alph.Alphabet alphabet):
+    """Makes lhs complete
+
+    :param Nfa lhs: automaton that will be made complete
+    :param Symbol sink_state: sink state of the automaton
+    :param OnTheFlyAlphabet alphabet: alphabet of the
+    """
+    if not lhs.thisptr.get().is_state(sink_state):
+        lhs.thisptr.get().add_state(lhs.size())
+    mata_nfa.c_make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
+
+def revert(Nfa lhs):
+    """Reverses transitions in the lhs
+
+    :param Nfa lhs: source automaton
+    :return: automaton with reversed transitions
+    """
+    result = Nfa()
+    mata_nfa.c_revert(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    return result
+
+def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
+    """Removes transitions that contain epsilon symbol.
+
+    :param Nfa lhs: Automaton, where epsilon transitions will be removed.
+    :param Symbol epsilon: Symbol representing the epsilon.
+    :return: Nfa: Automaton with epsilon transitions removed.
+    """
+    result = Nfa()
+    mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
+    return result
+
+def minimize(Nfa lhs):
+    """Minimizes the automaton lhs
+
+    :param Nfa lhs: automaton to be minimized
+    :return: minimized automaton
+    """
+    result = Nfa()
+    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    return result
+
+def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
+    """Reduce the automaton.
+
+    :param Nfa aut: Original automaton to reduce.
+    :param bool trim_input: Whether to trim the input automaton first or not.
+    :param Dict params: Additional parameters for the reduction algorithm:
+        - "algorithm": "simulation"
+    :return: (Reduced automaton, state map of original to new states)
+    """
+    params = params or {"algorithm": "simulation"}
+    cdef StateToStateMap state_map
+    result = Nfa()
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
+                    {
+                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+                    }
+                    )
+
+    return result, {k: v for k, v in state_map}
+
+def reduce(Nfa aut, bool trim_input = True, params = None):
+    """Reduce the automaton.
+
+    :param bool trim_input: Whether to trim the input automaton first or not.
+    :param Nfa aut: Original automaton to reduce.
+    :param Dict params: Additional parameters for the reduction algorithm:
+        - "algorithm": "simulation"
+    :return: Reduced automaton
+    """
+    params = params or {"algorithm": "simulation"}
+    result = Nfa()
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
+                    {
+                        k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+                    }
+                    )
+    return result
+
+def compute_relation(Nfa lhs, params = None):
+    """Computes the relation for the automaton
+
+    :param Nfa lhs: automaton
+    :param Dict params: parameters of the computed relation
+    :return: computd relation
+    """
+    params = params or {'relation': 'simulation', 'direction': 'forward'}
+    cdef CBinaryRelation relation = mata_nfa.c_compute_relation(
+        dereference(lhs.thisptr.get()),
+        {
+            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+            for k, v in params.items()
+        }
+    )
+    result = BinaryRelation()
+    cdef size_t relation_size = relation.size()
+    result.resize(relation_size)
+    for i in range(0, relation_size):
+        for j in range(0, relation_size):
+            val = relation.get(i, j)
+            result.set(i, j, val)
+    return result
+
+# Tests
+def is_deterministic(Nfa lhs):
+    """Tests if the lhs is determinstic
+
+    :param Nfa lhs: non-determinstic finite automaton
+    :return: true if the lhs is deterministic
+    """
+    return mata_nfa.c_is_deterministic(dereference(lhs.thisptr.get()))
+
+def is_lang_empty(Nfa lhs, Run run = None):
+    """Checks if language of automaton lhs is empty, if not, returns path of states as counter
+    example.
+
+    :param Nfa lhs:
+    :return: true if the lhs is empty, counter example if lhs is not empty
+    """
+    if run:
+        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
+    else:
+        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), NULL)
+
+def is_universal(Nfa lhs, alph.Alphabet alphabet, params = None):
+    """Tests if lhs is universal wrt given alphabet
+
+    :param Nfa lhs: automaton tested for universality
+    :param OnTheFlyAlphabet alphabet: on the fly alphabet
+    :param dict params: additional params to the function, currently supports key 'algorithm',
+        which determines used universality test
+    :return: true if lhs is universal
+    """
+    params = params or {'algorithm': 'antichains'}
+    return mata_nfa.c_is_universal(
+        dereference(lhs.thisptr.get()),
+        <CAlphabet&>dereference(alphabet.as_base()),
+        {
+            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+            for k, v in params.items()
+        }
+    )
+
+def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
+    """Test inclusion between two automata
+
+    :param Nfa lhs: smaller automaton
+    :param Nfa rhs: bigger automaton
+    :param alph.Alphabet alphabet: alpabet shared by two automata
+    :param dict params: additional params
+    :return: true if lhs is included by rhs, counter example word if not
+    """
+    run = Run()
+    cdef CAlphabet* c_alphabet = NULL
+    if alphabet:
+        c_alphabet = alphabet.as_base()
+    params = params or {'algorithm': 'antichains'}
+    result = mata_nfa.c_is_included(
+        dereference(lhs.thisptr.get()),
+        dereference(rhs.thisptr.get()),
+        run.thisptr,
+        c_alphabet,
+        {
+            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+            for k, v in params.items()
+        }
+    )
+    return result, run
+
+def is_included(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
+    """Test inclusion between two automata
+
+    :param Nfa lhs: smaller automaton
+    :param Nfa rhs: bigger automaton
+    :param alph.Alphabet alphabet: alpabet shared by two automata
+    :param dict params: additional params
+    :return: true if lhs is included by rhs, counter example word if not
+    """
+    cdef CAlphabet* c_alphabet = NULL
+    if alphabet:
+        c_alphabet = alphabet.as_base()
+    params = params or {'algorithm': 'antichains'}
+    result = mata_nfa.c_is_included(
+        dereference(lhs.thisptr.get()),
+        dereference(rhs.thisptr.get()),
+        NULL,
+        c_alphabet,
+        {
+            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+            for k, v in params.items()
+        }
+    )
+    return result
+
+def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None) -> bool:
+    """Test equivalence of two automata.
+
+:param Nfa lhs: Smaller automaton.
+:param Nfa rhs: Bigger automaton.
+:param alph.Alphabet alphabet: Alphabet shared by two automata.
+:param dict params: Additional params:
+- "algorithm": "antichains"
+:return: True if lhs is equivalent to rhs, False otherwise.
+"""
+    params = params or {'algorithm': 'antichains'}
+    cdef CAlphabet * c_alphabet = NULL
+    if alphabet:
+        c_alphabet = alphabet.as_base()
+        return mata_nfa.c_are_equivalent(
             dereference(lhs.thisptr.get()),
-            <CAlphabet&>dereference(alphabet.as_base())
+            dereference(rhs.thisptr.get()),
+            c_alphabet,
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
+        )
+    else:
+        return mata_nfa.c_are_equivalent(
+            dereference(lhs.thisptr.get()),
+            dereference(rhs.thisptr.get()),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
         )
 
-    @classmethod
-    def is_in_lang(cls, Nfa lhs, vector[Symbol] word):
-        """Tests if word is in language
+def is_complete(Nfa lhs, alph.Alphabet alphabet):
+    """Test if automaton is complete
 
-        :param Nfa lhs: tested automaton
-        :param vector[Symbol] word: tested word
-        :return: true if word is in language of automaton lhs
-        """
-        run = Run()
-        run.thisptr.word = word
-        return mata_nfa.is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
+    :param Nf lhs: tested automaton
+    :param OnTheFlyAlphabet alphabet: alphabet of the automaton
+    :return: true if the automaton is complete
+    """
+    return mata_nfa.c_is_complete(
+        dereference(lhs.thisptr.get()),
+        <CAlphabet&>dereference(alphabet.as_base())
+    )
 
-    @classmethod
-    def is_prefix_in_lang(cls, Nfa lhs, vector[Symbol] word):
-        """Test if any prefix of the word is in the language
+def is_in_lang(Nfa lhs, vector[Symbol] word):
+    """Tests if word is in language
 
-        :param Nfa lhs: tested automaton
-        :param vector[Symbol] word: tested word
-        :return: true if any prefix of word is in language of automaton lhs
-        """
-        run = Run()
-        run.thisptr.word = word
-        return mata_nfa.is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
+    :param Nfa lhs: tested automaton
+    :param vector[Symbol] word: tested word
+    :return: true if word is in language of automaton lhs
+    """
+    run = Run()
+    run.thisptr.word = word
+    return mata_nfa.c_is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
-    @classmethod
-    def accepts_epsilon(cls, Nfa lhs):
-        """Tests if automaton accepts epsilon
+def is_prefix_in_lang(Nfa lhs, vector[Symbol] word):
+    """Test if any prefix of the word is in the language
 
-        :param Nfa lhs: tested automaton
-        :return: true if automaton accepts epsilon
-        """
-        for state in lhs.thisptr.get().initial:
-            if lhs.has_final_state(state):
-                return True
-        return False
+    :param Nfa lhs: tested automaton
+    :param vector[Symbol] word: tested word
+    :return: true if any prefix of word is in language of automaton lhs
+    """
+    run = Run()
+    run.thisptr.word = word
+    return mata_nfa.c_is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
-    # Helper functions
+def accepts_epsilon(Nfa lhs):
+    """Tests if automaton accepts epsilon
 
-    @classmethod
-    def get_word_for_path(cls, Nfa lhs, path):
-        """For a given path (set of states) returns a corresponding word
+    :param Nfa lhs: tested automaton
+    :return: true if automaton accepts epsilon
+    """
+    for state in lhs.thisptr.get().initial:
+        if lhs.has_final_state(state):
+            return True
+    return False
 
-        >>> mata_nfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
-        ([1, 1], True)
+# Helper functions
+def get_word_for_path(Nfa lhs, path):
+    """For a given path (set of states) returns a corresponding word
 
-        :param Nfa lhs: source automaton
-        :param list path: list of states
-        :return: pair of word (list of symbols) and true or false, whether the search was successful
-        """
-        cdef pair[CRun, bool] result
-        input = Run()
-        input.path = path
-        result = mata_nfa.get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
-        return result.first.word, result.second
+    >>> mata_nfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
+    ([1, 1], True)
 
-    @classmethod
-    def encode_word(cls, string_to_symbol, word):
-        """Encodes word based on a string to symbol map
+    :param Nfa lhs: source automaton
+    :param list path: list of states
+    :return: pair of word (list of symbols) and true or false, whether the search was successful
+    """
+    cdef pair[CRun, bool] result
+    input = Run()
+    input.path = path
+    result = mata_nfa.c_get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
+    return result.first.word, result.second
 
-        >>> mata_nfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
-        [1, 2, 0, 1]
+def encode_word(string_to_symbol, word):
+    """Encodes word based on a string to symbol map
 
-        :param dict string_to_symbol: dictionary of strings to integers
-        :param word: list of strings representing a encoded word
-        :return:
-        """
-        result = mata_nfa.encode_word(
-            {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
-            [s.encode('utf-8') for s in word]
-        )
-        return result.word
+    >>> mata_nfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
+    [1, 2, 0, 1]
 
-
+    :param dict string_to_symbol: dictionary of strings to integers
+    :param word: list of strings representing a encoded word
+    :return:
+    """
+    result = mata_nfa.c_encode_word(
+        {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
+        [s.encode('utf-8') for s in word]
+    )
+    return result.word
 
 cdef subset_map_to_dictionary(umap[StateSet, State] subset_map):
     """Helper function that translates the unordered map to dictionary

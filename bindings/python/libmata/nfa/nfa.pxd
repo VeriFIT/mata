@@ -169,39 +169,39 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         size_t size()
 
     # Automata tests
-    cdef bool is_deterministic(CNfa&)
-    cdef bool is_lang_empty(CNfa&, CRun*)
-    cdef bool is_universal(CNfa&, CAlphabet&, StringMap&) except +
-    cdef bool is_included(CNfa&, CNfa&, CAlphabet*, StringMap&)
-    cdef bool is_included(CNfa&, CNfa&, CRun*, CAlphabet*, StringMap&) except +
-    cdef bool are_equivalent(CNfa&, CNfa&, CAlphabet*, StringMap&)
-    cdef bool are_equivalent(CNfa&, CNfa&, StringMap&)
-    cdef bool is_complete(CNfa&, CAlphabet&) except +
-    cdef bool is_in_lang(CNfa&, CRun&)
-    cdef bool is_prfx_in_lang(CNfa&, CRun&)
+    cdef bool c_is_deterministic "Mata::Nfa::is_deterministic" (CNfa&)
+    cdef bool c_is_lang_empty "Mata::Nfa::is_lang_empty" (CNfa&, CRun*)
+    cdef bool c_is_universal "Mata::Nfa::is_universal" (CNfa&, CAlphabet&, StringMap&) except +
+    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CAlphabet*, StringMap&)
+    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, StringMap&) except +
+    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, StringMap&)
+    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, StringMap&)
+    cdef bool c_is_complete "Mata::Nfa::is_complete" (CNfa&, CAlphabet&) except +
+    cdef bool c_is_in_lang "Mata::Nfa::is_in_lang" (CNfa&, CRun&)
+    cdef bool c_is_prfx_in_lang "Mata::Nfa::is_prfx_in_lang" (CNfa&, CRun&)
 
     # Automata operations
     cdef void compute_fw_direct_simulation(const CNfa&)
 
     # Helper functions
-    cdef pair[CRun, bool] get_word_for_path(CNfa&, CRun&)
-    cdef CRun encode_word(StringToSymbolMap&, vector[string])
+    cdef pair[CRun, bool] c_get_word_for_path "Mata::Nfa::get_word_for_path" (CNfa&, CRun&)
+    cdef CRun c_encode_word "Mata::Nfa::encode_word" (StringToSymbolMap&, vector[string])
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "Mata::Nfa::Algorithms":
-    cdef CBinaryRelation& compute_relation(CNfa&, StringMap&)
+    cdef CBinaryRelation& c_compute_relation "Mata::Nfa::Algorithms::compute_relation" (CNfa&, StringMap&)
 
 cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void get_elements(StateSet*, CBoolVector)
-    cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
-    cdef void uni(CNfa*, CNfa&, CNfa&)
-    cdef void intersection(CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
-    cdef void concatenate(CNfa*, CNfa&, CNfa&, bool, StateToStateMap*, StateToStateMap*)
-    cdef void complement(CNfa*, CNfa&, CAlphabet&, StringMap&) except +
-    cdef void make_complete(CNfa*, CAlphabet&, State) except +
-    cdef void revert(CNfa*, CNfa&)
-    cdef void remove_epsilon(CNfa*, CNfa&, Symbol) except +
-    cdef void minimize(CNfa*, CNfa&)
-    cdef void reduce(CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
+    cdef void c_determinize "Mata::Nfa::Plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
+    cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
+    cdef void c_intersection "Mata::Nfa::Plumbing::intersection" (CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
+    cdef void c_concatenate "Mata::Nfa::Plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateToStateMap*, StateToStateMap*)
+    cdef void c_complement "Mata::Nfa::Plumbing::complement" (CNfa*, CNfa&, CAlphabet&, StringMap&) except +
+    cdef void c_make_complete "Mata::Nfa::Plumbing::make_complete" (CNfa*, CAlphabet&, State) except +
+    cdef void c_revert "Mata::Nfa::Plumbing::revert" (CNfa*, CNfa&)
+    cdef void c_remove_epsilon "Mata::Nfa::Plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
+    cdef void c_minimize "Mata::Nfa::Plumbing::minimize" (CNfa*, CNfa&)
+    cdef void c_reduce "Mata::Nfa::Plumbing::reduce" (CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
 
 
 
