@@ -51,7 +51,9 @@ may arise during development.
 
 There are two types of files:
 
-- `*.pxd`: Cython files containing declarations/definitions of the C/C++ API.
+- `*.pxd`: Cython files containing declarations/definitions of the C/C++ API, i.e., symbols one 
+  wants to specifically import and use in the binding (naturally, you do not need to import 
+  everything).
 - `*.pyx`: Cython files containing the implementation of the Python binding.
 
 The directory structure is as follows:
@@ -84,12 +86,13 @@ The directory structure is as follows:
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 #                ^-- source file          ^-- namespace
     cdef cppclass CNfa "Mata::Nfa::Nfa":
-    #             ^-- class name and its full C/C++ name
+    #             ^-- class name used in binding
+    #                  ^-- full C/C++ name used in C/C++ library
         void make_initial(State)
         #    ^- signature of class function
 ```
 
-     - For a non-class function, declare it under its corresponding environment:
+   - For a non-class function, declare it under its corresponding environment:
 
 ```cython
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
@@ -99,10 +102,10 @@ cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
     #         Cython types from C/C++ API as parameters
 ```
 
-     - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh), 
-       (2) the namespace where the function is a member, and (3) the signature of the function. 
-       The signature can be partial; the binding will only use the number of defined parameters. 
-       The typing can be conservative, e.g., const references do not have to be kept.
+   - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh), 
+     (2) the namespace where the function is a member, and (3) the signature of the function. 
+     The signature can be partial; the binding will only use the number of defined parameters. 
+     The typing can be conservative, e.g., const references do not have to be kept.
 
   2. Implement the function in the `.pyx` file:
 
@@ -151,9 +154,10 @@ cdef extern from "mata/alphabet.hh" namespace "Mata":
 #                ^-- source file              ^-- namespace
     cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
         
-        #         ^-- name in bind  ^-- full name           ^-- inheritance
+        #         ^-- name in bind  ^-- full name           ^-- inheritance (previously defined) 
         StringToSymbolMap symbol_map
-        # ^-- type        ^--- property name
+        # ^-- previously defined type in binding        
+        #                 ^--- property name
         COnTheFlyAlphabet(StringToSymbolMap) except +
         # ^-- constructor                    ^-- can fire exception
         StringToSymbolMap get_symbol_map()
@@ -191,7 +195,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         del self.thisptr
 ```
 
-  5. You can now define your class as `OnTheFlyAlphabet()` in Python code
+  5. You can now define your class as `OnTheFlyAlphabet()` in Python code.
 
 ## Adding or modifying the function's signature
 
@@ -441,7 +445,7 @@ from cython.operator import dereference
 <CAlphabet>dereference(alphabet.as_base())
 #                       ^-- the function returns CAlphabet* type
 #           ^-- dereference returns CAlphabet
-# ^-- the topmost function helps Cython to know, it is CAlphabet
+# ^-- the topmost function helps Cython to infer, that it is CAlphabet
 ```
 
 * Note: You might need to use parenthesis to restrict the scope of the the retype, i.e. `(<CType>...)`.
@@ -529,6 +533,17 @@ try:
 finally:
 # ^-- this assures that the `output` will be cleaned
     del output
+```
+
+## Using pre- and post-increments (`var++` and `++var`)
+
+* **Problem**: You want to manually use pre/post increments in your code.
+* **Solution**: You have to import  `postincrement` and `preincrement` from `cython.operator`.
+
+```cython
+from cython.operator import postincrement as postinc, preincrement as preinc
+postinc(it)
+preinc(iterator)
 ```
 
 ## Working with iterators
@@ -636,17 +651,6 @@ cdef mata_nfa.stringstream* output_stream
 def union(cls, Nfa lhs, Nfa rhs):
     pass
 #              ^-- tell Cython types of parameters
-```
-
-## Using pre- and post-increments (`var++` and `++var`)
-
-* **Problem**: You want to manually use pre/post increments in your code.
-* **Solution**: You have to import  `postincrement` and `preincrement` from `cython.operator`.
-
-```cython
-from cython.operator import postincrement as postinc, preincrement as preinc
-postinc(it)
-preinc(iterator)
 ```
 
 ## Working with exceptions
