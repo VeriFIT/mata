@@ -30,13 +30,14 @@ add_executable(tests
 		mintermization.cc
 		afa/afa.cc
 		nfa/nfa.cc
+		nfa/builder.cc
 		nfa/nfa-concatenation.cc
 		nfa/nfa-intersection.cc
 		nfa/nfa-profiling.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
-		)
+)
 
 target_link_libraries(tests libmata re2 simlib cudd)
 

@@ -5,6 +5,8 @@
 
 #include "nfa.hh"
 
+#include <filesystem>
+
 using namespace Mata::Nfa;
 
 /**
@@ -64,6 +66,30 @@ Nfa construct(const ParsedObject& parsed, Mata::StringToSymbolMap* symbol_map = 
     return aut;
 } // construct().
 
+/**
+ * Parse NFA from the mata format in an input stream.
+ *
+ * @param nfa_stream Input stream containing NFA in mata format.
+ * @throws std::runtime_error Parsing of NFA fails.
+ */
+Nfa parse_from_mata(std::istream& nfa_stream);
+
+/**
+ * Parse NFA from the mata format in a string.
+ *
+ * @param nfa_stream String containing NFA in mata format.
+ * @throws std::runtime_error Parsing of NFA fails.
+ */
+Nfa parse_from_mata(const std::string& nfa_in_mata);
+
+/**
+ * Parse NFA from the mata format in a file.
+ *
+ * @param nfa_stream Path to the file containing NFA in mata format.
+ * @throws std::runtime_error @p nfa_file does not exist.
+ * @throws std::runtime_error Parsing of NFA fails.
+ */
+Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
 } // namespace Mata::Nfa::Builder.
 
