@@ -507,7 +507,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
     right_side.delta.add(5, 'b', 6);
     right_side.final.insert({3, 6});
 
-    AutPtrSequence left_side{ &left1, &left2, &left3 };
+    std::vector<Nfa*> left_side{ &left1, &left2, &left3 };
     for (size_t i{}; i < 10000; ++i) {
         SegNfa::noodlify_for_equation(left_side, right_side);
     }

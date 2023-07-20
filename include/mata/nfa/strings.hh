@@ -153,8 +153,8 @@ public:
     using EpsilonDepth = size_t; ///< Depth of ε-transitions.
     /// Dictionary of lists of ε-transitions grouped by their depth.
     /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
-    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, TransSequence>;
-    using EpsilonDepthTransitionMap = std::unordered_map<EpsilonDepth, std::unordered_map<State,TransSequence>>;
+    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, std::vector<Trans>>;
+    using EpsilonDepthTransitionMap = std::unordered_map<EpsilonDepth, std::unordered_map<State, std::vector<Trans>>>;
 
     /**
      * Prepare automaton @p aut for segmentation.
@@ -183,14 +183,14 @@ public:
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton).
      */
-    const AutSequence& get_segments();
+    const std::vector<Nfa::Nfa>& get_segments();
 
     /**
      * Get raw segment automata.
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
      */
-    const AutSequence& get_untrimmed_segments();
+    const std::vector<Nfa::Nfa>& get_untrimmed_segments();
 
     const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
 
@@ -200,8 +200,8 @@ private:
     const SegNfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
-    AutSequence segments{}; ///< Segments for @p automaton.
-    AutSequence segments_raw{}; ///< Raw segments for @p automaton.
+    std::vector<Nfa::Nfa> segments{}; ///< Segments for @p automaton.
+    std::vector<Nfa::Nfa> segments_raw{}; ///< Raw segments for @p automaton.
     VisitedEpsMap visited_eps{}; /// number of visited eps for each state
 
     /**
@@ -285,11 +285,11 @@ private:
 
 /// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
 ///  one ε-transition between each two consecutive segments.
-using Noodle = std::vector<SharedPtrAut>;
+using Noodle = std::vector<std::shared_ptr<Nfa::Nfa>>;
 using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
 /// Noodles as segments enriched with EpsCntMap
-using NoodleSubst = std::vector<std::pair<SharedPtrAut, EpsCntVector>>;
+using NoodleSubst = std::vector<std::pair<std::shared_ptr<Nfa::Nfa>, EpsCntVector>>;
 using NoodleSubstSequence = std::vector<NoodleSubst>;
 
 /**
@@ -303,7 +303,7 @@ using NoodleSubstSequence = std::vector<NoodleSubst>;
  * segments_one_initial_final[init, unused_state] is similarly for the last segment
  * TODO: should we use unordered_map? then we need hash
  */
-void segs_one_initial_final(const Mata::Nfa::AutSequence& segments, bool include_empty,
+void segs_one_initial_final(const std::vector<Nfa::Nfa>& segments, bool include_empty,
     const State& unused_state, std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out);
 
 /**
@@ -354,7 +354,8 @@ NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>&
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const Nfa::Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata,
+                                     const Nfa::Nfa& right_automaton,
                                      bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 
 /**
@@ -377,7 +378,7 @@ NoodleSequence noodlify_for_equation(const AutRefSequence& left_automata, const 
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata, const Nfa::Nfa& right_automaton,
                                      bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
 
 /**

@@ -2530,7 +2530,7 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
 TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
 {
     Nfa aut('q' + 1);
-    TransSequence expected{};
+    std::vector<Trans> expected{};
 
     aut.delta.add(1, 2, 3);
     expected.emplace_back(1, 2, 3);

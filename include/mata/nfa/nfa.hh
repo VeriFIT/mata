@@ -252,14 +252,14 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    TransSequence get_trans_as_sequence() const;
+    std::vector<Trans> get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    TransSequence get_trans_from_as_sequence(State state_from) const;
+    std::vector<Trans> get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading from @p state_from.
@@ -280,7 +280,7 @@ public:
      * @return Sequence of @c Trans transitions leading to @p state_to.
      * (!slow!, traverses the entire delta)
      */
-    TransSequence get_transitions_to(State state_to) const;
+    std::vector<Trans> get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -428,28 +428,28 @@ inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
  * @param[in] nfas Vector of NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const ConstAutRefSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const AutRefSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const ConstAutPtrSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const AutPtrSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
 /// Do the automata have disjoint sets of states?
 bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);

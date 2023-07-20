@@ -462,9 +462,9 @@ void Nfa::print_to_mata(std::ostream &output) const {
     }
 }
 
-TransSequence Nfa::get_trans_as_sequence() const
+std::vector<Trans> Nfa::get_trans_as_sequence() const
 {
-    TransSequence trans_sequence{};
+    std::vector<Trans> trans_sequence{};
 
     for (State state_from{ 0 }; state_from < delta.num_of_states(); ++state_from)
     {
@@ -480,9 +480,9 @@ TransSequence Nfa::get_trans_as_sequence() const
     return trans_sequence;
 }
 
-TransSequence Nfa::get_trans_from_as_sequence(State state_from) const
+std::vector<Trans> Nfa::get_trans_from_as_sequence(State state_from) const
 {
-    TransSequence trans_sequence{};
+    std::vector<Trans> trans_sequence{};
 
     for (const auto& transition_from_state: delta[state_from])
     {
@@ -505,8 +505,8 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-TransSequence Nfa::get_transitions_to(State state_to) const {
-    TransSequence transitions_to_state{};
+std::vector<Trans> Nfa::get_transitions_to(State state_to) const {
+    std::vector<Trans> transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const Move& state_from_move: delta[state_from]) {

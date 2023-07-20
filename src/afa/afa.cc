@@ -799,7 +799,7 @@ void Mata::Afa::make_complete(
 
 Mata::Parser::ParsedSection Mata::Afa::serialize(
 	const Afa&                aut,
-	const SymbolToStringMap*  symbol_map,
+	const std::unordered_map<Symbol, std::string>*  symbol_map,
 	const StateToStringMap*   state_map)
 { // {{{
 	Mata::Parser::ParsedSection parsec;

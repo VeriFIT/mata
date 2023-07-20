@@ -53,7 +53,6 @@ template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
 
-using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
 using StateToStringMap = Mata::Nfa::StateToStringMap;
 using StringToStateMap = Mata::Nfa::StringToStateMap;
 
@@ -155,7 +154,7 @@ struct Afa;
 /// serializes Afa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
     const Afa&                aut,
-    const SymbolToStringMap*  symbol_map = nullptr,
+    const std::unordered_map<Symbol, std::string>*  symbol_map = nullptr,
     const StateToStringMap*   state_map = nullptr);
 
 
