@@ -95,7 +95,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
 #                ^-- source file                  ^-- namespace
     cdef void get_elements(StateSet*, CBoolVector)
-    #    ^-- signature
+    #    ^-- function signature using previously defined 
+    #         Cython types from C/C++ API as parameters
 ```
 
      - You need to specify: (1) the file where the function is declared (e.g., nfa-plumbing.hh), 
