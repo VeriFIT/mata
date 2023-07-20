@@ -217,7 +217,8 @@ Nfa Builder::parse_from_mata(std::istream& nfa_stream) {
     if (parsed[0].type.compare(0, nfa_str.length(), nfa_str) != 0) {
         throw std::runtime_error("The type of input automaton is not NFA\n");
     }
-    return construct(IntermediateAut::parse_from_mf(parsed)[0]);
+    IntAlphabet alphabet;
+    return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
 }
 
 Nfa Builder::parse_from_mata(const std::filesystem::path& nfa_file) {
