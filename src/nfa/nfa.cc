@@ -312,6 +312,121 @@ struct StackLevel {
     };
 };
 
+struct NodeData {
+    Post::const_iterator post_it;
+    Post::const_iterator post_end;
+    StateSet::const_iterator targets_it{};
+    StateSet::const_iterator targets_end{};
+    unsigned long index;
+    unsigned long lowlink;
+    bool initilized;
+
+    NodeData() = default;
+
+    NodeData(State q, const Delta & delta, unsigned long index) 
+        : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true) {
+        if (post_it != post_end) {
+            targets_it = post_it->cbegin();
+            targets_end = post_it->cend();
+        }
+    };
+
+    State get_act_succ() const {
+        return *(this->targets_it);
+    }
+
+    // Get a following successor
+    // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
+    bool get_next_succ(State& succ) {
+        while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
+            if (this->targets_it == this->targets_end) {
+                ++this->post_it;
+                if (this->post_it != this->post_end) {
+                    this->targets_it = this->post_it->cbegin();
+                    this->targets_end = this->post_it->cend();
+                }
+            } else
+                ++this->targets_it;
+        }
+        if(this->post_it == this->post_end) {
+            return false;
+        }
+        succ = *(this->targets_it);
+        this->targets_it++;
+        return true;
+    }
+};
+
+BoolVector Nfa::get_useful_states_tarjan() const {
+    BoolVector reached_and_reaching(this->size(),false); 
+    std::vector<NodeData> node_info(this->size());
+    std::deque<State> program_stack;
+    std::deque<State> tarjan_stack;
+    unsigned long cnt = 0;
+
+    for(const State& q0 : initial) {
+        program_stack.push_back(q0);
+    }
+
+    while(!program_stack.empty()) {
+        State act_state = program_stack.back();
+        NodeData& act_state_data = node_info[act_state];
+        // node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
+        if(!act_state_data.initilized) {
+            // initialize node
+            act_state_data = NodeData(act_state, this->delta, cnt++);
+            tarjan_stack.push_back(act_state);
+            if(this->final.contains(act_state)) {
+                reached_and_reaching[act_state] = true;
+            }
+        } else { // return from the recursive call
+            State act_succ = act_state_data.get_act_succ();
+            act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
+        }
+
+        // iterate through outgoing edges
+        State next_state;
+        bool rec_call = false;
+        while(act_state_data.get_next_succ(next_state)) {
+            if(!node_info[next_state].initilized) {
+                program_stack.push_back(next_state);
+                // recursive call
+                rec_call = true;
+                break;
+            } else {
+                act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
+            }
+        }
+        if(rec_call) continue;
+
+        // check if we have the root of a SCC
+        if(act_state_data.lowlink == act_state_data.index) {
+            State st;
+            bool final_scc = false;
+            std::vector<State> scc;
+            do {
+                st = tarjan_stack.back();
+                tarjan_stack.pop_back();
+                
+                // SCC contains a final state
+                if(reached_and_reaching[st]) {
+                    final_scc = true;
+                }
+                scc.push_back(st);
+            } while(st != act_state);
+            
+            if(final_scc) {
+                for(const State& st : scc) reached_and_reaching[st] = true;
+                for(const State& st : tarjan_stack) reached_and_reaching[st] = true;
+            }
+        }
+        // all successors have been processed, we can remove act_state from the program stack
+        program_stack.pop_back();
+    }
+
+    return reached_and_reaching;
+}
+
 BoolVector Nfa::get_useful_states() const
 {
 #ifdef _STATIC_STRUCTURES_

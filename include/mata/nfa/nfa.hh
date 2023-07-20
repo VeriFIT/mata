@@ -205,6 +205,8 @@ public:
 
     BoolVector get_useful_states() const;
 
+    BoolVector get_useful_states_tarjan() const;
+
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
      *
