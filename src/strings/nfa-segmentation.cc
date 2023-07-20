@@ -37,8 +37,8 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
                                                       std::deque<StateDepthTuple>& worklist)
 {
     /// TODO: Maybe we don't need to keep the transitions in both structures
-    this->epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, TransSequence{}));
-    this->eps_depth_trans_map.insert({ state_depth_pair.depth, {{state_depth_pair.state, TransSequence{}}} });
+    this->epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, std::vector<Trans>{}));
+    this->eps_depth_trans_map.insert({ state_depth_pair.depth, {{state_depth_pair.state, std::vector<Trans>{}}} });
 
     std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
     visited_eps_aux[move.symbol]++;
@@ -95,15 +95,15 @@ std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() c
 
 void SegNfa::Segmentation::split_aut_into_segments()
 {
-    segments_raw = AutSequence{ epsilon_depth_transitions.size() + 1, automaton };
+    segments_raw = { epsilon_depth_transitions.size() + 1, automaton };
     remove_inner_initial_and_final_states();
 
     // Construct segment automata.
-    std::unique_ptr<const TransSequence> depth_transitions{};
+    std::unique_ptr<const std::vector<Trans>> depth_transitions{};
     for (size_t depth{ 0 }; depth < epsilon_depth_transitions.size(); ++depth)
     {
         // Split the left segment from automaton into a new segment.
-        depth_transitions = std::make_unique<const TransSequence>(epsilon_depth_transitions[depth]);
+        depth_transitions = std::make_unique<const std::vector<Trans>>(epsilon_depth_transitions[depth]);
         for (const auto& transition: *depth_transitions)
         {
             update_current_segment(depth, transition);
@@ -147,7 +147,7 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
     segments_raw[next_depth].initial.insert(transition.tgt);
 }
 
-const AutSequence& SegNfa::Segmentation::get_segments()
+const std::vector<Nfa>& SegNfa::Segmentation::get_segments()
 {
     if (segments.empty()) {
         get_untrimmed_segments();
@@ -157,7 +157,7 @@ const AutSequence& SegNfa::Segmentation::get_segments()
     return segments;
 }
 
-const AutSequence& SegNfa::Segmentation::get_untrimmed_segments()
+const std::vector<Nfa>& SegNfa::Segmentation::get_untrimmed_segments()
 {
     if (segments_raw.empty()) { split_aut_into_segments(); }
 

@@ -73,7 +73,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 
     NoodleSequence noodles{};
     // noodle of epsilon transitions (each from different depth)
-    TransSequence epsilon_noodle(epsilon_depths_size);
+    std::vector<Trans> epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
     // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
     for (size_t index{ 0 }; index < num_of_permutations; ++index) {
@@ -127,7 +127,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 //todo: is this taking all final times all initial?
 // can it be done more efficiently? (only connected combinations through dfs)
 void SegNfa::segs_one_initial_final(
-    const Mata::Nfa::AutSequence& segments,
+    const std::vector<Nfa::Nfa>& segments,
     bool include_empty,
     const State& unused_state,
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out) {
@@ -207,7 +207,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        Mata::Nfa::SharedPtrAut seg = segments_one_initial_final[{unused_state, fn}];
+        std::shared_ptr<Nfa::Nfa> seg = segments_one_initial_final[{unused_state, fn}];
         if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
             new_item.noodle.emplace_back(seg, def_eps_vector);
         }
@@ -259,7 +259,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const Nfa::Nfa& right_automaton,
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata, const Nfa::Nfa& right_automaton,
                                                      bool include_empty, const StringMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
@@ -298,7 +298,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
     return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata, const Nfa::Nfa& right_automaton,
                                                      bool include_empty, const StringMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };

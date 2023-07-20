@@ -103,9 +103,9 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
 
         REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
-                {0, TransSequence{{1, epsilon, 2}}},
-                {1, TransSequence{{6, epsilon, 7}}},
-                {2, TransSequence{{7, epsilon, 8}}},
+                {0, std::vector<Trans>{{1, epsilon, 2}}},
+                {1, std::vector<Trans>{{6, epsilon, 7}}},
+                {2, std::vector<Trans>{{7, epsilon, 8}}},
         });
     }
 

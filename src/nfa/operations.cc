@@ -587,16 +587,6 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
     return aut.final.intersects_with(cur);
 }
 
-/// serializes Nfa into a ParsedSection
-Mata::Parser::ParsedSection Mata::Nfa::serialize(
-        const Nfa&                aut,
-        const SymbolToStringMap*  symbol_map,
-        const StateToStringMap*   state_map) {
-    (void)aut; (void)symbol_map; (void)state_map;
-    assert(false && "Unimplemented.");
-    return {};
-}
-
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
     std::list<State> worklist(
@@ -885,7 +875,7 @@ void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alpha
     }
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
@@ -893,7 +883,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfa
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutRefSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
@@ -901,7 +891,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutRefSequence& nfas) {
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutPtrSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const Mata::Nfa::Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
@@ -909,7 +899,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutPtrSequence& nfa
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const Mata::Nfa::Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
