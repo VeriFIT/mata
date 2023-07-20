@@ -3043,3 +3043,35 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
+
+TEST_CASE("Mata::Nfa::trim bug") {
+	Nfa aut(5, {0}, {4});
+    aut.delta.add(0, 122, 1);
+	aut.delta.add(1, 98, 1);
+	aut.delta.add(1, 122, 1);
+	aut.delta.add(1, 97, 2);
+	aut.delta.add(2, 122, 1);
+	aut.delta.add(2, 97, 1);
+	aut.delta.add(1, 97, 4);
+	aut.delta.add(3, 97, 4);
+
+	Nfa aut_copy {aut};
+	aut.trim();
+	CHECK(are_equivalent(aut_copy, aut));
+}
+
+TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
+	Nfa aut(5, {0}, {4});
+    aut.delta.add(0, 122, 1);
+	aut.delta.add(1, 98, 1);
+	aut.delta.add(1, 122, 1);
+	aut.delta.add(1, 97, 2);
+	aut.delta.add(2, 122, 1);
+	aut.delta.add(2, 97, 1);
+	aut.delta.add(1, 97, 4);
+	aut.delta.add(3, 97, 4);
+
+	Mata::BoolVector bv = aut.get_useful_states_tarjan();
+	Mata::BoolVector ref({1, 1, 1, 0, 1});
+	CHECK(bv == ref);
+}
