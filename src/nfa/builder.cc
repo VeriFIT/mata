@@ -212,10 +212,12 @@ Nfa Builder::parse_from_mata(std::istream& nfa_stream) {
     const std::string nfa_str = "NFA";
     Parser::Parsed parsed{ Parser::parse_mf(nfa_stream) };
     if (parsed.size() != 1) {
-        throw std::runtime_error("The number of sections in the input file is not 1\n");
+        throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
+            + "'. Required is '1'.\n");
     }
-    if (parsed[0].type.compare(0, nfa_str.length(), nfa_str) != 0) {
-        throw std::runtime_error("The type of input automaton is not NFA\n");
+    const std::string automaton_type{ parsed[0].type };
+    if (automaton_type.compare(0, nfa_str.length(), nfa_str) != 0) {
+        throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFA'\n");
     }
     IntAlphabet alphabet;
     return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
