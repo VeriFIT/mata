@@ -23,25 +23,10 @@ jobs:
       - name: Checkout latest version
         uses: actions/checkout@v2
 
-      - name: Add some version to VERSION file (since it cannot be inferred from git)
-        run: |
-          echo "0.0.0" > VERSION
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+      - name: Setup Python environment
+        uses: ./.github/workflows/actions/setup-python
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: 'pip'
-
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          make -C bindings/python init
-
-      - name: Install Unix dependencies
-        run: |
-          sudo apt-get -qq update 
-          sudo apt-get -qq install -y graphviz graphviz-dev
+          python-version: ${{ matrix.python-version}}
 
       - name: Install The Binding
         run: |
@@ -64,3 +49,26 @@ jobs:
           papermill ./examples/notebooks/example-01-ws1s-formulae.ipynb out.ipynb
           papermill ./examples/notebooks/example-02-redos-attacks.ipynb out.ipynb
           papermill ./examples/notebooks/example-03-exploring-maze.ipynb out.ipynb
+
+  build-from-tar:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - name: Checkout latest version
+        uses: actions/checkout@v2
+
+      - name: Setup Python environment
+        uses: ./.github/workflows/actions/setup-python
+        with:
+          python-version: ${{ matrix.python-version}}
+
+      - name: Create tarball
+        run: |
+          make pypi-release
+
+      - name: Install from tarball
+        run: |
+          pip3 install dist/*.tar.gz
