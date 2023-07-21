@@ -44,7 +44,6 @@ may arise during development.
 * [Troubleshooting](#troubleshooting)
   * [An error when importing Python object from other module](#an-error-when-importing-python-object-from-other-module)
   * [A weird error when Cython cannot retype C/C++ object to Python object](#a-weird-error-when-cython-cannot-retype-cc-object-to-python-object)
-  * [An error when Cython cannot find cimported function, even if it is defined](#an-error-when-cython-cannot-find-cimported-function-even-if-it-is-defined)
 * [Quick glossary](#quick-glossary)
 <!-- TOC -->
 
@@ -785,40 +784,6 @@ for c_noodle in c_noodle_segments:
         noodle.append(noodle_segment)
 
     noodle_segments.append(noodle)
-```
-
-## An error when Cython cannot find cimported function, even if it is defined
-
-* **Problem**: You defined some function `f` you wish to use in binding, you implement the function
-  with same name in the binding, but Cython first says, that 
-  you are redefining the function `f` and then says it cannot `cimport` it.
-* **Solution**: You have to explicitly name the function `f` to, e.g.. `c_f`.
-
-* The following is an example of the error.
- 
-```shell
-warning: libmata/nfa/nfa.pyx:690:0: Overriding cdef method with def method.
-
-Error compiling Cython file:
-------------------------------------------------------------
-...
-:param Nfa lhs: non-deterministic finite automaton
-:return: deterministic finite automaton, subset map
-"""
-result = Nfa()
-cdef umap[StateSet, State] subset_map
-mata_nfa.determinize(result.thisptr.get(), dereference(lhs.thisptr.get()), &subset_map)
-       ^
-------------------------------------------------------------
-
-libmata/nfa/nfa.pyx:687:12: cimported module has no attribute 'determinize'
-```
-
-* An example of the solution is as follows:
-
-```git
--    cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
-+    cdef void c_determinize "Mata::Nfa::Plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
 ```
 
 # Quick glossary

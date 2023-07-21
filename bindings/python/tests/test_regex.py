@@ -12,15 +12,15 @@ def test_regex():
     lhs = parser.from_regex("a|b")
     rhs = parser.from_regex("b|c")
 
-    union = mata_nfa.union(lhs, rhs)
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "a"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "b"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "c"))
+    union = mata_nfa.Nfa.union(lhs, rhs)
+    assert mata_nfa.Nfa.is_in_lang(union, mata_nfa.Nfa.encode_word(symbol_map, "a"))
+    assert mata_nfa.Nfa.is_in_lang(union, mata_nfa.Nfa.encode_word(symbol_map, "b"))
+    assert mata_nfa.Nfa.is_in_lang(union, mata_nfa.Nfa.encode_word(symbol_map, "c"))
 
-    intersection = mata_nfa.intersection(lhs, rhs)
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "a"))
-    assert mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "b"))
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "c"))
+    intersection = mata_nfa.Nfa.intersection(lhs, rhs)
+    assert not mata_nfa.Nfa.is_in_lang(intersection, mata_nfa.Nfa.encode_word(symbol_map, "a"))
+    assert mata_nfa.Nfa.is_in_lang(intersection, mata_nfa.Nfa.encode_word(symbol_map, "b"))
+    assert not mata_nfa.Nfa.is_in_lang(intersection, mata_nfa.Nfa.encode_word(symbol_map, "c"))
 
 
 def test_stars_concatenation():
@@ -31,4 +31,4 @@ def test_stars_concatenation():
     expected.add_transition(0, ord('c'), 0)
     expected.add_transition(0, ord('a'), 1)
     expected.add_transition(1, ord('a'), 1)
-    assert mata_nfa.equivalence_check(aut, expected)
+    assert mata_nfa.Nfa.equivalence_check(aut, expected)
