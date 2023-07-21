@@ -15,6 +15,9 @@
  * GNU General Public License for more details.
  */
 
+//is it good that header file names don't match cc files? What is the system actually? Is there a difference between operations and algorithms?
+//Generally, a comment on what the file is for would be good everywhere.
+
 #include <algorithm>
 #include <list>
 #include <unordered_set>
@@ -34,9 +37,14 @@ using namespace Mata::Nfa;
 using Mata::Symbol;
 using Mata::BoolVector;
 
+// Vector of bool is probably slower than vector of char (from some little experiment).
+// Just BoolArray would be better?
+// It would make sense to make this type name global, it is type that we use globally to represent bool vectors. ?
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
+    //Remove direct_, there are no close alternatives for NFA (unlike for Buchi). Remove "compute_" ?
+    //Is this declared in a header file? Can't find.
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
         Symbol maxSymbol = 0;
         const size_t state_num = aut.size();
@@ -58,6 +66,9 @@ namespace {
         return LTSforSimulation.compute_simulation();
     }
 
+    //Something shorter? like simulation_quotient?
+    //State_map could be optional?
+    //Also some comments needed here.
 	Nfa reduce_size_by_simulation(const Nfa& aut, StateToStateMap &state_map) {
         Nfa result;
         const auto sim_relation = Algorithms::compute_relation(
@@ -179,10 +190,13 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
     return true;
 } // are_disjoint }}}
 
+//Should be in-place method? I would still name it complete, it is a verb too.
+//Alphabet should be optional, the automaton has an alphabet that would be used implicitly.
 bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
     return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
 }
 
+//It is weird to have two finctions like this. Perhaps after we have alphabets finished, we could just pass an alphabet.
 bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols, State sink_state) {
     bool was_something_added{ false };
 
@@ -209,6 +223,7 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
+//Should it take an optional set of epsilons as a parameter?
 Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
@@ -270,6 +285,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     return result;
 }
 
+//TODO: experiment with reverts and chose which should survive
 Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     const size_t num_of_states{ aut.size() };
 
@@ -288,6 +304,8 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     // size of the "used alphabet", i.e. max symbol+1 or 0
     Symbol alphasize =  (symbols.empty()) ? 0 : (symbols.back()+1);
 
+
+    //let's remove the static structures
 #ifdef _STATIC_STRUCTURES_
     //STATIC DATA STRUCTURES:
     // Not sure that it works ideally, whether the space for the inner vectors stays there.
@@ -460,6 +478,7 @@ Nfa Mata::Nfa::revert(const Nfa& aut) {
     //return somewhat_simple_revert(aut);
 }
 
+//method?
 bool Mata::Nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initial.size() != 1) { return false; }
@@ -477,6 +496,8 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     return true;
 }
+
+//method?
 bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
     Util::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
@@ -517,6 +538,8 @@ bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
     return true;
 }
 
+//remove get_ ? path -> run? Strange, word is a part of Run, why to ask the automaton and call this function then?
+//Maybe something strange happened since we introduced the Run data type?
 std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run)
 {
     if (run.path.empty())
@@ -558,6 +581,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
 }
 
 //TODO: this is not efficient
+//method?
 bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur(aut.initial);
@@ -573,6 +597,7 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 
 /// Checks whether the prefix of a string is in the language of an automaton
 // TODO: slow and it should share code with is_in_lang
+//method?
 bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur =  StateSet{ aut.initial };
@@ -597,6 +622,7 @@ Mata::Parser::ParsedSection Mata::Nfa::serialize(
     return {};
 }
 
+//method?
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
     std::list<State> worklist(
@@ -664,11 +690,13 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 } // is_lang_empty }}}
 
 
+//method?
 Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     return determinize(revert(determinize(revert(aut))));
 }
 
+//method?
 Nfa Mata::Nfa::minimize(
                 const Nfa& aut,
                 const StringMap& params)
@@ -692,6 +720,7 @@ Nfa Mata::Nfa::minimize(
 	return algo(aut);
 }
 
+//could be a method that does it in-place (modifies the object on which it is called)?
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
@@ -749,6 +778,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
+//All these parameters are making this a monster. state_map optional, params too (or remove), kick out trim_input and don't trim.
 Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
@@ -789,6 +819,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_ma
     return result;
 }
 
+//Might be a method, but it will not be in-place anyway, so I don't know.
 Nfa Mata::Nfa::determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map)
@@ -873,6 +904,8 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
     nfa.print_to_mata(os);
     return os;
 }
+
+//Are the following functions for alphabets there to stay or to be refacvtored together with alphabets?
 
 void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
     const size_t nfa_num_of_states{ nfa.size() };

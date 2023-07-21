@@ -106,18 +106,21 @@ public:
     /**
      * Clear transitions but keep the automata states.
      */
+    //method of delta?
     void clear_transitions();
 
     /**
      * Add a new (fresh) state to the automaton.
      * @return The newly created state.
      */
+     //obsolete?
     State add_state();
 
     /**
      * Add state @p state to @c delta if @p state is not in @c delta yet.
      * @return The requested @p state.
      */
+     //obsolete?
     State add_state(State state);
 
     /**
@@ -126,6 +129,7 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
+     //rename, again, to num_of_states?
      size_t size() const;
 
     /**
@@ -145,6 +149,7 @@ public:
      *
      * The whole NFA is cleared, each member is set to its zero value.
      */
+     //used?
     void clear();
 
     /**
@@ -165,6 +170,8 @@ public:
      */
     Util::OrdVector<Symbol> get_used_symbols() const;
 
+    //this is to be debordelized, the variants were here just to play with data structures
+    //should be a method of delta
     Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
     Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
@@ -201,6 +208,7 @@ public:
      * @return Set of useful states.
      * TODO: with the new get_useful_states, we can delete this probably.
      */
+     //keep just the new one
     StateSet get_useful_states_old() const;
 
     BoolVector get_useful_states() const;
@@ -215,6 +223,7 @@ public:
      * @param[out] state_map Mapping of trimmed states to new states.
      * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
+     //to be compared on some good data
     void trim_inplace(StateToStateMap* state_map = nullptr);
     void trim_reverting(StateToStateMap* state_map = nullptr);
     void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
@@ -246,12 +255,14 @@ public:
      *
      * The operation has constant time complexity.
      */
+     //remove get_ ?
     size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.begin(), delta.end())); }
 
     /**
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
+     //this will become obsolete, we will have iterators in delta
     TransSequence get_trans_as_sequence() const;
 
     /**
@@ -259,6 +270,7 @@ public:
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
+    //this will become obsolete, we will have iterators in delta
     TransSequence get_trans_from_as_sequence(State state_from) const;
 
     /**
@@ -269,6 +281,7 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
+    //this will become obsolete, we will have iterators in delta
     const Post& get_moves_from(const State state_from) const {
         assert(state_from < size());
         return delta[state_from];
@@ -280,6 +293,7 @@ public:
      * @return Sequence of @c Trans transitions leading to @p state_to.
      * (!slow!, traverses the entire delta)
      */
+     //this function somehow does not fit with the planned iterator interface, but I don't know what to do
     TransSequence get_transitions_to(State state_to) const;
 
     /**
@@ -287,6 +301,7 @@ public:
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
+     //why the get_ everywhere?
     Nfa get_one_letter_aut(Symbol abstract_symbol = 'x') const;
 
     /**
@@ -338,6 +353,7 @@ public:
     void print_to_mata(std::ostream &output) const;
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+    // One usage in universality, should disappear and this function should be removed.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     struct const_iterator {
@@ -374,6 +390,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
+     //These things should be methods of delta?
     Post::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
@@ -383,6 +400,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
+    //These things should be methods of delta?
     static Post::const_iterator get_epsilon_transitions(const Post& post, Symbol epsilon = EPSILON);
 
     /**
@@ -390,6 +408,7 @@ public:
      *
      * The value of the already existing symbols will NOT be overwritten.
      */
+     //A method of delta as well?
     void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
 }; // struct Nfa.
 
@@ -398,9 +417,11 @@ public:
   * @param[in] nfa NFA with symbols to fill @p alphabet with.
   * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
   */
+    //A method of delta as well?
 void fill_alphabet(const Mata::Nfa::Nfa& nfa, Mata::OnTheFlyAlphabet& alphabet);
 
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
+//Please explain in a comment here what this is.
 template<bool...> struct bool_pack{};
 /// Checks for all types in the pack.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
@@ -413,6 +434,7 @@ template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts
  * @param[in] nfas NFAs to create alphabet from.
  * @return Created alphabet.
  */
+ //What is this, what are these types? Is it sane?
 template<typename... Nfas, typename = AreAllNfas<Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
@@ -428,6 +450,7 @@ inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
  * @param[in] nfas Vector of NFAs to create alphabet from.
  * @return Created alphabet.
  */
+ //We are to refactor alphabets, right?
 OnTheFlyAlphabet create_alphabet(const ConstAutRefSequence& nfas);
 
 /**
@@ -449,6 +472,7 @@ OnTheFlyAlphabet create_alphabet(const ConstAutPtrSequence& nfas);
  * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
  * @return Created alphabet.
  */
+ //Do we need all the variants? If yes, can we have one with iterators, or a template?
 OnTheFlyAlphabet create_alphabet(const AutPtrSequence& nfas);
 
 /// Do the automata have disjoint sets of states?
@@ -460,8 +484,10 @@ bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
  * @param[out] cex Counter-example path for a case the language is not empty.
  * @return True if the language is empty, false otherwise.
  */
+ //should be a method?
 bool is_lang_empty(const Nfa& aut, Run* cex = nullptr);
 
+//could be in-place method
 Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
 /**
@@ -482,6 +508,8 @@ Nfa uni(const Nfa &lhs, const Nfa &rhs);
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
+
+//preserve_epsilon optional too? Do we need both options?
 Nfa intersection(const Nfa& lhs, const Nfa& rhs,
                  bool preserve_epsilon = false, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
@@ -497,6 +525,7 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
+// choice of optional parameters using structure?
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
@@ -513,6 +542,8 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
  * @param[in] sink_state The state into which new transitions are added.
  * @return True if some new transition was added to the automaton.
  */
+ //method complete
+ //alphabet optional, sink stata too?
 bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
 
 /**
@@ -532,6 +563,7 @@ bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
  * @param[in] sink_state The state into which new transitions are added.
  * @return True if some new transition was added to the automaton.
  */
+ //eventually only one variant, the version with the optional alphabet (some enum alphabet type) ?
 bool make_complete(Nfa& aut, const Util::OrdVector<Symbol>& symbols, State sink_state);
 
 /**
@@ -555,6 +587,7 @@ inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_comp
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
+ //method
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
    const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
 
@@ -573,6 +606,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
+//Do we need this? How many algorithms do we have? If yes, maybe these syntactic sugar functions could really have their own file.
 Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
    const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
 
@@ -741,6 +775,7 @@ Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::stri
 } // namespace Mata::Nfa.
 
 namespace std {
+    //some comments needed
 template <>
 struct hash<Mata::Nfa::Trans> {
 	inline size_t operator()(const Mata::Nfa::Trans& trans) const {

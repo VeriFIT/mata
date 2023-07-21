@@ -117,6 +117,7 @@ bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex)
 //   bool is_universal_antichains(const Nfa& aut,{.alphabet = bla, .cex = bli});
 
 //comment missing
+//Do we really need this?
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});
