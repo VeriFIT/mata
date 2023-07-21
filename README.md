@@ -8,6 +8,7 @@
 [![devel: Ubuntu (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml)
 [![devel: MacOS (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml)
 
+[![codecov](https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 Mata is an open source automata library that offers interface for different kinds of automata (NFA,
 AFA, etc.). Currently, Mata offers two interfaces:
 
@@ -234,6 +235,10 @@ performance fixes or refactoring.
 Also, check out our research group focusing on program analysis, static and dynamic analysis,
 formal methods, verification and many more: 
 <http://www.fit.vutbr.cz/research/groups/verifit/index.php.en>.
+
+# Code Climate
+
+https://codecov.io/gh/VeriFIT/mata/branch/devel/graphs/sunburst.svg?token=9VAVD19N4D
 
 # Licensing
 
