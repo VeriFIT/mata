@@ -241,7 +241,7 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     useful_states.clear();
     useful_states = get_useful_states();
 #else
-    BoolVector useful_states{ get_useful_states() };
+    BoolVector useful_states(get_useful_states_tarjan());
 #endif
 
     std::vector<State> renaming(useful_states.size());
@@ -320,24 +320,22 @@ struct NodeData {
     unsigned long index;
     unsigned long lowlink;
     bool initilized;
+    bool on_stack;
 
     NodeData() = default;
 
     NodeData(State q, const Delta & delta, unsigned long index) 
-        : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true) {
+        : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
         if (post_it != post_end) {
             targets_it = post_it->cbegin();
             targets_end = post_it->cend();
         }
     };
 
-    State get_act_succ() const {
-        return *(this->targets_it);
-    }
-
-    // Get a following successor
+    // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
+    // first align the iterators.
     // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
-    bool get_next_succ(State& succ) {
+    void align_succ() {
         while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
             if (this->targets_it == this->targets_end) {
                 ++this->post_it;
@@ -345,15 +343,25 @@ struct NodeData {
                     this->targets_it = this->post_it->cbegin();
                     this->targets_end = this->post_it->cend();
                 }
-            } else
-                ++this->targets_it;
+            } 
         }
+    }
+
+    State get_act_succ() {
+        align_succ();
+        return *(this->targets_it);
+    }
+
+    void move_next_succ() {
         if(this->post_it == this->post_end) {
-            return false;
+            return;
         }
-        succ = *(this->targets_it);
         this->targets_it++;
-        return true;
+    }
+
+    bool is_end() {
+        align_succ();
+        return this->post_it == this->post_end;
     }
 };
 
@@ -382,20 +390,27 @@ BoolVector Nfa::get_useful_states_tarjan() const {
         } else { // return from the recursive call
             State act_succ = act_state_data.get_act_succ();
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
+            // act_succ is the state that cased the recursive call. Move to another successor.
+            act_state_data.move_next_succ();
         }
 
         // iterate through outgoing edges
         State next_state;
         bool rec_call = false;
-        while(act_state_data.get_next_succ(next_state)) {
-            if(!node_info[next_state].initilized) {
+        while(!act_state_data.is_end()) {
+            next_state = act_state_data.get_act_succ();
+            // if successor is useful, act_state is useful as well
+            if(reached_and_reaching[next_state]) {
+                reached_and_reaching[act_state] = true;
+            }
+            if(!node_info[next_state].initilized) { // recursive call
                 program_stack.push_back(next_state);
-                // recursive call
                 rec_call = true;
                 break;
-            } else {
+            } else if(node_info[next_state].on_stack) {
                 act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
             }
+            act_state_data.move_next_succ();
         }
         if(rec_call) continue;
 
@@ -407,14 +422,14 @@ BoolVector Nfa::get_useful_states_tarjan() const {
             do {
                 st = tarjan_stack.back();
                 tarjan_stack.pop_back();
-                
+                node_info[st].on_stack = false;
+
                 // SCC contains a final state
                 if(reached_and_reaching[st]) {
                     final_scc = true;
                 }
                 scc.push_back(st);
             } while(st != act_state);
-            
             if(final_scc) {
                 for(const State& st : scc) reached_and_reaching[st] = true;
                 for(const State& st : tarjan_stack) reached_and_reaching[st] = true;
