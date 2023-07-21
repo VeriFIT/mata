@@ -37,4 +37,4 @@ install:
 
 clean:
 	cd $(BUILD_DIR) && rm -rf *
-	rm -rf doc
+	find doc/_build -type f -not \( -name '.nojekyll' \) -exec rm -d {} +

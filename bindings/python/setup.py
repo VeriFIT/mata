@@ -122,7 +122,7 @@ def _copy_sources():
     shutil.copy(os.path.join(project_dir, 'Doxyfile.in'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'merge_static_libraries.sh'), sdist_dir)
     for mata_dir in (
-            'src', 'include', '3rdparty', 'cmake', 'cli', 'tests', 'unit-test-data'
+            'src', 'include', '3rdparty', 'cmake', 'tests'
     ):
         shutil.copytree(
             os.path.join(project_dir, mata_dir),

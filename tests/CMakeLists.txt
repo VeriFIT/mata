@@ -51,11 +51,6 @@ target_compile_options(tests PRIVATE "${COMMON_COMPILER_FLAGS}")
 
 include(Catch)
 catch_discover_tests(tests)
-add_custom_command(
-	TARGET tests POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/unit-test-data
-	COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/unit-test-data/ ${CMAKE_BINARY_DIR}/src/unit-test-data/
-)
 
 if(FALSE)
 
