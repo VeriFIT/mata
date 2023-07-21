@@ -103,7 +103,7 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 //the alphabet parameter should be optional? The automaton can have its alphabet too. Run should be optional.
-//actually, what about to use this
+//actually, what about to use this, with more optional parameters through structures
 //struct univ_params
 //{
 //    Alphabet* alphabet = NULL,
