@@ -93,3 +93,18 @@ jobs:
           if [ $number_of_warnings -gt 0 ]; then
             exit 1
           fi
+
+  code-coverage:
+    runs-on: ubuntu-latest
+    needs: run-tests
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+      - name: Build library for coverage
+        run: make coverage
+      - name: Test the library
+        run: make test
+      - name: Upload coverage to codecov
+        uses: codecov/codecov-action@v3
+        with:
+          gcov: true
