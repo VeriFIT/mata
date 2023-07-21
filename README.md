@@ -236,10 +236,6 @@ Also, check out our research group focusing on program analysis, static and dyna
 formal methods, verification and many more: 
 <http://www.fit.vutbr.cz/research/groups/verifit/index.php.en>.
 
-# Code Climate
-
-https://codecov.io/gh/VeriFIT/mata/branch/devel/graphs/sunburst.svg?token=9VAVD19N4D
-
 # Licensing
 
 The code of this project is licensed under GNU GPLv3 license.
