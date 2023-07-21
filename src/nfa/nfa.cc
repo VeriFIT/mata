@@ -237,9 +237,9 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
 void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
-    BoolVector useful_states{ get_useful_states() };
+    BoolVector useful_states{ get_useful_states_tarjan() };
     useful_states.clear();
-    useful_states = get_useful_states();
+    useful_states = get_useful_states_tarjan();
 #else
     BoolVector useful_states(get_useful_states_tarjan());
 #endif
