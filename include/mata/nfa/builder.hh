@@ -17,6 +17,7 @@ namespace Mata::Nfa::Builder {
 /**
  * Create an automaton accepting only a single @p word.
  */
+//should we drop the create_ from all the names?
 Nfa create_single_word_nfa(const std::vector<Symbol>& word);
 
 /**
@@ -45,10 +46,12 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+//construct does not cary much info, what is better? In the comment, don't know what Parsed object is, overall I don't get what this function does.
 
 /** Loads an automaton from Parsed object */
 Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
 
+//comment missing
 template<class ParsedObject>
 Nfa construct(const ParsedObject& parsed, Mata::StringToSymbolMap* symbol_map = nullptr,
               StringToStateMap* state_map = nullptr) {
