@@ -106,7 +106,7 @@ bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex)
 //actually, what about to use this
 //struct univ_params
 //{
-//    const Alphabet* alphabet = NULL,
+//    Alphabet* alphabet = NULL,
 //    Run* cex = NULL,
 //};
 //   bool is_universal_antichains(const Nfa& aut, univ_params={NULL,NULL});
