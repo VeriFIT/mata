@@ -67,8 +67,8 @@ jobs:
 
       - name: Create tarball
         run: |
-          make pypi-release
+          make -C bindings/python pypi-release
 
       - name: Install from tarball
         run: |
-          pip3 install dist/*.tar.gz
+          pip3 install bindings/python/dist/*.tar.gz
