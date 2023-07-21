@@ -6,11 +6,6 @@ project(libmata)
 # Export compile commands to be used with YouCompleteMe
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# if DEBUG, also test coverage
-if(CMAKE_BUILD_TYPE MATCHES "Coverage")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
-endif()
-
 # uncomment for profiling
 #add_definitions(-pg)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")

@@ -72,6 +72,16 @@ if (WERROR)
 endif ()
 
 ##############################################################################
+#                                COVERAGE
+##############################################################################
+
+# if DEBUG, also test coverage
+if(CMAKE_BUILD_TYPE MATCHES "Coverage")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+endif()
+
+##############################################################################
 #                                DEPENDENCIES
 ##############################################################################
 
