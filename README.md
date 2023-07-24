@@ -7,6 +7,7 @@
 
 [![devel: Ubuntu (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/ubuntu.yml)
 [![devel: MacOS (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/macos.yml)
+[![codecov](https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
 Mata is an open source automata library that offers interface for different kinds of automata (NFA,
 AFA, etc.). Currently, Mata offers two interfaces:
