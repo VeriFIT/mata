@@ -312,19 +312,26 @@ struct StackLevel {
     };
 };
 
-struct NodeData {
+// A structure to store metadata related to each state/node during the computation 
+// of useful states. It contains Tarjan's metadata and the state of the 
+// iteration through the successors. 
+struct TarjanNodeData {
     Post::const_iterator post_it;
     Post::const_iterator post_end;
     StateSet::const_iterator targets_it{};
     StateSet::const_iterator targets_end{};
-    unsigned long index;
-    unsigned long lowlink;
-    bool initilized;
-    bool on_stack;
+    // index of a node (corresponds to the time of discovery)
+    unsigned long index {0};
+    // index of a lower node in the same SCC 
+    unsigned long lowlink {0};
+    // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
+    bool initilized {false};
+    // is node on Tarjan's stack?
+    bool on_stack {false};
 
-    NodeData() = default;
+    TarjanNodeData() = default;
 
-    NodeData(State q, const Delta & delta, unsigned long index) 
+    TarjanNodeData(State q, const Delta & delta, unsigned long index) 
         : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
         if (post_it != post_end) {
             targets_it = post_it->cbegin();
@@ -347,7 +354,7 @@ struct NodeData {
         }
     }
 
-    State get_act_succ() {
+    State get_curr_succ() {
         align_succ();
         return *(this->targets_it);
     }
@@ -356,7 +363,7 @@ struct NodeData {
         if(this->post_it == this->post_end) {
             return;
         }
-        this->targets_it++;
+        ++this->targets_it;
     }
 
     bool is_end() {
@@ -367,10 +374,10 @@ struct NodeData {
 
 BoolVector Nfa::get_useful_states_tarjan() const {
     BoolVector reached_and_reaching(this->size(),false); 
-    std::vector<NodeData> node_info(this->size());
+    std::vector<TarjanNodeData> node_info(this->size());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
-    unsigned long cnt = 0;
+    unsigned long index_cnt = 0;
 
     for(const State& q0 : initial) {
         program_stack.push_back(q0);
@@ -378,17 +385,17 @@ BoolVector Nfa::get_useful_states_tarjan() const {
 
     while(!program_stack.empty()) {
         State act_state = program_stack.back();
-        NodeData& act_state_data = node_info[act_state];
+        TarjanNodeData& act_state_data = node_info[act_state];
         // node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
         if(!act_state_data.initilized) {
             // initialize node
-            act_state_data = NodeData(act_state, this->delta, cnt++);
+            act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
             tarjan_stack.push_back(act_state);
             if(this->final.contains(act_state)) {
                 reached_and_reaching[act_state] = true;
             }
         } else { // return from the recursive call
-            State act_succ = act_state_data.get_act_succ();
+            State act_succ = act_state_data.get_curr_succ();
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
             act_state_data.move_next_succ();
@@ -398,7 +405,7 @@ BoolVector Nfa::get_useful_states_tarjan() const {
         State next_state;
         bool rec_call = false;
         while(!act_state_data.is_end()) {
-            next_state = act_state_data.get_act_succ();
+            next_state = act_state_data.get_curr_succ();
             // if successor is useful, act_state is useful as well
             if(reached_and_reaching[next_state]) {
                 reached_and_reaching[act_state] = true;

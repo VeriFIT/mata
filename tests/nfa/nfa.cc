@@ -3046,7 +3046,7 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
 
 TEST_CASE("Mata::Nfa::trim bug") {
 	Nfa aut(5, {0}, {4});
-    aut.delta.add(0, 122, 1);
+	aut.delta.add(0, 122, 1);
 	aut.delta.add(1, 98, 1);
 	aut.delta.add(1, 122, 1);
 	aut.delta.add(1, 97, 2);
