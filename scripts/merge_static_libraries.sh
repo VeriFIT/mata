@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # takes in $1 the name of the output library and in
 # $2... names of input libraries
 
