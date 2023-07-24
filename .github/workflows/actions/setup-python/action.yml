@@ -1,0 +1,31 @@
+name: Setup Python environment
+description: Setup Python environment for running workflows.
+inputs:
+  python-version:
+    description: 'Python version to run'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Add some version to VERSION file (since it cannot be inferred from git)
+      shell: sh
+      run: echo "0.0.0" > VERSION
+
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: 'pip'
+
+    - name: Install Python Dependencies
+      shell: sh
+      run: |
+        python -m pip install --upgrade pip
+        make -C bindings/python init
+
+    - name: Install Unix dependencies
+      shell: sh
+      run: |
+        sudo apt-get -qq update 
+        sudo apt-get -qq install -y graphviz graphviz-dev
