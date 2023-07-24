@@ -295,65 +295,67 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     return create_trimmed_aut(*this, *state_map);
 }
 
-// A structure to store metadata related to each state/node during the computation 
-// of useful states. It contains Tarjan's metadata and the state of the 
-// iteration through the successors. 
-struct TarjanNodeData {
-    Post::const_iterator post_it;
-    Post::const_iterator post_end;
-    StateSet::const_iterator targets_it{};
-    StateSet::const_iterator targets_end{};
-    // index of a node (corresponds to the time of discovery)
-    unsigned long index {0};
-    // index of a lower node in the same SCC 
-    unsigned long lowlink {0};
-    // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-    bool initilized {false};
-    // is node on Tarjan's stack?
-    bool on_stack {false};
+namespace {
+    // A structure to store metadata related to each state/node during the computation 
+    // of useful states. It contains Tarjan's metadata and the state of the 
+    // iteration through the successors. 
+    struct TarjanNodeData {
+        Post::const_iterator post_it;
+        Post::const_iterator post_end;
+        StateSet::const_iterator targets_it{};
+        StateSet::const_iterator targets_end{};
+        // index of a node (corresponds to the time of discovery)
+        unsigned long index {0};
+        // index of a lower node in the same SCC 
+        unsigned long lowlink {0};
+        // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
+        bool initilized {false};
+        // is node on Tarjan's stack?
+        bool on_stack {false};
 
-    TarjanNodeData() = default;
+        TarjanNodeData() = default;
 
-    TarjanNodeData(State q, const Delta & delta, unsigned long index) 
-        : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
-        if (post_it != post_end) {
-            targets_it = post_it->cbegin();
-            targets_end = post_it->cend();
+        TarjanNodeData(State q, const Delta & delta, unsigned long index) 
+            : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
+            if (post_it != post_end) {
+                targets_it = post_it->cbegin();
+                targets_end = post_it->cend();
+            }
+        };
+
+        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
+        // first align the iterators.
+        // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
+        void align_succ() {
+            while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
+                if (this->targets_it == this->targets_end) {
+                    ++this->post_it;
+                    if (this->post_it != this->post_end) {
+                        this->targets_it = this->post_it->cbegin();
+                        this->targets_end = this->post_it->cend();
+                    }
+                } 
+            }
+        }
+
+        State get_curr_succ() {
+            align_succ();
+            return *(this->targets_it);
+        }
+
+        void move_next_succ() {
+            if(this->post_it == this->post_end) {
+                return;
+            }
+            ++this->targets_it;
+        }
+
+        bool is_end() {
+            align_succ();
+            return this->post_it == this->post_end;
         }
     };
-
-    // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
-    // first align the iterators.
-    // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
-    void align_succ() {
-        while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
-            if (this->targets_it == this->targets_end) {
-                ++this->post_it;
-                if (this->post_it != this->post_end) {
-                    this->targets_it = this->post_it->cbegin();
-                    this->targets_end = this->post_it->cend();
-                }
-            } 
-        }
-    }
-
-    State get_curr_succ() {
-        align_succ();
-        return *(this->targets_it);
-    }
-
-    void move_next_succ() {
-        if(this->post_it == this->post_end) {
-            return;
-        }
-        ++this->targets_it;
-    }
-
-    bool is_end() {
-        align_succ();
-        return this->post_it == this->post_end;
-    }
-};
+}
 
 BoolVector Nfa::get_useful_states() const {
     BoolVector reached_and_reaching(this->size(),false); 
