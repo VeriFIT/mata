@@ -3077,6 +3077,24 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		CHECK(bv == ref);
 	}
 
+	SECTION("Empty NFA") {
+		Nfa aut;
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({}));
+	}
+
+	SECTION("Single-state NFA") {
+		Nfa aut(1, {0}, {});
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({0}));
+	}
+
+	SECTION("Single-state NFA acc") {
+		Nfa aut(1, {0}, {0});
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({1}));
+	}
+
 	SECTION("Nfa 2") {
 		Nfa aut(5, {0, 1}, {2});
 		aut.delta.add(0, 122, 2);
