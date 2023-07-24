@@ -5,7 +5,6 @@ include mata/CMakeLists.txt
 include mata/Doxyfile.in
 include mata/LICENSE
 include mata/Makefile
-include mata/merge_static_libraries.sh
 include mata/README.md
 include mata/VERSION
 recursive-include mata/3rdparty *
@@ -14,4 +13,5 @@ recursive-include mata/cmake *
 recursive-include mata/include *
 recursive-include mata/src *
 recursive-include mata/tests *
+recursive-include mata/scripts *
 recursive-include mata/unit-test-data *
