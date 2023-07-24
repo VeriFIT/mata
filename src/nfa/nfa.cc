@@ -237,11 +237,11 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
 void Nfa::trim_inplace(StateToStateMap* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
-    BoolVector useful_states{ get_useful_states_tarjan() };
+    BoolVector useful_states{ useful_states() };
     useful_states.clear();
-    useful_states = get_useful_states_tarjan();
+    useful_states = useful_states();
 #else
-    BoolVector useful_states(get_useful_states_tarjan());
+    BoolVector useful_states(get_useful_states());
 #endif
 
     std::vector<State> renaming(useful_states.size());
@@ -355,7 +355,7 @@ struct TarjanNodeData {
     }
 };
 
-BoolVector Nfa::get_useful_states_tarjan() const {
+BoolVector Nfa::get_useful_states() const {
     BoolVector reached_and_reaching(this->size(),false); 
     std::vector<TarjanNodeData> node_info(this->size());
     std::deque<State> program_stack;

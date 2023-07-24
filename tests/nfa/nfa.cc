@@ -3072,7 +3072,7 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 97, 4);
 		aut.delta.add(3, 97, 4);
 
-		Mata::BoolVector bv = aut.get_useful_states_tarjan();
+		Mata::BoolVector bv = aut.get_useful_states();
 		Mata::BoolVector ref({1, 1, 1, 0, 1});
 		CHECK(bv == ref);
 	}
@@ -3084,7 +3084,7 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 98, 4);
 		aut.delta.add(4, 97, 3);
 
-		Mata::BoolVector bv = aut.get_useful_states_tarjan();
+		Mata::BoolVector bv = aut.get_useful_states();
 		Mata::BoolVector ref({1, 0, 1, 0, 0});
 		CHECK(bv == ref);
 	}
@@ -3094,7 +3094,7 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(0, 122, 0);
 		aut.delta.add(1, 98, 1);
 
-		Mata::BoolVector bv = aut.get_useful_states_tarjan();
+		Mata::BoolVector bv = aut.get_useful_states();
 		Mata::BoolVector ref({1, 1});
 		CHECK(bv == ref);
 	}
@@ -3110,7 +3110,7 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 97, 4);
 		aut.delta.add(3, 97, 4);
 
-		Mata::BoolVector bv = aut.get_useful_states_tarjan();
+		Mata::BoolVector bv = aut.get_useful_states();
 		Mata::BoolVector ref({0, 0, 0, 0, 0});
 		CHECK(bv == ref);
 	}
@@ -3119,12 +3119,12 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		Mata::Nfa::Nfa aut;
 		Mata::Parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
-		Mata::BoolVector bv = aut.get_useful_states_tarjan();
+		Mata::BoolVector bv = aut.get_useful_states();
 		Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
 		CHECK(bv == ref);
 
 		aut = Mata::Nfa::reduce(aut);
-		bv = aut.get_useful_states_tarjan();
+		bv = aut.get_useful_states();
 		CHECK(bv == Mata::BoolVector({1,1,1,1}));
 	}
 	

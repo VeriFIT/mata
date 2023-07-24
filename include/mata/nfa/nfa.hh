@@ -209,7 +209,7 @@ public:
      * 
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states_tarjan() const;
+    BoolVector get_useful_states() const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
