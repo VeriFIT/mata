@@ -295,23 +295,6 @@ Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
     return create_trimmed_aut(*this, *state_map);
 }
 
-// A data structure to store things in the depth first search within dfs in the trim.
-// It stores a state and the state of the iteration through the successors of the state.
-struct StackLevel {
-    State state;
-    Post::const_iterator post_it;
-    Post::const_iterator post_end;
-    StateSet::const_iterator targets_it{};
-    StateSet::const_iterator targets_end{};
-
-    StackLevel(State q, const Delta & delta) : state(q), post_it(delta[q].cbegin()), post_end(delta[q].cend()) {
-        if (post_it != post_end) {
-            targets_it = post_it->cbegin();
-            targets_end = post_it->cend();
-        }
-    };
-};
-
 // A structure to store metadata related to each state/node during the computation 
 // of useful states. It contains Tarjan's metadata and the state of the 
 // iteration through the successors. 
@@ -446,70 +429,6 @@ BoolVector Nfa::get_useful_states_tarjan() const {
         program_stack.pop_back();
     }
 
-    return reached_and_reaching;
-}
-
-BoolVector Nfa::get_useful_states() const
-{
-#ifdef _STATIC_STRUCTURES_
-    // STATIC SEEMS TO GIVE LIKE 5-10% SPEEDUP
-    static std::vector<StackLevel> stack;
-    //tracking elements seems to cost more than it saves, switching it off
-    BoolVector reached(size(),false);
-    BoolVector reached_and_reaching(size(),false);
-    stack.clear();
-    reached.clear();
-    reached_and_reaching.clear();
-#else
-    std::vector<StackLevel> stack;//the DFS stack
-    //tracking elements seems to cost more than it saves, switching it off
-    BoolVector reached(size(),false); // Reachable from initial state.
-    BoolVector reached_and_reaching(size(),false); // Reachable from initial state and reaches final state.
-#endif
-
-    for (const State q0: initial) {
-
-        stack.emplace_back(q0,delta);
-        reached[q0]=true;
-        if (final[q0])
-            reached_and_reaching[q0]=true;
-        while (!stack.empty()) {
-            StackLevel & level = stack.back();
-            //Continue the iteration through the successors of q (a shitty code. Is there a better way? What would be the needed interface for mata?)
-            while (level.post_it != level.post_end && level.targets_it == level.targets_end) {
-                if (level.targets_it == level.targets_end) {
-                    ++level.post_it;
-                    if (level.post_it != level.post_end) {
-                        level.targets_it = level.post_it->cbegin();
-                        level.targets_end = level.post_it->cend();
-                    }
-                } else
-                    ++level.targets_it;
-            }
-            if (level.post_it == level.post_end) {
-                stack.pop_back();
-            }
-            else {
-                State succ_state = *(level.targets_it);
-                ++level.targets_it;
-                if (final[succ_state])
-                    reached_and_reaching[succ_state]=true;
-                if (reached_and_reaching[succ_state])
-                {
-                    //A major trick, because of which one DFS is enough for reached as well as reaching.
-                    //On touching a state which reaches finals states, everything in the stack below reaches a final state.
-                    //An invariant of the stack is that everything below a reaching state is reaching.
-                    for (auto it = stack.crbegin(); it != stack.crend() && !reached_and_reaching[it->state]; it++) {
-                            reached_and_reaching[it->state]=true;
-                    }
-                }
-                if (!reached[succ_state]) {
-                    reached[succ_state]=true;
-                    stack.emplace_back(succ_state,delta);
-                }
-            }
-        }
-    }
     return reached_and_reaching;
 }
 
