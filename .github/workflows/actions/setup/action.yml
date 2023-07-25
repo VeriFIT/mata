@@ -10,10 +10,10 @@ runs:
   using: 'composite'
   steps:
     - name: Building MacOS dependencies
-      if: ${{ github.event.inputs.os == 'macos-latest' }}
+      if: ${{ inputs.os == 'macos-latest' }}
       shell: sh
       run: brew install lcov gcovr automake
     - name: Building Unix dependencies
-      if: ${{ github.event.inputs.os == 'ubuntu-latest' }}
+      if: ${{ inputs.os == 'ubuntu-latest' }}
       shell: sh
       run: sudo apt-get install -y build-essential lcov gcovr xdg-utils
