@@ -29,6 +29,10 @@ doc:
 test:
 	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
 
+test-coverage:
+	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
+	gcovr -p -e "3rdparty/*" -j 6 --exclude-unreachable-branches --exclude-throw-branches build/src build/tests
+
 check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
 

@@ -24,12 +24,6 @@ endif()
 #                             OUTPUT CUSTOMIZATION
 ##############################################################################
 
-# Build with Clang? -- currently does nothing, initialize with
-#   $ CXX=clang++ make debug
-# to enable Clang
-option(USE_CLANG "build with clang" OFF)
-# option(USE_CLANG "build with clang" ON)
-
 # Common compiler flags.
 set(COMMON_COMPILER_FLAGS
         -fms-extensions
@@ -79,6 +73,8 @@ endif ()
 if(CMAKE_BUILD_TYPE MATCHES "Coverage")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -O0 -fprofile-arcs -ftest-coverage")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+    include(CodeCoverage)
+    setup_target_for_coverage(${PROJECT_NAME}_coverage tests coverage)
 endif()
 
 ##############################################################################
@@ -123,11 +119,6 @@ message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 # Include CTest so that sophisticated testing can be done now
 include(CTest)
 enable_testing()
-
-# if(CMAKE_COMPILER_IS_GNUCXX)
-#    include(CodeCoverage)
-#    setup_target_for_coverage(${PROJECT_NAME}_coverage tests coverage)
-# endif()
 
 ##############################################################################
 #                                SUB-MODULES
