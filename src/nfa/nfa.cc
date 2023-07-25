@@ -357,6 +357,42 @@ namespace {
     };
 }
 
+/**
+ * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs 
+ * (see https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm, in particular strongconnect(v))
+ * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff 
+ * the state i is useful at the end. To break the recursiveness, we use @p program_stack simulating
+ * the program stack during the recursive calls of strongconnect(v) (see the wiki). 
+ * 
+ * Node data
+ *  - lowlink, index, on_stack (the same as from strongconnect(v))
+ *  - initialized (flag denoting whether the node started to be processing in strongconnect)
+ *  - bunch of iterators allowing to iterate over successors (and store the state of the iteration)
+ * 
+ * Program stack @p program_stack
+ *  - contains nodes 
+ *  - node on the top is being currently processed
+ *  - node is removed after it has been completely processed (after the end of strongconnect)
+ * 
+ * Simulation of strongconnect( @p act_state = v )
+ *  - if @p act_state is not initialized yet (corresponds to the initial phase of strongconnect), initialize
+ *  - if @p act_state has already been initialized (i.e., processing of @p act_state was resumed by a 
+ *    recursive call, which already finished and we continue in processing of @p act_state ), we set 
+ *    @p act_state lowlink to min of current lowlink and the current successor @p act_succ of @p act_state.
+ *    @p act_succ corresponds to w in strongconnect(v). In particular, in strongconnect(v) we called 
+ *    strongconnect(w) and now we continue after the return.
+ *  - Then, we continue iterating over successors @p next_state of @p act_state:
+ *      * if @p next_state is not initialized (corresponds to the first if in strongconnect(v)), we simulate 
+ *        the recursive call of strongconnect( @p next_state ): we put @p next_state on @p program_stack and 
+ *        jump to the processing of a new node from @p program_stack (we do not remove @p act_state from program 
+ *        stack yet).
+ *      * otherwise update the lowlink
+ *  - The rest corresponds to the last part of strongconnect(v) with a difference that if a node in the closed 
+ *    SCC if useful, we declare all nodes in the SCC useful and moreover we propagate usefulness also the states 
+ *    in @p tarjan_stack as it contains states that can reach this closed SCC.
+ * 
+ * @return BoolVector 
+ */
 BoolVector Nfa::get_useful_states() const {
     BoolVector reached_and_reaching(this->size(),false); 
     std::vector<TarjanNodeData> node_info(this->size());
@@ -409,6 +445,7 @@ BoolVector Nfa::get_useful_states() const {
         // check if we have the root of a SCC
         if(act_state_data.lowlink == act_state_data.index) {
             State st;
+            // contains the closed SCC a final state
             bool final_scc = false;
             std::vector<State> scc;
             do {
@@ -423,7 +460,9 @@ BoolVector Nfa::get_useful_states() const {
                 scc.push_back(st);
             } while(st != act_state);
             if(final_scc) {
+                // propagate usefulness to the closed SCC
                 for(const State& st : scc) reached_and_reaching[st] = true;
+                // propagate usefulness to predecessors in @p tarjan_stack
                 for(const State& st : tarjan_stack) reached_and_reaching[st] = true;
             }
         }
