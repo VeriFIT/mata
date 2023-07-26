@@ -66,15 +66,13 @@ WordSet ShortestWordsMap::get_shortest_words_for(State state) const
     return get_shortest_words_for(StateSet{ state });
 }
 
-void ShortestWordsMap::insert_initial_lengths()
-{
+void ShortestWordsMap::insert_initial_lengths() {
     const auto initial_states{ reversed_automaton.initial };
-    if (!initial_states.empty())
-    {
-        for (const State state: initial_states)
-        {
-            shortest_words_map.insert(std::make_pair(state, std::make_pair(0,
-                                                                           WordSet{ std::vector<Symbol>{} })));
+    if (!initial_states.empty()) {
+        for (const State state: initial_states) {
+            shortest_words_map.insert(
+                    std::make_pair(state, std::make_pair(0, WordSet{ std::vector<Symbol>{} }))
+            );
         }
 
         const auto initial_states_begin{ initial_states.begin() };

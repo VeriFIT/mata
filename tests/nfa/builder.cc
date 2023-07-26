@@ -11,7 +11,6 @@
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
 

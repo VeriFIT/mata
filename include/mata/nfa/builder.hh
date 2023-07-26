@@ -44,15 +44,17 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet,
+              std::unordered_map<std::string, State>* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
-Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet,
+              std::unordered_map<std::string, State>* state_map = nullptr);
 
 template<class ParsedObject>
-Nfa construct(const ParsedObject& parsed, Mata::StringToSymbolMap* symbol_map = nullptr,
-              StringToStateMap* state_map = nullptr) {
-    Mata::StringToSymbolMap tmp_symbol_map;
+Nfa construct(const ParsedObject& parsed, std::unordered_map<std::string, Symbol>* symbol_map = nullptr,
+              std::unordered_map<std::string, State>* state_map = nullptr) {
+    std::unordered_map<std::string, Symbol> tmp_symbol_map;
     if (symbol_map) {
         tmp_symbol_map = *symbol_map;
     }

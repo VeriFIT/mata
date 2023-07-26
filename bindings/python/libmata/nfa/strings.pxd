@@ -9,9 +9,6 @@ from libcpp.vector cimport vector
 from libmata.nfa.nfa cimport CNfa, CTrans
 from libmata.alphabets cimport Symbol
 
-cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
-    ctypedef umap[string, string] StringMap
-
 cdef extern from "mata/nfa/strings.hh" namespace "Mata::Strings":
     cdef cset[vector[Symbol]] c_get_shortest_words "Mata::Strings::get_shortest_words" (CNfa&)
 
@@ -28,6 +25,5 @@ cdef extern from "mata/nfa/strings.hh" namespace "Mata::Strings::SegNfa":
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
 
     cdef NoodleSequence c_noodlify "Mata::Strings::SegNfa::noodlify" (CNfa&, Symbol, bool)
-    cdef NoodleSequence c_noodlify_for_equation "Mata::Strings::SegNfa::noodlify_for_equation" (const vector[CNfa*]&,
-                                                                                                             CNfa&, bool, StringMap&)
-
+    cdef NoodleSequence c_noodlify_for_equation "Mata::Strings::SegNfa::noodlify_for_equation" \
+        (const vector[CNfa*]&, CNfa&, bool, umap[string, string]&)

@@ -44,7 +44,7 @@ inline void complement(
         Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"},
+        const std::unordered_map<std::string, std::string>& params = {{"algorithm", "classical"},
                                     {"minimize", "false"}}) { *result = complement(aut, alphabet, params);
 }
 
@@ -54,8 +54,10 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}}) { *result = reduce(aut, trim_result, state_map, params); }
+inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, std::unordered_map<State, State> *state_map = nullptr,
+    const std::unordered_map<std::string, std::string>&  params = {{"algorithm", "simulation"}}) {
+    *result = reduce(aut, trim_result, state_map, params);
+}
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 
@@ -66,8 +68,8 @@ template <class ParsedObject>
 void construct(
         Nfa*                                 result,
         const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr) {
+        std::unordered_map<std::string, Symbol>*                   symbol_map = nullptr,
+        std::unordered_map<std::string, State>*                    state_map = nullptr) {
     *result = Builder::construct(parsed, symbol_map, state_map);
 }
 
@@ -97,7 +99,8 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  */
 void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr) {
+                 std::unordered_map<State, State>* lhs_result_states_map = nullptr,
+                 std::unordered_map<State, State>* rhs_result_states_map = nullptr) {
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_states_map, rhs_result_states_map);
 }
 

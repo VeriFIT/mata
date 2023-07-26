@@ -22,7 +22,6 @@ using namespace Mata::Parser;
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
 
@@ -307,7 +306,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		union_norename(&res, a, b);
 
 		OnTheFlyAlphabet alph{"a", "b"};
-		StringMap params;
+		std::unordered_map<std::string, std::string> params;
 		params["algorithm"] = "antichains";
 
 		REQUIRE(is_included(a, res, &alph, params));
@@ -323,7 +322,7 @@ TEST_CASE("Mata::Nfa::union_norename()")
 		union_norename(&res, a, b);
 
 		OnTheFlyAlphabet alph{"a", "b"};
-		StringMap params;
+		std::unordered_map<std::string, std::string> params;
 		params["algorithm"] = "antichains";
 
 		REQUIRE(is_included(a, res, &alph, params));
@@ -637,7 +636,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
 	Nfa aut(10);
 	Mata::Parser::ParsedSection parsec;
-	StringToSymbolMap symbol_map;
+	std::unordered_map<std::string, Symbol> symbol_map;
 
 	SECTION("construct an empty automaton")
 	{
@@ -760,7 +759,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 { // {{{
     Nfa aut;
     Mata::IntermediateAut inter_aut;
-    StringToSymbolMap symbol_map;
+    std::unordered_map<std::string, Symbol> symbol_map;
 
     SECTION("construct an empty automaton")
     {
@@ -943,7 +942,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-		Mata::Nfa::StringToStateMap state_map;
+		std::unordered_map<std::string, State> state_map;
         Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
         CHECK(aut.final.size() == 9);
 		CHECK(aut.final[state_map.at("0")]);
@@ -975,7 +974,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-		Mata::Nfa::StringToStateMap state_map;
+		std::unordered_map<std::string, State> state_map;
         Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
         CHECK(aut.final.empty());
     }
@@ -1021,17 +1020,17 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 		aut.delta.add('s', 'd', 'q');
 		aut.delta.add('q', 'a', 'q');
 
-		Mata::Nfa::StateToStringMap state_dict =
+		Mata::Nfa::std::unordered_map<State, std::string> state_dict =
 			{{'q', "q"}, {'r', "r"}, {'s', "s"}, {'t', "t"}};
-		Mata::Nfa::SymbolToStringMap symb_dict =
+		Mata::Nfa::SymbolTostd::unordered_map<std::string, std::string> symb_dict =
 			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
 		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
 
 		ParsedSection parsec = Mata::Parser::parse_mf_section(str);
 
-		Mata::Nfa::StringToStateMap inv_state_dict =
+		Mata::Nfa::std::unordered_map<std::string, State> inv_state_dict =
 			Mata::util::invert_map(state_dict);
-		Mata::Nfa::StringToSymbolMap inv_symb_dict =
+		Mata::Nfa::std::unordered_map<std::string, Symbol> inv_symb_dict =
 			Mata::util::invert_map(symb_dict);
 		Nfa res = construct(parsec, &inv_symb_dict, &inv_state_dict);
 
@@ -1057,8 +1056,8 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 
 	SECTION("incorrect state mapper")
 	{
-		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}};
-		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		Mata::Nfa::std::unordered_map<State, std::string> state_dict = {{'q', "q"}};
+		Mata::Nfa::SymbolTostd::unordered_map<std::string, std::string> symb_dict = {{'a', "a"}};
 		aut.delta.add('q', 'a', 'r');
 
 		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
@@ -1067,8 +1066,8 @@ TEST_CASE("Mata::Nfa::serialize() and operator<<()")
 
 	SECTION("incorrect symbol mapper")
 	{
-		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}, {'r', "r"}};
-		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
+		Mata::Nfa::std::unordered_map<State, std::string> state_dict = {{'q', "q"}, {'r', "r"}};
+		Mata::Nfa::SymbolTostd::unordered_map<std::string, std::string> symb_dict = {{'a', "a"}};
 		aut.delta.add('q', 'b', 'r');
 
 		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
@@ -1332,7 +1331,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 { // {{{
 	Nfa aut(6);
 	Run cex;
-	StringMap params;
+	std::unordered_map<std::string, std::string> params;
 
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
@@ -1549,7 +1548,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 	Nfa smaller(10);
 	Nfa bigger(16);
 	Run cex;
-	StringMap params;
+	std::unordered_map<std::string, std::string> params;
 
 	const std::unordered_set<std::string> ALGORITHMS = {
 		"naive",
@@ -1748,7 +1747,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     Nfa smaller(10);
     Nfa bigger(16);
     Word cex;
-    StringMap params;
+    std::unordered_map<std::string, std::string> params;
 
     const std::unordered_set<std::string> ALGORITHMS = {
             "naive",
@@ -2294,7 +2293,7 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 {
 	Nfa aut;
-	StateToStateMap state_map;
+	std::unordered_map<State, State> state_map;
 
 	SECTION("empty automaton")
 	{
@@ -2721,7 +2720,7 @@ TEST_CASE("Mata::Nfa::trim()")
 
     SECTION("With state map") {
         Nfa aut{orig_aut};
-        StateToStateMap state_map{};
+        std::unordered_map<State, State> state_map{};
         aut.trim(&state_map);
         CHECK(aut.initial.size() == orig_aut.initial.size());
         CHECK(aut.final.size() == orig_aut.final.size());
@@ -3005,7 +3004,7 @@ TEST_CASE("Mata::Nfa:: create simple automata") {
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{};
-    StringToSymbolMap symbol_map{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
+    std::unordered_map<std::string, Symbol> symbol_map{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     alphabet.add_symbols_from(symbol_map);
     nfa = Builder::create_sigma_star_nfa(&alphabet);
     CHECK(is_in_lang(nfa, { {}, {} }));

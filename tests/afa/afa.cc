@@ -470,7 +470,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 { // {{{
     Afa aut;
     Mata::IntermediateAut inter_aut;
-    Mata::StringToSymbolMap symbol_map;
+    std::unordered_map<std::string, Mata::Symbol> symbol_map;
 
     SECTION("construct an empty automaton")
     {
@@ -579,7 +579,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
+        std::unordered_map<std::string, State> state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
         REQUIRE(aut.trans_size() == 4);
@@ -612,7 +612,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
+        std::unordered_map<std::string, State> state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
         REQUIRE(aut.initialstates.size() == 2);
@@ -638,7 +638,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
+        std::unordered_map<std::string, State> state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
         // Two initial nodes {q1} and {q2}
@@ -660,7 +660,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
+        std::unordered_map<std::string, State> state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
         // One initial node {q1, q2}
@@ -682,7 +682,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
+        std::unordered_map<std::string, State> state_map;
         construct(&aut, inter_aut, &symbol_map, &state_map);
 
         CHECK(aut.finalstates.size() == 2);

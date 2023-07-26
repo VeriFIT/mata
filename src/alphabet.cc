@@ -35,7 +35,7 @@ Mata::Util::OrdVector<Symbol> OnTheFlyAlphabet::get_complement(const Mata::Util:
     return symbols_alphabet.difference(symbols);
 }
 
-void OnTheFlyAlphabet::add_symbols_from(const StringToSymbolMap& new_symbol_map) {
+void OnTheFlyAlphabet::add_symbols_from(const std::unordered_map<std::string, Symbol>& new_symbol_map) {
     for (const auto& symbol_binding: new_symbol_map) {
         update_next_symbol_value(symbol_binding.second);
         try_add_new_symbol(symbol_binding.first, symbol_binding.second);

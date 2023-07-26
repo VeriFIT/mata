@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
 
         Mata::Parser::Parsed parsed;
         Nfa aut;
-        Mata::StringToSymbolMap stsm;
+        Mata::std::unordered_map<std::string, Symbol> stsm;
         const std::string nfa_str = "NFA";
         const std::string bits_str = "-bits";
         try {

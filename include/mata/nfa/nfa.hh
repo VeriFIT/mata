@@ -215,9 +215,9 @@ public:
      * @param[out] state_map Mapping of trimmed states to new states.
      * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    void trim_inplace(StateToStateMap* state_map = nullptr);
-    void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
+    void trim_inplace(std::unordered_map<State, State>* state_map = nullptr);
+    void trim_reverting(std::unordered_map<State, State>* state_map = nullptr);
+    void trim(std::unordered_map<State, State>* state_map = nullptr) { trim_inplace(state_map); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -229,7 +229,7 @@ public:
      * @param[out] state_map Mapping of trimmed states to new states.
      * @return Trimmed automaton.
      */
-    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr) const;
+    Nfa get_trimmed_automaton(std::unordered_map<State, State>* state_map = nullptr) const;
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -498,7 +498,8 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+                std::unordered_map<State, State>* lhs_result_states_map = nullptr,
+                std::unordered_map<State, State>* rhs_result_states_map = nullptr);
 
 /**
  * Make @c aut complete in place.
@@ -556,7 +557,7 @@ inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_comp
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+   const std::unordered_map<std::string, std::string>& params = {{"algorithm", "classical"}, {"minimize", "false"}});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -574,7 +575,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+   const std::unordered_map<std::string, std::string>& params = {{"algorithm", "classical"}, {"minimize", "false"}});
 
 /**
  * @brief Compute minimal deterministic automaton.
@@ -584,7 +585,7 @@ Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa &aut, const StringMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa &aut, const std::unordered_map<std::string, std::string>& params = {{"algorithm", "brzozowski"}});
 
 /**
  * @brief Determinize automaton.
@@ -605,20 +606,20 @@ Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(const Nfa &aut, bool trim_input = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}});
+Nfa reduce(const Nfa &aut, bool trim_input = true, std::unordered_map<State, State> *state_map = nullptr,
+    const std::unordered_map<std::string, std::string>&  params = {{"algorithm", "simulation"}});
 
 /// Is the language of the automaton universal?
 bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         Run*              cex = nullptr,
-        const StringMap&  params = {{"algorithm", "antichains"}});
+        const std::unordered_map<std::string, std::string>&  params = {{"algorithm", "antichains"}});
 
 inline bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params) {
+        const std::unordered_map<std::string, std::string>&  params) {
     return is_universal(aut, alphabet, nullptr, params);
 }
 
@@ -638,7 +639,7 @@ bool is_included(
         const Nfa&         bigger,
         Run*               cex,
         const Alphabet*    alphabet = nullptr,
-        const StringMap&   params = {{"algorithm", "antichains"}});
+        const std::unordered_map<std::string, std::string>&   params = {{"algorithm", "antichains"}});
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -654,7 +655,7 @@ inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algorithm", "antichains"}}) {
+        const std::unordered_map<std::string, std::string>&      params = {{"algorithm", "antichains"}}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
@@ -669,7 +670,7 @@ inline bool is_included(
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
-                    const StringMap& params = {{"algorithm", "antichains"}});
+                    const std::unordered_map<std::string, std::string>& params = {{"algorithm", "antichains"}});
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -688,7 +689,8 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
+bool are_equivalent(const Nfa& lhs, const Nfa& rhs,
+                    const std::unordered_map<std::string, std::string>& params = {{"algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
@@ -706,7 +708,8 @@ Nfa fragile_revert(const Nfa& aut);
 Nfa simple_revert(const Nfa& aut);
 
 // Reverting the automaton by a modification of the simple algorithm.
-// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all, except on dense automata, where it is almost as slow as simple_revert. Candidate for removal.
+// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all, except on
+//  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
@@ -736,7 +739,7 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // TODO: rename to something, but no idea to what.
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
-Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
+Run encode_word(const std::unordered_map<std::string, Symbol>& symbol_map, const std::vector<std::string>& input);
 
 } // namespace Mata::Nfa.
 

@@ -53,13 +53,8 @@ template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
 
-using StateToStringMap = Mata::Nfa::StateToStringMap;
-using StringToStateMap = Mata::Nfa::StringToStateMap;
-
 using Path = Util::OrdVector<State>;
 using Word = Util::OrdVector<Symbol>;
-
-using StringDict = Mata::Nfa::StringMap;
 
 using StateSet = OrdVec<State>;
 using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
@@ -153,9 +148,9 @@ struct Afa;
 
 /// serializes Afa into a ParsedSection
 Mata::Parser::ParsedSection serialize(
-    const Afa&                aut,
-    const std::unordered_map<Symbol, std::string>*  symbol_map = nullptr,
-    const StateToStringMap*   state_map = nullptr);
+      const Afa& aut,
+      const std::unordered_map<Symbol, std::string>*  symbol_map = nullptr,
+      const std::unordered_map<State, std::string>*   state_map = nullptr);
 
 
 ///  An AFA
@@ -300,7 +295,7 @@ struct AfaWrapper
     Alphabet* alphabet;
 
     /// mapping of state names (as strings) to their numerical values
-    StringToStateMap state_dict;
+    std::unordered_map<std::string, State> state_dict;
 }; // AfaWrapper }}}
 
 /// Do the automata have disjoint sets of states?
@@ -323,12 +318,12 @@ bool is_universal(
     const Afa&         aut,
     const Alphabet&    alphabet,
     Word*              cex = nullptr,
-    const StringDict&  params = {{"algorithm", "antichains"}});
+    const std::unordered_map<std::string, std::string>&  params = {{"algorithm", "antichains"}});
 
 inline bool is_universal(
     const Afa&         aut,
     const Alphabet&    alphabet,
-    const StringDict&  params)
+    const std::unordered_map<std::string, std::string>&  params)
 { // {{{
     return is_universal(aut, alphabet, nullptr, params);
 } // }}}
@@ -342,13 +337,13 @@ bool is_incl(
     const Afa&         bigger,
     const Alphabet&    alphabet,
     Word*              cex = nullptr,
-    const StringDict&  params = {{"algorithm", "antichains"}});
+    const std::unordered_map<std::string, std::string>&  params = {{"algorithm", "antichains"}});
 
 inline bool is_incl(
     const Afa&         smaller,
     const Afa&         bigger,
     const Alphabet&    alphabet,
-    const StringDict&  params)
+    const std::unordered_map<std::string, std::string>&  params)
 { // {{{
     return is_incl(smaller, bigger, alphabet, nullptr, params);
 } // }}}
@@ -405,12 +400,12 @@ inline Afa remove_epsilon(const Afa& aut, Symbol epsilon) {
 void minimize(
     Afa*               result,
     const Afa&         aut,
-    const StringDict&  params = {});
+    const std::unordered_map<std::string, std::string>&  params = {});
 
 
 inline Afa minimize(
     const Afa&         aut,
-    const StringDict&  params = {})
+    const std::unordered_map<std::string, std::string>&  params = {})
 { // {{{
     Afa result;
     minimize(&result, aut, params);
@@ -429,9 +424,11 @@ bool is_deterministic(const Afa& aut);
 bool is_complete(const Afa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
-Afa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Afa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet,
+              std::unordered_map<std::string, State>* state_map = nullptr);
 /** Loads automaton from intermediate automaton */
-Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet,
+              std::unordered_map<std::string, State>* state_map = nullptr);
 
 /**
  * @brief Loads automaton from parsed object (either ParsedSection or Intermediate automaton.
@@ -439,8 +436,9 @@ Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, String
  * If user does not provide symbol map or state map, it allocates its own ones.
  */
 template <class ParsedObject>
-Afa construct(const ParsedObject& parsed, StringToSymbolMap* symbol_map = nullptr, StringToStateMap* state_map = nullptr) {
-    StringToSymbolMap tmp_symbol_map;
+Afa construct(const ParsedObject& parsed, std::unordered_map<std::string, Symbol>* symbol_map = nullptr,
+              std::unordered_map<std::string, State>* state_map = nullptr) {
+    std::unordered_map<std::string, Symbol> tmp_symbol_map;
     if (symbol_map) {
         tmp_symbol_map = *symbol_map;
     }
@@ -455,8 +453,10 @@ Afa construct(const ParsedObject& parsed, StringToSymbolMap* symbol_map = nullpt
 }
 
 /** Loads an automaton from Parsed object */
-template <class ParsedObject> void construct(Afa* result, const ParsedObject& parsed,
-    StringToSymbolMap* symbol_map = nullptr, StringToStateMap* state_map = nullptr) {
+template <class ParsedObject> void construct(
+        Afa* result, const ParsedObject& parsed,
+        std::unordered_map<std::string, Symbol>* symbol_map = nullptr,
+        std::unordered_map<std::string, State>* state_map = nullptr) {
     *result = construct(parsed, symbol_map, state_map);
 }
 
@@ -484,7 +484,8 @@ bool is_in_lang(const Afa& aut, const Word& word);
 bool is_prfx_in_lang(const Afa& aut, const Word& word);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a @c Word instance. */
-inline Word encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
+inline Word encode_word(const std::unordered_map<std::string, Symbol>& symbol_map,
+                        const std::vector<std::string>& input);
 
 std::ostream& operator<<(std::ostream& os, const Afa& afa);
 

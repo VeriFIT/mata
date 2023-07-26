@@ -29,8 +29,7 @@ namespace {
  * @param[in] intersection_transition State transitions to add to the product.
  */
 void add_product_transition(Nfa& product, std::unordered_map<std::pair<State,State>, State>& product_map,
-                            const std::pair<State,State>& pair_to_process,
-                            Move& intersection_transition) {
+                            const std::pair<State,State>& pair_to_process, Move& intersection_transition) {
     if (intersection_transition.empty()) { return; }
 
     auto& intersect_state_transitions{ product.delta.get_mutable_post(product_map[pair_to_process]) };
@@ -91,8 +90,9 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
     return Algorithms::intersection_eps(lhs, rhs, preserve_epsilon, epsilons, prod_map);
 }
 
-Nfa Mata::Nfa::Algorithms::intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
-                 std::unordered_map<std::pair<State,State>, State> *prod_map) {
+Nfa Mata::Nfa::Algorithms::intersection_eps(
+        const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
+        std::unordered_map<std::pair<State, State>, State> *prod_map) {
     Nfa product{}; // Product of the intersection.
     // Product map for the generated intersection mapping original state pairs to new product states.
     std::unordered_map<std::pair<State,State>, State> product_map{};

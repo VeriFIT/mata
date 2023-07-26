@@ -18,7 +18,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm, std::string aut_name) {
+int load_automaton(std::string filename, Nfa& aut, Mata::std::unordered_map<std::string, Symbol>& stsm, std::string aut_name) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -75,8 +75,8 @@ int main(int argc, char *argv[])
 
     Nfa lhs;
     Nfa rhs;
-    Mata::StringToSymbolMap lhs_stsm;
-    Mata::StringToSymbolMap rhs_stsm;
+    Mata::std::unordered_map<std::string, Symbol> lhs_stsm;
+    Mata::std::unordered_map<std::string, Symbol> rhs_stsm;
     if (load_automaton(lhs_filename, lhs, lhs_stsm, "lhs") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }

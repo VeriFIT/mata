@@ -53,11 +53,13 @@ Nfa Mata::Nfa::Algorithms::complement_classical(const Nfa& aut, const OrdVector<
     return result;
 }
 
-Nfa Mata::Nfa::complement(const Nfa& aut, const Alphabet& alphabet, const StringMap& params) {
+Nfa Mata::Nfa::complement(const Nfa& aut, const Alphabet& alphabet,
+                          const std::unordered_map<std::string, std::string>& params) {
     return Mata::Nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Nfa Mata::Nfa::complement(const Nfa& aut, const Mata::Util::OrdVector<Mata::Symbol>& symbols, const StringMap& params) {
+Nfa Mata::Nfa::complement(const Nfa& aut, const Mata::Util::OrdVector<Mata::Symbol>& symbols,
+                          const std::unordered_map<std::string, std::string>& params) {
     Nfa result;
     // Setting the requested algorithm.
     decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;

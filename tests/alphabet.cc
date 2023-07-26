@@ -39,7 +39,7 @@ TEST_CASE("Mata::IntAlphabet") {
 
 TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
     OnTheFlyAlphabet alphabet{};
-    StringToSymbolMap symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
+    std::unordered_map<std::string, Symbol> symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
     alphabet.add_symbols_from(symbol_map);
 
     auto symbols{alphabet.get_alphabet_symbols() };
@@ -56,7 +56,7 @@ TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
     expected = Mata::Util::OrdVector<Symbol>{ 7, 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
-    CHECK(alphabet.get_symbol_map() == StringToSymbolMap{
+    CHECK(alphabet.get_symbol_map() == std::unordered_map<std::string, Symbol>{
         { "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
     });
 }

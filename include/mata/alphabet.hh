@@ -26,7 +26,6 @@
 namespace Mata {
 
 using Symbol = unsigned;
-using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
  /**
   * The abstract interface for NFA alphabets.
@@ -267,11 +266,11 @@ public:
 class OnTheFlyAlphabet : public Alphabet {
 public:
     /// Result of the insertion of a new symbol.
-    using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
+    using InsertionResult = std::pair<std::unordered_map<std::string, Symbol>::const_iterator, bool>;
 
     explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value(init_symbol) {};
     OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
-    explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map(std::move(str_sym_map)) {}
+    explicit OnTheFlyAlphabet(std::unordered_map<std::string, Symbol> str_sym_map) : symbol_map(std::move(str_sym_map)) {}
     /**
      * Create alphabet from a list of symbol names.
      * @param symbol_names Names for symbols on transitions.
@@ -303,7 +302,7 @@ public:
      * The value of the already existing symbols will NOT be overwritten.
      * @param[in] new_symbol_map Map of strings to symbols.
      */
-    void add_symbols_from(const StringToSymbolMap& new_symbol_map);
+    void add_symbols_from(const std::unordered_map<std::string, Symbol>& new_symbol_map);
 
     template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
         for (; first != last; ++first) {
@@ -364,10 +363,10 @@ public:
      * Get the symbol map used in the alphabet.
      * @return Map mapping strings to symbols used internally in Mata.
      */
-    const StringToSymbolMap& get_symbol_map() const { return symbol_map; }
+    const std::unordered_map<std::string, Symbol>& get_symbol_map() const { return symbol_map; }
 
 private:
-    StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
+    std::unordered_map<std::string, Symbol> symbol_map{}; ///< Map of string transition symbols to symbol values.
     Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
 
 public:

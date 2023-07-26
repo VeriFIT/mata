@@ -100,7 +100,10 @@ bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex)
 
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
-        const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});
+        const std::unordered_map<std::string, std::string>& params = {
+                { "relation",  "simulation" },
+                { "direction", "forward" }
+        });
 
 /**
  * @brief Compute intersection of two NFAs with a possibility of using multiple epsilons.
@@ -127,8 +130,10 @@ Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, cons
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
-    StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+Nfa concatenate_eps(
+        const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
+        std::unordered_map<State, State>* lhs_result_states_map = nullptr,
+        std::unordered_map<State, State>* rhs_result_states_map = nullptr);
 
 } // Namespace Mata::Nfa::Algorithms.
 

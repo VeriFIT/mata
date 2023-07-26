@@ -259,8 +259,9 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata,
+                                                     const Nfa::Nfa& right_automaton, bool include_empty,
+                                                     const std::unordered_map<std::string, std::string>& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
     for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
@@ -298,8 +299,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::refe
     return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata,
+                                                     const Nfa::Nfa& right_automaton, bool include_empty,
+                                                     const std::unordered_map<std::string, std::string>& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
 
@@ -347,8 +349,10 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*
 }
 
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
-    const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const StringMap& params) {
+SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(
+        const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
+        const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty,
+        const std::unordered_map<std::string, std::string>& params) {
     if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
 
     const auto left_automata_begin{ left_automata.begin() };
@@ -381,7 +385,8 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
     Nfa::Nfa concatenated_right_side{ **right_automata_begin };
     for (auto next_right_automaton_it{ right_automata_begin + 1 }; next_right_automaton_it != right_automata_end;
          ++next_right_automaton_it) {
-        concatenated_right_side = concatenate_eps(concatenated_right_side, **next_right_automaton_it, EPSILON-1, true); // we use EPSILON-1
+        // We use EPSILON - 1.
+        concatenated_right_side = concatenate_eps(concatenated_right_side, **next_right_automaton_it, EPSILON-1, true);
     }
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});

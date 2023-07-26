@@ -121,7 +121,8 @@ namespace {
      * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states.
      * @param[out] trimmed_aut The new trimmed automaton.
      */
-    void add_trimmed_transitions(const Nfa& nfa, const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut) {
+    void add_trimmed_transitions(const Nfa& nfa, const std::unordered_map<State, State>& original_to_new_states_map,
+                                 Nfa& trimmed_aut) {
         // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
         for (const auto& original_state_mapping: original_to_new_states_map)
         {
@@ -151,7 +152,7 @@ namespace {
      * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
      * @return Newly created trimmed automaton.
      */
-    Nfa create_trimmed_aut(const Nfa& nfa, const StateToStateMap& original_to_new_states_map) {
+    Nfa create_trimmed_aut(const Nfa& nfa, const std::unordered_map<State, State>& original_to_new_states_map) {
         Nfa trimmed_aut{ original_to_new_states_map.size() };
 
         for (const State old_initial_state: nfa.initial)
@@ -223,10 +224,10 @@ StateSet Nfa::get_terminating_states() const
 }
 
 //TODO: probably can be removed, trim_inplace is faster.
-void Nfa::trim_reverting(StateToStateMap* state_map)
+void Nfa::trim_reverting(std::unordered_map<State, State>* state_map)
 {
     if (!state_map) {
-        StateToStateMap tmp_state_map{};
+        std::unordered_map<State, State> tmp_state_map{};
         *this = get_trimmed_automaton(&tmp_state_map);
     } else {
         state_map->clear();
@@ -234,7 +235,7 @@ void Nfa::trim_reverting(StateToStateMap* state_map)
     }
 }
 
-void Nfa::trim_inplace(StateToStateMap* state_map)
+void Nfa::trim_inplace(std::unordered_map<State, State>* state_map)
 {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ get_useful_states() };
@@ -275,10 +276,10 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     }
 }
 
-Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
+Nfa Nfa::get_trimmed_automaton(std::unordered_map<State, State>* state_map) const {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
-    StateToStateMap tmp_state_map{};
+    std::unordered_map<State, State> tmp_state_map{};
     if (!state_map) {
         state_map = &tmp_state_map;
     }

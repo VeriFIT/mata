@@ -58,10 +58,10 @@ namespace {
         return LTSforSimulation.compute_simulation();
     }
 
-	Nfa reduce_size_by_simulation(const Nfa& aut, StateToStateMap &state_map) {
+	Nfa reduce_size_by_simulation(const Nfa& aut, std::unordered_map<State, State> &state_map) {
         Nfa result;
         const auto sim_relation = Algorithms::compute_relation(
-                aut, StringMap{{"relation", "simulation"}, {"direction", "forward"}});
+                aut, std::unordered_map<std::string, std::string>{{"relation", "simulation"}, {"direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -661,7 +661,7 @@ Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
 
 Nfa Mata::Nfa::minimize(
                 const Nfa& aut,
-                const StringMap& params)
+                const std::unordered_map<std::string, std::string>& params)
 {
 	Nfa result;
 	// setting the default algorithm
@@ -685,7 +685,7 @@ Nfa Mata::Nfa::minimize(
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa unionAutomaton = rhs;
 
-    StateToStateMap thisStateToUnionState;
+    std::unordered_map<State, State> thisStateToUnionState;
     const size_t size = lhs.size();
     for (State thisState = 0; thisState < size; ++thisState) {
         thisStateToUnionState[thisState] = unionAutomaton.add_state();
@@ -716,7 +716,8 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     return unionAutomaton;
 }
 
-Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const StringMap& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(
+        const Nfa& aut, const std::unordered_map<std::string, std::string>& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -739,7 +740,8 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, std::unordered_map<State, State> *state_map,
+                      const std::unordered_map<std::string, std::string>& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
@@ -747,7 +749,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_ma
     }
 
     Nfa aut_to_reduce{ aut };
-    StateToStateMap trimmed_state_map{};
+    std::unordered_map<State, State> trimmed_state_map{};
     if (trim_input) {
         aut_to_reduce.trim(&trimmed_state_map);
     }
@@ -779,11 +781,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_ma
     return result;
 }
 
-Nfa Mata::Nfa::determinize(
-        const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map)
-{
-
+Nfa Mata::Nfa::determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map) {
     Nfa result;
     //assuming all sets targets are non-empty
     std::vector<std::pair<State, StateSet>> worklist;
@@ -907,7 +905,8 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<Nfa*>& nfas)
     return alphabet;
 }
 
-Run Mata::Nfa::encode_word(const Mata::StringToSymbolMap& symbol_map, const std::vector<std::string>& input) {
+Run Mata::Nfa::encode_word(const std::unordered_map<std::string, Symbol>& symbol_map,
+                           const std::vector<std::string>& input) {
     Run result;
     for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
     return result;

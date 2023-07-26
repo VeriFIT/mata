@@ -9,7 +9,8 @@ using namespace Mata::Nfa;
 using Mata::Nfa::Nfa;
 using Mata::Symbol;
 
-Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet* alphabet, StringToStateMap* state_map) {
+Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet* alphabet,
+                       std::unordered_map<std::string, State>* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -20,7 +21,7 @@ Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet
 
     bool remove_state_map = false;
     if (nullptr == state_map) {
-        state_map = new StringToStateMap();
+        state_map = new std::unordered_map<std::string, State>();
         remove_state_map = true;
     }
 
@@ -94,7 +95,8 @@ Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet
     return aut;
 } // construct().
 
-Nfa Builder::construct(const Mata::IntermediateAut& inter_aut, Mata::Alphabet* alphabet, StringToStateMap* state_map) {
+Nfa Builder::construct(const Mata::IntermediateAut& inter_aut, Mata::Alphabet* alphabet,
+                       std::unordered_map<std::string, State>* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -103,7 +105,7 @@ Nfa Builder::construct(const Mata::IntermediateAut& inter_aut, Mata::Alphabet* a
                                  TYPE_NFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    std::unordered_map<std::string, State> tmp_state_map;
     if (nullptr == state_map) {
         state_map = &tmp_state_map;
     }

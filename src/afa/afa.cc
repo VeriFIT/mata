@@ -798,10 +798,8 @@ void Mata::Afa::make_complete(
 
 
 Mata::Parser::ParsedSection Mata::Afa::serialize(
-	const Afa&                aut,
-	const std::unordered_map<Symbol, std::string>*  symbol_map,
-	const StateToStringMap*   state_map)
-{ // {{{
+        const Afa& aut, const std::unordered_map<Symbol, std::string>* symbol_map,
+        const std::unordered_map<State, std::string>* state_map) {
 	Mata::Parser::ParsedSection parsec;
 	parsec.type = Mata::Afa::TYPE_AFA;
 
@@ -865,7 +863,7 @@ Mata::Parser::ParsedSection Mata::Afa::serialize(
     // TODO: transitions serialization
 
 	return parsec;
-} // serialize }}}
+} // serialize()
 
 
 void Mata::Afa::revert(Afa* result, const Afa& aut)
@@ -894,7 +892,7 @@ void Mata::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
 void Mata::Afa::minimize(
 	Afa*               result,
 	const Afa&         aut,
-	const StringDict&  params)
+	const std::unordered_map<std::string, std::string>&  params)
 { // {{{
 	assert(nullptr != result);
 
@@ -907,10 +905,7 @@ void Mata::Afa::minimize(
 
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Afa Mata::Afa::construct(
-	const Mata::Parser::ParsedSection&  parsec,
-	Alphabet*                            alphabet,
-	StringToStateMap*                    state_map)
-{ // {{{
+	const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, std::unordered_map<std::string, State>* state_map) {
 	assert(nullptr != alphabet);
 	Afa aut;
 
@@ -921,7 +916,7 @@ Afa Mata::Afa::construct(
 
 	bool remove_state_map = false;
 	if (nullptr == state_map) {
-		state_map = new StringToStateMap();
+		state_map = new std::unordered_map<std::string, State>();
 		remove_state_map = true;
 	}
 
@@ -981,13 +976,10 @@ Afa Mata::Afa::construct(
 	clean_up();
 
     return aut;
-} // construct }}}
+} // construct()
 
 Afa Mata::Afa::construct(
-        const Mata::IntermediateAut&         inter_aut,
-        Alphabet*                            alphabet,
-        StringToStateMap*                    state_map)
-{ // {{{
+        const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, std::unordered_map<std::string, State>* state_map) {
     Afa aut;
     assert(nullptr != alphabet);
 
@@ -996,7 +988,7 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    std::unordered_map<std::string, State> tmp_state_map;
     if (nullptr == state_map) {
         state_map = &tmp_state_map;
     }
@@ -1131,7 +1123,7 @@ Afa Mata::Afa::construct(
 		}
 	}
     return aut;
-} // construct }}}
+} // construct()
 
 bool Mata::Afa::is_in_lang(const Afa& aut, const Word& word)
 { // {{{
@@ -1177,7 +1169,7 @@ bool Mata::Afa::accepts_epsilon(const Afa& aut) {
         [&aut](const Node& node) { return node.IsSubsetOf(aut.finalstates); });
 }
 
-Word encode_word(const Mata::StringToSymbolMap &symbol_map, const std::vector<std::string> &input) {
+Word encode_word(const std::unordered_map<std::string, Mata::Symbol> &symbol_map, const std::vector<std::string> &input) {
     Word result;
     for (const auto& str : input) { result.insert(symbol_map.at(str)); }
     return result;

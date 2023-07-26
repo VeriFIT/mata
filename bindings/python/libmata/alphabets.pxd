@@ -7,7 +7,6 @@ from libmata.utils cimport COrdVector
 
 cdef extern from "mata/alphabet.hh" namespace "Mata":
     ctypedef uintptr_t Symbol
-    ctypedef umap[string, Symbol] StringToSymbolMap
 
     cdef cppclass CAlphabet "Mata::Alphabet":
         CAlphabet() except +
@@ -19,15 +18,15 @@ cdef extern from "mata/alphabet.hh" namespace "Mata":
         COrdVector[Symbol] get_alphabet_symbols()
 
     cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
-        StringToSymbolMap symbol_map
-        COnTheFlyAlphabet(StringToSymbolMap) except +
+        umap[string, Symbol] symbol_map
+        COnTheFlyAlphabet(umap[string, Symbol]) except +
         COnTheFlyAlphabet(Symbol) except +
         COnTheFlyAlphabet(COnTheFlyAlphabet) except +
         COnTheFlyAlphabet(vector[string]) except +
         COrdVector[Symbol] get_alphabet_symbols()
-        StringToSymbolMap get_symbol_map()
-        StringToSymbolMap add_symbols_from(StringToSymbolMap)
-        StringToSymbolMap add_symbols_from(vector[string])
+        umap[string, Symbol] get_symbol_map()
+        umap[string, Symbol] add_symbols_from(umap[string, Symbol])
+        umap[string, Symbol] add_symbols_from(vector[string])
 
 
 cdef class Alphabet:

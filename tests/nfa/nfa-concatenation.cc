@@ -526,11 +526,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         rhs.final.insert(0);
         rhs.delta.add(0, 'a', 0);
 
-        StateToStateMap lhs_map{};
-        StateToStateMap rhs_map{};
+        std::unordered_map<State, State> lhs_map{};
+        std::unordered_map<State, State> rhs_map{};
         result = concatenate(lhs, rhs, true, &lhs_map, &rhs_map);
 
-        CHECK(rhs_map == StateToStateMap{ { 0, 2 } });
+        CHECK(rhs_map == std::unordered_map<State, State>{ { 0, 2 } });
 
         CHECK(result.initial[0]);
         CHECK(result.final[2]);

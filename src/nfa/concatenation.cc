@@ -22,7 +22,8 @@ using namespace Mata::Nfa;
 namespace Mata::Nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
-                StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
+                std::unordered_map<State, State>* lhs_result_states_map,
+                std::unordered_map<State, State>* rhs_result_states_map) {
     return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
 }
 
@@ -63,8 +64,10 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     return *this;
 }
 
-Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
-                StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
+Nfa Algorithms::concatenate_eps(
+        const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
+        std::unordered_map<State, State>* lhs_result_states_map,
+        std::unordered_map<State, State>* rhs_result_states_map) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
@@ -76,8 +79,8 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     const unsigned long lhs_states_num{lhs.size() };
     const unsigned long rhs_states_num{rhs.size() };
     Nfa result{}; // Concatenated automaton.
-    StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
-    StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
+    std::unordered_map<State, State> lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
+    std::unordered_map<State, State> rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
     if (result_num_of_states == 0) { return Nfa{}; }

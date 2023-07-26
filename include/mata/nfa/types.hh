@@ -21,12 +21,6 @@ struct Run {
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
-using StringToStateMap = std::unordered_map<std::string, State>;
-using StateToStringMap = std::unordered_map<State, std::string>;
-/// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
-using StateToStateMap = std::unordered_map<State, State>;
-using StringMap = std::unordered_map<std::string, std::string>;
-
 struct Limits {
 public:
     static const State min_state = std::numeric_limits<State>::min();
@@ -54,8 +48,6 @@ struct Trans {
     } // operator== }}}
     bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
-
-struct Nfa; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::max_symbol;
