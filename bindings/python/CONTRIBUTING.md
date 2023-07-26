@@ -7,6 +7,7 @@ may arise during development.
 
 <!-- TOC -->
 * [Basic info](#basic-info)
+  * [Getting Started](#getting-started)
   * [File/Directory Structure](#filedirectory-structure)
   * [Adding a new function](#adding-a-new-function)
   * [Adding a new module](#adding-a-new-module)
@@ -47,6 +48,35 @@ may arise during development.
   * [An error when Cython cannot find cimported function, even if it is defined](#an-error-when-cython-cannot-find-cimported-function-even-if-it-is-defined)
 * [Quick glossary](#quick-glossary)
 <!-- TOC -->
+
+## Getting started
+
+The following shows minimal example of relation between library source files and Cython binding
+files.
+
+```c++
+// @file: nfa-plumbing.h
+namespace Mata::Nfa::Plumbing {
+    inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
+}
+```
+
+```cython
+# @file: nfa.pxd
+cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
+    cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
+
+```
+
+```cython
+# @file: nfa.pyx
+def union(Nfa lhs, Nfa rhs):
+    result = Nfa()
+    mata_nfa.c_uni(
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
+    )
+    return result
+```
 
 ## File/Directory Structure
 
