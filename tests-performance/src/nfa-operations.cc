@@ -4,7 +4,9 @@
  */
 #include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -16,7 +18,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int load_automaton(std::string filename, Nfa& aut, Mata::std::unordered_map<std::string, Symbol>& stsm) {
+int load_automaton(std::string filename, Nfa& aut, std::unordered_map<std::string, Mata::Symbol>& stsm) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -41,7 +43,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::std::unordered_map<std:
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
-            aut = construct(inter_auts[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
         } else {
             Mata::Mintermization mintermization;
             auto minterm_start = std::chrono::system_clock::now();
@@ -49,7 +51,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::std::unordered_map<std:
             auto minterm_end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
-            aut = construct(mintermized[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
             std::cout << "mintermization:" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;
@@ -71,7 +73,7 @@ int main(int argc, char *argv[])
     std::string filename = argv[1];
 
     Nfa aut;
-    Mata::std::unordered_map<std::string, Symbol> stsm;
+    std::unordered_map<std::string, Mata::Symbol> stsm;
     if (load_automaton(filename, aut, stsm) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }

@@ -3,6 +3,7 @@
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/mintermization.hh"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -11,8 +12,7 @@
 
 using namespace Mata::Nfa;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "Input file missing\n";
         return EXIT_FAILURE;
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 
     Mata::Parser::Parsed parsed;
     Nfa aut;
-    Mata::std::unordered_map<std::string, Symbol> stsm;
+    std::unordered_map<std::string, Mata::Symbol> stsm;
     const std::string nfa_str = "NFA";
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
