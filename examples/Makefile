@@ -4,7 +4,7 @@
 #
 ###############################################################################
 
-CFLAGS=-std=c++14 \
+CFLAGS=-std=c++20 \
   -pedantic-errors \
   -Wextra \
   -Wall \
@@ -13,12 +13,12 @@ CFLAGS=-std=c++14 \
   -Weffc++ \
   -Woverloaded-virtual \
   -fdiagnostics-show-option \
-	-g
+  -g
 
 
 INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include -I ../3rdparty -I ../3rdparty/cudd/cudd
 
-LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib -L../build/3rdparty/cudd/lib
+LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib -L../build/3rdparty/cudd
 
 LIBS=-lmata -lsimlib -lre2 -lcudd
 

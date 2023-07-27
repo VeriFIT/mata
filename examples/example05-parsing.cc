@@ -1,14 +1,14 @@
 // example5.cc - parsing a NFA from file
 
 #include "mata/nfa/nfa.hh"
-#include "mata/parser/inter-aut.hh"
+#include "mata/nfa/builder.hh"
+
 #include <iostream>
 #include <fstream>
 
 using namespace Mata::Nfa;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "Input file missing\n";
         return EXIT_FAILURE;
@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
 
     Mata::Parser::Parsed parsed;
     Nfa aut;
-    Mata::std::unordered_map<std::string, Symbol> stsm;
+    std::unordered_map<std::string, Mata::Symbol> stsm;
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
             std::cout << ia << '\n';
 
         if (inter_auts[0].is_nfa())
-            aut = construct(inter_auts[0]);
+            aut = Mata::Nfa::Builder::construct(inter_auts[0]);
     }
     catch (const std::exception& ex) {
         fs.close();
