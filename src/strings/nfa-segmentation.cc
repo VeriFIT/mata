@@ -23,7 +23,7 @@ using namespace Mata::Strings;
 void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
                                                     std::deque<StateDepthTuple>& worklist) {
     auto outgoing_post{ automaton.delta[state_depth_pair.state] };
-    for (const Move& outgoing_move: outgoing_post) {
+    for (const SymbolPost& outgoing_move: outgoing_post) {
         if (this->epsilons.find(outgoing_move.symbol) != this->epsilons.end()) {
             handle_epsilon_transitions(state_depth_pair, outgoing_move, worklist);
         } else { // Handle other transitions.
@@ -33,7 +33,7 @@ void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state
 }
 
 void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& state_depth_pair,
-                                                      const Move& move,
+                                                      const SymbolPost& move,
                                                       std::deque<StateDepthTuple>& worklist)
 {
     /// TODO: Maybe we don't need to keep the transitions in both structures
@@ -57,7 +57,7 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
 }
 
 void SegNfa::Segmentation::add_transitions_to_worklist(const StateDepthTuple& state_depth_pair,
-                                                      const Move& move,
+                                                      const SymbolPost& move,
                                                       std::deque<StateDepthTuple>& worklist)
 {
     for (State target_state: move.targets)

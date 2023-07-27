@@ -108,7 +108,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     }
 
     //For synchronised iteration over the set of states
-    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
     Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
 
     while (!worklist.empty()) {

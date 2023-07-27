@@ -86,7 +86,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
-    cdef cppclass CMove "Mata::Nfa::Move":
+    cdef cppclass CMove "Mata::Nfa::SymbolPost":
         # Public Attributes
         Symbol symbol
         StateSet targets

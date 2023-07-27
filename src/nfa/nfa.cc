@@ -64,7 +64,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const Move& move: nfa.delta[state])
+            for (const SymbolPost& move: nfa.delta[state])
             {
                 for (const State target_state: move.targets)
                 {
@@ -102,7 +102,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const Move& move: nfa.delta[state]) {
+            for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
                     if (states_to_consider[target_state] && !reachable[target_state]) {
                         worklist.push_back(target_state);
@@ -129,7 +129,7 @@ namespace {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
             {
-                Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
+                SymbolPost new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
                 {
                     auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
@@ -183,7 +183,7 @@ namespace {
     void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
         const State num_of_states{nfa.size() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
-            for (const Move& move: nfa.delta[src_state]) {
+            for (const SymbolPost& move: nfa.delta[src_state]) {
                 for (const State tgt_state: move.targets) {
                     // Directly try to add the transition. Finding out whether the transition is already in the digraph
                     //  only iterates through transition relation again.
@@ -413,7 +413,7 @@ void Nfa::print_to_DOT(std::ostream &output) const {
 
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
-        for (const Move &move: delta[source]) {
+        for (const SymbolPost &move: delta[source]) {
             output << source << " -> {";
             for (State target: move.targets) {
                 output << target << " ";
@@ -510,7 +510,7 @@ std::vector<Trans> Nfa::get_transitions_to(State state_to) const {
     std::vector<Trans> transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const Move& state_from_move: delta[state_from]) {
+        for (const SymbolPost& state_from_move: delta[state_from]) {
             const auto target_state{ state_from_move.targets.find(state_to) };
             if (target_state != state_from_move.targets.end()) {
                 transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to );
@@ -648,7 +648,7 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             Util::reserve_on_insert(symbols);
             symbols.push_back(move.symbol);
         }
@@ -668,7 +668,7 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
     }
@@ -690,7 +690,7 @@ Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
     }
@@ -711,7 +711,7 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
         }
@@ -731,7 +731,7 @@ BoolVector Nfa::get_used_symbols_chv() const {
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
         }
@@ -745,7 +745,7 @@ Symbol Nfa::get_max_symbol() const {
     Symbol max = 0;
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const Post & post = delta[q];
-        for (const Move & move: post) {
+        for (const SymbolPost & move: post) {
             if (move.symbol > max)
                 max = move.symbol;
         }
@@ -786,7 +786,7 @@ void Nfa::unify_final() {
 void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
     size_t aut_num_of_states{size() };
     for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const Move& move: delta[state]) {
+        for (const SymbolPost& move: delta[state]) {
             target_alphabet.update_next_symbol_value(move.symbol);
             target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
         }

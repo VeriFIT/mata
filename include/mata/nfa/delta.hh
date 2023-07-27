@@ -6,29 +6,31 @@
 namespace Mata::Nfa {
 
 /**
- * Structure represents a move which is a symbol and a set of target states of transitions.
+ * Structure represents a post of a single @c symbol: a set of target states in transitions.
+ *
+ * A set of @c SymbolPost is describing the automata transitions from a single source state.
  */
-class Move {
+class SymbolPost {
 public:
     Symbol symbol{};
     StateSet targets{};
 
-    Move() = default;
-    explicit Move(Symbol symbol) : symbol{ symbol }, targets{} {}
-    Move(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
-    Move(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
+    SymbolPost() = default;
+    explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
+    SymbolPost(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
+    SymbolPost(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
-    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
-    Move(const Move& rhs) = default;
-    Move& operator=(Move&& rhs) noexcept;
-    Move& operator=(const Move& rhs) = default;
+    SymbolPost(SymbolPost&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
+    SymbolPost(const SymbolPost& rhs) = default;
+    SymbolPost& operator=(SymbolPost&& rhs) noexcept;
+    SymbolPost& operator=(const SymbolPost& rhs) = default;
 
-    inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
-    inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
-    inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
-    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+    inline bool operator<(const SymbolPost& rhs) const { return symbol < rhs.symbol; }
+    inline bool operator<=(const SymbolPost& rhs) const { return symbol <= rhs.symbol; }
+    inline bool operator==(const SymbolPost& rhs) const { return symbol == rhs.symbol; }
+    inline bool operator!=(const SymbolPost& rhs) const { return symbol != rhs.symbol; }
+    inline bool operator>(const SymbolPost& rhs) const { return symbol > rhs.symbol; }
+    inline bool operator>=(const SymbolPost& rhs) const { return symbol >= rhs.symbol; }
 
     StateSet::iterator begin() { return targets.begin(); }
     StateSet::iterator end() { return targets.end(); }
@@ -59,9 +61,9 @@ public:
  * It is an ordered vector containing possible Moves (i.e., pair of symbol and target states.
  * Vector is ordered by symbols which are numbers.
  */
-class Post : private Util::OrdVector<Move> {
+class Post : private Util::OrdVector<SymbolPost> {
 private:
-    using super = Util::OrdVector<Move>;
+    using super = Util::OrdVector<SymbolPost>;
 public:
     using super::iterator, super::const_iterator;
     using super::begin, super::end, super::cbegin, super::cend;

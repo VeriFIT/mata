@@ -51,7 +51,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
             if(is_final) {
                 new_fin.insert(fin);
             }
-            for(const Move& ini_mv : ini_post) {
+            for(const SymbolPost& ini_mv : ini_post) {
                 // TODO: this should be done efficiently in a delta method
                 // TODO: in fact it is not efficient for now
                 for(const State& dest : ini_mv.targets) {
@@ -122,7 +122,7 @@ Nfa Algorithms::concatenate_eps(
     // Add rhs transitions to the result.
     for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
     {
-        for (const Move& rhs_move: rhs.get_moves_from(rhs_state))
+        for (const SymbolPost& rhs_move: rhs.get_moves_from(rhs_state))
         {
             for (const State& rhs_state_to: rhs_move.targets)
             {
