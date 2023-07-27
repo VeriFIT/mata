@@ -234,8 +234,6 @@ public:
     const_iterator begin() const { return cbegin(); }
     const_iterator end() const { return cend(); }
 
-private:
-    State find_max_state();
 }; // struct Delta.
 
 bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
