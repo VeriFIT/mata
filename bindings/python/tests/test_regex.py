@@ -1,7 +1,5 @@
 __author__ = 'Tomas Fiedor'
 
-import pytest
-
 import libmata.parser as parser
 import libmata.nfa.nfa as mata_nfa
 

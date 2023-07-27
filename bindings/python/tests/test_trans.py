@@ -1,6 +1,5 @@
 """Basic tests for utility package and sanity checks"""
 
-import pytest
 import libmata.nfa.nfa as mata_nfa
 
 

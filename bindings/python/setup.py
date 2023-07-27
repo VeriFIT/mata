@@ -12,7 +12,7 @@ from distutils.command.sdist import sdist as _sdist
 from distutils.command.build_ext import build_ext as _build_ext
 
 if 'microsoft' in platform.uname().release.lower():
-    """Patch for calling the python from WSL. The copystat fails on copied directories"""
+    #Patch for calling the python from WSL. The copystat fails on copied directories
     orig_copyxattr = shutil._copyxattr
     def patched_copyxattr(src, dst, *, follow_symlinks=True):
         try:
@@ -157,7 +157,7 @@ def run_safely_external_command(cmd: str, check_results=True, quiet=True, timeou
     cmd_no = len(unpiped_commands)
 
     # Run the command through pipes
-    objects: List[subprocess.Popen] = []
+    objects: list[subprocess.Popen] = []
     for i in range(cmd_no):
         executed_command = shlex.split(unpiped_commands[i])
 

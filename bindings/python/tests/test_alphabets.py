@@ -1,7 +1,5 @@
 __author__ = 'Tomas Fiedor'
 
-import pytest
-
 import libmata.alphabets as alph
 
 
@@ -32,10 +30,6 @@ def test_on_the_fly_alphabet_with_enumeration_of_symbols():
     assert alphabet.translate_symbol('a') == 0
     assert alphabet.translate_symbol('b') == 1
     assert alphabet.translate_symbol('c') == 2
-    # TODO: Decide on a unified format of specifying that the alphabet cannot be modified (new symbols cannot be added)
-    #  and propagate the information to the Python binding as well.
-    #with pytest.raises(RuntimeError):
-    #    assert alphabet.translate_symbol('d') == 2
 
 
 def test_on_the_fly_alphabet():
