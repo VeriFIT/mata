@@ -123,8 +123,8 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
         auto upd_fnc = [&](State st) {
             return st + 5;
         };
-        std::vector<Post> posts = a.delta.transform(upd_fnc);
-        a.delta.append(posts);
+        std::vector<StatePost> state_posts = a.delta.transform(upd_fnc);
+        a.delta.append(state_posts);
 
         REQUIRE(a.delta.contains(4, 'a', 6));
         REQUIRE(a.delta.contains(5, 'b', 7));
@@ -2690,21 +2690,21 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(5) == aut.get_moves_from(5).end());
     CHECK(aut.get_epsilon_transitions(19) == aut.get_moves_from(19).end());
 
-    Post post{ aut.delta[0] };
-    state_eps_trans = Nfa::get_epsilon_transitions(post);
+    StatePost state_post{ aut.delta[0] };
+    state_eps_trans = aut.get_epsilon_transitions(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
-    post = aut.delta[3];
-    state_eps_trans = Nfa::get_epsilon_transitions(post);
+    state_post = aut.delta[3];
+    state_eps_trans = Nfa::get_epsilon_transitions(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
-    post = aut.get_moves_from(1);
-    CHECK(aut.get_epsilon_transitions(post) == post.end());
-    post = aut.get_moves_from(5);
-    CHECK(aut.get_epsilon_transitions(post) == post.end());
-    post = aut.get_moves_from(19);
-    CHECK(aut.get_epsilon_transitions(post) == post.end());
+    state_post = aut.get_moves_from(1);
+    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    state_post = aut.get_moves_from(5);
+    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    state_post = aut.get_moves_from(19);
+    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta()") {

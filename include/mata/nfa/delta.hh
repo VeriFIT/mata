@@ -3,12 +3,14 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
+#include "mata/nfa/types.hh"
+
 namespace Mata::Nfa {
 
 /**
  * Structure represents a post of a single @c symbol: a set of target states in transitions.
  *
- * A set of @c SymbolPost is describing the automata transitions from a single source state.
+ * A set of @c SymbolPost, called @c StatePost, is describing the automata transitions from a single source state.
  */
 class SymbolPost {
 public:
@@ -53,11 +55,12 @@ public:
 }; // class Mata::Nfa::Move.
 
 /**
- * Post is a data structure representing possible transitions over different symbols.
- * It is an ordered vector containing possible Moves (i.e., pair of symbol and target states.
- * Vector is ordered by symbols which are numbers.
+ * @brief A data structure representing possible transitions over different symbols from a source state.
+ *
+ * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
+ * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class Post : private Util::OrdVector<SymbolPost> {
+class StatePost : private Util::OrdVector<SymbolPost> {
 private:
     using super = Util::OrdVector<SymbolPost>;
 public:
@@ -65,10 +68,10 @@ public:
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
-    Post(const Post&) = default;
-    Post(Post&&) = default;
-    Post& operator=(const Post&) = default;
-    Post& operator=(Post&&) = default;
+    StatePost(const StatePost&) = default;
+    StatePost(StatePost&&) = default;
+    StatePost& operator=(const StatePost&) = default;
+    StatePost& operator=(StatePost&&) = default;
     using super::insert;
     using super::reserve;
     using super::remove;
@@ -94,10 +97,10 @@ public:
  */
 class Delta {
 private:
-    std::vector<Post> posts;
+    std::vector<StatePost> posts;
 
 public:
-    inline static const Post empty_post; // When posts[q] is not allocated, then delta[q] returns this.
+    inline static const StatePost empty_post; // When posts[q] is not allocated, then delta[q] returns this.
 
     Delta() : posts() {}
     explicit Delta(size_t n) : posts(n) {}
@@ -121,12 +124,12 @@ public:
     // Or, to prevent the side effect from happening, one might want to make sure that posts of all states in the automaton
     // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
     // But it feels fragile, before doing something like that, better think and talk to people.
-    Post& get_mutable_post(State q);
+    StatePost& get_mutable_post(State q);
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
-    const Post & operator[] (State q) const;
+    const StatePost & operator[] (State q) const;
 
     void emplace_back() { posts.emplace_back(); }
 
@@ -160,8 +163,8 @@ public:
      *
      * @param post_vector Vector of posts to be appended.
      */
-    void append(const std::vector<Post>& post_vector) {
-        for(const Post& pst : post_vector) {
+    void append(const std::vector<StatePost>& post_vector) {
+        for(const StatePost& pst : post_vector) {
             this->posts.push_back(pst);
         }
     }
@@ -176,7 +179,7 @@ public:
      * @param lambda Monotonic lambda function mapping states to different states
      * @return std::vector<Post> Copied posts.
      */
-    std::vector<Post> transform(const std::function<State(State)>& lambda) const;
+    std::vector<StatePost> transform(const std::function<State(State)>& lambda) const;
 
     /**
      * @brief Add transitions to multiple destinations
@@ -192,9 +195,9 @@ public:
      */
     struct const_iterator {
     private:
-        const std::vector<Post>& post;
+        const std::vector<StatePost>& post;
         size_t current_state;
-        Post::const_iterator post_iterator{};
+        StatePost::const_iterator post_iterator{};
         StateSet::const_iterator targets_position{};
         bool is_end;
 
@@ -205,10 +208,10 @@ public:
         using pointer = int*;
         using reference = int&;
 
-        explicit const_iterator(const std::vector<Post>& post_p, bool ise = false);
+        explicit const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
-        const_iterator(const std::vector<Post>& post_p, size_t as,
-                       Post::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
+        const_iterator(const std::vector<StatePost>& post_p, size_t as,
+                       StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
                 post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
 
         const_iterator(const const_iterator& other) = default;

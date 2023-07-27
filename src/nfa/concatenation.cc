@@ -43,7 +43,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 
     // connect both parts
     for(const State& ini : aut.initial) {
-        const Post& ini_post = this->delta[upd_fnc(ini)];
+        const StatePost& ini_post = this->delta[upd_fnc(ini)];
         // is ini state also final?
         bool is_final = aut.final[ini];
         for(const State& fin : this->final) {

@@ -275,12 +275,12 @@ public:
      * @param state_from[in] Source state for transitions to get.
      * @return List of transitions leading from @p state_from.
      */
-    const Post& get_moves_from(const State state_from) const {
-        const size_t post_size{ size() };
-        if (state_from >= post_size) {
+    const StatePost& get_moves_from(const State state_from) const {
+        const size_t state_post_size{ size() };
+        if (state_from >= state_post_size) {
             throw std::runtime_error(
                     "Cannot get moves from nonexistent state '" + std::to_string(state_from)
-                    + "' for Post of size '" + std::to_string(post_size) + "'.");
+                    + "' for StatePost of size '" + std::to_string(state_post_size) + "'.");
         }
         return delta[state_from];
     }
@@ -354,7 +354,7 @@ public:
     struct const_iterator {
         const Nfa* nfa;
         size_t trIt;
-        Post::const_iterator tlIt;
+        StatePost::const_iterator tlIt;
         StateSet::const_iterator ssIt;
         Trans trans;
         bool is_end = { false };
@@ -385,7 +385,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    Post::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
+    StatePost::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -394,7 +394,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static Post::const_iterator get_epsilon_transitions(const Post& post, Symbol epsilon = EPSILON);
+    static StatePost::const_iterator get_epsilon_transitions(const StatePost& post, Symbol epsilon = EPSILON);
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
@@ -701,7 +701,8 @@ Nfa fragile_revert(const Nfa& aut);
 Nfa simple_revert(const Nfa& aut);
 
 // Reverting the automaton by a modification of the simple algorithm.
-// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all, except on dense automata, where it is almost as slow as simple_revert. Candidate for removal.
+// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all, except on
+//  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions

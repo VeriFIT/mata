@@ -40,23 +40,23 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
 
-    cdef cppclass CPost "Mata::Nfa::Post":
-        void insert(CMove&)
-        CMove& operator[](Symbol)
-        CMove& back()
-        void push_back(CMove&)
-        void remove(CMove&)
+    cdef cppclass CStatePost "Mata::Nfa::StatePost":
+        void insert(CSymbolPost&)
+        CSymbolPost& operator[](Symbol)
+        CSymbolPost& back()
+        void push_back(CSymbolPost&)
+        void remove(CSymbolPost&)
         bool empty()
         size_t size()
-        vector[CMove] ToVector()
-        COrdVector[CMove].const_iterator cbegin()
-        COrdVector[CMove].const_iterator cend()
+        vector[CSymbolPost] ToVector()
+        COrdVector[CSymbolPost].const_iterator cbegin()
+        COrdVector[CSymbolPost].const_iterator cend()
 
     cdef cppclass CDelta "Mata::Nfa::Delta":
-        vector[CPost] post
+        vector[CStatePost] post
 
         void reserve(size_t)
-        CPost& operator[](State)
+        CStatePost& operator[](State)
         void emplace_back()
         void clear()
         bool empty()
@@ -91,21 +91,21 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         bool operator==(CTrans)
         bool operator!=(CTrans)
 
-    cdef cppclass CMove "Mata::Nfa::SymbolPost":
+    cdef cppclass CSymbolPost "Mata::Nfa::SymbolPost":
         # Public Attributes
         Symbol symbol
         StateSet targets
 
         # Constructors
-        CMove() except +
-        CMove(Symbol) except +
-        CMove(Symbol, State) except +
-        CMove(Symbol, StateSet) except +
+        CSymbolPost() except +
+        CSymbolPost(Symbol) except +
+        CSymbolPost(Symbol, State) except +
+        CSymbolPost(Symbol, StateSet) except +
 
-        bool operator<(CMove)
-        bool operator<=(CMove)
-        bool operator>(CMove)
-        bool operator>=(CMove)
+        bool operator<(CSymbolPost)
+        bool operator<=(CSymbolPost)
+        bool operator>(CSymbolPost)
+        bool operator>=(CSymbolPost)
 
     cdef cppclass CNfa "Mata::Nfa::Nfa":
         # Nested iterator
@@ -151,7 +151,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         State add_state()
         State add_state(State)
         void print_to_DOT(ostream)
-        CPost get_moves_from(State)
+        CStatePost get_moves_from(State)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
@@ -162,8 +162,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
-        COrdVector[CMove].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CMove].const_iterator get_epsilon_transitions(CPost& post, Symbol epsilon)
+        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
+        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(CStatePost& post, Symbol epsilon)
         void clear()
         size_t size()
 

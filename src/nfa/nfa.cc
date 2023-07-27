@@ -295,8 +295,8 @@ namespace {
     // of useful states. It contains Tarjan's metadata and the state of the 
     // iteration through the successors. 
     struct TarjanNodeData {
-        Post::const_iterator post_it{};
-        Post::const_iterator post_end{};
+        StatePost::const_iterator post_it{};
+        StatePost::const_iterator post_end{};
         StateSet::const_iterator targets_it{};
         StateSet::const_iterator targets_end{};
         // index of a node (corresponds to the time of discovery)
@@ -351,7 +351,7 @@ namespace {
             return this->post_it == this->post_end;
         }
     };
-}
+};
 
 /**
  * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs 
@@ -629,7 +629,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     }
 
     for (const State state: states) {
-        const Post& post{ delta[state] };
+        const StatePost& post{ delta[state] };
         const auto move_it{ post.find(symbol) };
         if (move_it != post.end()) {
             res.insert(move_it->targets);
@@ -695,7 +695,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of state set
     ++(this->tlIt);
-    const Post& tlist = this->nfa->get_moves_from(this->trIt);
+    const StatePost& tlist = this->nfa->get_moves_from(this->trIt);
     assert(!tlist.empty());
     if (this->tlIt != tlist.end())
     {
@@ -749,7 +749,7 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
     std::vector<Symbol>  symbols{};
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             Util::reserve_on_insert(symbols);
             symbols.push_back(move.symbol);
@@ -769,7 +769,7 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
     static std::set<Symbol>  symbols{};
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
@@ -791,7 +791,7 @@ Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
@@ -812,7 +812,7 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
@@ -832,7 +832,7 @@ BoolVector Nfa::get_used_symbols_chv() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
@@ -846,7 +846,7 @@ BoolVector Nfa::get_used_symbols_chv() const {
 Symbol Nfa::get_max_symbol() const {
     Symbol max = 0;
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
+        const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
             if (move.symbol > max)
                 max = move.symbol;
@@ -859,7 +859,7 @@ Symbol Nfa::get_max_symbol() const {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const State orig_initial_state: initial) {
-        const Post& moves{ get_moves_from(orig_initial_state) };
+        const StatePost& moves{ get_moves_from(orig_initial_state) };
         for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
@@ -910,7 +910,7 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 void Nfa::clear_transitions() {
     const size_t delta_size = delta.num_of_states();
     for (size_t i = 0; i < delta_size; ++i) {
-        delta.get_mutable_post(i) = Post();
+        delta.get_mutable_post(i) = StatePost();
     }
 }
 

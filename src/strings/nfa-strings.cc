@@ -172,7 +172,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     while(curr_state.has_value()) {
         visited.insert(curr_state.value());
         handles[curr_state.value()] = cnt++;
-        Nfa::Post post = one_letter.delta[curr_state.value()];
+        Nfa::StatePost post = one_letter.delta[curr_state.value()];
 
         curr_state.reset();
         assert(post.size() <= 1);

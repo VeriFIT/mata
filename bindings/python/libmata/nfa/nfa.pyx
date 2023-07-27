@@ -20,7 +20,7 @@ cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
     Symbol, State, StateSet, StateRenaming, \
-    CDelta, CRun, CTrans, CNfa, CMove, CEPSILON
+    CDelta, CRun, CTrans, CNfa, CSymbolPost, CEPSILON
 
 from libmata.alphabets cimport CAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
@@ -126,7 +126,7 @@ cdef class Trans:
 
 cdef class SymbolPost:
     """Wrapper over pair of symbol and states for transitions"""
-    cdef mata_nfa.CMove *thisptr
+    cdef mata_nfa.CSymbolPost *thisptr
 
     @property
     def symbol(self):
@@ -148,7 +148,7 @@ cdef class SymbolPost:
 
     def __cinit__(self, Symbol symbol, vector[State] states):
         cdef StateSet targets = StateSet(states)
-        self.thisptr = new mata_nfa.CMove(symbol, targets)
+        self.thisptr = new mata_nfa.CSymbolPost(symbol, targets)
 
     def __dealloc__(self):
         if self.thisptr != NULL:
@@ -412,11 +412,11 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: SymbolPost
         """
-        cdef mata_nfa.CPost transitions = self.thisptr.get().get_moves_from(state)
-        cdef vector[mata_nfa.CMove] transitions_list = transitions.ToVector()
+        cdef mata_nfa.CStatePost transitions = self.thisptr.get().get_moves_from(state)
+        cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.ToVector()
 
-        cdef vector[mata_nfa.CMove].iterator it = transitions_list.begin()
-        cdef vector[mata_nfa.CMove].iterator end = transitions_list.end()
+        cdef vector[mata_nfa.CSymbolPost].iterator it = transitions_list.begin()
+        cdef vector[mata_nfa.CSymbolPost].iterator end = transitions_list.end()
         transsymbols = []
         while it != end:
             t = SymbolPost(
@@ -654,13 +654,13 @@ cdef class Nfa:
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CMove].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
+        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
             state, epsilon
         )
         if c_epsilon_transitions_iter == self.thisptr.get().get_moves_from(state).cend():
             return None
 
-        cdef CMove epsilon_transitions = dereference(c_epsilon_transitions_iter)
+        cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_transitions_iter)
         return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
