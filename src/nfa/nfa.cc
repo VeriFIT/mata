@@ -458,7 +458,7 @@ void Nfa::print_to_mata(std::ostream &output) const {
         output << std::endl;
     }
 
-    for (Trans trans : delta) {
+    for (Trans trans : delta.transitions()) {
         output << "q" << trans.src << " " << trans.symb << " q" << trans.tgt << std::endl;
     }
 }

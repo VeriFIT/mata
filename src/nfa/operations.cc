@@ -42,7 +42,7 @@ namespace {
         const size_t state_num = aut.size();
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
-        for (const auto& transition : aut.delta) {
+        for (const auto& transition : aut.delta.transitions()) {
             LTSforSimulation.add_transition(transition.src, transition.symb, transition.tgt);
             if (transition.symb > maxSymbol) {
                 maxSymbol = transition.symb;
@@ -863,12 +863,10 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
 }
 
 void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-    const size_t nfa_num_of_states{ nfa.size() };
-    for (Mata::Nfa::State state{ 0 }; state < nfa_num_of_states; ++state) {
-        // TODO: Rewrite to not create 'Trans' instances and iterate over same symbols all the time.
-        for (const Trans& state_transitions: nfa.delta) {
-            alphabet.update_next_symbol_value(state_transitions.symb);
-            alphabet.try_add_new_symbol(std::to_string(state_transitions.symb), state_transitions.symb);
+    for (const StatePost& state_post: nfa.delta) {
+        for (const SymbolPost& symbol_post: state_post) {
+            alphabet.update_next_symbol_value(symbol_post.symbol);
+            alphabet.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
         }
     }
 }

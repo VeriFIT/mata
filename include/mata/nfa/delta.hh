@@ -234,6 +234,21 @@ public:
     transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
     transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
+    struct TransitionsIterator {
+        transitions_const_iterator m_begin;
+        transitions_const_iterator m_end;
+        transitions_const_iterator begin() const { return m_begin; }
+        transitions_const_iterator end() const { return m_end; }
+    };
+
+    /**
+     * Iterate over transitions represented as 'Trans' instances.
+     * @return Iterator over transitions.
+     */
+    TransitionsIterator transitions() const {
+        return { transitions_begin(), transitions_end() };
+    }
+
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return posts.cbegin(); }
     const_iterator cend() const { return posts.cend(); }
