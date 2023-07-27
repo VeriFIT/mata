@@ -35,7 +35,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
 
-    cdef cppclass CPost "Mata::Nfa::Post":
+    cdef cppclass CPost "Mata::Nfa::StatePost":
         void insert(CMove&)
         CMove& operator[](Symbol)
         CMove& back()

@@ -126,7 +126,7 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
         Mata::Util::push_back(sync_iterator,rhs.delta[pair_to_process.second]);
 
         while (sync_iterator.advance()) {
-            std::vector<Post::const_iterator> moves = sync_iterator.get_current();
+            std::vector<StatePost::const_iterator> moves = sync_iterator.get_current();
             assert(moves.size() == 2); // One move per state in the pair.
 
             // Compute product for state transitions with same symbols.
@@ -151,7 +151,7 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
             // Add transitions of the current state pair for an epsilon preserving product.
 
             // Check for lhs epsilon transitions.
-            const Post& lhs_post{ lhs.delta[pair_to_process.first] };
+            const StatePost& lhs_post{ lhs.delta[pair_to_process.first] };
             if (!lhs_post.empty()) {
                 const auto& lhs_state_last_transitions{ lhs_post.back() };
                 if (epsilons.find(lhs_state_last_transitions.symbol) != epsilons.end()) {
@@ -169,7 +169,7 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
             }
 
             // Check for rhs epsilon transitions in case only rhs has any transitions and add them.
-            const Post& rhs_post{ rhs.delta[pair_to_process.second]};
+            const StatePost& rhs_post{ rhs.delta[pair_to_process.second]};
             if (!rhs_post.empty()) {
                 const auto& rhs_state_last_transitions{ rhs_post.back()};
                 if (epsilons.find(rhs_state_last_transitions.symbol) != epsilons.end()) {

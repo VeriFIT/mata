@@ -234,7 +234,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     while (changed) { // Compute the fixpoint.
         changed = false;
         for (size_t i = 0; i < num_of_states; ++i) {
-            const Post& post{ aut.delta[i] };
+            const StatePost& post{ aut.delta[i] };
             const auto eps_move_it { post.find(SymbolPost{ epsilon}) };//TODO: make faster if default epsilon
             if (eps_move_it != post.end()) {
                 StateSet& src_eps_cl = eps_closure[i];
@@ -365,7 +365,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         for (size_t i{ 0 }; i < sources[symbol].size(); ++i) {
             State tgt_state =sources[symbol][i];
             State src_state =targets[symbol][i];
-            Post & src_post = result.delta.get_mutable_post(src_state);
+            StatePost & src_post = result.delta.get_mutable_post(src_state);
             if (src_post.empty() || src_post.back().symbol != symbol) {
                 src_post.push_back(SymbolPost(symbol));
             }
@@ -377,7 +377,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     for (size_t i{ 0 }; i < e_sources.size(); ++i) {
         State tgt_state =e_sources[i];
         State src_state =e_targets[i];
-        Post & src_post = result.delta.get_mutable_post(src_state);
+        StatePost & src_post = result.delta.get_mutable_post(src_state);
         if (src_post.empty() || src_post.back().symbol != EPSILON) {
             src_post.push_back(SymbolPost(EPSILON));
         }
@@ -428,7 +428,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const SymbolPost &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
-                Post & post = result.delta.get_mutable_post(targetState);
+                StatePost & post = result.delta.get_mutable_post(targetState);
                 //auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
                 auto move = post.find(SymbolPost(transition.symbol));
                 if (move == post.end()) {
