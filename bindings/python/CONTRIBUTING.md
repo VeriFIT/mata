@@ -51,31 +51,71 @@ may arise during development.
 
 ## Getting started
 
-The following shows minimal example of relation between library source files and Cython binding
-files.
+The following shows minimal example of relation between C++ library source files and Cython binding
+files. It shows link between (1) Cython binding files (`nfa.pxd`, `nfa.pyx`) and C++ library files 
+(`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`Mata::Nfa::Nfa`; 
+in binding refered as `CNfa`), and (3) Cython binding function (`union` that takes Python 
+classes `Nfa`) and C++ library function (`uni` that takes C++ classes `Mata::Nfa::Nfa`, 
+in binding refered as `c_uni` and `CNfa` respectively)
 
 ```c++
 // @file: nfa-plumbing.h
+
+// Minimal specification of C++ function, we want to wrap in Binding
 namespace Mata::Nfa::Plumbing {
     inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
+//              ^-- C++ function signature with C++ types
 }
 ```
 
 ```cython
 # @file: nfa.pxd
-cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
-    cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
 
+# Minimal specification of Cython header file.
+# This specifies, what from C++ will be visible in Cython
+
+cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
+#                 ^-- source C++ file and namespace, where Mata::Nfa::Nfa class is defined
+    cdef cppclass CNfa "Mata::Nfa::Nfa":
+#                 ^-- C++ class made visible in binding; it will be refered by its alias `CNfa`
+#                      ^-- full C++ class name
+        CNfa()
+#       ^-- constructor of C++ class using alias `CNfa`
+#           (everything listed here will be visible in binding)
+    
+cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
+#                 ^-- source C++ header and namespace, where the function is defined
+    cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
+#             ^-- C++ function alias used in Binding   ^-- C++ type alias defined above
+#                   ^-- full C++ function name
 ```
 
 ```cython
 # @file: nfa.pyx
+
+# Minimal example of implementation of Python binding. 
+# These classes and function will be visible and callable in Python.
+
+cdef class Nfa:
+#          ^- Python class; wrapper for Mata::Nfa::Nfa
+    cdef shared_ptr[CNfa] thisptr
+#                         ^-- member that holds wrapped C++ object
+    def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
+#       ^-- constructor of the Python class
+        self.thisptr = make_shared[CNfa](
+            mata_nfa.CNfa(state_number, empty_default_state_set, empty_default_state_set, c_alphabet)
+        )
+#       ^-- creating C++ object, that is wrapped in Python class Nfa
+
 def union(Nfa lhs, Nfa rhs):
+#   ^-- Python function; wrapper for Mata::Nfa::Plumbing::uni()
     result = Nfa()
     mata_nfa.c_uni(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
+#   ^-- call to C++ function `uni()` (it is named as c_uni to avoid collisions with Python)
     return result
+#   ^-- function returns wrapper Python object Nfa, that holds instance of `Mata::Nfa::Nfa` C++ object
 ```
 
 ## File/Directory Structure
