@@ -3,13 +3,13 @@
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 #include "mata/nfa/nfa.hh"
+
 #include <iostream>
 #include <fstream>
 
 using namespace Mata::Nfa;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "Input file missing\n";
         return EXIT_FAILURE;
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
         for (const auto& ia : inter_auts) {
             Mata::Mintermization mintermization;
             std::cout << ia << '\n';
-            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == Mata::IntermediateAut::BITVECTOR) {
+            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR) {
                 const auto& aut = mintermization.mintermize(ia);
                 assert(ia.transitions.size() <= aut.transitions.size());
                 std::cout << aut << '\n';
