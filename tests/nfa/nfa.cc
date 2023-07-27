@@ -157,25 +157,25 @@ TEST_CASE("Mata::Nfa::Nfa iteration")
 	{
 		aut.delta.add('q', 'a', 'r');
 		aut.delta.add('q', 'b', 'r');
-		auto it = aut.delta.begin();
-		auto jt = aut.delta.begin();
+		auto it = aut.delta.transitions_begin();
+		auto jt = aut.delta.transitions_begin();
 		REQUIRE(it == jt);
 		++it;
 		REQUIRE(it != jt);
-		REQUIRE((it != aut.delta.begin() && it != aut.delta.end()));
-		REQUIRE(jt == aut.delta.begin());
+		REQUIRE((it != aut.delta.transitions_begin() && it != aut.delta.transitions_end()));
+		REQUIRE(jt == aut.delta.transitions_begin());
 
 		++jt;
 		REQUIRE(it == jt);
-		REQUIRE((jt != aut.delta.begin() && jt != aut.delta.end()));
+		REQUIRE((jt != aut.delta.transitions_begin() && jt != aut.delta.transitions_end()));
 
-        jt = aut.delta.end();
+        jt = aut.delta.transitions_end();
 		REQUIRE(it != jt);
-		REQUIRE((jt != aut.delta.begin() && jt == aut.delta.end()));
+		REQUIRE((jt != aut.delta.transitions_begin() && jt == aut.delta.transitions_end()));
 
-        it = aut.delta.end();
+        it = aut.delta.transitions_end();
 		REQUIRE(it == jt);
-		REQUIRE((it != aut.delta.begin() && it == aut.delta.end()));
+		REQUIRE((it != aut.delta.transitions_begin() && it == aut.delta.transitions_end()));
 	}
 } // }}}
 

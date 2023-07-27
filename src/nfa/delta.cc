@@ -185,10 +185,10 @@ bool Delta::contains(State src, Symbol symb, State tgt) const
 
 bool Delta::empty() const
 {
-    return this->begin() == this->end();
+    return this->transitions_begin() == this->transitions_end();
 }
 
-Delta::const_iterator::const_iterator(const std::vector<StatePost>& post_p, bool ise) :
+Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise) :
     post(post_p), current_state(0), is_end{ ise }
 {
     const size_t post_size = post.size();
@@ -205,7 +205,7 @@ Delta::const_iterator::const_iterator(const std::vector<StatePost>& post_p, bool
     is_end = true;
 }
 
-Delta::const_iterator& Delta::const_iterator::operator++()
+Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++()
 {
     assert(post.begin() != post.end());
 
@@ -233,13 +233,13 @@ Delta::const_iterator& Delta::const_iterator::operator++()
     return *this;
 }
 
-Delta::const_iterator Delta::const_iterator::operator++(int) {
-    const const_iterator tmp = *this;
+const Delta::transitions_const_iterator Delta::transitions_const_iterator::operator++(int) {
+    const transitions_const_iterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
-Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_iterator& x) {
+Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(const Delta::transitions_const_iterator& x) {
     this->post_iterator = x.post_iterator;
     this->targets_position = x.targets_position;
     this->current_state = x.current_state;
@@ -248,7 +248,7 @@ Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_itera
     return *this;
 }
 
-bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_iterator& b) {
+bool Mata::Nfa::operator==(const Delta::transitions_const_iterator& a, const Delta::transitions_const_iterator& b) {
     if (a.is_end && b.is_end) {
         return true;
     } else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end)) {
