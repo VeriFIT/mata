@@ -241,7 +241,7 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     useful_states.clear();
     useful_states = useful_states();
 #else
-    BoolVector useful_states(get_useful_states());
+    BoolVector useful_states{ get_useful_states() };
 #endif
 
     std::vector<State> renaming(useful_states.size());
@@ -326,6 +326,7 @@ namespace {
         // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
         // first align the iterators.
         // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
+        // Align iterators in a way that the current state is stored in *(this->targets_it).
         void align_succ() {
             while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
                 if (this->targets_it == this->targets_end) {
@@ -343,14 +344,14 @@ namespace {
             return *(this->targets_it);
         }
 
-        void move_next_succ() {
+        void move_to_next_succ() {
             if(this->post_it == this->post_end) {
                 return;
             }
             ++this->targets_it;
         }
 
-        bool is_end() {
+        bool is_end_succ() {
             align_succ();
             return this->post_it == this->post_end;
         }
@@ -394,7 +395,7 @@ namespace {
  * @return BoolVector 
  */
 BoolVector Nfa::get_useful_states() const {
-    BoolVector reached_and_reaching(this->size(),false); 
+    BoolVector useful(this->size(),false); 
     std::vector<TarjanNodeData> node_info(this->size());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
@@ -413,23 +414,25 @@ BoolVector Nfa::get_useful_states() const {
             act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
             tarjan_stack.push_back(act_state);
             if(this->final.contains(act_state)) {
-                reached_and_reaching[act_state] = true;
+                useful[act_state] = true;
             }
         } else { // return from the recursive call
             State act_succ = act_state_data.get_curr_succ();
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
-            act_state_data.move_next_succ();
+            act_state_data.move_to_next_succ();
         }
 
         // iterate through outgoing edges
         State next_state;
+        // rec_call simulates call of the strongconnect. Since c++ cannot do continue over 
+        // multiple loops, we use rec_call to jump to the main loop
         bool rec_call = false;
-        while(!act_state_data.is_end()) {
+        while(!act_state_data.is_end_succ()) {
             next_state = act_state_data.get_curr_succ();
             // if successor is useful, act_state is useful as well
-            if(reached_and_reaching[next_state]) {
-                reached_and_reaching[act_state] = true;
+            if(useful[next_state]) {
+                useful[act_state] = true;
             }
             if(!node_info[next_state].initilized) { // recursive call
                 program_stack.push_back(next_state);
@@ -438,7 +441,7 @@ BoolVector Nfa::get_useful_states() const {
             } else if(node_info[next_state].on_stack) {
                 act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
             }
-            act_state_data.move_next_succ();
+            act_state_data.move_to_next_succ();
         }
         if(rec_call) continue;
 
@@ -454,23 +457,23 @@ BoolVector Nfa::get_useful_states() const {
                 node_info[st].on_stack = false;
 
                 // SCC contains a final state
-                if(reached_and_reaching[st]) {
+                if(useful[st]) {
                     final_scc = true;
                 }
                 scc.push_back(st);
             } while(st != act_state);
             if(final_scc) {
                 // propagate usefulness to the closed SCC
-                for(const State& st : scc) reached_and_reaching[st] = true;
+                for(const State& st : scc) useful[st] = true;
                 // propagate usefulness to predecessors in @p tarjan_stack
-                for(const State& st : tarjan_stack) reached_and_reaching[st] = true;
+                for(const State& st : tarjan_stack) useful[st] = true;
             }
         }
         // all successors have been processed, we can remove act_state from the program stack
         program_stack.pop_back();
     }
 
-    return reached_and_reaching;
+    return useful;
 }
 
 StateSet Nfa::get_useful_states_old() const
