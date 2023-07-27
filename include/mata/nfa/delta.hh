@@ -25,12 +25,8 @@ public:
     SymbolPost& operator=(SymbolPost&& rhs) noexcept;
     SymbolPost& operator=(const SymbolPost& rhs) = default;
 
-    inline bool operator<(const SymbolPost& rhs) const { return symbol < rhs.symbol; }
-    inline bool operator<=(const SymbolPost& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator==(const SymbolPost& rhs) const { return symbol == rhs.symbol; }
-    inline bool operator!=(const SymbolPost& rhs) const { return symbol != rhs.symbol; }
-    inline bool operator>(const SymbolPost& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const SymbolPost& rhs) const { return symbol >= rhs.symbol; }
+    std::weak_ordering operator<=>(const SymbolPost& other) const { return symbol <=> other.symbol; }
+    bool operator==(const SymbolPost& other) const { return symbol == other.symbol; }
 
     StateSet::iterator begin() { return targets.begin(); }
     StateSet::iterator end() { return targets.end(); }
