@@ -259,22 +259,6 @@ bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_it
     }
 }
 
-State Delta::find_max_state() {
-    size_t max = 0;
-    State src = 0;
-    for (StatePost & p: posts) {
-        if (src > max)
-            max = src;
-        for (SymbolPost & m: p) {
-            if (!m.targets.empty())
-                if (m.targets.back() > max)
-                    max = m.targets.back();
-        }
-        src++;
-    }
-    return max;
-}
-
 std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambda) const {
     std::vector<StatePost> cp_post_vector;
     cp_post_vector.reserve(num_of_states());
