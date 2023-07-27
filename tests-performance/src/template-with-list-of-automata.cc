@@ -4,9 +4,11 @@
  */
 #include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nfa/builder.hh"
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/mintermization.hh"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
