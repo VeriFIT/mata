@@ -117,7 +117,7 @@ namespace {
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
                     // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta.get_mutable_post(q_class_state).insert(Move(q_trans.symbol, representatives_class_states));
+                    result.delta.get_mutable_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -192,7 +192,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
         changed = false;
         for (size_t i = 0; i < num_of_states; ++i) {
             const Post& post{ aut.delta[i] };
-            const auto eps_move_it { post.find(Move{ epsilon}) };//TODO: make faster if default epsilon
+            const auto eps_move_it { post.find(epsilon) };//TODO: make faster if default epsilon
             if (eps_move_it != post.end()) {
                 StateSet& src_eps_cl = eps_closure[i];
                 for (const State tgt: eps_move_it->targets) {
@@ -215,7 +215,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
             if (aut.final[eps_cl_state]) result.final.insert(src_state);
-            for (const Move& move : aut.delta[eps_cl_state]) {
+            for (const SymbolPost& move : aut.delta[eps_cl_state]) {
                 if (move.symbol == epsilon) continue;
                 // TODO: this could be done more efficiently if we had a better add method
                 for (State tgt_state : move.targets) {
@@ -293,7 +293,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     //Targets and sources of e-transitions go to the special place.
     //Important: since we are going through delta in order of sources, the sources arrays are all ordered.
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
-        for (const Move &move: aut.delta[sourceState]) {
+        for (const SymbolPost &move: aut.delta[sourceState]) {
             if (move.symbol == EPSILON) {
                 for (const State targetState: move.targets) {
                     //reserve_on_insert(e_sources);
@@ -324,7 +324,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
             State src_state =targets[symbol][i];
             Post & src_post = result.delta.get_mutable_post(src_state);
             if (src_post.empty() || src_post.back().symbol != symbol) {
-                src_post.push_back(Move(symbol));
+                src_post.push_back(SymbolPost(symbol));
             }
             src_post.back().push_back(tgt_state);
         }
@@ -336,7 +336,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         State src_state =e_targets[i];
         Post & src_post = result.delta.get_mutable_post(src_state);
         if (src_post.empty() || src_post.back().symbol != EPSILON) {
-            src_post.push_back(Move(EPSILON));
+            src_post.push_back(SymbolPost(EPSILON));
         }
         src_post.back().push_back(tgt_state);
     }
@@ -360,7 +360,7 @@ Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
     result.delta.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
-        for (const Move &transition: aut.delta[sourceState]) {
+        for (const SymbolPost &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
                 result.delta.add(targetState, transition.symbol, sourceState);
             }
@@ -383,14 +383,14 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     result.final = aut.initial;
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
-        for (const Move &transition: aut.delta[sourceState]) {
+        for (const SymbolPost &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
                 Post & post = result.delta.get_mutable_post(targetState);
                 //auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
-                auto move = post.find(Move(transition.symbol));
+                auto move = post.find(SymbolPost(transition.symbol));
                 if (move == post.end()) {
                     //post.push_back(Move(transition.symbol,sourceState));
-                    post.insert(Move(transition.symbol,sourceState));
+                    post.insert(SymbolPost(transition.symbol, sourceState));
                 }
                 else
                     move->push_back(sourceState);
@@ -658,15 +658,15 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
 
     for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
         State union_state = lhs_state_renaming[lhs_state];
-        for (const Move &lhs_move : lhs.delta[lhs_state]) {
+        for (const SymbolPost &lhs_symbol_post : lhs.delta[lhs_state]) {
 
-            Move union_move(lhs_move.symbol, StateSet{});
+            SymbolPost union_symbol_post{ lhs_symbol_post.symbol, StateSet{} };
 
-            for (State stateTo : lhs_move.targets) {
-                union_move.insert(lhs_state_renaming[stateTo]);
+            for (State target_state : lhs_symbol_post.targets) {
+                union_symbol_post.insert(lhs_state_renaming[target_state]);
             }
 
-            union_nfa.delta.get_mutable_post(union_state).insert(union_move);
+            union_nfa.delta.get_mutable_post(union_state).insert(union_symbol_post);
         }
     }
 
@@ -738,8 +738,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateRenaming *state_rena
 
 Nfa Mata::Nfa::determinize(
         const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map)
-{
+        std::unordered_map<StateSet, State> *subset_map) {
 
     Nfa result;
     //assuming all sets targets are non-empty
@@ -766,7 +765,7 @@ Nfa Mata::Nfa::determinize(
     if (aut.delta.empty())
         return result;
 
-    using Iterator = Mata::Util::OrdVector<Move>::const_iterator;
+    using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
     Mata::Util::SynchronizedExistentialIterator<Iterator> synchronized_iterator;
 
     while (!worklist.empty()) {
@@ -807,7 +806,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.delta.get_mutable_post(Sid).insert(Move(currentSymbol, Tid));
+            result.delta.get_mutable_post(Sid).insert(SymbolPost(currentSymbol, Tid));
         }
     }
 

@@ -17,10 +17,10 @@ def test_trans():
 
 
 def test_move():
-    a = mata_nfa.Move(0, [0, 1])
-    b = mata_nfa.Move(1, [1])
-    c = mata_nfa.Move(0, [0])
-    d = mata_nfa.Move(1, [])
+    a = mata_nfa.SymbolPost(0, [0, 1])
+    b = mata_nfa.SymbolPost(1, [1])
+    c = mata_nfa.SymbolPost(0, [0])
+    d = mata_nfa.SymbolPost(1, [])
     assert a.symbol == 0
     assert a.targets == [0, 1]
 

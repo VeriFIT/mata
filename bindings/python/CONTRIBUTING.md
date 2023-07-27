@@ -389,7 +389,7 @@ def determinize_with_subset_map(cls, Nfa lhs):
   will simply not be visible.
 
 ```cython
-cdef cppclass CMove "Mata::Nfa::Move":
+cdef cppclass CMove "Mata::Nfa::SymbolPost":
     Symbol symbol
     StateSet targets
 #   ^-- class attributes
@@ -398,7 +398,7 @@ cdef cppclass CMove "Mata::Nfa::Move":
 * Implement the getters and setters in Cython class
 
 ```cython
-cdef class Move:
+cdef class SymbolPost:
 # ^-- cython class
     cdef mata_nfa.CMove *thisptr
 #   ^-- wrapped C/C++ object
@@ -455,7 +455,7 @@ result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, tr
   2. `__repr__` returns computer readable representation (usually so it is parsable by other code); this is called in jupyter notebooks when you simply write the name of the vairable.
 
 ```cython
-cdef class Move:
+cdef class SymbolPost:
     def __str__(self):
     # ^-- called in notebook/interpret by typing `str(myvar)`
         trans = "{" + ",".join(map(str, self.targets)) + "}"
@@ -475,7 +475,7 @@ cdef class Move:
 ```cython
 # @file: nfa.pxd
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    cdef cppclass CMove "Mata::Nfa::Move":
+    cdef cppclass CMove "Mata::Nfa::SymbolPost":
         bool operator<(CMove)
         bool operator<=(CMove)
         bool operator>(CMove)
@@ -486,17 +486,17 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 ```cython
 # @file: nfa.pyx
-cdef class Move:
-    def __lt__(self, Move other):
+cdef class SymbolPost:
+    def __lt__(self, SymbolPost other):
         return dereference(self.thisptr) < dereference(other.thisptr)
 
-    def __gt__(self, Move other):
+    def __gt__(self, SymbolPost other):
         return dereference(self.thisptr) > dereference(other.thisptr)
 
-    def __le__(self, Move other):
+    def __le__(self, SymbolPost other):
         return dereference(self.thisptr) <= dereference(other.thisptr)
 
-    def __ge__(self, Move other):
+    def __ge__(self, SymbolPost other):
         return dereference(self.thisptr) >= dereference(other.thisptr)
 ```
 
@@ -647,7 +647,7 @@ cdef vector[mata_nfa.CMove].iterator end = transitions_list.end()
 transsymbols = []
 while it != end:
 #     ^-- comparsion of two iterators
-    t = Move(
+    t = SymbolPost(
         dereference(it).symbol,
         dereference(it).targets.ToVector()
         # ^-- to access the value of iterator you need to dereference

@@ -124,7 +124,7 @@ cdef class Trans:
         return str(self)
 
 
-cdef class Move:
+cdef class SymbolPost:
     """Wrapper over pair of symbol and states for transitions"""
     cdef mata_nfa.CMove *thisptr
 
@@ -154,22 +154,22 @@ cdef class Move:
         if self.thisptr != NULL:
             del self.thisptr
 
-    def __lt__(self, Move other):
+    def __lt__(self, SymbolPost other):
         return dereference(self.thisptr) < dereference(other.thisptr)
 
-    def __gt__(self, Move other):
+    def __gt__(self, SymbolPost other):
         return dereference(self.thisptr) > dereference(other.thisptr)
 
-    def __le__(self, Move other):
+    def __le__(self, SymbolPost other):
         return dereference(self.thisptr) <= dereference(other.thisptr)
 
-    def __ge__(self, Move other):
+    def __ge__(self, SymbolPost other):
         return dereference(self.thisptr) >= dereference(other.thisptr)
 
-    def __eq__(self, Move other):
+    def __eq__(self, SymbolPost other):
         return self.symbol == other.symbol and self.targets == other.targets
 
-    def __neq__(self, Move other):
+    def __neq__(self, SymbolPost other):
         return self.symbol != other.symbol or self.targets != other.targets
 
     def __str__(self):
@@ -407,10 +407,10 @@ cdef class Nfa:
             yield trans
 
     def get_transitions_from_state(self, State state):
-        """Returns list of Move for the given state
+        """Returns list of SymbolPost for the given state
 
         :param State state: state for which we are getting the transitions
-        :return: Move
+        :return: SymbolPost
         """
         cdef mata_nfa.CPost transitions = self.thisptr.get().get_moves_from(state)
         cdef vector[mata_nfa.CMove] transitions_list = transitions.ToVector()
@@ -419,7 +419,7 @@ cdef class Nfa:
         cdef vector[mata_nfa.CMove].iterator end = transitions_list.end()
         transsymbols = []
         while it != end:
-            t = Move(
+            t = SymbolPost(
                 dereference(it).symbol,
                 dereference(it).targets.ToVector()
             )
@@ -647,7 +647,7 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_epsilon(epsilon)
 
-    def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> Move | None:
+    def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
@@ -661,7 +661,7 @@ cdef class Nfa:
             return None
 
         cdef CMove epsilon_transitions = dereference(c_epsilon_transitions_iter)
-        return Move(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
+        return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
 

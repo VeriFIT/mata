@@ -672,9 +672,9 @@ def test_shortest(fa_one_divisible_by_two):
 def test_get_trans(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     t = lhs.get_transitions_from_state(0)
-    assert sorted(t) == sorted([mata_nfa.Move(0, [0]), mata_nfa.Move(1, [1])])
+    assert sorted(t) == sorted([mata_nfa.SymbolPost(0, [0]), mata_nfa.SymbolPost(1, [1])])
     tt = lhs.get_transitions_from_state(1)
-    assert sorted(tt) == sorted([mata_nfa.Move(0, [1]), mata_nfa.Move(1, [2])])
+    assert sorted(tt) == sorted([mata_nfa.SymbolPost(0, [1]), mata_nfa.SymbolPost(1, [2])])
 
 
 def test_trim(prepare_automaton_a):
