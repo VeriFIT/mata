@@ -193,7 +193,7 @@ public:
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
-    struct const_iterator {
+    struct transitions_const_iterator {
     private:
         const std::vector<StatePost>& post;
         size_t current_state;
@@ -208,35 +208,40 @@ public:
         using pointer = int*;
         using reference = int&;
 
-        explicit const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
+        explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
-        const_iterator(const std::vector<StatePost>& post_p, size_t as,
-                       StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
+        transitions_const_iterator(const std::vector<StatePost>& post_p, size_t as,
+                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
                 post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
 
-        const_iterator(const const_iterator& other) = default;
+        transitions_const_iterator(const transitions_const_iterator& other) = default;
 
         Trans operator*() const { return Trans{current_state, (*post_iterator).symbol, *targets_position}; }
 
         // Prefix increment
-        const_iterator& operator++();
+        transitions_const_iterator& operator++();
         // Postfix increment
-        const_iterator operator++(int);
+        const transitions_const_iterator operator++(int);
 
-        const_iterator& operator=(const const_iterator& x);
+        transitions_const_iterator& operator=(const transitions_const_iterator& x);
 
-        friend bool operator==(const const_iterator& a, const const_iterator& b);
-        friend bool operator!=(const const_iterator& a, const const_iterator& b) { return !(a == b); };
+        friend bool operator==(const transitions_const_iterator& a, const transitions_const_iterator& b);
+        friend bool operator!=(const transitions_const_iterator& a, const transitions_const_iterator& b) { return !(a == b); };
     };
 
-    const_iterator cbegin() const { return const_iterator(posts); }
-    const_iterator cend() const { return const_iterator(posts, true); }
-    const_iterator begin() const { return cbegin(); }
-    const_iterator end() const { return cend(); }
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(posts); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(posts, true); }
+    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+    transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
+    using const_iterator = std::vector<StatePost>::const_iterator;
+    const_iterator cbegin() const { return posts.cbegin(); }
+    const_iterator cend() const { return posts.cend(); }
+    const_iterator begin() const { return posts.begin(); }
+    const_iterator end() const { return posts.end(); }
 }; // struct Delta.
 
-bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
+bool operator==(const Delta::transitions_const_iterator& a, const Delta::transitions_const_iterator& b);
 
 } // namespace Mata::Nfa.
 

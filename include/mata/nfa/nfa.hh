@@ -252,7 +252,8 @@ public:
      *
      * The operation has constant time complexity.
      */
-    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.begin(), delta.end())); }
+    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.transitions_begin(),
+                                                                               delta.transitions_end())); }
 
     /**
      * Get transitions as a sequence of @c Trans.

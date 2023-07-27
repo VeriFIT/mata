@@ -644,7 +644,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 
     const_iterator result;
 
-    if (nfa->delta.begin() == nfa->delta.end()) {
+    if (nfa->delta.transitions_begin() == nfa->delta.transitions_end()) {
         result.is_end = true;
         return result;
     }
@@ -707,7 +707,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of transition list
     ++this->trIt;
-    assert(this->nfa->delta.begin() != this->nfa->delta.end());
+    assert(this->nfa->delta.transitions_begin() != this->nfa->delta.transitions_end());
 
     while (this->trIt < this->nfa->delta.num_of_states() &&
            this->nfa->get_moves_from(this->trIt).empty())
