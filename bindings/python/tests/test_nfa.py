@@ -382,7 +382,7 @@ def test_concatenate():
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
 
-    result, lhs_map, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
+    result, _, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
     assert result.size() == 4
@@ -479,7 +479,6 @@ def test_intersection(
 
 
 def test_intersection_preserving_epsilon_transitions():
-    epsilon = ord('e')
     a = mata_nfa.Nfa(6)
     a.make_initial_state(0)
     a.make_final_states([1, 4, 5])
@@ -773,7 +772,7 @@ def test_simulation_other_features(fa_one_divisible_by_two):
         [False, False, True, False],
         [True, False, True, True],
     ]
-    size = rel.alloc()
+    rel.alloc()
     assert rel.to_matrix() == [
         [True, False, True, True, False],
         [False, True, False, False, False],
