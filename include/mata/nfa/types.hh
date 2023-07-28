@@ -21,8 +21,6 @@ struct Run {
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
-using StringToStateMap = std::unordered_map<std::string, State>;
-using StateToStringMap = std::unordered_map<State, std::string>;
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
 using StateToStateMap = std::unordered_map<State, State>;
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;

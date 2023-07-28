@@ -19,6 +19,8 @@
 #include "nfa.hh"
 #include "builder.hh"
 
+using namespace Mata::Nfa::Builder;
+
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
  *
@@ -67,7 +69,7 @@ void construct(
         Nfa*                                 result,
         const ParsedObject&                  parsed,
         StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr) {
+        StateNameValueMap*                   state_map = nullptr) {
     *result = Builder::construct(parsed, symbol_map, state_map);
 }
 

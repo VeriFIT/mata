@@ -800,7 +800,7 @@ void Mata::Afa::make_complete(
 Mata::Parser::ParsedSection Mata::Afa::serialize(
 	const Afa&                aut,
 	const SymbolToStringMap*  symbol_map,
-	const StateToStringMap*   state_map)
+	const StateValueNameMap*   state_map)
 { // {{{
 	Mata::Parser::ParsedSection parsec;
 	parsec.type = Mata::Afa::TYPE_AFA;
@@ -907,9 +907,9 @@ void Mata::Afa::minimize(
 
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Afa Mata::Afa::construct(
-	const Mata::Parser::ParsedSection&  parsec,
-	Alphabet*                            alphabet,
-	StringToStateMap*                    state_map)
+        const Mata::Parser::ParsedSection&  parsec,
+        Alphabet*                            alphabet,
+        StateNameValueMap*                    state_map)
 { // {{{
 	assert(nullptr != alphabet);
 	Afa aut;
@@ -921,7 +921,7 @@ Afa Mata::Afa::construct(
 
 	bool remove_state_map = false;
 	if (nullptr == state_map) {
-		state_map = new StringToStateMap();
+		state_map = new StateNameValueMap();
 		remove_state_map = true;
 	}
 
@@ -986,7 +986,7 @@ Afa Mata::Afa::construct(
 Afa Mata::Afa::construct(
         const Mata::IntermediateAut&         inter_aut,
         Alphabet*                            alphabet,
-        StringToStateMap*                    state_map)
+        StateNameValueMap*                    state_map)
 { // {{{
     Afa aut;
     assert(nullptr != alphabet);
@@ -996,7 +996,7 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    StateNameValueMap tmp_state_map;
     if (nullptr == state_map) {
         state_map = &tmp_state_map;
     }
