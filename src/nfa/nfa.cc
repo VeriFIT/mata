@@ -156,16 +156,16 @@ namespace {
 
         for (const State old_initial_state: nfa.initial)
         {
-            if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
+            if (original_to_new_state_renaming.find(old_initial_state) != original_to_new_state_renaming.end())
             {
-                trimmed_aut.initial.insert(original_to_new_states_map.at(old_initial_state));
+                trimmed_aut.initial.insert(original_to_new_state_renaming.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final)
         {
-            if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
+            if (original_to_new_state_renaming.find(old_final_state) != original_to_new_state_renaming.end())
             {
-                trimmed_aut.final.insert(original_to_new_states_map.at(old_final_state));
+                trimmed_aut.final.insert(original_to_new_state_renaming.at(old_final_state));
             }
         }
 

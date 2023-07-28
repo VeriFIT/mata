@@ -903,8 +903,6 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<Nfa*>& nfas)
     return alphabet;
 }
 
-Run Mata::Nfa::encode_word(const Mata::StringToSymbolMap& symbol_map, const std::vector<std::string>& input) {
-    Run result;
-    for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
-    return result;
+Run Mata::Nfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
+    return { .word = alphabet->translate_word(input) };
 }

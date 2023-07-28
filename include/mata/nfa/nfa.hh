@@ -747,7 +747,7 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // TODO: rename to something, but no idea to what.
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
-Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
+Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
 } // namespace Mata::Nfa.
 

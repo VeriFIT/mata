@@ -38,25 +38,21 @@ TEST_CASE("Mata::IntAlphabet") {
 }
 
 TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
-    OnTheFlyAlphabet alphabet{};
-    StringToSymbolMap symbol_map{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
-    alphabet.add_symbols_from(symbol_map);
-
-    auto symbols{alphabet.get_alphabet_symbols() };
+    OnTheFlyAlphabet alphabet{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
+    auto symbols{ alphabet.get_alphabet_symbols() };
     Mata::Util::OrdVector<Symbol> expected{ 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
-    CHECK(alphabet.get_symbol_map() == symbol_map);
+    CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap{ { "a", 4 }, { "b", 2 }, { "c", 10 } });
 
-    symbol_map["a"] = 6;
-    symbol_map["e"] = 7;
-    alphabet.add_symbols_from(symbol_map);
+    alphabet.add_new_symbol("e", 7);
+    CHECK_THROWS_AS(alphabet.add_new_symbol("a", 0), std::runtime_error);
 
     symbols = alphabet.get_alphabet_symbols();
     expected = Mata::Util::OrdVector<Symbol>{ 7, 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
-    CHECK(alphabet.get_symbol_map() == StringToSymbolMap{
+    CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap {
         { "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
     });
 }

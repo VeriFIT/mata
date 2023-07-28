@@ -22,7 +22,6 @@ struct Run {
 };
 
 using StateRenaming = std::unordered_map<State, State>;
-using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
 /**
  * @brief Map of additional parameter name and value pairs.
@@ -45,10 +44,6 @@ public:
     static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
-/*TODO: Ideally remove functions using this struct as a parameter.
- * unpack the trans. relation to transitions is inefficient, goes against the hairs of the library.
- * Do we want to support it?
- */
 /// A single transition.
 struct Trans {
     State src;

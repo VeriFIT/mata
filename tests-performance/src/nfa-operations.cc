@@ -20,7 +20,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm) {
+int load_automaton(std::string filename, Nfa& aut, Mata::Alphabet& alphabet) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -45,7 +45,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
-            aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
         } else {
             Mata::Mintermization mintermization;
             auto minterm_start = std::chrono::system_clock::now();
@@ -53,7 +53,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
             auto minterm_end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
-            aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(mintermized[0], &alphabet);
             std::cout << "mintermization:" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;
@@ -75,15 +75,14 @@ int main(int argc, char *argv[])
     std::string filename = argv[1];
 
     Nfa aut;
-    Mata::StringToSymbolMap stsm;
-    if (load_automaton(filename, aut, stsm) != EXIT_SUCCESS) {
+    Mata::OnTheFlyAlphabet alphabet{};
+    if (load_automaton(filename, aut, alphabet) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(5);
 
-    Mata::OnTheFlyAlphabet alph{ stsm };
     Nfa trimmed_aut = aut;
     auto start = std::chrono::system_clock::now();
     trimmed_aut.trim();

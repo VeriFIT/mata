@@ -1177,10 +1177,8 @@ bool Mata::Afa::accepts_epsilon(const Afa& aut) {
         [&aut](const Node& node) { return node.IsSubsetOf(aut.finalstates); });
 }
 
-Word encode_word(const Mata::StringToSymbolMap &symbol_map, const std::vector<std::string> &input) {
-    Word result;
-    for (const auto& str : input) { result.insert(symbol_map.at(str)); }
-    return result;
+Word encode_word(const Mata::Alphabet& alphabet, const std::vector<std::string> &input) {
+    return alphabet.translate_word(input);
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap)

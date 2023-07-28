@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
         Mata::Parser::Parsed parsed;
         Nfa aut;
-        Mata::StringToSymbolMap stsm;
+        Mata::OnTheFlyAlphabet alphabet{};
         const std::string nfa_str = "NFA";
         const std::string bits_str = "-bits";
         try {
@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
             std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
             if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
-                aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
+                aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
             } else {
                 Mata::Mintermization mintermization;
                 auto minterm_start = std::chrono::system_clock::now();
@@ -157,7 +157,7 @@ int main(int argc, char *argv[])
                 auto minterm_end = std::chrono::system_clock::now();
                 std::chrono::duration<double> elapsed = minterm_end - minterm_start;
                 assert(mintermized.size() == 1);
-                aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
+                aut = Mata::Nfa::Builder::construct(mintermized[0], &alphabet);
                 std::cout << "mintermization:" << elapsed.count() << "\n";
             }
         }
@@ -169,7 +169,6 @@ int main(int argc, char *argv[])
 
         std::cout << "Processing " << aut_file << std::endl;
 
-        Mata::OnTheFlyAlphabet alph{stsm};
         auto start = std::chrono::system_clock::now();
 
         /**************************************************

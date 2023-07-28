@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
     Mata::Parser::Parsed parsed;
     Nfa aut;
-    Mata::StringToSymbolMap stsm;
+    Mata::OnTheFlyAlphabet alphabet{};
     const std::string nfa_str = "NFA";
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
         Mata::Mintermization mintermization;
         auto mintermized = mintermization.mintermize(inter_auts);
         assert(mintermized.size() == 1);
-        aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
+        aut = Mata::Nfa::Builder::construct(mintermized[0], &alphabet);
     }
     catch (const std::exception& ex) {
         fs.close();
@@ -57,12 +57,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::OnTheFlyAlphabet alph{ stsm };
     Nfa compl_aut;
     auto start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
-    Mata::Nfa::Plumbing::complement(&compl_aut, aut, alph);
+    Mata::Nfa::Plumbing::complement(&compl_aut, aut, alphabet);
     // > END OF PROFILED CODE
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
@@ -72,7 +71,7 @@ int main(int argc, char *argv[]) {
     start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
-    Mata::Nfa::Plumbing::complement(&min_compl_aut, aut, alph, {{"algorithm", "classical"}, {"minimize", "true"}});
+    Mata::Nfa::Plumbing::complement(&min_compl_aut, aut, alphabet, {{"algorithm", "classical"}, {"minimize", "true"}});
     // > END OF PROFILED CODE
     end = std::chrono::system_clock::now();
     elapsed = end - start;
@@ -131,7 +130,7 @@ int main(int argc, char *argv[]) {
     start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
-    Mata::Nfa::Algorithms::is_universal_naive(aut, alph, nullptr);
+    Mata::Nfa::Algorithms::is_universal_naive(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
     end = std::chrono::system_clock::now();
     elapsed = end - start;
@@ -140,7 +139,7 @@ int main(int argc, char *argv[]) {
     start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
-    Mata::Nfa::Algorithms::is_universal_antichains(aut, alph, nullptr);
+    Mata::Nfa::Algorithms::is_universal_antichains(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
     end = std::chrono::system_clock::now();
     elapsed = end - start;

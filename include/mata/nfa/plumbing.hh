@@ -67,12 +67,11 @@ inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(
-        Nfa*                                 result,
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StateNameValueMap*                   state_map = nullptr) {
-    *result = Builder::construct(parsed, symbol_map, state_map);
+void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+               StateNameValueMap* state_map = nullptr) {
+    OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) { alphabet = &tmp_alphabet; }
+    *result = Builder::construct(parsed, alphabet, state_map);
 }
 
 inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }

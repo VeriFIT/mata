@@ -22,11 +22,8 @@ using namespace Mata::Parser;
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
-
-template<class T> void unused(const T &) {}
 
 TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};
@@ -556,7 +553,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
     Nfa aut(10);
     Mata::Parser::ParsedSection parsec;
-    StringToSymbolMap symbol_map;
+    OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
@@ -597,15 +594,15 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
         parsec.dict.insert({"Final", {"q2"}});
         parsec.body = { {"q1", "a", "q2"} };
 
-        aut = Builder::construct(parsec, &symbol_map);
+        aut = Builder::construct(parsec, &alphabet);
 
         Run cex;
         REQUIRE(!is_lang_empty(aut, &cex));
         auto word_bool_pair = get_word_for_path(aut, cex);
         REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word == encode_word(symbol_map, {"a"}).word);
+        REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a"}).word);
 
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a"})));
     }
 
     SECTION("construct a more complicated non-empty automaton")
@@ -629,17 +626,17 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
         parsec.body.push_back({"q5", "a", "q5"});
         parsec.body.push_back({"q5", "c", "q9"});
 
-        aut = Builder::construct(parsec, &symbol_map);
+        aut = Builder::construct(parsec, &alphabet);
 
         // some samples
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map,
-            {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a", "c", "a", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet,
+                                            {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
         // some wrong samples
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "c"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a", "c", "c", "a"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "a", "c", "b"})));
     }
 } // }}}
 
@@ -679,7 +676,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 { // {{{
     Nfa aut;
     Mata::IntermediateAut inter_aut;
-    StringToSymbolMap symbol_map;
+    OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
@@ -768,15 +765,15 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
 
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
-        Plumbing::construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &alphabet);
 
         Run cex;
         REQUIRE(!is_lang_empty(aut, &cex));
         auto word_bool_pair = get_word_for_path(aut, cex);
         REQUIRE(word_bool_pair.second);
-        REQUIRE(word_bool_pair.first.word == encode_word(symbol_map, {"a"}).word);
+        REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a" }).word);
 
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a" })));
     }
 
     SECTION("construct a more complicated non-empty automaton from intermediate automaton")
@@ -805,17 +802,17 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &alphabet);
 
         // some samples
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map,
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a", "c", "a", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet,
                                             {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
         // some wrong samples
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "c"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a", "c", "c", "a"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "a", "c", "b"})));
     }
 
     SECTION("construct - final states from negation")
@@ -836,12 +833,12 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut, &symbol_map);
+        Plumbing::construct(&aut, inter_aut, &alphabet);
         REQUIRE(aut.final.size() == 4);
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3"})));
-        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a4"})));
-        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a1", "a2", "a3", "a5", "a7"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3"})));
+        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3", "a4"})));
+        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3", "a5", "a7"})));
     }
 
     SECTION("construct - final states given as true")
@@ -863,7 +860,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         inter_aut = auts[0];
 
         Mata::Nfa::Builder::StateNameValueMap state_map;
-        Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
+        Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.size() == 9);
         CHECK(aut.final[state_map.at("0")]);
         CHECK(aut.final[state_map.at("1")]);
@@ -895,7 +892,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         inter_aut = auts[0];
 
         Mata::Nfa::Builder::StateNameValueMap state_map;
-        Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
+        Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.empty());
     }
 } // }}}
@@ -917,7 +914,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
     SECTION("empty automaton")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
         make_complete(aut, alph, 0);
 
@@ -943,7 +940,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
     SECTION("one-state automaton")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         const State SINK = 10;
 
         aut.initial = {1};
@@ -961,7 +958,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
 
     SECTION("bigger automaton")
     {
-        OnTheFlyAlphabet alph{"a", "b", "c"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b", "c" } };
         const State SINK = 9;
 
         aut.initial = {1, 2};
@@ -1017,7 +1014,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
     SECTION("empty automaton")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
@@ -1046,7 +1043,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
     SECTION("empty automaton accepting epsilon")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         aut.initial = {1};
         aut.final = {1};
 
@@ -1060,17 +1057,12 @@ TEST_CASE("Mata::Nfa::complement()")
         REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
-        size_t sum = 0;
-        for (const auto& x : cmpl) {
-            unused(x);
-            sum++;
-        }
-        REQUIRE(sum == 4);
+        REQUIRE(cmpl.get_num_of_trans() == 4);
     }
 
     SECTION("non-empty automaton accepting a*b*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         aut.initial = {1, 2};
         aut.final = {1, 2};
 
@@ -1091,12 +1083,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
-        size_t sum = 0;
-        for (const auto& x : cmpl) {
-            unused(x);
-            sum++;
-        }
-        REQUIRE(sum == 6);
+        REQUIRE(cmpl.get_num_of_trans() == 6);
     }
 
     SECTION("empty automaton, empty alphabet, minimization")
@@ -1111,7 +1098,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
     SECTION("empty automaton, minimization")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
@@ -1128,7 +1115,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
     SECTION("minimization vs no minimization")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         aut.initial = {0, 1};
         aut.final = {1, 2};
 
@@ -1185,13 +1172,13 @@ TEST_CASE("Mata::Nfa::is_universal()")
             bool is_univ = is_universal(aut, alph, &cex, params);
 
             REQUIRE(is_univ);
-            REQUIRE(Word{ } == cex.word);
+            REQUIRE(cex.word.empty());
         }
     }
 
     SECTION("empty automaton accepting epsilon")
     {
-        OnTheFlyAlphabet alph{"a"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a" } };
         aut.initial = {1};
         aut.final = {1};
 
@@ -1206,7 +1193,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("automaton for a*b*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         aut.initial = {1, 2};
         aut.final = {1, 2};
 
@@ -1224,7 +1211,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("automaton for a* + b*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         aut.initial = {1, 2};
         aut.final = {1, 2};
 
@@ -1241,7 +1228,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("automaton for (a + b)*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         aut.initial = {1};
         aut.final = {1};
 
@@ -1258,7 +1245,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         aut.initial = {1};
         aut.final = {1, 2, 3, 4, 5};
 
@@ -1290,7 +1277,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         aut.initial = {1, 3};
         aut.final = {1, 2, 4};
 
@@ -1311,7 +1298,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("example from Abdulla et al. TACAS'10")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         aut.initial = {1, 2};
         aut.final = {1, 2, 3};
 
@@ -1335,7 +1322,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 
     SECTION("subsumption-pruning in processed")
     {
-        OnTheFlyAlphabet alph{"a"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a" } };
         aut.initial = {1, 2};
         aut.final = {1};
 
@@ -1438,17 +1425,17 @@ TEST_CASE("Mata::Nfa::is_included()")
             bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
             REQUIRE(!is_incl);
-            REQUIRE(cex.word == Word{});
+            REQUIRE(cex.word.empty());
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(cex.word == Word{});
+            REQUIRE(cex.word.empty());
             REQUIRE(is_incl);
         }
     }
 
     SECTION("a* + b* <= (a+b)*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         smaller.initial = {1, 2};
         smaller.final = {1, 2};
         smaller.delta.add(1, alph["a"], 1);
@@ -1471,7 +1458,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 
     SECTION("(a+b)* !<= a* + b*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         smaller.initial = {1};
         smaller.final = {1};
         smaller.delta.add(1, alph["a"], 1);
@@ -1502,7 +1489,7 @@ TEST_CASE("Mata::Nfa::is_included()")
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         smaller.initial = {1};
         smaller.final = {1};
         smaller.delta.add(1, alph["a"], 1);
@@ -1637,7 +1624,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
 
     SECTION("a* + b* == (a+b)*")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         smaller.initial = {1, 2};
         smaller.final = {1, 2};
         smaller.delta.add(1, alph["a"], 1);
@@ -1675,7 +1662,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
     {
-        OnTheFlyAlphabet alph{"a", "b"};
+        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
         smaller.initial = {1};
         smaller.final = {1};
         smaller.delta.add(1, alph["a"], 1);
@@ -1741,8 +1728,8 @@ TEST_CASE("Mata::Nfa::revert()")
         Nfa result = revert(aut);
 
         REQUIRE(result.delta.empty());
-        REQUIRE(result.initial.size() == 0);
-        REQUIRE(result.final.size() == 0);
+        REQUIRE(result.initial.empty());
+        REQUIRE(result.final.empty());
     }
 
     SECTION("no-transition automaton")
@@ -2781,11 +2768,11 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(aut.get_epsilon_transitions(19) == aut.get_moves_from(19).end());
 
     Post post{ aut.delta[0] };
-    state_eps_trans = aut.get_epsilon_transitions(post);
+    state_eps_trans = Nfa::get_epsilon_transitions(post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
     post = aut.delta[3];
-    state_eps_trans = aut.get_epsilon_transitions(post);
+    state_eps_trans = Nfa::get_epsilon_transitions(post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
@@ -2819,9 +2806,7 @@ TEST_CASE("Mata::Nfa:: create simple automata") {
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
-    OnTheFlyAlphabet alphabet{};
-    StringToSymbolMap symbol_map{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    alphabet.add_symbols_from(symbol_map);
+    OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     nfa = Builder::create_sigma_star_nfa(&alphabet);
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(is_in_lang(nfa, { { 0 }, {} }));

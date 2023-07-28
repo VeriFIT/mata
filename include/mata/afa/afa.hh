@@ -49,17 +49,18 @@ extern const std::string TYPE_AFA;
 
 using State = Mata::Nfa::State;
 
+using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
+
 template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
 
-using SymbolToStringMap = Mata::Nfa::SymbolToStringMap;
 using StateValueNameMap = Mata::Nfa::Builder::StateValueNameMap;
 using StateNameValueMap = Mata::Nfa::Builder::StateNameValueMap;
 
-using Path = Util::OrdVector<State>;
-using Word = Util::OrdVector<Symbol>;
+using Path = std::vector<State>;
+using Word = std::vector<Symbol>;
 
 using StringDict = Mata::Nfa::ParameterMap;
 
@@ -441,25 +442,22 @@ Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StateN
  * If user does not provide symbol map or state map, it allocates its own ones.
  */
 template <class ParsedObject>
-Afa construct(const ParsedObject& parsed, StringToSymbolMap* symbol_map = nullptr, StateNameValueMap* state_map = nullptr) {
-    StringToSymbolMap tmp_symbol_map;
-    if (symbol_map) {
-        tmp_symbol_map = *symbol_map;
+Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, StateNameValueMap* state_map = nullptr) {
+    Mata::OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) {
+        alphabet = &tmp_alphabet;
     }
-    Mata::OnTheFlyAlphabet alphabet(tmp_symbol_map);
-
-    Afa aut = construct(parsed, &alphabet, state_map);
-
-    if (symbol_map) {
-        *symbol_map = alphabet.get_symbol_map();
-    }
-    return aut;
+    return construct(parsed, alphabet, state_map);;
 }
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject> void construct(Afa* result, const ParsedObject& parsed,
-                                             StringToSymbolMap* symbol_map = nullptr, StateNameValueMap* state_map = nullptr) {
-    *result = construct(parsed, symbol_map, state_map);
+                                             Alphabet* alphabet = nullptr, StateNameValueMap* state_map = nullptr) {
+    Mata::OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) {
+        alphabet = &tmp_alphabet;
+    }
+    *result = construct(parsed, alphabet, state_map);
 }
 
 /**
@@ -486,7 +484,7 @@ bool is_in_lang(const Afa& aut, const Word& word);
 bool is_prfx_in_lang(const Afa& aut, const Word& word);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a @c Word instance. */
-inline Word encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
+inline Word encode_word(const Alphabet& alphabet, const std::vector<std::string>& input);
 
 std::ostream& operator<<(std::ostream& os, const Afa& afa);
 

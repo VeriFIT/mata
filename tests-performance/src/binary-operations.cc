@@ -7,6 +7,7 @@
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/mintermization.hh"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -18,7 +19,7 @@ using namespace Mata::Nfa;
 
 const bool SKIP_MINTERMIZATION = false;
 
-int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm, std::string aut_name) {
+int load_automaton(std::string filename, Nfa& aut, Mata::OnTheFlyAlphabet& alphabet, const std::string& aut_name) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -43,7 +44,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
         if (SKIP_MINTERMIZATION or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
-            aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
         } else {
             Mata::Mintermization mintermization;
             auto minterm_start = std::chrono::system_clock::now();
@@ -51,7 +52,7 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
             auto minterm_end = std::chrono::system_clock::now();
             std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
-            aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
+            aut = Mata::Nfa::Builder::construct(mintermized[0], &alphabet);
             std::cout << "mintermization-" << aut_name<< ":" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;
@@ -75,17 +76,13 @@ int main(int argc, char *argv[])
 
     Nfa lhs;
     Nfa rhs;
-    Mata::StringToSymbolMap lhs_stsm;
-    Mata::StringToSymbolMap rhs_stsm;
-    if (load_automaton(lhs_filename, lhs, lhs_stsm, "lhs") != EXIT_SUCCESS) {
+    Mata::OnTheFlyAlphabet alphabet;
+    if (load_automaton(lhs_filename, lhs, alphabet, "lhs") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
-    if (load_automaton(rhs_filename, rhs, rhs_stsm, "rhs") != EXIT_SUCCESS) {
+    if (load_automaton(rhs_filename, rhs, alphabet, "rhs") != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
-
-    Mata::OnTheFlyAlphabet alph{ lhs_stsm };
-    alph.add_symbols_from(rhs_stsm);
 
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
@@ -112,17 +109,16 @@ int main(int argc, char *argv[])
     std::cout << "union: " << elapsed.count() << "\n";
 
     start = std::chrono::system_clock::now();
-    Mata::Nfa::Algorithms::is_included_naive(lhs, rhs, &alph);
+    Mata::Nfa::Algorithms::is_included_naive(lhs, rhs, &alphabet);
     end = std::chrono::system_clock::now();
     elapsed = end - start;
     std::cout << "naive-inclusion: " << elapsed.count() << "\n";
 
     start = std::chrono::system_clock::now();
-    Mata::Nfa::Algorithms::is_included_antichains(lhs, rhs, &alph);
+    Mata::Nfa::Algorithms::is_included_antichains(lhs, rhs, &alphabet);
     end = std::chrono::system_clock::now();
     elapsed = end - start;
     std::cout << "antichain-inclusion: " << elapsed.count() << "\n";
-
 
     return EXIT_SUCCESS;
 }

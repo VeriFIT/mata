@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
     Mata::Parser::Parsed parsed;
     Nfa aut;
-    Mata::StringToSymbolMap stsm;
+    Mata::OnTheFlyAlphabet alphabet;
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
-        aut = Mata::Nfa::Builder::construct(parsed[0], &stsm);
+        aut = Mata::Nfa::Builder::construct(parsed[0], &alphabet);
     }
     catch (const std::exception& ex) {
         fs.close();
@@ -45,8 +45,7 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::OnTheFlyAlphabet alph{ stsm };
-    Nfa cmpl = complement(aut, alph);
+    Nfa cmpl = complement(aut, alphabet);
 
     std::cout << std::to_string(cmpl);
     return EXIT_SUCCESS;

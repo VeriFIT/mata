@@ -56,10 +56,10 @@ cdef class OnTheFlyAlphabet(Alphabet):
 
         :param symbol_map: Map mapping strings to symbols.
         """
-        cdef StringToSymbolMap c_symbol_map
+        cdef COnTheFlyAlphabet.StringToSymbolMap c_symbol_map
         for symbol, value in symbol_map.items():
             c_symbol_map[symbol.encode('utf-8')] = value
-        self.thisptr.add_symbols_from(c_symbol_map)
+        self.thisptr.add_symbols_from(<COnTheFlyAlphabet.StringToSymbolMap>c_symbol_map)
 
     def add_symbols_for_names(self, symbol_names: list[str]) -> None:
         """Add symbols for symbol names to the current alphabet.

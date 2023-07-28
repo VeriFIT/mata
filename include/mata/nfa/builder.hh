@@ -54,20 +54,13 @@ Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, Sta
 Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StateNameValueMap* state_map = nullptr);
 
 template<class ParsedObject>
-Nfa construct(const ParsedObject& parsed, Mata::StringToSymbolMap* symbol_map = nullptr,
+Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
               StateNameValueMap* state_map = nullptr) {
-    Mata::StringToSymbolMap tmp_symbol_map;
-    if (symbol_map) {
-        tmp_symbol_map = *symbol_map;
+    OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) {
+        alphabet = &tmp_alphabet;
     }
-    Mata::OnTheFlyAlphabet alphabet(tmp_symbol_map);
-
-    Nfa aut = construct(parsed, &alphabet, state_map);
-
-    if (symbol_map) {
-        *symbol_map = alphabet.get_symbol_map();
-    }
-    return aut;
+    return construct(parsed, alphabet, state_map);
 } // construct().
 
 /**

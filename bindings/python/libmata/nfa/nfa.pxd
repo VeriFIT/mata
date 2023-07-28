@@ -10,7 +10,7 @@ from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
-from libmata.alphabets cimport CAlphabet, StringToSymbolMap, Symbol
+from libmata.alphabets cimport CAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -36,7 +36,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[string, State] StateNameValueMap
     ctypedef umap[State, string] StateValueNameMap
     ctypedef umap[State, State] StateRenaming
-    ctypedef umap[Symbol, string] SymbolToStringMap
     ctypedef umap[string, string] ParameterMap
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
@@ -185,7 +184,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
 
     # Helper functions
     cdef pair[CRun, bool] c_get_word_for_path "Mata::Nfa::get_word_for_path" (CNfa&, CRun&)
-    cdef CRun c_encode_word "Mata::Nfa::encode_word" (StringToSymbolMap&, vector[string])
+    cdef CRun c_encode_word "Mata::Nfa::encode_word" (CAlphabet*, vector[string])
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "Mata::Nfa::Algorithms":
     cdef CBinaryRelation& c_compute_relation "Mata::Nfa::Algorithms::compute_relation" (CNfa&, ParameterMap&)
