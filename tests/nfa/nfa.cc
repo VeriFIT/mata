@@ -51,14 +51,10 @@ TEST_CASE("Mata::Nfa::size()") {
     CHECK(nfa.size() == 0);
 }
 
-/*
-TEST_CASE("Mata::Nfa::Trans::operator<<")
-{ // {{{
-	Trans trans(1, 2, 3);
-
-	REQUIRE(std::to_string(trans) == "(1, 2, 3)");
-} // }}}
-*/
+TEST_CASE("Mata::Nfa::Trans::operator<<") {
+    Trans trans(1, 2, 3);
+    REQUIRE(std::to_string(trans) == "(1, 2, 3)");
+}
 
 TEST_CASE("Mata::Nfa::create_alphabet()") {
     Nfa a{1};
@@ -81,496 +77,419 @@ TEST_CASE("Mata::Nfa::create_alphabet()") {
 
 TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
 { // {{{
-	Nfa a(3);
+    Nfa a(3);
 
-	SECTION("Empty automata have now transitions")
-	{
-		REQUIRE(!a.delta.contains(1, 'a', 1));
-	}
+    SECTION("Empty automata have now transitions")
+    {
+        REQUIRE(!a.delta.contains(1, 'a', 1));
+    }
 
-	SECTION("If I add a transition, it is in the automaton")
-	{
-		a.delta.add(1, 'a', 1);
+    SECTION("If I add a transition, it is in the automaton")
+    {
+        a.delta.add(1, 'a', 1);
 
-		REQUIRE(a.delta.contains(1, 'a', 1));
-	}
+        REQUIRE(a.delta.contains(1, 'a', 1));
+    }
 
-	SECTION("If I add a transition, only it is added")
-	{
-		a.delta.add(1, 'a', 1);
+    SECTION("If I add a transition, only it is added")
+    {
+        a.delta.add(1, 'a', 1);
 
-		REQUIRE(a.delta.contains(1, 'a', 1));
-		REQUIRE(!a.delta.contains(1, 'a', 2));
-		REQUIRE(!a.delta.contains(1, 'b', 2));
-		REQUIRE(!a.delta.contains(2, 'a', 1));
-	}
+        REQUIRE(a.delta.contains(1, 'a', 1));
+        REQUIRE(!a.delta.contains(1, 'a', 2));
+        REQUIRE(!a.delta.contains(1, 'b', 2));
+        REQUIRE(!a.delta.contains(2, 'a', 1));
+    }
 
-	SECTION("Adding multiple transitions")
-	{
-		a.delta.add(2, 'b', {2,1,0});
-		REQUIRE(a.delta.contains(2, 'b', 0));
-		REQUIRE(a.delta.contains(2, 'b', 1));
-		REQUIRE(a.delta.contains(2, 'b', 2));
-		REQUIRE(!a.delta.contains(0, 'b', 0));
+    SECTION("Adding multiple transitions")
+    {
+        a.delta.add(2, 'b', {2,1,0});
+        REQUIRE(a.delta.contains(2, 'b', 0));
+        REQUIRE(a.delta.contains(2, 'b', 1));
+        REQUIRE(a.delta.contains(2, 'b', 2));
+        REQUIRE(!a.delta.contains(0, 'b', 0));
 
-		a.delta.add(0, 'b', StateSet({0}));
-		REQUIRE(a.delta.contains(0, 'b', 0));
-	}
+        a.delta.add(0, 'b', StateSet({0}));
+        REQUIRE(a.delta.contains(0, 'b', 0));
+    }
 
 } // }}}
 
 TEST_CASE("Mata::Nfa::Delta.transform/append")
 { // {{{
-	Nfa a(3);
-	a.delta.add(1, 'a', 1);
-	a.delta.add(2, 'b', {2,1,0});
+    Nfa a(3);
+    a.delta.add(1, 'a', 1);
+    a.delta.add(2, 'b', {2,1,0});
 
-	SECTION("transform")
-	{
-		auto upd_fnc = [&](State st) {
-			return st + 5;
-		};
-		std::vector<Post> posts = a.delta.transform(upd_fnc);
-		a.delta.append(posts);
+    SECTION("transform")
+    {
+        auto upd_fnc = [&](State st) {
+            return st + 5;
+        };
+        std::vector<Post> posts = a.delta.transform(upd_fnc);
+        a.delta.append(posts);
 
-		REQUIRE(a.delta.contains(4, 'a', 6));
-		REQUIRE(a.delta.contains(5, 'b', 7));
-		REQUIRE(a.delta.contains(5, 'b', 5));
-		REQUIRE(a.delta.contains(5, 'b', 6));
-	}
+        REQUIRE(a.delta.contains(4, 'a', 6));
+        REQUIRE(a.delta.contains(5, 'b', 7));
+        REQUIRE(a.delta.contains(5, 'b', 5));
+        REQUIRE(a.delta.contains(5, 'b', 6));
+    }
 
 } // }}}
 
 TEST_CASE("Mata::Nfa::Nfa iteration")
 { // {{{
-	Nfa aut;
+    Nfa aut;
 
-	SECTION("empty automaton")
-	{
-		auto it = aut.begin();
-		REQUIRE(it == aut.end());
-	}
+    SECTION("empty automaton")
+    {
+        auto it = aut.begin();
+        REQUIRE(it == aut.end());
+    }
 
     const size_t state_num = 'r'+1;
     aut.delta.increase_size(state_num);
 
-	SECTION("a non-empty automaton")
-	{
-		aut.delta.add('q', 'a', 'r');
-		aut.delta.add('q', 'b', 'r');
-		auto it = aut.delta.begin();
-		auto jt = aut.delta.begin();
-		REQUIRE(it == jt);
-		++it;
-		REQUIRE(it != jt);
-		REQUIRE((it != aut.delta.begin() && it != aut.delta.end()));
-		REQUIRE(jt == aut.delta.begin());
+    SECTION("a non-empty automaton")
+    {
+        aut.delta.add('q', 'a', 'r');
+        aut.delta.add('q', 'b', 'r');
+        auto it = aut.delta.begin();
+        auto jt = aut.delta.begin();
+        REQUIRE(it == jt);
+        ++it;
+        REQUIRE(it != jt);
+        REQUIRE((it != aut.delta.begin() && it != aut.delta.end()));
+        REQUIRE(jt == aut.delta.begin());
 
-		++jt;
-		REQUIRE(it == jt);
-		REQUIRE((jt != aut.delta.begin() && jt != aut.delta.end()));
+        ++jt;
+        REQUIRE(it == jt);
+        REQUIRE((jt != aut.delta.begin() && jt != aut.delta.end()));
 
         jt = aut.delta.end();
-		REQUIRE(it != jt);
-		REQUIRE((jt != aut.delta.begin() && jt == aut.delta.end()));
+        REQUIRE(it != jt);
+        REQUIRE((jt != aut.delta.begin() && jt == aut.delta.end()));
 
         it = aut.delta.end();
-		REQUIRE(it == jt);
-		REQUIRE((it != aut.delta.begin() && it == aut.delta.end()));
-	}
+        REQUIRE(it == jt);
+        REQUIRE((it != aut.delta.begin() && it == aut.delta.end()));
+    }
 } // }}}
 
-/*
-TEST_CASE("Mata::Nfa::are_state_disjoint()")
-{ // {{{
-	Nfa a(50), b(50);
+TEST_CASE("Mata::Nfa::are_state_disjoint()") {
+    Nfa a(50), b(50);
 
-	SECTION("Empty automata are state disjoint")
-	{
-		REQUIRE(are_state_disjoint(a, b));
-	}
+    SECTION("Empty automata are state disjoint") {
+        REQUIRE(are_state_disjoint(Nfa{}, Nfa{}));
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Left-hand side empty automaton is state disjoint with anything")
-	{
-		b.initial = {1, 4, 6};
-		b.final = {4, 7, 9, 0};
-		b.delta.add(1, 'a', 1);
-		b.delta.add(2, 'a', 8);
-		b.delta.add(0, 'c', 49);
+    SECTION("Left-hand side empty automaton is state disjoint with anything") {
+        b.initial = {1, 4, 6};
+        b.final = {4, 7, 9, 0};
+        b.delta.add(1, 'a', 1);
+        b.delta.add(2, 'a', 8);
+        b.delta.add(0, 'c', 49);
 
-		REQUIRE(are_state_disjoint(a, b));
-	}
+        REQUIRE(are_state_disjoint(Nfa{}, b));
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Right-hand side empty automaton is state disjoint with anything")
-	{
-		a.initial = {1, 4, 6};
-		a.final = {4, 7, 9, 0};
-		a.delta.add(1, 'a', 1);
-		a.delta.add(2, 'a', 8);
-		a.delta.add(0, 'c', 49);
+    SECTION("Right-hand side empty automaton is state disjoint with anything") {
+        a.initial = {1, 4, 6};
+        a.final = {4, 7, 9, 0};
+        a.delta.add(1, 'a', 1);
+        a.delta.add(2, 'a', 8);
+        a.delta.add(0, 'c', 49);
 
-		REQUIRE(are_state_disjoint(a, b));
-	}
+        REQUIRE(are_state_disjoint(a, Nfa{}));
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Automata with intersecting initial states are not state disjoint")
-	{
-		a.initial = {1, 4, 6};
-		b.initial = {3, 9, 6, 8};
+    SECTION("Automata with intersecting initial states are not state disjoint") {
+        a.initial = {1, 4, 6};
+        b.initial = {3, 9, 6, 8};
 
-		REQUIRE(!are_state_disjoint(a, b));
-	}
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Automata with intersecting final states are not state disjoint")
-	{
-		a.final = {1, 4, 6};
-		b.final = {3, 9, 6, 8};
+    SECTION("Automata with intersecting final states are not state disjoint") {
+        a.final = {1, 4, 6};
+        b.final = {3, 9, 6, 8};
 
-		REQUIRE(!are_state_disjoint(a, b));
-	}
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Automata with disjoint sets of states are state disjoint")
-	{
-		a.initial = {0, 5, 16};
-		a.final = {1, 4, 6};
+    SECTION("Automata with non-disjoint sets of states are not state disjoint") {
+        a.initial = {0, 5, 16};
+        a.final = {1, 4, 6};
 
-		b.initial = {11, 3};
-		b.final = {3, 9, 8};
+        b.initial = {11, 3};
+        b.final = {3, 9, 8};
 
-		a.delta.add(1, 'a', 7);
-		a.delta.add(1, 'b', 7);
-		b.delta.add(3, 'b', 11);
-		b.delta.add(3, 'b', 9);
+        a.delta.add(1, 'a', 7);
+        a.delta.add(1, 'b', 7);
+        b.delta.add(3, 'b', 11);
+        b.delta.add(3, 'b', 9);
 
-		REQUIRE(are_state_disjoint(a, b));
-	}
+        REQUIRE(!are_state_disjoint(a, b));
+    }
 
-	SECTION("Automata with intersecting states are not disjoint")
-	{
-		a.initial = {0, 5, 16};
-		a.final = {1, 4};
+    SECTION("Automata with intersecting states are not disjoint") {
+        a.initial = {0, 5, 16};
+        a.final = {1, 4};
 
-		b.initial = {11, 3};
-		b.final = {3, 9, 6, 8};
+        b.initial = {11, 3};
+        b.final = {3, 9, 6, 8};
 
-		a.delta.add(1, 'a', 7);
-		a.delta.add(1, 'b', 7);
-		a.delta.add(1, 'c', 7);
-		b.delta.add(3, 'c', 11);
-		b.delta.add(3, 'c', 5);
-		b.delta.add(11, 'a', 3);
+        a.delta.add(1, 'a', 7);
+        a.delta.add(1, 'b', 7);
+        a.delta.add(1, 'c', 7);
+        b.delta.add(3, 'c', 11);
+        b.delta.add(3, 'c', 5);
+        b.delta.add(11, 'a', 3);
 
-		REQUIRE(!are_state_disjoint(a, b));
-	}
-} // }}}
-
-TEST_CASE("Mata::Nfa::union_norename()")
-{ // {{{
-	Nfa a(7), b(7), res;
-
-	SECTION("Union of empty automata")
-	{
-		union_norename(&res, a, b);
-
-		REQUIRE(res.initial.empty());
-		REQUIRE(res.final.empty());
-		REQUIRE(res.delta.empty());
-	}
-
-	SECTION("Union of automata with no transitions")
-	{
-		a.initial = {1, 3};
-		a.final = {3, 5};
-
-		b.initial = {4, 6};
-		b.final = {4, 2};
-
-		union_norename(&res, a, b);
-
-		REQUIRE(!res.initial.empty());
-		REQUIRE(!res.final.empty());
-
-		REQUIRE(res.initial[1]);
-		REQUIRE(res.initial[3]);
-		REQUIRE(res.initial[4]);
-		REQUIRE(res.initial[6]);
-		REQUIRE(res.final[3]);
-		REQUIRE(res.final[5]);
-		REQUIRE(res.final[4]);
-		REQUIRE(res.final[2]);
-	}
-
-	SECTION("Union of automata with some transitions")
-	{
-		FILL_WITH_AUT_A(a);
-		FILL_WITH_AUT_B(b);
-
-		union_norename(&res, a, b);
-
-		OnTheFlyAlphabet alph{"a", "b"};
-		StringMap params;
-		params["algorithm"] = "antichains";
-
-		REQUIRE(is_included(a, res, &alph, params));
-		REQUIRE(is_included(b, res, &alph, params));
-	}
-
-	SECTION("Union of automata with some transitions but without a final state")
-	{
-		FILL_WITH_AUT_A(a);
-		FILL_WITH_AUT_B(b);
-		b.final = {};
-
-		union_norename(&res, a, b);
-
-		OnTheFlyAlphabet alph{"a", "b"};
-		StringMap params;
-		params["algorithm"] = "antichains";
-
-		REQUIRE(is_included(a, res, &alph, params));
-		REQUIRE(is_included(res, a, &alph, params));
-
-		WARN_PRINT("Insufficient testing of Mata::Nfa::union_norename()");
-	}
-} // }}}
-*/
+        REQUIRE(!are_state_disjoint(a, b));
+    }
+}
 
 TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
-	Nfa aut(14);
-	Run cex;
+    Nfa aut(14);
+    Run cex;
 
-	SECTION("An empty automaton has an empty language")
-	{
-		REQUIRE(is_lang_empty(aut));
-	}
+    SECTION("An empty automaton has an empty language")
+    {
+        REQUIRE(is_lang_empty(aut));
+    }
 
-	SECTION("An automaton with a state that is both initial and final does not have an empty language")
-	{
-		aut.initial = {1, 2};
-		aut.final = {2, 3};
+    SECTION("An automaton with a state that is both initial and final does not have an empty language")
+    {
+        aut.initial = {1, 2};
+        aut.final = {2, 3};
 
-		bool is_empty = is_lang_empty(aut, &cex);
-		REQUIRE(!is_empty);
-	}
+        bool is_empty = is_lang_empty(aut, &cex);
+        REQUIRE(!is_empty);
+    }
 
-	SECTION("More complicated automaton")
-	{
-		aut.initial = {1, 2};
-		aut.delta.add(1, 'a', 2);
-		aut.delta.add(1, 'a', 3);
-		aut.delta.add(1, 'b', 4);
-		aut.delta.add(2, 'a', 2);
-		aut.delta.add(2, 'a', 3);
-		aut.delta.add(2, 'b', 4);
-		aut.delta.add(3, 'b', 4);
-		aut.delta.add(3, 'c', 7);
-		aut.delta.add(3, 'b', 2);
-		aut.delta.add(7, 'a', 8);
+    SECTION("More complicated automaton")
+    {
+        aut.initial = {1, 2};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 4);
+        aut.delta.add(3, 'b', 4);
+        aut.delta.add(3, 'c', 7);
+        aut.delta.add(3, 'b', 2);
+        aut.delta.add(7, 'a', 8);
 
-		SECTION("with final states")
-		{
-			aut.final = {7};
-			REQUIRE(!is_lang_empty(aut));
-		}
+        SECTION("with final states")
+        {
+            aut.final = {7};
+            REQUIRE(!is_lang_empty(aut));
+        }
 
-		SECTION("without final states")
-		{
-			REQUIRE(is_lang_empty(aut));
-		}
+        SECTION("without final states")
+        {
+            REQUIRE(is_lang_empty(aut));
+        }
 
-		SECTION("another complicated automaton")
-		{
-			FILL_WITH_AUT_A(aut);
+        SECTION("another complicated automaton")
+        {
+            FILL_WITH_AUT_A(aut);
 
-			REQUIRE(!is_lang_empty(aut));
-		}
+            REQUIRE(!is_lang_empty(aut));
+        }
 
-		SECTION("a complicated automaton with unreachable final states")
-		{
-			FILL_WITH_AUT_A(aut);
-			aut.final = {13};
+        SECTION("a complicated automaton with unreachable final states")
+        {
+            FILL_WITH_AUT_A(aut);
+            aut.final = {13};
 
-			REQUIRE(is_lang_empty(aut));
-		}
-	}
+            REQUIRE(is_lang_empty(aut));
+        }
+    }
 
-	SECTION("An automaton with a state that is both initial and final does not have an empty language")
-	{
-		aut.initial = {1, 2};
-		aut.final = {2, 3};
+    SECTION("An automaton with a state that is both initial and final does not have an empty language")
+    {
+        aut.initial = {1, 2};
+        aut.final = {2, 3};
 
-		bool is_empty = is_lang_empty(aut, &cex);
-		REQUIRE(!is_empty);
+        bool is_empty = is_lang_empty(aut, &cex);
+        REQUIRE(!is_empty);
 
-		// check the counterexample
-		REQUIRE(cex.path.size() == 1);
-		REQUIRE(cex.path[0] == 2);
-	}
+        // check the counterexample
+        REQUIRE(cex.path.size() == 1);
+        REQUIRE(cex.path[0] == 2);
+    }
 
-	SECTION("Counterexample of an automaton with non-empty language")
-	{
-		aut.initial = {1, 2};
-		aut.final = {8, 9};
-		aut.delta.add(1, 'c', 2);
-		aut.delta.add(2, 'a', 4);
-		aut.delta.add(2, 'c', 1);
-		aut.delta.add(2, 'c', 3);
-		aut.delta.add(3, 'e', 5);
-		aut.delta.add(4, 'c', 8);
+    SECTION("Counterexample of an automaton with non-empty language")
+    {
+        aut.initial = {1, 2};
+        aut.final = {8, 9};
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'c', 3);
+        aut.delta.add(3, 'e', 5);
+        aut.delta.add(4, 'c', 8);
 
-		bool is_empty = is_lang_empty(aut, &cex);
-		REQUIRE(!is_empty);
+        bool is_empty = is_lang_empty(aut, &cex);
+        REQUIRE(!is_empty);
 
-		// check the counterexample
-		REQUIRE(cex.path.size() == 3);
-		REQUIRE(cex.path[0] == 2);
-		REQUIRE(cex.path[1] == 4);
-		REQUIRE(cex.path[2] == 8);
-	}
+        // check the counterexample
+        REQUIRE(cex.path.size() == 3);
+        REQUIRE(cex.path[0] == 2);
+        REQUIRE(cex.path[1] == 4);
+        REQUIRE(cex.path[2] == 8);
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::get_word_for_path()")
 { // {{{
-	Nfa aut(5);
-	Run path;
-	Word word;
+    Nfa aut(5);
+    Run path;
+    Word word;
 
-	SECTION("empty word")
-	{
-		path = { };
+    SECTION("empty word")
+    {
+        path = { };
 
-		auto word_bool_pair = get_word_for_path(aut, path);
-		REQUIRE(word_bool_pair.second);
-		REQUIRE(word_bool_pair.first.word.empty());
-	}
+        auto word_bool_pair = get_word_for_path(aut, path);
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(word_bool_pair.first.word.empty());
+    }
 
-	SECTION("empty word 2")
-	{
-		aut.initial = {1};
-		path.path = {1};
+    SECTION("empty word 2")
+    {
+        aut.initial = {1};
+        path.path = {1};
 
-		auto word_bool_pair = get_word_for_path(aut, path);
-		REQUIRE(word_bool_pair.second);
-		REQUIRE(word_bool_pair.first.word.empty());
-	}
+        auto word_bool_pair = get_word_for_path(aut, path);
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(word_bool_pair.first.word.empty());
+    }
 
-	SECTION("nonempty word")
-	{
-		aut.initial = {1};
-		aut.delta.add(1, 'c', 2);
-		aut.delta.add(2, 'a', 4);
-		aut.delta.add(2, 'c', 1);
-		aut.delta.add(2, 'b', 3);
+    SECTION("nonempty word")
+    {
+        aut.initial = {1};
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'b', 3);
 
         path.path = {1,2,3};
 
-		auto word_bool_pair = get_word_for_path(aut, path);
-		REQUIRE(word_bool_pair.second);
-		REQUIRE(word_bool_pair.first.word == Word({'c', 'b'}));
-	}
+        auto word_bool_pair = get_word_for_path(aut, path);
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(word_bool_pair.first.word == Word({'c', 'b'}));
+    }
 
-	SECTION("longer word")
-	{
-		aut.initial = {1};
-		aut.delta.add(1, 'a', 2);
-		aut.delta.add(1, 'c', 2);
-		aut.delta.add(2, 'a', 4);
-		aut.delta.add(2, 'c', 1);
-		aut.delta.add(2, 'b', 3);
-		aut.delta.add(3, 'd', 2);
+    SECTION("longer word")
+    {
+        aut.initial = {1};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'b', 3);
+        aut.delta.add(3, 'd', 2);
 
         path.path = {1,2,3,2,4};
 
-		auto word_bool_pair = get_word_for_path(aut, path);
-		std::set<Word> possible({
-			Word({'c', 'b', 'd', 'a'}),
-			Word({'a', 'b', 'd', 'a'})});
-		REQUIRE(word_bool_pair.second);
-		REQUIRE(haskey(possible, word_bool_pair.first.word));
-	}
+        auto word_bool_pair = get_word_for_path(aut, path);
+        std::set<Word> possible({
+            Word({'c', 'b', 'd', 'a'}),
+            Word({'a', 'b', 'd', 'a'})});
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(haskey(possible, word_bool_pair.first.word));
+    }
 
-	SECTION("invalid path")
-	{
-		aut.initial = {1};
-		aut.delta.add(1, 'a', 2);
-		aut.delta.add(1, 'c', 2);
-		aut.delta.add(2, 'a', 4);
-		aut.delta.add(2, 'c', 1);
-		aut.delta.add(2, 'b', 3);
-		aut.delta.add(3, 'd', 2);
+    SECTION("invalid path")
+    {
+        aut.initial = {1};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'b', 3);
+        aut.delta.add(3, 'd', 2);
 
-		path.path = {1,2,3,1,2};
+        path.path = {1,2,3,1,2};
 
-		auto word_bool_pair = get_word_for_path(aut, path);
-		REQUIRE(!word_bool_pair.second);
-	}
+        auto word_bool_pair = get_word_for_path(aut, path);
+        REQUIRE(!word_bool_pair.second);
+    }
 }
 
 
 TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
 {
-	Nfa aut(10);
-	Run cex;
+    Nfa aut(10);
+    Run cex;
 
-	SECTION("Counterexample of an automaton with non-empty language")
-	{
-		aut.initial = {1, 2};
-		aut.final = {8, 9};
-		aut.delta.add(1, 'c', 2);
-		aut.delta.add(2, 'a', 4);
-		aut.delta.add(2, 'c', 1);
-		aut.delta.add(2, 'c', 3);
-		aut.delta.add(3, 'e', 5);
-		aut.delta.add(4, 'c', 8);
+    SECTION("Counterexample of an automaton with non-empty language")
+    {
+        aut.initial = {1, 2};
+        aut.final = {8, 9};
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'c', 3);
+        aut.delta.add(3, 'e', 5);
+        aut.delta.add(4, 'c', 8);
 
-		bool is_empty = is_lang_empty(aut, &cex);
-		REQUIRE(!is_empty);
+        bool is_empty = is_lang_empty(aut, &cex);
+        REQUIRE(!is_empty);
 
-		// check the counterexample
-		REQUIRE(cex.word.size() == 2);
-		REQUIRE(cex.word[0] == 'a');
-		REQUIRE(cex.word[1] == 'c');
-	}
+        // check the counterexample
+        REQUIRE(cex.word.size() == 2);
+        REQUIRE(cex.word[0] == 'a');
+        REQUIRE(cex.word[1] == 'c');
+    }
 }
 
 
 TEST_CASE("Mata::Nfa::determinize()")
 {
-	Nfa aut(3);
-	Nfa result;
-	std::unordered_map<StateSet, State> subset_map;
+    Nfa aut(3);
+    Nfa result;
+    std::unordered_map<StateSet, State> subset_map;
 
-	SECTION("empty automaton")
-	{
-		result = determinize(aut);
+    SECTION("empty automaton")
+    {
+        result = determinize(aut);
 
-		REQUIRE(result.final.empty());
-		REQUIRE(result.delta.empty());
+        REQUIRE(result.final.empty());
+        REQUIRE(result.delta.empty());
         CHECK(is_lang_empty(result));
-	}
+    }
 
-	SECTION("simple automaton 1")
-	{
-		aut.initial = {1 };
-		aut.final = {1 };
-		result = determinize(aut, &subset_map);
+    SECTION("simple automaton 1")
+    {
+        aut.initial = {1 };
+        aut.final = {1 };
+        result = determinize(aut, &subset_map);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
-		REQUIRE(result.final[subset_map[{1}]]);
-		REQUIRE(result.delta.empty());
-	}
+        REQUIRE(result.initial[subset_map[{1}]]);
+        REQUIRE(result.final[subset_map[{1}]]);
+        REQUIRE(result.delta.empty());
+    }
 
-	SECTION("simple automaton 2")
-	{
-		aut.initial = {1 };
-		aut.final = {2 };
-		aut.delta.add(1, 'a', 2);
-		result = determinize(aut, &subset_map);
+    SECTION("simple automaton 2")
+    {
+        aut.initial = {1 };
+        aut.final = {2 };
+        aut.delta.add(1, 'a', 2);
+        result = determinize(aut, &subset_map);
 
-		REQUIRE(result.initial[subset_map[{1}]]);
+        REQUIRE(result.initial[subset_map[{1}]]);
         REQUIRE(result.final[subset_map[{2}]]);
-		REQUIRE(result.delta.contains(subset_map[{1}], 'a', subset_map[{2}]));
-	}
+        REQUIRE(result.delta.contains(subset_map[{1}], 'a', subset_map[{2}]));
+    }
 
     SECTION("This broke Delta when delta[q] could cause re-allocation of post")
     {
@@ -635,125 +554,125 @@ TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
 
 TEST_CASE("Mata::Nfa::construct() correct calls")
 { // {{{
-	Nfa aut(10);
-	Mata::Parser::ParsedSection parsec;
-	StringToSymbolMap symbol_map;
+    Nfa aut(10);
+    Mata::Parser::ParsedSection parsec;
+    StringToSymbolMap symbol_map;
 
-	SECTION("construct an empty automaton")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
+    SECTION("construct an empty automaton")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
 
-		aut = Builder::construct(parsec);
+        aut = Builder::construct(parsec);
 
-		REQUIRE(is_lang_empty(aut));
-	}
+        REQUIRE(is_lang_empty(aut));
+    }
 
-	SECTION("construct a simple non-empty automaton accepting the empty word")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.dict.insert({"Initial", {"q1"}});
-		parsec.dict.insert({"Final", {"q1"}});
+    SECTION("construct a simple non-empty automaton accepting the empty word")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.dict.insert({"Initial", {"q1"}});
+        parsec.dict.insert({"Final", {"q1"}});
 
-		aut = Builder::construct(parsec);
+        aut = Builder::construct(parsec);
 
-		REQUIRE(!is_lang_empty(aut));
-	}
+        REQUIRE(!is_lang_empty(aut));
+    }
 
-	SECTION("construct an automaton with more than one initial/final states")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.dict.insert({"Initial", {"q1", "q2"}});
-		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
+    SECTION("construct an automaton with more than one initial/final states")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.dict.insert({"Initial", {"q1", "q2"}});
+        parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-		aut = Builder::construct(parsec);
+        aut = Builder::construct(parsec);
 
-		REQUIRE(aut.initial.size() == 2);
-		REQUIRE(aut.final.size() == 3);
-	}
+        REQUIRE(aut.initial.size() == 2);
+        REQUIRE(aut.final.size() == 3);
+    }
 
-	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.dict.insert({"Initial", {"q1"}});
-		parsec.dict.insert({"Final", {"q2"}});
-		parsec.body = { {"q1", "a", "q2"} };
+    SECTION("construct a simple non-empty automaton accepting only the word 'a'")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.dict.insert({"Initial", {"q1"}});
+        parsec.dict.insert({"Final", {"q2"}});
+        parsec.body = { {"q1", "a", "q2"} };
 
-		aut = Builder::construct(parsec, &symbol_map);
+        aut = Builder::construct(parsec, &symbol_map);
 
-		Run cex;
-		REQUIRE(!is_lang_empty(aut, &cex));
-		auto word_bool_pair = get_word_for_path(aut, cex);
-		REQUIRE(word_bool_pair.second);
-		REQUIRE(word_bool_pair.first.word == encode_word(symbol_map, {"a"}).word);
+        Run cex;
+        REQUIRE(!is_lang_empty(aut, &cex));
+        auto word_bool_pair = get_word_for_path(aut, cex);
+        REQUIRE(word_bool_pair.second);
+        REQUIRE(word_bool_pair.first.word == encode_word(symbol_map, {"a"}).word);
 
-		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
-	}
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a"})));
+    }
 
-	SECTION("construct a more complicated non-empty automaton")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.dict.insert({"Initial", {"q1", "q3"}});
-		parsec.dict.insert({"Final", {"q5"}});
-		parsec.body.push_back({"q1", "a", "q3"});
-		parsec.body.push_back({"q1", "a", "q10"});
-		parsec.body.push_back({"q1", "b", "q7"});
-		parsec.body.push_back({"q3", "a", "q7"});
-		parsec.body.push_back({"q3", "b", "q9"});
-		parsec.body.push_back({"q9", "a", "q9"});
-		parsec.body.push_back({"q7", "b", "q1"});
-		parsec.body.push_back({"q7", "a", "q3"});
-		parsec.body.push_back({"q7", "c", "q3"});
-		parsec.body.push_back({"q10", "a", "q7"});
-		parsec.body.push_back({"q10", "b", "q7"});
-		parsec.body.push_back({"q10", "c", "q7"});
-		parsec.body.push_back({"q7", "a", "q5"});
-		parsec.body.push_back({"q5", "a", "q5"});
-		parsec.body.push_back({"q5", "c", "q9"});
+    SECTION("construct a more complicated non-empty automaton")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.dict.insert({"Initial", {"q1", "q3"}});
+        parsec.dict.insert({"Final", {"q5"}});
+        parsec.body.push_back({"q1", "a", "q3"});
+        parsec.body.push_back({"q1", "a", "q10"});
+        parsec.body.push_back({"q1", "b", "q7"});
+        parsec.body.push_back({"q3", "a", "q7"});
+        parsec.body.push_back({"q3", "b", "q9"});
+        parsec.body.push_back({"q9", "a", "q9"});
+        parsec.body.push_back({"q7", "b", "q1"});
+        parsec.body.push_back({"q7", "a", "q3"});
+        parsec.body.push_back({"q7", "c", "q3"});
+        parsec.body.push_back({"q10", "a", "q7"});
+        parsec.body.push_back({"q10", "b", "q7"});
+        parsec.body.push_back({"q10", "c", "q7"});
+        parsec.body.push_back({"q7", "a", "q5"});
+        parsec.body.push_back({"q5", "a", "q5"});
+        parsec.body.push_back({"q5", "c", "q9"});
 
-		aut = Builder::construct(parsec, &symbol_map);
+        aut = Builder::construct(parsec, &symbol_map);
 
-		// some samples
-		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
-		REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
-		REQUIRE(is_in_lang(aut, encode_word(symbol_map,
-			{"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
-		// some wrong samples
-		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
-		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
-		REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
-	}
+        // some samples
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"b", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map, {"a", "c", "a", "a"})));
+        REQUIRE(is_in_lang(aut, encode_word(symbol_map,
+            {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
+        // some wrong samples
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "c"})));
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"a", "c", "c", "a"})));
+        REQUIRE(!is_in_lang(aut, encode_word(symbol_map, {"b", "a", "c", "b"})));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::construct() invalid calls")
 { // {{{
-	Nfa aut;
-	Mata::Parser::ParsedSection parsec;
+    Nfa aut;
+    Mata::Parser::ParsedSection parsec;
 
-	SECTION("construct() call with invalid ParsedSection object")
-	{
-		parsec.type = "FA";
+    SECTION("construct() call with invalid ParsedSection object")
+    {
+        parsec.type = "FA";
 
-		CHECK_THROWS_WITH(Builder::construct(parsec),
+        CHECK_THROWS_WITH(Builder::construct(parsec),
                           Catch::Contains("expecting type"));
-	}
+    }
 
-	SECTION("construct() call with an epsilon transition")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.body = { {"q1", "q2"} };
+    SECTION("construct() call with an epsilon transition")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.body = { {"q1", "q2"} };
 
-		CHECK_THROWS_WITH(Builder::construct(parsec),
+        CHECK_THROWS_WITH(Builder::construct(parsec),
                           Catch::Contains("Epsilon transition"));
-	}
+    }
 
-	SECTION("construct() call with a nonsense transition")
-	{
-		parsec.type = Mata::Nfa::TYPE_NFA;
-		parsec.body = { {"q1", "a", "q2", "q3"} };
+    SECTION("construct() call with a nonsense transition")
+    {
+        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.body = { {"q1", "a", "q2", "q3"} };
 
-		CHECK_THROWS_WITH(Plumbing::construct(&aut, parsec),
-			Catch::Contains("Invalid transition"));
-	}
+        CHECK_THROWS_WITH(Plumbing::construct(&aut, parsec),
+            Catch::Contains("Invalid transition"));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
@@ -943,18 +862,18 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-		Mata::Nfa::StringToStateMap state_map;
+        Mata::Nfa::StringToStateMap state_map;
         Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
         CHECK(aut.final.size() == 9);
-		CHECK(aut.final[state_map.at("0")]);
-		CHECK(aut.final[state_map.at("1")]);
-		CHECK(aut.final[state_map.at("2")]);
-		CHECK(aut.final[state_map.at("3")]);
-		CHECK(aut.final[state_map.at("4")]);
-		CHECK(aut.final[state_map.at("5")]);
-		CHECK(aut.final[state_map.at("6")]);
-		CHECK(aut.final[state_map.at("7")]);
-		CHECK(aut.final[state_map.at("8")]);
+        CHECK(aut.final[state_map.at("0")]);
+        CHECK(aut.final[state_map.at("1")]);
+        CHECK(aut.final[state_map.at("2")]);
+        CHECK(aut.final[state_map.at("3")]);
+        CHECK(aut.final[state_map.at("4")]);
+        CHECK(aut.final[state_map.at("5")]);
+        CHECK(aut.final[state_map.at("6")]);
+        CHECK(aut.final[state_map.at("7")]);
+        CHECK(aut.final[state_map.at("8")]);
     }
 
     SECTION("construct - final states given as false")
@@ -975,741 +894,645 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-		Mata::Nfa::StringToStateMap state_map;
+        Mata::Nfa::StringToStateMap state_map;
         Plumbing::construct(&aut, inter_aut, &symbol_map, &state_map);
         CHECK(aut.final.empty());
     }
 } // }}}
 
-/*
-TEST_CASE("Mata::Nfa::serialize() and operator<<()")
-{ // {{{
-	Nfa aut;
-
-	SECTION("empty automaton")
-	{
-		std::string str;
-
-		SECTION("serialize()")
-		{
-			str = std::to_string(serialize(aut));
-		}
-
-		SECTION("operator<<")
-		{
-			std::ostringstream os;
-			os << aut;
-			str = os.str();
-		}
-
-		Mata::Parser::ParsedSection parsec = Mata::Parser::parse_vtf_section(str);
-		Nfa res = construct(parsec);
-
-		REQUIRE(res.initial.empty());
-		REQUIRE(res.final.empty());
-		REQUIRE(res.delta.empty());
-	}
-
-	SECTION("small automaton")
-	{
-		aut.initial = { 'q', 'r', 's' };
-		aut.final = { 'r', 's', 't' };
-
-		aut.delta.add('q', 'a', 'r');
-		aut.delta.add('r', 'b', 'q');
-		aut.delta.add('s', 'c', 'q');
-		aut.delta.add('s', 'd', 'q');
-		aut.delta.add('q', 'a', 'q');
-
-		Mata::Nfa::StateToStringMap state_dict =
-			{{'q', "q"}, {'r', "r"}, {'s', "s"}, {'t', "t"}};
-		Mata::Nfa::SymbolToStringMap symb_dict =
-			{{'a', "a"}, {'b', "b"}, {'c', "c"}, {'d', "d"}};
-		std::string str = std::to_string(serialize(aut, &symb_dict, &state_dict));
-
-		ParsedSection parsec = Mata::Parser::parse_mf_section(str);
-
-		Mata::Nfa::StringToStateMap inv_state_dict =
-			Mata::util::invert_map(state_dict);
-		Mata::Nfa::StringToSymbolMap inv_symb_dict =
-			Mata::util::invert_map(symb_dict);
-		Nfa res = construct(parsec, &inv_symb_dict, &inv_state_dict);
-
-		REQUIRE(res.initial == aut.initial);
-		REQUIRE(res.final == aut.final);
-		REQUIRE(res.trans_size() == aut.trans_size());
-		REQUIRE(res.delta.has_trans('q', 'a', 'r'));
-		REQUIRE(res.delta.has_trans('r', 'b', 'q'));
-		REQUIRE(res.delta.has_trans('s', 'c', 'q'));
-		REQUIRE(res.delta.has_trans('s', 'd', 'q'));
-		REQUIRE(res.delta.contains('q', 'a', 'q'));
-	}
-
-	SECTION("implicit state and symbol mapper")
-	{
-		aut.delta.add(1, 2, 3);
-
-		ParsedSection parsec = serialize(aut);
-
-		REQUIRE(parsec.body.size() == 1);
-		REQUIRE(*parsec.body.cbegin() == BodyLine({"q1", "a2", "q3"}));
-	}
-
-	SECTION("incorrect state mapper")
-	{
-		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}};
-		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
-		aut.delta.add('q', 'a', 'r');
-
-		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
-			Catch::Contains("cannot translate state"));
-	}
-
-	SECTION("incorrect symbol mapper")
-	{
-		Mata::Nfa::StateToStringMap state_dict = {{'q', "q"}, {'r', "r"}};
-		Mata::Nfa::SymbolToStringMap symb_dict = {{'a', "a"}};
-		aut.delta.add('q', 'b', 'r');
-
-		CHECK_THROWS_WITH(serialize(aut, &symb_dict, &state_dict),
-			Catch::Contains("cannot translate symbol"));
-	}
-} // }}}
-*/
-
 TEST_CASE("Mata::Nfa::make_complete()")
 { // {{{
-	Nfa aut(11);
+    Nfa aut(11);
 
-	SECTION("empty automaton, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("empty automaton, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
 
-		make_complete(aut, alph, 0);
+        make_complete(aut, alph, 0);
 
-		REQUIRE(aut.initial.empty());
-		REQUIRE(aut.final.empty());
-		REQUIRE(aut.delta.empty());
-	}
+        REQUIRE(aut.initial.empty());
+        REQUIRE(aut.final.empty());
+        REQUIRE(aut.delta.empty());
+    }
 
-	SECTION("empty automaton")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
+    SECTION("empty automaton")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
 
-		make_complete(aut, alph, 0);
+        make_complete(aut, alph, 0);
 
-		REQUIRE(aut.initial.empty());
-		REQUIRE(aut.final.empty());
-		REQUIRE(aut.delta.contains(0, alph["a"], 0));
-		REQUIRE(aut.delta.contains(0, alph["b"], 0));
-	}
+        REQUIRE(aut.initial.empty());
+        REQUIRE(aut.final.empty());
+        REQUIRE(aut.delta.contains(0, alph["a"], 0));
+        REQUIRE(aut.delta.contains(0, alph["b"], 0));
+    }
 
-	SECTION("non-empty automaton, empty alphabet")
-	{
-		OnTheFlyAlphabet alphabet{};
+    SECTION("non-empty automaton, empty alphabet")
+    {
+        OnTheFlyAlphabet alphabet{};
 
-		aut.initial = {1};
+        aut.initial = {1};
 
-		make_complete(aut, alphabet, 0);
+        make_complete(aut, alphabet, 0);
 
-		REQUIRE(aut.initial.size() == 1);
-		REQUIRE(*aut.initial.begin() == 1);
-		REQUIRE(aut.final.empty());
-		REQUIRE(aut.delta.empty());
-	}
+        REQUIRE(aut.initial.size() == 1);
+        REQUIRE(*aut.initial.begin() == 1);
+        REQUIRE(aut.final.empty());
+        REQUIRE(aut.delta.empty());
+    }
 
-	SECTION("one-state automaton")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		const State SINK = 10;
+    SECTION("one-state automaton")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        const State SINK = 10;
 
-		aut.initial = {1};
+        aut.initial = {1};
 
-		make_complete(aut, alph, SINK);
+        make_complete(aut, alph, SINK);
 
-		REQUIRE(aut.initial.size() == 1);
-		REQUIRE(*aut.initial.begin() == 1);
-		REQUIRE(aut.final.empty());
-		REQUIRE(aut.delta.contains(1, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(1, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
-	}
+        REQUIRE(aut.initial.size() == 1);
+        REQUIRE(*aut.initial.begin() == 1);
+        REQUIRE(aut.final.empty());
+        REQUIRE(aut.delta.contains(1, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(1, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
+    }
 
-	SECTION("bigger automaton")
-	{
-		OnTheFlyAlphabet alph{"a", "b", "c"};
-		const State SINK = 9;
+    SECTION("bigger automaton")
+    {
+        OnTheFlyAlphabet alph{"a", "b", "c"};
+        const State SINK = 9;
 
-		aut.initial = {1, 2};
-		aut.final = {8};
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(2, alph["a"], 4);
-		aut.delta.add(2, alph["c"], 1);
-		aut.delta.add(2, alph["c"], 3);
-		aut.delta.add(3, alph["b"], 5);
-		aut.delta.add(4, alph["c"], 8);
+        aut.initial = {1, 2};
+        aut.final = {8};
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(2, alph["a"], 4);
+        aut.delta.add(2, alph["c"], 1);
+        aut.delta.add(2, alph["c"], 3);
+        aut.delta.add(3, alph["b"], 5);
+        aut.delta.add(4, alph["c"], 8);
 
-		make_complete(aut, alph, SINK);
+        make_complete(aut, alph, SINK);
 
-		REQUIRE(aut.delta.contains(1, alph["a"], 2));
-		REQUIRE(aut.delta.contains(1, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(1, alph["c"], SINK));
-		REQUIRE(aut.delta.contains(2, alph["a"], 4));
-		REQUIRE(aut.delta.contains(2, alph["c"], 1));
-		REQUIRE(aut.delta.contains(2, alph["c"], 3));
-		REQUIRE(aut.delta.contains(2, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(3, alph["b"], 5));
-		REQUIRE(aut.delta.contains(3, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(3, alph["c"], SINK));
-		REQUIRE(aut.delta.contains(4, alph["c"], 8));
-		REQUIRE(aut.delta.contains(4, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(4, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(5, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(5, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(5, alph["c"], SINK));
-		REQUIRE(aut.delta.contains(8, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(8, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(8, alph["c"], SINK));
-		REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
-		REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
-		REQUIRE(aut.delta.contains(SINK, alph["c"], SINK));
-	}
+        REQUIRE(aut.delta.contains(1, alph["a"], 2));
+        REQUIRE(aut.delta.contains(1, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(1, alph["c"], SINK));
+        REQUIRE(aut.delta.contains(2, alph["a"], 4));
+        REQUIRE(aut.delta.contains(2, alph["c"], 1));
+        REQUIRE(aut.delta.contains(2, alph["c"], 3));
+        REQUIRE(aut.delta.contains(2, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(3, alph["b"], 5));
+        REQUIRE(aut.delta.contains(3, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(3, alph["c"], SINK));
+        REQUIRE(aut.delta.contains(4, alph["c"], 8));
+        REQUIRE(aut.delta.contains(4, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(4, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(5, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(5, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(5, alph["c"], SINK));
+        REQUIRE(aut.delta.contains(8, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(8, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(8, alph["c"], SINK));
+        REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
+        REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
+        REQUIRE(aut.delta.contains(SINK, alph["c"], SINK));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::complement()")
 { // {{{
-	Nfa aut(3);
-	Nfa cmpl;
+    Nfa aut(3);
+    Nfa cmpl;
 
-	SECTION("empty automaton, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("empty automaton, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
         Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(cmpl, empty_string_nfa));
-	}
+    }
 
-	SECTION("empty automaton")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
+    SECTION("empty automaton")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		REQUIRE(is_in_lang(cmpl, {}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, {}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
         Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(cmpl, sigma_star_nfa));
-	}
+    }
 
-	SECTION("empty automaton accepting epsilon, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
-		aut.initial = {1};
-		aut.final = {1};
+    SECTION("empty automaton accepting epsilon, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
+        aut.initial = {1};
+        aut.final = {1};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		CHECK(is_lang_empty(cmpl));
-	}
+        CHECK(is_lang_empty(cmpl));
+    }
 
-	SECTION("empty automaton accepting epsilon")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1};
-		aut.final = {1};
+    SECTION("empty automaton accepting epsilon")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1};
+        aut.final = {1};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		REQUIRE(!is_in_lang(cmpl, { }));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"]}, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"]}, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-		size_t sum = 0;
-		for (const auto& x : cmpl) {
+        REQUIRE(!is_in_lang(cmpl, { }));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
+        REQUIRE(cmpl.initial.size() == 1);
+        REQUIRE(cmpl.final.size() == 1);
+        size_t sum = 0;
+        for (const auto& x : cmpl) {
             unused(x);
             sum++;
-		}
-		REQUIRE(sum == 4);
-	}
+        }
+        REQUIRE(sum == 4);
+    }
 
-	SECTION("non-empty automaton accepting a*b*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1, 2};
-		aut.final = {1, 2};
+    SECTION("non-empty automaton accepting a*b*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1, 2};
+        aut.final = {1, 2};
 
-		aut.delta.add(1, alph["a"], 1);
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(1, alph["a"], 1);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(2, alph["b"], 2);
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		REQUIRE(!is_in_lang(cmpl, { }));
-		REQUIRE(!is_in_lang(cmpl, {{ alph["a"] }, {}}));
-		REQUIRE(!is_in_lang(cmpl, {{ alph["b"] }, {}}));
-		REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"] }, {}}));
-		REQUIRE(is_in_lang(cmpl, {{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
-		REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"], alph["b"], alph["b"] }, {}}));
-		REQUIRE(is_in_lang(cmpl, {{ alph["b"], alph["a"], alph["a"], alph["a"] }, {}}));
+        REQUIRE(!is_in_lang(cmpl, { }));
+        REQUIRE(!is_in_lang(cmpl, {{ alph["a"] }, {}}));
+        REQUIRE(!is_in_lang(cmpl, {{ alph["b"] }, {}}));
+        REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, {{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"], alph["b"], alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, {{ alph["b"], alph["a"], alph["a"], alph["a"] }, {}}));
 
-		REQUIRE(cmpl.initial.size() == 1);
-		REQUIRE(cmpl.final.size() == 1);
-		size_t sum = 0;
-		for (const auto& x : cmpl) {
+        REQUIRE(cmpl.initial.size() == 1);
+        REQUIRE(cmpl.final.size() == 1);
+        size_t sum = 0;
+        for (const auto& x : cmpl) {
             unused(x);
             sum++;
-		}
-		REQUIRE(sum == 6);
-	}
+        }
+        REQUIRE(sum == 6);
+    }
 
-	SECTION("empty automaton, empty alphabet, minimization")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("empty automaton, empty alphabet, minimization")
+    {
+        OnTheFlyAlphabet alph{};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
         Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(empty_string_nfa, cmpl));
-	}
+    }
 
-	SECTION("empty automaton, minimization")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
+    SECTION("empty automaton, minimization")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
 
-		REQUIRE(is_in_lang(cmpl, {}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-		REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, {}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
         Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
         CHECK(Mata::Nfa::are_equivalent(sigma_star_nfa, cmpl));
-	}
+    }
 
-	SECTION("minimization vs no minimization")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {0, 1};
-		aut.final = {1, 2};
+    SECTION("minimization vs no minimization")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {0, 1};
+        aut.final = {1, 2};
 
-		aut.delta.add(1, alph["b"], 1);
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(2, alph["b"], 2);
-		aut.delta.add(0, alph["a"], 1);
-		aut.delta.add(0, alph["a"], 2);
+        aut.delta.add(1, alph["b"], 1);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(0, alph["a"], 1);
+        aut.delta.add(0, alph["a"], 2);
 
-		cmpl = complement(aut, alph, {{"algorithm", "classical"},
+        cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-		Nfa cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
+        Nfa cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
 
-		CHECK(are_equivalent(cmpl, cmpl_min, &alph));
-		CHECK(cmpl_min.size() == 4);
-		CHECK(cmpl.size() == 5);
-	}
+        CHECK(are_equivalent(cmpl, cmpl_min, &alph));
+        CHECK(cmpl_min.size() == 4);
+        CHECK(cmpl.size() == 5);
+    }
 
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_universal()")
 { // {{{
-	Nfa aut(6);
-	Run cex;
-	StringMap params;
+    Nfa aut(6);
+    Run cex;
+    StringMap params;
 
-	const std::unordered_set<std::string> ALGORITHMS = {
-		"naive",
-		"antichains",
-	};
+    const std::unordered_set<std::string> ALGORITHMS = {
+        "naive",
+        "antichains",
+    };
 
-	SECTION("empty automaton, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("empty automaton, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, params);
 
-			REQUIRE(!is_univ);
-		}
-	}
+            REQUIRE(!is_univ);
+        }
+    }
 
-	SECTION("empty automaton accepting epsilon, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
-		aut.initial = {1};
-		aut.final = {1};
+    SECTION("empty automaton accepting epsilon, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
+        aut.initial = {1};
+        aut.final = {1};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(is_univ);
-			REQUIRE(Word{ } == cex.word);
-		}
-	}
+            REQUIRE(is_univ);
+            REQUIRE(Word{ } == cex.word);
+        }
+    }
 
-	SECTION("empty automaton accepting epsilon")
-	{
-		OnTheFlyAlphabet alph{"a"};
-		aut.initial = {1};
-		aut.final = {1};
+    SECTION("empty automaton accepting epsilon")
+    {
+        OnTheFlyAlphabet alph{"a"};
+        aut.initial = {1};
+        aut.final = {1};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(!is_univ);
-			REQUIRE(((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]})));
-		}
-	}
+            REQUIRE(!is_univ);
+            REQUIRE(((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]})));
+        }
+    }
 
-	SECTION("automaton for a*b*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1, 2};
-		aut.final = {1, 2};
+    SECTION("automaton for a*b*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1, 2};
+        aut.final = {1, 2};
 
-		aut.delta.add(1, alph["a"], 1);
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(1, alph["a"], 1);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(2, alph["b"], 2);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, params);
 
-			REQUIRE(!is_univ);
-		}
-	}
+            REQUIRE(!is_univ);
+        }
+    }
 
-	SECTION("automaton for a* + b*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1, 2};
-		aut.final = {1, 2};
+    SECTION("automaton for a* + b*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1, 2};
+        aut.final = {1, 2};
 
-		aut.delta.add(1, alph["a"], 1);
-		aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(1, alph["a"], 1);
+        aut.delta.add(2, alph["b"], 2);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, params);
 
-			REQUIRE(!is_univ);
-		}
-	}
+            REQUIRE(!is_univ);
+        }
+    }
 
-	SECTION("automaton for (a + b)*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1};
-		aut.final = {1};
+    SECTION("automaton for (a + b)*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1};
+        aut.final = {1};
 
-		aut.delta.add(1, alph["a"], 1);
-		aut.delta.add(1, alph["b"], 1);
+        aut.delta.add(1, alph["a"], 1);
+        aut.delta.add(1, alph["b"], 1);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, params);
 
-			REQUIRE(is_univ);
-		}
-	}
+            REQUIRE(is_univ);
+        }
+    }
 
-	SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1};
-		aut.final = {1, 2, 3, 4, 5};
+    SECTION("automaton for eps + (a+b) + (a+b)(a+b)(a* + b*)")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1};
+        aut.final = {1, 2, 3, 4, 5};
 
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(1, alph["b"], 2);
-		aut.delta.add(2, alph["a"], 3);
-		aut.delta.add(2, alph["b"], 3);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(1, alph["b"], 2);
+        aut.delta.add(2, alph["a"], 3);
+        aut.delta.add(2, alph["b"], 3);
 
-		aut.delta.add(3, alph["a"], 4);
-		aut.delta.add(4, alph["a"], 4);
+        aut.delta.add(3, alph["a"], 4);
+        aut.delta.add(4, alph["a"], 4);
 
-		aut.delta.add(3, alph["b"], 5);
-		aut.delta.add(5, alph["b"], 5);
+        aut.delta.add(3, alph["b"], 5);
+        aut.delta.add(5, alph["b"], 5);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(!is_univ);
+            REQUIRE(!is_univ);
 
-			REQUIRE(cex.word.size() == 4);
-			REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-			REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-			REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-			REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-			REQUIRE(cex.word[2] != cex.word[3]);
-		}
-	}
+            REQUIRE(cex.word.size() == 4);
+            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+            REQUIRE(cex.word[2] != cex.word[3]);
+        }
+    }
 
-	SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1, 3};
-		aut.final = {1, 2, 4};
+    SECTION("automaton for epsilon + a(a + b)* + b(a + b)*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1, 3};
+        aut.final = {1, 2, 4};
 
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(2, alph["a"], 2);
-		aut.delta.add(2, alph["b"], 2);
-		aut.delta.add(3, alph["b"], 4);
-		aut.delta.add(4, alph["a"], 4);
-		aut.delta.add(4, alph["b"], 4);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(2, alph["a"], 2);
+        aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(3, alph["b"], 4);
+        aut.delta.add(4, alph["a"], 4);
+        aut.delta.add(4, alph["b"], 4);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(is_univ);
-		}
-	}
+            REQUIRE(is_univ);
+        }
+    }
 
-	SECTION("example from Abdulla et al. TACAS'10")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		aut.initial = {1, 2};
-		aut.final = {1, 2, 3};
+    SECTION("example from Abdulla et al. TACAS'10")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        aut.initial = {1, 2};
+        aut.final = {1, 2, 3};
 
-		aut.delta.add(1, alph["b"], 1);
-		aut.delta.add(1, alph["a"], 2);
-		aut.delta.add(1, alph["b"], 4);
-		aut.delta.add(2, alph["b"], 2);
-		aut.delta.add(2, alph["a"], 3);
-		aut.delta.add(3, alph["b"], 3);
-		aut.delta.add(3, alph["a"], 1);
-		aut.delta.add(4, alph["b"], 2);
-		aut.delta.add(4, alph["b"], 3);
+        aut.delta.add(1, alph["b"], 1);
+        aut.delta.add(1, alph["a"], 2);
+        aut.delta.add(1, alph["b"], 4);
+        aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(2, alph["a"], 3);
+        aut.delta.add(3, alph["b"], 3);
+        aut.delta.add(3, alph["a"], 1);
+        aut.delta.add(4, alph["b"], 2);
+        aut.delta.add(4, alph["b"], 3);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(is_univ);
-		}
-	}
+            REQUIRE(is_univ);
+        }
+    }
 
-	SECTION("subsumption-pruning in processed")
-	{
-		OnTheFlyAlphabet alph{"a"};
-		aut.initial = {1, 2};
-		aut.final = {1};
+    SECTION("subsumption-pruning in processed")
+    {
+        OnTheFlyAlphabet alph{"a"};
+        aut.initial = {1, 2};
+        aut.final = {1};
 
-		aut.delta.add(1, alph["a"], 1);
+        aut.delta.add(1, alph["a"], 1);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_univ = is_universal(aut, alph, &cex, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_univ = is_universal(aut, alph, &cex, params);
 
-			REQUIRE(is_univ);
-		}
-	}
+            REQUIRE(is_univ);
+        }
+    }
 
-	SECTION("wrong parameters 1")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("wrong parameters 1")
+    {
+        OnTheFlyAlphabet alph{};
 
-		CHECK_THROWS_WITH(is_universal(aut, alph, params),
-			Catch::Contains("requires setting the \"algo\" key"));
-	}
+        CHECK_THROWS_WITH(is_universal(aut, alph, params),
+            Catch::Contains("requires setting the \"algo\" key"));
+    }
 
-	SECTION("wrong parameters 2")
-	{
-		OnTheFlyAlphabet alph{};
-		params["algorithm"] = "foo";
+    SECTION("wrong parameters 2")
+    {
+        OnTheFlyAlphabet alph{};
+        params["algorithm"] = "foo";
 
-		CHECK_THROWS_WITH(is_universal(aut, alph, params),
-			Catch::Contains("received an unknown value"));
-	}
+        CHECK_THROWS_WITH(is_universal(aut, alph, params),
+            Catch::Contains("received an unknown value"));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_included()")
 { // {{{
-	Nfa smaller(10);
-	Nfa bigger(16);
-	Run cex;
-	StringMap params;
+    Nfa smaller(10);
+    Nfa bigger(16);
+    Run cex;
+    StringMap params;
 
-	const std::unordered_set<std::string> ALGORITHMS = {
-		"naive",
-		"antichains",
-	};
+    const std::unordered_set<std::string> ALGORITHMS = {
+        "naive",
+        "antichains",
+    };
 
-	SECTION("{} <= {}, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("{} <= {}, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &alph, params);
-			CHECK(is_incl);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &alph, params);
+            CHECK(is_incl);
 
             is_incl = is_included(bigger, smaller, &alph, params);
             CHECK(is_incl);
-		}
-	}
+        }
+    }
 
-	SECTION("{} <= {epsilon}, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
-		bigger.initial = {1};
-		bigger.final = {1};
+    SECTION("{} <= {epsilon}, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
+        bigger.initial = {1};
+        bigger.final = {1};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
             CHECK(is_incl);
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
             CHECK(!is_incl);
-		}
-	}
+        }
+    }
 
-	SECTION("{epsilon} <= {epsilon}, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
-		smaller.initial = {1};
-		smaller.final = {1};
-		bigger.initial = {11};
-		bigger.final = {11};
+    SECTION("{epsilon} <= {epsilon}, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
+        smaller.initial = {1};
+        smaller.final = {1};
+        bigger.initial = {11};
+        bigger.final = {11};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
             CHECK(is_incl);
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
             CHECK(is_incl);
-		}
-	}
+        }
+    }
 
-	SECTION("{epsilon} !<= {}, empty alphabet")
-	{
-		OnTheFlyAlphabet alph{};
-		smaller.initial = {1};
-		smaller.final = {1};
+    SECTION("{epsilon} !<= {}, empty alphabet")
+    {
+        OnTheFlyAlphabet alph{};
+        smaller.initial = {1};
+        smaller.final = {1};
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-			REQUIRE(!is_incl);
-			REQUIRE(cex.word == Word{});
+            REQUIRE(!is_incl);
+            REQUIRE(cex.word == Word{});
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
             REQUIRE(cex.word == Word{});
             REQUIRE(is_incl);
-		}
-	}
+        }
+    }
 
-	SECTION("a* + b* <= (a+b)*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial = {1, 2};
-		smaller.final = {1, 2};
-		smaller.delta.add(1, alph["a"], 1);
-		smaller.delta.add(2, alph["b"], 2);
+    SECTION("a* + b* <= (a+b)*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        smaller.initial = {1, 2};
+        smaller.final = {1, 2};
+        smaller.delta.add(1, alph["a"], 1);
+        smaller.delta.add(2, alph["b"], 2);
 
-		bigger.initial = {11};
-		bigger.final = {11};
-		bigger.delta.add(11, alph["a"], 11);
-		bigger.delta.add(11, alph["b"], 11);
+        bigger.initial = {11};
+        bigger.final = {11};
+        bigger.delta.add(11, alph["a"], 11);
+        bigger.delta.add(11, alph["b"], 11);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &alph, params);
-			REQUIRE(is_incl);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &alph, params);
+            REQUIRE(is_incl);
 
             is_incl = is_included(bigger, smaller, &alph, params);
             REQUIRE(!is_incl);
-		}
-	}
+        }
+    }
 
-	SECTION("(a+b)* !<= a* + b*")
-	{
-		OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial = {1};
-		smaller.final = {1};
-		smaller.delta.add(1, alph["a"], 1);
-		smaller.delta.add(1, alph["b"], 1);
+    SECTION("(a+b)* !<= a* + b*")
+    {
+        OnTheFlyAlphabet alph{"a", "b"};
+        smaller.initial = {1};
+        smaller.final = {1};
+        smaller.delta.add(1, alph["a"], 1);
+        smaller.delta.add(1, alph["b"], 1);
 
-		bigger.initial = {11, 12};
-		bigger.final = {11, 12};
-		bigger.delta.add(11, alph["a"], 11);
-		bigger.delta.add(12, alph["b"], 12);
+        bigger.initial = {11, 12};
+        bigger.final = {11, 12};
+        bigger.delta.add(11, alph["a"], 11);
+        bigger.delta.add(12, alph["b"], 12);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
 
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-			REQUIRE(!is_incl);
-			REQUIRE((
-				cex.word == Word{alph["a"], alph["b"]} ||
-				cex.word == Word{alph["b"], alph["a"]}));
+            REQUIRE(!is_incl);
+            REQUIRE((
+                cex.word == Word{alph["a"], alph["b"]} ||
+                cex.word == Word{alph["b"], alph["a"]}));
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
             REQUIRE(is_incl);
             REQUIRE((
                 cex.word == Word{alph["a"], alph["b"]} ||
                 cex.word == Word{alph["b"], alph["a"]}));
-		}
-	}
+        }
+    }
 
-	SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
-	{
+    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
+    {
         OnTheFlyAlphabet alph{"a", "b"};
-		smaller.initial = {1};
-		smaller.final = {1};
-		smaller.delta.add(1, alph["a"], 1);
-		smaller.delta.add(1, alph["b"], 1);
+        smaller.initial = {1};
+        smaller.final = {1};
+        smaller.delta.add(1, alph["a"], 1);
+        smaller.delta.add(1, alph["b"], 1);
 
-		bigger.initial = {11};
-		bigger.final = {11, 12, 13, 14, 15};
+        bigger.initial = {11};
+        bigger.final = {11, 12, 13, 14, 15};
 
-		bigger.delta.add(11, alph["a"], 12);
-		bigger.delta.add(11, alph["b"], 12);
-		bigger.delta.add(12, alph["a"], 13);
-		bigger.delta.add(12, alph["b"], 13);
+        bigger.delta.add(11, alph["a"], 12);
+        bigger.delta.add(11, alph["b"], 12);
+        bigger.delta.add(12, alph["a"], 13);
+        bigger.delta.add(12, alph["b"], 13);
 
-		bigger.delta.add(13, alph["a"], 14);
-		bigger.delta.add(14, alph["a"], 14);
+        bigger.delta.add(13, alph["a"], 14);
+        bigger.delta.add(14, alph["a"], 14);
 
-		bigger.delta.add(13, alph["b"], 15);
-		bigger.delta.add(15, alph["b"], 15);
+        bigger.delta.add(13, alph["b"], 15);
+        bigger.delta.add(15, alph["b"], 15);
 
-		for (const auto& algo : ALGORITHMS) {
-			params["algorithm"] = algo;
-			bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-			REQUIRE(!is_incl);
+        for (const auto& algo : ALGORITHMS) {
+            params["algorithm"] = algo;
+            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+            REQUIRE(!is_incl);
 
-			REQUIRE(cex.word.size() == 4);
-			REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-			REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-			REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-			REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-			REQUIRE(cex.word[2] != cex.word[3]);
+            REQUIRE(cex.word.size() == 4);
+            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+            REQUIRE(cex.word[2] != cex.word[3]);
 
             is_incl = is_included(bigger, smaller, &cex, &alph, params);
             REQUIRE(is_incl);
@@ -1720,27 +1543,27 @@ TEST_CASE("Mata::Nfa::is_included()")
             REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
             REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
             REQUIRE(cex.word[2] != cex.word[3]);
-		}
-	}
+        }
+    }
 
-	SECTION("wrong parameters 1")
-	{
+    SECTION("wrong parameters 1")
+    {
         OnTheFlyAlphabet alph{};
 
-		CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
-			Catch::Contains("requires setting the \"algo\" key"));
+        CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
+            Catch::Contains("requires setting the \"algo\" key"));
         CHECK_NOTHROW(is_included(smaller, bigger, &alph));
-	}
+    }
 
-	SECTION("wrong parameters 2")
-	{
+    SECTION("wrong parameters 2")
+    {
         OnTheFlyAlphabet alph{};
-		params["algorithm"] = "foo";
+        params["algorithm"] = "foo";
 
-		CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
-			Catch::Contains("received an unknown value"));
+        CHECK_THROWS_WITH(is_included(smaller, bigger, &alph, params),
+            Catch::Contains("received an unknown value"));
         CHECK_NOTHROW(is_included(smaller, bigger, &alph));
-	}
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::are_equivalent")
@@ -1911,305 +1734,305 @@ TEST_CASE("Mata::Nfa::are_equivalent")
 
 TEST_CASE("Mata::Nfa::revert()")
 { // {{{
-	Nfa aut(9);
+    Nfa aut(9);
 
-	SECTION("empty automaton")
-	{
-		Nfa result = revert(aut);
+    SECTION("empty automaton")
+    {
+        Nfa result = revert(aut);
 
-		REQUIRE(result.delta.empty());
-		REQUIRE(result.initial.size() == 0);
-		REQUIRE(result.final.size() == 0);
-	}
+        REQUIRE(result.delta.empty());
+        REQUIRE(result.initial.size() == 0);
+        REQUIRE(result.final.size() == 0);
+    }
 
-	SECTION("no-transition automaton")
-	{
-		aut.initial.insert(1);
-		aut.initial.insert(3);
+    SECTION("no-transition automaton")
+    {
+        aut.initial.insert(1);
+        aut.initial.insert(3);
 
-		aut.final.insert(2);
-		aut.final.insert(5);
+        aut.final.insert(2);
+        aut.final.insert(5);
 
-		Nfa result = revert(aut);
+        Nfa result = revert(aut);
 
-		REQUIRE(result.delta.empty());
-		REQUIRE(result.initial[2]);
-		REQUIRE(result.initial[5]);
-		REQUIRE(result.final[1]);
-		REQUIRE(result.final[3]);
-	}
+        REQUIRE(result.delta.empty());
+        REQUIRE(result.initial[2]);
+        REQUIRE(result.initial[5]);
+        REQUIRE(result.final[1]);
+        REQUIRE(result.final[3]);
+    }
 
-	SECTION("one-transition automaton")
-	{
-		aut.initial.insert(1);
-		aut.final.insert(2);
-		aut.delta.add(1, 'a', 2);
+    SECTION("one-transition automaton")
+    {
+        aut.initial.insert(1);
+        aut.final.insert(2);
+        aut.delta.add(1, 'a', 2);
 
-		Nfa result = revert(aut);
+        Nfa result = revert(aut);
 
-		REQUIRE(result.initial[2]);
-		REQUIRE(result.final[1]);
-		REQUIRE(result.delta.contains(2, 'a', 1));
-		REQUIRE(result.delta.size() == aut.delta.size());
-	}
+        REQUIRE(result.initial[2]);
+        REQUIRE(result.final[1]);
+        REQUIRE(result.delta.contains(2, 'a', 1));
+        REQUIRE(result.delta.size() == aut.delta.size());
+    }
 
-	SECTION("bigger automaton")
-	{
-		aut.initial = {1, 2};
-		aut.delta.add(1, 'a', 2);
-		aut.delta.add(1, 'a', 3);
-		aut.delta.add(1, 'b', 4);
-		aut.delta.add(2, 'a', 2);
-		aut.delta.add(2, 'a', 3);
-		aut.delta.add(2, 'b', 4);
-		aut.delta.add(3, 'b', 4);
-		aut.delta.add(3, 'c', 7);
-		aut.delta.add(3, 'b', 2);
-		aut.delta.add(7, 'a', 8);
-		aut.final = {3};
+    SECTION("bigger automaton")
+    {
+        aut.initial = {1, 2};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 4);
+        aut.delta.add(3, 'b', 4);
+        aut.delta.add(3, 'c', 7);
+        aut.delta.add(3, 'b', 2);
+        aut.delta.add(7, 'a', 8);
+        aut.final = {3};
 
-		Nfa result = revert(aut);
-		//REQUIRE(result.final == StateSet({1, 2}));
+        Nfa result = revert(aut);
+        //REQUIRE(result.final == StateSet({1, 2}));
         REQUIRE(StateSet(result.final) == StateSet({1, 2}));
-		REQUIRE(result.delta.contains(2, 'a', 1));
-		REQUIRE(result.delta.contains(3, 'a', 1));
-		REQUIRE(result.delta.contains(4, 'b', 1));
-		REQUIRE(result.delta.contains(2, 'a', 2));
-		REQUIRE(result.delta.contains(3, 'a', 2));
-		REQUIRE(result.delta.contains(4, 'b', 2));
-		REQUIRE(result.delta.contains(4, 'b', 3));
-		REQUIRE(result.delta.contains(7, 'c', 3));
-		REQUIRE(result.delta.contains(2, 'b', 3));
-		REQUIRE(result.delta.contains(8, 'a', 7));
-		REQUIRE(StateSet(result.initial) == StateSet({3}));
-	}
+        REQUIRE(result.delta.contains(2, 'a', 1));
+        REQUIRE(result.delta.contains(3, 'a', 1));
+        REQUIRE(result.delta.contains(4, 'b', 1));
+        REQUIRE(result.delta.contains(2, 'a', 2));
+        REQUIRE(result.delta.contains(3, 'a', 2));
+        REQUIRE(result.delta.contains(4, 'b', 2));
+        REQUIRE(result.delta.contains(4, 'b', 3));
+        REQUIRE(result.delta.contains(7, 'c', 3));
+        REQUIRE(result.delta.contains(2, 'b', 3));
+        REQUIRE(result.delta.contains(8, 'a', 7));
+        REQUIRE(StateSet(result.initial) == StateSet({3}));
+    }
 
-	SECTION("Automaton A") {
-		Nfa nfa{ 11 };
-		FILL_WITH_AUT_A(nfa);
-		Nfa res = revert(nfa);
-		CHECK(res.initial[5]);
-		CHECK(res.final[1]);
-		CHECK(res.final[3]);
-		CHECK(res.get_num_of_trans() == 15);
-		CHECK(res.delta.contains(5, 'a', 5));
-		CHECK(res.delta.contains(5, 'a', 7));
-		CHECK(res.delta.contains(9, 'a', 9));
-		CHECK(res.delta.contains(9, 'c', 5));
-		CHECK(res.delta.contains(9, 'b', 3));
-		CHECK(res.delta.contains(7, 'a', 3));
-		CHECK(res.delta.contains(7, 'a', 10));
-		CHECK(res.delta.contains(7, 'b', 10));
-		CHECK(res.delta.contains(7, 'c', 10));
-		CHECK(res.delta.contains(7, 'b', 1));
-		CHECK(res.delta.contains(3, 'a', 7));
-		CHECK(res.delta.contains(3, 'c', 7));
-		CHECK(res.delta.contains(3, 'a', 1));
-		CHECK(res.delta.contains(1, 'b', 7));
-		CHECK(res.delta.contains(10, 'a', 1));
-	}
+    SECTION("Automaton A") {
+        Nfa nfa{ 11 };
+        FILL_WITH_AUT_A(nfa);
+        Nfa res = revert(nfa);
+        CHECK(res.initial[5]);
+        CHECK(res.final[1]);
+        CHECK(res.final[3]);
+        CHECK(res.get_num_of_trans() == 15);
+        CHECK(res.delta.contains(5, 'a', 5));
+        CHECK(res.delta.contains(5, 'a', 7));
+        CHECK(res.delta.contains(9, 'a', 9));
+        CHECK(res.delta.contains(9, 'c', 5));
+        CHECK(res.delta.contains(9, 'b', 3));
+        CHECK(res.delta.contains(7, 'a', 3));
+        CHECK(res.delta.contains(7, 'a', 10));
+        CHECK(res.delta.contains(7, 'b', 10));
+        CHECK(res.delta.contains(7, 'c', 10));
+        CHECK(res.delta.contains(7, 'b', 1));
+        CHECK(res.delta.contains(3, 'a', 7));
+        CHECK(res.delta.contains(3, 'c', 7));
+        CHECK(res.delta.contains(3, 'a', 1));
+        CHECK(res.delta.contains(1, 'b', 7));
+        CHECK(res.delta.contains(10, 'a', 1));
+    }
 
-	SECTION("Automaton B") {
-		Nfa nfa{ 15 };
-		FILL_WITH_AUT_B(nfa);
-		Nfa res = revert(nfa);
-		CHECK(res.initial[2]);
-		CHECK(res.initial[12]);
-		CHECK(res.final[4]);
-		CHECK(res.get_num_of_trans() == 12);
-		CHECK(res.delta.contains(8, 'a', 4));
-		CHECK(res.delta.contains(8, 'c', 4));
-		CHECK(res.delta.contains(4, 'b', 8));
-		CHECK(res.delta.contains(6, 'b', 4));
-		CHECK(res.delta.contains(6, 'a', 4));
-		CHECK(res.delta.contains(2, 'a', 6));
-		CHECK(res.delta.contains(2, 'a', 0));
-		CHECK(res.delta.contains(2, 'b', 2));
-		CHECK(res.delta.contains(0, 'a', 2));
-		CHECK(res.delta.contains(12, 'c', 2));
-		CHECK(res.delta.contains(12, 'b', 14));
-		CHECK(res.delta.contains(14, 'a', 12));
-	}
+    SECTION("Automaton B") {
+        Nfa nfa{ 15 };
+        FILL_WITH_AUT_B(nfa);
+        Nfa res = revert(nfa);
+        CHECK(res.initial[2]);
+        CHECK(res.initial[12]);
+        CHECK(res.final[4]);
+        CHECK(res.get_num_of_trans() == 12);
+        CHECK(res.delta.contains(8, 'a', 4));
+        CHECK(res.delta.contains(8, 'c', 4));
+        CHECK(res.delta.contains(4, 'b', 8));
+        CHECK(res.delta.contains(6, 'b', 4));
+        CHECK(res.delta.contains(6, 'a', 4));
+        CHECK(res.delta.contains(2, 'a', 6));
+        CHECK(res.delta.contains(2, 'a', 0));
+        CHECK(res.delta.contains(2, 'b', 2));
+        CHECK(res.delta.contains(0, 'a', 2));
+        CHECK(res.delta.contains(12, 'c', 2));
+        CHECK(res.delta.contains(12, 'b', 14));
+        CHECK(res.delta.contains(14, 'a', 12));
+    }
 } // }}}
 
 
 TEST_CASE("Mata::Nfa::is_deterministic()")
 { // {{{
-	Nfa aut('s'+1);
+    Nfa aut('s'+1);
 
-	SECTION("(almost) empty automaton")
-	{
-		// no initial states
-		REQUIRE(!is_deterministic(aut));
+    SECTION("(almost) empty automaton")
+    {
+        // no initial states
+        REQUIRE(!is_deterministic(aut));
 
-		// add an initial state
-		aut.initial.insert('q');
-		REQUIRE(is_deterministic(aut));
+        // add an initial state
+        aut.initial.insert('q');
+        REQUIRE(is_deterministic(aut));
 
-		// add the same initial state
-		aut.initial.insert('q');
-		REQUIRE(is_deterministic(aut));
+        // add the same initial state
+        aut.initial.insert('q');
+        REQUIRE(is_deterministic(aut));
 
-		// add another initial state
-		aut.initial.insert('r');
-		REQUIRE(!is_deterministic(aut));
+        // add another initial state
+        aut.initial.insert('r');
+        REQUIRE(!is_deterministic(aut));
 
-		// add a final state
-		aut.final.insert('q');
-		REQUIRE(!is_deterministic(aut));
-	}
+        // add a final state
+        aut.final.insert('q');
+        REQUIRE(!is_deterministic(aut));
+    }
 
-	SECTION("trivial automata")
-	{
-		aut.initial.insert('q');
-		aut.delta.add('q', 'a', 'r');
-		REQUIRE(is_deterministic(aut));
+    SECTION("trivial automata")
+    {
+        aut.initial.insert('q');
+        aut.delta.add('q', 'a', 'r');
+        REQUIRE(is_deterministic(aut));
 
-		// unreachable states
-		aut.delta.add('s', 'a', 'r');
-		REQUIRE(is_deterministic(aut));
+        // unreachable states
+        aut.delta.add('s', 'a', 'r');
+        REQUIRE(is_deterministic(aut));
 
-		// transitions over a different symbol
-		aut.delta.add('q', 'b', 'h');
-		REQUIRE(is_deterministic(aut));
+        // transitions over a different symbol
+        aut.delta.add('q', 'b', 'h');
+        REQUIRE(is_deterministic(aut));
 
-		// nondeterminism
-		aut.delta.add('q', 'a', 's');
-		REQUIRE(!is_deterministic(aut));
-	}
+        // nondeterminism
+        aut.delta.add('q', 'a', 's');
+        REQUIRE(!is_deterministic(aut));
+    }
 
-	SECTION("larger automaton 1")
-	{
-		FILL_WITH_AUT_A(aut);
-		REQUIRE(!is_deterministic(aut));
-	}
+    SECTION("larger automaton 1")
+    {
+        FILL_WITH_AUT_A(aut);
+        REQUIRE(!is_deterministic(aut));
+    }
 
-	SECTION("larger automaton 2")
-	{
-		FILL_WITH_AUT_B(aut);
-		REQUIRE(!is_deterministic(aut));
-	}
+    SECTION("larger automaton 2")
+    {
+        FILL_WITH_AUT_B(aut);
+        REQUIRE(!is_deterministic(aut));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_complete()")
 { // {{{
-	Nfa aut('q'+1);
+    Nfa aut('q'+1);
 
-	SECTION("empty automaton")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("empty automaton")
+    {
+        OnTheFlyAlphabet alph{};
 
-		// is complete for the empty alphabet
-		REQUIRE(is_complete(aut, alph));
+        // is complete for the empty alphabet
+        REQUIRE(is_complete(aut, alph));
 
-		alph.translate_symb("a1");
-		alph.translate_symb("a2");
+        alph.translate_symb("a1");
+        alph.translate_symb("a2");
 
-		// the empty automaton is complete even for a non-empty alphabet
-		REQUIRE(is_complete(aut, alph));
+        // the empty automaton is complete even for a non-empty alphabet
+        REQUIRE(is_complete(aut, alph));
 
-		// add a non-reachable state (the automaton should still be complete)
-		aut.delta.add('q', alph["a1"], 'q');
-		REQUIRE(is_complete(aut, alph));
-	}
+        // add a non-reachable state (the automaton should still be complete)
+        aut.delta.add('q', alph["a1"], 'q');
+        REQUIRE(is_complete(aut, alph));
+    }
 
-	SECTION("small automaton")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("small automaton")
+    {
+        OnTheFlyAlphabet alph{};
 
         aut.initial.insert(4);
-		aut.delta.add(4, alph["a"], 8);
-		aut.delta.add(4, alph["c"], 8);
-		aut.delta.add(4, alph["a"], 6);
-		aut.delta.add(4, alph["b"], 6);
-		aut.delta.add(8, alph["b"], 4);
-		aut.delta.add(6, alph["a"], 2);
-		aut.delta.add(2, alph["b"], 2);
-		aut.delta.add(2, alph["a"], 0);
-		aut.delta.add(2, alph["c"], 12);
-		aut.delta.add(0, alph["a"], 2);
-		aut.delta.add(12, alph["a"], 14);
-		aut.delta.add(14, alph["b"], 12);
-		aut.final.insert({2, 12});
+        aut.delta.add(4, alph["a"], 8);
+        aut.delta.add(4, alph["c"], 8);
+        aut.delta.add(4, alph["a"], 6);
+        aut.delta.add(4, alph["b"], 6);
+        aut.delta.add(8, alph["b"], 4);
+        aut.delta.add(6, alph["a"], 2);
+        aut.delta.add(2, alph["b"], 2);
+        aut.delta.add(2, alph["a"], 0);
+        aut.delta.add(2, alph["c"], 12);
+        aut.delta.add(0, alph["a"], 2);
+        aut.delta.add(12, alph["a"], 14);
+        aut.delta.add(14, alph["b"], 12);
+        aut.final.insert({2, 12});
 
-		REQUIRE(!is_complete(aut, alph));
+        REQUIRE(!is_complete(aut, alph));
 
-		make_complete(aut, alph, 100);
-		REQUIRE(is_complete(aut, alph));
-	}
+        make_complete(aut, alph, 100);
+        REQUIRE(is_complete(aut, alph));
+    }
 
-	SECTION("using a non-alphabet symbol")
-	{
-		OnTheFlyAlphabet alph{};
+    SECTION("using a non-alphabet symbol")
+    {
+        OnTheFlyAlphabet alph{};
 
-		aut.initial.insert(4);
-		aut.delta.add(4, alph["a"], 8);
-		aut.delta.add(4, alph["c"], 8);
-		aut.delta.add(4, alph["a"], 6);
-		aut.delta.add(4, alph["b"], 6);
-		aut.delta.add(6, 100, 4);
+        aut.initial.insert(4);
+        aut.delta.add(4, alph["a"], 8);
+        aut.delta.add(4, alph["c"], 8);
+        aut.delta.add(4, alph["a"], 6);
+        aut.delta.add(4, alph["b"], 6);
+        aut.delta.add(6, 100, 4);
 
-		CHECK_THROWS_WITH(is_complete(aut, alph),
-			Catch::Contains("symbol that is not in the provided alphabet"));
-	}
+        CHECK_THROWS_WITH(is_complete(aut, alph),
+            Catch::Contains("symbol that is not in the provided alphabet"));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
 { // {{{
-	Nfa aut('q'+1);
+    Nfa aut('q'+1);
 
-	SECTION("empty automaton")
-	{
-		Run w;
-		w.word = {'a', 'b', 'd'};
-		REQUIRE(!is_prfx_in_lang(aut, w));
+    SECTION("empty automaton")
+    {
+        Run w;
+        w.word = {'a', 'b', 'd'};
+        REQUIRE(!is_prfx_in_lang(aut, w));
 
-		w.word = { };
-		REQUIRE(!is_prfx_in_lang(aut, w));
-	}
+        w.word = { };
+        REQUIRE(!is_prfx_in_lang(aut, w));
+    }
 
-	SECTION("automaton accepting only epsilon")
-	{
-		aut.initial.insert('q');
-		aut.final.insert('q');
-
-		Run w;
-		w.word = { };
-		REQUIRE(is_prfx_in_lang(aut, w));
-
-		w.word = {'a', 'b'};
-		REQUIRE(is_prfx_in_lang(aut, w));
-	}
-
-	SECTION("small automaton")
-	{
-		FILL_WITH_AUT_B(aut);
+    SECTION("automaton accepting only epsilon")
+    {
+        aut.initial.insert('q');
+        aut.final.insert('q');
 
         Run w;
-		w.word = {'b', 'a'};
-		REQUIRE(is_prfx_in_lang(aut, w));
+        w.word = { };
+        REQUIRE(is_prfx_in_lang(aut, w));
 
-		w.word = { };
-		REQUIRE(!is_prfx_in_lang(aut, w));
+        w.word = {'a', 'b'};
+        REQUIRE(is_prfx_in_lang(aut, w));
+    }
 
-		w.word = {'c', 'b', 'a'};
-		REQUIRE(!is_prfx_in_lang(aut, w));
+    SECTION("small automaton")
+    {
+        FILL_WITH_AUT_B(aut);
 
-		w.word = {'c', 'b', 'a', 'a'};
-		REQUIRE(is_prfx_in_lang(aut, w));
+        Run w;
+        w.word = {'b', 'a'};
+        REQUIRE(is_prfx_in_lang(aut, w));
 
-		w.word = {'a', 'a'};
-		REQUIRE(is_prfx_in_lang(aut, w));
+        w.word = { };
+        REQUIRE(!is_prfx_in_lang(aut, w));
 
-		w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
-		REQUIRE(is_prfx_in_lang(aut, w));
+        w.word = {'c', 'b', 'a'};
+        REQUIRE(!is_prfx_in_lang(aut, w));
 
-		w.word = Word(100000, 'a');
-		REQUIRE(is_prfx_in_lang(aut, w));
+        w.word = {'c', 'b', 'a', 'a'};
+        REQUIRE(is_prfx_in_lang(aut, w));
 
-		w.word = Word(100000, 'b');
-		REQUIRE(!is_prfx_in_lang(aut, w));
-	}
+        w.word = {'a', 'a'};
+        REQUIRE(is_prfx_in_lang(aut, w));
+
+        w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
+        REQUIRE(is_prfx_in_lang(aut, w));
+
+        w.word = Word(100000, 'a');
+        REQUIRE(is_prfx_in_lang(aut, w));
+
+        w.word = Word(100000, 'b');
+        REQUIRE(!is_prfx_in_lang(aut, w));
+    }
 } // }}}
 
 TEST_CASE("Mata::Nfa::fw-direct-simulation()")
@@ -2293,71 +2116,71 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 
 TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 {
-	Nfa aut;
-	StateToStateMap state_map;
+    Nfa aut;
+    StateToStateMap state_map;
 
-	SECTION("empty automaton")
-	{
-		Nfa result = reduce(aut, false, &state_map);
+    SECTION("empty automaton")
+    {
+        Nfa result = reduce(aut, false, &state_map);
 
-		REQUIRE(result.delta.empty());
-		REQUIRE(result.initial.empty());
-		REQUIRE(result.final.empty());
-	}
+        REQUIRE(result.delta.empty());
+        REQUIRE(result.initial.empty());
+        REQUIRE(result.final.empty());
+    }
 
-	SECTION("simple automaton")
-	{
-		aut.add_state(2);
+    SECTION("simple automaton")
+    {
+        aut.add_state(2);
         aut.initial.insert(1);
 
         aut.final.insert(2);
-		Nfa result = reduce(aut, false, &state_map);
+        Nfa result = reduce(aut, false, &state_map);
 
-		REQUIRE(result.delta.empty());
-		REQUIRE(result.initial[state_map[1]]);
-		REQUIRE(result.final[state_map[2]]);
-		REQUIRE(result.size() == 2);
-		REQUIRE(state_map[1] == state_map[0]);
-		REQUIRE(state_map[2] != state_map[0]);
-	}
+        REQUIRE(result.delta.empty());
+        REQUIRE(result.initial[state_map[1]]);
+        REQUIRE(result.final[state_map[2]]);
+        REQUIRE(result.size() == 2);
+        REQUIRE(state_map[1] == state_map[0]);
+        REQUIRE(state_map[2] != state_map[0]);
+    }
 
-	SECTION("big automaton")
-	{
-		aut.add_state(9);
-		aut.initial = {1, 2};
-		aut.delta.add(1, 'a', 2);
-		aut.delta.add(1, 'a', 3);
-		aut.delta.add(1, 'b', 4);
-		aut.delta.add(2, 'a', 2);
-		aut.delta.add(2, 'b', 2);
-		aut.delta.add(2, 'a', 3);
-		aut.delta.add(2, 'b', 4);
-		aut.delta.add(3, 'b', 4);
-		aut.delta.add(3, 'c', 7);
-		aut.delta.add(3, 'b', 2);
-		aut.delta.add(5, 'c', 3);
-		aut.delta.add(7, 'a', 8);
-		aut.delta.add(9, 'b', 2);
-		aut.delta.add(9, 'c', 0);
-		aut.delta.add(0, 'a', 4);
-		aut.final = {3, 9};
+    SECTION("big automaton")
+    {
+        aut.add_state(9);
+        aut.initial = {1, 2};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(2, 'b', 2);
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 4);
+        aut.delta.add(3, 'b', 4);
+        aut.delta.add(3, 'c', 7);
+        aut.delta.add(3, 'b', 2);
+        aut.delta.add(5, 'c', 3);
+        aut.delta.add(7, 'a', 8);
+        aut.delta.add(9, 'b', 2);
+        aut.delta.add(9, 'c', 0);
+        aut.delta.add(0, 'a', 4);
+        aut.final = {3, 9};
 
 
-		Nfa result = reduce(aut, false, &state_map);
+        Nfa result = reduce(aut, false, &state_map);
 
-		REQUIRE(result.size() == 6);
-		REQUIRE(result.initial[state_map[1]]);
-		REQUIRE(result.initial[state_map[2]]);
-		REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
-		REQUIRE(result.delta.contains(state_map[9], 'c', state_map[7]));
-		REQUIRE(result.delta.contains(state_map[3], 'c', state_map[0]));
-		REQUIRE(result.delta.contains(state_map[0], 'a', state_map[8]));
-		REQUIRE(result.delta.contains(state_map[7], 'a', state_map[4]));
-		REQUIRE(result.delta.contains(state_map[1], 'a', state_map[3]));
-		REQUIRE(!result.delta.contains(state_map[3], 'b', state_map[4]));
-		REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
-		REQUIRE(result.final[state_map[9]]);
-		REQUIRE(result.final[state_map[3]]);
+        REQUIRE(result.size() == 6);
+        REQUIRE(result.initial[state_map[1]]);
+        REQUIRE(result.initial[state_map[2]]);
+        REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
+        REQUIRE(result.delta.contains(state_map[9], 'c', state_map[7]));
+        REQUIRE(result.delta.contains(state_map[3], 'c', state_map[0]));
+        REQUIRE(result.delta.contains(state_map[0], 'a', state_map[8]));
+        REQUIRE(result.delta.contains(state_map[7], 'a', state_map[4]));
+        REQUIRE(result.delta.contains(state_map[1], 'a', state_map[3]));
+        REQUIRE(!result.delta.contains(state_map[3], 'b', state_map[4]));
+        REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
+        REQUIRE(result.final[state_map[9]]);
+        REQUIRE(result.final[state_map[3]]);
 
         result = reduce(aut, true, &state_map);
         CHECK(result.size() == 3);
@@ -2376,15 +2199,15 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         CHECK(result.delta.contains(state_map[2], 'b', state_map[2]));
         CHECK(result.delta.contains(state_map[2], 'a', state_map[3]));
         CHECK(result.delta.contains(state_map[3], 'b', state_map[2]));
-	}
+    }
 
-	SECTION("no transitions from non-final state")
-	{
-		aut.delta.add(0, 'a', 1);
-		aut.initial = { 0 };
-		Nfa result = reduce(aut, true, &state_map);
-		CHECK(Mata::Nfa::are_equivalent(result, aut));
-	}
+    SECTION("no transitions from non-final state")
+    {
+        aut.delta.add(0, 'a', 1);
+        aut.initial = { 0 };
+        Nfa result = reduce(aut, true, &state_map);
+        CHECK(Mata::Nfa::are_equivalent(result, aut));
+    }
 }
 
 TEST_CASE("Mata::Nfa::union_norename()") {
@@ -2480,12 +2303,10 @@ TEST_CASE("Mata::Nfa::delta.remove()")
     }
 }
 
-TEST_CASE("Mafa::Nfa::get_moves_from()")
-{
+TEST_CASE("Mafa::Nfa::get_moves_from()") {
     Nfa aut{};
 
-    SECTION("Add new states within the limit")
-    {
+    SECTION("Add new states within the limit") {
         aut.add_state(19);
         aut.initial.insert(0);
         aut.initial.insert(1);
@@ -2498,37 +2319,31 @@ TEST_CASE("Mafa::Nfa::get_moves_from()")
         REQUIRE(aut.get_moves_from(2).empty());
     }
 
-    SECTION("Add new states over the limit")
-    {
+    SECTION("Add new states over the limit") {
         aut.add_state(1);
         REQUIRE_NOTHROW(aut.initial.insert(0));
         REQUIRE_NOTHROW(aut.initial.insert(1));
-        //REQUIRE_THROWS_AS(aut.initial.insert(2), std::runtime_error);
         REQUIRE_NOTHROW(aut.get_moves_from(0));
         REQUIRE_NOTHROW(aut.get_moves_from(1));
-        //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE_THROWS(aut.get_moves_from(2));
         REQUIRE(aut.get_moves_from(0).empty());
         REQUIRE(aut.get_moves_from(1).empty());
-        //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
+        REQUIRE_THROWS(aut.get_moves_from(2));
     }
 
-    //TODO: modify or remove these
-    //SECTION("Add new states without specifying the number of states")
-    //{
-    //    REQUIRE_THROWS_AS(aut.initial.insert(0), std::runtime_error);
-    //    //REQUIRE_THROWS(aut.get_moves_from(2)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
-    //}
+    SECTION("Add new states without specifying the number of states") {
+        CHECK_NOTHROW(aut.initial.insert(0));
+        CHECK_THROWS_AS(aut.get_moves_from(2), std::runtime_error);
+    }
 
-    //SECTION("Add new initial without specifying the number of states with over +1 number")
-    //{
-    //    REQUIRE_THROWS_AS(aut.initial.insert(25), std::runtime_error);
-    //    //REQUIRE_THROWS(aut.get_moves_from(25)); // FIXME: Fails on assert. Catch2 cannot catch assert failure.
-    //}
+    SECTION("Add new initial without specifying the number of states with over +1 number") {
+        REQUIRE_NOTHROW(aut.initial.insert(25));
+        CHECK_NOTHROW(aut.get_moves_from(25));
+        CHECK_THROWS(aut.get_moves_from(26));
+    }
 }
 
-
-TEST_CASE("Mata::Nfa::get_trans_as_sequence(}")
-{
+TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
     Nfa aut('q' + 1);
     std::vector<Trans> expected{};
 
@@ -3020,28 +2835,28 @@ TEST_CASE("Mata::Nfa:: create simple automata") {
 }
 
 TEST_CASE("Mata::Nfa:: print_to_mata") {
-	Nfa aut_big;
-	aut_big.initial = {1, 2};
-	aut_big.delta.add(1, 'a', 2);
-	aut_big.delta.add(1, 'a', 3);
-	aut_big.delta.add(1, 'b', 4);
-	aut_big.delta.add(2, 'a', 2);
-	aut_big.delta.add(2, 'b', 2);
-	aut_big.delta.add(2, 'a', 3);
-	aut_big.delta.add(2, 'b', 4);
-	aut_big.delta.add(3, 'b', 4);
-	aut_big.delta.add(3, 'c', 7);
-	aut_big.delta.add(3, 'b', 2);
-	aut_big.delta.add(5, 'c', 3);
-	aut_big.delta.add(7, 'a', 8);
-	aut_big.final = {3};
+    Nfa aut_big;
+    aut_big.initial = {1, 2};
+    aut_big.delta.add(1, 'a', 2);
+    aut_big.delta.add(1, 'a', 3);
+    aut_big.delta.add(1, 'b', 4);
+    aut_big.delta.add(2, 'a', 2);
+    aut_big.delta.add(2, 'b', 2);
+    aut_big.delta.add(2, 'a', 3);
+    aut_big.delta.add(2, 'b', 4);
+    aut_big.delta.add(3, 'b', 4);
+    aut_big.delta.add(3, 'c', 7);
+    aut_big.delta.add(3, 'b', 2);
+    aut_big.delta.add(5, 'c', 3);
+    aut_big.delta.add(7, 'a', 8);
+    aut_big.final = {3};
 
-	std::string aut_big_mata = aut_big.print_to_mata();
-	// for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
-	IntAlphabet int_alph;
-	Nfa aut_big_from_mata = Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+    std::string aut_big_mata = aut_big.print_to_mata();
+    // for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
+    IntAlphabet int_alph;
+    Nfa aut_big_from_mata = Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
-	CHECK(are_equivalent(aut_big, aut_big_from_mata));
+    CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
 
 TEST_CASE("Mata::Nfa::trim bug") {
