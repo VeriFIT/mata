@@ -140,10 +140,10 @@ namespace SegNfa {
 using SegNfa = Nfa::Nfa;
 using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 
-/// Number of visited epsilons
-using EpsCntMap = std::map<Symbol, unsigned>;
-/// Projection of EpsCntMap to sorted keys (desc)
-using EpsCntVector = std::vector<unsigned>;
+/// Number of visited epsilons.
+using VisitedEpsilonsCounterMap = std::map<Symbol, unsigned>;
+/// Projection of VisitedEpsilonsNumberMap to sorted keys (in descending order).
+using VisitedEpsilonsCounterVector = std::vector<unsigned>;
 
 /**
 * Class executing segmentation operations for a given segment automaton. Works only with segment automata.
@@ -210,7 +210,7 @@ private:
     struct StateDepthTuple {
         State state; ///< State with a depth.
         EpsilonDepth depth; ///< Depth of a state.
-        EpsCntMap eps; /// visited epsilons and their numbers
+        VisitedEpsilonsCounterMap eps; /// visited epsilons and their numbers
     };
 
     /**
@@ -289,7 +289,7 @@ using Noodle = std::vector<std::shared_ptr<Nfa::Nfa>>;
 using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
 
 /// Noodles as segments enriched with EpsCntMap
-using NoodleSubst = std::vector<std::pair<std::shared_ptr<Nfa::Nfa>, EpsCntVector>>;
+using NoodleSubst = std::vector<std::pair<std::shared_ptr<Nfa::Nfa>, VisitedEpsilonsCounterVector>>;
 using NoodleSubstSequence = std::vector<NoodleSubst>;
 
 /**
@@ -401,7 +401,7 @@ NoodleSubstSequence noodlify_for_equation(const std::vector<std::shared_ptr<Nfa:
  * @param eps_cnt Epsilon count
  * @return Vector of keys (count of epsilons)
  */
-EpsCntVector process_eps_map(const EpsCntMap& eps_cnt);
+VisitedEpsilonsCounterVector process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt);
 
 } // namespace SegNfa.
 

@@ -174,11 +174,11 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
-    EpsCntMap def_eps_map;
+    VisitedEpsilonsCounterMap def_eps_map;
     for(const Symbol& eps : epsilons) {
         def_eps_map[eps] = 0;
     }
-    EpsCntVector def_eps_vector = process_eps_map(def_eps_map);
+    VisitedEpsilonsCounterVector def_eps_vector = process_eps_map(def_eps_map);
 
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
@@ -406,8 +406,8 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
     return noodlify_mult_eps(product_pres_eps_trans, epsilons, include_empty);
 }
 
-SegNfa::EpsCntVector SegNfa::process_eps_map(const EpsCntMap& eps_cnt) {
-    EpsCntVector ret;
+SegNfa::VisitedEpsilonsCounterVector SegNfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
+    VisitedEpsilonsCounterVector ret;
     for(auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); it++) {
         ret.push_back(it->second);
     }
