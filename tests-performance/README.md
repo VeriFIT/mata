@@ -12,12 +12,14 @@
      and computes minterms.
   * `template-with-list-of-automata.cc` contains basic template that without arguments takes a hardcoded list of input 
      automata taken from `automata` directory; in case it is run with arguments, it reads the input files that contains
-     paths to source automata. 
+     paths to source automata.
 4. `pycobench`: a performance testing script
 5. `pyco_proc`: a parser of performance results
 6. `scripts/`: several helper scripts for profiling
   * `scripts/run_callgrind.sh` to print top functions (exclusive time, greater than 1%)
   * `scripts/run_massif.sh` to print memory peak in [B]
+7. `jobs` definitions of jobs for `pycobench`
+8. `inputs` definitions of inputs for `pycobench`
 
 #### How to profile
 
@@ -44,7 +46,7 @@
        cmd: ./bin/new-binary $1
 ```
 
-5. Run `./pycobench -c jobs.yaml -o some.output < single-automata.input`
+5. Run `./pycobench -c jobs/jobs.yaml -o some.output < inputs/single-automata.input`
   * Alternatively, one can pass any shell command that returns list of automata,
   e.g. `< ls -1 ./automata/**/aut1.mata`
 6. Run `./pyco_proc --csv some.output > some.csv`
