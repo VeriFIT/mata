@@ -149,7 +149,7 @@ bool Mata::Nfa::is_universal(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex,
-	const StringMap&  params)
+	const ParameterMap&  params)
 { // {{{
 
 	// setting the default algorithm

@@ -1155,7 +1155,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
 { // {{{
     Nfa aut(6);
     Run cex;
-    StringMap params;
+    ParameterMap params;
 
     const std::unordered_set<std::string> ALGORITHMS = {
         "naive",
@@ -1372,7 +1372,7 @@ TEST_CASE("Mata::Nfa::is_included()")
     Nfa smaller(10);
     Nfa bigger(16);
     Run cex;
-    StringMap params;
+    ParameterMap params;
 
     const std::unordered_set<std::string> ALGORITHMS = {
         "naive",
@@ -1571,7 +1571,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     Nfa smaller(10);
     Nfa bigger(16);
     Word cex;
-    StringMap params;
+    ParameterMap params;
 
     const std::unordered_set<std::string> ALGORITHMS = {
             "naive",

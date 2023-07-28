@@ -61,7 +61,7 @@ namespace {
 	Nfa reduce_size_by_simulation(const Nfa& aut, StateToStateMap &state_map) {
         Nfa result;
         const auto sim_relation = Algorithms::compute_relation(
-                aut, StringMap{{"relation", "simulation"}, {"direction", "forward"}});
+                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -657,7 +657,7 @@ Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
 
 Nfa Mata::Nfa::minimize(
                 const Nfa& aut,
-                const StringMap& params)
+                const ParameterMap& params)
 {
 	Nfa result;
 	// setting the default algorithm
@@ -712,7 +712,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     return unionAutomaton;
 }
 
-Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const StringMap& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -735,7 +735,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateRenaming *state_map, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "

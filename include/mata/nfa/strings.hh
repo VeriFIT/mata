@@ -356,7 +356,7 @@ NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>&
  */
 NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata,
                                      const Nfa::Nfa& right_automaton,
-                                     bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+                                     bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -379,7 +379,7 @@ NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Nf
  * @return A list of all (non-empty) noodles.
  */
 NoodleSequence noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata, const Nfa::Nfa& right_automaton,
-                                     bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+                                     bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
@@ -393,7 +393,7 @@ NoodleSequence noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
 NoodleSubstSequence noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata, const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata,
-                                                 bool include_empty = false, const StringMap& params = {{"reduce", "false"}});
+                                                 bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
  * @brief Process epsilon map to a sequence of values (sorted according to key desc)

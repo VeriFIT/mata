@@ -24,7 +24,19 @@ struct Run {
 /// Mapping of states to states, used, for example, to map original states to reindexed states of new automaton, etc.
 using StateToStateMap = std::unordered_map<State, State>;
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
-using StringMap = std::unordered_map<std::string, std::string>;
+
+/**
+ * @brief Map of additional parameter name and value pairs.
+ *
+ * Used by certain functions for specifying some additional parameters in the following format:
+ * ```cpp
+ * ParameterMap {
+ *     { "algorithm", "classical" },
+ *     { "minimize", "true" }
+ * }
+ * ```
+ */
+using ParameterMap = std::unordered_map<std::string, std::string>;
 
 struct Limits {
 public:

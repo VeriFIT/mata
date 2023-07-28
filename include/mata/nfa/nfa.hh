@@ -567,7 +567,7 @@ inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_comp
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+   const ParameterMap& params = {{ "algorithm", "classical"}, { "minimize", "false"}});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -585,7 +585,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+   const ParameterMap& params = {{ "algorithm", "classical"}, { "minimize", "false"}});
 
 /**
  * @brief Compute minimal deterministic automaton.
@@ -595,7 +595,7 @@ Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa &aut, const StringMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}});
 
 /**
  * @brief Determinize automaton.
@@ -617,19 +617,19 @@ Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, bool trim_input = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}});
+           const ParameterMap&  params = {{ "algorithm", "simulation"}});
 
 /// Is the language of the automaton universal?
 bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
         Run*              cex = nullptr,
-        const StringMap&  params = {{"algorithm", "antichains"}});
+        const ParameterMap&  params = {{ "algorithm", "antichains"}});
 
 inline bool is_universal(
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params) {
+        const ParameterMap&  params) {
     return is_universal(aut, alphabet, nullptr, params);
 }
 
@@ -649,7 +649,7 @@ bool is_included(
         const Nfa&         bigger,
         Run*               cex,
         const Alphabet*    alphabet = nullptr,
-        const StringMap&   params = {{"algorithm", "antichains"}});
+        const ParameterMap&   params = {{ "algorithm", "antichains"}});
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -665,7 +665,7 @@ inline bool is_included(
         const Nfa&             smaller,
         const Nfa&             bigger,
         const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algorithm", "antichains"}}) {
+        const ParameterMap&      params = {{ "algorithm", "antichains"}}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
@@ -680,7 +680,7 @@ inline bool is_included(
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
-                    const StringMap& params = {{"algorithm", "antichains"}});
+                    const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -699,7 +699,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
+bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).

@@ -260,7 +260,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
 }
 
 SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
+                                                     bool include_empty, const ParameterMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
     for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
@@ -299,7 +299,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::refe
 }
 
 SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
+                                                     bool include_empty, const ParameterMap& params) {
     const auto left_automata_begin{ left_automata.begin() };
     const auto left_automata_end{ left_automata.end() };
 
@@ -348,7 +348,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*
 
 
 SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
-    const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const StringMap& params) {
+    const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const ParameterMap& params) {
     if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
 
     const auto left_automata_begin{ left_automata.begin() };

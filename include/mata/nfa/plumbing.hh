@@ -46,8 +46,8 @@ inline void complement(
         Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"},
-                                    {"minimize", "false"}}) { *result = complement(aut, alphabet, params);
+        const ParameterMap&  params = {{ "algorithm", "classical"},
+                                       { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
 inline void minimize(Nfa* res, const Nfa &aut) { *res = minimize(aut); }
@@ -57,7 +57,7 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
 }
 
 inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}}) { *result = reduce(aut, trim_result, state_map, params); }
+                   const ParameterMap&  params = {{ "algorithm", "simulation"}}) { *result = reduce(aut, trim_result, state_map, params); }
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 

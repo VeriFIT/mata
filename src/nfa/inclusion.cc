@@ -224,7 +224,7 @@ namespace {
         return false;
     }
 
-    AlgoType set_algorithm(const std::string &function_name, const StringMap &params) {
+    AlgoType set_algorithm(const std::string &function_name, const ParameterMap &params) {
         if (!haskey(params, "algorithm")) {
             throw std::runtime_error(function_name +
                                      " requires setting the \"algo\" key in the \"params\" argument; "
@@ -253,12 +253,12 @@ bool Mata::Nfa::is_included(
         const Nfa &bigger,
         Run *cex,
         const Alphabet *const alphabet,
-        const StringMap &params) { // {{{
+        const ParameterMap &params) { // {{{
     AlgoType algo{set_algorithm(std::to_string(__func__), params)};
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const StringMap& params)
+bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
@@ -273,6 +273,6 @@ bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
     return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
-bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params) {
+bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
     return are_equivalent(lhs, rhs, nullptr, params);
 }

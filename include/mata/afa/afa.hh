@@ -61,7 +61,7 @@ using StateNameValueMap = Mata::Nfa::Builder::StateNameValueMap;
 using Path = Util::OrdVector<State>;
 using Word = Util::OrdVector<Symbol>;
 
-using StringDict = Mata::Nfa::StringMap;
+using StringDict = Mata::Nfa::ParameterMap;
 
 using StateSet = OrdVec<State>;
 using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
