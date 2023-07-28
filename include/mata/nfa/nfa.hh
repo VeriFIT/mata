@@ -276,7 +276,12 @@ public:
      * @return List of transitions leading from @p state_from.
      */
     const Post& get_moves_from(const State state_from) const {
-        assert(state_from < size());
+        const size_t post_size{ size() };
+        if (state_from >= post_size) {
+            throw std::runtime_error(
+                    "Cannot get moves from nonexistent state '" + std::to_string(state_from)
+                    + "' for Post of size '" + std::to_string(post_size) + "'.");
+        }
         return delta[state_from];
     }
 
