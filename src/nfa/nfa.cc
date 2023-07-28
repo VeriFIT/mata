@@ -118,12 +118,12 @@ namespace {
     /**
      * Add transitions to the trimmed automaton.
      * @param[in] nfa NFA to add transitions from.
-     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states.
      * @param[out] trimmed_aut The new trimmed automaton.
      */
-    void add_trimmed_transitions(const Nfa& nfa, const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut) {
+    void add_trimmed_transitions(const Nfa& nfa, const StateRenaming& original_to_new_state_renaming, Nfa& trimmed_aut) {
         // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
-        for (const auto& original_state_mapping: original_to_new_states_map)
+        for (const auto& original_state_mapping: original_to_new_state_renaming)
         {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
@@ -131,8 +131,8 @@ namespace {
                 Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
                 {
-                    auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
-                    if (iter_to_new_state_to != original_to_new_states_map.end())
+                    auto iter_to_new_state_to = original_to_new_state_renaming.find(old_state_to);
+                    if (iter_to_new_state_to != original_to_new_state_renaming.end())
                     {
                         // We can push here, because we assume that new states follow the ordering of original states.
                         new_state_trans_with_symbol.insert(iter_to_new_state_to->second);
@@ -148,11 +148,11 @@ namespace {
     /**
      * Get a new trimmed automaton.
      * @param[in] nfa NFA to trim.
-     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
+     * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
      * @return Newly created trimmed automaton.
      */
-    Nfa create_trimmed_aut(const Nfa& nfa, const StateToStateMap& original_to_new_states_map) {
-        Nfa trimmed_aut{ original_to_new_states_map.size() };
+    Nfa create_trimmed_aut(const Nfa& nfa, const StateRenaming& original_to_new_state_renaming) {
+        Nfa trimmed_aut{ original_to_new_state_renaming.size() };
 
         for (const State old_initial_state: nfa.initial)
         {
@@ -169,7 +169,7 @@ namespace {
             }
         }
 
-        add_trimmed_transitions(nfa, original_to_new_states_map, trimmed_aut);
+        add_trimmed_transitions(nfa, original_to_new_state_renaming, trimmed_aut);
         return trimmed_aut;
     }
 
@@ -223,18 +223,18 @@ StateSet Nfa::get_terminating_states() const
 }
 
 //TODO: probably can be removed, trim_inplace is faster.
-void Nfa::trim_reverting(StateToStateMap* state_map)
+void Nfa::trim_reverting(StateRenaming* state_renaming)
 {
-    if (!state_map) {
-        StateToStateMap tmp_state_map{};
-        *this = get_trimmed_automaton(&tmp_state_map);
+    if (!state_renaming) {
+        StateRenaming tmp_state_renaming{};
+        *this = get_trimmed_automaton(&tmp_state_renaming);
     } else {
-        state_map->clear();
-        *this = get_trimmed_automaton(state_map);
+        state_renaming->clear();
+        *this = get_trimmed_automaton(state_renaming);
     }
 }
 
-void Nfa::trim_inplace(StateToStateMap* state_map)
+void Nfa::trim_inplace(StateRenaming* state_renaming)
 {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
@@ -266,33 +266,33 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
     final.truncate();
 
     // TODO : this is actually only used in one test, remove state map?
-    if (state_map) {
-        state_map->clear();
-        state_map->reserve(useful_states.size());
+    if (state_renaming) {
+        state_renaming->clear();
+        state_renaming->reserve(useful_states.size());
         for (State q=0;q<useful_states.size();q++)
             if (useful_states[q])
-                (*state_map)[q] = renaming[q];
+                (*state_renaming)[q] = renaming[q];
     }
 }
 
-Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
+Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
-    StateToStateMap tmp_state_map{};
-    if (!state_map) {
-        state_map = &tmp_state_map;
+    StateRenaming tmp_state_renaming{};
+    if (!state_renaming) {
+        state_renaming = &tmp_state_renaming;
     }
-    state_map->clear();
+    state_renaming->clear();
 
     const StateSet original_useful_states{get_useful_states_old() };
-    state_map->reserve(original_useful_states.size());
+    state_renaming->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
     for (const State original_state: original_useful_states) {
-        (*state_map)[original_state] = new_state_num;
+        (*state_renaming)[original_state] = new_state_num;
         ++new_state_num;
     }
-    return create_trimmed_aut(*this, *state_map);
+    return create_trimmed_aut(*this, *state_renaming);
 }
 
 namespace {

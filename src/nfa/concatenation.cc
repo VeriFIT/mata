@@ -22,8 +22,8 @@ using namespace Mata::Nfa;
 namespace Mata::Nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
-                StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
-    return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_states_map, rhs_result_states_map);
+                StateRenaming* lhs_result_state_renaming, StateRenaming* rhs_result_state_renaming) {
+    return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
@@ -64,7 +64,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 }
 
 Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
-                StateToStateMap* lhs_result_states_map, StateToStateMap* rhs_result_states_map) {
+                                StateRenaming* lhs_result_state_renaming, StateRenaming* rhs_result_state_renaming) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
@@ -76,23 +76,23 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     const unsigned long lhs_states_num{lhs.size() };
     const unsigned long rhs_states_num{rhs.size() };
     Nfa result{}; // Concatenated automaton.
-    StateToStateMap lhs_result_states_map_internal{}; // Map mapping rhs states to result states.
-    StateToStateMap rhs_result_states_map_internal{}; // Map mapping rhs states to result states.
+    StateRenaming lhs_result_states_renaming_internal{}; // Map mapping rhs states to result states.
+    StateRenaming rhs_result_states_renaming_internal{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
     if (result_num_of_states == 0) { return Nfa{}; }
 
     // Map lhs states to result states.
-    lhs_result_states_map_internal.reserve(lhs_states_num);
+    lhs_result_states_renaming_internal.reserve(lhs_states_num);
     Symbol result_state_index{ 0 };
     for (State lhs_state{ 0 }; lhs_state < lhs_states_num; ++lhs_state) {
-        lhs_result_states_map_internal.insert(std::make_pair(lhs_state, result_state_index));
+        lhs_result_states_renaming_internal.insert(std::make_pair(lhs_state, result_state_index));
         ++result_state_index;
     }
     // Map rhs states to result states.
-    rhs_result_states_map_internal.reserve(rhs_states_num);
+    rhs_result_states_renaming_internal.reserve(rhs_states_num);
     for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state) {
-        rhs_result_states_map_internal.insert(std::make_pair(rhs_state, result_state_index));
+        rhs_result_states_renaming_internal.insert(std::make_pair(rhs_state, result_state_index));
         ++result_state_index;
     }
 
@@ -106,14 +106,14 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     for (const auto& lhs_final_state: lhs.final) {
         for (const auto& rhs_initial_state: rhs.initial) {
             result.delta.add(lhs_final_state, epsilon,
-                             rhs_result_states_map_internal[rhs_initial_state]);
+                             rhs_result_states_renaming_internal[rhs_initial_state]);
         }
     }
 
     // Make result final states.
     for (const auto& rhs_final_state: rhs.final)
     {
-        result.final.insert(rhs_result_states_map_internal[rhs_final_state]);
+        result.final.insert(rhs_result_states_renaming_internal[rhs_final_state]);
     }
 
     // Add rhs transitions to the result.
@@ -123,9 +123,9 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
         {
             for (const State& rhs_state_to: rhs_move.targets)
             {
-                result.delta.add(rhs_result_states_map_internal[rhs_state],
+                result.delta.add(rhs_result_states_renaming_internal[rhs_state],
                                  rhs_move.symbol,
-                                 rhs_result_states_map_internal[rhs_state_to]);
+                                 rhs_result_states_renaming_internal[rhs_state_to]);
             }
         }
     }
@@ -133,8 +133,8 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (!use_epsilon) {
         result.remove_epsilon();
     }
-    if (lhs_result_states_map != nullptr) { *lhs_result_states_map = lhs_result_states_map_internal; }
-    if (rhs_result_states_map != nullptr) { *rhs_result_states_map = rhs_result_states_map_internal; }
+    if (lhs_result_state_renaming != nullptr) { *lhs_result_state_renaming = lhs_result_states_renaming_internal; }
+    if (rhs_result_state_renaming != nullptr) { *rhs_result_state_renaming = rhs_result_states_renaming_internal; }
     return result;
 } // concatenate_eps().
 } // Namespace Mata::Nfa.

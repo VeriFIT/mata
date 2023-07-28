@@ -2117,11 +2117,11 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
 TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 {
     Nfa aut;
-    StateToStateMap state_map;
+    StateRenaming state_renaming;
 
     SECTION("empty automaton")
     {
-        Nfa result = reduce(aut, false, &state_map);
+        Nfa result = reduce(aut, false, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2134,14 +2134,14 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result = reduce(aut, false, &state_map);
+        Nfa result = reduce(aut, false, &state_renaming);
 
         REQUIRE(result.delta.empty());
-        REQUIRE(result.initial[state_map[1]]);
-        REQUIRE(result.final[state_map[2]]);
+        REQUIRE(result.initial[state_renaming[1]]);
+        REQUIRE(result.final[state_renaming[2]]);
         REQUIRE(result.size() == 2);
-        REQUIRE(state_map[1] == state_map[0]);
-        REQUIRE(state_map[2] != state_map[0]);
+        REQUIRE(state_renaming[1] == state_renaming[0]);
+        REQUIRE(state_renaming[2] != state_renaming[0]);
     }
 
     SECTION("big automaton")
@@ -2166,46 +2166,46 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.final = {3, 9};
 
 
-        Nfa result = reduce(aut, false, &state_map);
+        Nfa result = reduce(aut, false, &state_renaming);
 
         REQUIRE(result.size() == 6);
-        REQUIRE(result.initial[state_map[1]]);
-        REQUIRE(result.initial[state_map[2]]);
-        REQUIRE(result.delta.contains(state_map[9], 'c', state_map[0]));
-        REQUIRE(result.delta.contains(state_map[9], 'c', state_map[7]));
-        REQUIRE(result.delta.contains(state_map[3], 'c', state_map[0]));
-        REQUIRE(result.delta.contains(state_map[0], 'a', state_map[8]));
-        REQUIRE(result.delta.contains(state_map[7], 'a', state_map[4]));
-        REQUIRE(result.delta.contains(state_map[1], 'a', state_map[3]));
-        REQUIRE(!result.delta.contains(state_map[3], 'b', state_map[4]));
-        REQUIRE(result.delta.contains(state_map[2], 'a', state_map[2]));
-        REQUIRE(result.final[state_map[9]]);
-        REQUIRE(result.final[state_map[3]]);
+        REQUIRE(result.initial[state_renaming[1]]);
+        REQUIRE(result.initial[state_renaming[2]]);
+        REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[0]));
+        REQUIRE(result.delta.contains(state_renaming[9], 'c', state_renaming[7]));
+        REQUIRE(result.delta.contains(state_renaming[3], 'c', state_renaming[0]));
+        REQUIRE(result.delta.contains(state_renaming[0], 'a', state_renaming[8]));
+        REQUIRE(result.delta.contains(state_renaming[7], 'a', state_renaming[4]));
+        REQUIRE(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
+        REQUIRE(!result.delta.contains(state_renaming[3], 'b', state_renaming[4]));
+        REQUIRE(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
+        REQUIRE(result.final[state_renaming[9]]);
+        REQUIRE(result.final[state_renaming[3]]);
 
-        result = reduce(aut, true, &state_map);
+        result = reduce(aut, true, &state_renaming);
         CHECK(result.size() == 3);
         CHECK(result.initial.size() == 2);
         for (State initial : result.initial) {
-            CHECK(((initial == state_map[1]) || (initial == state_map[2])));
+            CHECK(((initial == state_renaming[1]) || (initial == state_renaming[2])));
         }
         REQUIRE(result.final.size() == 1);
         for (State final : result.final) {
-            CHECK(final == state_map[3]);
+            CHECK(final == state_renaming[3]);
         }
         CHECK(result.delta.size() == 6);
-        CHECK(result.delta.contains(state_map[1], 'a', state_map[3]));
-        CHECK(result.delta.contains(state_map[1], 'a', state_map[2]));
-        CHECK(result.delta.contains(state_map[2], 'a', state_map[2]));
-        CHECK(result.delta.contains(state_map[2], 'b', state_map[2]));
-        CHECK(result.delta.contains(state_map[2], 'a', state_map[3]));
-        CHECK(result.delta.contains(state_map[3], 'b', state_map[2]));
+        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
+        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[3]));
+        CHECK(result.delta.contains(state_renaming[3], 'b', state_renaming[2]));
     }
 
     SECTION("no transitions from non-final state")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        Nfa result = reduce(aut, true, &state_map);
+        Nfa result = reduce(aut, true, &state_renaming);
         CHECK(Mata::Nfa::are_equivalent(result, aut));
     }
 }
@@ -2536,7 +2536,7 @@ TEST_CASE("Mata::Nfa::trim()")
 
     SECTION("With state map") {
         Nfa aut{orig_aut};
-        StateToStateMap state_map{};
+        StateRenaming state_map{};
         aut.trim(&state_map);
         CHECK(aut.initial.size() == orig_aut.initial.size());
         CHECK(aut.final.size() == orig_aut.final.size());

@@ -19,7 +19,7 @@ cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
-    Symbol, State, StateSet, StateToStateMap, StringToSymbolMap, \
+    Symbol, State, StateSet, StateRenaming, StringToSymbolMap, \
     CDelta, CRun, CTrans, CNfa, CMove, CEPSILON
 
 from libmata.alphabets cimport CAlphabet
@@ -504,7 +504,7 @@ cdef class Nfa:
 
         :return: State map of original to new states.
         """
-        cdef StateToStateMap state_map
+        cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
         return {k: v for k, v in state_map}
 
@@ -782,8 +782,8 @@ def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = Fal
     :return: Nfa: Concatenated automaton.
     """
     result = Nfa()
-    cdef StateToStateMap c_lhs_map
-    cdef StateToStateMap c_rhs_map
+    cdef StateRenaming c_lhs_map
+    cdef StateRenaming c_rhs_map
     mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
                          use_epsilon, &c_lhs_map, &c_rhs_map)
     lhs_map = {}
@@ -871,7 +871,7 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
     :return: (Reduced automaton, state map of original to new states)
     """
     params = params or {"algorithm": "simulation"}
-    cdef StateToStateMap state_map
+    cdef StateRenaming state_map
     result = Nfa()
     mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
                     {

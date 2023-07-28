@@ -56,8 +56,10 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateToStateMap *state_map = nullptr,
-                   const ParameterMap&  params = {{ "algorithm", "simulation"}}) { *result = reduce(aut, trim_result, state_map, params); }
+inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateRenaming *state_renaming = nullptr,
+                   const ParameterMap& params = {{ "algorithm", "simulation"}}) {
+    *result = reduce(aut, trim_result, state_renaming, params);
+}
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 
@@ -95,12 +97,12 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
 
 /**
  * @brief Concatenate two NFAs.
- * @param[out] lhs_result_states_map Map mapping lhs states to result states.
- * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
+ * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
 void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr) {
-    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_states_map, rhs_result_states_map);
+                 StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
+    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 } // namespace Mata::Nfa::Plumbing.

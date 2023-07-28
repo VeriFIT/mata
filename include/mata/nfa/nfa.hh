@@ -218,12 +218,12 @@ public:
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
-     * @param[out] state_map Mapping of trimmed states to new states.
+     * @param[out] state_renaming Mapping of trimmed states to new states.
      * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    void trim_inplace(StateToStateMap* state_map = nullptr);
-    void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
+    void trim_inplace(StateRenaming* state_renaming = nullptr);
+    void trim_reverting(StateRenaming* state_renaming = nullptr);
+    void trim(StateRenaming* state_renaming = nullptr) { trim_inplace(state_renaming); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -232,10 +232,10 @@ public:
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
-     * @param[out] state_map Mapping of trimmed states to new states.
+     * @param[out] state_renaming Mapping of trimmed states to new states.
      * @return Trimmed automaton.
      */
-    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr) const;
+    Nfa get_trimmed_automaton(StateRenaming* state_renaming = nullptr) const;
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -503,13 +503,13 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_result_states_map Map mapping lhs states to result states.
- * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
+ * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+                StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr);
 
 /**
  * Make @c aut complete in place.
@@ -611,12 +611,12 @@ Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map
  *
  * @param[in] aut Automaton to reduce.
  * @param[in] trim_input Whether to trim the input automaton first or not.
- * @param[out] state_map Mapping of trimmed states to new states.
+ * @param[out] state_renaming Mapping of trimmed states to new states.
  * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(const Nfa &aut, bool trim_input = true, StateToStateMap *state_map = nullptr,
+Nfa reduce(const Nfa &aut, bool trim_input = true, StateRenaming *state_renaming = nullptr,
            const ParameterMap&  params = {{ "algorithm", "simulation"}});
 
 /// Is the language of the automaton universal?
