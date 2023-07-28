@@ -137,37 +137,33 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
     return os << result;
 }
 
-bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
-{ // {{{
-    // fill lhs_states with all states of lhs
+bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs) {
+    // Fill lhs_states with all states in lhs.
     std::unordered_set<State> lhs_states;
     lhs_states.insert(lhs.initial.begin(), lhs.initial.end());
     lhs_states.insert(lhs.final.begin(), lhs.final.end());
-
-    const size_t delta_size = lhs.delta.num_of_states();
-    for (size_t i = 0; i < delta_size; i++) {
+    const size_t lhs_delta_size{ lhs.delta.num_of_states() };
+    for (size_t i{ 0 }; i < lhs_delta_size; ++i) {
         lhs_states.insert(i);
-        for (const auto& symStates : lhs.delta[i])
-        {
+        for (const Move& symStates : lhs.delta[i]) {
             lhs_states.insert(symStates.targets.begin(), symStates.targets.end());
         }
     }
 
-    // for every state found in rhs, check its presence in lhs_states
-    for (const auto& rhs_st : rhs.initial) {
+    // For every state found in rhs, check its presence in lhs_states.
+    for (const State rhs_st : rhs.initial) {
         if (haskey(lhs_states, rhs_st)) { return false; }
     }
 
-    for (const auto& rhs_st : rhs.final) {
+    for (const State rhs_st : rhs.final) {
         if (haskey(lhs_states, rhs_st)) { return false; }
     }
 
-    const size_t lhs_post_size = lhs.delta.num_of_states();
-    for (size_t i = 0; i < lhs_post_size; i++) {
-        if (haskey(lhs_states, i))
-            return false;
-        for (const auto& symState : lhs.delta[i]) {
-            for (const auto& rhState : symState.targets) {
+    const size_t rhs_delta_size{ rhs.delta.num_of_states() };
+    for (size_t i{ 0 }; i < rhs_delta_size; ++i) {
+        if (haskey(lhs_states, i)) { return false; }
+        for (const Move& symState : lhs.delta[i]) {
+            for (const State rhState : symState.targets) {
                 if (haskey(lhs_states,rhState)) {
                     return false;
                 }
@@ -175,9 +171,9 @@ bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
         }
     }
 
-    // no common state found
+    // No common state found.
     return true;
-} // are_disjoint }}}
+} // are_state_disjoint().
 
 bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
     return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
