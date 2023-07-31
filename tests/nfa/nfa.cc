@@ -3043,3 +3043,108 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
 
 	CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
+
+TEST_CASE("Mata::Nfa::trim bug") {
+	Nfa aut(5, {0}, {4});
+	aut.delta.add(0, 122, 1);
+	aut.delta.add(1, 98, 1);
+	aut.delta.add(1, 122, 1);
+	aut.delta.add(1, 97, 2);
+	aut.delta.add(2, 122, 1);
+	aut.delta.add(2, 97, 1);
+	aut.delta.add(1, 97, 4);
+	aut.delta.add(3, 97, 4);
+
+	Nfa aut_copy {aut};
+	aut.trim();
+	CHECK(are_equivalent(aut_copy, aut));
+}
+
+TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
+	SECTION("Nfa 1") {
+		Nfa aut(5, {0}, {4});
+		aut.delta.add(0, 122, 1);
+		aut.delta.add(1, 98, 1);
+		aut.delta.add(1, 122, 1);
+		aut.delta.add(1, 97, 2);
+		aut.delta.add(2, 122, 1);
+		aut.delta.add(2, 97, 1);
+		aut.delta.add(1, 97, 4);
+		aut.delta.add(3, 97, 4);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({1, 1, 1, 0, 1});
+		CHECK(bv == ref);
+	}
+
+	SECTION("Empty NFA") {
+		Nfa aut;
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({}));
+	}
+
+	SECTION("Single-state NFA") {
+		Nfa aut(1, {0}, {});
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({0}));
+	}
+
+	SECTION("Single-state NFA acc") {
+		Nfa aut(1, {0}, {0});
+		Mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({1}));
+	}
+
+	SECTION("Nfa 2") {
+		Nfa aut(5, {0, 1}, {2});
+		aut.delta.add(0, 122, 2);
+		aut.delta.add(2, 98, 3);
+		aut.delta.add(1, 98, 4);
+		aut.delta.add(4, 97, 3);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({1, 0, 1, 0, 0});
+		CHECK(bv == ref);
+	}
+
+	SECTION("Nfa 3") {
+		Nfa aut(2, {0, 1}, {0, 1});
+		aut.delta.add(0, 122, 0);
+		aut.delta.add(1, 98, 1);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({1, 1});
+		CHECK(bv == ref);
+	}
+
+	SECTION("Nfa no final") {
+		Nfa aut(5, {0}, {});
+		aut.delta.add(0, 122, 1);
+		aut.delta.add(1, 98, 1);
+		aut.delta.add(1, 122, 1);
+		aut.delta.add(1, 97, 2);
+		aut.delta.add(2, 122, 1);
+		aut.delta.add(2, 97, 1);
+		aut.delta.add(1, 97, 4);
+		aut.delta.add(3, 97, 4);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({0, 0, 0, 0, 0});
+		CHECK(bv == ref);
+	}
+
+	SECTION("from regex (a+b*a*)") {
+		Mata::Nfa::Nfa aut;
+		Mata::Parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
+		CHECK(bv == ref);
+
+		aut = Mata::Nfa::reduce(aut);
+		bv = aut.get_useful_states();
+		CHECK(bv == Mata::BoolVector({1,1,1,1}));
+	}
+	
+}
+
