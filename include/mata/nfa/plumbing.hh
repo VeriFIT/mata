@@ -29,7 +29,7 @@ using namespace Mata::Nfa::Builder;
  */
 namespace Mata::Nfa::Plumbing {
 
-void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
+inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     element_set->clear();
     element_set->reserve(bool_vec.count());
     for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
@@ -88,7 +88,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
  *
  * Automata must share alphabets.
  */
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
+inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
                   bool preserve_epsilon = false,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
     *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
@@ -99,7 +99,7 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                  StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
