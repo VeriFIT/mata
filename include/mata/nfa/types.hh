@@ -44,19 +44,20 @@ public:
     static const Symbol max_symbol = std::numeric_limits<Symbol>::max();
 };
 
-/// A single transition.
+/// A single transition in Delta.
 struct Trans {
     State src;
     Symbol symb;
     State tgt;
 
     Trans() : src(), symb(), tgt() { }
-    Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) { }
+    Trans(const Trans &) = default;
+    Trans(Trans &&) = default;
+    Trans &operator=(const Trans &) = default;
+    Trans &operator=(Trans &&) = default;
+    Trans(State src, Symbol symb, State tgt) : src(src), symb(symb), tgt(tgt) {}
 
-    bool operator==(const Trans& rhs) const
-    { // {{{
-        return src == rhs.src && symb == rhs.symb && tgt == rhs.tgt;
-    } // operator== }}}
+    bool operator==(const Trans& rhs) const { return src == rhs.src && symb == rhs.symb && tgt == rhs.tgt; }
     bool operator!=(const Trans& rhs) const { return !this->operator==(rhs); }
 };
 
