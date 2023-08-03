@@ -3145,6 +3145,17 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		bv = aut.get_useful_states();
 		CHECK(bv == Mata::BoolVector({1,1,1,1}));
 	}
+
+    SECTION("more initials") {
+
+        Nfa aut(4, {0, 1, 2}, {0, 3});
+		aut.delta.add(1, 48, 0);
+        aut.delta.add(2, 53, 3);
+
+		Mata::BoolVector bv = aut.get_useful_states();
+		Mata::BoolVector ref({1, 1, 1, 1});
+		CHECK(bv == ref);
+	}
 	
 }
 
