@@ -110,6 +110,36 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
         REQUIRE(a.delta.contains(0, 'b', 0));
     }
 
+    SECTION("Iterating over transitions") {
+        Trans t1{ 0, 0, 0};
+        Trans t2{ 0, 1, 0};
+        Trans t3{ 1, 1, 1};
+        Trans t4{ 2, 2, 2};
+        a.delta.add(t1);
+        a.delta.add(t2);
+        a.delta.add(t3);
+        a.delta.add(t4);
+        a.delta.add(t3);
+        size_t transitions_cnt{ 0 };
+        std::vector<Trans> expected_transitions{ t1, t2, t3, t4 };
+        std::vector<Trans> iterated_transitions{};
+        for (auto trans_it{ a.delta.transitions_begin()}; trans_it != a.delta.transitions_end(); ++trans_it) {
+            iterated_transitions.push_back(*trans_it);
+            ++transitions_cnt;
+        }
+        CHECK(transitions_cnt == 4);
+        CHECK(expected_transitions == iterated_transitions);
+
+        transitions_cnt = 0;
+        iterated_transitions.clear();
+        for (const Trans& trans: a.delta.transitions()) {
+            iterated_transitions.push_back(trans);
+            ++transitions_cnt;
+        }
+        CHECK(transitions_cnt == 4);
+        CHECK(expected_transitions == iterated_transitions);
+    }
+
 } // }}}
 
 TEST_CASE("Mata::Nfa::Delta.transform/append")
