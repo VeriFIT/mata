@@ -46,13 +46,9 @@ int load_automaton(std::string filename, Nfa& aut, Mata::StringToSymbolMap& stsm
             aut = Mata::Nfa::Builder::construct(inter_auts[0], &stsm);
         } else {
             Mata::Mintermization mintermization;
-            auto minterm_start = std::chrono::system_clock::now();
             auto mintermized = mintermization.mintermize(inter_auts);
-            auto minterm_end = std::chrono::system_clock::now();
-            std::chrono::duration<double> elapsed = minterm_end - minterm_start;
             assert(mintermized.size() == 1);
             aut = Mata::Nfa::Builder::construct(mintermized[0], &stsm);
-            std::cout << "mintermization:" << elapsed.count() << "\n";
         }
         return EXIT_SUCCESS;
     }
@@ -78,37 +74,15 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Setting precision of the times to fixed points and 4 decimal places
-    std::cout << std::fixed << std::setprecision(5);
+    // trim test
+    Nfa aut_trim(aut);
+    aut_trim.trim();
+    std::cout << "trim:" << (Mata::Nfa::are_equivalent(aut, aut_trim) ? "ok" : "fail") << std::endl;
 
-    Mata::OnTheFlyAlphabet alph{ stsm };
-    Nfa trimmed_aut = aut;
-    auto start = std::chrono::system_clock::now();
-    trimmed_aut.trim();
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "trim: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut2 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.trim_inplace();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "trim-inplace: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut3 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.trim_reverting();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "trim-reverting: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut4 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.get_trimmed_automaton();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "get-trimmed-automaton: " << elapsed.count() << "\n";
+    // minimization test
+    Nfa aut_min(aut);
+    aut_min = Mata::Nfa::minimize(aut_min);
+    std::cout << "minimize:" << (Mata::Nfa::are_equivalent(aut, aut_min) ? "ok" : "fail") << std::endl;
 
     return EXIT_SUCCESS;
 }
