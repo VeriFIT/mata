@@ -8,6 +8,19 @@ namespace Mata::Nfa {
 /**
  * Structure represents a move which is a symbol and a set of target states of transitions.
  */
+    //HOW TO RENAME STUFF
+    //delta/coniferation (a set/sequence of cones)/cone
+    //choice,
+    //iconary,
+    //lexicon,
+    //choice/fan/fanout/cone/fork
+    //symbolbrach, sourcebranch
+    //srcbranch, charbranch
+    //srcfork,symfork,tgtfork
+    //srctree,symtree
+    //srctree,symtree,tgttree
+    //delta,srcpost,sympost
+    //AND THE WINNER IS: delta, srcpost, sympost. Huraaa
 class Move {
 public:
     Symbol symbol{};
@@ -97,6 +110,10 @@ public:
 class Delta {
 private:
     std::vector<Post> posts;
+    //this internal vector of things is done in a different way in each of the structures, post, delta, move.
+    //would be nice to make it uniform
+    //the delta way is the cleanest, no? a private data member
+    //lets do it that way?
 
 public:
     inline static const Post empty_post; // When posts[q] is not allocated, then delta[q] returns this.
@@ -125,6 +142,7 @@ public:
     // But it feels fragile, before doing something like that, better think and talk to people.
     Post& get_mutable_post(State q);
 
+    //Needs explanation. Maybe refactoring, replacing by several more sensible functions
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
@@ -134,6 +152,7 @@ public:
 
     void clear() { posts.clear(); }
 
+    //Still fishy, what do we mean by size here? Probably should be just the size of the vector. However, below we call it num_of_states.
     void increase_size(size_t n) {
         assert(n >= posts.size());
         posts.resize(n);
@@ -143,9 +162,12 @@ public:
      * @return Number of states in the whole Delta, including both source and target states.
      */
     size_t num_of_states() const { return posts.size(); }
+    //should it just be size() ?
+
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
+    //more add functions below, should be together?
     void remove(State src, Symbol symb, State tgt);
     void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
 
@@ -192,6 +214,7 @@ public:
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
+    //So this should become the thing discussed, delta.transitions.begin() ..., with internal transition, * will return a const reference to it
     struct const_iterator {
     private:
         const std::vector<Post>& post;

@@ -68,6 +68,8 @@ Nfa complement_classical(const Nfa& aut, const Mata::Util::OrdVector<Symbol>& sy
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+//naive is not a good word, maybe textbook, or explicit, construct_first
+//the alphabet parameter is useless in inclusion
 
 /**
  * Inclusion implemented by antichain algorithms.
@@ -79,6 +81,7 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
 bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+//antichains -> antichain. Everywhere here.
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -88,6 +91,7 @@ bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabe
  * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
  */
 bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
+//naive -> textbook/explicit
 
 /**
  * Universality checking based on subset construction with antichain.
@@ -98,6 +102,22 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
  */
 bool is_universal_antichains(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
+//the alphabet parameter should be optional? The automaton can have its alphabet too. Run should be optional.
+//actually, what about to use this, with more optional parameters through structures
+//struct univ_params
+//{
+//    Alphabet* alphabet = NULL,
+//    Run* cex = NULL,
+//};
+//   bool is_universal_antichains(const Nfa& aut, univ_params={NULL,NULL});
+//   and call as
+//   bool is_universal_antichains(const Nfa& aut);
+//   bool is_universal_antichains(const Nfa& aut,{.alphabet = bla});
+//   bool is_universal_antichains(const Nfa& aut,{.cex = bli});
+//   bool is_universal_antichains(const Nfa& aut,{.alphabet = bla, .cex = bli});
+
+//comment missing
+//Do we really need this?
 Simlib::Util::BinaryRelation compute_relation(
         const Nfa& aut,
         const StringMap&  params = {{"relation", "simulation"}, {"direction", "forward"}});
@@ -112,6 +132,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
+// all parameters needed/used?
 Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
     std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
@@ -127,6 +148,7 @@ Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, cons
  * @param[out] rhs_result_states_map Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
+//Are both maps needed?
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
     StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
 
