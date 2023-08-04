@@ -408,6 +408,14 @@ BoolVector Nfa::get_useful_states() const {
     while(!program_stack.empty()) {
         State act_state = program_stack.back();
         TarjanNodeData& act_state_data = node_info[act_state];
+
+        // if a node is initialized and is not on stack --> skip it; this state was 
+        // already processed (=this state is initial and was reachable from another initial).
+        if(act_state_data.initilized && !act_state_data.on_stack) {
+            program_stack.pop_back();
+            continue;
+        }
+
         // node has not been initialized yet --> corresponds to the first call of strongconnect(act_state)
         if(!act_state_data.initilized) {
             // initialize node
