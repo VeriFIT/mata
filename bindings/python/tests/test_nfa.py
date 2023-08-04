@@ -170,23 +170,25 @@ def test_transitions():
 
     # Test adding transition
     assert lhs.get_num_of_trans() == 0
-    lhs.add_transition_object(t1)
-    assert lhs.get_num_of_trans() != 0
+    lhs.add_transition(0, 0, 0)
+    assert lhs.get_num_of_trans() == 1
     assert lhs.has_transition(t1.src, t1.symb, t1.tgt)
 
     lhs.add_transition_object(t2)
+    assert lhs.get_num_of_trans() == 2
     assert lhs.has_transition(t2.src, t2.symb, t2.tgt)
 
     # Test adding add-hoc transition
     lhs.add_transition(1, 1, 1)
+    assert lhs.get_num_of_trans() == 3
     assert lhs.has_transition(t3.src, t3.symb, t3.tgt)
     assert not lhs.has_transition(2, 2, 2)
     lhs.add_transition_object(t4)
+    assert lhs.get_num_of_trans() == 4
     assert lhs.has_transition(2, 2, 2)
 
     # Test that transitions are not duplicated
     lhs.add_transition(1, 1, 1)
-
     assert [t for t in lhs.iterate()] == [t1, t2, t3, t4]
 
 
