@@ -26,8 +26,6 @@
 #include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
-using std::tie;
-
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;

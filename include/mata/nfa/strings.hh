@@ -16,9 +16,6 @@
 #ifndef MATA_NFA_STRING_SOLVING_HH_
 #define MATA_NFA_STRING_SOLVING_HH_
 
-#include <memory>
-#include <optional>
-
 #include "nfa.hh"
 
 namespace {
