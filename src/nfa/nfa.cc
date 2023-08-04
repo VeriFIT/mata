@@ -300,18 +300,18 @@ namespace {
     // of useful states. It contains Tarjan's metadata and the state of the 
     // iteration through the successors. 
     struct TarjanNodeData {
-        Post::const_iterator post_it;
-        Post::const_iterator post_end;
+        Post::const_iterator post_it{};
+        Post::const_iterator post_end{};
         StateSet::const_iterator targets_it{};
         StateSet::const_iterator targets_end{};
         // index of a node (corresponds to the time of discovery)
-        unsigned long index {0};
+        unsigned long index{ 0 };
         // index of a lower node in the same SCC 
-        unsigned long lowlink {0};
+        unsigned long lowlink{ 0 };
         // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-        bool initilized {false};
+        bool initilized{ false };
         // is node on Tarjan's stack?
-        bool on_stack {false};
+        bool on_stack{ false };
 
         TarjanNodeData() = default;
 
