@@ -6,6 +6,8 @@
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
 
+#include <limits>
+
 namespace Mata::Nfa {
 
 extern const std::string TYPE_NFA;
