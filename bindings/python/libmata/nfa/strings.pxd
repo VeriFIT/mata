@@ -28,5 +28,5 @@ cdef extern from "mata/nfa/strings.hh" namespace "Mata::Strings::SegNfa":
     ctypedef vector[vector[shared_ptr[CNfa]]] NoodleSequence
 
     cdef NoodleSequence c_noodlify "Mata::Strings::SegNfa::noodlify" (CNfa&, Symbol, bool)
-    cdef NoodleSequence c_noodlify_for_equation "Mata::Strings::SegNfa::noodlify_for_equation" (const vector[CNfa*]&,
-                                                                                                             CNfa&, bool, ParameterMap&)
+    cdef NoodleSequence c_noodlify_for_equation "Mata::Strings::SegNfa::noodlify_for_equation" \
+        (const vector[CNfa*]&, CNfa&, bool, ParameterMap&)

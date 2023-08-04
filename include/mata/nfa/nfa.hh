@@ -567,7 +567,7 @@ inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_comp
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-   const ParameterMap& params = {{ "algorithm", "classical"}, { "minimize", "false"}});
+               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -585,7 +585,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
-   const ParameterMap& params = {{ "algorithm", "classical"}, { "minimize", "false"}});
+               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute minimal deterministic automaton.
@@ -595,7 +595,7 @@ Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}});
+Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
 
 /**
  * @brief Determinize automaton.
@@ -604,7 +604,7 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzoz
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
  * @return Determinized automaton.
  */
-Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
  * Reduce the size of the automaton.
@@ -617,19 +617,13 @@ Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, bool trim_input = true, StateRenaming *state_renaming = nullptr,
-           const ParameterMap&  params = {{ "algorithm", "simulation"}});
+           const ParameterMap& params = {{ "algorithm", "simulation" }});
 
 /// Is the language of the automaton universal?
-bool is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        Run*              cex = nullptr,
-        const ParameterMap&  params = {{ "algorithm", "antichains"}});
+bool is_universal(const Nfa& aut, const Alphabet& alphabet, Run* cex = nullptr,
+                  const ParameterMap& params = {{ "algorithm", "antichains" }});
 
-inline bool is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const ParameterMap&  params) {
+inline bool is_universal(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
     return is_universal(aut, alphabet, nullptr, params);
 }
 
@@ -644,12 +638,8 @@ inline bool is_universal(
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_included(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        Run*               cex,
-        const Alphabet*    alphabet = nullptr,
-        const ParameterMap&   params = {{ "algorithm", "antichains"}});
+bool is_included(const Nfa& smaller, const Nfa& bigger, Run* cex, const Alphabet* alphabet = nullptr,
+                 const ParameterMap& params = {{ "algorithm", "antichains" }});
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -661,11 +651,8 @@ bool is_included(
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(
-        const Nfa&             smaller,
-        const Nfa&             bigger,
-        const Alphabet* const  alphabet = nullptr,
-        const ParameterMap&      params = {{ "algorithm", "antichains"}}) {
+inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* const alphabet = nullptr,
+                        const ParameterMap& params = {{ "algorithm", "antichains" }}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
