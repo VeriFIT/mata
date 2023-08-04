@@ -234,8 +234,7 @@ void Nfa::trim_reverting(StateRenaming* state_renaming)
     }
 }
 
-void Nfa::trim_inplace(StateRenaming* state_renaming)
-{
+void Nfa::trim_inplace(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
@@ -243,35 +242,33 @@ void Nfa::trim_inplace(StateRenaming* state_renaming)
 #else
     BoolVector useful_states{ get_useful_states() };
 #endif
-
-    std::vector<State> renaming(useful_states.size());
-
-    State j=0;
-    for(State i = 0; i<useful_states.size(); i++) {
-        if (useful_states[i]) {
-            renaming[i] = j;
-            j++;
+    const size_t useful_states_size{ useful_states.size() };
+    std::vector<State> renaming(useful_states_size);
+    for(State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
+        if (useful_states[orig_state]) {
+            renaming[orig_state] = new_state;
+            ++new_state;
         }
     }
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&useful_states](State q){return q < useful_states.size() && useful_states[q];};
+    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
-    auto rename_state = [&renaming](State q){return renaming[q];};
+    auto rename_state = [&](State q){return renaming[q];};
     initial.rename(rename_state);
     final.rename(rename_state);
     initial.truncate();
     final.truncate();
-
-    // TODO : this is actually only used in one test, remove state map?
-    if (state_renaming) {
+    if (state_renaming != nullptr) {
         state_renaming->clear();
-        state_renaming->reserve(useful_states.size());
-        for (State q=0;q<useful_states.size();q++)
-            if (useful_states[q])
+        state_renaming->reserve(useful_states_size);
+        for (State q{ 0 }; q < useful_states_size; ++q) {
+            if (useful_states[q]) {
                 (*state_renaming)[q] = renaming[q];
+            }
+        }
     }
 }
 
