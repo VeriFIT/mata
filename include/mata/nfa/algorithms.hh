@@ -123,12 +123,12 @@ Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, cons
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] epsilon Epsilon to be used co concatenation (provided @p use_epsilon is true)
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
- * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
-                    StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr);
+                    StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 } // Namespace Mata::Nfa::Algorithms.
 

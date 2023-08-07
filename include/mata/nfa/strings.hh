@@ -343,16 +343,16 @@ NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>&
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] left_automata Sequence of segment automata for left side of an equation to noodlify.
- * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
+ * @param[in] lhs_automata Sequence of segment automata for left side of an equation to noodlify.
+ * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Mata::Nfa::Nfa>>& left_automata,
-                                     const Mata::Nfa::Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Mata::Nfa::Nfa>>& lhs_automata,
+                                     const Mata::Nfa::Nfa& rhs_automaton,
                                      bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -367,22 +367,22 @@ NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Ma
  *  representing the intersection. That can be achieved by computing a product of both sides. First, the left side
  *  has to be concatenated over an epsilon transitions into a single automaton to compute the intersection on, though.
  *
- * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
- * @param[in] right_automaton Segment automaton for right side of an equation to noodlify.
+ * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in] rhs_automaton Segment automaton for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const std::vector<Mata::Nfa::Nfa*>& left_automata, const Mata::Nfa::Nfa& right_automaton,
+NoodleSequence noodlify_for_equation(const std::vector<Mata::Nfa::Nfa*>& lhs_automata, const Mata::Nfa::Nfa& rhs_automaton,
                                      bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
  *
- * @param[in] left_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
- * @param[in] right_automaton Sequence of pointers to segment automata for right side of an equation to noodlify.
+ * @param[in] lhs_automata Sequence of pointers to segment automata for left side of an equation to noodlify.
+ * @param[in] rhs_automaton Sequence of pointers to segment automata for right side of an equation to noodlify.
  * @param[in] include_empty Whether to also include empty noodles.
  * @param[in] params Additional parameters for the noodlification:
  *     - "reduce": "false", "forward", "backward", "bidirectional"; Execute forward, backward or bidirectional simulation
@@ -390,8 +390,8 @@ NoodleSequence noodlify_for_equation(const std::vector<Mata::Nfa::Nfa*>& left_au
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
 NoodleSubstSequence noodlify_for_equation(
-   const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& left_automata,
-   const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& right_automata,
+   const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& lhs_automata,
+   const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**

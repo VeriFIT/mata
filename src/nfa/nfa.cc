@@ -116,12 +116,12 @@ namespace {
     /**
      * Add transitions to the trimmed automaton.
      * @param[in] nfa NFA to add transitions from.
-     * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states.
+     * @param[in] state_renaming Map of old states to new trimmed automaton states.
      * @param[out] trimmed_aut The new trimmed automaton.
      */
-    void add_trimmed_transitions(const Nfa& nfa, const StateRenaming& original_to_new_state_renaming, Nfa& trimmed_aut) {
+    void add_trimmed_transitions(const Nfa& nfa, const StateRenaming& state_renaming, Nfa& trimmed_aut) {
         // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
-        for (const auto& original_state_mapping: original_to_new_state_renaming)
+        for (const auto& original_state_mapping: state_renaming)
         {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
@@ -129,8 +129,8 @@ namespace {
                 Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
                 {
-                    auto iter_to_new_state_to = original_to_new_state_renaming.find(old_state_to);
-                    if (iter_to_new_state_to != original_to_new_state_renaming.end())
+                    auto iter_to_new_state_to = state_renaming.find(old_state_to);
+                    if (iter_to_new_state_to != state_renaming.end())
                     {
                         // We can push here, because we assume that new states follow the ordering of original states.
                         new_state_trans_with_symbol.insert(iter_to_new_state_to->second);
@@ -149,25 +149,25 @@ namespace {
      * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
      * @return Newly created trimmed automaton.
      */
-    Nfa create_trimmed_aut(const Nfa& nfa, const StateRenaming& original_to_new_state_renaming) {
-        Nfa trimmed_aut{ original_to_new_state_renaming.size() };
+    Nfa create_trimmed_aut(const Nfa& nfa, const StateRenaming& state_renaming) {
+        Nfa trimmed_aut{ state_renaming.size() };
 
         for (const State old_initial_state: nfa.initial)
         {
-            if (original_to_new_state_renaming.find(old_initial_state) != original_to_new_state_renaming.end())
+            if (state_renaming.find(old_initial_state) != state_renaming.end())
             {
-                trimmed_aut.initial.insert(original_to_new_state_renaming.at(old_initial_state));
+                trimmed_aut.initial.insert(state_renaming.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final)
         {
-            if (original_to_new_state_renaming.find(old_final_state) != original_to_new_state_renaming.end())
+            if (state_renaming.find(old_final_state) != state_renaming.end())
             {
-                trimmed_aut.final.insert(original_to_new_state_renaming.at(old_final_state));
+                trimmed_aut.final.insert(state_renaming.at(old_final_state));
             }
         }
 
-        add_trimmed_transitions(nfa, original_to_new_state_renaming, trimmed_aut);
+        add_trimmed_transitions(nfa, state_renaming, trimmed_aut);
         return trimmed_aut;
     }
 
