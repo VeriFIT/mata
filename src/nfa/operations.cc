@@ -679,37 +679,37 @@ Nfa Mata::Nfa::minimize(
 }
 
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
-    Nfa unionAutomaton = rhs;
+    Nfa union_nfa{ rhs };
 
-    StateRenaming this_state_to_union_state;
+    StateRenaming lhs_state_renaming;
     const size_t size = lhs.size();
-    for (State this_state = 0; this_state < size; ++this_state) {
-        this_state_to_union_state[this_state] = unionAutomaton.add_state();
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        lhs_state_renaming[lhs_state] = union_nfa.add_state();
     }
 
-    for (State thisInitialState : lhs.initial) {
-        unionAutomaton.initial.insert(this_state_to_union_state[thisInitialState]);
+    for (State lhs_initial_state : lhs.initial) {
+        union_nfa.initial.insert(lhs_state_renaming[lhs_initial_state]);
     }
 
-    for (State thisFinalState : lhs.final) {
-        unionAutomaton.final.insert(this_state_to_union_state[thisFinalState]);
+    for (State lhs_final_state : lhs.final) {
+        union_nfa.final.insert(lhs_state_renaming[lhs_final_state]);
     }
 
-    for (State thisState = 0; thisState < size; ++thisState) {
-        State unionState = this_state_to_union_state[thisState];
-        for (const Move &transitionFromThisState : lhs.delta[thisState]) {
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        State union_state = lhs_state_renaming[lhs_state];
+        for (const Move &lhs_move : lhs.delta[lhs_state]) {
 
-            Move transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
+            Move union_move(lhs_move.symbol, StateSet{});
 
-            for (State stateTo : transitionFromThisState.targets) {
-                transitionFromUnionState.insert(this_state_to_union_state[stateTo]);
+            for (State stateTo : lhs_move.targets) {
+                union_move.insert(lhs_state_renaming[stateTo]);
             }
 
-            unionAutomaton.delta.get_mutable_post(unionState).insert(transitionFromUnionState);
+            union_nfa.delta.get_mutable_post(union_state).insert(union_move);
         }
     }
 
-    return unionAutomaton;
+    return union_nfa;
 }
 
 Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
