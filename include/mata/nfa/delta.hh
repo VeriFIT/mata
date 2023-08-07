@@ -246,7 +246,7 @@ public:
      * @return Iterator over transitions.
      */
     TransitionsIterator transitions() const {
-        return { transitions_begin(), transitions_end() };
+        return { .m_begin = transitions_begin(), .m_end = transitions_end() };
     }
 
     using const_iterator = std::vector<StatePost>::const_iterator;
