@@ -56,8 +56,8 @@ template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
 
-using StateValueNameMap = Mata::Nfa::Builder::StateValueNameMap;
-using StateNameValueMap = Mata::Nfa::Builder::StateNameValueMap;
+using StateNameMap = std::unordered_map<State, std::string>;
+using NameStateMap = Nfa::Builder::NameStateMap;
 
 using Path = std::vector<State>;
 using Word = std::vector<Symbol>;
@@ -158,7 +158,7 @@ struct Afa;
 Mata::Parser::ParsedSection serialize(
     const Afa&                aut,
     const SymbolToStringMap*  symbol_map = nullptr,
-    const StateValueNameMap*   state_map = nullptr);
+    const StateNameMap*   state_map = nullptr);
 
 
 ///  An AFA
@@ -303,7 +303,7 @@ struct AfaWrapper
     Alphabet* alphabet;
 
     /// mapping of state names (as strings) to their numerical values
-    StateNameValueMap state_dict;
+    NameStateMap state_dict;
 }; // AfaWrapper }}}
 
 /// Do the automata have disjoint sets of states?
@@ -432,9 +432,9 @@ bool is_deterministic(const Afa& aut);
 bool is_complete(const Afa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
-Afa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, StateNameValueMap* state_map = nullptr);
+Afa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads automaton from intermediate automaton */
-Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StateNameValueMap* state_map = nullptr);
+Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /**
  * @brief Loads automaton from parsed object (either ParsedSection or Intermediate automaton.
@@ -442,7 +442,7 @@ Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StateN
  * If user does not provide symbol map or state map, it allocates its own ones.
  */
 template <class ParsedObject>
-Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, StateNameValueMap* state_map = nullptr) {
+Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
     Mata::OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) {
         alphabet = &tmp_alphabet;
@@ -452,7 +452,7 @@ Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, StateNam
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject> void construct(Afa* result, const ParsedObject& parsed,
-                                             Alphabet* alphabet = nullptr, StateNameValueMap* state_map = nullptr) {
+                                             Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
     Mata::OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) {
         alphabet = &tmp_alphabet;

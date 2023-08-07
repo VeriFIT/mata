@@ -33,8 +33,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
     ctypedef umap[string, State] StringSubsetMap
-    ctypedef umap[string, State] StateNameValueMap
-    ctypedef umap[State, string] StateValueNameMap
+    ctypedef umap[string, State] StateNameMap
+    ctypedef umap[State, string] StateNameMap
     ctypedef umap[State, State] StateRenaming
     ctypedef umap[string, string] ParameterMap
 

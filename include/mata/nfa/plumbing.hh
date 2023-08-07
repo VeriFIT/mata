@@ -68,7 +68,7 @@ inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
 void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
-               StateNameValueMap* state_map = nullptr) {
+               NameStateMap* state_map = nullptr) {
     OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) { alphabet = &tmp_alphabet; }
     *result = Builder::construct(parsed, alphabet, state_map);

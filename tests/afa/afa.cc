@@ -578,7 +578,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StateNameValueMap state_map;
+        NameStateMap state_map;
         construct(&aut, inter_aut, &alphabet, &state_map);
 
         REQUIRE(aut.trans_size() == 4);
@@ -611,7 +611,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StateNameValueMap state_map;
+        NameStateMap state_map;
         construct(&aut, inter_aut, &alphabet, &state_map);
 
         REQUIRE(aut.initialstates.size() == 2);
@@ -637,7 +637,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StateNameValueMap state_map;
+        NameStateMap state_map;
         construct(&aut, inter_aut, &alphabet, &state_map);
 
         // Two initial nodes {q1} and {q2}
@@ -659,7 +659,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StateNameValueMap state_map;
+        NameStateMap state_map;
         construct(&aut, inter_aut, &alphabet, &state_map);
 
         // One initial node {q1, q2}
@@ -681,7 +681,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StateNameValueMap state_map;
+        NameStateMap state_map;
         construct(&aut, inter_aut, &alphabet, &state_map);
 
         CHECK(aut.finalstates.size() == 2);

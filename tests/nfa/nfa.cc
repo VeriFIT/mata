@@ -859,7 +859,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Mata::Nfa::Builder::StateNameValueMap state_map;
+        Mata::Nfa::Builder::NameStateMap state_map;
         Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.size() == 9);
         CHECK(aut.final[state_map.at("0")]);
@@ -891,7 +891,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Mata::Nfa::Builder::StateNameValueMap state_map;
+        Mata::Nfa::Builder::NameStateMap state_map;
         Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.empty());
     }
