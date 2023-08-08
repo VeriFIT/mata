@@ -114,21 +114,52 @@ public:
      */
     size_t size() const;
 
-    // Get a non const reference to post of a state, which allows modifying the post.
-    //
-    // BEWARE, IT HAS A SIDE EFFECT.
-    //
-    // Namely, it allocates the post of the state if it was not allocated yet. This in turn may cause that
-    // the entire post data structure is re-allocated, iterators to it get invalidated ...
-    // Use the constant [] operator below if possible.
-    // Or, to prevent the side effect from happening, one might want to make sure that posts of all states in the automaton
-    // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
-    // But it feels fragile, before doing something like that, better think and talk to people.
-    StatePost& get_mutable_post(State q);
+    /**
+     * @brief Get constant reference to the state post of @p src_state.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+     *  effects (no allocation is performed; iterators remain valid).
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    const StatePost& state_post(const State src_state) const {
+        if (src_state >= num_of_states()) {
+            return empty_state_post;
+        }
+        return state_posts[src_state];
+    }
 
+    /**
+     * @brief Get constant reference to the state post of @p src_state.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+     *  effects (no allocation is performed; iterators remain valid).
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    const StatePost& operator[](State src_state) const { return state_post(src_state); }
 
-    // Get a constant reference to the post of a state. No side effects.
-    const StatePost & operator[] (State q) const;
+    /**
+     * @brief Get mutable (non-constant) reference to the state post of @p src_state.
+     *
+     * The function allows modifying the state post.
+     *
+     * BEWARE, IT HAS A SIDE EFFECT.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, a new state post for @p src_state will be allocated along with
+     *  all state posts for all previous states. This in turn may cause that the entire post data structure is
+     *  re-allocated. Iterators to @c Delta will get invalidated.
+     * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
+     *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
+     *  @c Delta for all states of the NFA.
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    StatePost& mutable_state_post(State src_state);
+
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     void emplace_back() { state_posts.emplace_back(); }
@@ -150,7 +181,14 @@ public:
     void remove(State src, Symbol symb, State tgt);
     void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
 
+    /**
+     * Check whether @c Delta contains a passed transition.
+     */
     bool contains(State src, Symbol symb, State tgt) const;
+    /**
+     * Check whether @c Delta contains a transition passed as a triple.
+     */
+    bool contains(const Trans& transition) const;
 
     /**
      * Check whether automaton contains no transitions.

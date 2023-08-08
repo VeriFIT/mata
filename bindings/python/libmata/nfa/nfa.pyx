@@ -412,7 +412,7 @@ cdef class Nfa:
         :param State state: state for which we are getting the transitions
         :return: SymbolPost
         """
-        cdef mata_nfa.CStatePost transitions = self.thisptr.get().get_moves_from(state)
+        cdef mata_nfa.CStatePost transitions = self.thisptr.get().delta.state_post(state)
         cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.ToVector()
 
         cdef vector[mata_nfa.CSymbolPost].iterator it = transitions_list.begin()
@@ -657,7 +657,7 @@ cdef class Nfa:
         cdef COrdVector[CSymbolPost].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
             state, epsilon
         )
-        if c_epsilon_transitions_iter == self.thisptr.get().get_moves_from(state).cend():
+        if c_epsilon_transitions_iter == self.thisptr.get().delta.state_post(state).cend():
             return None
 
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_transitions_iter)

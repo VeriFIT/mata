@@ -119,7 +119,7 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // Add rhs transitions to the result.
     for (State rhs_state{ 0 }; rhs_state < rhs_states_num; ++rhs_state)
     {
-        for (const SymbolPost& rhs_move: rhs.get_moves_from(rhs_state))
+        for (const SymbolPost& rhs_move: rhs.delta.state_post(rhs_state))
         {
             for (const State& rhs_state_to: rhs_move.targets)
             {

@@ -104,7 +104,7 @@ void ShortestWordsMap::compute_for_state(const State state)
     const WordLength dst_length_plus_one{ dst.first + 1 };
     LengthWordsPair act;
 
-    for (const SymbolPost& transition: reversed_automaton.get_moves_from(state))
+    for (const SymbolPost& transition: reversed_automaton.delta.state_post(state))
     {
         for (const State state_to: transition.targets)
         {

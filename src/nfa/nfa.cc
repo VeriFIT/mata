@@ -137,7 +137,7 @@ namespace {
                     }
                 }
                 if (!new_state_trans_with_symbol.empty()) {
-                    trimmed_aut.delta.get_mutable_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
+                    trimmed_aut.delta.mutable_state_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
                 }
             }
         }
@@ -291,9 +291,9 @@ Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {
 }
 
 namespace {
-    // A structure to store metadata related to each state/node during the computation 
-    // of useful states. It contains Tarjan's metadata and the state of the 
-    // iteration through the successors. 
+    // A structure to store metadata related to each state/node during the computation
+    // of useful states. It contains Tarjan's metadata and the state of the
+    // iteration through the successors.
     struct TarjanNodeData {
         StatePost::const_iterator post_it{};
         StatePost::const_iterator post_end{};
@@ -301,7 +301,7 @@ namespace {
         StateSet::const_iterator targets_end{};
         // index of a node (corresponds to the time of discovery)
         unsigned long index{ 0 };
-        // index of a lower node in the same SCC 
+        // index of a lower node in the same SCC
         unsigned long lowlink{ 0 };
         // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
         bool initilized{ false };
@@ -310,7 +310,7 @@ namespace {
 
         TarjanNodeData() = default;
 
-        TarjanNodeData(State q, const Delta & delta, unsigned long index) 
+        TarjanNodeData(State q, const Delta & delta, unsigned long index)
             : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
             if (post_it != post_end) {
                 targets_it = post_it->cbegin();
@@ -318,7 +318,7 @@ namespace {
             }
         };
 
-        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
+        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to
         // first align the iterators.
         // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
         // Align iterators in a way that the current state is stored in *(this->targets_it).
@@ -330,7 +330,7 @@ namespace {
                         this->targets_it = this->post_it->cbegin();
                         this->targets_end = this->post_it->cend();
                     }
-                } 
+                }
             }
         }
 
@@ -354,43 +354,43 @@ namespace {
 };
 
 /**
- * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs 
+ * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
  * (see https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm, in particular strongconnect(v))
- * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff 
+ * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff
  * the state i is useful at the end. To break the recursiveness, we use @p program_stack simulating
- * the program stack during the recursive calls of strongconnect(v) (see the wiki). 
- * 
+ * the program stack during the recursive calls of strongconnect(v) (see the wiki).
+ *
  * Node data
  *  - lowlink, index, on_stack (the same as from strongconnect(v))
  *  - initialized (flag denoting whether the node started to be processing in strongconnect)
  *  - bunch of iterators allowing to iterate over successors (and store the state of the iteration)
- * 
+ *
  * Program stack @p program_stack
- *  - contains nodes 
+ *  - contains nodes
  *  - node on the top is being currently processed
  *  - node is removed after it has been completely processed (after the end of strongconnect)
- * 
+ *
  * Simulation of strongconnect( @p act_state = v )
  *  - if @p act_state is not initialized yet (corresponds to the initial phase of strongconnect), initialize
- *  - if @p act_state has already been initialized (i.e., processing of @p act_state was resumed by a 
- *    recursive call, which already finished and we continue in processing of @p act_state ), we set 
+ *  - if @p act_state has already been initialized (i.e., processing of @p act_state was resumed by a
+ *    recursive call, which already finished and we continue in processing of @p act_state ), we set
  *    @p act_state lowlink to min of current lowlink and the current successor @p act_succ of @p act_state.
- *    @p act_succ corresponds to w in strongconnect(v). In particular, in strongconnect(v) we called 
+ *    @p act_succ corresponds to w in strongconnect(v). In particular, in strongconnect(v) we called
  *    strongconnect(w) and now we continue after the return.
  *  - Then, we continue iterating over successors @p next_state of @p act_state:
- *      * if @p next_state is not initialized (corresponds to the first if in strongconnect(v)), we simulate 
- *        the recursive call of strongconnect( @p next_state ): we put @p next_state on @p program_stack and 
- *        jump to the processing of a new node from @p program_stack (we do not remove @p act_state from program 
+ *      * if @p next_state is not initialized (corresponds to the first if in strongconnect(v)), we simulate
+ *        the recursive call of strongconnect( @p next_state ): we put @p next_state on @p program_stack and
+ *        jump to the processing of a new node from @p program_stack (we do not remove @p act_state from program
  *        stack yet).
  *      * otherwise update the lowlink
- *  - The rest corresponds to the last part of strongconnect(v) with a difference that if a node in the closed 
- *    SCC if useful, we declare all nodes in the SCC useful and moreover we propagate usefulness also the states 
+ *  - The rest corresponds to the last part of strongconnect(v) with a difference that if a node in the closed
+ *    SCC if useful, we declare all nodes in the SCC useful and moreover we propagate usefulness also the states
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
- * 
- * @return BoolVector 
+ *
+ * @return BoolVector
  */
 BoolVector Nfa::get_useful_states() const {
-    BoolVector useful(this->size(),false); 
+    BoolVector useful(this->size(),false);
     std::vector<TarjanNodeData> node_info(this->size());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
@@ -404,7 +404,7 @@ BoolVector Nfa::get_useful_states() const {
         State act_state = program_stack.back();
         TarjanNodeData& act_state_data = node_info[act_state];
 
-        // if a node is initialized and is not on stack --> skip it; this state was 
+        // if a node is initialized and is not on stack --> skip it; this state was
         // already processed (=this state is initial and was reachable from another initial).
         if(act_state_data.initilized && !act_state_data.on_stack) {
             program_stack.pop_back();
@@ -428,7 +428,7 @@ BoolVector Nfa::get_useful_states() const {
 
         // iterate through outgoing edges
         State next_state;
-        // rec_call simulates call of the strongconnect. Since c++ cannot do continue over 
+        // rec_call simulates call of the strongconnect. Since c++ cannot do continue over
         // multiple loops, we use rec_call to jump to the main loop
         bool rec_call = false;
         while(!act_state_data.is_end_succ()) {
@@ -652,7 +652,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     result.nfa = nfa;
 
     for (size_t trIt{ 0 }; trIt < nfa->delta.num_of_states(); ++trIt) {
-        auto& moves{ nfa->get_moves_from(trIt) };
+        auto& moves{ nfa->delta.state_post(trIt) };
         if (!moves.empty()) {
             auto move{ moves.begin() };
             while (move != moves.end()) {
@@ -695,7 +695,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of state set
     ++(this->tlIt);
-    const StatePost& tlist = this->nfa->get_moves_from(this->trIt);
+    const StatePost& tlist = this->nfa->delta.state_post(this->trIt);
     assert(!tlist.empty());
     if (this->tlIt != tlist.end())
     {
@@ -710,15 +710,15 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
     assert(this->nfa->delta.transitions_begin() != this->nfa->delta.transitions_end());
 
     while (this->trIt < this->nfa->delta.num_of_states() &&
-           this->nfa->get_moves_from(this->trIt).empty())
+           this->nfa->delta.state_post(this->trIt).empty())
     {
         ++this->trIt;
     }
 
     if (this->trIt < this->nfa->delta.num_of_states())
     {
-        this->tlIt = this->nfa->get_moves_from(this->trIt).begin();
-        assert(!this->nfa->get_moves_from(this->trIt).empty());
+        this->tlIt = this->nfa->delta.state_post(this->trIt).begin();
+        assert(!this->nfa->delta.state_post(this->trIt).empty());
         const StateSet& new_state_set = this->tlIt->targets;
         assert(!new_state_set.empty());
         this->ssIt = new_state_set.begin();
@@ -838,7 +838,7 @@ BoolVector Nfa::get_used_symbols_chv() const {
             symbols[move.symbol]=true;
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
     return symbols;
 }
 
@@ -859,7 +859,7 @@ Symbol Nfa::get_max_symbol() const {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const State orig_initial_state: initial) {
-        const StatePost& moves{ get_moves_from(orig_initial_state) };
+        const StatePost& moves{ delta.state_post(orig_initial_state) };
         for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
@@ -910,7 +910,7 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 void Nfa::clear_transitions() {
     const size_t delta_size = delta.num_of_states();
     for (size_t i = 0; i < delta_size; ++i) {
-        delta.get_mutable_post(i) = StatePost();
+        delta.mutable_state_post(i) = StatePost();
     }
 }
 

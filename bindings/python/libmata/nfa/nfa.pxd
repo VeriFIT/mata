@@ -56,6 +56,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         vector[CStatePost] post
 
         void reserve(size_t)
+        CStatePost& state_post(State)
         CStatePost& operator[](State)
         void emplace_back()
         void clear()
@@ -151,7 +152,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         State add_state()
         State add_state(State)
         void print_to_DOT(ostream)
-        CStatePost get_moves_from(State)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)

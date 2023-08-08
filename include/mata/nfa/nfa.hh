@@ -269,24 +269,6 @@ public:
     std::vector<Trans> get_trans_from_as_sequence(State state_from) const;
 
     /**
-     * Get transitions leading from @p state_from.
-     *
-     * If we try to access a state which is present in the delta as a target state, yet does not have allocated space
-     *  for itself in @c post, @c post is resized to include @p state_from.
-     * @param state_from[in] Source state for transitions to get.
-     * @return List of transitions leading from @p state_from.
-     */
-    const StatePost& get_moves_from(const State state_from) const {
-        const size_t state_post_size{ size() };
-        if (state_from >= state_post_size) {
-            throw std::runtime_error(
-                    "Cannot get moves from nonexistent state '" + std::to_string(state_from)
-                    + "' for StatePost of size '" + std::to_string(state_post_size) + "'.");
-        }
-        return delta[state_from];
-    }
-
-    /**
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.

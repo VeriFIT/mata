@@ -462,7 +462,7 @@ namespace {
             std::vector<Mata::Nfa::State> renumbered_states(program_size, Mata::Nfa::Limits::max_state);
             Mata::Nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
             for (Mata::Nfa::State state{ 0 }; state < program_size; state++) {
-                const auto& transition_list = input_nfa.get_moves_from(state);
+                const auto& transition_list = input_nfa.delta.state_post(state);
                 // If the transition list is empty, the state is not used
                 if (transition_list.empty()) {
                     continue;
@@ -480,7 +480,7 @@ namespace {
             }
 
             for (Mata::Nfa::State state{ 0 }; state < program_size; state++) {
-                const auto& transition_list = input_nfa.get_moves_from(state);
+                const auto& transition_list = input_nfa.delta.state_post(state);
                 for (const auto& transition: transition_list) {
                     for (auto stateTo: transition.targets) {
                         if (renumbered_states[stateTo] == Mata::Nfa::Limits::max_state) {

@@ -2243,46 +2243,6 @@ TEST_CASE("Mata::Nfa::delta.remove()")
     }
 }
 
-TEST_CASE("Mafa::Nfa::get_moves_from()") {
-    Nfa aut{};
-
-    SECTION("Add new states within the limit") {
-        aut.add_state(19);
-        aut.initial.insert(0);
-        aut.initial.insert(1);
-        aut.initial.insert(2);
-        REQUIRE_NOTHROW(aut.get_moves_from(0));
-        REQUIRE_NOTHROW(aut.get_moves_from(1));
-        REQUIRE_NOTHROW(aut.get_moves_from(2));
-        REQUIRE(aut.get_moves_from(0).empty());
-        REQUIRE(aut.get_moves_from(1).empty());
-        REQUIRE(aut.get_moves_from(2).empty());
-    }
-
-    SECTION("Add new states over the limit") {
-        aut.add_state(1);
-        REQUIRE_NOTHROW(aut.initial.insert(0));
-        REQUIRE_NOTHROW(aut.initial.insert(1));
-        REQUIRE_NOTHROW(aut.get_moves_from(0));
-        REQUIRE_NOTHROW(aut.get_moves_from(1));
-        REQUIRE_THROWS(aut.get_moves_from(2));
-        REQUIRE(aut.get_moves_from(0).empty());
-        REQUIRE(aut.get_moves_from(1).empty());
-        REQUIRE_THROWS(aut.get_moves_from(2));
-    }
-
-    SECTION("Add new states without specifying the number of states") {
-        CHECK_NOTHROW(aut.initial.insert(0));
-        CHECK_THROWS_AS(aut.get_moves_from(2), std::runtime_error);
-    }
-
-    SECTION("Add new initial without specifying the number of states with over +1 number") {
-        REQUIRE_NOTHROW(aut.initial.insert(25));
-        CHECK_NOTHROW(aut.get_moves_from(25));
-        CHECK_THROWS(aut.get_moves_from(26));
-    }
-}
-
 TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
     Nfa aut('q' + 1);
     std::vector<Trans> expected{};
@@ -2557,16 +2517,16 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     aut.delta[25];
     REQUIRE(aut.size() == 20);
 
-    aut.delta.get_mutable_post(25);
+    aut.delta.mutable_state_post(25);
     REQUIRE(aut.size() == 26);
     REQUIRE(aut.delta[25].empty());
 
-    aut.delta.get_mutable_post(50);
+    aut.delta.mutable_state_post(50);
     REQUIRE(aut.size() == 51);
     REQUIRE(aut.delta[50].empty());
 
     Nfa aut1 = aut;
-    aut1.delta.get_mutable_post(60);
+    aut1.delta.mutable_state_post(60);
     REQUIRE(aut1.size() == 61);
     REQUIRE(aut1.delta[60].empty());
 
@@ -2716,9 +2676,9 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(state_eps_trans->symbol == 42);
     CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
 
-    CHECK(aut.get_epsilon_transitions(1) == aut.get_moves_from(1).end());
-    CHECK(aut.get_epsilon_transitions(5) == aut.get_moves_from(5).end());
-    CHECK(aut.get_epsilon_transitions(19) == aut.get_moves_from(19).end());
+    CHECK(aut.get_epsilon_transitions(1) == aut.delta.state_post(1).end());
+    CHECK(aut.get_epsilon_transitions(5) == aut.delta.state_post(5).end());
+    CHECK(aut.get_epsilon_transitions(19) == aut.delta.state_post(19).end());
 
     StatePost state_post{ aut.delta[0] };
     state_eps_trans = aut.get_epsilon_transitions(state_post);
@@ -2729,11 +2689,11 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
-    state_post = aut.get_moves_from(1);
+    state_post = aut.delta.state_post(1);
     CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
-    state_post = aut.get_moves_from(5);
+    state_post = aut.delta.state_post(5);
     CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
-    state_post = aut.get_moves_from(19);
+    state_post = aut.delta.state_post(19);
     CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
 }
 
@@ -2909,6 +2869,5 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		Mata::BoolVector ref({1, 1, 1, 1});
 		CHECK(bv == ref);
 	}
-	
-}
 
+}

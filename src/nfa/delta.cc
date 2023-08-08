@@ -48,7 +48,7 @@ void SymbolPost::insert(const StateSet& states) {
 
 StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
-    return get_epsilon_transitions(get_moves_from(state), epsilon);
+    return get_epsilon_transitions(delta.state_post(state), epsilon);
 }
 
 StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const StatePost& state_transitions, const Symbol epsilon) {
@@ -183,6 +183,10 @@ bool Delta::contains(State src, Symbol symb, State tgt) const
     return symbol_transitions->targets.find(tgt) != symbol_transitions->targets.end();
 }
 
+bool Delta::contains(const Trans& transition) const {
+    return contains(transition.src, transition.symb, transition.tgt);
+}
+
 bool Delta::empty() const
 {
     return this->transitions_begin() == this->transitions_end();
@@ -278,7 +282,7 @@ std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambd
     return cp_post_vector;
 }
 
-StatePost& Delta::get_mutable_post(State q) {
+StatePost& Delta::mutable_state_post(State q) {
     if (q >= state_posts.size()) {
         Util::reserve_on_insert(state_posts, q);
         const size_t new_size{ q + 1 };
@@ -303,8 +307,8 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 
     //this iterates through every post and every move, filters and renames states,
     //and then removes moves that became empty.
-        StatePost & p = get_mutable_post(q);
     for (State q=0,size=state_posts.size(); q < size; ++q) {
+        StatePost & p = mutable_state_post(q);
         for (auto move = p.begin(); move < p.end(); ++move) {
             move->targets.erase(
                     std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
@@ -321,11 +325,4 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
                 p.end()
         );
     }
-}
-
-const StatePost& Delta::operator[](State q) const {
-    if (q >= posts.size()) {
-        return empty_post;
-    }
-    return posts[q];
 }

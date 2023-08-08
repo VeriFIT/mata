@@ -92,7 +92,7 @@ namespace {
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (const auto &q_trans : aut.get_moves_from(q)) {
+                for (const auto &q_trans : aut.delta.state_post(q)) {
                     const StateSet representatives_of_states_to = [&]{
                         StateSet state_set;
                         for (auto s : q_trans.targets) {
@@ -118,7 +118,7 @@ namespace {
 
                     // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
                     // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta.get_mutable_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
+                    result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
                 }
 
                 if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
@@ -323,7 +323,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
         for (size_t i{ 0 }; i < sources[symbol].size(); ++i) {
             State tgt_state =sources[symbol][i];
             State src_state =targets[symbol][i];
-            StatePost & src_post = result.delta.get_mutable_post(src_state);
+            StatePost & src_post = result.delta.mutable_state_post(src_state);
             if (src_post.empty() || src_post.back().symbol != symbol) {
                 src_post.push_back(SymbolPost(symbol));
             }
@@ -335,7 +335,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     for (size_t i{ 0 }; i < e_sources.size(); ++i) {
         State tgt_state =e_sources[i];
         State src_state =e_targets[i];
-        StatePost & src_post = result.delta.get_mutable_post(src_state);
+        StatePost & src_post = result.delta.mutable_state_post(src_state);
         if (src_post.empty() || src_post.back().symbol != EPSILON) {
             src_post.push_back(SymbolPost(EPSILON));
         }
@@ -386,7 +386,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const SymbolPost &transition: aut.delta[sourceState]) {
             for (const State targetState: transition.targets) {
-                StatePost & post = result.delta.get_mutable_post(targetState);
+                StatePost & post = result.delta.mutable_state_post(targetState);
                 //auto move = std::find(post.begin(),post.end(),Move(transition.symbol));
                 auto move = post.find(SymbolPost(transition.symbol));
                 if (move == post.end()) {
@@ -404,7 +404,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
         //Post & post = result.delta.get_mutable_post(q);
         //Util::sort_and_rmdupl(post);
-        for (auto m = result.delta.get_mutable_post(q).begin(); m != result.delta.get_mutable_post(q).end(); ++m) {
+        for (auto m = result.delta.mutable_state_post(q).begin(); m != result.delta.mutable_state_post(q).end(); ++m) {
             sort_and_rmdupl(m->targets);
         }
     }
@@ -667,7 +667,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
                 union_symbol_post.insert(lhs_state_renaming[target_state]);
             }
 
-            union_nfa.delta.get_mutable_post(union_state).insert(union_symbol_post);
+            union_nfa.delta.mutable_state_post(union_state).insert(union_symbol_post);
         }
     }
 
@@ -807,7 +807,7 @@ Nfa Mata::Nfa::determinize(
                 }
                 worklist.emplace_back(std::make_pair(Tid, T));
             }
-            result.delta.get_mutable_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+            result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
         }
     }
 
