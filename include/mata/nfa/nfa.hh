@@ -462,9 +462,6 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
  */
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
-/// Do the automata have disjoint sets of states?
-bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
-
 /**
  * Check whether is the language of the automaton empty.
  * @param[in] aut Automaton to check.
