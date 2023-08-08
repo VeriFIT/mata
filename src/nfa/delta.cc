@@ -192,15 +192,17 @@ bool Delta::empty() const
     return this->transitions_begin() == this->transitions_end();
 }
 
-Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise) :
-    post(post_p), current_state(0), is_end{ ise }
-{
+Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise)
+    : post(post_p), current_state(0), is_end{ ise } {
     const size_t post_size = post.size();
     for (size_t i = 0; i < post_size; ++i) {
         if (!post[i].empty()) {
             current_state = i;
             post_iterator = post[i].begin();
             targets_position = post_iterator->targets.begin();
+            transition.src = current_state;
+            transition.symb = post_iterator->symbol;
+            transition.tgt = *targets_position;
             return;
         }
     }
@@ -209,17 +211,29 @@ Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<
     is_end = true;
 }
 
-Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++()
-{
+Delta::transitions_const_iterator::transitions_const_iterator(
+    const std::vector<StatePost>& post_p, size_t as, StatePost::const_iterator pi, StateSet::const_iterator ti,
+    bool ise)
+    : post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {
+    transition.src = current_state;
+    transition.symb = post_iterator->symbol;
+    transition.tgt = *targets_position;
+};
+
+Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
     assert(post.begin() != post.end());
 
     ++targets_position;
-    if (targets_position != post_iterator->targets.end())
+    if (targets_position != post_iterator->targets.end()) {
+        transition.tgt = *targets_position;
         return *this;
+    }
 
     ++post_iterator;
     if (post_iterator != post[current_state].cend()) {
         targets_position = post_iterator->targets.begin();
+        transition.symb = post_iterator->symbol;
+        transition.tgt = *targets_position;
         return *this;
     }
 
@@ -233,6 +247,10 @@ Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++
         post_iterator = post[current_state].begin();
         targets_position = post_iterator->targets.begin();
     }
+
+    transition.src = current_state;
+    transition.symb = post_iterator->symbol;
+    transition.tgt = *targets_position;
 
     return *this;
 }

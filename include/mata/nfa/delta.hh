@@ -238,6 +238,7 @@ public:
         StatePost::const_iterator post_iterator{};
         StateSet::const_iterator targets_position{};
         bool is_end;
+        Trans transition{};
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -249,12 +250,11 @@ public:
         explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
         transitions_const_iterator(const std::vector<StatePost>& post_p, size_t as,
-                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
-                post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
+                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false);
 
         transitions_const_iterator(const transitions_const_iterator& other) = default;
 
-        Trans operator*() const { return Trans{current_state, (*post_iterator).symbol, *targets_position}; }
+        const Trans& operator*() const { return transition; }
 
         // Prefix increment
         transitions_const_iterator& operator++();
