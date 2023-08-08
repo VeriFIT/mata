@@ -73,7 +73,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 
     NoodleSequence noodles{};
     // noodle of epsilon transitions (each from different depth)
-    TransSequence epsilon_noodle(epsilon_depths_size);
+    std::vector<Trans> epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
     // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
     for (size_t index{ 0 }; index < num_of_permutations; ++index) {
@@ -127,7 +127,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 //todo: is this taking all final times all initial?
 // can it be done more efficiently? (only connected combinations through dfs)
 void SegNfa::segs_one_initial_final(
-    const Mata::Nfa::AutSequence& segments,
+    const std::vector<Nfa::Nfa>& segments,
     bool include_empty,
     const State& unused_state,
     std::map<std::pair<State, State>, std::shared_ptr<Nfa::Nfa>>& out) {
@@ -174,11 +174,11 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
-    EpsCntMap def_eps_map;
+    VisitedEpsilonsCounterMap def_eps_map;
     for(const Symbol& eps : epsilons) {
         def_eps_map[eps] = 0;
     }
-    EpsCntVector def_eps_vector = process_eps_map(def_eps_map);
+    VisitedEpsilonsCounterVector def_eps_vector = process_eps_map(def_eps_map);
 
     if (segments.size() == 1) {
         std::shared_ptr<Nfa::Nfa> segment = std::make_shared<Nfa::Nfa>(segments[0]);
@@ -207,7 +207,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        Mata::Nfa::SharedPtrAut seg = segments_one_initial_final[{unused_state, fn}];
+        std::shared_ptr<Nfa::Nfa> seg = segments_one_initial_final[{unused_state, fn}];
         if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
             new_item.noodle.emplace_back(seg, def_eps_vector);
         }
@@ -259,27 +259,27 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
-    const auto left_automata_begin{ left_automata.begin() };
-    const auto left_automata_end{ left_automata.end() };
-    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
-         ++left_aut_iter) {
-        (*left_aut_iter).get().unify_initial();
-        (*left_aut_iter).get().unify_final();
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& lhs_automata, const Nfa::Nfa& rhs_automaton,
+                                                     bool include_empty, const ParameterMap& params) {
+    const auto lhs_aut_begin{ lhs_automata.begin() };
+    const auto lhs_aut_end{ lhs_automata.end() };
+    for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end;
+         ++lhs_aut_iter) {
+        (*lhs_aut_iter).get().unify_initial();
+        (*lhs_aut_iter).get().unify_final();
     }
 
-    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
+    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return NoodleSequence{}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa::Nfa concatenated_left_side{ *left_automata_begin };
-    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
-         ++next_left_automaton_it) {
-        concatenated_left_side = concatenate(concatenated_left_side, *next_left_automaton_it, EPSILON);
+    Nfa::Nfa concatenated_lhs{ *lhs_aut_begin };
+    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
+         ++next_lhs_aut_it) {
+        concatenated_lhs = concatenate(concatenated_lhs, *next_lhs_aut_it, EPSILON);
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_left_side, right_automaton, true) };
+            intersection(concatenated_lhs, rhs_automaton, true) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
@@ -298,10 +298,10 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutRefSequence& left_
     return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_automata, const Nfa::Nfa& right_automaton,
-                                                     bool include_empty, const StringMap& params) {
-    const auto left_automata_begin{ left_automata.begin() };
-    const auto left_automata_end{ left_automata.end() };
+SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& lhs_automata, const Nfa::Nfa& rhs_automaton,
+                                                     bool include_empty, const ParameterMap& params) {
+    const auto lhs_aut_begin{ lhs_automata.begin() };
+    const auto lhs_aut_end{ lhs_automata.end() };
 
     std::string reduce_value{};
     if (Util::haskey(params, "reduce")) {
@@ -310,25 +310,25 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 
     if (!reduce_value.empty()) {
         if (reduce_value == "forward" || reduce_value == "backward" || reduce_value == "bidirectional") {
-            for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end;
-                 ++left_aut_iter) {
-                (*left_aut_iter)->unify_initial();
-                (*left_aut_iter)->unify_final();
+            for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end;
+                 ++lhs_aut_iter) {
+                (*lhs_aut_iter)->unify_initial();
+                (*lhs_aut_iter)->unify_final();
             }
         }
     }
 
-    if (left_automata.empty() || is_lang_empty(right_automaton)) { return NoodleSequence{}; }
+    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return NoodleSequence{}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa::Nfa concatenated_left_side{ *(*left_automata_begin) };
-    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
-         ++next_left_automaton_it) {
-        concatenated_left_side = concatenate(concatenated_left_side, *(*next_left_automaton_it), EPSILON);
+    Nfa::Nfa concatenated_lhs{ *(*lhs_aut_begin) };
+    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
+         ++next_lhs_aut_it) {
+        concatenated_lhs = concatenate(concatenated_lhs, *(*next_lhs_aut_it), EPSILON);
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_left_side, right_automaton, true) };
+            intersection(concatenated_lhs, rhs_automaton, true) };
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return NoodleSequence{};
@@ -347,46 +347,46 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const AutPtrSequence& left_
 }
 
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& left_automata,
-    const std::vector<std::shared_ptr<Nfa::Nfa>>& right_automata, bool include_empty, const StringMap& params) {
-    if (left_automata.empty() || right_automata.empty()) { return NoodleSubstSequence{}; }
+SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& lhs_automata,
+    const std::vector<std::shared_ptr<Nfa::Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
+    if (lhs_automata.empty() || rhs_automata.empty()) { return NoodleSubstSequence{}; }
 
-    const auto left_automata_begin{ left_automata.begin() };
-    const auto left_automata_end{ left_automata.end() };
-    const auto right_automata_begin{ right_automata.begin() };
-    const auto right_automata_end{ right_automata.end() };
+    const auto lhs_aut_begin{ lhs_automata.begin() };
+    const auto lhs_aut_end{ lhs_automata.end() };
+    const auto rhs_aut_begin{ rhs_automata.begin() };
+    const auto rhs_aut_end{ rhs_automata.end() };
 
     std::unordered_set<std::shared_ptr<Nfa::Nfa>> unified_nfas; // Unify each automaton only once.
-    for (auto left_aut_iter{ left_automata_begin }; left_aut_iter != left_automata_end; ++left_aut_iter) {
-        if (unified_nfas.find(*left_aut_iter) == unified_nfas.end()) {
-            left_aut_iter->get()->unify_initial();
-            left_aut_iter->get()->unify_final();
-            unified_nfas.insert(*left_aut_iter);
+    for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end; ++lhs_aut_iter) {
+        if (unified_nfas.find(*lhs_aut_iter) == unified_nfas.end()) {
+            lhs_aut_iter->get()->unify_initial();
+            lhs_aut_iter->get()->unify_final();
+            unified_nfas.insert(*lhs_aut_iter);
         }
     }
-    for (auto right_aut_iter{ right_automata_begin }; right_aut_iter != right_automata_end; ++right_aut_iter) {
-        if (unified_nfas.find(*right_aut_iter) == unified_nfas.end()) {
-            right_aut_iter->get()->unify_initial();
-            right_aut_iter->get()->unify_final();
-            unified_nfas.insert(*right_aut_iter);
+    for (auto rhs_aut_iter{ rhs_aut_begin }; rhs_aut_iter != rhs_aut_end; ++rhs_aut_iter) {
+        if (unified_nfas.find(*rhs_aut_iter) == unified_nfas.end()) {
+            rhs_aut_iter->get()->unify_initial();
+            rhs_aut_iter->get()->unify_final();
+            unified_nfas.insert(*rhs_aut_iter);
         }
     }
 
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa::Nfa concatenated_left_side{ **left_automata_begin };
-    for (auto next_left_automaton_it{ left_automata_begin + 1 }; next_left_automaton_it != left_automata_end;
-         ++next_left_automaton_it) {
-        concatenated_left_side = concatenate_eps(concatenated_left_side, **next_left_automaton_it, EPSILON, true);
+    Nfa::Nfa concatenated_lhs{ **lhs_aut_begin };
+    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
+         ++next_lhs_aut_it) {
+        concatenated_lhs = concatenate_eps(concatenated_lhs, **next_lhs_aut_it, EPSILON, true);
     }
-    Nfa::Nfa concatenated_right_side{ **right_automata_begin };
-    for (auto next_right_automaton_it{ right_automata_begin + 1 }; next_right_automaton_it != right_automata_end;
-         ++next_right_automaton_it) {
-        concatenated_right_side = concatenate_eps(concatenated_right_side, **next_right_automaton_it, EPSILON-1, true); // we use EPSILON-1
+    Nfa::Nfa concatenated_rhs{ **rhs_aut_begin };
+    for (auto next_rhs_aut_it{ rhs_aut_begin + 1 }; next_rhs_aut_it != rhs_aut_end;
+         ++next_rhs_aut_it) {
+        concatenated_rhs = concatenate_eps(concatenated_rhs, **next_rhs_aut_it, EPSILON-1, true); // we use EPSILON-1
     }
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
     auto product_pres_eps_trans{
-            intersection_eps(concatenated_left_side, concatenated_right_side, true, epsilons) };
+            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons) };
 
     product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
@@ -406,8 +406,8 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
     return noodlify_mult_eps(product_pres_eps_trans, epsilons, include_empty);
 }
 
-SegNfa::EpsCntVector SegNfa::process_eps_map(const EpsCntMap& eps_cnt) {
-    EpsCntVector ret;
+SegNfa::VisitedEpsilonsCounterVector SegNfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
+    VisitedEpsilonsCounterVector ret;
     for(auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); it++) {
         ret.push_back(it->second);
     }

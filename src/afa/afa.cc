@@ -800,7 +800,7 @@ void Mata::Afa::make_complete(
 Mata::Parser::ParsedSection Mata::Afa::serialize(
 	const Afa&                aut,
 	const SymbolToStringMap*  symbol_map,
-	const StateToStringMap*   state_map)
+	const StateNameMap*   state_map)
 { // {{{
 	Mata::Parser::ParsedSection parsec;
 	parsec.type = Mata::Afa::TYPE_AFA;
@@ -907,9 +907,9 @@ void Mata::Afa::minimize(
 
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
 Afa Mata::Afa::construct(
-	const Mata::Parser::ParsedSection&  parsec,
-	Alphabet*                            alphabet,
-	StringToStateMap*                    state_map)
+        const Mata::Parser::ParsedSection&  parsec,
+        Alphabet*                            alphabet,
+        NameStateMap*                    state_map)
 { // {{{
 	assert(nullptr != alphabet);
 	Afa aut;
@@ -921,7 +921,7 @@ Afa Mata::Afa::construct(
 
 	bool remove_state_map = false;
 	if (nullptr == state_map) {
-		state_map = new StringToStateMap();
+		state_map = new NameStateMap();
 		remove_state_map = true;
 	}
 
@@ -986,7 +986,7 @@ Afa Mata::Afa::construct(
 Afa Mata::Afa::construct(
         const Mata::IntermediateAut&         inter_aut,
         Alphabet*                            alphabet,
-        StringToStateMap*                    state_map)
+        NameStateMap*                    state_map)
 { // {{{
     Afa aut;
     assert(nullptr != alphabet);
@@ -996,7 +996,7 @@ Afa Mata::Afa::construct(
                                  Mata::Afa::TYPE_AFA + "\"");
     }
 
-    StringToStateMap tmp_state_map;
+    NameStateMap tmp_state_map;
     if (nullptr == state_map) {
         state_map = &tmp_state_map;
     }
@@ -1177,10 +1177,8 @@ bool Mata::Afa::accepts_epsilon(const Afa& aut) {
         [&aut](const Node& node) { return node.IsSubsetOf(aut.finalstates); });
 }
 
-Word encode_word(const Mata::StringToSymbolMap &symbol_map, const std::vector<std::string> &input) {
-    Word result;
-    for (const auto& str : input) { result.insert(symbol_map.at(str)); }
-    return result;
+Word encode_word(const Mata::Alphabet& alphabet, const std::vector<std::string> &input) {
+    return alphabet.translate_word(input);
 }
 
 std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap)

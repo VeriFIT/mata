@@ -3,7 +3,7 @@ cimport libmata.nfa.strings as mata_strings
 
 from cython.operator import dereference, postincrement as postinc
 
-from libmata.nfa.strings cimport AutSequence, NoodleSequence, AutPtrSequence, CSegmentation
+from libmata.nfa.strings cimport NoodleSequence, CSegmentation
 from libmata.nfa.nfa cimport CTrans
 
 cdef class Segmentation:
@@ -45,7 +45,7 @@ cdef class Segmentation:
                  automaton) to the right (final states of segment automaton).
         """
         segments = []
-        cdef AutSequence c_segments = self.thisptr.get_segments()
+        cdef vector[CNfa] c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
             segment = mata_nfa.Nfa(c_segment.size())
             (<mata_nfa.Nfa>segment).thisptr.get().initial = c_segment.initial
@@ -116,7 +116,7 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
                     minimization before noodlification.
     :return: List of automata: A list of all (non-empty) noodles.
     """
-    cdef AutPtrSequence c_left_side_automata
+    cdef vector[CNfa*] c_left_side_automata
     for lhs_aut in left_side_automata:
         c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
     noodle_segments = []

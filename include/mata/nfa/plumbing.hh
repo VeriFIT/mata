@@ -19,6 +19,8 @@
 #include "nfa.hh"
 #include "builder.hh"
 
+using namespace Mata::Nfa::Builder;
+
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
  *
@@ -27,7 +29,7 @@
  */
 namespace Mata::Nfa::Plumbing {
 
-void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
+inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     element_set->clear();
     element_set->reserve(bool_vec.count());
     for (size_t i{ 0 }; i < bool_vec.size(); ++i) {
@@ -44,8 +46,8 @@ inline void complement(
         Nfa*               result,
         const Nfa&         aut,
         const Alphabet&    alphabet,
-        const StringMap&  params = {{"algorithm", "classical"},
-                                    {"minimize", "false"}}) { *result = complement(aut, alphabet, params);
+        const ParameterMap&  params = {{ "algorithm", "classical"},
+                                       { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
 inline void minimize(Nfa* res, const Nfa &aut) { *res = minimize(aut); }
@@ -54,8 +56,10 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}}) { *result = reduce(aut, trim_result, state_map, params); }
+inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateRenaming *state_renaming = nullptr,
+                   const ParameterMap& params = {{ "algorithm", "simulation"}}) {
+    *result = reduce(aut, trim_result, state_renaming, params);
+}
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
 
@@ -63,12 +67,11 @@ inline void remove_epsilon(Nfa* result, const Nfa& aut, Symbol epsilon = EPSILON
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(
-        Nfa*                                 result,
-        const ParsedObject&                  parsed,
-        StringToSymbolMap*                   symbol_map = nullptr,
-        StringToStateMap*                    state_map = nullptr) {
-    *result = Builder::construct(parsed, symbol_map, state_map);
+void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+               NameStateMap* state_map = nullptr) {
+    OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) { alphabet = &tmp_alphabet; }
+    *result = Builder::construct(parsed, alphabet, state_map);
 }
 
 inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
@@ -85,7 +88,7 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
  *
  * Automata must share alphabets.
  */
-void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
+inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
                   bool preserve_epsilon = false,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
     *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
@@ -93,12 +96,12 @@ void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
 
 /**
  * @brief Concatenate two NFAs.
- * @param[out] lhs_result_states_map Map mapping lhs states to result states.
- * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
+ * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                 StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr) {
-    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_states_map, rhs_result_states_map);
+inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
+                 StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
+    *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
 } // namespace Mata::Nfa::Plumbing.

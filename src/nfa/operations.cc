@@ -32,7 +32,6 @@ using std::tie;
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
-using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -58,10 +57,10 @@ namespace {
         return LTSforSimulation.compute_simulation();
     }
 
-	Nfa reduce_size_by_simulation(const Nfa& aut, StateToStateMap &state_map) {
+    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
         Nfa result;
         const auto sim_relation = Algorithms::compute_relation(
-                aut, StringMap{{"relation", "simulation"}, {"direction", "forward"}});
+                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -70,22 +69,22 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-		const size_t num_of_states = aut.size();
+        const size_t num_of_states = aut.size();
 
-		// map each state q of aut to the state of the reduced automaton representing the simulation class of q
-		for (State q = 0; q < num_of_states; ++q) {
-			const State qReprState = quot_proj[q];
-			if (state_map.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-				const State qClass = result.add_state();
-				state_map[qReprState] = qClass;
-				state_map[q] = qClass;
-			} else {
-				state_map[q] = state_map[qReprState];
-			}
-		}
+        // map each state q of aut to the state of the reduced automaton representing the simulation class of q
+        for (State q = 0; q < num_of_states; ++q) {
+            const State qReprState = quot_proj[q];
+            if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+                const State qClass = result.add_state();
+                state_renaming[qReprState] = qClass;
+                state_renaming[q] = qClass;
+            } else {
+                state_renaming[q] = state_renaming[qReprState];
+            }
+        }
 
         for (State q = 0; q < num_of_states; ++q) {
-            const State q_class_state = state_map.at(q);
+            const State q_class_state = state_renaming.at(q);
 
             if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
                 result.initial.insert(q_class_state);
@@ -112,7 +111,7 @@ namespace {
                             }
                         }
                         if (is_state_important) {
-                            representatives_class_states.insert(state_map.at(s));
+                            representatives_class_states.insert(state_renaming.at(s));
                         }
                     }
 
@@ -136,48 +135,6 @@ std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) {
                          std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
     return os << result;
 }
-
-bool Mata::Nfa::are_state_disjoint(const Nfa& lhs, const Nfa& rhs)
-{ // {{{
-    // fill lhs_states with all states of lhs
-    std::unordered_set<State> lhs_states;
-    lhs_states.insert(lhs.initial.begin(), lhs.initial.end());
-    lhs_states.insert(lhs.final.begin(), lhs.final.end());
-
-    const size_t delta_size = lhs.delta.num_of_states();
-    for (size_t i = 0; i < delta_size; i++) {
-        lhs_states.insert(i);
-        for (const auto& symStates : lhs.delta[i])
-        {
-            lhs_states.insert(symStates.targets.begin(), symStates.targets.end());
-        }
-    }
-
-    // for every state found in rhs, check its presence in lhs_states
-    for (const auto& rhs_st : rhs.initial) {
-        if (haskey(lhs_states, rhs_st)) { return false; }
-    }
-
-    for (const auto& rhs_st : rhs.final) {
-        if (haskey(lhs_states, rhs_st)) { return false; }
-    }
-
-    const size_t lhs_post_size = lhs.delta.num_of_states();
-    for (size_t i = 0; i < lhs_post_size; i++) {
-        if (haskey(lhs_states, i))
-            return false;
-        for (const auto& symState : lhs.delta[i]) {
-            for (const auto& rhState : symState.targets) {
-                if (haskey(lhs_states,rhState)) {
-                    return false;
-                }
-            }
-        }
-    }
-
-    // no common state found
-    return true;
-} // are_disjoint }}}
 
 bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
     return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
@@ -587,16 +544,6 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
     return aut.final.intersects_with(cur);
 }
 
-/// serializes Nfa into a ParsedSection
-Mata::Parser::ParsedSection Mata::Nfa::serialize(
-        const Nfa&                aut,
-        const SymbolToStringMap*  symbol_map,
-        const StateToStringMap*   state_map) {
-    (void)aut; (void)symbol_map; (void)state_map;
-    assert(false && "Unimplemented.");
-    return {};
-}
-
 bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
     std::list<State> worklist(
@@ -671,62 +618,62 @@ Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
 
 Nfa Mata::Nfa::minimize(
                 const Nfa& aut,
-                const StringMap& params)
+                const ParameterMap& params)
 {
-	Nfa result;
-	// setting the default algorithm
-	decltype(Algorithms::minimize_brzozowski)* algo = Algorithms::minimize_brzozowski;
-	if (!haskey(params, "algorithm")) {
-		throw std::runtime_error(std::to_string(__func__) +
-			" requires setting the \"algo\" key in the \"params\" argument; "
-			"received: " + std::to_string(params));
-	}
+    Nfa result;
+    // setting the default algorithm
+    decltype(Algorithms::minimize_brzozowski)* algo = Algorithms::minimize_brzozowski;
+    if (!haskey(params, "algorithm")) {
+        throw std::runtime_error(std::to_string(__func__) +
+            " requires setting the \"algo\" key in the \"params\" argument; "
+            "received: " + std::to_string(params));
+    }
 
-	const std::string& str_algo = params.at("algorithm");
-	if ("brzozowski" == str_algo) {  /* default */ }
-	else {
-		throw std::runtime_error(std::to_string(__func__) +
-			" received an unknown value of the \"algo\" key: " + str_algo);
-	}
+    const std::string& str_algo = params.at("algorithm");
+    if ("brzozowski" == str_algo) {  /* default */ }
+    else {
+        throw std::runtime_error(std::to_string(__func__) +
+            " received an unknown value of the \"algo\" key: " + str_algo);
+    }
 
-	return algo(aut);
+    return algo(aut);
 }
 
 Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
-    Nfa unionAutomaton = rhs;
+    Nfa union_nfa{ rhs };
 
-    StateToStateMap thisStateToUnionState;
+    StateRenaming lhs_state_renaming;
     const size_t size = lhs.size();
-    for (State thisState = 0; thisState < size; ++thisState) {
-        thisStateToUnionState[thisState] = unionAutomaton.add_state();
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        lhs_state_renaming[lhs_state] = union_nfa.add_state();
     }
 
-    for (State thisInitialState : lhs.initial) {
-        unionAutomaton.initial.insert(thisStateToUnionState[thisInitialState]);
+    for (State lhs_initial_state : lhs.initial) {
+        union_nfa.initial.insert(lhs_state_renaming[lhs_initial_state]);
     }
 
-    for (State thisFinalState : lhs.final) {
-        unionAutomaton.final.insert(thisStateToUnionState[thisFinalState]);
+    for (State lhs_final_state : lhs.final) {
+        union_nfa.final.insert(lhs_state_renaming[lhs_final_state]);
     }
 
-    for (State thisState = 0; thisState < size; ++thisState) {
-        State unionState = thisStateToUnionState[thisState];
-        for (const Move &transitionFromThisState : lhs.delta[thisState]) {
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        State union_state = lhs_state_renaming[lhs_state];
+        for (const Move &lhs_move : lhs.delta[lhs_state]) {
 
-            Move transitionFromUnionState(transitionFromThisState.symbol, StateSet{});
+            Move union_move(lhs_move.symbol, StateSet{});
 
-            for (State stateTo : transitionFromThisState.targets) {
-                transitionFromUnionState.insert(thisStateToUnionState[stateTo]);
+            for (State stateTo : lhs_move.targets) {
+                union_move.insert(lhs_state_renaming[stateTo]);
             }
 
-            unionAutomaton.delta.get_mutable_post(unionState).insert(transitionFromUnionState);
+            union_nfa.delta.get_mutable_post(union_state).insert(union_move);
         }
     }
 
-    return unionAutomaton;
+    return union_nfa;
 }
 
-Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const StringMap& params) {
+Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -749,7 +696,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_map, const StringMap& params) {
+Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateRenaming *state_renaming, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
@@ -757,9 +704,9 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_ma
     }
 
     Nfa aut_to_reduce{ aut };
-    StateToStateMap trimmed_state_map{};
+    StateRenaming trimmed_state_renaming{};
     if (trim_input) {
-        aut_to_reduce.trim(&trimmed_state_map);
+        aut_to_reduce.trim(&trimmed_state_renaming);
     }
 
     Nfa result;
@@ -772,17 +719,17 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateToStateMap *state_ma
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
 
-    if (state_map) {
-        state_map->clear();
+    if (state_renaming) {
+        state_renaming->clear();
         if (trim_input) {
-            for (const auto& trimmed_mapping : trimmed_state_map) {
+            for (const auto& trimmed_mapping : trimmed_state_renaming) {
                 const auto reduced_mapping{ reduced_state_map.find(trimmed_mapping.second) };
                 if (reduced_mapping != reduced_state_map.end()) {
-                    (*state_map)[trimmed_mapping.first] = reduced_mapping->second;
+                    (*state_renaming)[trimmed_mapping.first] = reduced_mapping->second;
                 }
             }
         } else { // Input has not been trimmed, the reduced state map is the actual input to result state map.
-            *state_map = reduced_state_map;
+            *state_renaming = reduced_state_map;
         }
     }
 
@@ -885,7 +832,7 @@ void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alpha
     }
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
@@ -893,7 +840,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutRefSequence& nfa
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutRefSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
@@ -901,7 +848,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutRefSequence& nfas) {
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutPtrSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const Mata::Nfa::Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
@@ -909,7 +856,7 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const ConstAutPtrSequence& nfa
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
+Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
     Mata::OnTheFlyAlphabet alphabet{};
     for (const Mata::Nfa::Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
@@ -917,8 +864,6 @@ Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const AutPtrSequence& nfas) {
     return alphabet;
 }
 
-Run Mata::Nfa::encode_word(const Mata::StringToSymbolMap& symbol_map, const std::vector<std::string>& input) {
-    Run result;
-    for (const auto& str : input) { result.word.push_back(symbol_map.at(str)); }
-    return result;
+Run Mata::Nfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
+    return { .word = alphabet->translate_word(input) };
 }

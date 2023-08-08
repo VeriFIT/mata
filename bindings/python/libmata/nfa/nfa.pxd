@@ -10,7 +10,7 @@ from libcpp.pair cimport pair
 from libc.stdint cimport uintptr_t, uint8_t
 
 from libmata.utils cimport CSparseSet, COrdVector, CBoolVector, CBinaryRelation
-from libmata.alphabets cimport CAlphabet, StringToSymbolMap, Symbol
+from libmata.alphabets cimport CAlphabet, Symbol
 
 cdef extern from "<iostream>" namespace "std":
     cdef cppclass ostream:
@@ -33,11 +33,10 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
     ctypedef umap[string, State] StringSubsetMap
-    ctypedef umap[string, State] StringToStateMap
-    ctypedef umap[State, string] StateToStringMap
-    ctypedef umap[State, State] StateToStateMap
-    ctypedef umap[Symbol, string] SymbolToStringMap
-    ctypedef umap[string, string] StringMap
+    ctypedef umap[string, State] StateNameMap
+    ctypedef umap[State, string] StateNameMap
+    ctypedef umap[State, State] StateRenaming
+    ctypedef umap[string, string] ParameterMap
 
     cdef const Symbol CEPSILON "Mata::Nfa::EPSILON"
 
@@ -156,7 +155,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
-        void trim(StateToStateMap*)
+        void trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()
@@ -171,11 +170,11 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     # Automata tests
     cdef bool c_is_deterministic "Mata::Nfa::is_deterministic" (CNfa&)
     cdef bool c_is_lang_empty "Mata::Nfa::is_lang_empty" (CNfa&, CRun*)
-    cdef bool c_is_universal "Mata::Nfa::is_universal" (CNfa&, CAlphabet&, StringMap&) except +
-    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CAlphabet*, StringMap&)
-    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, StringMap&) except +
-    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, StringMap&)
-    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, StringMap&)
+    cdef bool c_is_universal "Mata::Nfa::is_universal" (CNfa&, CAlphabet&, ParameterMap&) except +
+    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
+    cdef bool c_is_included "Mata::Nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
+    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
+    cdef bool c_are_equivalent "Mata::Nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&)
     cdef bool c_is_complete "Mata::Nfa::is_complete" (CNfa&, CAlphabet&) except +
     cdef bool c_is_in_lang "Mata::Nfa::is_in_lang" (CNfa&, CRun&)
     cdef bool c_is_prfx_in_lang "Mata::Nfa::is_prfx_in_lang" (CNfa&, CRun&)
@@ -185,23 +184,23 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
 
     # Helper functions
     cdef pair[CRun, bool] c_get_word_for_path "Mata::Nfa::get_word_for_path" (CNfa&, CRun&)
-    cdef CRun c_encode_word "Mata::Nfa::encode_word" (StringToSymbolMap&, vector[string])
+    cdef CRun c_encode_word "Mata::Nfa::encode_word" (CAlphabet*, vector[string])
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "Mata::Nfa::Algorithms":
-    cdef CBinaryRelation& c_compute_relation "Mata::Nfa::Algorithms::compute_relation" (CNfa&, StringMap&)
+    cdef CBinaryRelation& c_compute_relation "Mata::Nfa::Algorithms::compute_relation" (CNfa&, ParameterMap&)
 
 cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void get_elements(StateSet*, CBoolVector)
     cdef void c_determinize "Mata::Nfa::Plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
     cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
     cdef void c_intersection "Mata::Nfa::Plumbing::intersection" (CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
-    cdef void c_concatenate "Mata::Nfa::Plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateToStateMap*, StateToStateMap*)
-    cdef void c_complement "Mata::Nfa::Plumbing::complement" (CNfa*, CNfa&, CAlphabet&, StringMap&) except +
+    cdef void c_concatenate "Mata::Nfa::Plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
+    cdef void c_complement "Mata::Nfa::Plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
     cdef void c_make_complete "Mata::Nfa::Plumbing::make_complete" (CNfa*, CAlphabet&, State) except +
     cdef void c_revert "Mata::Nfa::Plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "Mata::Nfa::Plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void c_minimize "Mata::Nfa::Plumbing::minimize" (CNfa*, CNfa&)
-    cdef void c_reduce "Mata::Nfa::Plumbing::reduce" (CNfa*, CNfa&, bool, StateToStateMap*, StringMap&)
+    cdef void c_reduce "Mata::Nfa::Plumbing::reduce" (CNfa*, CNfa&, bool, StateRenaming*, ParameterMap&)
 
 
 

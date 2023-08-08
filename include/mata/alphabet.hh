@@ -26,7 +26,6 @@
 namespace Mata {
 
 using Symbol = unsigned;
-using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
 
  /**
   * The abstract interface for NFA alphabets.
@@ -266,12 +265,15 @@ public:
  */
 class OnTheFlyAlphabet : public Alphabet {
 public:
+    using StringToSymbolMap = std::unordered_map<std::string, Symbol>;
+
     /// Result of the insertion of a new symbol.
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
     explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value(init_symbol) {};
     OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
     explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map(std::move(str_sym_map)) {}
+
     /**
      * Create alphabet from a list of symbol names.
      * @param symbol_names Names for symbols on transitions.
@@ -279,6 +281,17 @@ public:
      */
     explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
             : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
+
+    template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
+        for (; first != last; ++first) {
+            add_new_symbol(*first, next_symbol_value);
+        }
+    }
+    OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map{} {
+        for (auto&& [name, symbol]: name_symbol_map) {
+            add_new_symbol(name, symbol);
+        }
+    }
 
     Util::OrdVector<Symbol> get_alphabet_symbols() const override;
     Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override;
@@ -304,13 +317,6 @@ public:
      * @param[in] new_symbol_map Map of strings to symbols.
      */
     void add_symbols_from(const StringToSymbolMap& new_symbol_map);
-
-    template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
-        for (; first != last; ++first) {
-            add_new_symbol(*first, next_symbol_value);
-        }
-    }
-    OnTheFlyAlphabet(std::initializer_list<std::string> l) : OnTheFlyAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override;
 

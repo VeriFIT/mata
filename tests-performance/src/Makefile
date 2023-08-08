@@ -39,7 +39,7 @@ LIBS=-lmata -lsimlib -lre2 -lcudd
 all: $(patsubst %.cc,%,$(wildcard *.cc)) $(BUILD_DIR)/src/libmata.a
 
 %: %.cc
-	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< $(LIBS) -o ../bin/$@
+	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< utils/utils.cc $(LIBS) -o ../bin/$@
 
 clean:
 	rm -rf $(patsubst %.cc,%,$(wildcard *.cc))

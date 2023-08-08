@@ -8,10 +8,10 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
 
+using namespace Mata::Nfa;
 using Symbol = Mata::Symbol;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-using StringToSymbolMap = Mata::StringToSymbolMap;
 
 using Word = std::vector<Symbol>;
 

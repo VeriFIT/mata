@@ -26,8 +26,6 @@
 #include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
-using std::tie;
-
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
@@ -118,12 +116,12 @@ namespace {
     /**
      * Add transitions to the trimmed automaton.
      * @param[in] nfa NFA to add transitions from.
-     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states.
+     * @param[in] state_renaming Map of old states to new trimmed automaton states.
      * @param[out] trimmed_aut The new trimmed automaton.
      */
-    void add_trimmed_transitions(const Nfa& nfa, const StateToStateMap& original_to_new_states_map, Nfa& trimmed_aut) {
+    void add_trimmed_transitions(const Nfa& nfa, const StateRenaming& state_renaming, Nfa& trimmed_aut) {
         // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
-        for (const auto& original_state_mapping: original_to_new_states_map)
+        for (const auto& original_state_mapping: state_renaming)
         {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
@@ -131,8 +129,8 @@ namespace {
                 Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
                 {
-                    auto iter_to_new_state_to = original_to_new_states_map.find(old_state_to);
-                    if (iter_to_new_state_to != original_to_new_states_map.end())
+                    auto iter_to_new_state_to = state_renaming.find(old_state_to);
+                    if (iter_to_new_state_to != state_renaming.end())
                     {
                         // We can push here, because we assume that new states follow the ordering of original states.
                         new_state_trans_with_symbol.insert(iter_to_new_state_to->second);
@@ -148,28 +146,28 @@ namespace {
     /**
      * Get a new trimmed automaton.
      * @param[in] nfa NFA to trim.
-     * @param[in] original_to_new_states_map Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
+     * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
      * @return Newly created trimmed automaton.
      */
-    Nfa create_trimmed_aut(const Nfa& nfa, const StateToStateMap& original_to_new_states_map) {
-        Nfa trimmed_aut{ original_to_new_states_map.size() };
+    Nfa create_trimmed_aut(const Nfa& nfa, const StateRenaming& state_renaming) {
+        Nfa trimmed_aut{ state_renaming.size() };
 
         for (const State old_initial_state: nfa.initial)
         {
-            if (original_to_new_states_map.find(old_initial_state) != original_to_new_states_map.end())
+            if (state_renaming.find(old_initial_state) != state_renaming.end())
             {
-                trimmed_aut.initial.insert(original_to_new_states_map.at(old_initial_state));
+                trimmed_aut.initial.insert(state_renaming.at(old_initial_state));
             }
         }
         for (const State old_final_state: nfa.final)
         {
-            if (original_to_new_states_map.find(old_final_state) != original_to_new_states_map.end())
+            if (state_renaming.find(old_final_state) != state_renaming.end())
             {
-                trimmed_aut.final.insert(original_to_new_states_map.at(old_final_state));
+                trimmed_aut.final.insert(state_renaming.at(old_final_state));
             }
         }
 
-        add_trimmed_transitions(nfa, original_to_new_states_map, trimmed_aut);
+        add_trimmed_transitions(nfa, state_renaming, trimmed_aut);
         return trimmed_aut;
     }
 
@@ -223,19 +221,18 @@ StateSet Nfa::get_terminating_states() const
 }
 
 //TODO: probably can be removed, trim_inplace is faster.
-void Nfa::trim_reverting(StateToStateMap* state_map)
+void Nfa::trim_reverting(StateRenaming* state_renaming)
 {
-    if (!state_map) {
-        StateToStateMap tmp_state_map{};
-        *this = get_trimmed_automaton(&tmp_state_map);
+    if (!state_renaming) {
+        StateRenaming tmp_state_renaming{};
+        *this = get_trimmed_automaton(&tmp_state_renaming);
     } else {
-        state_map->clear();
-        *this = get_trimmed_automaton(state_map);
+        state_renaming->clear();
+        *this = get_trimmed_automaton(state_renaming);
     }
 }
 
-void Nfa::trim_inplace(StateToStateMap* state_map)
-{
+void Nfa::trim_inplace(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
@@ -243,56 +240,54 @@ void Nfa::trim_inplace(StateToStateMap* state_map)
 #else
     BoolVector useful_states{ get_useful_states() };
 #endif
-
-    std::vector<State> renaming(useful_states.size());
-
-    State j=0;
-    for(State i = 0; i<useful_states.size(); i++) {
-        if (useful_states[i]) {
-            renaming[i] = j;
-            j++;
+    const size_t useful_states_size{ useful_states.size() };
+    std::vector<State> renaming(useful_states_size);
+    for(State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
+        if (useful_states[orig_state]) {
+            renaming[orig_state] = new_state;
+            ++new_state;
         }
     }
 
     delta.defragment(useful_states, renaming);
 
-    auto is_state_useful = [&useful_states](State q){return q < useful_states.size() && useful_states[q];};
+    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
     initial.filter(is_state_useful);
     final.filter(is_state_useful);
-    auto rename_state = [&renaming](State q){return renaming[q];};
+    auto rename_state = [&](State q){return renaming[q];};
     initial.rename(rename_state);
     final.rename(rename_state);
     initial.truncate();
     final.truncate();
-
-    // TODO : this is actually only used in one test, remove state map?
-    if (state_map) {
-        state_map->clear();
-        state_map->reserve(useful_states.size());
-        for (State q=0;q<useful_states.size();q++)
-            if (useful_states[q])
-                (*state_map)[q] = renaming[q];
+    if (state_renaming != nullptr) {
+        state_renaming->clear();
+        state_renaming->reserve(useful_states_size);
+        for (State q{ 0 }; q < useful_states_size; ++q) {
+            if (useful_states[q]) {
+                (*state_renaming)[q] = renaming[q];
+            }
+        }
     }
 }
 
-Nfa Nfa::get_trimmed_automaton(StateToStateMap* state_map) const {
+Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {
     if (initial.empty() || final.empty()) { return Nfa{}; }
 
-    StateToStateMap tmp_state_map{};
-    if (!state_map) {
-        state_map = &tmp_state_map;
+    StateRenaming tmp_state_renaming{};
+    if (!state_renaming) {
+        state_renaming = &tmp_state_renaming;
     }
-    state_map->clear();
+    state_renaming->clear();
 
     const StateSet original_useful_states{get_useful_states_old() };
-    state_map->reserve(original_useful_states.size());
+    state_renaming->reserve(original_useful_states.size());
 
     size_t new_state_num{ 0 };
     for (const State original_state: original_useful_states) {
-        (*state_map)[original_state] = new_state_num;
+        (*state_renaming)[original_state] = new_state_num;
         ++new_state_num;
     }
-    return create_trimmed_aut(*this, *state_map);
+    return create_trimmed_aut(*this, *state_renaming);
 }
 
 namespace {
@@ -300,18 +295,18 @@ namespace {
     // of useful states. It contains Tarjan's metadata and the state of the 
     // iteration through the successors. 
     struct TarjanNodeData {
-        Post::const_iterator post_it;
-        Post::const_iterator post_end;
+        Post::const_iterator post_it{};
+        Post::const_iterator post_end{};
         StateSet::const_iterator targets_it{};
         StateSet::const_iterator targets_end{};
         // index of a node (corresponds to the time of discovery)
-        unsigned long index {0};
+        unsigned long index{ 0 };
         // index of a lower node in the same SCC 
-        unsigned long lowlink {0};
+        unsigned long lowlink{ 0 };
         // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
-        bool initilized {false};
+        bool initilized{ false };
         // is node on Tarjan's stack?
-        bool on_stack {false};
+        bool on_stack{ false };
 
         TarjanNodeData() = default;
 
@@ -570,9 +565,9 @@ void Nfa::print_to_mata(std::ostream &output) const {
     }
 }
 
-TransSequence Nfa::get_trans_as_sequence() const
+std::vector<Trans> Nfa::get_trans_as_sequence() const
 {
-    TransSequence trans_sequence{};
+    std::vector<Trans> trans_sequence{};
 
     for (State state_from{ 0 }; state_from < delta.num_of_states(); ++state_from)
     {
@@ -588,9 +583,9 @@ TransSequence Nfa::get_trans_as_sequence() const
     return trans_sequence;
 }
 
-TransSequence Nfa::get_trans_from_as_sequence(State state_from) const
+std::vector<Trans> Nfa::get_trans_from_as_sequence(State state_from) const
 {
-    TransSequence trans_sequence{};
+    std::vector<Trans> trans_sequence{};
 
     for (const auto& transition_from_state: delta[state_from])
     {
@@ -613,8 +608,8 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-TransSequence Nfa::get_transitions_to(State state_to) const {
-    TransSequence transitions_to_state{};
+std::vector<Trans> Nfa::get_transitions_to(State state_to) const {
+    std::vector<Trans> transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const Move& state_from_move: delta[state_from]) {

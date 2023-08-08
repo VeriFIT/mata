@@ -251,7 +251,8 @@ def test_get_word_for_path(
 
 
 def test_encode_word():
-    assert mata_nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca") == [1, 2, 0, 1]
+    assert mata_nfa.encode_word(alphabets.OnTheFlyAlphabet.from_symbol_map({'a': 1, 'b': 2, "c": 0}), "abca") \
+           == [1, 2, 0, 1]
 
 
 def test_language_emptiness(fa_one_divisible_by_two):

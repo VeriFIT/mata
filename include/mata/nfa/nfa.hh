@@ -218,12 +218,12 @@ public:
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
-     * @param[out] state_map Mapping of trimmed states to new states.
+     * @param[out] state_renaming Mapping of trimmed states to new states.
      * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    void trim_inplace(StateToStateMap* state_map = nullptr);
-    void trim_reverting(StateToStateMap* state_map = nullptr);
-    void trim(StateToStateMap* state_map = nullptr) { trim_inplace(state_map); }
+    void trim_inplace(StateRenaming* state_renaming = nullptr);
+    void trim_reverting(StateRenaming* state_renaming = nullptr);
+    void trim(StateRenaming* state_renaming = nullptr) { trim_inplace(state_renaming); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -232,10 +232,10 @@ public:
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
-     * @param[out] state_map Mapping of trimmed states to new states.
+     * @param[out] state_renaming Mapping of trimmed states to new states.
      * @return Trimmed automaton.
      */
-    Nfa get_trimmed_automaton(StateToStateMap* state_map = nullptr) const;
+    Nfa get_trimmed_automaton(StateRenaming* state_renaming = nullptr) const;
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -258,14 +258,14 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    TransSequence get_trans_as_sequence() const;
+    std::vector<Trans> get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    TransSequence get_trans_from_as_sequence(State state_from) const;
+    std::vector<Trans> get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading from @p state_from.
@@ -276,7 +276,12 @@ public:
      * @return List of transitions leading from @p state_from.
      */
     const Post& get_moves_from(const State state_from) const {
-        assert(state_from < size());
+        const size_t post_size{ size() };
+        if (state_from >= post_size) {
+            throw std::runtime_error(
+                    "Cannot get moves from nonexistent state '" + std::to_string(state_from)
+                    + "' for Post of size '" + std::to_string(post_size) + "'.");
+        }
         return delta[state_from];
     }
 
@@ -286,7 +291,7 @@ public:
      * @return Sequence of @c Trans transitions leading to @p state_to.
      * (!slow!, traverses the entire delta)
      */
-    TransSequence get_transitions_to(State state_to) const;
+    std::vector<Trans> get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -434,31 +439,28 @@ inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
  * @param[in] nfas Vector of NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const ConstAutRefSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const AutRefSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const ConstAutPtrSequence& nfas);
+OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
 
 /**
  * Create alphabet from a vector of NFAs.
  * @param[in] nfas Vector of pointers to NFAs to create alphabet from.
  * @return Created alphabet.
  */
-OnTheFlyAlphabet create_alphabet(const AutPtrSequence& nfas);
-
-/// Do the automata have disjoint sets of states?
-bool are_state_disjoint(const Nfa& lhs, const Nfa& rhs);
+OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
 /**
  * Check whether is the language of the automaton empty.
@@ -498,13 +500,13 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
- * @param[out] lhs_result_states_map Map mapping lhs states to result states.
- * @param[out] rhs_result_states_map Map mapping rhs states to result states.
+ * @param[out] lhs_state_renaming Map mapping lhs states to result states.
+ * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
-                StateToStateMap* lhs_result_states_map = nullptr, StateToStateMap* rhs_result_states_map = nullptr);
+                StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
  * Make @c aut complete in place.
@@ -562,7 +564,7 @@ inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_comp
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -580,7 +582,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
-   const StringMap& params = {{"algorithm", "classical"}, {"minimize", "false"}});
+               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
  * @brief Compute minimal deterministic automaton.
@@ -590,7 +592,7 @@ Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa &aut, const StringMap& params = {{"algorithm", "brzozowski"}});
+Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
 
 /**
  * @brief Determinize automaton.
@@ -599,32 +601,26 @@ Nfa minimize(const Nfa &aut, const StringMap& params = {{"algorithm", "brzozowsk
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
  * @return Determinized automaton.
  */
-Nfa determinize(const Nfa&  aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
  * Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
  * @param[in] trim_input Whether to trim the input automaton first or not.
- * @param[out] state_map Mapping of trimmed states to new states.
+ * @param[out] state_renaming Mapping of trimmed states to new states.
  * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(const Nfa &aut, bool trim_input = true, StateToStateMap *state_map = nullptr,
-    const StringMap&  params = {{"algorithm", "simulation"}});
+Nfa reduce(const Nfa &aut, bool trim_input = true, StateRenaming *state_renaming = nullptr,
+           const ParameterMap& params = {{ "algorithm", "simulation" } });
 
 /// Is the language of the automaton universal?
-bool is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        Run*              cex = nullptr,
-        const StringMap&  params = {{"algorithm", "antichains"}});
+bool is_universal(const Nfa& aut, const Alphabet& alphabet, Run* cex = nullptr,
+                  const ParameterMap& params = {{ "algorithm", "antichains" }});
 
-inline bool is_universal(
-        const Nfa&         aut,
-        const Alphabet&    alphabet,
-        const StringMap&  params) {
+inline bool is_universal(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
     return is_universal(aut, alphabet, nullptr, params);
 }
 
@@ -639,12 +635,8 @@ inline bool is_universal(
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_included(
-        const Nfa&         smaller,
-        const Nfa&         bigger,
-        Run*               cex,
-        const Alphabet*    alphabet = nullptr,
-        const StringMap&   params = {{"algorithm", "antichains"}});
+bool is_included(const Nfa& smaller, const Nfa& bigger, Run* cex, const Alphabet* alphabet = nullptr,
+                 const ParameterMap& params = {{ "algorithm", "antichains" }});
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -656,11 +648,8 @@ bool is_included(
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(
-        const Nfa&             smaller,
-        const Nfa&             bigger,
-        const Alphabet* const  alphabet = nullptr,
-        const StringMap&      params = {{"algorithm", "antichains"}}) {
+inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* const alphabet = nullptr,
+                        const ParameterMap& params = {{ "algorithm", "antichains" }}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
@@ -675,7 +664,7 @@ inline bool is_included(
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
-                    const StringMap& params = {{"algorithm", "antichains"}});
+                    const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -694,7 +683,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const StringMap& params = {{"algorithm", "antichains"}});
+bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
@@ -742,7 +731,7 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // TODO: rename to something, but no idea to what.
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
-Run encode_word(const StringToSymbolMap& symbol_map, const std::vector<std::string>& input);
+Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
 } // namespace Mata::Nfa.
 

@@ -367,7 +367,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }},
                 {{x, {0, 0} }, {y, {1, 0} }, {y, {1, 1} }} } );
         SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
@@ -391,7 +391,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&w, "(a|b)+");
         create_nfa(&astar, "a*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 1} }, {z, {1, 1} }},
                 {{x, {0, 0} }, {w, {1, 1} }},
                 {{x, {0, 0} }, {x, {0, 1} }, {z, {1, 1} }},
@@ -417,7 +417,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {} );
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({} );
        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(y), std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
@@ -439,7 +439,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{y, {1, 1} }},
                 {{y, {1, 0} }, {y, {1, 1} }},
             } );
@@ -464,7 +464,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "ab*");
         create_nfa(&u, "a*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::EpsCntVector>>>( {
+        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {1, 1} }},
             } );
         SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
@@ -507,7 +507,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
     right_side.delta.add(5, 'b', 6);
     right_side.final.insert({3, 6});
 
-    AutPtrSequence left_side{ &left1, &left2, &left3 };
+    std::vector<Nfa*> left_side{ &left1, &left2, &left3 };
     for (size_t i{}; i < 10000; ++i) {
         SegNfa::noodlify_for_equation(left_side, right_side);
     }

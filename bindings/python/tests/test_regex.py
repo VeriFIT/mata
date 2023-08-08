@@ -2,23 +2,24 @@ __author__ = 'Tomas Fiedor'
 
 import libmata.parser as parser
 import libmata.nfa.nfa as mata_nfa
+import libmata.alphabets as mata_alphabets
 
 
 def test_regex():
     """Test basic functionality of regex conversion"""
-    symbol_map = {"a": ord("a"), "b": ord("b"), "c": ord("c")}
+    alphabet = mata_alphabets.OnTheFlyAlphabet.from_symbol_map({"a": ord("a"), "b": ord("b"), "c": ord("c")})
     lhs = parser.from_regex("a|b")
     rhs = parser.from_regex("b|c")
 
     union = mata_nfa.union(lhs, rhs)
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "a"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "b"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(symbol_map, "c"))
+    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "a"))
+    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "b"))
+    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "c"))
 
     intersection = mata_nfa.intersection(lhs, rhs)
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "a"))
-    assert mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "b"))
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(symbol_map, "c"))
+    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "a"))
+    assert mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "b"))
+    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "c"))
 
 
 def test_stars_concatenation():

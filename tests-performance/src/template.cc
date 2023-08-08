@@ -8,8 +8,7 @@
 
 using namespace Mata::Nfa;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 

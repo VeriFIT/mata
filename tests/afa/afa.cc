@@ -470,12 +470,12 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 { // {{{
     Afa aut;
     Mata::IntermediateAut inter_aut;
-    Mata::StringToSymbolMap symbol_map;
+    Mata::OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
         inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::AFA;
-        aut = Mata::Afa::construct(inter_aut, &symbol_map);
+        aut = Mata::Afa::construct(inter_aut, &alphabet);
         REQUIRE(true);
     }
 
@@ -496,8 +496,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         REQUIRE(aut.finalstates.size() == 2);
     }
 
-    SECTION("construct an automaton with more than one initial/final states from intermediate automaton")
-    {
+    SECTION("construct an automaton with more than one initial/final states from intermediate automaton") {
         std::string file =
                 "@AFA-explicit\n"
                 "%States-enum p q 3\n"
@@ -559,7 +558,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
-        construct(&aut, inter_aut, &symbol_map);
+        construct(&aut, inter_aut, &alphabet);
     }
 
     SECTION("construct a more complicated non-empty automaton from intermediate automaton")
@@ -579,22 +578,22 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        NameStateMap state_map;
+        construct(&aut, inter_aut, &alphabet, &state_map);
 
         REQUIRE(aut.trans_size() == 4);
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.size() == 3);
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.begin()->count(
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["a"]).dst.size() == 3);
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["a"]).dst.begin()->count(
                 state_map["q1"]));
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["a"]).dst.begin()->count(
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["a"]).dst.begin()->count(
                 state_map["q3"]));
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.size() == 1);
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.begin()->count(
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["b"]).dst.size() == 1);
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["b"]).dst.begin()->count(
                 state_map["q3"]));
-        REQUIRE(aut.get_trans_from_state(state_map["q1"], symbol_map["b"]).dst.begin()->count(
+        REQUIRE(aut.get_trans_from_state(state_map["q1"], alphabet["b"]).dst.begin()->count(
                 state_map["q4"]));
-        REQUIRE(aut.get_trans_from_state(state_map["q2"], symbol_map["a"]).dst.size() == 3);
-        REQUIRE(aut.get_trans_from_state(state_map["q3"], symbol_map["a"]).dst.size() == 2);
+        REQUIRE(aut.get_trans_from_state(state_map["q2"], alphabet["a"]).dst.size() == 3);
+        REQUIRE(aut.get_trans_from_state(state_map["q3"], alphabet["a"]).dst.size() == 2);
     }
 
     SECTION("Initial formula in DNF")
@@ -612,8 +611,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        NameStateMap state_map;
+        construct(&aut, inter_aut, &alphabet, &state_map);
 
         REQUIRE(aut.initialstates.size() == 2);
         auto it = aut.initialstates.begin();
@@ -638,8 +637,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        NameStateMap state_map;
+        construct(&aut, inter_aut, &alphabet, &state_map);
 
         // Two initial nodes {q1} and {q2}
         REQUIRE(aut.initialstates.size() == 2);
@@ -660,8 +659,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        NameStateMap state_map;
+        construct(&aut, inter_aut, &alphabet, &state_map);
 
         // One initial node {q1, q2}
         REQUIRE(aut.initialstates.size() == 1);
@@ -682,8 +681,8 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
         const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        StringToStateMap state_map;
-        construct(&aut, inter_aut, &symbol_map, &state_map);
+        NameStateMap state_map;
+        construct(&aut, inter_aut, &alphabet, &state_map);
 
         CHECK(aut.finalstates.size() == 2);
 		CHECK(aut.finalstates.count(state_map.at("2")));
@@ -693,7 +692,6 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
 } // }}}
 
-/*
 TEST_CASE("Mata::Afa::construct() correct calls")
 { // {{{
 	Afa aut;
@@ -740,4 +738,4 @@ TEST_CASE("Mata::Afa::construct() correct calls")
 
 		construct(&aut, parsec);
 	}
-} // }}} */
+}

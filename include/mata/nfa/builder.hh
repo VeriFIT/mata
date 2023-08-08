@@ -7,12 +7,15 @@
 
 #include <filesystem>
 
-using namespace Mata::Nfa;
 
 /**
  * Namespace providing options to build NFAs.
  */
 namespace Mata::Nfa::Builder {
+
+using namespace Mata::Nfa;
+
+using NameStateMap = std::unordered_map<std::string, State>;
 
 /**
  * Create an automaton accepting only a single @p word.
@@ -44,26 +47,19 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
-Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, StringToStateMap* state_map = nullptr);
+Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 template<class ParsedObject>
-Nfa construct(const ParsedObject& parsed, Mata::StringToSymbolMap* symbol_map = nullptr,
-              StringToStateMap* state_map = nullptr) {
-    Mata::StringToSymbolMap tmp_symbol_map;
-    if (symbol_map) {
-        tmp_symbol_map = *symbol_map;
+Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+              NameStateMap* state_map = nullptr) {
+    OnTheFlyAlphabet tmp_alphabet{};
+    if (!alphabet) {
+        alphabet = &tmp_alphabet;
     }
-    Mata::OnTheFlyAlphabet alphabet(tmp_symbol_map);
-
-    Nfa aut = construct(parsed, &alphabet, state_map);
-
-    if (symbol_map) {
-        *symbol_map = alphabet.get_symbol_map();
-    }
-    return aut;
+    return construct(parsed, alphabet, state_map);
 } // construct().
 
 /**

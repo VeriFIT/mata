@@ -258,7 +258,7 @@ public:
      *
      * This function expects the vector to be sorted.
      */
-    inline void remove(Key k) {
+    inline void remove(const Key& k) {
         assert(vectorIsSorted());
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {

@@ -19,7 +19,7 @@ cimport libmata.nfa.nfa as mata_nfa
 cimport libmata.alphabets as alph
 
 from libmata.nfa.nfa cimport \
-    Symbol, State, StateSet, StateToStateMap, StringToSymbolMap, \
+    Symbol, State, StateSet, StateRenaming, \
     CDelta, CRun, CTrans, CNfa, CMove, CEPSILON
 
 from libmata.alphabets cimport CAlphabet
@@ -504,7 +504,7 @@ cdef class Nfa:
 
         :return: State map of original to new states.
         """
-        cdef StateToStateMap state_map
+        cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
         return {k: v for k, v in state_map}
 
@@ -782,8 +782,8 @@ def concatenate_with_result_state_maps(Nfa lhs, Nfa rhs, use_epsilon: bool = Fal
     :return: Nfa: Concatenated automaton.
     """
     result = Nfa()
-    cdef StateToStateMap c_lhs_map
-    cdef StateToStateMap c_rhs_map
+    cdef StateRenaming c_lhs_map
+    cdef StateRenaming c_rhs_map
     mata_nfa.c_concatenate(result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()),
                          use_epsilon, &c_lhs_map, &c_rhs_map)
     lhs_map = {}
@@ -871,7 +871,7 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
     :return: (Reduced automaton, state map of original to new states)
     """
     params = params or {"algorithm": "simulation"}
-    cdef StateToStateMap state_map
+    cdef StateRenaming state_map
     result = Nfa()
     mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
                     {
@@ -1109,18 +1109,19 @@ def get_word_for_path(Nfa lhs, path):
     result = mata_nfa.c_get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
     return result.first.word, result.second
 
-def encode_word(string_to_symbol, word):
-    """Encodes word based on a string to symbol map
+def encode_word(alph.Alphabet alphabet, word):
+    """Encodes word based on a passed alphabet
 
-    >>> mata_nfa.Nfa.encode_word({'a': 1, 'b': 2, "c": 0}, "abca")
+    >>> mata_nfa.Nfa.encode_word(OnTheFlyAlphabet.from_symbol_map({'a': 1, 'b': 2, "c": 0}), "abca")
     [1, 2, 0, 1]
 
-    :param dict string_to_symbol: dictionary of strings to integers
-    :param word: list of strings representing a encoded word
-    :return:
+    :param alph.Alphabet alphabet: Alphabet to encode the word with.
+    :param word: list of strings representing an encoded word.
+    :return: Encoded word.
     """
+    cdef CAlphabet* c_alphabet = alphabet.as_base()
     result = mata_nfa.c_encode_word(
-        {k.encode('utf-8'): v for (k, v) in string_to_symbol.items()},
+        c_alphabet,
         [s.encode('utf-8') for s in word]
     )
     return result.word

@@ -2,13 +2,13 @@
 
 #include "mata/afa/afa.hh"
 #include "mata/parser/inter-aut.hh"
+
 #include <iostream>
 #include <fstream>
 
 using namespace Mata::Afa;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     if (argc != 2) {
         std::cerr << "Input file missing\n";
         return EXIT_FAILURE;
@@ -24,7 +24,6 @@ int main(int argc, char *argv[])
 
     Mata::Parser::Parsed parsed;
     Afa aut;
-    StringToSymbolMap stsm;
     try {
         parsed = Mata::Parser::parse_mf(fs, true);
         fs.close();
