@@ -5,6 +5,8 @@
 
 #include "mata/nfa/types.hh"
 
+#include <iterator>
+
 namespace Mata::Nfa {
 
 /**
@@ -112,11 +114,11 @@ public:
         Move move_{};
 
     public:
-        using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = int;
-        using difference_type = int;
-        using pointer = int*;
-        using reference = int&;
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = Move;
+        using difference_type = unsigned;
+        using pointer = Move*;
+        using reference = Move&;
 
         explicit moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end = false);
 
@@ -320,11 +322,11 @@ public:
         Trans transition{};
 
     public:
-        using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = int;
-        using difference_type = int;
-        using pointer = int*;
-        using reference = int&;
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = Trans;
+        using difference_type = unsigned;
+        using pointer = Trans*;
+        using reference = Trans&;
 
         explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
