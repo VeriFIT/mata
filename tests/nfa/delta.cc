@@ -103,7 +103,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         nfa.delta.add(2, 0, 3);
 
         state_post = nfa.delta.state_post(0);
-        iterated_moves = std::vector<Move>{ state_post.moves_cbegin(), state_post.moves_end() };
+        Mata::Nfa::StatePost::MovesIterator moves{ state_post.moves() };
+        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
         expected_moves = std::vector<Move>{ { 1, 1 }, { 2, 1 }, { 5, 1 } };
         CHECK(iterated_moves == expected_moves);
         iterated_moves.clear();
@@ -113,7 +114,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         CHECK(iterated_moves == expected_moves);
 
         state_post = nfa.delta.state_post(1);
-        iterated_moves = { state_post.moves_cbegin(), state_post.moves_end() };
+        moves = state_post.moves();
+        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
         expected_moves = std::vector<Move>{ { 3, 2 } };
         CHECK(iterated_moves == expected_moves);
         iterated_moves.clear();
@@ -123,7 +125,9 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         CHECK(iterated_moves == expected_moves);
 
         state_post = nfa.delta.state_post(2);
-        iterated_moves = { state_post.moves_cbegin(), state_post.moves_end() };
+        moves = state_post.moves();
+        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
+
         expected_moves = std::vector<Move>{ { 0, 1 }, { 0, 3 } };
         CHECK(iterated_moves == expected_moves);
         iterated_moves.clear();
@@ -133,7 +137,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         CHECK(iterated_moves == expected_moves);
 
         state_post = nfa.delta.state_post(3);
-        iterated_moves = { state_post.moves_cbegin(), state_post.moves_end() };
+        moves = state_post.moves();
+        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
         CHECK(iterated_moves.empty());
         iterated_moves.clear();
         for (const Move& move: state_post.moves()) {
@@ -142,7 +147,8 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         CHECK(iterated_moves.empty());
 
         state_post = nfa.delta.state_post(4);
-        iterated_moves = { state_post.moves_cbegin(), state_post.moves_end() };
+        moves = state_post.moves();
+        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
         CHECK(iterated_moves.empty());
         iterated_moves.clear();
         for (const Move& move: state_post.moves()) {
@@ -156,7 +162,6 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
     Nfa nfa;
     std::vector<Trans> iterated_transitions{};
     std::vector<Trans> expected_transitions{};
-    StatePost state_post{};
 
     SECTION("Simple NFA") {
         nfa.initial.insert(0);
@@ -168,7 +173,8 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
         nfa.delta.add(2, 0, 1);
         nfa.delta.add(2, 0, 3);
 
-        iterated_transitions = std::vector<Trans>{ nfa.delta.transitions_cbegin(), nfa.delta.transitions_cend() };
+        Mata::Nfa::Delta::TransitionsIterator transitions{ nfa.delta.transitions() };
+        iterated_transitions = std::vector<Trans>{ transitions.begin(), transitions.end() };
         expected_transitions = std::vector<Trans>{
             { 0, 1, 1 }, { 0, 2, 1 }, { 0, 5, 1 }, { 1, 3, 2 }, { 2, 0, 1 }, { 2, 0, 3 }
         };
