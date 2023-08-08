@@ -8,6 +8,17 @@
 namespace Mata::Nfa {
 
 /**
+ * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c tgt_state.
+ */
+class Move {
+public:
+    Symbol symbol;
+    State tgt_state;
+
+    bool operator==(const Move&) const = default;
+}; // class Move.
+
+/**
  * Structure represents a post of a single @c symbol: a set of target states in transitions.
  *
  * A set of @c SymbolPost, called @c StatePost, is describing the automata transitions from a single source state.
@@ -87,6 +98,66 @@ public:
     using super::find;
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+
+    /**
+     * Iterator over moves. It iterates over pairs (symbol, target state) for a current source state whose state post
+     *  we iterate.
+     */
+    struct moves_const_iterator {
+    private:
+        const std::vector<SymbolPost>& m_symbol_posts{};
+        std::vector<SymbolPost>::const_iterator m_symbol_post_it{};
+        StateSet::const_iterator m_target_states_it{};
+        bool m_is_end{ false };
+        Move m_move{};
+
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using value_type = int;
+        using difference_type = int;
+        using pointer = int*;
+        using reference = int&;
+
+        explicit moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end = false);
+
+        moves_const_iterator(const std::vector<SymbolPost>& symbol_posts,
+                             std::vector<SymbolPost>::const_iterator symbol_posts_it,
+                             StateSet::const_iterator target_states_it, bool is_end = false);
+
+        moves_const_iterator(const moves_const_iterator& other) = default;
+
+        const Move& operator*() const { return m_move; }
+
+        // Prefix increment
+        moves_const_iterator& operator++();
+        // Postfix increment
+        const moves_const_iterator operator++(int);
+
+        moves_const_iterator& operator=(const moves_const_iterator& x);
+
+        bool operator==(const moves_const_iterator& other) const;
+        bool operator!=(const moves_const_iterator& other) const { return !(*this == other); };
+    };
+
+    moves_const_iterator moves_cbegin() const { return moves_const_iterator(ToVector()); }
+    moves_const_iterator moves_cend() const { return moves_const_iterator(ToVector(), true); }
+    moves_const_iterator moves_begin() const { return moves_cbegin(); }
+    moves_const_iterator moves_end() const { return moves_cend(); }
+
+    struct MovesIterator {
+        moves_const_iterator m_begin;
+        moves_const_iterator m_end;
+        moves_const_iterator begin() const { return m_begin; }
+        moves_const_iterator end() const { return m_end; }
+    };
+
+    /**
+     * Iterate over moves represented as 'Move' instances.
+     * @return Iterator over moves.
+     */
+    MovesIterator moves() const {
+        return { .m_begin = moves_begin(), .m_end = moves_end() };
+    }
 }; // struct Post.
 
 /**
@@ -263,8 +334,8 @@ public:
 
         transitions_const_iterator& operator=(const transitions_const_iterator& x);
 
-        friend bool operator==(const transitions_const_iterator& a, const transitions_const_iterator& b);
-        friend bool operator!=(const transitions_const_iterator& a, const transitions_const_iterator& b) { return !(a == b); };
+        bool operator==(const transitions_const_iterator& other) const;
+        bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
     };
 
     transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts); }
@@ -293,8 +364,6 @@ public:
     const_iterator begin() const { return state_posts.begin(); }
     const_iterator end() const { return state_posts.end(); }
 }; // struct Delta.
-
-bool operator==(const Delta::transitions_const_iterator& a, const Delta::transitions_const_iterator& b);
 
 } // namespace Mata::Nfa.
 

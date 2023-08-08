@@ -5,17 +5,16 @@
 
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nfa/delta.hh"
+
 
 #include <algorithm>
 #include <list>
 #include <iterator>
 
-using std::tie;
-
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
-using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -262,22 +261,26 @@ const Delta::transitions_const_iterator Delta::transitions_const_iterator::opera
 }
 
 Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(const Delta::transitions_const_iterator& x) {
+    // FIXME: this->post is never updated, because it is a const reference to std::vector which does not have assignment
+    //  operator defined.
     this->post_iterator = x.post_iterator;
     this->targets_position = x.targets_position;
     this->current_state = x.current_state;
     this->is_end = x.is_end;
-
+    transition.src = x.transition.src;
+    transition.symb = x.transition.symb;
+    transition.tgt = x.transition.tgt;
     return *this;
 }
 
-bool Mata::Nfa::operator==(const Delta::transitions_const_iterator& a, const Delta::transitions_const_iterator& b) {
-    if (a.is_end && b.is_end) {
+bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+    if (is_end && other.is_end) {
         return true;
-    } else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end)) {
+    } else if ((is_end && !other.is_end) || (!is_end && other.is_end)) {
         return false;
     } else {
-        return a.current_state == b.current_state && a.post_iterator == b.post_iterator
-               && a.targets_position == b.targets_position;
+        return current_state == other.current_state && post_iterator == other.post_iterator
+               && targets_position == other.targets_position;
     }
 }
 
@@ -342,5 +345,85 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
                 }),
                 p.end()
         );
+    }
+}
+
+StatePost::moves_const_iterator::moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end)
+    : m_symbol_posts{ symbol_posts }, m_symbol_post_it{ m_symbol_posts.cbegin() }, m_is_end{ is_end } {
+    while (m_symbol_post_it != m_symbol_posts.cend()) {
+        if (!m_symbol_post_it->empty()) {
+            m_target_states_it = m_symbol_post_it->targets.begin();
+            m_move.symbol = m_symbol_post_it->symbol;
+            m_move.tgt_state = *m_target_states_it;
+            return;
+        }
+        ++m_symbol_post_it;
+    }
+    // No move found. We are at the end of moves.
+    m_is_end = true;
+}
+
+StatePost::moves_const_iterator::moves_const_iterator(
+    const std::vector<SymbolPost>& symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
+    StateSet::const_iterator target_states_it, bool is_end)
+    : m_symbol_posts{ symbol_posts }, m_symbol_post_it{ symbol_posts_it }, m_target_states_it{ target_states_it },
+      m_is_end{ is_end } {
+        while (m_symbol_post_it != m_symbol_posts.cend()) {
+            if (!m_symbol_post_it->empty()) {
+                m_target_states_it = m_symbol_post_it->targets.begin();
+                m_move.symbol = m_symbol_post_it->symbol;
+                m_move.tgt_state = *m_target_states_it;
+                return;
+            }
+        }
+        // No move found. We are at the end of moves.
+        m_is_end = true;
+}
+
+StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
+    assert(m_symbol_posts.begin() != m_symbol_posts.end());
+
+    ++m_target_states_it;
+    if (m_target_states_it != m_symbol_post_it->targets.end()) {
+        m_move.tgt_state = *m_target_states_it;
+        return *this;
+    }
+
+    ++m_symbol_post_it;
+    if (m_symbol_post_it != m_symbol_posts.cend()) {
+        m_target_states_it = m_symbol_post_it->targets.begin();
+        m_move.symbol = m_symbol_post_it->symbol;
+        m_move.tgt_state = *m_target_states_it;
+        return *this;
+    }
+
+    m_is_end = true;
+    return *this;
+}
+
+const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator++(int) {
+    const moves_const_iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& x) {
+    // FIXME: this->symbol_posts is never updated, because it is a const reference to std::vector which does not have
+    //  assignment operator defined.
+    m_is_end = x.m_is_end;
+    m_move.symbol = x.m_move.symbol;
+    m_move.tgt_state = x.m_move.tgt_state;
+    m_symbol_post_it = x.m_symbol_post_it;
+    m_target_states_it = x.m_target_states_it;
+    return *this;
+}
+
+bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
+    if (m_is_end && other.m_is_end) {
+        return true;
+    } else if ((m_is_end && !other.m_is_end) || (!m_is_end && other.m_is_end)) {
+        return false;
+    } else {
+        return m_symbol_post_it == other.m_symbol_post_it && m_target_states_it == other.m_target_states_it;
     }
 }
