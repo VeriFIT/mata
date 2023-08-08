@@ -1,12 +1,13 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
-
 #include "nfa-util.hh"
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
 #include "mata/nfa/delta.hh"
+#include "mata/nfa/nfa.hh"
+
+#include "../3rdparty/catch.hpp"
 
 using namespace Mata::Nfa;
 

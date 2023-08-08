@@ -97,16 +97,16 @@ public:
  */
 class Delta {
 private:
-    std::vector<StatePost> posts;
+    std::vector<StatePost> state_posts;
 
 public:
-    inline static const StatePost empty_post; // When posts[q] is not allocated, then delta[q] returns this.
+    inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
-    Delta() : posts() {}
-    explicit Delta(size_t n) : posts(n) {}
+    Delta() : state_posts() {}
+    explicit Delta(size_t n) : state_posts(n) {}
 
     void reserve(size_t n) {
-        posts.reserve(n);
+        state_posts.reserve(n);
     };
 
     /**
@@ -126,24 +126,24 @@ public:
     // But it feels fragile, before doing something like that, better think and talk to people.
     StatePost& get_mutable_post(State q);
 
-    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
     // Get a constant reference to the post of a state. No side effects.
     const StatePost & operator[] (State q) const;
+    void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
-    void emplace_back() { posts.emplace_back(); }
+    void emplace_back() { state_posts.emplace_back(); }
 
-    void clear() { posts.clear(); }
+    void clear() { state_posts.clear(); }
 
     void increase_size(size_t n) {
-        assert(n >= posts.size());
-        posts.resize(n);
+        assert(n >= state_posts.size());
+        state_posts.resize(n);
     }
 
     /**
      * @return Number of states in the whole Delta, including both source and target states.
      */
-    size_t num_of_states() const { return posts.size(); }
+    size_t num_of_states() const { return state_posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
@@ -165,7 +165,7 @@ public:
      */
     void append(const std::vector<StatePost>& post_vector) {
         for(const StatePost& pst : post_vector) {
-            this->posts.push_back(pst);
+            this->state_posts.push_back(pst);
         }
     }
 
@@ -229,8 +229,8 @@ public:
         friend bool operator!=(const transitions_const_iterator& a, const transitions_const_iterator& b) { return !(a == b); };
     };
 
-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(posts); }
-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(posts, true); }
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts, true); }
     transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
     transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
@@ -250,10 +250,10 @@ public:
     }
 
     using const_iterator = std::vector<StatePost>::const_iterator;
-    const_iterator cbegin() const { return posts.cbegin(); }
-    const_iterator cend() const { return posts.cend(); }
-    const_iterator begin() const { return posts.begin(); }
-    const_iterator end() const { return posts.end(); }
+    const_iterator cbegin() const { return state_posts.cbegin(); }
+    const_iterator cend() const { return state_posts.cend(); }
+    const_iterator begin() const { return state_posts.begin(); }
+    const_iterator end() const { return state_posts.end(); }
 }; // struct Delta.
 
 bool operator==(const Delta::transitions_const_iterator& a, const Delta::transitions_const_iterator& b);

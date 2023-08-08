@@ -78,12 +78,12 @@ size_t Delta::size() const
 
 void Delta::add(State state_from, Symbol symbol, State state_to) {
     const State max_state{ std::max(state_from, state_to) };
-    if (max_state >= posts.size()) {
-        reserve_on_insert(posts, max_state);
-        posts.resize(max_state + 1);
+    if (max_state >= state_posts.size()) {
+        reserve_on_insert(state_posts, max_state);
+        state_posts.resize(max_state + 1);
     }
 
-    StatePost& state_transitions{ posts[state_from] };
+    StatePost& state_transitions{ state_posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, state_to });
@@ -108,12 +108,12 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
     }
 
     const State max_state{ std::max(state_from, states.back()) };
-    if (max_state >= posts.size()) {
-        reserve_on_insert(posts, max_state + 1);
-        posts.resize(max_state + 1);
+    if (max_state >= state_posts.size()) {
+        reserve_on_insert(state_posts, max_state + 1);
+        state_posts.resize(max_state + 1);
     }
 
-    StatePost& state_transitions{ posts[state_from] };
+    StatePost& state_transitions{ state_posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, states });
@@ -134,11 +134,11 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
 }
 
 void Delta::remove(State src, Symbol symb, State tgt) {
-    if (src >= posts.size()) {
+    if (src >= state_posts.size()) {
         return;
     }
 
-    StatePost& state_transitions{ posts[src] };
+    StatePost& state_transitions{ state_posts[src] };
     if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -156,7 +156,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         } else {
             symbol_transitions->remove(tgt);
             if (symbol_transitions->empty()) {
-                posts[src].remove(*symbol_transitions);
+                state_posts[src].remove(*symbol_transitions);
             }
         }
     }
@@ -164,14 +164,14 @@ void Delta::remove(State src, Symbol symb, State tgt) {
 
 bool Delta::contains(State src, Symbol symb, State tgt) const
 { // {{{
-    if (posts.empty()) {
+    if (state_posts.empty()) {
         return false;
     }
 
-    if (posts.size() <= src)
+    if (state_posts.size() <= src)
         return false;
 
-    const StatePost& tl = posts[src];
+    const StatePost& tl = state_posts[src];
     if (tl.empty()) {
         return false;
     }
@@ -262,7 +262,7 @@ bool Mata::Nfa::operator==(const Delta::transitions_const_iterator& a, const Del
 std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambda) const {
     std::vector<StatePost> cp_post_vector;
     cp_post_vector.reserve(num_of_states());
-    for(const StatePost& act_post: this->posts) {
+    for(const StatePost& act_post: this->state_posts) {
         StatePost cp_post;
         cp_post.reserve(act_post.size());
         for(const SymbolPost& mv : act_post) {
@@ -279,13 +279,13 @@ std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambd
 }
 
 StatePost& Delta::get_mutable_post(State q) {
-    if (q >= posts.size()) {
-        Util::reserve_on_insert(posts, q);
+    if (q >= state_posts.size()) {
+        Util::reserve_on_insert(state_posts, q);
         const size_t new_size{ q + 1 };
-        posts.resize(new_size);
+        state_posts.resize(new_size);
     }
 
-    return posts[q];
+    return state_posts[q];
 }
 
 void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
@@ -293,7 +293,7 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
     size_t move_index{ 0 };
-    std::erase_if(posts,
+    std::erase_if(state_posts,
          [&](StatePost&) -> bool {
              size_t prev{ move_index };
              ++move_index;
@@ -303,8 +303,8 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 
     //this iterates through every post and every move, filters and renames states,
     //and then removes moves that became empty.
-    for (State q=0,size=posts.size(); q < size; ++q) {
         StatePost & p = get_mutable_post(q);
+    for (State q=0,size=state_posts.size(); q < size; ++q) {
         for (auto move = p.begin(); move < p.end(); ++move) {
             move->targets.erase(
                     std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
