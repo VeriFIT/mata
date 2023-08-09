@@ -9,6 +9,24 @@
 
 namespace Mata::Nfa {
 
+/// A single transition in Delta represented as a triple(source, symbol, target).
+struct Transition {
+    State source; ///< Source state.
+    Symbol symbol; ///< Transition symbol.
+    State target; ///< Target state.
+
+    Transition() : source(), symbol(), target() { }
+    Transition(const Transition&) = default;
+    Transition(Transition&&) = default;
+    Transition &operator=(const Transition&) = default;
+    Transition &operator=(Transition&&) = default;
+    Transition(const State source, const Symbol symbol, const State target)
+            : source(source), symbol(symbol), target(target) {}
+
+    bool operator==(const Transition& rhs) const { return source == rhs.source && symbol == rhs.symbol && target == rhs.target; }
+    bool operator!=(const Transition& rhs) const { return !this->operator==(rhs); }
+};
+
 /**
  * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c tgt_state.
  */
@@ -258,9 +276,9 @@ public:
     size_t num_of_states() const { return state_posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
-    void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
+    void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
     void remove(State src, Symbol symb, State tgt);
-    void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
+    void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
 
     /**
      * Check whether @c Delta contains a passed transition.
@@ -269,7 +287,7 @@ public:
     /**
      * Check whether @c Delta contains a transition passed as a triple.
      */
-    bool contains(const Trans& transition) const;
+    bool contains(const Transition& transition) const;
 
     /**
      * Check whether automaton contains no transitions.
@@ -319,14 +337,14 @@ public:
         StatePost::const_iterator post_iterator{};
         StateSet::const_iterator targets_position{};
         bool is_end;
-        Trans transition{};
+        Transition transition{};
 
     public:
         using iterator_category = std::forward_iterator_tag;
-        using value_type = Trans;
+        using value_type = Transition;
         using difference_type = unsigned;
-        using pointer = Trans*;
-        using reference = Trans&;
+        using pointer = Transition*;
+        using reference = Transition&;
 
         explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
@@ -335,7 +353,7 @@ public:
 
         transitions_const_iterator(const transitions_const_iterator& other) = default;
 
-        const Trans& operator*() const { return transition; }
+        const Transition& operator*() const { return transition; }
 
         // Prefix increment
         transitions_const_iterator& operator++();

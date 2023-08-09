@@ -433,8 +433,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 ```cython
 # @file: nfa.pxd
-cdef class Trans:
-# ^-- forward declaration of the Trans class
+cdef class Transition:
+# ^-- forward declaration of the Transition class
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
     # ^-- all of properties (and preferably some cdef methods) must be declared as well
@@ -443,8 +443,8 @@ cdef class Trans:
 ```cython
 # @file: strings.pyx
 cimport libmata.nfa.nfa as mata_nfa
-result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
-#                                       ^-- now Trans can be used in other pyx files.
+result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.symbol, trans.target))
+#                                       ^-- now Transition can be used in other pyx files.
 ```
 
 ## Declaring functions for string representation of objects
@@ -689,8 +689,8 @@ lhs.thisptr.get().add_state()
 cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
 trans = []
 for c_transition in c_transitions:
-#   ^-- classic for each loop over std::vector<Trans> does everything behind the scenes
-    trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+#   ^-- classic for each loop over std::vector<Transition> does everything behind the scenes
+    trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
 ```
 
 ## Working with strings
@@ -801,18 +801,18 @@ for trans in epsilon_depth_pair.second:
 if epsilon_depth_pair.first not in result:
 result[epsilon_depth_pair.first] = []
 
-                result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
+                result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.symbol, trans.target))
                                                                ^
 ------------------------------------------------------------
 
-libmata/nfa/strings.pyx:37:64: cimported module has no attribute 'Trans'
+libmata/nfa/strings.pyx:37:64: cimported module has no attribute 'Transition'
 ```
 
 * The fix is to add the following forward declaration to `.pxd` file.
 
 ```cython
 # @file: nfa.pxd
-cdef class Trans:
+cdef class Transition:
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
 ```

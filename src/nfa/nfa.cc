@@ -560,14 +560,14 @@ void Nfa::print_to_mata(std::ostream &output) const {
         output << std::endl;
     }
 
-    for (Trans trans : delta.transitions()) {
-        output << "q" << trans.src << " " << trans.symb << " q" << trans.tgt << std::endl;
+    for (Transition trans : delta.transitions()) {
+        output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
     }
 }
 
-std::vector<Trans> Nfa::get_trans_as_sequence() const
+std::vector<Transition> Nfa::get_trans_as_sequence() const
 {
-    std::vector<Trans> trans_sequence{};
+    std::vector<Transition> trans_sequence{};
 
     for (State state_from{ 0 }; state_from < delta.num_of_states(); ++state_from)
     {
@@ -575,7 +575,7 @@ std::vector<Trans> Nfa::get_trans_as_sequence() const
         {
             for (State state_to: transition_from_state.targets)
             {
-                trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+                trans_sequence.push_back(Transition{ state_from, transition_from_state.symbol, state_to });
             }
         }
     }
@@ -583,9 +583,9 @@ std::vector<Trans> Nfa::get_trans_as_sequence() const
     return trans_sequence;
 }
 
-std::vector<Trans> Nfa::get_trans_from_as_sequence(State state_from) const
+std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
 {
-    std::vector<Trans> trans_sequence{};
+    std::vector<Transition> trans_sequence{};
 
     for (const auto& transition_from_state: delta[state_from])
     {
@@ -608,8 +608,8 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-std::vector<Trans> Nfa::get_transitions_to(State state_to) const {
-    std::vector<Trans> transitions_to_state{};
+std::vector<Transition> Nfa::get_transitions_to(State state_to) const {
+    std::vector<Transition> transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
         for (const SymbolPost& state_from_move: delta[state_from]) {
@@ -877,7 +877,7 @@ void Nfa::unify_final() {
     for (const auto& orig_final_state: final) {
         const auto transitions_to{ get_transitions_to(orig_final_state) };
         for (const auto& transitions: transitions_to) {
-            delta.add(transitions.src, transitions.symb, new_final_state);
+            delta.add(transitions.source, transitions.symbol, new_final_state);
         }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
@@ -949,9 +949,9 @@ bool Nfa::is_identical(const Nfa& aut) {
         return false;
     }
 
-    std::vector<Trans> this_trans;
+    std::vector<Transition> this_trans;
     for (auto trans: *this) { this_trans.push_back(trans); }
-    std::vector<Trans> aut_trans;
+    std::vector<Transition> aut_trans;
     for (auto trans: aut) { aut_trans.push_back(trans); }
     return this_trans == aut_trans;
 }

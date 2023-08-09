@@ -861,9 +861,9 @@ def test_segmentation(prepare_automaton_a):
     assert len(epsilon_depths) == 1
     assert 0 in epsilon_depths
     assert len(epsilon_depths[0]) == 3
-    assert mata_nfa.Trans(10, epsilon, 7) in epsilon_depths[0]
-    assert mata_nfa.Trans(7, epsilon, 3) in epsilon_depths[0]
-    assert mata_nfa.Trans(5, epsilon, 9) in epsilon_depths[0]
+    assert mata_nfa.Transition(10, epsilon, 7) in epsilon_depths[0]
+    assert mata_nfa.Transition(7, epsilon, 3) in epsilon_depths[0]
+    assert mata_nfa.Transition(5, epsilon, 9) in epsilon_depths[0]
 
     nfa = mata_nfa.Nfa(ord('q') + 1)
     nfa.make_initial_state(1)
@@ -885,9 +885,9 @@ def test_segmentation(prepare_automaton_a):
     assert len(epsilon_depths[0]) == 1
     assert len(epsilon_depths[1]) == 1
     assert len(epsilon_depths[2]) == 1
-    assert mata_nfa.Trans(1, epsilon, 2) in epsilon_depths[0]
-    assert mata_nfa.Trans(6, epsilon, 7) in epsilon_depths[1]
-    assert mata_nfa.Trans(7, epsilon, 8) in epsilon_depths[2]
+    assert mata_nfa.Transition(1, epsilon, 2) in epsilon_depths[0]
+    assert mata_nfa.Transition(6, epsilon, 7) in epsilon_depths[1]
+    assert mata_nfa.Transition(7, epsilon, 8) in epsilon_depths[2]
 
 
 def test_reduce():

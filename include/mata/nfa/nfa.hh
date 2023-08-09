@@ -204,9 +204,9 @@ public:
     StateSet get_useful_states_old() const;
 
     /**
-     * @brief Get the useful states using a modified Tarjan's algorithm. A state 
+     * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
-     * 
+     *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
     BoolVector get_useful_states() const;
@@ -259,14 +259,14 @@ public:
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    std::vector<Trans> get_trans_as_sequence() const;
+    std::vector<Transition> get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    std::vector<Trans> get_trans_from_as_sequence(State state_from) const;
+    std::vector<Transition> get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading to @p state_to.
@@ -274,7 +274,7 @@ public:
      * @return Sequence of @c Trans transitions leading to @p state_to.
      * (!slow!, traverses the entire delta)
      */
-    std::vector<Trans> get_transitions_to(State state_to) const;
+    std::vector<Transition> get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -339,7 +339,7 @@ public:
         size_t trIt;
         StatePost::const_iterator tlIt;
         StateSet::const_iterator ssIt;
-        Trans trans;
+        Transition trans;
         bool is_end = { false };
 
         const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
@@ -351,7 +351,7 @@ public:
         //  adds clutter and makes people write inefficient code.
         void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
 
-        const Trans& operator*() const { return this->trans; }
+        const Transition& operator*() const { return this->trans; }
 
         bool operator==(const const_iterator& rhs) const;
         bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
@@ -721,16 +721,16 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
 
 namespace std {
 template <>
-struct hash<Mata::Nfa::Trans> {
-	inline size_t operator()(const Mata::Nfa::Trans& trans) const {
-		size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
-		accum = Mata::Util::hash_combine(accum, trans.symb);
-		accum = Mata::Util::hash_combine(accum, trans.tgt);
+struct hash<Mata::Nfa::Transition> {
+	inline size_t operator()(const Mata::Nfa::Transition& trans) const {
+		size_t accum = std::hash<Mata::Nfa::State>{}(trans.source);
+		accum = Mata::Util::hash_combine(accum, trans.symbol);
+		accum = Mata::Util::hash_combine(accum, trans.target);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Transition& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
 } // namespace std.
 

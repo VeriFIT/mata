@@ -120,26 +120,26 @@ def plot_using_graphviz(
         dot.edge(f"q{state}", f"{state}", **edge_configuration)
     edges = {}
     for trans in aut.iterate():
-        key = f"{trans.src},{trans.tgt}"
+        key = f"{trans.source},{trans.target}"
         if key not in edges.keys():
             edges[key] = []
         symbol = "{}".format(
-            alphabet.reverse_translate_symbol(trans.symb) if alphabet else trans.symb
+            alphabet.reverse_translate_symbol(trans.symbol) if alphabet else trans.symbol
         )
         edges[key].append((
-            f"{trans.src}", f"{trans.tgt}", symbol,
+            f"{trans.source}", f"{trans.target}", symbol,
             get_configuration_for(
                 edge_configuration, edge_highlight, aut, trans
             )
         ))
     for edge in edges.values():
-        src = edge[0][0]
-        tgt = edge[0][1]
+        source = edge[0][0]
+        target = edge[0][1]
         label = "<" + " | ".join(sorted(t[2] for t in edge)) + ">"
         style = {}
         for val in edge:
             style.update(val[3])
-        dot.edge(src, tgt, label=label, **style)
+        dot.edge(source, target, label=label, **style)
 
     return dot
 
@@ -256,4 +256,4 @@ class Condition:
     @classmethod
     def transition_is_cycle(cls, _, trans):
         """Tests if transition is self cycle"""
-        return trans.src == trans.tgt
+        return trans.source == trans.target

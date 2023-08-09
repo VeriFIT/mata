@@ -43,9 +43,9 @@ namespace {
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
         for (const auto& transition : aut.delta.transitions()) {
-            LTSforSimulation.add_transition(transition.src, transition.symb, transition.tgt);
-            if (transition.symb > maxSymbol) {
-                maxSymbol = transition.symb;
+            LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
+            if (transition.symbol > maxSymbol) {
+                maxSymbol = transition.symbol;
             }
         }
 
@@ -131,9 +131,9 @@ namespace {
     }
 }
 
-std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Trans &trans) { // {{{
-    std::string result = "(" + std::to_string(trans.src) + ", " +
-                         std::to_string(trans.symb) + ", " + std::to_string(trans.tgt) + ")";
+std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Transition &trans) { // {{{
+    std::string result = "(" + std::to_string(trans.source) + ", " +
+                         std::to_string(trans.symbol) + ", " + std::to_string(trans.target) + ")";
     return os << result;
 }
 

@@ -37,8 +37,8 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
                                                       std::deque<StateDepthTuple>& worklist)
 {
     /// TODO: Maybe we don't need to keep the transitions in both structures
-    this->epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, std::vector<Trans>{}));
-    this->eps_depth_trans_map.insert({ state_depth_pair.depth, {{state_depth_pair.state, std::vector<Trans>{}}} });
+    this->epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, std::vector<Transition>{}));
+    this->eps_depth_trans_map.insert({ state_depth_pair.depth, {{state_depth_pair.state, std::vector<Transition>{}}} });
 
     std::map<Symbol, unsigned> visited_eps_aux(state_depth_pair.eps);
     visited_eps_aux[move.symbol]++;
@@ -46,10 +46,10 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
     for (State target_state: move.targets)
     {
         this->epsilon_depth_transitions[state_depth_pair.depth].push_back(
-                Trans{ state_depth_pair.state, move.symbol, target_state }
+                Transition{ state_depth_pair.state, move.symbol, target_state }
         );
         this->eps_depth_trans_map[state_depth_pair.depth][state_depth_pair.state].push_back(
-            Trans{ state_depth_pair.state, move.symbol, target_state }
+                Transition{ state_depth_pair.state, move.symbol, target_state }
         );
         worklist.push_back(StateDepthTuple{ target_state, state_depth_pair.depth + 1, visited_eps_aux });
         this->visited_eps[target_state] = visited_eps_aux;
@@ -99,11 +99,11 @@ void SegNfa::Segmentation::split_aut_into_segments()
     remove_inner_initial_and_final_states();
 
     // Construct segment automata.
-    std::unique_ptr<const std::vector<Trans>> depth_transitions{};
+    std::unique_ptr<const std::vector<Transition>> depth_transitions{};
     for (size_t depth{ 0 }; depth < epsilon_depth_transitions.size(); ++depth)
     {
         // Split the left segment from automaton into a new segment.
-        depth_transitions = std::make_unique<const std::vector<Trans>>(epsilon_depth_transitions[depth]);
+        depth_transitions = std::make_unique<const std::vector<Transition>>(epsilon_depth_transitions[depth]);
         for (const auto& transition: *depth_transitions)
         {
             update_current_segment(depth, transition);
@@ -125,26 +125,26 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
     }
 }
 
-void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Trans& transition)
+void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Transition& transition)
 {
-    assert(this->epsilons.find(transition.symb) != this->epsilons.end());
-    assert(segments_raw[current_depth].delta.contains(transition.src, transition.symb, transition.tgt));
+    assert(this->epsilons.find(transition.symbol) != this->epsilons.end());
+    assert(segments_raw[current_depth].delta.contains(transition.source, transition.symbol, transition.target));
 
-    segments_raw[current_depth].final.insert(transition.src);
+    segments_raw[current_depth].final.insert(transition.source);
     // we need to remove this transition so that the language of the current segment does not accept too much
     segments_raw[current_depth].delta.remove(transition);
 }
 
-void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const Trans& transition)
+void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const Transition& transition)
 {
     const size_t next_depth = current_depth + 1;
 
-    assert(this->epsilons.find(transition.symb) != this->epsilons.end());
-    assert(segments_raw[next_depth].delta.contains(transition.src, transition.symb, transition.tgt));
+    assert(this->epsilons.find(transition.symbol) != this->epsilons.end());
+    assert(segments_raw[next_depth].delta.contains(transition.source, transition.symbol, transition.target));
 
     // we do not need to remove epsilon transitions in current_depth from the next segment (or the
     // segments after) as the initial states are after these transitions
-    segments_raw[next_depth].initial.insert(transition.tgt);
+    segments_raw[next_depth].initial.insert(transition.target);
 }
 
 const std::vector<Nfa>& SegNfa::Segmentation::get_segments()

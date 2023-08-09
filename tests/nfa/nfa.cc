@@ -49,7 +49,7 @@ TEST_CASE("Mata::Nfa::size()") {
 }
 
 TEST_CASE("Mata::Nfa::Trans::operator<<") {
-    Trans trans(1, 2, 3);
+    Transition trans(1, 2, 3);
     REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 }
 
@@ -111,18 +111,18 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
     }
 
     SECTION("Iterating over transitions") {
-        Trans t1{ 0, 0, 0};
-        Trans t2{ 0, 1, 0};
-        Trans t3{ 1, 1, 1};
-        Trans t4{ 2, 2, 2};
+        Transition t1{ 0, 0, 0};
+        Transition t2{ 0, 1, 0};
+        Transition t3{ 1, 1, 1};
+        Transition t4{ 2, 2, 2};
         a.delta.add(t1);
         a.delta.add(t2);
         a.delta.add(t3);
         a.delta.add(t4);
         a.delta.add(t3);
         size_t transitions_cnt{ 0 };
-        std::vector<Trans> expected_transitions{ t1, t2, t3, t4 };
-        std::vector<Trans> iterated_transitions{};
+        std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
+        std::vector<Transition> iterated_transitions{};
         for (auto trans_it{ a.delta.transitions_begin()}; trans_it != a.delta.transitions_end(); ++trans_it) {
             iterated_transitions.push_back(*trans_it);
             ++transitions_cnt;
@@ -132,7 +132,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
 
         transitions_cnt = 0;
         iterated_transitions.clear();
-        for (const Trans& trans: a.delta.transitions()) {
+        for (const Transition& trans: a.delta.transitions()) {
             iterated_transitions.push_back(trans);
             ++transitions_cnt;
         }
@@ -2245,7 +2245,7 @@ TEST_CASE("Mata::Nfa::delta.remove()")
 
 TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
     Nfa aut('q' + 1);
-    std::vector<Trans> expected{};
+    std::vector<Transition> expected{};
 
     aut.delta.add(1, 2, 3);
     expected.emplace_back(1, 2, 3);

@@ -78,11 +78,11 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         # Constructor
         CRun() except +
 
-    cdef cppclass CTrans "Mata::Nfa::Trans":
+    cdef cppclass CTrans "Mata::Nfa::Transition":
         # Public Attributes
-        State src
-        Symbol symb
-        State tgt
+        State source
+        Symbol symbol
+        State target
 
         # Constructor
         CTrans() except +
@@ -215,6 +215,6 @@ cdef class Nfa:
     cdef shared_ptr[CNfa] thisptr
     cdef label
 
-cdef class Trans:
+cdef class Transition:
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)

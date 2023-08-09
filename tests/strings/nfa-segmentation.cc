@@ -82,7 +82,7 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
         FILL_WITH_AUT_A(aut);
         auto segmentation{SegNfa::Segmentation{aut, epsilons } };
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
-        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Trans>{
+        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Transition>{
                 {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
        }});
     }
@@ -103,9 +103,9 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
 
         REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
-                {0, std::vector<Trans>{{1, epsilon, 2}}},
-                {1, std::vector<Trans>{{6, epsilon, 7}}},
-                {2, std::vector<Trans>{{7, epsilon, 8}}},
+                {0, std::vector<Transition>{{ 1, epsilon, 2}}},
+                {1, std::vector<Transition>{{ 6, epsilon, 7}}},
+                {2, std::vector<Transition>{{ 7, epsilon, 8}}},
         });
     }
 

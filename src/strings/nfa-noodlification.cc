@@ -73,7 +73,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
 
     NoodleSequence noodles{};
     // noodle of epsilon transitions (each from different depth)
-    std::vector<Trans> epsilon_noodle(epsilon_depths_size);
+    std::vector<Transition> epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
     // based on https://stackoverflow.com/questions/48270565/create-all-possible-combinations-of-multiple-vectors
     for (size_t index{ 0 }; index < num_of_permutations; ++index) {
@@ -88,7 +88,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
         Noodle noodle;
 
         // epsilon_noodle[0] for sure exists, as we sorted out the case of only one segment at the beginning
-        auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state, epsilon_noodle[0].src));
+        auto first_segment_iter = segments_one_initial_final.find(std::make_pair(unused_state, epsilon_noodle[0].source));
         if (first_segment_iter != segments_one_initial_final.end()) {
             noodle.push_back(first_segment_iter->second);
         } else {
@@ -98,7 +98,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
         bool all_segments_exist = true;
         for (auto iter = epsilon_noodle.begin(); iter + 1 != epsilon_noodle.end(); ++iter) {
             auto next_iter = iter + 1;
-            auto segment_iter = segments_one_initial_final.find(std::make_pair(iter->tgt, next_iter->src));
+            auto segment_iter = segments_one_initial_final.find(std::make_pair(iter->target, next_iter->source));
             if (segment_iter != segments_one_initial_final.end()) {
                 noodle.push_back(segment_iter->second);
             } else {
@@ -112,7 +112,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
         }
 
         auto last_segment_iter = segments_one_initial_final.find(
-                std::make_pair(epsilon_noodle.back().tgt, unused_state));
+                std::make_pair(epsilon_noodle.back().target, unused_state));
         if (last_segment_iter != segments_one_initial_final.end()) {
             noodle.push_back(last_segment_iter->second);
         } else {
@@ -233,7 +233,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
             continue;
         }
 
-        for(const Trans& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
+        for(const Transition& tr : epsilon_depths_map.at(item.seg_id).at(item.fin)) {
             //TODO: is the use of SparseSet here good? It may take a lot of space. Do you need constant test? Otherwise what about StateSet?
             Mata::Util::SparseSet<Mata::Nfa::State> fins = segments[item.seg_id+1].final; // final states of the segment
             if(item.seg_id + 1 == segments.size() - 1) { // last segment
@@ -241,7 +241,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
             }
 
             for(const State& fn : fins) {
-                auto seg_iter = segments_one_initial_final.find({tr.tgt, fn});
+                auto seg_iter = segments_one_initial_final.find({ tr.target, fn});
                 if(seg_iter == segments_one_initial_final.end())
                     continue;
 
@@ -249,7 +249,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
                 new_item.seg_id++;
                 // do not include segmets with trivial epsilon language
                 if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
-                    new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.tgt]));
+                    new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
                 }
                 new_item.fin = fn;
                 lifo.push_back(new_item);

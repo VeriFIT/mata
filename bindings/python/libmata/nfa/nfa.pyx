@@ -37,9 +37,9 @@ cdef class Run:
     def __cinit__(self):
         """Constructor of the transition
 
-        :param State src: source state
+        :param State source: source state
         :param Symbol s: symbol
-        :param State tgt: target state
+        :param State target: target state
         """
         self.thisptr = new mata_nfa.CRun()
 
@@ -64,38 +64,38 @@ cdef class Run:
     def path(self, value):
         self.thisptr.path = value
 
-cdef class Trans:
+cdef class Transition:
     """Wrapper over the transitions in NFA."""
 
     @property
-    def src(self):
+    def source(self):
         """
         :return: source state of the transition
         """
-        return self.thisptr.src
+        return self.thisptr.source
 
     @property
-    def symb(self):
+    def symbol(self):
         """
         :return: symbol for the transition
         """
-        return self.thisptr.symb
+        return self.thisptr.symbol
 
     @property
-    def tgt(self):
+    def target(self):
         """
         :return: target state of the transition
         """
-        return self.thisptr.tgt
+        return self.thisptr.target
 
-    def __cinit__(self, State src=0, Symbol s=0, State tgt=0):
+    def __cinit__(self, State source=0, Symbol s=0, State target=0):
         """Constructor of the transition
 
-        :param State src: source state
+        :param State source: source state
         :param Symbol s: symbol
-        :param State tgt: target state
+        :param State target: target state
         """
-        self.thisptr = new mata_nfa.CTrans(src, s, tgt)
+        self.thisptr = new mata_nfa.CTrans(source, s, target)
 
     def __dealloc__(self):
         """Destructor"""
@@ -107,18 +107,18 @@ cdef class Trans:
 
         :param CTrans trans: copied transition
         """
-        self.thisptr.src = trans.src
-        self.thisptr.symb = trans.symb
-        self.thisptr.tgt = trans.tgt
+        self.thisptr.source = trans.source
+        self.thisptr.symbol = trans.symbol
+        self.thisptr.target = trans.target
 
-    def __eq__(self, Trans other):
+    def __eq__(self, Transition other):
         return dereference(self.thisptr) == dereference(other.thisptr)
 
-    def __neq__(self, Trans other):
+    def __neq__(self, Transition other):
         return dereference(self.thisptr) != dereference(other.thisptr)
 
     def __str__(self):
-        return f"{self.thisptr.src}-[{self.thisptr.symb}]\u2192{self.thisptr.tgt}"
+        return f"{self.thisptr.source}-[{self.thisptr.symbol}]\u2192{self.thisptr.target}"
 
     def __repr__(self):
         return str(self)
@@ -327,54 +327,54 @@ cdef class Nfa:
         """Unify final states into a single new final state."""
         self.thisptr.get().unify_final()
 
-    def add_transition_object(self, Trans tr):
+    def add_transition_object(self, Transition tr):
         """Adds transition to automaton
 
-        :param Trans tr: added transition
+        :param Transition tr: added transition
         """
         self.thisptr.get().delta.add(dereference(tr.thisptr))
 
-    def add_transition(self, State src, symb, State tgt, alph.Alphabet alphabet = None):
+    def add_transition(self, State source, symbol, State target, alph.Alphabet alphabet = None):
         """Constructs transition and adds it to automaton
 
-        :param State src: source state
-        :param Symbol symb: symbol
-        :param State tgt: target state
+        :param State source: source state
+        :param Symbol symbol: symbol
+        :param State target: target state
         :param alph.Alphabet alphabet: alphabet of the transition
         """
-        if isinstance(symb, str):
+        if isinstance(symbol, str):
             alphabet = alphabet or store().get('alphabet')
             if not alphabet:
-                raise Exception(f"Cannot translate symbol '{symb}' without specified alphabet")
-            self.thisptr.get().delta.add(src, alphabet.translate_symbol(symb), tgt)
+                raise Exception(f"Cannot translate symbol '{symbol}' without specified alphabet")
+            self.thisptr.get().delta.add(source, alphabet.translate_symbol(symbol), target)
         else:
-            self.thisptr.get().delta.add(src, symb, tgt)
+            self.thisptr.get().delta.add(source, symbol, target)
 
-    def remove_trans(self, Trans tr):
+    def remove_trans(self, Transition tr):
         """Removes transition from the automaton.
 
-        :param Trans tr: Transition to be removed.
+        :param Transition tr: Transition to be removed.
         """
         self.thisptr.get().delta.remove(dereference(tr.thisptr))
 
-    def remove_trans_raw(self, State src, Symbol symb, State tgt):
+    def remove_trans_raw(self, State source, Symbol symbol, State target):
         """Constructs transition and removes it from the automaton.
 
-        :param State src: Source state of the transition to be removed.
-        :param Symbol symb: Symbol of the transition to be removed.
-        :param State tgt: Target state of the transition to be removed.
+        :param State source: Source state of the transition to be removed.
+        :param Symbol symbol: Symbol of the transition to be removed.
+        :param State target: Target state of the transition to be removed.
         """
-        self.thisptr.get().delta.remove(src, symb, tgt)
+        self.thisptr.get().delta.remove(source, symbol, target)
 
-    def has_transition(self, State src, Symbol symb, State tgt):
+    def has_transition(self, State source, Symbol symbol, State target):
         """Tests if automaton contains transition
 
-        :param State src: source state
-        :param Symbol symb: symbol
-        :param State tgt: target state
+        :param State source: source state
+        :param Symbol symbol: symbol
+        :param State target: target state
         :return: true if automaton contains transition
         """
-        return self.thisptr.get().delta.contains(src, symb, tgt)
+        return self.thisptr.get().delta.contains(source, symbol, target)
 
     def get_num_of_trans(self):
         """Returns number of transitions in automaton
@@ -400,7 +400,7 @@ cdef class Nfa:
         """
         iterator = self.thisptr.get().begin()
         while iterator != self.thisptr.get().end():
-            trans = Trans()
+            trans = Transition()
             lhs = dereference(iterator)
             trans.copy_from(lhs)
             preinc(iterator)
@@ -435,7 +435,7 @@ cdef class Nfa:
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
         trans = []
         for c_transition in c_transitions:
-            trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+            trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
         return trans
 
     def get_trans_as_sequence(self):
@@ -446,7 +446,7 @@ cdef class Nfa:
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
         transitions = []
         for c_transition in c_transitions:
-            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+            transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
         return transitions
 
     def get_trans_from_state_as_sequence(self, State state_from):
@@ -457,7 +457,7 @@ cdef class Nfa:
         cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_from_as_sequence(state_from)
         transitions = []
         for c_transition in c_transitions:
-            transitions.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+            transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
         return transitions
 
     def get_useful_states(self):
@@ -535,9 +535,9 @@ cdef class Nfa:
         result += "final_states: {}\n".format([s for s in self.thisptr.get().final])
         result += "transitions:\n"
         for trans in self.iterate():
-            symbol = trans.symb if self.thisptr.get().alphabet == NULL \
-                else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symb)
-            result += f"{trans.src}-[{symbol}]\u2192{trans.tgt}\n"
+            symbol = trans.symbol if self.thisptr.get().alphabet == NULL \
+                else self.thisptr.get().alphabet.reverse_translate_symbol(trans.symbol)
+            result += f"{trans.source}-[{symbol}]\u2192{trans.target}\n"
         return result
 
     def __repr__(self):
@@ -593,7 +593,7 @@ cdef class Nfa:
         """
         columns = ['source', 'symbol', 'target']
         data = [
-            [trans.src, trans.symb, trans.tgt] for trans in self.iterate()
+            [trans.source, trans.symbol, trans.target] for trans in self.iterate()
         ]
         return pandas.DataFrame(data, columns=columns)
 
@@ -601,7 +601,7 @@ cdef class Nfa:
         """Transforms the automaton into networkx.Graph
 
         Transforms the automaton into networkx.Graph format,
-        that is represented as graph with edges (src, tgt) with
+        that is represented as graph with edges (source, target) with
         additional properties.
 
         Each symbol is added as an property to each edge.
@@ -610,7 +610,7 @@ cdef class Nfa:
         """
         G = nx.DiGraph()
         for trans in self.iterate():
-            G.add_edge(trans.src, trans.tgt, symbol=trans.symb)
+            G.add_edge(trans.source, trans.target, symbol=trans.symbol)
         return G
 
     def post_map_of(self, State st, alph.Alphabet alphabet):
