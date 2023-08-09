@@ -25,6 +25,7 @@ add_executable(tests
 		re2parser.cc
 		mintermization.cc
 		afa/afa.cc
+		nfa/delta.cc
 		nfa/nfa.cc
 		nfa/builder.cc
 		nfa/nfa-concatenation.cc

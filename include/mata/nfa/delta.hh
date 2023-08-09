@@ -3,32 +3,63 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
+#include "mata/nfa/types.hh"
+
+#include <iterator>
+
 namespace Mata::Nfa {
 
+/// A single transition in Delta represented as a triple(source, symbol, target).
+struct Transition {
+    State source; ///< Source state.
+    Symbol symbol; ///< Transition symbol.
+    State target; ///< Target state.
+
+    Transition() : source(), symbol(), target() { }
+    Transition(const Transition&) = default;
+    Transition(Transition&&) = default;
+    Transition &operator=(const Transition&) = default;
+    Transition &operator=(Transition&&) = default;
+    Transition(const State source, const Symbol symbol, const State target)
+            : source(source), symbol(symbol), target(target) {}
+
+    bool operator==(const Transition& rhs) const { return source == rhs.source && symbol == rhs.symbol && target == rhs.target; }
+    bool operator!=(const Transition& rhs) const { return !this->operator==(rhs); }
+};
+
 /**
- * Structure represents a move which is a symbol and a set of target states of transitions.
+ * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c target.
  */
 class Move {
+public:
+    Symbol symbol;
+    State target;
+
+    bool operator==(const Move&) const = default;
+}; // class Move.
+
+/**
+ * Structure represents a post of a single @c symbol: a set of target states in transitions.
+ *
+ * A set of @c SymbolPost, called @c StatePost, is describing the automata transitions from a single source state.
+ */
+class SymbolPost {
 public:
     Symbol symbol{};
     StateSet targets{};
 
-    Move() = default;
-    explicit Move(Symbol symbol) : symbol{ symbol }, targets{} {}
-    Move(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
-    Move(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
+    SymbolPost() = default;
+    explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
+    SymbolPost(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
+    SymbolPost(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
-    Move(Move&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
-    Move(const Move& rhs) = default;
-    Move& operator=(Move&& rhs) noexcept;
-    Move& operator=(const Move& rhs) = default;
+    SymbolPost(SymbolPost&& rhs) noexcept : symbol{ rhs.symbol }, targets{ std::move(rhs.targets) } {}
+    SymbolPost(const SymbolPost& rhs) = default;
+    SymbolPost& operator=(SymbolPost&& rhs) noexcept;
+    SymbolPost& operator=(const SymbolPost& rhs) = default;
 
-    inline bool operator<(const Move& rhs) const { return symbol < rhs.symbol; }
-    inline bool operator<=(const Move& rhs) const { return symbol <= rhs.symbol; }
-    inline bool operator==(const Move& rhs) const { return symbol == rhs.symbol; }
-    inline bool operator!=(const Move& rhs) const { return symbol != rhs.symbol; }
-    inline bool operator>(const Move& rhs) const { return symbol > rhs.symbol; }
-    inline bool operator>=(const Move& rhs) const { return symbol >= rhs.symbol; }
+    std::weak_ordering operator<=>(const SymbolPost& other) const { return symbol <=> other.symbol; }
+    bool operator==(const SymbolPost& other) const { return symbol == other.symbol; }
 
     StateSet::iterator begin() { return targets.begin(); }
     StateSet::iterator end() { return targets.end(); }
@@ -55,22 +86,23 @@ public:
 }; // class Mata::Nfa::Move.
 
 /**
- * Post is a data structure representing possible transitions over different symbols.
- * It is an ordered vector containing possible Moves (i.e., pair of symbol and target states.
- * Vector is ordered by symbols which are numbers.
+ * @brief A data structure representing possible transitions over different symbols from a source state.
+ *
+ * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
+ * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class Post : private Util::OrdVector<Move> {
+class StatePost : private Util::OrdVector<SymbolPost> {
 private:
-    using super = Util::OrdVector<Move>;
+    using super = Util::OrdVector<SymbolPost>;
 public:
     using super::iterator, super::const_iterator;
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
-    Post(const Post&) = default;
-    Post(Post&&) = default;
-    Post& operator=(const Post&) = default;
-    Post& operator=(Post&&) = default;
+    StatePost(const StatePost&) = default;
+    StatePost(StatePost&&) = default;
+    StatePost& operator=(const StatePost&) = default;
+    StatePost& operator=(StatePost&&) = default;
     using super::insert;
     using super::reserve;
     using super::remove;
@@ -86,26 +118,94 @@ public:
     using super::find;
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+
+    /**
+     * Iterator over moves. It iterates over pairs (symbol, target state) for a current source state whose state post
+     *  we iterate.
+     */
+    struct moves_const_iterator {
+    private:
+        const std::vector<SymbolPost>& symbol_posts_{};
+        std::vector<SymbolPost>::const_iterator symbol_post_it_{};
+        StateSet::const_iterator target_states_it_{};
+        bool is_end_{ false };
+        Move move_{};
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = Move;
+        using difference_type = unsigned;
+        using pointer = Move*;
+        using reference = Move&;
+
+        explicit moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end = false);
+
+        moves_const_iterator(const std::vector<SymbolPost>& symbol_posts,
+                             std::vector<SymbolPost>::const_iterator symbol_posts_it,
+                             StateSet::const_iterator target_states_it, bool is_end = false);
+
+        moves_const_iterator(const moves_const_iterator& other) = default;
+
+        const Move& operator*() const { return move_; }
+
+        // Prefix increment
+        moves_const_iterator& operator++();
+        // Postfix increment
+        const moves_const_iterator operator++(int);
+
+        moves_const_iterator& operator=(const moves_const_iterator& x);
+
+        bool operator==(const moves_const_iterator& other) const;
+        bool operator!=(const moves_const_iterator& other) const { return !(*this == other); };
+    };
+
+    moves_const_iterator moves_cbegin() const { return moves_const_iterator(ToVector()); }
+    moves_const_iterator moves_cend() const { return moves_const_iterator(ToVector(), true); }
+    moves_const_iterator moves_begin() const { return moves_cbegin(); }
+    moves_const_iterator moves_end() const { return moves_cend(); }
+
+    class Moves {
+    public:
+        moves_const_iterator begin_;
+        moves_const_iterator end_;
+        moves_const_iterator begin() const { return begin_; }
+        moves_const_iterator end() const { return end_; }
+    };
+
+    /**
+     * Iterate over moves represented as 'Move' instances.
+     * @return Iterator over moves.
+     */
+    Moves moves() const { return { .begin_ = moves_begin(), .end_ = moves_end() }; }
 }; // struct Post.
 
 /**
- * Delta is a data structure for representing transition relation.
- * Its underlying data structure is vector of Post structures.
- * Each index of vector corresponds to one state, that is a number of
- * state is an index to the vector of Posts.
+ * @brief Delta is a data structure for representing transition relation.
+ *
+ * Transition is represented as a triple Trans(source state, symbol, target state). Move is the part (symbol, target
+ *  state), specified for a single source state.
+ * Its underlying data structure is vector of StatePost classes. Each index to the vector corresponds to one source
+ *  state, that is, a number for a certain state is an index to the vector of state posts.
+ * Transition relation (delta) in Mata stores a set of transitions in a four-level hierarchical structure:
+ *  Delta, StatePost, SymbolPost, and a set of target states.
+ * A vector of 'StatePost's indexed by a source states on top, where the StatePost for a state 'q' (whose number is
+ *  'q' and it is the index to the vector of 'StatePost's) stores a set of 'Move's from the source state 'q'.
+ * Namely, 'StatePost' has a vector of 'SymbolPost's, where each 'SymbolPost' stores a symbol 'a' and a vector of
+ *  target states of 'a'-moves from state 'q'. 'SymbolPost's are ordered by the symbol, target states are ordered by
+ *  the state number.
  */
 class Delta {
 private:
-    std::vector<Post> posts;
+    std::vector<StatePost> state_posts;
 
 public:
-    inline static const Post empty_post; // When posts[q] is not allocated, then delta[q] returns this.
+    inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
-    Delta() : posts() {}
-    explicit Delta(size_t n) : posts(n) {}
+    Delta() : state_posts() {}
+    explicit Delta(size_t n) : state_posts(n) {}
 
     void reserve(size_t n) {
-        posts.reserve(n);
+        state_posts.reserve(n);
     };
 
     /**
@@ -113,43 +213,81 @@ public:
      */
     size_t size() const;
 
-    // Get a non const reference to post of a state, which allows modifying the post.
-    //
-    // BEWARE, IT HAS A SIDE EFFECT.
-    //
-    // Namely, it allocates the post of the state if it was not allocated yet. This in turn may cause that
-    // the entire post data structure is re-allocated, iterators to it get invalidated ...
-    // Use the constant [] operator below if possible.
-    // Or, to prevent the side effect from happening, one might want to make sure that posts of all states in the automaton
-    // are allocated, e.g., write an NFA method that allocate delta for all states of the NFA.
-    // But it feels fragile, before doing something like that, better think and talk to people.
-    Post& get_mutable_post(State q);
+    /**
+     * @brief Get constant reference to the state post of @p src_state.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+     *  effects (no allocation is performed; iterators remain valid).
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    const StatePost& state_post(const State src_state) const {
+        if (src_state >= num_of_states()) {
+            return empty_state_post;
+        }
+        return state_posts[src_state];
+    }
+
+    /**
+     * @brief Get constant reference to the state post of @p src_state.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, an @c empty_post is returned. Hence, the function has no side
+     *  effects (no allocation is performed; iterators remain valid).
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    const StatePost& operator[](State src_state) const { return state_post(src_state); }
+
+    /**
+     * @brief Get mutable (non-constant) reference to the state post of @p src_state.
+     *
+     * The function allows modifying the state post.
+     *
+     * BEWARE, IT HAS A SIDE EFFECT.
+     *
+     * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,
+     *  yet does not have allocated space in @c Delta, a new state post for @p src_state will be allocated along with
+     *  all state posts for all previous states. This in turn may cause that the entire post data structure is
+     *  re-allocated. Iterators to @c Delta will get invalidated.
+     * Use the constant 'state_post()' is possible. Or, to prevent the side effect from causing issues, one might want
+     *  to make sure that posts of all states in the automaton are allocated, e.g., write an NFA method that allocate
+     *  @c Delta for all states of the NFA.
+     * @param state_from[in] Source state of a state post to access.
+     * @return State post of @p src_state.
+     */
+    StatePost& mutable_state_post(State src_state);
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
-    // Get a constant reference to the post of a state. No side effects.
-    const Post & operator[] (State q) const;
+    void emplace_back() { state_posts.emplace_back(); }
 
-    void emplace_back() { posts.emplace_back(); }
-
-    void clear() { posts.clear(); }
+    void clear() { state_posts.clear(); }
 
     void increase_size(size_t n) {
-        assert(n >= posts.size());
-        posts.resize(n);
+        assert(n >= state_posts.size());
+        state_posts.resize(n);
     }
 
     /**
      * @return Number of states in the whole Delta, including both source and target states.
      */
-    size_t num_of_states() const { return posts.size(); }
+    size_t num_of_states() const { return state_posts.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
-    void add(const Trans& trans) { add(trans.src, trans.symb, trans.tgt); }
+    void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
     void remove(State src, Symbol symb, State tgt);
-    void remove(const Trans& trans) { remove(trans.src, trans.symb, trans.tgt); }
+    void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
 
+    /**
+     * Check whether @c Delta contains a passed transition.
+     */
     bool contains(State src, Symbol symb, State tgt) const;
+    /**
+     * Check whether @c Delta contains a transition passed as a triple.
+     */
+    bool contains(const Transition& transition) const;
 
     /**
      * Check whether automaton contains no transitions.
@@ -162,9 +300,9 @@ public:
      *
      * @param post_vector Vector of posts to be appended.
      */
-    void append(const std::vector<Post>& post_vector) {
-        for(const Post& pst : post_vector) {
-            this->posts.push_back(pst);
+    void append(const std::vector<StatePost>& post_vector) {
+        for(const StatePost& pst : post_vector) {
+            this->state_posts.push_back(pst);
         }
     }
 
@@ -178,7 +316,7 @@ public:
      * @param lambda Monotonic lambda function mapping states to different states
      * @return std::vector<Post> Copied posts.
      */
-    std::vector<Post> transform(const std::function<State(State)>& lambda) const;
+    std::vector<StatePost> transform(const std::function<State(State)>& lambda) const;
 
     /**
      * @brief Add transitions to multiple destinations
@@ -192,52 +330,66 @@ public:
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
-    struct const_iterator {
+    struct transitions_const_iterator {
     private:
-        const std::vector<Post>& post;
+        const std::vector<StatePost>& post;
         size_t current_state;
-        Post::const_iterator post_iterator{};
+        StatePost::const_iterator post_iterator{};
         StateSet::const_iterator targets_position{};
         bool is_end;
+        Transition transition{};
 
     public:
-        using iterator_category = std::bidirectional_iterator_tag;
-        using value_type = int;
-        using difference_type = int;
-        using pointer = int*;
-        using reference = int&;
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = Transition;
+        using difference_type = unsigned;
+        using pointer = Transition*;
+        using reference = Transition&;
 
-        explicit const_iterator(const std::vector<Post>& post_p, bool ise = false);
+        explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
 
-        const_iterator(const std::vector<Post>& post_p, size_t as,
-                       Post::const_iterator pi, StateSet::const_iterator ti, bool ise = false) :
-                post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {};
+        transitions_const_iterator(const std::vector<StatePost>& post_p, size_t as,
+                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false);
 
-        const_iterator(const const_iterator& other) = default;
+        transitions_const_iterator(const transitions_const_iterator& other) = default;
 
-        Trans operator*() const { return Trans{current_state, (*post_iterator).symbol, *targets_position}; }
+        const Transition& operator*() const { return transition; }
 
         // Prefix increment
-        const_iterator& operator++();
+        transitions_const_iterator& operator++();
         // Postfix increment
-        const_iterator operator++(int);
+        const transitions_const_iterator operator++(int);
 
-        const_iterator& operator=(const const_iterator& x);
+        transitions_const_iterator& operator=(const transitions_const_iterator& x);
 
-        friend bool operator==(const const_iterator& a, const const_iterator& b);
-        friend bool operator!=(const const_iterator& a, const const_iterator& b) { return !(a == b); };
+        bool operator==(const transitions_const_iterator& other) const;
+        bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
     };
 
-    const_iterator cbegin() const { return const_iterator(posts); }
-    const_iterator cend() const { return const_iterator(posts, true); }
-    const_iterator begin() const { return cbegin(); }
-    const_iterator end() const { return cend(); }
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts, true); }
+    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+    transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
-private:
-    State find_max_state();
+    struct Transitions {
+        transitions_const_iterator begin_;
+        transitions_const_iterator end_;
+        transitions_const_iterator begin() const { return begin_; }
+        transitions_const_iterator end() const { return end_; }
+    };
+
+    /**
+     * Iterate over transitions represented as 'Trans' instances.
+     * @return Iterator over transitions.
+     */
+    Transitions transitions() const { return { .begin_ = transitions_begin(), .end_ = transitions_end() }; }
+
+    using const_iterator = std::vector<StatePost>::const_iterator;
+    const_iterator cbegin() const { return state_posts.cbegin(); }
+    const_iterator cend() const { return state_posts.cend(); }
+    const_iterator begin() const { return state_posts.begin(); }
+    const_iterator end() const { return state_posts.end(); }
 }; // struct Delta.
-
-bool operator==(const Delta::const_iterator& a, const Delta::const_iterator& b);
 
 } // namespace Mata::Nfa.
 

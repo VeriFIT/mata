@@ -204,9 +204,9 @@ public:
     StateSet get_useful_states_old() const;
 
     /**
-     * @brief Get the useful states using a modified Tarjan's algorithm. A state 
+     * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
-     * 
+     *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
     BoolVector get_useful_states() const;
@@ -252,38 +252,21 @@ public:
      *
      * The operation has constant time complexity.
      */
-    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.begin(), delta.end())); }
+    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.transitions_begin(),
+                                                                               delta.transitions_end())); }
 
     /**
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
-    std::vector<Trans> get_trans_as_sequence() const;
+    std::vector<Transition> get_trans_as_sequence() const;
 
     /**
      * Get transitions from @p state_from as a sequence of @c Trans.
      * @param state_from[in] Source state_from of transitions to get.
      * @return Sequence of transitions as @c Trans from @p state_from.
      */
-    std::vector<Trans> get_trans_from_as_sequence(State state_from) const;
-
-    /**
-     * Get transitions leading from @p state_from.
-     *
-     * If we try to access a state which is present in the delta as a target state, yet does not have allocated space
-     *  for itself in @c post, @c post is resized to include @p state_from.
-     * @param state_from[in] Source state for transitions to get.
-     * @return List of transitions leading from @p state_from.
-     */
-    const Post& get_moves_from(const State state_from) const {
-        const size_t post_size{ size() };
-        if (state_from >= post_size) {
-            throw std::runtime_error(
-                    "Cannot get moves from nonexistent state '" + std::to_string(state_from)
-                    + "' for Post of size '" + std::to_string(post_size) + "'.");
-        }
-        return delta[state_from];
-    }
+    std::vector<Transition> get_trans_from_as_sequence(State state_from) const;
 
     /**
      * Get transitions leading to @p state_to.
@@ -291,7 +274,7 @@ public:
      * @return Sequence of @c Trans transitions leading to @p state_to.
      * (!slow!, traverses the entire delta)
      */
-    std::vector<Trans> get_transitions_to(State state_to) const;
+    std::vector<Transition> get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -354,9 +337,9 @@ public:
     struct const_iterator {
         const Nfa* nfa;
         size_t trIt;
-        Post::const_iterator tlIt;
+        StatePost::const_iterator tlIt;
         StateSet::const_iterator ssIt;
-        Trans trans;
+        Transition trans;
         bool is_end = { false };
 
         const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
@@ -368,7 +351,7 @@ public:
         //  adds clutter and makes people write inefficient code.
         void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
 
-        const Trans& operator*() const { return this->trans; }
+        const Transition& operator*() const { return this->trans; }
 
         bool operator==(const const_iterator& rhs) const;
         bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
@@ -385,7 +368,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    Post::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
+    StatePost::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
 
     /**
      * Return all epsilon transitions from epsilon symbol under given state transitions.
@@ -394,7 +377,7 @@ public:
      * @return Returns reference element of transition list with epsilon transitions or end of transition list when
      * there are no epsilon transitions.
      */
-    static Post::const_iterator get_epsilon_transitions(const Post& post, Symbol epsilon = EPSILON);
+    static StatePost::const_iterator get_epsilon_transitions(const StatePost& post, Symbol epsilon = EPSILON);
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
@@ -701,7 +684,8 @@ Nfa fragile_revert(const Nfa& aut);
 Nfa simple_revert(const Nfa& aut);
 
 // Reverting the automaton by a modification of the simple algorithm.
-// It replaces random access addition to Move by push_back and sorting later, so far seems the slowest of all, except on dense automata, where it is almost as slow as simple_revert. Candidate for removal.
+// It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all, except on
+//  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
 Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
@@ -737,16 +721,16 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
 
 namespace std {
 template <>
-struct hash<Mata::Nfa::Trans> {
-	inline size_t operator()(const Mata::Nfa::Trans& trans) const {
-		size_t accum = std::hash<Mata::Nfa::State>{}(trans.src);
-		accum = Mata::Util::hash_combine(accum, trans.symb);
-		accum = Mata::Util::hash_combine(accum, trans.tgt);
+struct hash<Mata::Nfa::Transition> {
+	inline size_t operator()(const Mata::Nfa::Transition& trans) const {
+		size_t accum = std::hash<Mata::Nfa::State>{}(trans.source);
+		accum = Mata::Util::hash_combine(accum, trans.symbol);
+		accum = Mata::Util::hash_combine(accum, trans.target);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Transition& trans);
 std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
 } // namespace std.
 

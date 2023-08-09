@@ -150,8 +150,8 @@ public:
     using EpsilonDepth = size_t; ///< Depth of ε-transitions.
     /// Dictionary of lists of ε-transitions grouped by their depth.
     /// For each depth 'i' we have 'depths[i]' which contains a list of ε-transitions of depth 'i'.
-    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, std::vector<Trans>>;
-    using EpsilonDepthTransitionMap = std::unordered_map<EpsilonDepth, std::unordered_map<State, std::vector<Trans>>>;
+    using EpsilonDepthTransitions = std::unordered_map<EpsilonDepth, std::vector<Transition>>;
+    using EpsilonDepthTransitionMap = std::unordered_map<EpsilonDepth, std::unordered_map<State, std::vector<Transition>>>;
 
     /**
      * Prepare automaton @p aut for segmentation.
@@ -225,14 +225,14 @@ private:
      * @param[in] current_depth Current depth.
      * @param[in] transition Current epsilon transition.
      */
-    void update_next_segment(size_t current_depth, const Trans& transition);
+    void update_next_segment(size_t current_depth, const Transition& transition);
 
     /**
      * Update current segment automaton.
      * @param[in] current_depth Current depth.
      * @param[in] transition Current epsilon transition.
      */
-    void update_current_segment(size_t current_depth, const Trans& transition);
+    void update_current_segment(size_t current_depth, const Transition& transition);
 
     /**
      * Initialize map of visited states.
@@ -259,7 +259,7 @@ private:
      * @param depth[in] Current depth.
      * @param worklist[out] Worklist of state and depth pairs to process.
      */
-    void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const Move& move,
+    void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const SymbolPost& move,
                                      std::deque<StateDepthTuple>& worklist);
 
     /**
@@ -268,7 +268,7 @@ private:
      * @param[in] move Move from current state.
      * @param[out] worklist Worklist of state and depth pairs to process.
      */
-    void handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const Move& move,
+    void handle_epsilon_transitions(const StateDepthTuple& state_depth_pair, const SymbolPost& move,
                                     std::deque<StateDepthTuple>& worklist);
 
     /**

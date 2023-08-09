@@ -104,7 +104,7 @@ void ShortestWordsMap::compute_for_state(const State state)
     const WordLength dst_length_plus_one{ dst.first + 1 };
     LengthWordsPair act;
 
-    for (const Move& transition: reversed_automaton.get_moves_from(state))
+    for (const SymbolPost& transition: reversed_automaton.delta.state_post(state))
     {
         for (const State state_to: transition.targets)
         {
@@ -172,11 +172,11 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     while(curr_state.has_value()) {
         visited.insert(curr_state.value());
         handles[curr_state.value()] = cnt++;
-        Nfa::Post post = one_letter.delta[curr_state.value()];
+        Nfa::StatePost post = one_letter.delta[curr_state.value()];
 
         curr_state.reset();
         assert(post.size() <= 1);
-        for(const Move& move : post) {
+        for(const SymbolPost& move : post) {
             assert(move.targets.size() == 1);
             Nfa::State tgt = *move.targets.begin();
 

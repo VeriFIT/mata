@@ -160,36 +160,6 @@ def test_making_initial_and_final_states():
     assert len(nfa.final_states) == 0
 
 
-def test_transitions():
-    """Test adding transitions to automaton"""
-    lhs = mata_nfa.Nfa(3)
-    t1 = mata_nfa.Trans(0, 0, 0)
-    t2 = mata_nfa.Trans(0, 1, 0)
-    t3 = mata_nfa.Trans(1, 1, 1)
-    t4 = mata_nfa.Trans(2, 2, 2)
-
-    # Test adding transition
-    assert lhs.get_num_of_trans() == 0
-    lhs.add_transition_object(t1)
-    assert lhs.get_num_of_trans() != 0
-    assert lhs.has_transition(t1.src, t1.symb, t1.tgt)
-
-    lhs.add_transition_object(t2)
-    assert lhs.has_transition(t2.src, t2.symb, t2.tgt)
-
-    # Test adding add-hoc transition
-    lhs.add_transition(1, 1, 1)
-    assert lhs.has_transition(t3.src, t3.symb, t3.tgt)
-    assert not lhs.has_transition(2, 2, 2)
-    lhs.add_transition_object(t4)
-    assert lhs.has_transition(2, 2, 2)
-
-    # Test that transitions are not duplicated
-    lhs.add_transition(1, 1, 1)
-
-    assert [t for t in lhs.iterate()] == [t1, t2, t3, t4]
-
-
 def test_post(binary_alphabet):
     """Test various cases of getting post of the states
     :return:
@@ -672,9 +642,9 @@ def test_shortest(fa_one_divisible_by_two):
 def test_get_trans(fa_one_divisible_by_two):
     lhs = fa_one_divisible_by_two
     t = lhs.get_transitions_from_state(0)
-    assert sorted(t) == sorted([mata_nfa.Move(0, [0]), mata_nfa.Move(1, [1])])
+    assert sorted(t) == sorted([mata_nfa.SymbolPost(0, [0]), mata_nfa.SymbolPost(1, [1])])
     tt = lhs.get_transitions_from_state(1)
-    assert sorted(tt) == sorted([mata_nfa.Move(0, [1]), mata_nfa.Move(1, [2])])
+    assert sorted(tt) == sorted([mata_nfa.SymbolPost(0, [1]), mata_nfa.SymbolPost(1, [2])])
 
 
 def test_trim(prepare_automaton_a):
@@ -891,9 +861,9 @@ def test_segmentation(prepare_automaton_a):
     assert len(epsilon_depths) == 1
     assert 0 in epsilon_depths
     assert len(epsilon_depths[0]) == 3
-    assert mata_nfa.Trans(10, epsilon, 7) in epsilon_depths[0]
-    assert mata_nfa.Trans(7, epsilon, 3) in epsilon_depths[0]
-    assert mata_nfa.Trans(5, epsilon, 9) in epsilon_depths[0]
+    assert mata_nfa.Transition(10, epsilon, 7) in epsilon_depths[0]
+    assert mata_nfa.Transition(7, epsilon, 3) in epsilon_depths[0]
+    assert mata_nfa.Transition(5, epsilon, 9) in epsilon_depths[0]
 
     nfa = mata_nfa.Nfa(ord('q') + 1)
     nfa.make_initial_state(1)
@@ -915,9 +885,9 @@ def test_segmentation(prepare_automaton_a):
     assert len(epsilon_depths[0]) == 1
     assert len(epsilon_depths[1]) == 1
     assert len(epsilon_depths[2]) == 1
-    assert mata_nfa.Trans(1, epsilon, 2) in epsilon_depths[0]
-    assert mata_nfa.Trans(6, epsilon, 7) in epsilon_depths[1]
-    assert mata_nfa.Trans(7, epsilon, 8) in epsilon_depths[2]
+    assert mata_nfa.Transition(1, epsilon, 2) in epsilon_depths[0]
+    assert mata_nfa.Transition(6, epsilon, 7) in epsilon_depths[1]
+    assert mata_nfa.Transition(7, epsilon, 8) in epsilon_depths[2]
 
 
 def test_reduce():

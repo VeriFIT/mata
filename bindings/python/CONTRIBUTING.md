@@ -389,7 +389,7 @@ def determinize_with_subset_map(cls, Nfa lhs):
   will simply not be visible.
 
 ```cython
-cdef cppclass CMove "Mata::Nfa::Move":
+cdef cppclass CMove "Mata::Nfa::SymbolPost":
     Symbol symbol
     StateSet targets
 #   ^-- class attributes
@@ -398,7 +398,7 @@ cdef cppclass CMove "Mata::Nfa::Move":
 * Implement the getters and setters in Cython class
 
 ```cython
-cdef class Move:
+cdef class SymbolPost:
 # ^-- cython class
     cdef mata_nfa.CMove *thisptr
 #   ^-- wrapped C/C++ object
@@ -433,8 +433,8 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 ```cython
 # @file: nfa.pxd
-cdef class Trans:
-# ^-- forward declaration of the Trans class
+cdef class Transition:
+# ^-- forward declaration of the Transition class
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
     # ^-- all of properties (and preferably some cdef methods) must be declared as well
@@ -443,8 +443,8 @@ cdef class Trans:
 ```cython
 # @file: strings.pyx
 cimport libmata.nfa.nfa as mata_nfa
-result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
-#                                       ^-- now Trans can be used in other pyx files.
+result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.symbol, trans.target))
+#                                       ^-- now Transition can be used in other pyx files.
 ```
 
 ## Declaring functions for string representation of objects
@@ -455,7 +455,7 @@ result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, tr
   2. `__repr__` returns computer readable representation (usually so it is parsable by other code); this is called in jupyter notebooks when you simply write the name of the vairable.
 
 ```cython
-cdef class Move:
+cdef class SymbolPost:
     def __str__(self):
     # ^-- called in notebook/interpret by typing `str(myvar)`
         trans = "{" + ",".join(map(str, self.targets)) + "}"
@@ -475,7 +475,7 @@ cdef class Move:
 ```cython
 # @file: nfa.pxd
 cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    cdef cppclass CMove "Mata::Nfa::Move":
+    cdef cppclass CMove "Mata::Nfa::SymbolPost":
         bool operator<(CMove)
         bool operator<=(CMove)
         bool operator>(CMove)
@@ -486,17 +486,17 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
 
 ```cython
 # @file: nfa.pyx
-cdef class Move:
-    def __lt__(self, Move other):
+cdef class SymbolPost:
+    def __lt__(self, SymbolPost other):
         return dereference(self.thisptr) < dereference(other.thisptr)
 
-    def __gt__(self, Move other):
+    def __gt__(self, SymbolPost other):
         return dereference(self.thisptr) > dereference(other.thisptr)
 
-    def __le__(self, Move other):
+    def __le__(self, SymbolPost other):
         return dereference(self.thisptr) <= dereference(other.thisptr)
 
-    def __ge__(self, Move other):
+    def __ge__(self, SymbolPost other):
         return dereference(self.thisptr) >= dereference(other.thisptr)
 ```
 
@@ -647,7 +647,7 @@ cdef vector[mata_nfa.CMove].iterator end = transitions_list.end()
 transsymbols = []
 while it != end:
 #     ^-- comparsion of two iterators
-    t = Move(
+    t = SymbolPost(
         dereference(it).symbol,
         dereference(it).targets.ToVector()
         # ^-- to access the value of iterator you need to dereference
@@ -689,8 +689,8 @@ lhs.thisptr.get().add_state()
 cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
 trans = []
 for c_transition in c_transitions:
-#   ^-- classic for each loop over std::vector<Trans> does everything behind the scenes
-    trans.append(Trans(c_transition.src, c_transition.symb, c_transition.tgt))
+#   ^-- classic for each loop over std::vector<Transition> does everything behind the scenes
+    trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
 ```
 
 ## Working with strings
@@ -801,18 +801,18 @@ for trans in epsilon_depth_pair.second:
 if epsilon_depth_pair.first not in result:
 result[epsilon_depth_pair.first] = []
 
-                result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
+                result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.symbol, trans.target))
                                                                ^
 ------------------------------------------------------------
 
-libmata/nfa/strings.pyx:37:64: cimported module has no attribute 'Trans'
+libmata/nfa/strings.pyx:37:64: cimported module has no attribute 'Transition'
 ```
 
 * The fix is to add the following forward declaration to `.pxd` file.
 
 ```cython
 # @file: nfa.pxd
-cdef class Trans:
+cdef class Transition:
     cdef CTrans* thisptr
     cdef copy_from(self, CTrans trans)
 ```

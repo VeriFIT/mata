@@ -62,7 +62,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const Move& move: nfa.delta[state])
+            for (const SymbolPost& move: nfa.delta[state])
             {
                 for (const State target_state: move.targets)
                 {
@@ -100,7 +100,7 @@ namespace {
             state = worklist.back();
             worklist.pop_back();
 
-            for (const Move& move: nfa.delta[state]) {
+            for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
                     if (states_to_consider[target_state] && !reachable[target_state]) {
                         worklist.push_back(target_state);
@@ -126,7 +126,7 @@ namespace {
             // ...add all transitions from 's' to some reachable state to the trimmed automaton.
             for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
             {
-                Move new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
+                SymbolPost new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
                 for (State old_state_to: state_transitions_with_symbol.targets)
                 {
                     auto iter_to_new_state_to = state_renaming.find(old_state_to);
@@ -137,7 +137,7 @@ namespace {
                     }
                 }
                 if (!new_state_trans_with_symbol.empty()) {
-                    trimmed_aut.delta.get_mutable_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
+                    trimmed_aut.delta.mutable_state_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
                 }
             }
         }
@@ -180,7 +180,7 @@ namespace {
     void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
         const State num_of_states{nfa.size() };
         for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
-            for (const Move& move: nfa.delta[src_state]) {
+            for (const SymbolPost& move: nfa.delta[src_state]) {
                 for (const State tgt_state: move.targets) {
                     // Directly try to add the transition. Finding out whether the transition is already in the digraph
                     //  only iterates through transition relation again.
@@ -291,17 +291,17 @@ Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {
 }
 
 namespace {
-    // A structure to store metadata related to each state/node during the computation 
-    // of useful states. It contains Tarjan's metadata and the state of the 
-    // iteration through the successors. 
+    // A structure to store metadata related to each state/node during the computation
+    // of useful states. It contains Tarjan's metadata and the state of the
+    // iteration through the successors.
     struct TarjanNodeData {
-        Post::const_iterator post_it{};
-        Post::const_iterator post_end{};
+        StatePost::const_iterator post_it{};
+        StatePost::const_iterator post_end{};
         StateSet::const_iterator targets_it{};
         StateSet::const_iterator targets_end{};
         // index of a node (corresponds to the time of discovery)
         unsigned long index{ 0 };
-        // index of a lower node in the same SCC 
+        // index of a lower node in the same SCC
         unsigned long lowlink{ 0 };
         // was the node already initialized (=the initial phase of the Tarjan's recursive call was executed)
         bool initilized{ false };
@@ -310,7 +310,7 @@ namespace {
 
         TarjanNodeData() = default;
 
-        TarjanNodeData(State q, const Delta & delta, unsigned long index) 
+        TarjanNodeData(State q, const Delta & delta, unsigned long index)
             : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
             if (post_it != post_end) {
                 targets_it = post_it->cbegin();
@@ -318,7 +318,7 @@ namespace {
             }
         };
 
-        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to 
+        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to
         // first align the iterators.
         // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
         // Align iterators in a way that the current state is stored in *(this->targets_it).
@@ -330,7 +330,7 @@ namespace {
                         this->targets_it = this->post_it->cbegin();
                         this->targets_end = this->post_it->cend();
                     }
-                } 
+                }
             }
         }
 
@@ -351,46 +351,46 @@ namespace {
             return this->post_it == this->post_end;
         }
     };
-}
+};
 
 /**
- * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs 
+ * @brief This function employs non-recursive version of Tarjan's algorithm for finding SCCs
  * (see https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm, in particular strongconnect(v))
- * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff 
+ * The method saturates a bool vector @p reached_and_reaching in a way that reached_and_reaching[i] = true iff
  * the state i is useful at the end. To break the recursiveness, we use @p program_stack simulating
- * the program stack during the recursive calls of strongconnect(v) (see the wiki). 
- * 
+ * the program stack during the recursive calls of strongconnect(v) (see the wiki).
+ *
  * Node data
  *  - lowlink, index, on_stack (the same as from strongconnect(v))
  *  - initialized (flag denoting whether the node started to be processing in strongconnect)
  *  - bunch of iterators allowing to iterate over successors (and store the state of the iteration)
- * 
+ *
  * Program stack @p program_stack
- *  - contains nodes 
+ *  - contains nodes
  *  - node on the top is being currently processed
  *  - node is removed after it has been completely processed (after the end of strongconnect)
- * 
+ *
  * Simulation of strongconnect( @p act_state = v )
  *  - if @p act_state is not initialized yet (corresponds to the initial phase of strongconnect), initialize
- *  - if @p act_state has already been initialized (i.e., processing of @p act_state was resumed by a 
- *    recursive call, which already finished and we continue in processing of @p act_state ), we set 
+ *  - if @p act_state has already been initialized (i.e., processing of @p act_state was resumed by a
+ *    recursive call, which already finished and we continue in processing of @p act_state ), we set
  *    @p act_state lowlink to min of current lowlink and the current successor @p act_succ of @p act_state.
- *    @p act_succ corresponds to w in strongconnect(v). In particular, in strongconnect(v) we called 
+ *    @p act_succ corresponds to w in strongconnect(v). In particular, in strongconnect(v) we called
  *    strongconnect(w) and now we continue after the return.
  *  - Then, we continue iterating over successors @p next_state of @p act_state:
- *      * if @p next_state is not initialized (corresponds to the first if in strongconnect(v)), we simulate 
- *        the recursive call of strongconnect( @p next_state ): we put @p next_state on @p program_stack and 
- *        jump to the processing of a new node from @p program_stack (we do not remove @p act_state from program 
+ *      * if @p next_state is not initialized (corresponds to the first if in strongconnect(v)), we simulate
+ *        the recursive call of strongconnect( @p next_state ): we put @p next_state on @p program_stack and
+ *        jump to the processing of a new node from @p program_stack (we do not remove @p act_state from program
  *        stack yet).
  *      * otherwise update the lowlink
- *  - The rest corresponds to the last part of strongconnect(v) with a difference that if a node in the closed 
- *    SCC if useful, we declare all nodes in the SCC useful and moreover we propagate usefulness also the states 
+ *  - The rest corresponds to the last part of strongconnect(v) with a difference that if a node in the closed
+ *    SCC if useful, we declare all nodes in the SCC useful and moreover we propagate usefulness also the states
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
- * 
- * @return BoolVector 
+ *
+ * @return BoolVector
  */
 BoolVector Nfa::get_useful_states() const {
-    BoolVector useful(this->size(),false); 
+    BoolVector useful(this->size(),false);
     std::vector<TarjanNodeData> node_info(this->size());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
@@ -404,7 +404,7 @@ BoolVector Nfa::get_useful_states() const {
         State act_state = program_stack.back();
         TarjanNodeData& act_state_data = node_info[act_state];
 
-        // if a node is initialized and is not on stack --> skip it; this state was 
+        // if a node is initialized and is not on stack --> skip it; this state was
         // already processed (=this state is initial and was reachable from another initial).
         if(act_state_data.initilized && !act_state_data.on_stack) {
             program_stack.pop_back();
@@ -428,7 +428,7 @@ BoolVector Nfa::get_useful_states() const {
 
         // iterate through outgoing edges
         State next_state;
-        // rec_call simulates call of the strongconnect. Since c++ cannot do continue over 
+        // rec_call simulates call of the strongconnect. Since c++ cannot do continue over
         // multiple loops, we use rec_call to jump to the main loop
         bool rec_call = false;
         while(!act_state_data.is_end_succ()) {
@@ -515,7 +515,7 @@ void Nfa::print_to_DOT(std::ostream &output) const {
 
     const size_t delta_size = delta.num_of_states();
     for (State source = 0; source != delta_size; ++source) {
-        for (const Move &move: delta[source]) {
+        for (const SymbolPost &move: delta[source]) {
             output << source << " -> {";
             for (State target: move.targets) {
                 output << target << " ";
@@ -560,14 +560,14 @@ void Nfa::print_to_mata(std::ostream &output) const {
         output << std::endl;
     }
 
-    for (Trans trans : delta) {
-        output << "q" << trans.src << " " << trans.symb << " q" << trans.tgt << std::endl;
+    for (Transition trans : delta.transitions()) {
+        output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
     }
 }
 
-std::vector<Trans> Nfa::get_trans_as_sequence() const
+std::vector<Transition> Nfa::get_trans_as_sequence() const
 {
-    std::vector<Trans> trans_sequence{};
+    std::vector<Transition> trans_sequence{};
 
     for (State state_from{ 0 }; state_from < delta.num_of_states(); ++state_from)
     {
@@ -575,7 +575,7 @@ std::vector<Trans> Nfa::get_trans_as_sequence() const
         {
             for (State state_to: transition_from_state.targets)
             {
-                trans_sequence.push_back(Trans{ state_from, transition_from_state.symbol, state_to });
+                trans_sequence.push_back(Transition{ state_from, transition_from_state.symbol, state_to });
             }
         }
     }
@@ -583,9 +583,9 @@ std::vector<Trans> Nfa::get_trans_as_sequence() const
     return trans_sequence;
 }
 
-std::vector<Trans> Nfa::get_trans_from_as_sequence(State state_from) const
+std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
 {
-    std::vector<Trans> trans_sequence{};
+    std::vector<Transition> trans_sequence{};
 
     for (const auto& transition_from_state: delta[state_from])
     {
@@ -608,11 +608,11 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-std::vector<Trans> Nfa::get_transitions_to(State state_to) const {
-    std::vector<Trans> transitions_to_state{};
+std::vector<Transition> Nfa::get_transitions_to(State state_to) const {
+    std::vector<Transition> transitions_to_state{};
     const size_t num_of_states{ delta.num_of_states() };
     for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const Move& state_from_move: delta[state_from]) {
+        for (const SymbolPost& state_from_move: delta[state_from]) {
             const auto target_state{ state_from_move.targets.find(state_to) };
             if (target_state != state_from_move.targets.end()) {
                 transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to );
@@ -629,7 +629,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     }
 
     for (const State state: states) {
-        const Post& post{ delta[state] };
+        const StatePost& post{ delta[state] };
         const auto move_it{ post.find(symbol) };
         if (move_it != post.end()) {
             res.insert(move_it->targets);
@@ -644,7 +644,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 
     const_iterator result;
 
-    if (nfa->delta.begin() == nfa->delta.end()) {
+    if (nfa->delta.transitions_begin() == nfa->delta.transitions_end()) {
         result.is_end = true;
         return result;
     }
@@ -652,7 +652,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
     result.nfa = nfa;
 
     for (size_t trIt{ 0 }; trIt < nfa->delta.num_of_states(); ++trIt) {
-        auto& moves{ nfa->get_moves_from(trIt) };
+        auto& moves{ nfa->delta.state_post(trIt) };
         if (!moves.empty()) {
             auto move{ moves.begin() };
             while (move != moves.end()) {
@@ -695,7 +695,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of state set
     ++(this->tlIt);
-    const Post& tlist = this->nfa->get_moves_from(this->trIt);
+    const StatePost& tlist = this->nfa->delta.state_post(this->trIt);
     assert(!tlist.empty());
     if (this->tlIt != tlist.end())
     {
@@ -707,18 +707,18 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of transition list
     ++this->trIt;
-    assert(this->nfa->delta.begin() != this->nfa->delta.end());
+    assert(this->nfa->delta.transitions_begin() != this->nfa->delta.transitions_end());
 
     while (this->trIt < this->nfa->delta.num_of_states() &&
-           this->nfa->get_moves_from(this->trIt).empty())
+           this->nfa->delta.state_post(this->trIt).empty())
     {
         ++this->trIt;
     }
 
     if (this->trIt < this->nfa->delta.num_of_states())
     {
-        this->tlIt = this->nfa->get_moves_from(this->trIt).begin();
-        assert(!this->nfa->get_moves_from(this->trIt).empty());
+        this->tlIt = this->nfa->delta.state_post(this->trIt).begin();
+        assert(!this->nfa->delta.state_post(this->trIt).empty());
         const StateSet& new_state_set = this->tlIt->targets;
         assert(!new_state_set.empty());
         this->ssIt = new_state_set.begin();
@@ -749,8 +749,8 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
     std::vector<Symbol>  symbols{};
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             Util::reserve_on_insert(symbols);
             symbols.push_back(move.symbol);
         }
@@ -769,8 +769,8 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
     static std::set<Symbol>  symbols{};
 #endif
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
     }
@@ -791,8 +791,8 @@ Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             symbols.insert(move.symbol);
         }
     }
@@ -812,8 +812,8 @@ std::vector<bool> Nfa::get_used_symbols_bv() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
         }
@@ -832,13 +832,13 @@ BoolVector Nfa::get_used_symbols_chv() const {
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             reserve_on_insert(symbols,move.symbol);
             symbols[move.symbol]=true;
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
+    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
     return symbols;
 }
 
@@ -846,8 +846,8 @@ BoolVector Nfa::get_used_symbols_chv() const {
 Symbol Nfa::get_max_symbol() const {
     Symbol max = 0;
     for (State q = 0; q< delta.num_of_states(); ++q) {
-        const Post & post = delta[q];
-        for (const Move & move: post) {
+        const StatePost & post = delta[q];
+        for (const SymbolPost & move: post) {
             if (move.symbol > max)
                 max = move.symbol;
         }
@@ -859,7 +859,7 @@ Symbol Nfa::get_max_symbol() const {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };
     for (const State orig_initial_state: initial) {
-        const Post& moves{ get_moves_from(orig_initial_state) };
+        const StatePost& moves{ delta.state_post(orig_initial_state) };
         for (const auto& transitions: moves) {
             for (const State state_to: transitions.targets) {
                 delta.add(new_initial_state, transitions.symbol, state_to);
@@ -877,7 +877,7 @@ void Nfa::unify_final() {
     for (const auto& orig_final_state: final) {
         const auto transitions_to{ get_transitions_to(orig_final_state) };
         for (const auto& transitions: transitions_to) {
-            delta.add(transitions.src, transitions.symb, new_final_state);
+            delta.add(transitions.source, transitions.symbol, new_final_state);
         }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
@@ -888,7 +888,7 @@ void Nfa::unify_final() {
 void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
     size_t aut_num_of_states{size() };
     for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const Move& move: delta[state]) {
+        for (const SymbolPost& move: delta[state]) {
             target_alphabet.update_next_symbol_value(move.symbol);
             target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
         }
@@ -910,7 +910,7 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 void Nfa::clear_transitions() {
     const size_t delta_size = delta.num_of_states();
     for (size_t i = 0; i < delta_size; ++i) {
-        delta.get_mutable_post(i) = Post();
+        delta.mutable_state_post(i) = StatePost();
     }
 }
 
@@ -949,9 +949,9 @@ bool Nfa::is_identical(const Nfa& aut) {
         return false;
     }
 
-    std::vector<Trans> this_trans;
+    std::vector<Transition> this_trans;
     for (auto trans: *this) { this_trans.push_back(trans); }
-    std::vector<Trans> aut_trans;
+    std::vector<Transition> aut_trans;
     for (auto trans: aut) { aut_trans.push_back(trans); }
     return this_trans == aut_trans;
 }

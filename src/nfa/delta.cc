@@ -5,21 +5,20 @@
 
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
+#include "mata/nfa/delta.hh"
+
 
 #include <algorithm>
 #include <list>
 #include <iterator>
 
-using std::tie;
-
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
-using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-Move& Move::operator=(Move&& rhs) noexcept {
+SymbolPost& SymbolPost::operator=(SymbolPost&& rhs) noexcept {
     if (*this != rhs) {
         symbol = rhs.symbol;
         targets = std::move(rhs.targets);
@@ -27,7 +26,7 @@ Move& Move::operator=(Move&& rhs) noexcept {
     return *this;
 }
 
-void Move::insert(State s) {
+void SymbolPost::insert(State s) {
     if(targets.empty() || targets.back() < s) {
         targets.push_back(s);
         return;
@@ -40,18 +39,18 @@ void Move::insert(State s) {
     }
 }
 
-void Move::insert(const StateSet& states) {
+void SymbolPost::insert(const StateSet& states) {
     for (State s : states) {
         insert(s);
     }
 }
 
-Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
+StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
     assert(is_state(state));
-    return get_epsilon_transitions(get_moves_from(state), epsilon);
+    return get_epsilon_transitions(delta.state_post(state), epsilon);
 }
 
-Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const Post& state_transitions, const Symbol epsilon) {
+StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const StatePost& state_transitions, const Symbol epsilon) {
     if (!state_transitions.empty()) {
         if (epsilon == EPSILON) {
             const auto& back = state_transitions.back();
@@ -59,7 +58,7 @@ Post::const_iterator Nfa::Nfa::get_epsilon_transitions(const Post& state_transit
                 return std::prev(state_transitions.end());
             }
         } else {
-            return state_transitions.find(Move(epsilon));
+            return state_transitions.find(SymbolPost(epsilon));
         }
     }
 
@@ -70,7 +69,7 @@ size_t Delta::size() const
 {
     size_t size = 0;
     for (State q = 0; q < num_of_states(); ++q)
-        for (const Move & m: (*this)[q])
+        for (const SymbolPost & m: (*this)[q])
             size = size + m.size();
 
     return size;
@@ -78,25 +77,25 @@ size_t Delta::size() const
 
 void Delta::add(State state_from, Symbol symbol, State state_to) {
     const State max_state{ std::max(state_from, state_to) };
-    if (max_state >= posts.size()) {
-        reserve_on_insert(posts, max_state);
-        posts.resize(max_state + 1);
+    if (max_state >= state_posts.size()) {
+        reserve_on_insert(state_posts, max_state);
+        state_posts.resize(max_state + 1);
     }
 
-    Post& state_transitions{ posts[state_from] };
+    StatePost& state_transitions{ state_posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, state_to });
     } else if (state_transitions.back().symbol < symbol) {
         state_transitions.insert({ symbol, state_to });
     } else {
-        const auto symbol_transitions{ state_transitions.find(Move{ symbol }) };
+        const auto symbol_transitions{ state_transitions.find(SymbolPost{ symbol }) };
         if (symbol_transitions != state_transitions.end()) {
             // Add transition with symbol already used on transitions from state_from.
             symbol_transitions->insert(state_to);
         } else {
             // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
-            const Move new_symbol_transitions{ symbol, state_to };
+            const SymbolPost new_symbol_transitions{ symbol, state_to };
             state_transitions.insert(new_symbol_transitions);
         }
     }
@@ -108,12 +107,12 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
     }
 
     const State max_state{ std::max(state_from, states.back()) };
-    if (max_state >= posts.size()) {
-        reserve_on_insert(posts, max_state + 1);
-        posts.resize(max_state + 1);
+    if (max_state >= state_posts.size()) {
+        reserve_on_insert(state_posts, max_state + 1);
+        state_posts.resize(max_state + 1);
     }
 
-    Post& state_transitions{ posts[state_from] };
+    StatePost& state_transitions{ state_posts[state_from] };
 
     if (state_transitions.empty()) {
         state_transitions.insert({ symbol, states });
@@ -128,17 +127,17 @@ void Delta::add(const State state_from, const Symbol symbol, const StateSet& sta
         } else {
             // Add transition to a new Move struct with symbol yet unused on transitions from state_from.
             // Move new_symbol_transitions{ symbol, states };
-            state_transitions.insert(Move{symbol, states});
+            state_transitions.insert(SymbolPost{ symbol, states});
         }
     }
 }
 
 void Delta::remove(State src, Symbol symb, State tgt) {
-    if (src >= posts.size()) {
+    if (src >= state_posts.size()) {
         return;
     }
 
-    Post& state_transitions{ posts[src] };
+    StatePost& state_transitions{ state_posts[src] };
     if (state_transitions.empty()) {
         throw std::invalid_argument(
                 "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
@@ -156,7 +155,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         } else {
             symbol_transitions->remove(tgt);
             if (symbol_transitions->empty()) {
-                posts[src].remove(*symbol_transitions);
+                state_posts[src].remove(*symbol_transitions);
             }
         }
     }
@@ -164,18 +163,18 @@ void Delta::remove(State src, Symbol symb, State tgt) {
 
 bool Delta::contains(State src, Symbol symb, State tgt) const
 { // {{{
-    if (posts.empty()) {
+    if (state_posts.empty()) {
         return false;
     }
 
-    if (posts.size() <= src)
+    if (state_posts.size() <= src)
         return false;
 
-    const Post& tl = posts[src];
+    const StatePost& tl = state_posts[src];
     if (tl.empty()) {
         return false;
     }
-    auto symbol_transitions{ tl.find(Move{symb} ) };
+    auto symbol_transitions{ tl.find(SymbolPost{ symb} ) };
     if (symbol_transitions == tl.cend()) {
         return false;
     }
@@ -183,20 +182,26 @@ bool Delta::contains(State src, Symbol symb, State tgt) const
     return symbol_transitions->targets.find(tgt) != symbol_transitions->targets.end();
 }
 
-bool Delta::empty() const
-{
-    return this->begin() == this->end();
+bool Delta::contains(const Transition& transition) const {
+    return contains(transition.source, transition.symbol, transition.target);
 }
 
-Delta::const_iterator::const_iterator(const std::vector<Post>& post_p, bool ise) :
-    post(post_p), current_state(0), is_end{ ise }
+bool Delta::empty() const
 {
+    return this->transitions_begin() == this->transitions_end();
+}
+
+Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise)
+    : post(post_p), current_state(0), is_end{ ise } {
     const size_t post_size = post.size();
     for (size_t i = 0; i < post_size; ++i) {
         if (!post[i].empty()) {
             current_state = i;
             post_iterator = post[i].begin();
             targets_position = post_iterator->targets.begin();
+            transition.source = current_state;
+            transition.symbol = post_iterator->symbol;
+            transition.target = *targets_position;
             return;
         }
     }
@@ -205,17 +210,29 @@ Delta::const_iterator::const_iterator(const std::vector<Post>& post_p, bool ise)
     is_end = true;
 }
 
-Delta::const_iterator& Delta::const_iterator::operator++()
-{
+Delta::transitions_const_iterator::transitions_const_iterator(
+    const std::vector<StatePost>& post_p, size_t as, StatePost::const_iterator pi, StateSet::const_iterator ti,
+    bool ise)
+    : post(post_p), current_state(as), post_iterator(pi), targets_position(ti), is_end(ise) {
+    transition.source = current_state;
+    transition.symbol = post_iterator->symbol;
+    transition.target = *targets_position;
+};
+
+Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
     assert(post.begin() != post.end());
 
     ++targets_position;
-    if (targets_position != post_iterator->targets.end())
+    if (targets_position != post_iterator->targets.end()) {
+        transition.target = *targets_position;
         return *this;
+    }
 
     ++post_iterator;
     if (post_iterator != post[current_state].cend()) {
         targets_position = post_iterator->targets.begin();
+        transition.symbol = post_iterator->symbol;
+        transition.target = *targets_position;
         return *this;
     }
 
@@ -230,78 +247,70 @@ Delta::const_iterator& Delta::const_iterator::operator++()
         targets_position = post_iterator->targets.begin();
     }
 
+    transition.source = current_state;
+    transition.symbol = post_iterator->symbol;
+    transition.target = *targets_position;
+
     return *this;
 }
 
-Delta::const_iterator Delta::const_iterator::operator++(int) {
-    const const_iterator tmp = *this;
+const Delta::transitions_const_iterator Delta::transitions_const_iterator::operator++(int) {
+    const transitions_const_iterator tmp = *this;
     ++(*this);
     return tmp;
 }
 
-Delta::const_iterator& Delta::const_iterator::operator=(const Delta::const_iterator& x) {
+Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(const Delta::transitions_const_iterator& x) {
+    // FIXME: this->post is never updated, because it is a const reference to std::vector which does not have assignment
+    //  operator defined.
     this->post_iterator = x.post_iterator;
     this->targets_position = x.targets_position;
     this->current_state = x.current_state;
     this->is_end = x.is_end;
-
+    transition.source = x.transition.source;
+    transition.symbol = x.transition.symbol;
+    transition.target = x.transition.target;
     return *this;
 }
 
-bool Mata::Nfa::operator==(const Delta::const_iterator& a, const Delta::const_iterator& b) {
-    if (a.is_end && b.is_end) {
+bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+    if (is_end && other.is_end) {
         return true;
-    } else if ((a.is_end && !b.is_end) || (!a.is_end && b.is_end)) {
+    } else if ((is_end && !other.is_end) || (!is_end && other.is_end)) {
         return false;
     } else {
-        return a.current_state == b.current_state && a.post_iterator == b.post_iterator
-               && a.targets_position == b.targets_position;
+        return current_state == other.current_state && post_iterator == other.post_iterator
+               && targets_position == other.targets_position;
     }
 }
 
-State Delta::find_max_state() {
-    size_t max = 0;
-    State src = 0;
-    for (Post & p: posts) {
-        if (src > max)
-            max = src;
-        for (Move & m: p) {
-            if (!m.targets.empty())
-                if (m.targets.back() > max)
-                    max = m.targets.back();
-        }
-        src++;
-    }
-    return max;
-}
-
-std::vector<Post> Delta::transform(const std::function<State(State)>& lambda) const {
-    std::vector<Post> cp_post_vector;
+std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambda) const {
+    std::vector<StatePost> cp_post_vector;
     cp_post_vector.reserve(num_of_states());
-    for(const Post& act_post: this->posts) {
-        Post cp_post;
+    for(const StatePost& act_post: this->state_posts) {
+        StatePost cp_post;
         cp_post.reserve(act_post.size());
-        for(const Move& mv : act_post) {
+        for(const SymbolPost& mv : act_post) {
             StateSet cp_dest;
             cp_dest.reserve(mv.size());
             for(const State& state : mv.targets) {
                 cp_dest.push_back(std::move(lambda(state)));
             }
-            cp_post.push_back(std::move(Move(mv.symbol, cp_dest)));
+            cp_post.push_back(std::move(SymbolPost(mv.symbol, cp_dest)));
         }
         cp_post_vector.emplace_back(cp_post);
     }
     return cp_post_vector;
 }
 
-Post& Delta::get_mutable_post(State q) {
-    if (q >= posts.size()) {
-        Util::reserve_on_insert(posts, q);
+StatePost& Delta::mutable_state_post(State q) {
+    if (q >= state_posts.size()) {
+        Util::reserve_on_insert(state_posts, q);
         const size_t new_size{ q + 1 };
-        posts.resize(new_size);
+        state_posts.resize(new_size);
     }
 
-    return posts[q];
+    return state_posts[q];
 }
 
 void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& renaming) {
@@ -309,8 +318,8 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 
     //first, indexes of post are filtered (places of to be removed states are taken by states on their right)
     size_t move_index{ 0 };
-    std::erase_if(posts,
-         [&](Post&) -> bool {
+    std::erase_if(state_posts,
+         [&](StatePost&) -> bool {
              size_t prev{ move_index };
              ++move_index;
              return !is_staying[prev];
@@ -319,8 +328,8 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 
     //this iterates through every post and every move, filters and renames states,
     //and then removes moves that became empty.
-    for (State q=0,size=posts.size(); q < size; ++q) {
-        Post & p = get_mutable_post(q);
+    for (State q=0,size=state_posts.size(); q < size; ++q) {
+        StatePost & p = mutable_state_post(q);
         for (auto move = p.begin(); move < p.end(); ++move) {
             move->targets.erase(
                     std::remove_if(move->targets.begin(), move->targets.end(), [&](State q) -> bool {
@@ -331,7 +340,7 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
             move->targets.rename(renaming);
         }
         p.erase(
-                std::remove_if(p.begin(), p.end(), [&](Move& move) -> bool {
+                std::remove_if(p.begin(), p.end(), [&](SymbolPost& move) -> bool {
                     return move.targets.empty();
                 }),
                 p.end()
@@ -339,9 +348,82 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
     }
 }
 
-const Post& Delta::operator[](State q) const {
-    if (q >= posts.size()) {
-        return empty_post;
+StatePost::moves_const_iterator::moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end)
+    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_.cbegin() }, is_end_{ is_end } {
+    while (symbol_post_it_ != symbol_posts_.cend()) {
+        if (!symbol_post_it_->empty()) {
+            target_states_it_ = symbol_post_it_->targets.begin();
+            move_.symbol = symbol_post_it_->symbol;
+            move_.target = *target_states_it_;
+            return;
+        }
+        ++symbol_post_it_;
     }
-    return posts[q];
+    // No move found. We are at the end of moves.
+    is_end_ = true;
+}
+
+StatePost::moves_const_iterator::moves_const_iterator(
+    const std::vector<SymbolPost>& symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
+    StateSet::const_iterator target_states_it, bool is_end)
+    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
+      is_end_{ is_end } {
+        while (symbol_post_it_ != symbol_posts_.cend()) {
+            if (!symbol_post_it_->empty()) {
+                target_states_it_ = symbol_post_it_->targets.begin();
+                move_.symbol = symbol_post_it_->symbol;
+                move_.target = *target_states_it_;
+                return;
+            }
+        }
+        // No move found. We are at the end of moves.
+        is_end_ = true;
+}
+
+StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
+    assert(symbol_posts_.begin() != symbol_posts_.end());
+
+    ++target_states_it_;
+    if (target_states_it_ != symbol_post_it_->targets.end()) {
+        move_.target = *target_states_it_;
+        return *this;
+    }
+
+    ++symbol_post_it_;
+    if (symbol_post_it_ != symbol_posts_.cend()) {
+        target_states_it_ = symbol_post_it_->targets.begin();
+        move_.symbol = symbol_post_it_->symbol;
+        move_.target = *target_states_it_;
+        return *this;
+    }
+
+    is_end_ = true;
+    return *this;
+}
+
+const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator++(int) {
+    const moves_const_iterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& x) {
+    // FIXME: this->symbol_posts is never updated, because it is a const reference to std::vector which does not have
+    //  assignment operator defined.
+    is_end_ = x.is_end_;
+    move_.symbol = x.move_.symbol;
+    move_.target = x.move_.target;
+    symbol_post_it_ = x.symbol_post_it_;
+    target_states_it_ = x.target_states_it_;
+    return *this;
+}
+
+bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
+    if (is_end_ && other.is_end_) {
+        return true;
+    } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+        return false;
+    } else {
+        return symbol_post_it_ == other.symbol_post_it_ && target_states_it_ == other.target_states_it_;
+    }
 }

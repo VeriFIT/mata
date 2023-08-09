@@ -34,7 +34,7 @@ cdef class Segmentation:
                 if epsilon_depth_pair.first not in result:
                     result[epsilon_depth_pair.first] = []
 
-                result[epsilon_depth_pair.first].append(mata_nfa.Trans(trans.src, trans.symb, trans.tgt))
+                result[epsilon_depth_pair.first].append(mata_nfa.Transition(trans.source, trans.symbol, trans.target))
 
         return result
 
