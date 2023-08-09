@@ -28,12 +28,12 @@ struct Transition {
 };
 
 /**
- * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c tgt_state.
+ * Move from a @c StatePost for a single source state, represented as a pair of @c symbol and target state @c target.
  */
 class Move {
 public:
     Symbol symbol;
-    State tgt_state;
+    State target;
 
     bool operator==(const Move&) const = default;
 }; // class Move.

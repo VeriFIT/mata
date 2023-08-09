@@ -354,7 +354,7 @@ StatePost::moves_const_iterator::moves_const_iterator(const std::vector<SymbolPo
         if (!symbol_post_it_->empty()) {
             target_states_it_ = symbol_post_it_->targets.begin();
             move_.symbol = symbol_post_it_->symbol;
-            move_.tgt_state = *target_states_it_;
+            move_.target = *target_states_it_;
             return;
         }
         ++symbol_post_it_;
@@ -372,7 +372,7 @@ StatePost::moves_const_iterator::moves_const_iterator(
             if (!symbol_post_it_->empty()) {
                 target_states_it_ = symbol_post_it_->targets.begin();
                 move_.symbol = symbol_post_it_->symbol;
-                move_.tgt_state = *target_states_it_;
+                move_.target = *target_states_it_;
                 return;
             }
         }
@@ -385,7 +385,7 @@ StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
 
     ++target_states_it_;
     if (target_states_it_ != symbol_post_it_->targets.end()) {
-        move_.tgt_state = *target_states_it_;
+        move_.target = *target_states_it_;
         return *this;
     }
 
@@ -393,7 +393,7 @@ StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
     if (symbol_post_it_ != symbol_posts_.cend()) {
         target_states_it_ = symbol_post_it_->targets.begin();
         move_.symbol = symbol_post_it_->symbol;
-        move_.tgt_state = *target_states_it_;
+        move_.target = *target_states_it_;
         return *this;
     }
 
@@ -412,7 +412,7 @@ StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(cons
     //  assignment operator defined.
     is_end_ = x.is_end_;
     move_.symbol = x.move_.symbol;
-    move_.tgt_state = x.move_.tgt_state;
+    move_.target = x.move_.target;
     symbol_post_it_ = x.symbol_post_it_;
     target_states_it_ = x.target_states_it_;
     return *this;
