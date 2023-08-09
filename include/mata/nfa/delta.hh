@@ -159,10 +159,19 @@ public:
 }; // struct Post.
 
 /**
- * Delta is a data structure for representing transition relation.
- * Its underlying data structure is vector of Post structures.
- * Each index of vector corresponds to one state, that is a number of
- * state is an index to the vector of Posts.
+ * @brief Delta is a data structure for representing transition relation.
+ *
+ * Transition is represented as a triple Trans(source state, symbol, target state). Move is the part (symbol, target
+ *  state), specified for a single source state.
+ * Its underlying data structure is vector of StatePost classes. Each index to the vector corresponds to one source
+ *  state, that is, a number for a certain state is an index to the vector of state posts.
+ * Transition relation (delta) in Mata stores a set of transitions in a four-level hierarchical structure: 
+ *  Delta, StatePost, SymbolPost, and a set of target states.
+ * A vector of 'StatePost's indexed by a source states on top, where the StatePost for a state 'q' (whose number is
+ *  'q' and it is the index to the vector of 'StatePost's) stores a set of 'Move's from the source state 'q'.
+ * Namely, 'StatePost' has a vector of 'SymbolPost's, where each 'SymbolPost' stores a symbol 'a' and a vector of
+ *  target states of 'a'-moves from state 'q'. 'SymbolPost's are ordered by the symbol, target states are ordered by
+ *  the state number.
  */
 class Delta {
 private:
