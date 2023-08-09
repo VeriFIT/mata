@@ -349,55 +349,55 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
 }
 
 StatePost::moves_const_iterator::moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end)
-    : m_symbol_posts{ symbol_posts }, m_symbol_post_it{ m_symbol_posts.cbegin() }, m_is_end{ is_end } {
-    while (m_symbol_post_it != m_symbol_posts.cend()) {
-        if (!m_symbol_post_it->empty()) {
-            m_target_states_it = m_symbol_post_it->targets.begin();
-            m_move.symbol = m_symbol_post_it->symbol;
-            m_move.tgt_state = *m_target_states_it;
+    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_.cbegin() }, is_end_{ is_end } {
+    while (symbol_post_it_ != symbol_posts_.cend()) {
+        if (!symbol_post_it_->empty()) {
+            target_states_it_ = symbol_post_it_->targets.begin();
+            move_.symbol = symbol_post_it_->symbol;
+            move_.tgt_state = *target_states_it_;
             return;
         }
-        ++m_symbol_post_it;
+        ++symbol_post_it_;
     }
     // No move found. We are at the end of moves.
-    m_is_end = true;
+    is_end_ = true;
 }
 
 StatePost::moves_const_iterator::moves_const_iterator(
     const std::vector<SymbolPost>& symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
     StateSet::const_iterator target_states_it, bool is_end)
-    : m_symbol_posts{ symbol_posts }, m_symbol_post_it{ symbol_posts_it }, m_target_states_it{ target_states_it },
-      m_is_end{ is_end } {
-        while (m_symbol_post_it != m_symbol_posts.cend()) {
-            if (!m_symbol_post_it->empty()) {
-                m_target_states_it = m_symbol_post_it->targets.begin();
-                m_move.symbol = m_symbol_post_it->symbol;
-                m_move.tgt_state = *m_target_states_it;
+    : symbol_posts_{ symbol_posts }, symbol_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
+      is_end_{ is_end } {
+        while (symbol_post_it_ != symbol_posts_.cend()) {
+            if (!symbol_post_it_->empty()) {
+                target_states_it_ = symbol_post_it_->targets.begin();
+                move_.symbol = symbol_post_it_->symbol;
+                move_.tgt_state = *target_states_it_;
                 return;
             }
         }
         // No move found. We are at the end of moves.
-        m_is_end = true;
+        is_end_ = true;
 }
 
 StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
-    assert(m_symbol_posts.begin() != m_symbol_posts.end());
+    assert(symbol_posts_.begin() != symbol_posts_.end());
 
-    ++m_target_states_it;
-    if (m_target_states_it != m_symbol_post_it->targets.end()) {
-        m_move.tgt_state = *m_target_states_it;
+    ++target_states_it_;
+    if (target_states_it_ != symbol_post_it_->targets.end()) {
+        move_.tgt_state = *target_states_it_;
         return *this;
     }
 
-    ++m_symbol_post_it;
-    if (m_symbol_post_it != m_symbol_posts.cend()) {
-        m_target_states_it = m_symbol_post_it->targets.begin();
-        m_move.symbol = m_symbol_post_it->symbol;
-        m_move.tgt_state = *m_target_states_it;
+    ++symbol_post_it_;
+    if (symbol_post_it_ != symbol_posts_.cend()) {
+        target_states_it_ = symbol_post_it_->targets.begin();
+        move_.symbol = symbol_post_it_->symbol;
+        move_.tgt_state = *target_states_it_;
         return *this;
     }
 
-    m_is_end = true;
+    is_end_ = true;
     return *this;
 }
 
@@ -410,20 +410,20 @@ const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator+
 StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& x) {
     // FIXME: this->symbol_posts is never updated, because it is a const reference to std::vector which does not have
     //  assignment operator defined.
-    m_is_end = x.m_is_end;
-    m_move.symbol = x.m_move.symbol;
-    m_move.tgt_state = x.m_move.tgt_state;
-    m_symbol_post_it = x.m_symbol_post_it;
-    m_target_states_it = x.m_target_states_it;
+    is_end_ = x.is_end_;
+    move_.symbol = x.move_.symbol;
+    move_.tgt_state = x.move_.tgt_state;
+    symbol_post_it_ = x.symbol_post_it_;
+    target_states_it_ = x.target_states_it_;
     return *this;
 }
 
 bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
-    if (m_is_end && other.m_is_end) {
+    if (is_end_ && other.is_end_) {
         return true;
-    } else if ((m_is_end && !other.m_is_end) || (!m_is_end && other.m_is_end)) {
+    } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
         return false;
     } else {
-        return m_symbol_post_it == other.m_symbol_post_it && m_target_states_it == other.m_target_states_it;
+        return symbol_post_it_ == other.symbol_post_it_ && target_states_it_ == other.target_states_it_;
     }
 }

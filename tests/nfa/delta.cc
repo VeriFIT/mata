@@ -103,8 +103,11 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
         nfa.delta.add(2, 0, 3);
 
         state_post = nfa.delta.state_post(0);
-        Mata::Nfa::StatePost::MovesIterator moves{ state_post.moves() };
-        iterated_moves = std::vector<Move>{ moves.begin(), moves.end() };
+        Mata::Nfa::StatePost::Moves moves{ state_post.moves() };
+        iterated_moves.clear();
+        for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
+            iterated_moves.push_back(*move_it);
+        }
         expected_moves = std::vector<Move>{ { 1, 1 }, { 2, 1 }, { 5, 1 } };
         CHECK(iterated_moves == expected_moves);
         iterated_moves.clear();
@@ -173,8 +176,11 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
         nfa.delta.add(2, 0, 1);
         nfa.delta.add(2, 0, 3);
 
-        Mata::Nfa::Delta::TransitionsIterator transitions{ nfa.delta.transitions() };
-        iterated_transitions = std::vector<Trans>{ transitions.begin(), transitions.end() };
+        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
+        iterated_transitions.clear();
+        for (auto transitions_it{ transitions.begin() }; transitions_it != transitions.end(); ++transitions_it) {
+            iterated_transitions.push_back(*transitions_it);
+        }
         expected_transitions = std::vector<Trans>{
             { 0, 1, 1 }, { 0, 2, 1 }, { 0, 5, 1 }, { 1, 3, 2 }, { 2, 0, 1 }, { 2, 0, 3 }
         };

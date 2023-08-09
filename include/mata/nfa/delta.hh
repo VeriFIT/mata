@@ -105,11 +105,11 @@ public:
      */
     struct moves_const_iterator {
     private:
-        const std::vector<SymbolPost>& m_symbol_posts{};
-        std::vector<SymbolPost>::const_iterator m_symbol_post_it{};
-        StateSet::const_iterator m_target_states_it{};
-        bool m_is_end{ false };
-        Move m_move{};
+        const std::vector<SymbolPost>& symbol_posts_{};
+        std::vector<SymbolPost>::const_iterator symbol_post_it_{};
+        StateSet::const_iterator target_states_it_{};
+        bool is_end_{ false };
+        Move move_{};
 
     public:
         using iterator_category = std::bidirectional_iterator_tag;
@@ -126,7 +126,7 @@ public:
 
         moves_const_iterator(const moves_const_iterator& other) = default;
 
-        const Move& operator*() const { return m_move; }
+        const Move& operator*() const { return move_; }
 
         // Prefix increment
         moves_const_iterator& operator++();
@@ -144,18 +144,19 @@ public:
     moves_const_iterator moves_begin() const { return moves_cbegin(); }
     moves_const_iterator moves_end() const { return moves_cend(); }
 
-    struct MovesIterator {
-        moves_const_iterator m_begin;
-        moves_const_iterator m_end;
-        moves_const_iterator begin() const { return m_begin; }
-        moves_const_iterator end() const { return m_end; }
+    class Moves {
+    public:
+        moves_const_iterator begin_;
+        moves_const_iterator end_;
+        moves_const_iterator begin() const { return begin_; }
+        moves_const_iterator end() const { return end_; }
     };
 
     /**
      * Iterate over moves represented as 'Move' instances.
      * @return Iterator over moves.
      */
-    MovesIterator moves() const { return { .m_begin = moves_begin(), .m_end = moves_end() }; }
+    Moves moves() const { return { .begin_ = moves_begin(), .end_ = moves_end() }; }
 }; // struct Post.
 
 /**
@@ -165,7 +166,7 @@ public:
  *  state), specified for a single source state.
  * Its underlying data structure is vector of StatePost classes. Each index to the vector corresponds to one source
  *  state, that is, a number for a certain state is an index to the vector of state posts.
- * Transition relation (delta) in Mata stores a set of transitions in a four-level hierarchical structure: 
+ * Transition relation (delta) in Mata stores a set of transitions in a four-level hierarchical structure:
  *  Delta, StatePost, SymbolPost, and a set of target states.
  * A vector of 'StatePost's indexed by a source states on top, where the StatePost for a state 'q' (whose number is
  *  'q' and it is the index to the vector of 'StatePost's) stores a set of 'Move's from the source state 'q'.
@@ -350,18 +351,18 @@ public:
     transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
     transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
-    struct TransitionsIterator {
-        transitions_const_iterator m_begin;
-        transitions_const_iterator m_end;
-        transitions_const_iterator begin() const { return m_begin; }
-        transitions_const_iterator end() const { return m_end; }
+    struct Transitions {
+        transitions_const_iterator begin_;
+        transitions_const_iterator end_;
+        transitions_const_iterator begin() const { return begin_; }
+        transitions_const_iterator end() const { return end_; }
     };
 
     /**
      * Iterate over transitions represented as 'Trans' instances.
      * @return Iterator over transitions.
      */
-    TransitionsIterator transitions() const { return { .m_begin = transitions_begin(), .m_end = transitions_end() }; }
+    Transitions transitions() const { return { .begin_ = transitions_begin(), .end_ = transitions_end() }; }
 
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return state_posts.cbegin(); }
