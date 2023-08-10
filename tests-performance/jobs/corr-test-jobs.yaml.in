@@ -1,0 +1,2 @@
+test-unary:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/test-unary-op $1
