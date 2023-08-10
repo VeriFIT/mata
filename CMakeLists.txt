@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.15.0)
 project(libMATA)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -130,6 +130,7 @@ add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 add_subdirectory(tests)
+add_subdirectory(tests-performance)
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "**/*.hh")
