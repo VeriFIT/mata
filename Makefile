@@ -35,7 +35,7 @@ test-coverage:
 
 test-performance:
 	./tests-performance/pycobench -c ./tests-performance/jobs/corr-single-param-jobs.yaml < ./tests-performance/inputs/single-automata.input
-	./tests-performance/pyco_proc --csv pycobench.tasks
+	./tests-performance/pyco_proc --text pycobench.tasks
 
 check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1

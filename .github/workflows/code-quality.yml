@@ -55,6 +55,23 @@ jobs:
       - name: Test the library
         run: make test
 
+  run-test-performance:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+        with:
+          build-log-output-file: 'warnings-new'
+      - name: Test the library
+        run: make test-performance
+
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:
