@@ -31,7 +31,7 @@ using namespace Mata::Util;
 using namespace Mata::Parser;
 
 using Symbol = Mata::Symbol;
-using Word = std::vector<Symbol>;
+using Word = Mata::Word;
 
 // Some common automata {{{
 
@@ -86,7 +86,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         Word word{};
         word.push_back('b');
         word.push_back('a');
-        WordSet expected{word};
+        std::set<Word> expected{word};
         Word word2{};
         word2.push_back('a');
         word2.push_back('a');
@@ -108,7 +108,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
             word.push_back('b');
             word.push_back('b');
             word.push_back('a');
-            expected = WordSet{word};
+            expected = std::set<Word>{word};
             word2.clear();
             word2.push_back('b');
             word2.push_back('a');
@@ -131,7 +131,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words()")
         aut.final.insert(1);
         REQUIRE(get_shortest_words(aut).empty());
         aut.final.insert(0);
-        REQUIRE(get_shortest_words(aut) == WordSet{Word{}});
+        REQUIRE(get_shortest_words(aut) == std::set<Word>{Word{}});
     }
 
     SECTION("Automaton A")
@@ -195,7 +195,7 @@ TEST_CASE("Mata::Nfa::get_shortest_words() for profiling", "[.profiling][shortes
     word.push_back('b');
     word.push_back('b');
     word.push_back('a');
-    WordSet expected{ word };
+    std::set<Word> expected{ word };
     Word word2{};
     word2.push_back('b');
     word2.push_back('a');

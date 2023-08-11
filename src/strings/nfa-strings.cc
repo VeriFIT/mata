@@ -21,15 +21,15 @@
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 
-WordSet Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
+std::set<Mata::Word> Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return ShortestWordsMap{ nfa }.get_shortest_words_for(StateSet{ nfa.initial });
 }
 
-WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
+std::set<Mata::Word> ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
 {
-    WordSet result{};
+    std::set<Word> result{};
 
     if (!shortest_words_map.empty())
     {
@@ -61,7 +61,7 @@ WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
     return result;
 }
 
-WordSet ShortestWordsMap::get_shortest_words_for(State state) const
+std::set<Mata::Word> ShortestWordsMap::get_shortest_words_for(State state) const
 {
     return get_shortest_words_for(StateSet{ state });
 }
@@ -74,7 +74,7 @@ void ShortestWordsMap::insert_initial_lengths()
         for (const State state: initial_states)
         {
             shortest_words_map.insert(std::make_pair(state, std::make_pair(0,
-                                                                           WordSet{ std::vector<Symbol>{} })));
+                                                                           std::set<Word>{ std::vector<Symbol>{} })));
         }
 
         const auto initial_states_begin{ initial_states.begin() };

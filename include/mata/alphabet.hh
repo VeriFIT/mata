@@ -26,6 +26,8 @@
 namespace Mata {
 
 using Symbol = unsigned;
+using Word = std::vector<Symbol>;
+using WordName = std::vector<std::string>;
 
  /**
   * The abstract interface for NFA alphabets.
@@ -38,8 +40,8 @@ public:
     /**
      * Translate sequence of symbol names to sequence of their respective values.
      */
-    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const {
-        (void)word;
+    virtual Word translate_word(const WordName& word_name) const {
+        (void)word_name;
         throw std::runtime_error("Unimplemented");
     }
 
@@ -213,7 +215,7 @@ public:
     EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override;
-    std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override;
+    Word translate_word(const WordName& word_name) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value identical to its string representation.
@@ -320,7 +322,7 @@ public:
 
     Symbol translate_symb(const std::string& str) override;
 
-    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override;
+    virtual Word translate_word(const WordName& word_name) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.

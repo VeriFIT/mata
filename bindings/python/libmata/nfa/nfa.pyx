@@ -25,10 +25,13 @@ from libmata.nfa.nfa cimport \
 from libmata.alphabets cimport CAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
 
+
 cdef Symbol EPSILON = CEPSILON
+
 
 def epsilon():
     return EPSILON
+
 
 cdef class Run:
     """Wrapper over the run in NFA."""

@@ -76,18 +76,18 @@ Symbol Mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
     //return it->second;
 }
 
-std::vector<Symbol> Mata::OnTheFlyAlphabet::translate_word(const std::vector<std::string>& word) const {
-    const size_t word_size{ word.size() };
-    std::vector<Symbol> symbols;
-    symbols.reserve(word_size);
+Mata::Word Mata::OnTheFlyAlphabet::translate_word(const Mata::WordName& word_name) const {
+    const size_t word_size{ word_name.size() };
+    Word word;
+    word.reserve(word_size);
     for (size_t i{ 0 }; i < word_size; ++i) {
-        const auto symbol_mapping_it = symbol_map.find(word[i]);
+        const auto symbol_mapping_it = symbol_map.find(word_name[i]);
         if (symbol_mapping_it == symbol_map.end()) {
-            throw std::runtime_error("Unknown symbol \'" + word[i] + "\'");
+            throw std::runtime_error("Unknown symbol \'" + word_name[i] + "\'");
         }
-        symbols.push_back(symbol_mapping_it->second);
+        word.push_back(symbol_mapping_it->second);
     }
-    return symbols;
+    return word;
 }
 
 OnTheFlyAlphabet::InsertionResult Mata::OnTheFlyAlphabet::add_new_symbol(const std::string& key) {
@@ -149,21 +149,21 @@ Symbol Mata::EnumAlphabet::translate_symb(const std::string& str) {
     return symbol;
 }
 
-std::vector<Symbol> Mata::EnumAlphabet::translate_word(const std::vector<std::string>& word) const {
-    const size_t word_size{ word.size() };
-    std::vector<Symbol> translated_symbols;
+Mata::Word Mata::EnumAlphabet::translate_word(const Mata::WordName& word_name) const {
+    const size_t word_size{ word_name.size() };
+    Mata::Word word;
     Symbol symbol;
     std::stringstream stream;
-    translated_symbols.reserve(word_size);
-    for (const auto& str_symbol: word) {
+    word.reserve(word_size);
+    for (const auto& str_symbol: word_name) {
         stream << str_symbol;
         stream >> symbol;
         if (m_symbols.find(symbol) == m_symbols.end()) {
             throw std::runtime_error("Unknown symbol \'" + str_symbol + "\'");
         }
-        translated_symbols.push_back(symbol);
+        word.push_back(symbol);
     }
-    return translated_symbols;
+    return word;
 }
 
 void Mata::EnumAlphabet::add_new_symbol(const std::string& symbol) {

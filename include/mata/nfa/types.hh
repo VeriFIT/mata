@@ -15,9 +15,8 @@ extern const std::string TYPE_NFA;
 using State = unsigned long;
 using StateSet = Mata::Util::OrdVector<State>;
 
-using WordSet = std::set<std::vector<Symbol>>;
 struct Run {
-    std::vector<Symbol> word{}; ///< A finite-length word.
+    Word word{}; ///< A finite-length word.
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 

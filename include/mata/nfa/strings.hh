@@ -46,19 +46,19 @@ public:
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for(const StateSet& states) const;
+    std::set<Word> get_shortest_words_for(const StateSet& states) const;
 
     /**
      * Gets shortest words for the given @p state.
      * @param[in] state State to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for(State state) const;
+    std::set<Word> get_shortest_words_for(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.
     /// Pair binding the length of all words in the word set and word set with words of the given length.
-    using LengthWordsPair = std::pair<WordLength, WordSet>;
+    using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
     std::unordered_map<State, LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
@@ -89,7 +89,7 @@ private:
      * @return Created default shortest words map element for the given @p state.
      */
     LengthWordsPair map_default_shortest_words(const State state) {
-        return shortest_words_map.emplace(state, std::make_pair(-1, WordSet{})).first->second;
+        return shortest_words_map.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
     }
 
     /**
@@ -105,7 +105,7 @@ private:
  * Get shortest words (regarding their length) of the automaton using BFS.
  * @return Set of shortest words.
  */
-WordSet get_shortest_words(const Mata::Nfa::Nfa& nfa);
+std::set<Word> get_shortest_words(const Mata::Nfa::Nfa& nfa);
 
 /**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each

@@ -20,10 +20,9 @@ using namespace Mata::Nfa::Plumbing;
 using namespace Mata::Util;
 using namespace Mata::Parser;
 using Symbol = Mata::Symbol;
+using Word = Mata::Word;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-
-using Word = std::vector<Symbol>;
 
 TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};

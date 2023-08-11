@@ -29,6 +29,7 @@
 using namespace Mata::Util;
 using namespace Mata::Nfa;
 using Mata::Symbol;
+using Mata::Word;
 using Mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
