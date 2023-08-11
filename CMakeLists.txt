@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Enable fancy colours
 set(CMAKE_COLOR_MAKEFILE ON)
 # Enable verbose output for 'make'
-set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MACOSX_RPATH 1)
 
