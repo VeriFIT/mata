@@ -54,13 +54,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
     using ProdStateType = std::pair<State, StateSet>;
     using WorklistType = std::deque<ProdStateType>;
-    using ProcessedType = std::deque<ProdStateType>;
+    // ProcessedType is indexed by states of the smaller nfa
+    // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
+    using ProcessedType = std::vector<std::deque<ProdStateType>>;
 
-    //TODO: This is used in a container (a deque) of pairs, where every new pair means iterating through the entire list,
-    // and testing subsumption with everybody.
-    // Rewrite this as a deque (vector?) indexed by the first component (state) of vectors of the second components.
-    // We will go to the vector of the first component and test subsumption of the second components there.
-    // It may need some more fiddling if we still want to implement pure dfs/bfs however.
     auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
         if (lhs.first != rhs.first) {
             return false;
@@ -71,16 +68,15 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
             return false;
         }
-
+        
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
-        return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
-            lhs_bigger.begin(), lhs_bigger.end());
+        return lhs_bigger.IsSubsetOf(rhs_bigger);
     };
 
     // initialize
     WorklistType worklist = { };
-    ProcessedType processed = { };
+    ProcessedType processed(smaller.size()); // allocate to the number of states of the smaller nfa
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state
@@ -97,7 +93,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
         const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
         worklist.push_back(st);
-        processed.push_back(st);
+        processed[state].push_back(st);
 
         if (cex != nullptr)
             paths.insert({ st, {st, 0}});
@@ -165,7 +161,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
 
                 bool is_subsumed = false;
-                for (const auto& anti_state : processed)
+                for (const auto& anti_state : processed[smaller_succ])
                 { // trying to find a smaller state in processed
                     if (subsumes(anti_state, succ)) {
                         is_subsumed = true;
@@ -175,7 +171,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 if (is_subsumed) { continue; }
 
-                for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
+                for (std::deque<ProdStateType>* ds : {&processed[smaller_succ], &worklist}) {
                     for (size_t it = 0; it < ds->size(); ++it) {
                         if (subsumes(succ, ds->at(it))) {
                             //Removal though replacement by the last element and removal pob_back.
@@ -191,8 +187,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                     ds->push_back(succ);
                 }
 
-                // also set that succ was accessed from state
-                paths[succ] = {prod_state, smaller_symbol};
+                if(cex != nullptr) {
+                    // also set that succ was accessed from state
+                    paths[succ] = {prod_state, smaller_symbol};
+                }
             }
         }
     }
