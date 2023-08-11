@@ -78,10 +78,6 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
             lhs_bigger.begin(), lhs_bigger.end());
     };
 
-    // process parameters
-    // TODO: set correctly!!!!
-    bool is_dfs = true;
-
     // initialize
     WorklistType worklist = { };
     ProcessedType processed = { };
@@ -113,15 +109,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
     while (!worklist.empty()) {
         // get a next product state
-        ProdStateType prod_state;
-        if (is_dfs) {
-            prod_state = *worklist.rbegin();
-            worklist.pop_back();
-        } else { // BFS
-            prod_state = *worklist.begin();
-            worklist.pop_front();
-        }
-
+        ProdStateType prod_state = *worklist.rbegin();
+        worklist.pop_back();
+    
         const State& smaller_state = prod_state.first;
         const StateSet& bigger_set = prod_state.second;
 
