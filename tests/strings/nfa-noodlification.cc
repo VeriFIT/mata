@@ -320,7 +320,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             std::vector<std::shared_ptr<Nfa>> noodle2_segments{ std::make_shared<Nfa>(noodle2_segment1),
                     std::make_shared<Nfa>(noodle2_segment2), std::make_shared<Nfa>(noodle2_segment3) };
 
-            SegNfa::NoodleSequence expected{ noodle1_segments, noodle2_segments };
+            std::vector<SegNfa::Noodle> expected{ noodle1_segments, noodle2_segments };
 
             auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 2);
@@ -370,7 +370,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }},
                 {{x, {0, 0} }, {y, {1, 0} }, {y, {1, 1} }} } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<SegNfa::NoodleWithEpsilonsCounter> noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         for(size_t i = 0; i < noodles.size(); i++) {
@@ -397,7 +397,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
                 {{x, {0, 0} }, {x, {0, 1} }, {z, {1, 1} }},
                 {{x, {0, 0} }, {z, {1, 0} }, {w, {1, 1} }},
          } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<SegNfa::NoodleWithEpsilonsCounter> noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         for(size_t i = 0; i < noodles.size(); i++) {
@@ -418,7 +418,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&w, "(a|b)*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({} );
-       SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+       std::vector<SegNfa::NoodleWithEpsilonsCounter> noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(y), std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         CHECK(noodles.size() == 1);
@@ -443,7 +443,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
                 {{y, {1, 1} }},
                 {{y, {1, 0} }, {y, {1, 1} }},
             } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<SegNfa::NoodleWithEpsilonsCounter> noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         CHECK(noodles.size() == 2);
@@ -467,7 +467,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {1, 1} }},
             } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<SegNfa::NoodleWithEpsilonsCounter> noodles = SegNfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(u)});
         CHECK(noodles.size() == 1);
