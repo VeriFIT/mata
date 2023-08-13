@@ -17,6 +17,10 @@
 
 #include "mata/parser/mintermization.hh"
 
+#include<vector>
+
+using MintermizationAlgebra = struct Mata::MintermizationAlgebra;
+
 namespace {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
     {
@@ -54,24 +58,38 @@ namespace {
     }
 }
 
-void Mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
+Cudd Mata::MintermizationAlgebra::bdd_mng = Cudd{};
+
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getTrue() {
+    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddOne());
+}
+
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getFalse() {
+    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddZero());
+}
+
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getVar() {
+    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddVar());
+}
+
+void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
 {
     assert(aut.is_nfa());
 
     for (const auto& trans : aut.transitions) {
-        // Foreach transition create a BDD
+        // Foreach transition create a MintermizationAlgebra
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert((symbol_part.node.is_operator() || symbol_part.children.empty()) &&
             "Symbol part must be either formula or single symbol");
-        const BDD bdd = graph_to_bdd_nfa(symbol_part);
-        if (bdd.IsZero())
+        const MintermizationAlgebra val = graph_to_vars_nfa(symbol_part);
+        if (val.isFalse())
             continue;
-        bdds.insert(bdd);
-        trans_to_bddvar[&symbol_part] = bdd;
+        vars.insert(val);
+        trans_to_var[&symbol_part] = val;
     }
 }
 
-void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
+void Mata::Mintermization::trans_to_vars_afa(const IntermediateAut &aut)
 {
     assert(aut.is_afa());
 
@@ -102,38 +120,39 @@ void Mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
                                                                                            act_graph));
         }
 
-        // Foreach disjunct create a BDD
+        // Foreach disjunct create a MintermizationAlgebra
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
-            // create bdd for the whole disjunct
-            const auto bdd = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
-                    OptionalBdd(bdd_mng.bddOne()) : // transition from state to states -> add true as symbol
-                    graph_to_bdd_afa(*ds_pair.first);
-            assert(bdd.type == OptionalBdd::TYPE::BDD_E);
-            if (bdd.val.IsZero())
+            // create val for the whole disjunct
+            const auto val = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
+                    OptionalValue(MintermizationAlgebra::getTrue()) : // transition from state to states -> add true as symbol
+                             graph_to_vars_afa(*ds_pair.first);
+            assert(val.type == OptionalValue::TYPE::VALUE_E);
+            if (val.val.isFalse())
                 continue;
-            trans_to_bddvar[ds_pair.first] = bdd.val;
-            bdds.insert(bdd.val);
+            trans_to_var[ds_pair.first] = val.val;
+            vars.insert(val.val);
         }
     }
 }
 
-std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& source_bdds)
+std::unordered_set<MintermizationAlgebra> Mata::Mintermization::compute_minterms(
+        const std::unordered_set<MintermizationAlgebra>& source_bdds)
 {
-    std::unordered_set<BDD> stack{ bdd_mng.bddOne() };
-    for (const BDD& b: source_bdds) {
-        std::unordered_set<BDD> next;
+    std::unordered_set<MintermizationAlgebra> stack{ MintermizationAlgebra::getTrue() };
+    for (const MintermizationAlgebra& b: source_bdds) {
+        std::unordered_set<MintermizationAlgebra> next;
         /**
-         * TODO: Possible optimization - we can remember which transition belongs to the currently processed bdds
+         * TODO: Possible optimization - we can remember which transition belongs to the currently processed vars
          * and mintermize automaton somehow directly here. However, it would be better to do such optimization
          * in copy of this function and this one keep clean and straightforward.
          */
         for (const auto& minterm : stack) {
-            BDD b1 = minterm * b;
-            if (!b1.IsZero()) {
+            MintermizationAlgebra b1 = minterm && b;
+            if (!b1.isFalse()) {
                 next.insert(b1);
             }
-            BDD b0 = minterm * !b;
-            if (!b0.IsZero()) {
+            MintermizationAlgebra b0 = minterm && !b;
+            if (!b0.isFalse()) {
                 next.insert(b0);
             }
         }
@@ -143,35 +162,35 @@ std::unordered_set<BDD> Mata::Mintermization::compute_minterms(const std::unorde
     return stack;
 }
 
-Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(const FormulaGraph &graph)
+Mata::Mintermization::OptionalValue Mata::Mintermization::graph_to_vars_afa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
     if (node.is_operand()) {
         if (node.is_state())
-            return OptionalBdd(OptionalBdd::TYPE::NOTHING_E);
-        if (symbol_to_bddvar.count(node.name)) {
-            return OptionalBdd(symbol_to_bddvar.at(node.name));
+            return OptionalValue(OptionalValue::TYPE::NOTHING_E);
+        if (symbol_to_var.count(node.name)) {
+            return OptionalValue(symbol_to_var.at(node.name));
         } else {
-            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
-                    (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
-            symbol_to_bddvar[node.name] = res;
-            return OptionalBdd(res);
+            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra::getTrue() :
+                    (node.name == "false" ? MintermizationAlgebra::getFalse() : MintermizationAlgebra::getVar());
+            symbol_to_var[node.name] = res;
+            return OptionalValue(res);
         }
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::OperatorType::AND) {
             assert(graph.children.size() == 2);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
-            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
+            const OptionalValue op1 = graph_to_vars_afa(graph.children[0]);
+            const OptionalValue op2 = graph_to_vars_afa(graph.children[1]);
             return op1 * op2;
         } else if (node.operator_type == FormulaNode::OperatorType::OR) {
             assert(graph.children.size() == 2);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
-            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
+            const OptionalValue op1 = graph_to_vars_afa(graph.children[0]);
+            const OptionalValue op2 = graph_to_vars_afa(graph.children[1]);
             return op1 + op2;
         } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
             assert(graph.children.size() == 1);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
+            const OptionalValue op1 = graph_to_vars_afa(graph.children[0]);
             return !op1;
         } else
             assert(false && "Unknown type of operation. It should conjunction, disjunction, or negation.");
@@ -181,33 +200,33 @@ Mata::Mintermization::OptionalBdd Mata::Mintermization::graph_to_bdd_afa(const F
     return {};
 }
 
-BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
+MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
     if (node.is_operand()) {
-        if (symbol_to_bddvar.count(node.name)) {
-            return symbol_to_bddvar.at(node.name);
+        if (symbol_to_var.count(node.name)) {
+            return symbol_to_var.at(node.name);
         } else {
-            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
-                      (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
-            symbol_to_bddvar[node.name] = res;
+            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra::getTrue() :
+                      (node.name == "false" ? MintermizationAlgebra::getFalse() : MintermizationAlgebra::getVar());
+            symbol_to_var[node.name] = res;
             return res;
         }
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::OperatorType::AND) {
             assert(graph.children.size() == 2);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
-            return op1 * op2;
+            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
+            const MintermizationAlgebra op2 = graph_to_vars_nfa(graph.children[1]);
+            return op1 && op2;
         } else if (node.operator_type == FormulaNode::OperatorType::OR) {
             assert(graph.children.size() == 2);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
-            return op1 + op2;
+            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
+            const MintermizationAlgebra op2 = graph_to_vars_nfa(graph.children[1]);
+            return op1 || op2;
         } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
             assert(graph.children.size() == 1);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
+            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
             return !op1;
         } else
             assert(false);
@@ -218,21 +237,21 @@ BDD Mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
 }
 
 void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::unordered_set<BDD>& minterms)
+                                           const std::unordered_set<MintermizationAlgebra>& minterms)
 {
     for (const auto& trans : aut.transitions) {
             // for each t=(q1,s,q2)
         const auto &symbol_part = trans.second.children[0];
 
         size_t symbol = 0;
-        if(trans_to_bddvar.count(&symbol_part) == 0)
-            continue; // Transition had zero bdd so it was not added to map
-        const BDD &bdd = trans_to_bddvar[&symbol_part];
+        if(trans_to_var.count(&symbol_part) == 0)
+            continue; // Transition had zero var so it was not added to map
+        const MintermizationAlgebra &var = trans_to_var[&symbol_part];
 
         for (const auto &minterm: minterms) {
             // for each minterm x:
-            if (!((bdd * minterm).IsZero())) {
-                // if for symbol s of t is BDD_s < x
+            if (!((var && minterm).isFalse())) {
+                // if for symbol s of t is MintermizationAlgebra_s < x
                 // add q1,x,q2 to transitions
                 IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
                                                         trans.second.children[1].node.raw});
@@ -243,22 +262,22 @@ void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const
 }
 
 void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::unordered_set<BDD>& minterms)
+                                           const std::unordered_set<MintermizationAlgebra>& minterms)
 {
     for (const auto& trans : aut.transitions) {
         for (const auto& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // for each t=(q1,s,q2)
             const auto disjunct = ds_pair.first;
 
-            if (!trans_to_bddvar.count(disjunct))
-                continue; // Transition had zero bdd so it was not added to map
-            const BDD &bdd = trans_to_bddvar[disjunct];
+            if (!trans_to_var.count(disjunct))
+                continue; // Transition had zero var so it was not added to map
+            const MintermizationAlgebra &var = trans_to_var[disjunct];
 
             size_t symbol = 0;
             for (const auto &minterm: minterms) {
                 // for each minterm x:
-                if (!((bdd * minterm).IsZero())) {
-                    // if for symbol s of t is BDD_s < x
+                if (!((var && minterm).isFalse())) {
+                    // if for symbol s of t is MintermizationAlgebra_s < x
                     // add q1,x,q2 to transitions
                     const auto str_symbol = std::to_string(symbol);
                     FormulaNode node_symbol(FormulaNode::Type::OPERAND, str_symbol, str_symbol,
@@ -285,11 +304,11 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
             throw std::runtime_error("We currently support mintermization only for NFA and AFA with bitvectors");
         }
 
-        aut->is_nfa() ? trans_to_bdd_nfa(*aut) : trans_to_bdd_afa(*aut);
+        aut->is_nfa() ? trans_to_vars_nfa(*aut) : trans_to_vars_afa(*aut);
     }
 
-    // Build minterm tree over BDDs
-    auto minterms = compute_minterms(bdds);
+    // Build minterm tree over MintermizationAlgebras
+    auto minterms = compute_minterms(vars);
 
     std::vector<Mata::IntermediateAut> res;
     for (const Mata::IntermediateAut *aut : auts) {
@@ -316,32 +335,32 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
     return mintermize(auts_pointers);
 }
 
-Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator*(
-    const Mata::Mintermization::OptionalBdd& b) const {
+Mata::Mintermization::OptionalValue Mata::Mintermization::OptionalValue::operator*(
+    const Mata::Mintermization::OptionalValue& b) const {
     if (this->type == TYPE::NOTHING_E) {
         return b;
     } else if (b.type == TYPE::NOTHING_E) {
         return *this;
     } else {
-        return OptionalBdd{ TYPE::BDD_E, this->val * b.val };
+        return OptionalValue{TYPE::VALUE_E, this->val && b.val };
     }
 }
 
-Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator+(
-    const Mata::Mintermization::OptionalBdd& b) const {
+Mata::Mintermization::OptionalValue Mata::Mintermization::OptionalValue::operator+(
+    const Mata::Mintermization::OptionalValue& b) const {
     if (this->type == TYPE::NOTHING_E) {
         return b;
     } else if (b.type == TYPE::NOTHING_E) {
         return *this;
     } else {
-        return OptionalBdd{ TYPE::BDD_E, this->val + b.val };
+        return OptionalValue{TYPE::VALUE_E, this->val || b.val };
     }
 }
 
-Mata::Mintermization::OptionalBdd Mata::Mintermization::OptionalBdd::operator!() const {
+Mata::Mintermization::OptionalValue Mata::Mintermization::OptionalValue::operator!() const {
     if (this->type == TYPE::NOTHING_E) {
-        return OptionalBdd(TYPE::NOTHING_E);
+        return OptionalValue(TYPE::NOTHING_E);
     } else {
-        return OptionalBdd{ TYPE::BDD_E, !this->val };
+        return OptionalValue{TYPE::VALUE_E, !this->val };
     }
 }

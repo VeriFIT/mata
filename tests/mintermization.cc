@@ -22,7 +22,7 @@
 
 using namespace Mata::Parser;
 
-TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
+TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
 {
     Parsed parsed;
     Mata::Mintermization mintermization{};
@@ -42,8 +42,8 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].first.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-        const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
-        REQUIRE(bdd.nodeCount() == 2);
+        const Mata::MintermizationAlgebra alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        REQUIRE(alg.val.nodeCount() == 2);
     }
 
     SECTION("Small bitvector transition")
@@ -61,8 +61,8 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
-        REQUIRE(bdd.nodeCount() == 3);
+        const Mata::MintermizationAlgebra alg  = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        REQUIRE(alg.val.nodeCount() == 3);
     }
 
     SECTION("Complex bitvector transition")
@@ -80,12 +80,12 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const BDD bdd = mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]);
-        REQUIRE(bdd.nodeCount() == 4);
+        const Mata::MintermizationAlgebra alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        REQUIRE(alg.val.nodeCount() == 4);
         int inputs[] = {0,0,0,0};
-        REQUIRE(bdd.Eval(inputs).IsOne());
+        REQUIRE(alg.val.Eval(inputs).IsOne());
         int inputs_false[] = {0,1,0,0};
-        REQUIRE(bdd.Eval(inputs_false).IsZero());
+        REQUIRE(alg.val.Eval(inputs_false).IsZero());
     }
 } // trans to bdd section
 
@@ -110,10 +110,10 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<BDD> bdds;
-        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
-        auto res = mintermization.compute_minterms(bdds);
+        std::unordered_set<Mata::MintermizationAlgebra> vars;
+        vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
+        vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
+        auto res = mintermization.compute_minterms(vars);
         REQUIRE(res.size() == 4);
     }
 
@@ -133,10 +133,10 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<BDD> bdds;
-        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[0].second.children[0]));
-        bdds.insert(mintermization.graph_to_bdd_nfa(aut.transitions[1].second.children[0]));
-        auto res = mintermization.compute_minterms(bdds);
+        std::unordered_set<struct Mata::MintermizationAlgebra> vars;
+        vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
+        vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
+        auto res = mintermization.compute_minterms(vars);
         REQUIRE(res.size() == 3);
     }
 } // compute_minterms
@@ -485,7 +485,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     }
 }
 
-TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
+TEST_CASE("Mata::Mintermization::trans_to_vars_nfa with big AFA","[.expensive]")
 {
 
     Parsed parsed;

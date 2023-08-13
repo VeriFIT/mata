@@ -21,38 +21,86 @@
 
 #include "inter-aut.hh"
 
-namespace Mata {
 
+namespace Mata {
+    struct MintermizationAlgebra {
+        static Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+        BDD val;
+
+        MintermizationAlgebra() {
+            this->val = BDD();
+        }
+
+        MintermizationAlgebra(BDD val) {
+            this->val = val;
+        }
+
+        friend MintermizationAlgebra operator&&(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
+            return {lhs.val * rhs.val};
+        }
+
+        friend MintermizationAlgebra operator||(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
+            return {lhs.val + rhs.val};
+        }
+
+        friend MintermizationAlgebra operator!(const MintermizationAlgebra &lhs) {
+            return {!lhs.val};
+        }
+
+        bool operator==(const MintermizationAlgebra &rhs) const {
+            return this->val == rhs.val;
+        }
+
+        bool isFalse() const {
+            return val.IsZero();
+        }
+
+        static MintermizationAlgebra getTrue();
+        static MintermizationAlgebra getFalse();
+        static MintermizationAlgebra getVar();
+};
+}
+
+// custom specialization of std::hash can be injected in namespace std
+namespace std {
+    template<>
+    struct hash<struct Mata::MintermizationAlgebra> {
+        size_t operator()(const struct Mata::MintermizationAlgebra &algebra) const noexcept {
+            return hash<BDD>{}(algebra.val);
+        }
+    };
+}
+
+namespace Mata {
 class Mintermization {
 private: // data types
-    struct OptionalBdd {
-        enum class TYPE {NOTHING_E, BDD_E};
+    struct OptionalValue {
+        enum class TYPE {NOTHING_E, VALUE_E};
 
         TYPE type{};
-        BDD val{};
+        MintermizationAlgebra val{};
 
-        OptionalBdd() = default;
-        explicit OptionalBdd(TYPE t) : type(t) {}
-        explicit OptionalBdd(const BDD& bdd) : type(TYPE::BDD_E), val(bdd) {}
-        OptionalBdd(TYPE t, const BDD& bdd) : type(t), val(bdd) {}
+        OptionalValue() = default;
+        explicit OptionalValue(TYPE t) : type(t) {}
+        explicit OptionalValue(const MintermizationAlgebra& algebra) : type(TYPE::VALUE_E), val(algebra) {}
+        OptionalValue(TYPE t, const MintermizationAlgebra& algebra) : type(t), val(algebra) {}
 
-        OptionalBdd operator*(const OptionalBdd& b) const;
-        OptionalBdd operator+(const OptionalBdd& b) const;
-        OptionalBdd operator!() const;
+        OptionalValue operator*(const OptionalValue& b) const;
+        OptionalValue operator+(const OptionalValue& b) const;
+        OptionalValue operator!() const;
     };
 
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
-    Cudd bdd_mng{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
-    std::unordered_map<std::string, BDD> symbol_to_bddvar{};
-    std::unordered_map<const FormulaGraph*, BDD> trans_to_bddvar{};
+    std::unordered_map<std::string, MintermizationAlgebra> symbol_to_var{};
+    std::unordered_map<const FormulaGraph*, MintermizationAlgebra> trans_to_var{};
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
-    std::unordered_set<BDD> bdds{}; // bdds created from transitions
+    std::unordered_set<MintermizationAlgebra> vars{}; // vars created from transitions
 
 private:
-    void trans_to_bdd_nfa(const IntermediateAut& aut);
-    void trans_to_bdd_afa(const IntermediateAut& aut);
+    void trans_to_vars_nfa(const IntermediateAut& aut);
+    void trans_to_vars_afa(const IntermediateAut& aut);
 
 public:
     /**
@@ -61,14 +109,15 @@ public:
      * @param source_bdds BDDs for which minterms are computed
      * @return Computed minterms
      */
-    std::unordered_set<BDD> compute_minterms(const std::unordered_set<BDD>& source_bdds);
+    std::unordered_set<MintermizationAlgebra> compute_minterms(
+            const std::unordered_set<MintermizationAlgebra>& source_bdds);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+    MintermizationAlgebra graph_to_vars_nfa(const FormulaGraph& graph);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
@@ -77,7 +126,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
+    OptionalValue graph_to_vars_afa(const FormulaGraph& graph);
 
     /**
      * Method mintermizes given automaton which has bitvector alphabet.
@@ -106,7 +155,7 @@ public:
      * @param minterms Set of minterms for mintermization
      */
     void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                             const std::unordered_set<BDD>& minterms);
+                             const std::unordered_set<MintermizationAlgebra>& minterms);
 
     /**
      * The method for mintermization of alternating finite automaton using
@@ -116,10 +165,11 @@ public:
      * @param minterms Set of minterms for mintermization
      */
     void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                             const std::unordered_set<BDD>& minterms);
+                             const std::unordered_set<MintermizationAlgebra>& minterms);
 
-    Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar() {}
+    Mintermization() : symbol_to_var{}, trans_to_var() {}
 }; // class Mintermization.
 
 } // namespace Mata
+
 #endif //MATA_MINTERM_HH
