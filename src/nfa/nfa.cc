@@ -476,7 +476,6 @@ BoolVector Nfa::get_useful_states() const {
         // all successors have been processed, we can remove act_state from the program stack
         program_stack.pop_back();
     }
-
     return useful;
 }
 

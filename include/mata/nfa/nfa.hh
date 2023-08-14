@@ -587,16 +587,15 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzoz
 Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
- * Reduce the size of the automaton.
+ * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[in] trim_input Whether to trim the input automaton first or not.
- * @param[out] state_renaming Mapping of trimmed states to new states.
+ * @param[out] state_renaming Mapping of original states to reduced states.
  * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(const Nfa &aut, bool trim_input = true, StateRenaming *state_renaming = nullptr,
+Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
            const ParameterMap& params = {{ "algorithm", "simulation" } });
 
 /// Is the language of the automaton universal?

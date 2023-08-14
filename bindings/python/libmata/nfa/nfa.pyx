@@ -864,11 +864,10 @@ def minimize(Nfa lhs):
     mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
     return result
 
-def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
+def reduce_with_state_map(Nfa aut, params = None):
     """Reduce the automaton.
 
     :param Nfa aut: Original automaton to reduce.
-    :param bool trim_input: Whether to trim the input automaton first or not.
     :param Dict params: Additional parameters for the reduction algorithm:
         - "algorithm": "simulation"
     :return: (Reduced automaton, state map of original to new states)
@@ -876,7 +875,7 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
     params = params or {"algorithm": "simulation"}
     cdef StateRenaming state_map
     result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
                     {
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }
@@ -884,10 +883,9 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
 
     return result, {k: v for k, v in state_map}
 
-def reduce(Nfa aut, bool trim_input = True, params = None):
+def reduce(Nfa aut, params = None):
     """Reduce the automaton.
 
-    :param bool trim_input: Whether to trim the input automaton first or not.
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
         - "algorithm": "simulation"
@@ -895,7 +893,7 @@ def reduce(Nfa aut, bool trim_input = True, params = None):
     """
     params = params or {"algorithm": "simulation"}
     result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
                     {
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }

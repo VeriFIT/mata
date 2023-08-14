@@ -137,6 +137,7 @@ void SegNfa::segs_one_initial_final(
             for (const State final_state: iter->final) {
                 Nfa::Nfa segment_one_final = *iter;
                 segment_one_final.final = {final_state };
+                segment_one_final.trim();
                 segment_one_final = reduce(segment_one_final);
 
                 if (segment_one_final.size() > 0 || include_empty) {
@@ -147,6 +148,7 @@ void SegNfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 Nfa::Nfa segment_one_init = *iter;
                 segment_one_init.initial = {init_state };
+                segment_one_init.trim();
                 segment_one_init = reduce(segment_one_init);
 
                 if (segment_one_init.size() > 0 || include_empty) {
@@ -159,6 +161,7 @@ void SegNfa::segs_one_initial_final(
                     Nfa::Nfa segment_one_init_final = *iter;
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
+                    segment_one_init_final.trim();
                     segment_one_init_final = reduce(segment_one_init_final);
 
                     if (segment_one_init_final.size() > 0 || include_empty) {
@@ -287,10 +290,12 @@ std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<std:
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
@@ -335,10 +340,12 @@ std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<Nfa:
     }
     if (!reduce_value.empty()) {
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
@@ -395,10 +402,12 @@ std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_for_equation(con
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
+            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
