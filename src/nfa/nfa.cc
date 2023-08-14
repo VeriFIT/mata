@@ -143,18 +143,11 @@ namespace {
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @param[out] digraph Digraph to add computed transitions to.
      */
-    void collect_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
-        const State num_of_states{nfa.size() };
-        for (State src_state{ 0 }; src_state < num_of_states; ++src_state) {
-            for (const SymbolPost& move: nfa.delta[src_state]) {
-                for (const State tgt_state: move.targets) {
-                    // Directly try to add the transition. Finding out whether the transition is already in the digraph
-                    //  only iterates through transition relation again.
-                    digraph.delta.add(src_state, abstract_symbol, tgt_state);
-                }
-                // FIXME: Alternatively: But it is actually slower...
-                //digraph.add(src_state, abstract_symbol, symbol_transitions.targets);
-            }
+    void add_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
+        for (const Transition& transition: nfa.delta.transitions()) {
+            // Directly try to add the transition. Finding out whether the transition is already in the digraph
+            //  only iterates through transition relation again.
+            digraph.delta.add(transition.source, abstract_symbol, transition.target);
         }
     }
 }
@@ -564,7 +557,7 @@ std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     Nfa digraph{size(), StateSet(initial), StateSet(final) };
-    collect_directed_transitions(*this, abstract_symbol, digraph);
+    add_directed_transitions(*this, abstract_symbol, digraph);
     return digraph;
 }
 
