@@ -642,7 +642,6 @@ cdef class Nfa:
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
-
     def remove_epsilon_inplace(self, Symbol epsilon = CEPSILON):
         """Removes transitions which contain epsilon symbol.
 
@@ -652,20 +651,20 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_epsilon(epsilon)
 
-    def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
+    def epsilon_symbol_posts(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
+        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
             state, epsilon
         )
-        if c_epsilon_transitions_iter == self.thisptr.get().delta.state_post(state).cend():
+        if c_epsilon_symbol_posts_iter == self.thisptr.get().delta.state_post(state).cend():
             return None
 
-        cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_transitions_iter)
+        cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
         return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 

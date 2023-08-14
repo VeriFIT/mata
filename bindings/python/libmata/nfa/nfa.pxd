@@ -68,6 +68,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         void remove(CTrans) except +
         void remove(State, Symbol, State) except +
         bool contains(State, Symbol, State)
+        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
+        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
 
     cdef cppclass CRun "Mata::Nfa::Run":
         # Public Attributes
@@ -161,8 +163,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
-        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(CStatePost& post, Symbol epsilon)
         void clear()
         size_t size()
 

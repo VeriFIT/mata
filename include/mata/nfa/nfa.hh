@@ -363,24 +363,6 @@ public:
     const_iterator end() const { return const_iterator::for_end(this); }
 
     /**
-     * Return all epsilon transitions from epsilon symbol under a given state.
-     * @param[in] state State from which are epsilon transitions checked
-     * @param[in] epsilon User can define his favourite epsilon or used default
-     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
-     * there are no epsilon transitions.
-     */
-    StatePost::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
-
-    /**
-     * Return all epsilon transitions from epsilon symbol under given state transitions.
-     * @param[in] post Post from which are epsilon transitions checked.
-     * @param[in] epsilon User can define his favourite epsilon or used default
-     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
-     * there are no epsilon transitions.
-     */
-    static StatePost::const_iterator get_epsilon_transitions(const StatePost& post, Symbol epsilon = EPSILON);
-
-    /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
      *
      * The value of the already existing symbols will NOT be overwritten.

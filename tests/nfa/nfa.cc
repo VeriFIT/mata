@@ -2645,17 +2645,17 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
+TEST_CASE("Mata::Nfa::Nfa::get_delta.epsilon_symbol_posts()") {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.add(0, EPSILON, 3);
     aut.delta.add(3, EPSILON, 3);
     aut.delta.add(3, EPSILON, 4);
 
-    auto state_eps_trans{ aut.get_epsilon_transitions(0) };
+    auto state_eps_trans{ aut.delta.epsilon_symbol_posts(0) };
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
-    state_eps_trans = aut.get_epsilon_transitions(3);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(3);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
@@ -2663,29 +2663,29 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     aut.delta.add(8, 42, 4);
     aut.delta.add(8, 42, 6);
 
-    state_eps_trans = aut.get_epsilon_transitions(8, 42);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(8, 42);
     CHECK(state_eps_trans->symbol == 42);
     CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
 
-    CHECK(aut.get_epsilon_transitions(1) == aut.delta.state_post(1).end());
-    CHECK(aut.get_epsilon_transitions(5) == aut.delta.state_post(5).end());
-    CHECK(aut.get_epsilon_transitions(19) == aut.delta.state_post(19).end());
+    CHECK(aut.delta.epsilon_symbol_posts(1) == aut.delta.state_post(1).end());
+    CHECK(aut.delta.epsilon_symbol_posts(5) == aut.delta.state_post(5).end());
+    CHECK(aut.delta.epsilon_symbol_posts(19) == aut.delta.state_post(19).end());
 
     StatePost state_post{ aut.delta[0] };
-    state_eps_trans = aut.get_epsilon_transitions(state_post);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
     state_post = aut.delta[3];
-    state_eps_trans = Nfa::get_epsilon_transitions(state_post);
+    state_eps_trans = Delta::epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
     state_post = aut.delta.state_post(1);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(5);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(19);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta()") {

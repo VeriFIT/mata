@@ -389,6 +389,22 @@ public:
     const_iterator cend() const { return state_posts.cend(); }
     const_iterator begin() const { return state_posts.begin(); }
     const_iterator end() const { return state_posts.end(); }
+
+    /**
+     * Iterate over @p epsilon symbol posts under the given @p state.
+     * @param[in] state State from which epsilon transitions are checked.
+     * @param[in] epsilon User can define his favourite epsilon or used default.
+     * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
+     */
+    StatePost::const_iterator epsilon_symbol_posts(State state, Symbol epsilon = EPSILON) const;
+
+    /**
+     * Iterate over @p epsilon symbol posts under the given @p state_post.
+     * @param[in] state_post State post from which epsilon transitions are checked.
+     * @param[in] epsilon User can define his favourite epsilon or used default.
+     * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
+     */
+    static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
 }; // struct Delta.
 
 } // namespace Mata::Nfa.

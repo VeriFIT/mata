@@ -45,24 +45,18 @@ void SymbolPost::insert(const StateSet& states) {
     }
 }
 
-StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const State state, const Symbol epsilon) const {
-    assert(is_state(state));
-    return get_epsilon_transitions(delta.state_post(state), epsilon);
+StatePost::const_iterator Delta::epsilon_symbol_posts(const State state, const Symbol epsilon) const {
+    return epsilon_symbol_posts(state_post(state), epsilon);
 }
 
-StatePost::const_iterator Nfa::Nfa::get_epsilon_transitions(const StatePost& state_transitions, const Symbol epsilon) {
-    if (!state_transitions.empty()) {
+StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_post, const Symbol epsilon) {
+    if (!state_post.empty()) {
         if (epsilon == EPSILON) {
-            const auto& back = state_transitions.back();
-            if (back.symbol == epsilon) {
-                return std::prev(state_transitions.end());
-            }
-        } else {
-            return state_transitions.find(SymbolPost(epsilon));
-        }
+            const auto& back = state_post.back();
+            if (back.symbol == epsilon) { return std::prev(state_post.end()); }
+        } else { return state_post.find(SymbolPost(epsilon)); }
     }
-
-    return state_transitions.end();
+    return state_post.end();
 }
 
 size_t Delta::size() const
