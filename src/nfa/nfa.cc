@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <list>
+#include <optional>
 #include <unordered_set>
 #include <iterator>
 
@@ -43,54 +44,19 @@ const Symbol Limits::max_symbol;
 
 namespace {
     /**
-     * Compute reachability of states.
-     *
-     * @param[in] nfa NFA to compute reachability for.
-     * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
-     */
-    StateBoolArray compute_reachability(const Nfa& nfa) {
-        std::vector<State> worklist{ nfa.initial.begin(),nfa.initial.end() };
-
-        StateBoolArray reachable(nfa.size(), false);
-        for (const State state: nfa.initial)
-        {
-            reachable.at(state) = true;
-        }
-
-        State state{};
-        while (!worklist.empty())
-        {
-            state = worklist.back();
-            worklist.pop_back();
-
-            for (const SymbolPost& move: nfa.delta[state])
-            {
-                for (const State target_state: move.targets)
-                {
-                    if (!reachable.at(target_state))
-                    {
-                        worklist.push_back(target_state);
-                        reachable.at(target_state) = true;
-                    }
-                }
-            }
-        }
-
-        return reachable;
-    }
-
-    /**
      * Compute reachability of states considering only specified states.
      *
      * @param[in] nfa NFA to compute reachability for.
-     * @param[in] states_to_consider State to consider as potentially reachable.
+     * @param[in] states_to_consider State to consider as potentially reachable. If @c std::nullopt is used, all states
+     *  are considered as potentially reachable.
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
-    StateBoolArray compute_reachability(const Nfa& nfa, const StateBoolArray& states_to_consider) {
+    StateBoolArray reachable_states_in(const Nfa& nfa,
+                                       const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
         std::vector<State> worklist{};
         StateBoolArray reachable(nfa.size(), false);
         for (const State state: nfa.initial) {
-            if (states_to_consider[state]) {
+            if (!states_to_consider.has_value() || states_to_consider.value()[state]) {
                 worklist.push_back(state);
                 reachable.at(state) = true;
             }
@@ -100,17 +66,16 @@ namespace {
         while (!worklist.empty()) {
             state = worklist.back();
             worklist.pop_back();
-
             for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
-                    if (states_to_consider[target_state] && !reachable[target_state]) {
+                    if (!reachable[target_state] &&
+                        (!states_to_consider.has_value() || states_to_consider.value()[target_state])) {
                         worklist.push_back(target_state);
                         reachable[target_state] = true;
                     }
                 }
             }
         }
-
         return reachable;
     }
 
@@ -199,9 +164,8 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = Mata::Nfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const
-{
-    StateBoolArray reachable_bool_array{ compute_reachability(*this) };
+StateSet Nfa::get_reachable_states() const {
+    StateBoolArray reachable_bool_array{ reachable_states_in(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{size() };
@@ -480,13 +444,12 @@ BoolVector Nfa::get_useful_states() const {
     return useful;
 }
 
-StateSet Nfa::get_useful_states_old() const
-{
+StateSet Nfa::get_useful_states_old() const {
     if (initial.empty() || final.empty()) { return StateSet{}; }
 
     const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
     // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
-    const StateBoolArray useful_states_bool_array{ compute_reachability(revert(digraph), compute_reachability(digraph)) };
+    const StateBoolArray useful_states_bool_array{ reachable_states_in(revert(digraph), reachable_states_in(digraph)) };
 
     const size_t num_of_states{size() };
     StateSet useful_states{};
