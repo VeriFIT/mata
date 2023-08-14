@@ -19,6 +19,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-single-param-jobs.yaml.in"
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-test-jobs.yaml.in" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-test-jobs.yaml" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inputs/single-automata.input.in" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/single-automata.input" @ONLY)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input.in" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input" @ONLY)
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh" @ONLY)
 
 file(GLOB SOURCES "src/*.cc")
 foreach(SOURCE ${SOURCES})
