@@ -196,16 +196,16 @@ public:
  */
 class Delta {
 private:
-    std::vector<StatePost> state_posts;
+    std::vector<StatePost> state_posts_;
 
 public:
     inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
-    Delta() : state_posts() {}
-    explicit Delta(size_t n) : state_posts(n) {}
+    Delta() : state_posts_() {}
+    explicit Delta(size_t n) : state_posts_(n) {}
 
     void reserve(size_t n) {
-        state_posts.reserve(n);
+        state_posts_.reserve(n);
     };
 
     /**
@@ -226,7 +226,7 @@ public:
         if (src_state >= num_of_states()) {
             return empty_state_post;
         }
-        return state_posts[src_state];
+        return state_posts_[src_state];
     }
 
     /**
@@ -261,19 +261,19 @@ public:
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
-    void emplace_back() { state_posts.emplace_back(); }
+    void emplace_back() { state_posts_.emplace_back(); }
 
-    void clear() { state_posts.clear(); }
+    void clear() { state_posts_.clear(); }
 
     void increase_size(size_t n) {
-        assert(n >= state_posts.size());
-        state_posts.resize(n);
+        assert(n >= state_posts_.size());
+        state_posts_.resize(n);
     }
 
     /**
      * @return Number of states in the whole Delta, including both source and target states.
      */
-    size_t num_of_states() const { return state_posts.size(); }
+    size_t num_of_states() const { return state_posts_.size(); }
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
@@ -302,7 +302,7 @@ public:
      */
     void append(const std::vector<StatePost>& post_vector) {
         for(const StatePost& pst : post_vector) {
-            this->state_posts.push_back(pst);
+            this->state_posts_.push_back(pst);
         }
     }
 
@@ -332,12 +332,12 @@ public:
      */
     struct transitions_const_iterator {
     private:
-        const std::vector<StatePost>& post;
-        size_t current_state;
-        StatePost::const_iterator post_iterator{};
-        StateSet::const_iterator targets_position{};
-        bool is_end;
-        Transition transition{};
+        const std::vector<StatePost>& post_;
+        size_t current_state_;
+        StatePost::const_iterator post_iterator_{};
+        StateSet::const_iterator targets_position_{};
+        bool is_end_;
+        Transition transition_{};
 
     public:
         using iterator_category = std::forward_iterator_tag;
@@ -353,7 +353,7 @@ public:
 
         transitions_const_iterator(const transitions_const_iterator& other) = default;
 
-        const Transition& operator*() const { return transition; }
+        const Transition& operator*() const { return transition_; }
 
         // Prefix increment
         transitions_const_iterator& operator++();
@@ -364,10 +364,10 @@ public:
 
         bool operator==(const transitions_const_iterator& other) const;
         bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
-    };
+    }; // class transitions_const_iterator.
 
-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts); }
-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts, true); }
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts_); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts_, true); }
     transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
     transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
@@ -385,10 +385,10 @@ public:
     Transitions transitions() const { return { .begin_ = transitions_begin(), .end_ = transitions_end() }; }
 
     using const_iterator = std::vector<StatePost>::const_iterator;
-    const_iterator cbegin() const { return state_posts.cbegin(); }
-    const_iterator cend() const { return state_posts.cend(); }
-    const_iterator begin() const { return state_posts.begin(); }
-    const_iterator end() const { return state_posts.end(); }
+    const_iterator cbegin() const { return state_posts_.cbegin(); }
+    const_iterator cend() const { return state_posts_.cend(); }
+    const_iterator begin() const { return state_posts_.begin(); }
+    const_iterator end() const { return state_posts_.end(); }
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
