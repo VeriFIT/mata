@@ -495,8 +495,10 @@ cdef class Nfa:
         Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
+        :return: Self.
         """
         self.thisptr.get().trim(NULL)
+        return self
 
     def trim_with_state_map(self):
         """Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -505,11 +507,11 @@ cdef class Nfa:
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
 
-        :return: State map of original to new states.
+        :return: Self, State map of original to new states.
         """
         cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
-        return {k: v for k, v in state_map}
+        return self, {k: v for k, v in state_map}
 
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only

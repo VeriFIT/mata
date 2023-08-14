@@ -2122,8 +2122,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         REQUIRE(result.final[state_renaming[9]]);
         REQUIRE(result.final[state_renaming[3]]);
 
-        aut.trim();
-        result = reduce(aut, &state_renaming);
+        result = reduce(aut.trim(), &state_renaming);
         CHECK(result.size() == 3);
         CHECK(result.initial == SparseSet<Mata::Nfa::State>{ 0, 1 });
         CHECK(result.final == SparseSet<Mata::Nfa::State>{ 2 });
@@ -2140,8 +2139,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        aut.trim();
-        Nfa result = reduce(aut, &state_renaming);
+        Nfa result = reduce(aut.trim(), &state_renaming);
         CHECK(Mata::Nfa::are_equivalent(result, aut));
     }
 }
@@ -2765,8 +2763,7 @@ TEST_CASE("Mata::Nfa::trim bug") {
 	aut.delta.add(3, 97, 4);
 
 	Nfa aut_copy {aut};
-	aut.trim();
-	CHECK(are_equivalent(aut_copy, aut));
+	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
 TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
@@ -2850,8 +2847,7 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
         Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
         CHECK(bv == ref);
 
-        aut.trim();
-        aut = Mata::Nfa::reduce(aut);
+        aut = Mata::Nfa::reduce(aut.trim());
         bv = aut.get_useful_states();
         CHECK(bv == Mata::BoolVector({1,1,1,1}));
     }

@@ -154,8 +154,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
     /// transitions are renamed to a single symbol (e.g., `a`).
     aut.get_one_letter_aut(one_letter);
-    one_letter = determinize(one_letter);
-    one_letter.trim();
+    one_letter = determinize(one_letter).trim();
     if(one_letter.size() == 0) {
         return {};
     }

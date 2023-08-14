@@ -211,6 +211,8 @@ public:
      */
     BoolVector get_useful_states() const;
 
+    Nfa& trim_inplace(StateRenaming* state_renaming = nullptr);
+    void trim_reverting(StateRenaming* state_renaming = nullptr);
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
      *
@@ -219,11 +221,10 @@ public:
      * the starting point of a path ending in a final state).
      *
      * @param[out] state_renaming Mapping of trimmed states to new states.
+     * @return @c this after trimming.
      * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    void trim_inplace(StateRenaming* state_renaming = nullptr);
-    void trim_reverting(StateRenaming* state_renaming = nullptr);
-    void trim(StateRenaming* state_renaming = nullptr) { trim_inplace(state_renaming); }
+    Nfa& trim(StateRenaming* state_renaming = nullptr) { return trim_inplace(state_renaming); }
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.

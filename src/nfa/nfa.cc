@@ -233,7 +233,7 @@ void Nfa::trim_reverting(StateRenaming* state_renaming)
     }
 }
 
-void Nfa::trim_inplace(StateRenaming* state_renaming) {
+Nfa& Nfa::trim_inplace(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
@@ -269,6 +269,7 @@ void Nfa::trim_inplace(StateRenaming* state_renaming) {
             }
         }
     }
+    return *this;
 }
 
 Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {

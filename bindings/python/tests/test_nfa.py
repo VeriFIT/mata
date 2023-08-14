@@ -912,8 +912,7 @@ def test_reduce():
     assert state_map[1] == state_map[0]
     assert state_map[2] != state_map[0]
 
-    nfa.trim()
-    result, state_map = mata_nfa.reduce_with_state_map(nfa)
+    result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
     assert result.get_num_of_trans() == 0
     assert result.size() == 0
 

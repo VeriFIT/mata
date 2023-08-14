@@ -137,8 +137,7 @@ void SegNfa::segs_one_initial_final(
             for (const State final_state: iter->final) {
                 Nfa::Nfa segment_one_final = *iter;
                 segment_one_final.final = {final_state };
-                segment_one_final.trim();
-                segment_one_final = reduce(segment_one_final);
+                segment_one_final = reduce(segment_one_final.trim());
 
                 if (segment_one_final.size() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_final);
@@ -148,8 +147,7 @@ void SegNfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 Nfa::Nfa segment_one_init = *iter;
                 segment_one_init.initial = {init_state };
-                segment_one_init.trim();
-                segment_one_init = reduce(segment_one_init);
+                segment_one_init = reduce(segment_one_init.trim());
 
                 if (segment_one_init.size() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa::Nfa>(segment_one_init);
@@ -161,9 +159,7 @@ void SegNfa::segs_one_initial_final(
                     Nfa::Nfa segment_one_init_final = *iter;
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
-                    segment_one_init_final.trim();
-                    segment_one_init_final = reduce(segment_one_init_final);
-
+                    segment_one_init_final = reduce(segment_one_init_final.trim());
                     if (segment_one_init_final.size() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_init_final);
                     }
@@ -282,20 +278,17 @@ std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<std:
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true) };
-    product_pres_eps_trans.trim();
+            intersection(concatenated_lhs, rhs_automaton, true).trim() };
     if (is_lang_empty(product_pres_eps_trans)) {
         return {};
     }
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
@@ -333,19 +326,16 @@ std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<Nfa:
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true) };
-    product_pres_eps_trans.trim();
+            intersection(concatenated_lhs, rhs_automaton, true).trim() };
     if (is_lang_empty(product_pres_eps_trans)) {
         return {};
     }
     if (!reduce_value.empty()) {
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
@@ -393,21 +383,18 @@ std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_for_equation(con
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
     auto product_pres_eps_trans{
-            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons) };
+            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons).trim() };
 
-    product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
         return {};
     }
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
         }
         if (reduce_value == "backward" || reduce_value == "bidirectional") {
             product_pres_eps_trans = revert(product_pres_eps_trans);
-            product_pres_eps_trans.trim();
             product_pres_eps_trans = reduce(product_pres_eps_trans);
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
