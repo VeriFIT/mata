@@ -31,6 +31,7 @@ add_executable(tests
 		nfa/nfa-concatenation.cc
 		nfa/nfa-intersection.cc
 		nfa/nfa-profiling.cc
+		nfa/nfa-plumbing.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
