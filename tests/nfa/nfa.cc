@@ -2303,33 +2303,30 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
     REQUIRE(!digraph.delta.contains(10, 'c', 7));
 }
 
-TEST_CASE("Mata::Nfa::get_reachable_states()")
-{
+TEST_CASE("Mata::Nfa::get_reachable_states()") {
     Nfa aut{20};
 
-    SECTION("Automaton A")
-    {
+    SECTION("Automaton A") {
         FILL_WITH_AUT_A(aut);
         aut.delta.remove(3, 'b', 9);
         aut.delta.remove(5, 'c', 9);
         aut.delta.remove(1, 'a', 10);
 
-        auto reachable{aut.get_reachable_states()};
-        CHECK(reachable.find(0) == reachable.end());
-        CHECK(reachable.find(1) != reachable.end());
-        CHECK(reachable.find(2) == reachable.end());
-        CHECK(reachable.find(3) != reachable.end());
-        CHECK(reachable.find(4) == reachable.end());
-        CHECK(reachable.find(5) != reachable.end());
-        CHECK(reachable.find(6) == reachable.end());
-        CHECK(reachable.find(7) != reachable.end());
-        CHECK(reachable.find(8) == reachable.end());
-        CHECK(reachable.find(9) == reachable.end());
-        CHECK(reachable.find(10) == reachable.end());
+        StateSet reachable{ aut.get_reachable_states() };
+        CHECK(!reachable.contains(0));
+        CHECK(reachable.contains(1));
+        CHECK(!reachable.contains(2));
+        CHECK(reachable.contains(3));
+        CHECK(!reachable.contains(4));
+        CHECK(reachable.contains(5));
+        CHECK(!reachable.contains(6));
+        CHECK(reachable.contains(7));
+        CHECK(!reachable.contains(8));
+        CHECK(!reachable.contains(9));
+        CHECK(!reachable.contains(10));
 
         aut.initial.erase(1);
         aut.initial.erase(3);
-
         reachable = aut.get_reachable_states();
         CHECK(reachable.empty());
     }
