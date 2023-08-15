@@ -160,7 +160,11 @@ Processes results of benchmarks from pycobench''')
                         help='output in HTML')
     parser.add_argument('--tick', action="store_true",
                         help='tick finished benchmarks (usable for filtering)')
+    parser.add_argument('--param-no', type=int, default=1,
+                        help='tells pyco_proc how many parameters original file had')
     args = parser.parse_args()
+
+    PARAMS_NUM = args.param_no
 
     if args.results:
         fd = open(args.results, "r")

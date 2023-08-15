@@ -37,7 +37,7 @@ test-performance:
 	./tests-performance/pycobench -c ./tests-performance/jobs/corr-single-param-jobs.yaml < ./tests-performance/inputs/single-automata.input
 	./tests-performance/pyco_proc --text pycobench.tasks
 	./tests-performance/pycobench -c ./tests-performance/jobs/corr-double-param-jobs.yaml < ./tests-performance/inputs/double-automata.input
-	./tests-performance/pyco_proc --text pycobench.tasks
+	./tests-performance/pyco_proc --text --param-no 2 pycobench.tasks
 	rm pycobench.tasks
 
 check:
