@@ -77,6 +77,28 @@ TEST_CASE("Mata::Nfa::Delta::state_post()") {
     }
 }
 
+TEST_CASE("Mata::Nfa::Delta::contains()") {
+    Nfa nfa;
+    CHECK(!nfa.delta.contains(0, 1, 0));
+    CHECK(!nfa.delta.contains(Transition{ 0, 1, 0 }));
+    nfa.delta.add(0, 1, 0);
+    CHECK(nfa.delta.contains(0, 1, 0));
+    CHECK(nfa.delta.contains(Transition{ 0, 1, 0 }));
+}
+
+TEST_CASE("Mata::Nfa::Delta::remove()") {
+    Nfa nfa;
+
+    SECTION("Simple remove") {
+        nfa.delta.add(0, 1, 0);
+        CHECK_NOTHROW(nfa.delta.remove(3, 5, 6));
+        CHECK_NOTHROW(nfa.delta.remove(0, 1, 0));
+        CHECK(nfa.delta.empty());
+        nfa.delta.add(10, 1, 0);
+        CHECK_THROWS_AS(nfa.delta.remove(3, 5, 6), std::invalid_argument);
+    }
+}
+
 TEST_CASE("Mata::Nfa::Delta::mutable_post()") {
     Nfa nfa;
 
