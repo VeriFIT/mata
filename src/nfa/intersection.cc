@@ -56,7 +56,7 @@ void create_product_state_and_trans(
             std::unordered_map<std::pair<State,State>, State>& product_map,
             const Nfa& lhs,
             const Nfa& rhs,
-            std::unordered_set<std::pair<State,State>>& pairs_to_process,
+            std::deque<std::pair<State,State>>& pairs_to_process,
             const State lhs_state_to,
             const State rhs_state_to,
             SymbolPost& intersect_transitions
@@ -66,7 +66,7 @@ void create_product_state_and_trans(
     if (product_map.find(intersect_state_pair_to) == product_map.end()) {
         intersect_state_to = product.add_state();
         product_map[intersect_state_pair_to] = intersect_state_to;
-        pairs_to_process.insert(intersect_state_pair_to);
+        pairs_to_process.push_back(intersect_state_pair_to);
 
         if (lhs.final[lhs_state_to] && rhs.final[rhs_state_to]) {
             product.final.insert(intersect_state_to);
@@ -97,7 +97,7 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
     // Product map for the generated intersection mapping original state pairs to new product states.
     std::unordered_map<std::pair<State,State>, State> product_map{};
     std::pair<State,State> pair_to_process{}; // State pair of original states currently being processed.
-    std::unordered_set<std::pair<State,State>> pairs_to_process{}; // Set of state pairs of original states to process.
+    std::deque<std::pair<State,State>> pairs_to_process{}; // Set of state pairs of original states to process.
 
     // Initialize pairs to process with initial state pairs.
     for (const State lhs_initial_state : lhs.initial) {
@@ -107,7 +107,7 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
             const State new_intersection_state = product.add_state();
 
             product_map[this_and_other_initial_state_pair] = new_intersection_state;
-            pairs_to_process.insert(this_and_other_initial_state_pair);
+            pairs_to_process.push_back(this_and_other_initial_state_pair);
 
             product.initial.insert(new_intersection_state);
             if (lhs.final[lhs_initial_state] && rhs.final[rhs_initial_state]) {
@@ -117,8 +117,8 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
     }
 
     while (!pairs_to_process.empty()) {
-        pair_to_process = *pairs_to_process.cbegin();
-        pairs_to_process.erase(pair_to_process);
+        pair_to_process = pairs_to_process.back();
+        pairs_to_process.pop_back();
         // Compute classic product for current state pair.
 
         Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
