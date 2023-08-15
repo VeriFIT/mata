@@ -43,9 +43,3 @@
 @CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut0.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut1.mata
 @CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut0.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut2.mata
 @CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut0.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-param-medium-hard/aut3.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut21.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut26.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut21.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut27.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut21.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut35.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut21.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easiest/aut51.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easy/aut26.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easy/aut40.mata
-@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easy/aut26.mata;@CMAKE_CURRENT_SOURCE_DIR@/automata/b-regex-easy/aut61.mata
