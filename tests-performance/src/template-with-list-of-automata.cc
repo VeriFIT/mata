@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
         std::cout << "Processing " << aut_file << std::endl;
 
-        auto start = std::chrono::system_clock::now();
+        TIME_BEGIN(tmp);
 
         /**************************************************
          *  HERE COMES YOUR CODE THAT YOU WANT TO PROFILE *
@@ -135,9 +135,7 @@ int main(int argc, char *argv[])
          *   - e.g. complement(aut, alph);                *
          **************************************************/
 
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<double> elapsed = end - start;
-        std::cout << "time: " << elapsed.count() << "\n";
+        TIME_END(tmp);
     }
 
     return EXIT_SUCCESS;
