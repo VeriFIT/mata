@@ -311,12 +311,12 @@ public:
      * targets.
      *
      * IMPORTANT: In order to work properly, the lambda function needs to be
-     * monotonic.
+     * monotonic, that is, the order of states in targets cannot change.
      *
-     * @param lambda Monotonic lambda function mapping states to different states
+     * @param target_renumberer Monotonic lambda function mapping states to different states.
      * @return std::vector<Post> Copied posts.
      */
-    std::vector<StatePost> transform(const std::function<State(State)>& lambda) const;
+    std::vector<StatePost> renumber_targets(const std::function<State(State)>& target_renumberer) const;
 
     /**
      * @brief Add transitions to multiple destinations

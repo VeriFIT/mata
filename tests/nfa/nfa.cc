@@ -153,7 +153,7 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
         auto upd_fnc = [&](State st) {
             return st + 5;
         };
-        std::vector<StatePost> state_posts = a.delta.transform(upd_fnc);
+        std::vector<StatePost> state_posts = a.delta.renumber_targets(upd_fnc);
         a.delta.append(state_posts);
 
         REQUIRE(a.delta.contains(4, 'a', 6));

@@ -276,23 +276,23 @@ bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::trans
     }
 }
 
-std::vector<StatePost> Delta::transform(const std::function<State(State)>& lambda) const {
-    std::vector<StatePost> cp_post_vector;
-    cp_post_vector.reserve(num_of_states());
-    for(const StatePost& act_post: this->state_posts_) {
-        StatePost cp_post;
-        cp_post.reserve(act_post.size());
-        for(const SymbolPost& mv : act_post) {
-            StateSet cp_dest;
-            cp_dest.reserve(mv.size());
-            for(const State& state : mv.targets) {
-                cp_dest.push_back(std::move(lambda(state)));
+std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>& target_renumberer) const {
+    std::vector<StatePost> copied_state_posts;
+    copied_state_posts.reserve(num_of_states());
+    for(const StatePost& state_post: state_posts_) {
+        StatePost copied_state_post;
+        copied_state_post.reserve(state_post.size());
+        for(const SymbolPost& symbol_post: state_post) {
+            StateSet copied_targets;
+            copied_targets.reserve(symbol_post.size());
+            for(const State& state: symbol_post.targets) {
+                copied_targets.push_back(std::move(target_renumberer(state)));
             }
-            cp_post.push_back(std::move(SymbolPost(mv.symbol, cp_dest)));
+            copied_state_post.push_back(std::move(SymbolPost(symbol_post.symbol, copied_targets)));
         }
-        cp_post_vector.emplace_back(cp_post);
+        copied_state_posts.emplace_back(copied_state_post);
     }
-    return cp_post_vector;
+    return copied_state_posts;
 }
 
 StatePost& Delta::mutable_state_post(State q) {
