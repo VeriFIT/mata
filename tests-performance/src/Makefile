@@ -27,8 +27,8 @@ BUILD_DIR := $(shell \
 	fi \
 )
 
-INCLUDE=-I$(INCLUDE_DIR) -I$(THIRD_PARTY_DIR)/simlib/include -I$(THIRD_PARTY_DIR)/re2/include -I $(THIRD_PARTY_DIR) -I $(THIRD_PARTY_DIR)/cudd/cudd
-LIBS_ADD=-L$(BUILD_DIR)/src -L$(BUILD_DIR)/3rdparty/re2 -L$(BUILD_DIR)/3rdparty/simlib -L$(BUILD_DIR)/3rdparty/cudd
+INCLUDE=-I$(INCLUDE_DIR) -I$(THIRD_PARTY_DIR)/simlib/include -I$(THIRD_PARTY_DIR)/re2/include -I $(THIRD_PARTY_DIR) -I $(THIRD_PARTY_DIR)/cudd/include
+LIBS_ADD=-L../../src -L$(BUILD_DIR)/3rdparty/re2 -L$(BUILD_DIR)/3rdparty/simlib -L$(BUILD_DIR)/3rdparty/cudd
 LIBS=-lmata -lsimlib -lre2 -lcudd
 
 
