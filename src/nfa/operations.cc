@@ -767,7 +767,7 @@ Nfa Mata::Nfa::determinize(
         return result;
 
     using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
-    Mata::Util::SynchronizedExistentialIterator<Iterator> synchronized_iterator;
+    SynchronizedExistentialIteratorSymbolPost synchronized_iterator;
 
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
@@ -790,10 +790,7 @@ Nfa Mata::Nfa::determinize(
             // extract post from the sychronized_iterator iterator
             std::vector<Iterator> moves = synchronized_iterator.get_current();
             Symbol currentSymbol = (*moves.begin())->symbol;
-            StateSet T;
-            for (auto m: moves){
-                T = T.Union(m->targets);
-            }
+            StateSet T = synchronized_iterator.unify_targets();
 
             const auto existingTitr = subset_map->find(T);
             State Tid;

@@ -100,8 +100,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     }
 
     //For synchronised iteration over the set of states
-    using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
-    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
+    SynchronizedExistentialIteratorSymbolPost sync_iterator;
 
     while (!worklist.empty()) {
         // get a next product state
@@ -120,22 +119,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         for (const auto& smaller_move : smaller.delta[smaller_state]) {
             const Symbol& smaller_symbol = smaller_move.symbol;
 
-            do {
-                if (sync_iterator.is_synchronized()) {
-                    auto current_min = sync_iterator.get_current_minimum();
-                    if (*current_min >= smaller_move) {
-                        break;
-                    }
-                }
-            } while (sync_iterator.advance());
-
-            // TODO: this is ugly, the interface of the sync iterator should be redesigned so that this looks ok
             StateSet bigger_succ = {};
-            if(sync_iterator.is_synchronized() && *sync_iterator.get_current_minimum() == smaller_move) {
-                std::vector<Iterator> bigger_moves = sync_iterator.get_current();
-                for (auto m: bigger_moves) {
-                    bigger_succ = bigger_succ.Union(m->targets);
-                }
+            if(sync_iterator.synchronize_with(smaller_move)) {
+                bigger_succ = sync_iterator.unify_targets();
             }
 
             for (const State& smaller_succ : smaller_move.targets) {
