@@ -34,10 +34,10 @@ test-coverage:
 	gcovr -p -e "3rdparty/*" -j 6 --exclude-unreachable-branches --exclude-throw-branches build/src build/tests
 
 test-performance:
-	./tests-performance/pycobench -c ./tests-performance/jobs/corr-single-param-jobs.yaml < ./tests-performance/inputs/single-automata.input
-	./tests-performance/pyco_proc --text pycobench.tasks
-	./tests-performance/pycobench -c ./tests-performance/jobs/corr-double-param-jobs.yaml < ./tests-performance/inputs/double-automata.input
-	./tests-performance/pyco_proc --text --param-no 2 pycobench.tasks
+	./tests-integration/pycobench -c ./tests-performance/jobs/corr-single-param-jobs.yaml < ./tests-performance/inputs/single-automata.input
+	./tests-integration/pyco_proc --text pycobench.tasks
+	./tests-integration/pycobench -c ./tests-performance/jobs/corr-double-param-jobs.yaml < ./tests-performance/inputs/double-automata.input
+	./tests-integration/pyco_proc --text --param-no 2 pycobench.tasks
 	rm pycobench.tasks
 
 check:

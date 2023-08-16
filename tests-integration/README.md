@@ -22,7 +22,7 @@
 
 ## How to start with the infrastructure `libmata`
 
-We first explain, how to compile sources in the `test-performance` infrastructure. We will explain, how to profile or test performance in separate sections.
+We first explain, how to compile sources in the `tests-integration` infrastructure. We will explain, how to profile or test performance in separate sections.
 
 1. We recommend you to make a copy of one of the `src/templates/template*.cc` files which contains basic boilerplate code, 
    (e.g. from `tests-performance` directory run `cp src/templates/template.cc src/<YOUR_FILENAME>.cc`).
@@ -31,7 +31,7 @@ We first explain, how to compile sources in the `test-performance` infrastructur
    and fill it with code you want to profile, measure or test. 
    The measurement is performed using our timing macros (namely `TIME_BEGIN` and `TIME_END`).
  *  If you want to use our timing macros (`TIME_BEGIN`, `TIME_END`, `TIME_STATEMENT`, or `TIME_BLOCK`) include 
-3. Build the sources using `make release` or `make debug` from the project root directory or build it yourself using `cmake` from `test-performance` directory.
+3. Build the sources using `make release` or `make debug` from the project root directory or build it yourself using `cmake` from `tests-integration` directory.
  
 ### How to start profiling `libmata`
 
@@ -43,7 +43,7 @@ In order to profile the code you just built by the above steps:
 
 ### How to test performance
 
-We assume, this is executed from `test-performance` directory.
+We assume, this is executed from `tests-integration` directory.
 In order to test or measure performance of the code you just built by the above steps:
 
 4. Add your new binaries to one of the yaml files in `jobs/*.yaml` as follows:
