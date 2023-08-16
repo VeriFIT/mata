@@ -14,7 +14,8 @@ namespace Mata::PerformanceTesting {
 #define TIME_PRINT(timer) std::cout << #timer ": " << timer##_elapsed.count() << "\n"
 
 /*
- * Use to create initial timer with user-defined prefxi `timer`
+ * Use to create initial timer with user-defined prefix `timer`
+
  */
 #define TIME_BEGIN(timer) auto timer##_start = std::chrono::system_clock::now()
 
