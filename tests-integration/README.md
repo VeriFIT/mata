@@ -25,7 +25,7 @@
 We first explain, how to compile sources in the `tests-integration` infrastructure. We will explain, how to profile or test performance in separate sections.
 
 1. We recommend you to make a copy of one of the `src/templates/template*.cc` files which contains basic boilerplate code, 
-   (e.g. from `tests-performance` directory run `cp src/templates/template.cc src/<YOUR_FILENAME>.cc`).
+   (e.g. from `tests-integration` directory run `cp src/templates/template.cc src/<YOUR_FILENAME>.cc`).
  * Note, that your `<YOUR_FILENAME>.cc` source code has to be in `src/` directory; this will ensure it will be compiled using the cmake infrastructure. 
 2. If you are using our template, locate the comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` 
    and fill it with code you want to profile, measure or test. 
