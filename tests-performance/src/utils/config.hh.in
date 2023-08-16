@@ -20,7 +20,8 @@ namespace Mata::PerformanceTesting {
 #define TIME_BEGIN(timer) auto timer##_start = std::chrono::system_clock::now()
 
 /*
- * Use to create final timer with user-defined prefxi `timer`
+ * Use to create final timer with user-defined prefix `timer`
+
  * and print time elapsed between initial and final timers.
  */
 #define TIME_END(timer) do { \
