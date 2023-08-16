@@ -1,4 +1,4 @@
-#include "../utils/config.hh"
+#include "utils/utils.hh"
 #include "mata/nfa/nfa.hh"
 #include <iostream>
 #include <iomanip>
@@ -7,7 +7,7 @@
 
 using namespace Mata::Nfa;
 
-int main(int argc, char *argv[]) {
+int main() {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 

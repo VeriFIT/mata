@@ -30,6 +30,7 @@ We first explain, how to compile sources in the `test-performance` infrastructur
 2. If you are using our template, locate the comment `HERE COMES YOUR CODE THAT YOU WANT TO PROFILE` 
    and fill it with code you want to profile, measure or test. 
    The measurement is performed using our timing macros (namely `TIME_BEGIN` and `TIME_END`).
+ *  If you want to use our timing macros (`TIME_BEGIN`, `TIME_END`, `TIME_STATEMENT`, or `TIME_BLOCK`) include 
 3. Build the sources using `make release` or `make debug` from the project root directory or build it yourself using `cmake` from `test-performance` directory.
  
 ### How to start profiling `libmata`

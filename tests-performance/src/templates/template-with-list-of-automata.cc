@@ -3,8 +3,8 @@
  *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
  */
 
-#include "../utils/utils.hh"
-#include "../utils/config.hh"
+#include "utils/utils.hh"
+#include "utils/config.hh"
 
 #include "mata/nfa/nfa.hh"
 
