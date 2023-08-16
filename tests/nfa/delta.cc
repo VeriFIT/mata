@@ -234,7 +234,7 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         CHECK(iterated_transitions == expected_transitions);
 
         iterated_transitions.clear();
-        for (const Transition& transition: nfa.delta.transitions()) { iterated_transitions.push_back(transition); }
+        for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
         CHECK(iterated_transitions == expected_transitions);
     }
 }

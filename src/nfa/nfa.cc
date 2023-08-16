@@ -394,7 +394,7 @@ void Nfa::print_to_mata(std::ostream &output) const {
         output << std::endl;
     }
 
-    for (Transition trans : delta.transitions()) {
+    for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
     }
 }
@@ -483,7 +483,7 @@ Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
 
     const_iterator result;
 
-    if (nfa->delta.transitions_begin() == nfa->delta.transitions_end()) {
+    if (nfa->delta.transitions.begin() == nfa->delta.transitions.end()) {
         result.is_end = true;
         return result;
     }
@@ -546,7 +546,7 @@ Nfa::const_iterator& Nfa::const_iterator::operator++()
 
     // out of transition list
     ++this->trIt;
-    assert(this->nfa->delta.transitions_begin() != this->nfa->delta.transitions_end());
+    assert(this->nfa->delta.transitions.begin() != this->nfa->delta.transitions.end());
 
     while (this->trIt < this->nfa->delta.num_of_states() &&
            this->nfa->delta.state_post(this->trIt).empty())

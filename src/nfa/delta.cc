@@ -67,6 +67,11 @@ size_t Delta::size() const {
     return size;
 }
 
+Delta& Delta::operator=(const Delta& other) {
+    this->state_posts_ = other.state_posts_;
+    return *this;
+}
+
 void Delta::add(State source, Symbol symbol, State target) {
     const State max_state{ std::max(source, target) };
     if (max_state >= state_posts_.size()) {

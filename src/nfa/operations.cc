@@ -42,7 +42,7 @@ namespace {
         const size_t state_num = aut.size();
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
-        for (const auto& transition : aut.delta.transitions()) {
+        for (const Transition& transition : aut.delta.transitions) {
             LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
             if (transition.symbol > maxSymbol) {
                 maxSymbol = transition.symbol;

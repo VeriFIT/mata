@@ -234,14 +234,14 @@ public:
  *  the state number.
  */
 class Delta {
-private:
-    std::vector<StatePost> state_posts_;
-
 public:
     inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
-    Delta() : state_posts_() {}
-    explicit Delta(size_t n) : state_posts_(n) {}
+    Delta(): state_posts_{} {}
+    Delta(const Delta& other): state_posts_{ other.state_posts_ } {}
+    explicit Delta(size_t n): state_posts_{ n } {}
+
+    Delta& operator=(const Delta& other);
 
     void reserve(size_t n) {
         state_posts_.reserve(n);
@@ -366,6 +366,12 @@ public:
      */
     void add(const State state_from, const Symbol symbol, const StateSet& states);
 
+    using const_iterator = std::vector<StatePost>::const_iterator;
+    const_iterator cbegin() const { return state_posts_.cbegin(); }
+    const_iterator cend() const { return state_posts_.cend(); }
+    const_iterator begin() const { return state_posts_.begin(); }
+    const_iterator end() const { return state_posts_.end(); }
+
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
@@ -405,29 +411,39 @@ public:
         bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
     }; // class transitions_const_iterator.
 
-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(state_posts_); }
-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(state_posts_, true); }
-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+    /**
+     * Iterator over transitions represented as 'Transition' instances.
+     */
+    class Transitions {
+    private:
+        const Delta& delta_;
+    public:
+        explicit Transitions(const Delta& delta): delta_{ delta } {}
+        transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
+        transitions_const_iterator end() const { return delta_.transitions_cend(); }
 
-    struct Transitions {
-        transitions_const_iterator begin_;
-        transitions_const_iterator end_;
-        transitions_const_iterator begin() const { return begin_; }
-        transitions_const_iterator end() const { return end_; }
-    };
+        /**
+         * @brief Get a number of transitions in delta.
+         *
+         * The operation has a linear time complexity to the number of 'SymbolPost's in the delta.
+         */
+        size_t count() const { return delta_.size(); }
+
+        /**
+         * Whether there are no transitions in the delta.
+         */
+        bool empty() const { return count() == 0; }
+    }; // class Transitions.
 
     /**
-     * Iterate over transitions represented as 'Trans' instances.
-     * @return Iterator over transitions.
+     * Iterator over transitions represented as 'Transition' instances.
      */
-    Transitions transitions() const { return { .begin_ = transitions_begin(), .end_ = transitions_end() }; }
+    Transitions transitions() { return Transitions{ *this }; }
 
-    using const_iterator = std::vector<StatePost>::const_iterator;
-    const_iterator cbegin() const { return state_posts_.cbegin(); }
-    const_iterator cend() const { return state_posts_.cend(); }
-    const_iterator begin() const { return state_posts_.begin(); }
-    const_iterator end() const { return state_posts_.end(); }
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
+    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+    transitions_const_iterator transitions_end() const { return transitions_cend(); }
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
@@ -444,6 +460,8 @@ public:
      * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
      */
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+private:
+    std::vector<StatePost> state_posts_;
 }; // struct Delta.
 
 } // namespace mata::nfa.

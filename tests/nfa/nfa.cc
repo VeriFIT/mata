@@ -123,7 +123,8 @@ TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
         size_t transitions_cnt{ 0 };
         std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
         std::vector<Transition> iterated_transitions{};
-        for (auto trans_it{ a.delta.transitions_begin()}; trans_it != a.delta.transitions_end(); ++trans_it) {
+        for (Delta::transitions_const_iterator trans_it{ a.delta.transitions.begin()}; 
+             trans_it != a.delta.transitions.end(); ++trans_it) {
             iterated_transitions.push_back(*trans_it);
             ++transitions_cnt;
         }
@@ -132,7 +133,7 @@ TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
 
         transitions_cnt = 0;
         iterated_transitions.clear();
-        for (const Transition& trans: a.delta.transitions()) {
+        for (const Transition& trans: a.delta.transitions) {
             iterated_transitions.push_back(trans);
             ++transitions_cnt;
         }
@@ -181,25 +182,25 @@ TEST_CASE("mata::nfa::Nfa iteration")
     {
         aut.delta.add('q', 'a', 'r');
         aut.delta.add('q', 'b', 'r');
-        auto it = aut.delta.transitions_begin();
-        auto jt = aut.delta.transitions_begin();
+        auto it = aut.delta.transitions.begin();
+        auto jt = aut.delta.transitions.begin();
         REQUIRE(it == jt);
         ++it;
         REQUIRE(it != jt);
-        REQUIRE((it != aut.delta.transitions_begin() && it != aut.delta.transitions_end()));
-        REQUIRE(jt == aut.delta.transitions_begin());
+        REQUIRE((it != aut.delta.transitions.begin() && it != aut.delta.transitions.end()));
+        REQUIRE(jt == aut.delta.transitions.begin());
 
         ++jt;
         REQUIRE(it == jt);
-        REQUIRE((jt != aut.delta.transitions_begin() && jt != aut.delta.transitions_end()));
+        REQUIRE((jt != aut.delta.transitions.begin() && jt != aut.delta.transitions.end()));
 
-        jt = aut.delta.transitions_end();
+        jt = aut.delta.transitions.end();
         REQUIRE(it != jt);
-        REQUIRE((jt != aut.delta.transitions_begin() && jt == aut.delta.transitions_end()));
+        REQUIRE((jt != aut.delta.transitions.begin() && jt == aut.delta.transitions.end()));
 
-        it = aut.delta.transitions_end();
+        it = aut.delta.transitions.end();
         REQUIRE(it == jt);
-        REQUIRE((it != aut.delta.transitions_begin() && it == aut.delta.transitions_end()));
+        REQUIRE((it != aut.delta.transitions.begin() && it == aut.delta.transitions.end()));
     }
 } // }}}
 
