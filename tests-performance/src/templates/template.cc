@@ -1,4 +1,4 @@
-#include "utils/config.hh"
+#include "../utils/config.hh"
 #include "mata/nfa/nfa.hh"
 #include <iostream>
 #include <iomanip>
