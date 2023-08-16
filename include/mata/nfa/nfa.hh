@@ -238,13 +238,6 @@ public:
     std::vector<Transition> get_trans_as_sequence() const;
 
     /**
-     * Get transitions from @p state_from as a sequence of @c Trans.
-     * @param state_from[in] Source state_from of transitions to get.
-     * @return Sequence of transitions as @c Trans from @p state_from.
-     */
-    std::vector<Transition> get_trans_from_as_sequence(State state_from) const;
-
-    /**
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.

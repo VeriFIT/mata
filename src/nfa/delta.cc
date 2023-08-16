@@ -72,6 +72,12 @@ Delta& Delta::operator=(const Delta& other) {
     return *this;
 }
 
+Delta::TransitionsView Delta::Transitions::from(const State source) const {
+    transitions_const_iterator begin_it{ delta_, source };
+    transitions_const_iterator end_it{ delta_, source + 1 };
+    return TransitionsView{ begin_it, end_it };
+}
+
 void Delta::add(State source, Symbol symbol, State target) {
     const State max_state{ std::max(source, target) };
     if (max_state >= state_posts_.size()) {
@@ -188,17 +194,17 @@ bool Delta::empty() const
     return this->transitions_begin() == this->transitions_end();
 }
 
-Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise)
-    : post_(post_p), current_state_(0), is_end_{ ise } {
-    const size_t post_size = post_.size();
+Delta::transitions_const_iterator::transitions_const_iterator(const Delta& delta, bool is_end)
+    : delta_{ &delta }, current_state_{ 0 }, is_end_{ is_end } {
+    const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {
-        if (!post_[i].empty()) {
+        if (!(*delta_)[i].empty()) {
             current_state_ = i;
-            post_iterator_ = post_[i].begin();
-            targets_position_ = post_iterator_->targets.begin();
+            state_post_it_ = (*delta_)[i].begin();
+            symbol_post_it_ = state_post_it_->targets.begin();
             transition_.source = current_state_;
-            transition_.symbol = post_iterator_->symbol;
-            transition_.target = *targets_position_;
+            transition_.symbol = state_post_it_->symbol;
+            transition_.target = *symbol_post_it_;
             return;
         }
     }
@@ -208,45 +214,59 @@ Delta::transitions_const_iterator::transitions_const_iterator(const std::vector<
 }
 
 Delta::transitions_const_iterator::transitions_const_iterator(
-    const std::vector<StatePost>& post_p, size_t as, StatePost::const_iterator pi, StateSet::const_iterator ti,
-    bool ise)
-    : post_(post_p), current_state_(as), post_iterator_(pi), targets_position_(ti), is_end_(ise) {
-    transition_.source = current_state_;
-    transition_.symbol = post_iterator_->symbol;
-    transition_.target = *targets_position_;
-};
+        const Delta& delta, State current_state, bool is_end)
+    : delta_{ &delta }, current_state_{ current_state }, is_end_{ is_end } {
+    const size_t post_size = delta_->num_of_states();
+    for (State source{ current_state_ }; source < post_size; ++source) {
+        const StatePost& state_post{ delta_->state_post(source) };
+        if (!state_post.empty()) {
+            current_state_ = source;
+            state_post_it_ = state_post.begin();
+            symbol_post_it_ = state_post_it_->targets.begin();
+            transition_.source = current_state_;
+            transition_.symbol = state_post_it_->symbol;
+            transition_.target = *symbol_post_it_;
+            return;
+        }
+    }
+
+    // no transition found, an empty post
+    is_end_ = true;
+}
 
 Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
-    assert(post_.begin() != post_.end());
+    assert(delta_->begin() != delta_->end());
 
-    ++targets_position_;
-    if (targets_position_ != post_iterator_->targets.end()) {
-        transition_.target = *targets_position_;
+    ++symbol_post_it_;
+    if (symbol_post_it_ != state_post_it_->targets.end()) {
+        transition_.target = *symbol_post_it_;
         return *this;
     }
 
-    ++post_iterator_;
-    if (post_iterator_ != post_[current_state_].cend()) {
-        targets_position_ = post_iterator_->targets.begin();
-        transition_.symbol = post_iterator_->symbol;
-        transition_.target = *targets_position_;
+    ++state_post_it_;
+    if (state_post_it_ != (*delta_)[current_state_].cend()) {
+        symbol_post_it_ = state_post_it_->targets.begin();
+        transition_.symbol = state_post_it_->symbol;
+        transition_.target = *symbol_post_it_;
         return *this;
     }
 
-    ++current_state_;
-    while (current_state_ < post_.size() && post_[current_state_].empty()) // skip empty posts
-        current_state_++;
-
-    if (current_state_ >= post_.size())
+    const size_t state_posts_size{ delta_->num_of_states() };
+    do { // Skip empty posts.
+        ++current_state_;
+    } while (current_state_ < state_posts_size && (*delta_)[current_state_].empty());
+    if (current_state_ >= state_posts_size) {
         is_end_ = true;
-    else {
-        post_iterator_ = post_[current_state_].begin();
-        targets_position_ = post_iterator_->targets.begin();
+        return *this;
     }
+
+    const StatePost& state_post{ (*delta_)[current_state_] };
+    state_post_it_ = state_post.begin();
+    symbol_post_it_ = state_post_it_->targets.begin();
 
     transition_.source = current_state_;
-    transition_.symbol = post_iterator_->symbol;
-    transition_.target = *targets_position_;
+    transition_.symbol = state_post_it_->symbol;
+    transition_.target = *symbol_post_it_;
 
     return *this;
 }
@@ -257,27 +277,14 @@ const Delta::transitions_const_iterator Delta::transitions_const_iterator::opera
     return tmp;
 }
 
-Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(const Delta::transitions_const_iterator& x) {
-    // FIXME: this->post is never updated, because it is a const reference to std::vector which does not have assignment
-    //  operator defined.
-    this->post_iterator_ = x.post_iterator_;
-    this->targets_position_ = x.targets_position_;
-    this->current_state_ = x.current_state_;
-    this->is_end_ = x.is_end_;
-    transition_.source = x.transition_.source;
-    transition_.symbol = x.transition_.symbol;
-    transition_.target = x.transition_.target;
-    return *this;
-}
-
-bool mata::nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
     if (is_end_ && other.is_end_) {
         return true;
     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
         return false;
     } else {
-        return current_state_ == other.current_state_ && post_iterator_ == other.post_iterator_
-               && targets_position_ == other.targets_position_;
+        return current_state_ == other.current_state_ && state_post_it_ == other.state_post_it_
+               && symbol_post_it_ == other.symbol_post_it_;
     }
 }
 

@@ -417,21 +417,6 @@ std::vector<Transition> Nfa::get_trans_as_sequence() const
     return trans_sequence;
 }
 
-std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
-{
-    std::vector<Transition> trans_sequence{};
-
-    for (const auto& transition_from_state: delta[state_from])
-    {
-        for (State state_to: transition_from_state.targets)
-        {
-            trans_sequence.emplace_back(state_from, transition_from_state.symbol, state_to);
-        }
-    }
-
-    return trans_sequence;
-}
-
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     Nfa digraph{size(), StateSet(initial), StateSet(final) };
     // Add directed transitions for digraph.

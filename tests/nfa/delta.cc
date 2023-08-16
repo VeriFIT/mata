@@ -238,3 +238,22 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         CHECK(iterated_transitions == expected_transitions);
     }
 }
+TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
+    Nfa nfa{};
+    nfa.initial.insert(0);
+    nfa.final.insert(5);
+    nfa.delta.add(0, 'a', 1);
+    nfa.delta.add(1, 'b', 2);
+    nfa.delta.add(1, 'c', 2);
+    nfa.delta.add(1, 'd', 2);
+    nfa.delta.add(2, 'e', 3);
+    nfa.delta.add(3, 'e', 4);
+    nfa.delta.add(4, 'f', 5);
+    Delta::TransitionsView transitions_from_source{ nfa.delta.transitions.from(0) };
+    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } == std::vector<Transition>{ { 0, 'a', 1 }});
+    transitions_from_source = nfa.delta.transitions.from(1);
+    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } ==
+        std::vector<Transition>{ { 1, 'b', 2 }, { 1, 'c', 2 }, { 1, 'd', 2 } });
+    transitions_from_source = nfa.delta.transitions.from(12);
+    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
+}

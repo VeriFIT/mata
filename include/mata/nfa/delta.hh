@@ -375,13 +375,13 @@ public:
     /**
      * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
      */
-    struct transitions_const_iterator {
+    class transitions_const_iterator {
     private:
-        const std::vector<StatePost>& post_;
+        const Delta* delta_ = nullptr;
         size_t current_state_;
-        StatePost::const_iterator post_iterator_{};
-        StateSet::const_iterator targets_position_{};
-        bool is_end_;
+        StatePost::const_iterator state_post_it_{};
+        StateSet::const_iterator symbol_post_it_{};
+        bool is_end_{ false };
         Transition transition_{};
 
     public:
@@ -391,12 +391,12 @@ public:
         using pointer = Transition*;
         using reference = Transition&;
 
-        explicit transitions_const_iterator(const std::vector<StatePost>& post_p, bool ise = false);
+        transitions_const_iterator() = default;
+        explicit transitions_const_iterator(const Delta& delta, bool is_end = false);
+        transitions_const_iterator(const Delta& delta, State current_state, bool is_end = false);
 
-        transitions_const_iterator(const std::vector<StatePost>& post_p, size_t as,
-                                   StatePost::const_iterator pi, StateSet::const_iterator ti, bool ise = false);
-
-        transitions_const_iterator(const transitions_const_iterator& other) = default;
+        transitions_const_iterator(const transitions_const_iterator& other) noexcept = default;
+        transitions_const_iterator(transitions_const_iterator&&) = default;
 
         const Transition& operator*() const { return transition_; }
 
@@ -405,11 +405,29 @@ public:
         // Postfix increment
         const transitions_const_iterator operator++(int);
 
-        transitions_const_iterator& operator=(const transitions_const_iterator& x);
+        transitions_const_iterator& operator=(const transitions_const_iterator& other) noexcept = default;
+        transitions_const_iterator& operator=(transitions_const_iterator&&) = default;
 
         bool operator==(const transitions_const_iterator& other) const;
         bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
     }; // class transitions_const_iterator.
+
+    class TransitionsView {
+    private:
+        transitions_const_iterator begin_;
+        transitions_const_iterator end_;
+    public:
+        TransitionsView() = default;
+        TransitionsView(const TransitionsView&) = default;
+        TransitionsView(TransitionsView&&) = default;
+        TransitionsView(transitions_const_iterator begin, transitions_const_iterator end): begin_{ begin }, end_{ end } {}
+        TransitionsView& operator=(const TransitionsView&) = default;
+        TransitionsView& operator=(TransitionsView&&) = default;
+        transitions_const_iterator begin() const { return begin_; }
+        transitions_const_iterator end() const { return end_; }
+        size_t count() const { return std::distance( begin(), end() ); }
+        size_t empty() const { return count() == 0; }
+    };
 
     /**
      * Iterator over transitions represented as 'Transition' instances.
@@ -421,6 +439,19 @@ public:
         explicit Transitions(const Delta& delta): delta_{ delta } {}
         transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
         transitions_const_iterator end() const { return delta_.transitions_cend(); }
+
+        /**
+         * @brief Get a number of transitions in delta.
+         *
+         * The operation has a linear time complexity to the number of transitions in the delta.
+         */
+        size_t count() const { return std::distance(begin(), end()); }
+
+        size_t empty() const { return count() == 0; }
+
+        // TODO: Is 'from_source()' than 'from()'?
+        TransitionsView from(State source) const;
+    };
 
         /**
          * @brief Get a number of transitions in delta.
@@ -462,6 +493,10 @@ public:
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
 private:
     std::vector<StatePost> state_posts_;
+    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
+    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
+    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
+    transitions_const_iterator transitions_end() const { return transitions_cend(); }
 }; // struct Delta.
 
 } // namespace mata::nfa.
