@@ -37,7 +37,7 @@ test-performance:
 	./tests-integration/pycobench -c ./tests-integration/jobs/corr-single-param-jobs.yaml < ./tests-integration/inputs/single-automata.input -o ./tests-integration/corr-single-param-jobs.out
 	./tests-integration/pyco_proc --csv ./tests-integration/corr-single-param-jobs.out > ./tests-integration/corr-single-param-jobs.csv
 	./tests-integration/pycobench -c ./tests-integration/jobs/corr-double-param-jobs.yaml < ./tests-integration/inputs/double-automata.input -o ./tests-integration/corr-double-param-jobs.out
-	./tests-integration/pyco_proc --csv --param-no 2 corr-double-param-jobs.out > ./tests-integration/corr-double-param-jobs.csv
+	./tests-integration/pyco_proc --csv --param-no 2 ./tests-integration/corr-double-param-jobs.out > ./tests-integration/corr-double-param-jobs.csv
 
 check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
