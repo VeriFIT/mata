@@ -73,7 +73,7 @@ def proc_res(fd, args):
     list_ptrns = list()
     for bench in results:
         all_engs = True
-        ls = list(bench)
+        ls = [",".join(bench)]
         for eng in engines:
             out_len = len(engines_outs[eng]) + 1    # +1 = time
             if eng in results[bench]:
