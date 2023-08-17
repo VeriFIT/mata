@@ -462,107 +462,6 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
-Nfa::const_iterator Nfa::const_iterator::for_begin(const Nfa* nfa)
-{ // {{{
-    assert(nullptr != nfa);
-
-    const_iterator result;
-
-    if (nfa->delta.transitions.begin() == nfa->delta.transitions.end()) {
-        result.is_end = true;
-        return result;
-    }
-
-    result.nfa = nfa;
-
-    for (size_t trIt{ 0 }; trIt < nfa->delta.num_of_states(); ++trIt) {
-        auto& moves{ nfa->delta.state_post(trIt) };
-        if (!moves.empty()) {
-            auto move{ moves.begin() };
-            while (move != moves.end()) {
-                if (!move->targets.empty()) {
-                    result.trIt = trIt;
-                    result.tlIt = moves.begin();
-                    result.ssIt = result.tlIt->targets.begin();
-                    break;
-                }
-                ++move;
-            }
-            break;
-        }
-    }
-
-    result.refresh_trans();
-
-    return result;
-} // for_begin }}}
-
-Nfa::const_iterator Nfa::const_iterator::for_end(const Nfa* /* nfa*/)
-{ // {{{
-    const_iterator result;
-    result.is_end = true;
-    return result;
-} // for_end }}}
-
-Nfa::const_iterator& Nfa::const_iterator::operator++()
-{ // {{{
-    assert(nullptr != nfa);
-
-    ++(this->ssIt);
-    const StateSet& state_set = this->tlIt->targets;
-    assert(!state_set.empty());
-    if (this->ssIt != state_set.end())
-    {
-        this->refresh_trans();
-        return *this;
-    }
-
-    // out of state set
-    ++(this->tlIt);
-    const StatePost& tlist = this->nfa->delta.state_post(this->trIt);
-    assert(!tlist.empty());
-    if (this->tlIt != tlist.end())
-    {
-        this->ssIt = this->tlIt->targets.begin();
-
-        this->refresh_trans();
-        return *this;
-    }
-
-    // out of transition list
-    ++this->trIt;
-    assert(this->nfa->delta.transitions.begin() != this->nfa->delta.transitions.end());
-
-    while (this->trIt < this->nfa->delta.num_of_states() &&
-           this->nfa->delta.state_post(this->trIt).empty())
-    {
-        ++this->trIt;
-    }
-
-    if (this->trIt < this->nfa->delta.num_of_states())
-    {
-        this->tlIt = this->nfa->delta.state_post(this->trIt).begin();
-        assert(!this->nfa->delta.state_post(this->trIt).empty());
-        const StateSet& new_state_set = this->tlIt->targets;
-        assert(!new_state_set.empty());
-        this->ssIt = new_state_set.begin();
-
-        this->refresh_trans();
-        return *this;
-    }
-
-    // out of transitions
-    this->is_end = true;
-
-    return *this;
-}
-
-bool Nfa::const_iterator::operator==(const Nfa::const_iterator& rhs) const {
-    if (this->is_end && rhs.is_end) { return true; }
-    if ((this->is_end && !rhs.is_end) || (!this->is_end && rhs.is_end)) { return false; }
-    return ssIt == rhs.ssIt && tlIt == rhs.tlIt && trIt == rhs.trIt;
-}
-
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
 mata::utils::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
@@ -772,12 +671,7 @@ bool Nfa::is_identical(const Nfa& aut) {
     if (utils::OrdVector<State>(final) != utils::OrdVector<State>(aut.final)) {
         return false;
     }
-
-    std::vector<Transition> this_trans;
-    for (auto trans: *this) { this_trans.push_back(trans); }
-    std::vector<Transition> aut_trans;
-    for (auto trans: aut) { aut_trans.push_back(trans); }
-    return this_trans == aut_trans;
+    return delta == aut.delta;
 }
 
 OrdVector<Symbol> Nfa::get_used_symbols() const {

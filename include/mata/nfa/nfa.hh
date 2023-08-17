@@ -303,33 +303,6 @@ public:
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
-    struct const_iterator {
-        const Nfa* nfa;
-        size_t trIt;
-        StatePost::const_iterator tlIt;
-        StateSet::const_iterator ssIt;
-        Transition trans;
-        bool is_end = { false };
-
-        const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
-        static const_iterator for_begin(const Nfa* nfa);
-        static const_iterator for_end(const Nfa* nfa);
-
-        // FIXME: He, what is this? Some comment would help.
-        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition
-        //  adds clutter and makes people write inefficient code.
-        void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
-
-        const Transition& operator*() const { return this->trans; }
-
-        bool operator==(const const_iterator& rhs) const;
-        bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
-        const_iterator& operator++();
-    }; // }}}
-
-    const_iterator begin() const { return const_iterator::for_begin(this); }
-    const_iterator end() const { return const_iterator::for_end(this); }
-
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
      *

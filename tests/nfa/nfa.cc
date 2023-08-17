@@ -165,46 +165,7 @@ TEST_CASE("mata::nfa::Delta.transform/append")
 
 } // }}}
 
-TEST_CASE("mata::nfa::Nfa iteration")
-{ // {{{
-    Nfa aut;
-
-    SECTION("empty automaton")
-    {
-        auto it = aut.begin();
-        REQUIRE(it == aut.end());
-    }
-
-    const size_t state_num = 'r'+1;
-    aut.delta.increase_size(state_num);
-
-    SECTION("a non-empty automaton")
-    {
-        aut.delta.add('q', 'a', 'r');
-        aut.delta.add('q', 'b', 'r');
-        auto it = aut.delta.transitions.begin();
-        auto jt = aut.delta.transitions.begin();
-        REQUIRE(it == jt);
-        ++it;
-        REQUIRE(it != jt);
-        REQUIRE((it != aut.delta.transitions.begin() && it != aut.delta.transitions.end()));
-        REQUIRE(jt == aut.delta.transitions.begin());
-
-        ++jt;
-        REQUIRE(it == jt);
-        REQUIRE((jt != aut.delta.transitions.begin() && jt != aut.delta.transitions.end()));
-
-        jt = aut.delta.transitions.end();
-        REQUIRE(it != jt);
-        REQUIRE((jt != aut.delta.transitions.begin() && jt == aut.delta.transitions.end()));
-
-        it = aut.delta.transitions.end();
-        REQUIRE(it == jt);
-        REQUIRE((it != aut.delta.transitions.begin() && it == aut.delta.transitions.end()));
-    }
-} // }}}
-
-TEST_CASE("mata::nfa::is_lang_empty()")
+TEST_CASE("Mata::Nfa::is_lang_empty()")
 { // {{{
     Nfa aut(14);
     Run cex;

@@ -401,8 +401,8 @@ cdef class Nfa:
 
         :return: stream of transitions
         """
-        iterator = self.thisptr.get().begin()
-        while iterator != self.thisptr.get().end():
+        iterator = self.thisptr.get().delta.transitions.begin()
+        while iterator != self.thisptr.get().delta.transitions.end():
             trans = Transition()
             lhs = dereference(iterator)
             trans.copy_from(lhs)

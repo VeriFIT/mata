@@ -209,6 +209,11 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
     std::vector<Transition> iterated_transitions{};
     std::vector<Transition> expected_transitions{};
 
+    SECTION("empty automaton") {
+        Mata::Nfa::Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
+        REQUIRE(it == nfa.delta.transitions.end());
+    }
+
     SECTION("Simple NFA") {
         nfa.initial.insert(0);
         nfa.final.insert(3);
@@ -236,6 +241,33 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         iterated_transitions.clear();
         for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
         CHECK(iterated_transitions == expected_transitions);
+    }
+
+    SECTION("Sparse automaton") {
+        const size_t state_num = 'r'+1;
+        nfa.delta.increase_size(state_num);
+
+        nfa.delta.add('q', 'a', 'r');
+        nfa.delta.add('q', 'b', 'r');
+        Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
+        Delta::transitions_const_iterator jt = nfa.delta.transitions.begin();
+        CHECK(it == jt);
+        ++it;
+        CHECK(it != jt);
+        CHECK((it != nfa.delta.transitions.begin() && it != nfa.delta.transitions.end()));
+        CHECK(jt == nfa.delta.transitions.begin());
+
+        ++jt;
+        CHECK(it == jt);
+        CHECK((jt != nfa.delta.transitions.begin() && jt != nfa.delta.transitions.end()));
+
+        jt = nfa.delta.transitions.end();
+        CHECK(it != jt);
+        CHECK((jt != nfa.delta.transitions.begin() && jt == nfa.delta.transitions.end()));
+
+        it = nfa.delta.transitions.end();
+        CHECK(it == jt);
+        CHECK((it != nfa.delta.transitions.begin() && it == nfa.delta.transitions.end()));
     }
 }
 

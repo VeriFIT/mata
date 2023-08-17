@@ -129,15 +129,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[State].const_iterator end()
 
     cdef cppclass CNfa "Mata::Nfa::Nfa":
-        # Nested iterator
-        cppclass const_iterator:
-            const_iterator()
-            CTrans operator*()
-            const_iterator& operator++()
-            bool operator==(const_iterator&)
-            bool operator!=(const_iterator&)
-            void refresh_trans()
-
         # Public Attributes
         CSparseSet[State] initial
         CSparseSet[State] final
@@ -166,8 +157,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[Symbol] get_used_symbols()
         bool is_state(State)
         StateSet post(StateSet&, Symbol)
-        CNfa.const_iterator begin()
-        CNfa.const_iterator end()
         State add_state()
         State add_state(State)
         void print_to_DOT(ostream)
