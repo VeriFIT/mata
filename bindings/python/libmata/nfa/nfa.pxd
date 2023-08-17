@@ -51,8 +51,24 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
 
-    cdef cppclass CDelta "mata::nfa::Delta":
-        vector[CStatePost] post
+    cdef cppclass Ctransitions_const_iterator "Mata::Nfa::Delta::transitions_const_iterator":
+            bool operator==(Ctransitions_const_iterator&)
+            bool operator!=(Ctransitions_const_iterator&)
+            CTrans& operator*()
+            Ctransitions_const_iterator& operator++()
+
+    cdef cppclass CTransitionsView "Mata::Nfa::Delta::TransitionsView":
+        Ctransitions_const_iterator begin()
+        Ctransitions_const_iterator end()
+
+    cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
+        Ctransitions_const_iterator begin()
+        Ctransitions_const_iterator end()
+        size_t count()
+
+    cdef cppclass CDelta "Mata::Nfa::Delta":
+        vector[CStatePost] state_posts
+        CTransitions transitions
 
         void reserve(size_t)
         CStatePost& state_post(State)
@@ -109,7 +125,10 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool operator>(CSymbolPost)
         bool operator>=(CSymbolPost)
 
-    cdef cppclass CNfa "mata::nfa::Nfa":
+        COrdVector[State].const_iterator begin()
+        COrdVector[State].const_iterator end()
+
+    cdef cppclass CNfa "Mata::Nfa::Nfa":
         # Nested iterator
         cppclass const_iterator:
             const_iterator()
@@ -146,7 +165,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void unify_final()
         COrdVector[Symbol] get_used_symbols()
         bool is_state(State)
-        size_t get_num_of_trans()
         StateSet post(StateSet&, Symbol)
         CNfa.const_iterator begin()
         CNfa.const_iterator end()
@@ -155,7 +173,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void print_to_DOT(ostream)
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
-        vector[CTrans] get_trans_from_as_sequence(State)
         CNfa& trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
