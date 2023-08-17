@@ -154,9 +154,9 @@ jobs:
       - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-baseline.csv
       - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-baseline.csv
       - name: Compare single param profiles
-        run: python3 ./tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
+        run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
       - name: Compare double param profiles
-        run: python3 ./tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
+        run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
 
   compare-versions:
     runs-on: ${{ matrix.os }}
