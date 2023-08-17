@@ -159,9 +159,9 @@ jobs:
           key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
       - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-baseline.csv
       - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-baseline.csv
-      - name: !!! Comparison of operations accepting single automaton as parameters!!!
+      - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
         run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
-      - name: !!! Comparison of operations accepting two automata as parameters !!!
+      - name: LOOK HERE for Comparison of operations accepting two automata as parameters
         run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
 
   compare-versions:
