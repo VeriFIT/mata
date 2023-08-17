@@ -2,6 +2,7 @@ import tabulate
 import pandas
 import sys
 
+TIMEOUT = 60
 
 def load_dataframe(path):
     """Loads from @path pandas dataframe and computes averages and medians in each metric
@@ -9,9 +10,18 @@ def load_dataframe(path):
     :param path: path to csv file delimited by ;
     :return: averages and medians of each column
     """
+    def transform(cell):
+        if cell == 'TO' or cell == 'ERR':
+            return TIMEOUT
+        else:
+            try:
+                return float(cell)
+            except ValueError:
+                return cell
     df = pandas.read_csv(path, sep=';')
-    avgs = df.mean(numeric_only=True)
-    meds = df.median(numeric_only=True)
+    df = df.applymap(transform).drop(columns=['name'])
+    avgs = df.mean(numeric_only=False, skipna=True)
+    meds = df.median(numeric_only=False, skipna=True)
     return avgs, meds
 
 
@@ -43,6 +53,7 @@ if __name__ == "__main__":
             row += [averages[i][col]]
             row += [medians[i][col]]
         data.append(row)
+    data = sorted(data, key=lambda x: x[0])
 
     print(tabulate.tabulate(data, headers=headers, floatfmt=".3f"))
 
