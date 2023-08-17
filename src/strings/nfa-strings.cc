@@ -144,6 +144,17 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
     act.first = dst.first + 1;
 }
 
+std::set<Mata::Symbol> Mata::Strings::get_one_symbol_words(const Nfa::Nfa& nfa) {
+    std::set<Mata::Symbol> one_symbol_words;
+    for (State init : nfa.initial) {
+        for (const auto& move_from_init : nfa.delta[init]) {
+            if (!one_symbol_words.contains(move_from_init.symbol) && nfa.final.intersects_with(move_from_init.targets)) {
+                one_symbol_words.insert(move_from_init.symbol);
+            }
+        }
+    }
+    return one_symbol_words;
+}
 
 std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
     Nfa one_letter;

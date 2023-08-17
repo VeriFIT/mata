@@ -339,3 +339,43 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
         }
     }
 }
+
+TEST_CASE("Mata::Strings::get_one_symbol_words()") {
+    Nfa x;
+    std::set<Mata::Symbol> symbols;
+
+    SECTION("basic") {
+        create_nfa(&x, "a|bc");
+        symbols = {'a'};
+        CHECK(get_one_symbol_words(x) == symbols);
+    }
+
+    SECTION("basic 2") {
+        create_nfa(&x, "");
+        CHECK(get_one_symbol_words(x).empty());
+    }
+
+    SECTION("basic 3") {
+        CHECK(get_one_symbol_words(x).empty());
+    }
+
+    SECTION("advanced 1") {
+        create_nfa(&x, "a*|c+|(db)*");
+        symbols = {'a', 'c'};
+        CHECK(get_one_symbol_words(x) == symbols);
+    }
+
+    SECTION("advanced 2") {
+        x.delta.add(0, 'a', 1);
+        x.delta.add(0, 'b', 1);
+        x.delta.add(2, 'c', 3);
+        x.delta.add(2, 'd', 4);
+        x.delta.add(4, 'e', 2);
+        x.delta.add(2, 'f', 2);
+        x.delta.add(5, 'g', 1);
+        x.initial = {0, 2, 4};
+        x.final = {1, 3, 2};
+        symbols = {'a', 'b', 'c', 'e', 'f'};
+        CHECK(get_one_symbol_words(x) == symbols);
+    }
+}
