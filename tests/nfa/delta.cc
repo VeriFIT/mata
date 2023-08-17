@@ -238,6 +238,19 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         CHECK(iterated_transitions == expected_transitions);
     }
 }
+
+TEST_CASE("Mata::Nfa::Delta::operator=()") {
+    Nfa nfa{};
+    nfa.initial.insert(0);
+    nfa.final.insert(1);
+    nfa.delta.add(0, 'a', 1);
+
+    Nfa copied_nfa{ nfa };
+    nfa.delta.add(1, 'b', 0);
+    CHECK(nfa.delta.transitions.count() == 2);
+    CHECK(copied_nfa.delta.transitions.count() == 1);
+}
+
 TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
     Nfa nfa{};
     nfa.initial.insert(0);
