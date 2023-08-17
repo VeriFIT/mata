@@ -131,10 +131,6 @@ jobs:
     needs: [ run-test-performance, run-test-performance-base ]
     steps:
       - uses: actions/checkout@v3
-      - uses: ./.github/workflows/actions/setup
-        with:
-          os: ${{ matrix.os }}
-      - uses: ./.github/workflows/actions/compile
       - name: Set up Python
         uses: actions/setup-python@v3
         with:
