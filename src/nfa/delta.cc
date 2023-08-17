@@ -431,3 +431,18 @@ bool mata::nfa::StatePost::moves_const_iterator::operator==(const StatePost::mov
         return symbol_post_it_ == other.symbol_post_it_ && target_states_it_ == other.target_states_it_;
     }
 }
+
+bool Delta::operator==(const Delta& other) const {
+    transitions_const_iterator this_transitions_it{ transitions_begin() };
+    const transitions_const_iterator this_transitions_end{ transitions_end() };
+    transitions_const_iterator other_transitions_it{ other.transitions_begin() };
+    const transitions_const_iterator other_transitions_end{ other.transitions_end() };
+    while (this_transitions_it != this_transitions_end) {
+        if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
+            return false;
+        }
+        ++this_transitions_it;
+        ++other_transitions_it;
+    }
+    return other_transitions_it == other_transitions_end;
+}

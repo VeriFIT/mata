@@ -243,6 +243,8 @@ public:
 
     Delta& operator=(const Delta& other);
 
+    bool operator==(const Delta& other) const;
+
     void reserve(size_t n) {
         state_posts_.reserve(n);
     };

@@ -302,3 +302,24 @@ TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
     transitions_from_source = nfa.delta.transitions.from(12);
     CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
 }
+
+TEST_CASE("Mata::Nfa::Delta::operator==()") {
+    Delta delta{};
+    Delta delta2{};
+    CHECK(delta == delta2);
+    delta.add(0, 0, 0);
+    CHECK(delta != delta2);
+    delta2.add(0, 0, 0);
+    CHECK(delta == delta2);
+    delta.add(0, 0, 1);
+    delta2.add(0, 0, 2);
+    CHECK(delta != delta2);
+    delta2.add(0, 0, 1);
+    CHECK(delta != delta2);
+    delta.add(0, 0, 2);
+    CHECK(delta == delta2);
+    delta2.add(0, 0, 3);
+    CHECK(delta != delta2);
+    delta.add(0, 0, 3);
+    CHECK(delta == delta2);
+}
