@@ -26,6 +26,8 @@
 namespace Mata {
 
 using Symbol = unsigned;
+using Word = std::vector<Symbol>;
+using WordName = std::vector<std::string>;
 
  /**
   * The abstract interface for NFA alphabets.
@@ -38,8 +40,8 @@ public:
     /**
      * Translate sequence of symbol names to sequence of their respective values.
      */
-    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const {
-        (void)word;
+    virtual Word translate_word(const WordName& word_name) const {
+        (void)word_name;
         throw std::runtime_error("Unimplemented");
     }
 
@@ -180,9 +182,9 @@ public:
     EnumAlphabet(const EnumAlphabet& rhs) = default;
     EnumAlphabet(EnumAlphabet&& rhs) = default;
 
-    Util::OrdVector<Symbol> get_alphabet_symbols() const override { return m_symbols; }
+    Util::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
     Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
-        return m_symbols.difference(symbols);
+        return symbols_.difference(symbols);
     }
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
@@ -197,14 +199,14 @@ public:
      * Adding a symbol name which already exists will throw an exception.
      * @param[in] symbols Vector of symbols to add.
      */
-    void add_symbols_from(const Mata::Util::OrdVector<Symbol>& symbols) { m_symbols.insert(symbols); }
+    void add_symbols_from(const Mata::Util::OrdVector<Symbol>& symbols) { symbols_.insert(symbols); }
 
     /**
      * @brief Expand alphabet by symbols from the passed @p alphabet.
      *
      * @param[in] symbols_to_add Vector of symbols to add.
      */
-    void add_symbols_from(const EnumAlphabet& alphabet) { m_symbols.insert(alphabet.get_alphabet_symbols()); }
+    void add_symbols_from(const EnumAlphabet& alphabet) { symbols_.insert(alphabet.get_alphabet_symbols()); }
 
     EnumAlphabet(std::initializer_list<Symbol> symbols) : EnumAlphabet(symbols.begin(), symbols.end()) {}
     template <class InputIt> EnumAlphabet(InputIt first, InputIt last) : EnumAlphabet() {
@@ -213,7 +215,7 @@ public:
     EnumAlphabet(std::initializer_list<std::string> l) : EnumAlphabet(l.begin(), l.end()) {}
 
     Symbol translate_symb(const std::string& str) override;
-    std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override;
+    Word translate_word(const WordName& word_name) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value identical to its string representation.
@@ -236,17 +238,17 @@ public:
      * Get the next value for a potential new symbol.
      * @return Next Symbol value.
      */
-    Symbol get_next_value() const { return next_symbol_value; }
+    Symbol get_next_value() const { return next_symbol_value_; }
 
     /**
      * Get the number of existing symbols, epsilon symbols excluded.
      * @return The number of symbols.
      */
-    size_t get_number_of_symbols() const { return m_symbols.size(); }
+    size_t get_number_of_symbols() const { return symbols_.size(); }
 
 private:
-    Mata::Util::OrdVector<Symbol> m_symbols{}; ///< Map of string transition symbols to symbol values.
-    Symbol next_symbol_value{ 0 }; ///< Next value to be used for a newly added symbol.
+    Mata::Util::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
+    Symbol next_symbol_value_{ 0 }; ///< Next value to be used for a newly added symbol.
 
 public:
     /**
@@ -270,9 +272,9 @@ public:
     /// Result of the insertion of a new symbol.
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
-    explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value(init_symbol) {};
-    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map(rhs.symbol_map), next_symbol_value(rhs.next_symbol_value) {}
-    explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map(std::move(str_sym_map)) {}
+    explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map_(rhs.symbol_map_), next_symbol_value_(rhs.next_symbol_value_) {}
+    explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
 
     /**
      * Create alphabet from a list of symbol names.
@@ -280,14 +282,14 @@ public:
      * @param init_symbol Start of a sequence of values to use for new symbols.
      */
     explicit OnTheFlyAlphabet(const std::vector<std::string>& symbol_names, Symbol init_symbol = 0)
-            : symbol_map(), next_symbol_value(init_symbol) { add_symbols_from(symbol_names); }
+            : symbol_map_(), next_symbol_value_(init_symbol) { add_symbols_from(symbol_names); }
 
     template <class InputIt> OnTheFlyAlphabet(InputIt first, InputIt last) {
         for (; first != last; ++first) {
-            add_new_symbol(*first, next_symbol_value);
+            add_new_symbol(*first, next_symbol_value_);
         }
     }
-    OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map{} {
+    OnTheFlyAlphabet(std::initializer_list<std::pair<std::string, Symbol>> name_symbol_map) : symbol_map_{} {
         for (auto&& [name, symbol]: name_symbol_map) {
             add_new_symbol(name, symbol);
         }
@@ -320,7 +322,7 @@ public:
 
     Symbol translate_symb(const std::string& str) override;
 
-    virtual std::vector<Symbol> translate_word(const std::vector<std::string>& word) const override;
+    virtual Word translate_word(const WordName& word_name) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.
@@ -352,29 +354,29 @@ public:
      * @param[in] value Number of the symbol to be used on transitions.
      * @return Result of the insertion as @c InsertionResult.
      */
-    InsertionResult try_add_new_symbol(const std::string& key, Symbol value) { return symbol_map.insert({ key, value}); }
+    InsertionResult try_add_new_symbol(const std::string& key, Symbol value) { return symbol_map_.insert({ key, value}); }
 
     /**
      * Get the next value for a potential new symbol.
      * @return Next Symbol value.
      */
-    Symbol get_next_value() const { return next_symbol_value; }
+    Symbol get_next_value() const { return next_symbol_value_; }
 
     /**
      * Get the number of existing symbols, epsilon symbols excluded.
      * @return The number of symbols.
      */
-    size_t get_number_of_symbols() const { return next_symbol_value; }
+    size_t get_number_of_symbols() const { return next_symbol_value_; }
 
     /**
      * Get the symbol map used in the alphabet.
      * @return Map mapping strings to symbols used internally in Mata.
      */
-    const StringToSymbolMap& get_symbol_map() const { return symbol_map; }
+    const StringToSymbolMap& get_symbol_map() const { return symbol_map_; }
 
 private:
-    StringToSymbolMap symbol_map{}; ///< Map of string transition symbols to symbol values.
-    Symbol next_symbol_value{}; ///< Next value to be used for a newly added symbol.
+    StringToSymbolMap symbol_map_{}; ///< Map of string transition symbols to symbol values.
+    Symbol next_symbol_value_{}; ///< Next value to be used for a newly added symbol.
 
 public:
     /**

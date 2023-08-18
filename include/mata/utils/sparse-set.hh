@@ -188,6 +188,10 @@ concept Iterable = requires(T t) {
             return *this;
         }
 
+        // TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
+        //  comparing contained elements should be enough?
+        bool operator==(const SparseSet<Number>&) const = default;
+
 // Things
 
         // Tests the basic invariant of the sparse set.

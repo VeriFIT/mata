@@ -6,6 +6,7 @@
 
 #include "nfa-util.hh"
 
+#include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/builder.hh"
@@ -20,10 +21,9 @@ using namespace Mata::Nfa::Plumbing;
 using namespace Mata::Util;
 using namespace Mata::Parser;
 using Symbol = Mata::Symbol;
+using Word = Mata::Word;
 using IntAlphabet = Mata::IntAlphabet;
 using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
-
-using Word = std::vector<Symbol>;
 
 TEST_CASE("Mata::Nfa::size()") {
     Nfa nfa{};
@@ -153,7 +153,7 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
         auto upd_fnc = [&](State st) {
             return st + 5;
         };
-        std::vector<StatePost> state_posts = a.delta.transform(upd_fnc);
+        std::vector<StatePost> state_posts = a.delta.renumber_targets(upd_fnc);
         a.delta.append(state_posts);
 
         REQUIRE(a.delta.contains(4, 'a', 6));
@@ -2061,7 +2061,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
 
     SECTION("empty automaton")
     {
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2074,7 +2074,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2106,7 +2106,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.final = {3, 9};
 
 
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.size() == 6);
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2122,30 +2122,24 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         REQUIRE(result.final[state_renaming[9]]);
         REQUIRE(result.final[state_renaming[3]]);
 
-        result = reduce(aut, true, &state_renaming);
+        result = reduce(aut.trim(), &state_renaming);
         CHECK(result.size() == 3);
-        CHECK(result.initial.size() == 2);
-        for (State initial : result.initial) {
-            CHECK(((initial == state_renaming[1]) || (initial == state_renaming[2])));
-        }
-        REQUIRE(result.final.size() == 1);
-        for (State final : result.final) {
-            CHECK(final == state_renaming[3]);
-        }
+        CHECK(result.initial == SparseSet<Mata::Nfa::State>{ 0, 1 });
+        CHECK(result.final == SparseSet<Mata::Nfa::State>{ 2 });
         CHECK(result.delta.size() == 6);
-        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
+        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
+        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[1]));
+        CHECK(result.delta.contains(state_renaming[1], 'b', state_renaming[1]));
         CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[3]));
-        CHECK(result.delta.contains(state_renaming[3], 'b', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[1]));
     }
 
     SECTION("no transitions from non-final state")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        Nfa result = reduce(aut, true, &state_renaming);
+        Nfa result = reduce(aut.trim(), &state_renaming);
         CHECK(Mata::Nfa::are_equivalent(result, aut));
     }
 }
@@ -2309,33 +2303,30 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
     REQUIRE(!digraph.delta.contains(10, 'c', 7));
 }
 
-TEST_CASE("Mata::Nfa::get_reachable_states()")
-{
+TEST_CASE("Mata::Nfa::get_reachable_states()") {
     Nfa aut{20};
 
-    SECTION("Automaton A")
-    {
+    SECTION("Automaton A") {
         FILL_WITH_AUT_A(aut);
         aut.delta.remove(3, 'b', 9);
         aut.delta.remove(5, 'c', 9);
         aut.delta.remove(1, 'a', 10);
 
-        auto reachable{aut.get_reachable_states()};
-        CHECK(reachable.find(0) == reachable.end());
-        CHECK(reachable.find(1) != reachable.end());
-        CHECK(reachable.find(2) == reachable.end());
-        CHECK(reachable.find(3) != reachable.end());
-        CHECK(reachable.find(4) == reachable.end());
-        CHECK(reachable.find(5) != reachable.end());
-        CHECK(reachable.find(6) == reachable.end());
-        CHECK(reachable.find(7) != reachable.end());
-        CHECK(reachable.find(8) == reachable.end());
-        CHECK(reachable.find(9) == reachable.end());
-        CHECK(reachable.find(10) == reachable.end());
+        StateSet reachable{ aut.get_reachable_states() };
+        CHECK(!reachable.contains(0));
+        CHECK(reachable.contains(1));
+        CHECK(!reachable.contains(2));
+        CHECK(reachable.contains(3));
+        CHECK(!reachable.contains(4));
+        CHECK(reachable.contains(5));
+        CHECK(!reachable.contains(6));
+        CHECK(reachable.contains(7));
+        CHECK(!reachable.contains(8));
+        CHECK(!reachable.contains(9));
+        CHECK(!reachable.contains(10));
 
         aut.initial.erase(1);
         aut.initial.erase(3);
-
         reachable = aut.get_reachable_states();
         CHECK(reachable.empty());
     }
@@ -2371,7 +2362,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(2) != reachable.end());
         CHECK(reachable.find(4) != reachable.end());
         CHECK(reachable.find(6) != reachable.end());
-        CHECK(aut.get_useful_states_old().empty());
+        CHECK(aut.get_useful_states().count() == 0);
 
         aut.final.insert(4);
         reachable = aut.get_reachable_states();
@@ -2392,14 +2383,14 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
 }
 
 //TODO: make this a test for the new version
-TEST_CASE("Mata::Nfa::get_useful_states_old() for profiling", "[.profiling],[useful_states]")
+TEST_CASE("Mata::Nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        aut.get_useful_states_old();
+        aut.get_useful_states();
     }
 }
 
@@ -2654,17 +2645,17 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
+TEST_CASE("Mata::Nfa::Nfa::get_delta.epsilon_symbol_posts()") {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.add(0, EPSILON, 3);
     aut.delta.add(3, EPSILON, 3);
     aut.delta.add(3, EPSILON, 4);
 
-    auto state_eps_trans{ aut.get_epsilon_transitions(0) };
+    auto state_eps_trans{ aut.delta.epsilon_symbol_posts(0) };
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
-    state_eps_trans = aut.get_epsilon_transitions(3);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(3);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
@@ -2672,29 +2663,29 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     aut.delta.add(8, 42, 4);
     aut.delta.add(8, 42, 6);
 
-    state_eps_trans = aut.get_epsilon_transitions(8, 42);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(8, 42);
     CHECK(state_eps_trans->symbol == 42);
     CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
 
-    CHECK(aut.get_epsilon_transitions(1) == aut.delta.state_post(1).end());
-    CHECK(aut.get_epsilon_transitions(5) == aut.delta.state_post(5).end());
-    CHECK(aut.get_epsilon_transitions(19) == aut.delta.state_post(19).end());
+    CHECK(aut.delta.epsilon_symbol_posts(1) == aut.delta.state_post(1).end());
+    CHECK(aut.delta.epsilon_symbol_posts(5) == aut.delta.state_post(5).end());
+    CHECK(aut.delta.epsilon_symbol_posts(19) == aut.delta.state_post(19).end());
 
     StatePost state_post{ aut.delta[0] };
-    state_eps_trans = aut.get_epsilon_transitions(state_post);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
     state_post = aut.delta[3];
-    state_eps_trans = Nfa::get_epsilon_transitions(state_post);
+    state_eps_trans = Delta::epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
     state_post = aut.delta.state_post(1);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(5);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(19);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
 TEST_CASE("Mata::Nfa::Nfa::delta()") {
@@ -2769,8 +2760,7 @@ TEST_CASE("Mata::Nfa::trim bug") {
 	aut.delta.add(3, 97, 4);
 
 	Nfa aut_copy {aut};
-	aut.trim();
-	CHECK(are_equivalent(aut_copy, aut));
+	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
 TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
@@ -2846,28 +2836,23 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		CHECK(bv == ref);
 	}
 
-	SECTION("from regex (a+b*a*)") {
-		Mata::Nfa::Nfa aut;
-		Mata::Parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
+    SECTION("from regex (a+b*a*)") {
+        Mata::Nfa::Nfa aut;
+        Mata::Parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
-		CHECK(bv == ref);
+        Mata::BoolVector bv = aut.get_useful_states();
+        Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
+        CHECK(bv == ref);
 
-		aut = Mata::Nfa::reduce(aut);
-		bv = aut.get_useful_states();
-		CHECK(bv == Mata::BoolVector({1,1,1,1}));
-	}
+        aut = Mata::Nfa::reduce(aut.trim());
+        bv = aut.get_useful_states();
+        CHECK(bv == Mata::BoolVector({1,1,1,1}));
+    }
 
     SECTION("more initials") {
-
         Nfa aut(4, {0, 1, 2}, {0, 3});
-		aut.delta.add(1, 48, 0);
+        aut.delta.add(1, 48, 0);
         aut.delta.add(2, 53, 3);
-
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 1, 1, 1});
-		CHECK(bv == ref);
-	}
-
+        CHECK(aut.get_useful_states() == Mata::BoolVector{1, 1, 1, 1});
+    }
 }

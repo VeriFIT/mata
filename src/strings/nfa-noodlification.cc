@@ -43,7 +43,7 @@ size_t get_num_of_permutations(const SegNfa::Segmentation::EpsilonDepthTransitio
 
 } // namespace
 
-SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
+std::vector<SegNfa::Noodle> SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
 
     const std::set<Symbol> epsilons({epsilon});
     // return noodlify_reach(aut, epsilons, include_empty);
@@ -71,7 +71,7 @@ SegNfa::NoodleSequence SegNfa::noodlify(const SegNfa& aut, const Symbol epsilon,
     size_t num_of_permutations{ get_num_of_permutations(epsilon_depths) };
     size_t epsilon_depths_size{ epsilon_depths.size() };
 
-    NoodleSequence noodles{};
+    std::vector<Noodle> noodles{};
     // noodle of epsilon transitions (each from different depth)
     std::vector<Transition> epsilon_noodle(epsilon_depths_size);
     // for each combination of ε-transitions, create the automaton.
@@ -137,7 +137,7 @@ void SegNfa::segs_one_initial_final(
             for (const State final_state: iter->final) {
                 Nfa::Nfa segment_one_final = *iter;
                 segment_one_final.final = {final_state };
-                segment_one_final = reduce(segment_one_final);
+                segment_one_final = reduce(segment_one_final.trim());
 
                 if (segment_one_final.size() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_final);
@@ -147,7 +147,7 @@ void SegNfa::segs_one_initial_final(
             for (const State init_state: iter->initial) {
                 Nfa::Nfa segment_one_init = *iter;
                 segment_one_init.initial = {init_state };
-                segment_one_init = reduce(segment_one_init);
+                segment_one_init = reduce(segment_one_init.trim());
 
                 if (segment_one_init.size() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa::Nfa>(segment_one_init);
@@ -159,8 +159,7 @@ void SegNfa::segs_one_initial_final(
                     Nfa::Nfa segment_one_init_final = *iter;
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
-                    segment_one_init_final = reduce(segment_one_init_final);
-
+                    segment_one_init_final = reduce(segment_one_init_final.trim());
                     if (segment_one_init_final.size() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa::Nfa>(segment_one_init_final);
                     }
@@ -170,7 +169,7 @@ void SegNfa::segs_one_initial_final(
     }
 }
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
+std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty) {
     Segmentation segmentation{ aut, epsilons };
     const auto& segments{ segmentation.get_untrimmed_segments() };
 
@@ -197,12 +196,12 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     const auto& epsilon_depths_map{ segmentation.get_epsilon_depth_trans_map() };
 
     struct SegItem {
-        NoodleSubst noodle{};
+        NoodleWithEpsilonsCounter noodle{};
         State fin{};
         size_t seg_id{};
     };
 
-    NoodleSubstSequence noodles{};
+    std::vector<NoodleWithEpsilonsCounter> noodles{};
     std::deque<SegItem> lifo;
 
     for(const State& fn : segments[0].final) {
@@ -225,7 +224,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
         if(item.seg_id + 1 == segments.size()) {
             // check if the noodle is already there
             if(!std::any_of(noodles.begin(), noodles.end(),
-                [&](NoodleSubst &s) {
+                [&](NoodleWithEpsilonsCounter &s) {
                     return s == item.noodle;
             } )) {
                 noodles.push_back(item.noodle);
@@ -259,7 +258,7 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_mult_eps(const SegNfa& aut, const s
     return noodles;
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& lhs_automata, const Nfa::Nfa& rhs_automaton,
+std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa::Nfa>>& lhs_automata, const Nfa::Nfa& rhs_automaton,
                                                      bool include_empty, const ParameterMap& params) {
     const auto lhs_aut_begin{ lhs_automata.begin() };
     const auto lhs_aut_end{ lhs_automata.end() };
@@ -269,7 +268,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::refe
         (*lhs_aut_iter).get().unify_final();
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return NoodleSequence{}; }
+    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa::Nfa concatenated_lhs{ *lhs_aut_begin };
@@ -279,10 +278,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::refe
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true) };
-    product_pres_eps_trans.trim();
+            intersection(concatenated_lhs, rhs_automaton, true).trim() };
     if (is_lang_empty(product_pres_eps_trans)) {
-        return NoodleSequence{};
+        return {};
     }
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");
@@ -298,7 +296,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<std::refe
     return noodlify(product_pres_eps_trans, EPSILON, include_empty);
 }
 
-SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& lhs_automata, const Nfa::Nfa& rhs_automaton,
+std::vector<SegNfa::Noodle> SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*>& lhs_automata, const Nfa::Nfa& rhs_automaton,
                                                      bool include_empty, const ParameterMap& params) {
     const auto lhs_aut_begin{ lhs_automata.begin() };
     const auto lhs_aut_end{ lhs_automata.end() };
@@ -318,7 +316,7 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*
         }
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return NoodleSequence{}; }
+    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa::Nfa concatenated_lhs{ *(*lhs_aut_begin) };
@@ -328,10 +326,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true) };
-    product_pres_eps_trans.trim();
+            intersection(concatenated_lhs, rhs_automaton, true).trim() };
     if (is_lang_empty(product_pres_eps_trans)) {
-        return NoodleSequence{};
+        return {};
     }
     if (!reduce_value.empty()) {
         if (reduce_value == "forward" || reduce_value == "bidirectional") {
@@ -347,9 +344,9 @@ SegNfa::NoodleSequence SegNfa::noodlify_for_equation(const std::vector<Nfa::Nfa*
 }
 
 
-SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& lhs_automata,
+std::vector<SegNfa::NoodleWithEpsilonsCounter> SegNfa::noodlify_for_equation(const std::vector<std::shared_ptr<Nfa::Nfa>>& lhs_automata,
     const std::vector<std::shared_ptr<Nfa::Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
-    if (lhs_automata.empty() || rhs_automata.empty()) { return NoodleSubstSequence{}; }
+    if (lhs_automata.empty() || rhs_automata.empty()) { return {}; }
 
     const auto lhs_aut_begin{ lhs_automata.begin() };
     const auto lhs_aut_end{ lhs_automata.end() };
@@ -386,11 +383,10 @@ SegNfa::NoodleSubstSequence SegNfa::noodlify_for_equation(const std::vector<std:
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
     auto product_pres_eps_trans{
-            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons) };
+            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons).trim() };
 
-    product_pres_eps_trans.trim();
     if (is_lang_empty(product_pres_eps_trans)) {
-        return NoodleSubstSequence{};
+        return {};
     }
     if (Util::haskey(params, "reduce")) {
         const std::string& reduce_value = params.at("reduce");

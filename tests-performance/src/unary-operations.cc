@@ -60,7 +60,8 @@ int main(int argc, char *argv[]) {
     start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
-    Mata::Nfa::Plumbing::reduce(&reduced_aut, aut);
+    Nfa trimmed{ aut };
+    Mata::Nfa::Plumbing::reduce(&reduced_aut, trimmed.trim());
     // > END OF PROFILED CODE
     end = std::chrono::system_clock::now();
     elapsed = end - start;
@@ -70,7 +71,7 @@ int main(int argc, char *argv[]) {
     start = std::chrono::system_clock::now();
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
-    Mata::Nfa::Plumbing::reduce(&untrimmed_reduced_aut, aut, false);
+    Mata::Nfa::Plumbing::reduce(&untrimmed_reduced_aut, aut);
     // > END OF PROFILED CODE
     end = std::chrono::system_clock::now();
     elapsed = end - start;

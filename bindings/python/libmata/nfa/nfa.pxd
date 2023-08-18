@@ -33,7 +33,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
     ctypedef umap[Symbol, StateSet] PostSymb
     ctypedef umap[State, PostSymb] StateToPostMap
     ctypedef umap[string, State] StringSubsetMap
-    ctypedef umap[string, State] StateNameMap
     ctypedef umap[State, string] StateNameMap
     ctypedef umap[State, State] StateRenaming
     ctypedef umap[string, string] ParameterMap
@@ -69,6 +68,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         void remove(CTrans) except +
         void remove(State, Symbol, State) except +
         bool contains(State, Symbol, State)
+        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
+        COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
 
     cdef cppclass CRun "Mata::Nfa::Run":
         # Public Attributes
@@ -155,15 +156,13 @@ cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
         vector[CTrans] get_transitions_to(State)
         vector[CTrans] get_trans_as_sequence()
         vector[CTrans] get_trans_from_as_sequence(State)
-        void trim(StateRenaming*)
+        CNfa& trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()
         StateSet get_reachable_states()
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
-        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(State state, Symbol epsilon)
-        COrdVector[CSymbolPost].const_iterator get_epsilon_transitions(CStatePost& post, Symbol epsilon)
         void clear()
         size_t size()
 
@@ -200,7 +199,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
     cdef void c_revert "Mata::Nfa::Plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "Mata::Nfa::Plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void c_minimize "Mata::Nfa::Plumbing::minimize" (CNfa*, CNfa&)
-    cdef void c_reduce "Mata::Nfa::Plumbing::reduce" (CNfa*, CNfa&, bool, StateRenaming*, ParameterMap&)
+    cdef void c_reduce "Mata::Nfa::Plumbing::reduce" (CNfa*, CNfa&, StateRenaming*, ParameterMap&)
 
 
 

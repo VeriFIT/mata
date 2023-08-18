@@ -63,17 +63,7 @@ TEST_CASE("Mata::Nfa::trim_inplace() speed, simple", "[.profiling]") {
     FILL_WITH_AUT_B(B);
     for (int i = 0; i < 300000; i++) {
         A = B;
-        A.trim_inplace();
-    }
-}
-
-TEST_CASE("Mata::Nfa::trim_reverting() speed, simple", "[.profiling]") {
-    Nfa A, B;
-//this gives an interesting test case if the parser is not trimming and reducing
-    FILL_WITH_AUT_B(B);
-    for (int i = 0; i < 300000; i++) {
-        A = B;
-        A.trim_reverting();
+        A.trim();
     }
 }
 
@@ -83,17 +73,7 @@ TEST_CASE("Mata::Nfa::trim_inplace() speed, harder", "[.profiling]") {
     create_nfa(&B, "((.*){10})*");
     for (int i = 0; i < 200; i++) {
         A = B;
-        A.trim_inplace();
-    }
-}
-
-TEST_CASE("Mata::Nfa::trim_reverting() speed, harder", "[.profiling]") {
-    Nfa A, B;
-//this gives an interesting test case if the parser is not trimming and reducing
-    create_nfa(&B, "((.*){10})*");
-    for (int i = 0; i < 200; i++) {
-        A = B;
-        A.trim_reverting();
+        A.trim();
     }
 }
 

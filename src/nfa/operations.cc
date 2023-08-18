@@ -697,24 +697,18 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateRenaming *state_renaming, const ParameterMap& params) {
+Nfa Mata::Nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
 
-    Nfa aut_to_reduce{ aut };
-    StateRenaming trimmed_state_renaming{};
-    if (trim_input) {
-        aut_to_reduce.trim(&trimmed_state_renaming);
-    }
-
     Nfa result;
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        result = reduce_size_by_simulation(aut_to_reduce, reduced_state_map);
+        result = reduce_size_by_simulation(aut, reduced_state_map);
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
@@ -722,18 +716,8 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, bool trim_input, StateRenaming *state_rena
 
     if (state_renaming) {
         state_renaming->clear();
-        if (trim_input) {
-            for (const auto& trimmed_mapping : trimmed_state_renaming) {
-                const auto reduced_mapping{ reduced_state_map.find(trimmed_mapping.second) };
-                if (reduced_mapping != reduced_state_map.end()) {
-                    (*state_renaming)[trimmed_mapping.first] = reduced_mapping->second;
-                }
-            }
-        } else { // Input has not been trimmed, the reduced state map is the actual input to result state map.
-            *state_renaming = reduced_state_map;
-        }
+        *state_renaming = reduced_state_map;
     }
-
     return result;
 }
 

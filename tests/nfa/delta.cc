@@ -68,6 +68,35 @@ TEST_CASE("Mata::Nfa::Delta::state_post()") {
         CHECK(aut.delta.state_post(25).empty());
         CHECK(aut.delta.state_post(26).empty());
     }
+
+    SECTION("Add multiple targets at once") {
+        CHECK_NOTHROW(aut.delta.add(0, 1, { 3, 4, 5, 6 }));
+        CHECK_NOTHROW(aut.delta.add(26, 1, StateSet{}));
+        CHECK_NOTHROW(aut.delta.add(42, 1, StateSet{ 43 }));
+        CHECK(aut.get_num_of_trans() == 5);
+    }
+}
+
+TEST_CASE("Mata::Nfa::Delta::contains()") {
+    Nfa nfa;
+    CHECK(!nfa.delta.contains(0, 1, 0));
+    CHECK(!nfa.delta.contains(Transition{ 0, 1, 0 }));
+    nfa.delta.add(0, 1, 0);
+    CHECK(nfa.delta.contains(0, 1, 0));
+    CHECK(nfa.delta.contains(Transition{ 0, 1, 0 }));
+}
+
+TEST_CASE("Mata::Nfa::Delta::remove()") {
+    Nfa nfa;
+
+    SECTION("Simple remove") {
+        nfa.delta.add(0, 1, 0);
+        CHECK_NOTHROW(nfa.delta.remove(3, 5, 6));
+        CHECK_NOTHROW(nfa.delta.remove(0, 1, 0));
+        CHECK(nfa.delta.empty());
+        nfa.delta.add(10, 1, 0);
+        CHECK_THROWS_AS(nfa.delta.remove(3, 5, 6), std::invalid_argument);
+    }
 }
 
 TEST_CASE("Mata::Nfa::Delta::mutable_post()") {

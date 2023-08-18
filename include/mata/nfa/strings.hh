@@ -46,19 +46,19 @@ public:
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for(const StateSet& states) const;
+    std::set<Word> get_shortest_words_from(const StateSet& states) const;
 
     /**
      * Gets shortest words for the given @p state.
      * @param[in] state State to map shortest words for.
      * @return Set of shortest words.
      */
-    WordSet get_shortest_words_for(State state) const;
+    std::set<Word> get_shortest_words_from(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.
     /// Pair binding the length of all words in the word set and word set with words of the given length.
-    using LengthWordsPair = std::pair<WordLength, WordSet>;
+    using LengthWordsPair = std::pair<WordLength, std::set<Word>>;
     /// Map mapping states to the shortest words accepted by the automaton from the mapped state.
     std::unordered_map<State, LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
@@ -89,7 +89,7 @@ private:
      * @return Created default shortest words map element for the given @p state.
      */
     LengthWordsPair map_default_shortest_words(const State state) {
-        return shortest_words_map.emplace(state, std::make_pair(-1, WordSet{})).first->second;
+        return shortest_words_map.emplace(state, std::make_pair(-1, std::set<Word>{})).first->second;
     }
 
     /**
@@ -105,7 +105,7 @@ private:
  * Get shortest words (regarding their length) of the automaton using BFS.
  * @return Set of shortest words.
  */
-WordSet get_shortest_words(const Mata::Nfa::Nfa& nfa);
+std::set<Word> get_shortest_words(const Mata::Nfa::Nfa& nfa);
 
 /**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each
@@ -197,8 +197,8 @@ private:
     const SegNfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
     EpsilonDepthTransitionMap eps_depth_trans_map{}; /// Epsilon depths with mapping of states to epsilon transitions
-    std::vector<Mata::Nfa::Nfa> segments{}; ///< Segments for @p automaton.
-    std::vector<Mata::Nfa::Nfa> segments_raw{}; ///< Raw segments for @p automaton.
+    std::vector<SegNfa> segments{}; ///< Segments for @p automaton.
+    std::vector<SegNfa> segments_raw{}; ///< Raw segments for @p automaton.
     VisitedEpsMap visited_eps{}; /// number of visited eps for each state
 
     /**
@@ -282,12 +282,11 @@ private:
 
 /// A noodle is represented as a sequence of segments (a copy of the segment automata) created as if there was exactly
 ///  one ε-transition between each two consecutive segments.
-using Noodle = std::vector<std::shared_ptr<Mata::Nfa::Nfa>>;
-using NoodleSequence = std::vector<Noodle>; ///< A sequence of noodles.
-
+using Noodle = std::vector<std::shared_ptr<SegNfa>>;
+/// Segment with a counter of visited epsilons.
+using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Mata::Nfa::Nfa>, VisitedEpsilonsCounterVector>;
 /// Noodles as segments enriched with EpsCntMap
-using NoodleSubst = std::vector<std::pair<std::shared_ptr<Mata::Nfa::Nfa>, VisitedEpsilonsCounterVector>>;
-using NoodleSubstSequence = std::vector<NoodleSubst>;
+using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 
 /**
  * @brief segs_one_initial_final
@@ -315,7 +314,7 @@ void segs_one_initial_final(const std::vector<Mata::Nfa::Nfa>& segments, bool in
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -329,7 +328,7 @@ NoodleSequence noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = 
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
+std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>& epsilons, bool include_empty = false);
 
 /**
  * @brief Create noodles for left and right side of equation.
@@ -351,7 +350,7 @@ NoodleSubstSequence noodlify_mult_eps(const SegNfa& aut, const std::set<Symbol>&
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Mata::Nfa::Nfa>>& lhs_automata,
+std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<Mata::Nfa::Nfa>>& lhs_automata,
                                      const Mata::Nfa::Nfa& rhs_automaton,
                                      bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
@@ -375,8 +374,9 @@ NoodleSequence noodlify_for_equation(const std::vector<std::reference_wrapper<Ma
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-NoodleSequence noodlify_for_equation(const std::vector<Mata::Nfa::Nfa*>& lhs_automata, const Mata::Nfa::Nfa& rhs_automaton,
-                                     bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
+std::vector<Noodle> noodlify_for_equation(
+   const std::vector<Mata::Nfa::Nfa*>& lhs_automata, const Mata::Nfa::Nfa& rhs_automaton, bool include_empty = false,
+   const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
  * @brief Create noodles for left and right side of equation (both sides are given as a sequence of automata).
@@ -389,7 +389,7 @@ NoodleSequence noodlify_for_equation(const std::vector<Mata::Nfa::Nfa*>& lhs_aut
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
-NoodleSubstSequence noodlify_for_equation(
+std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
    const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& lhs_automata,
    const std::vector<std::shared_ptr<Mata::Nfa::Nfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
