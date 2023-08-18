@@ -78,78 +78,6 @@ namespace {
         }
         return reachable;
     }
-
-    /**
-     * Add transitions to the trimmed automaton.
-     * @param[in] nfa NFA to add transitions from.
-     * @param[in] state_renaming Map of old states to new trimmed automaton states.
-     * @param[out] trimmed_aut The new trimmed automaton.
-     */
-    void add_trimmed_transitions(const Nfa& nfa, const StateRenaming& state_renaming, Nfa& trimmed_aut) {
-        // For each reachable original state 's' (which means it is mapped to the state of trimmed automaton)...
-        for (const auto& original_state_mapping: state_renaming)
-        {
-            // ...add all transitions from 's' to some reachable state to the trimmed automaton.
-            for (const auto& state_transitions_with_symbol: nfa.delta[original_state_mapping.first])
-            {
-                SymbolPost new_state_trans_with_symbol(state_transitions_with_symbol.symbol);
-                for (State old_state_to: state_transitions_with_symbol.targets)
-                {
-                    auto iter_to_new_state_to = state_renaming.find(old_state_to);
-                    if (iter_to_new_state_to != state_renaming.end())
-                    {
-                        // We can push here, because we assume that new states follow the ordering of original states.
-                        new_state_trans_with_symbol.insert(iter_to_new_state_to->second);
-                    }
-                }
-                if (!new_state_trans_with_symbol.empty()) {
-                    trimmed_aut.delta.mutable_state_post(original_state_mapping.second).insert(new_state_trans_with_symbol);
-                }
-            }
-        }
-    }
-
-    /**
-     * Get a new trimmed automaton.
-     * @param[in] nfa NFA to trim.
-     * @param[in] original_to_new_state_renaming Map of old states to new trimmed automaton states (new states should follow the ordering of old states).
-     * @return Newly created trimmed automaton.
-     */
-    Nfa create_trimmed_aut(const Nfa& nfa, const StateRenaming& state_renaming) {
-        Nfa trimmed_aut{ state_renaming.size() };
-
-        for (const State old_initial_state: nfa.initial)
-        {
-            if (state_renaming.find(old_initial_state) != state_renaming.end())
-            {
-                trimmed_aut.initial.insert(state_renaming.at(old_initial_state));
-            }
-        }
-        for (const State old_final_state: nfa.final)
-        {
-            if (state_renaming.find(old_final_state) != state_renaming.end())
-            {
-                trimmed_aut.final.insert(state_renaming.at(old_final_state));
-            }
-        }
-
-        add_trimmed_transitions(nfa, state_renaming, trimmed_aut);
-        return trimmed_aut;
-    }
-
-    /**
-     * Get directed transitions for digraph.
-     * @param[in] nfa NFA to get directed transitions from.
-     * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
-     * @param[out] digraph Digraph to add computed transitions to.
-     */
-    void add_directed_transitions(const Nfa& nfa, const Symbol abstract_symbol, Nfa& digraph) {
-        for (const Transition& transition: nfa.delta.transitions()) {
-            // Directly try to add the transition. Finding out whether the transition is already in the digraph
-            //  only iterates through transition relation again.
-            digraph.delta.add(transition.source, abstract_symbol, transition.target);
-        }
-    }
 }
 
 void Nfa::remove_epsilon(const Symbol epsilon)
@@ -178,19 +106,7 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
-//TODO: probably can be removed, trim_inplace is faster.
-void Nfa::trim_reverting(StateRenaming* state_renaming)
-{
-    if (!state_renaming) {
-        StateRenaming tmp_state_renaming{};
-        *this = get_trimmed_automaton(&tmp_state_renaming);
-    } else {
-        state_renaming->clear();
-        *this = get_trimmed_automaton(state_renaming);
-    }
-}
-
-Nfa& Nfa::trim_inplace(StateRenaming* state_renaming) {
+Nfa& Nfa::trim(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
@@ -227,26 +143,6 @@ Nfa& Nfa::trim_inplace(StateRenaming* state_renaming) {
         }
     }
     return *this;
-}
-
-Nfa Nfa::get_trimmed_automaton(StateRenaming* state_renaming) const {
-    if (initial.empty() || final.empty()) { return Nfa{}; }
-
-    StateRenaming tmp_state_renaming{};
-    if (!state_renaming) {
-        state_renaming = &tmp_state_renaming;
-    }
-    state_renaming->clear();
-
-    const StateSet original_useful_states{get_useful_states_old() };
-    state_renaming->reserve(original_useful_states.size());
-
-    size_t new_state_num{ 0 };
-    for (const State original_state: original_useful_states) {
-        (*state_renaming)[original_state] = new_state_num;
-        ++new_state_num;
-    }
-    return create_trimmed_aut(*this, *state_renaming);
 }
 
 namespace {
@@ -437,25 +333,6 @@ BoolVector Nfa::get_useful_states() const {
     return useful;
 }
 
-StateSet Nfa::get_useful_states_old() const {
-    if (initial.empty() || final.empty()) { return StateSet{}; }
-
-    const Nfa digraph{get_one_letter_aut() }; // Compute reachability on directed graph.
-    // Compute reachability from the initial states and use the reachable states to compute the reachability from the final states.
-    const StateBoolArray useful_states_bool_array{ reachable_states_in(revert(digraph), reachable_states_in(digraph)) };
-
-    const size_t num_of_states{size() };
-    StateSet useful_states{};
-    for (State original_state{ 0 }; original_state < num_of_states; ++original_state) {
-        if (useful_states_bool_array[original_state]) {
-            // We can use push_back here, because we are always increasing the value of original_state (so useful_states
-            //  will always be ordered).
-            useful_states.insert(original_state);
-        }
-    }
-    return useful_states;
-}
-
 std::string Nfa::print_to_DOT() const {
     std::stringstream output;
     print_to_DOT(output);
@@ -557,7 +434,12 @@ std::vector<Transition> Nfa::get_trans_from_as_sequence(State state_from) const
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
     Nfa digraph{size(), StateSet(initial), StateSet(final) };
-    add_directed_transitions(*this, abstract_symbol, digraph);
+    // Add directed transitions for digraph.
+    for (const Transition& transition: delta.transitions()) {
+        // Directly try to add the transition. Finding out whether the transition is already in the digraph
+        //  only iterates through transition relation again.
+        digraph.delta.add(transition.source, abstract_symbol, transition.target);
+    }
     return digraph;
 }
 

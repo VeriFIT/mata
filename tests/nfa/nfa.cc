@@ -2362,7 +2362,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()") {
         CHECK(reachable.find(2) != reachable.end());
         CHECK(reachable.find(4) != reachable.end());
         CHECK(reachable.find(6) != reachable.end());
-        CHECK(aut.get_useful_states_old().empty());
+        CHECK(aut.get_useful_states().count() == 0);
 
         aut.final.insert(4);
         reachable = aut.get_reachable_states();
@@ -2383,14 +2383,14 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
 }
 
 //TODO: make this a test for the new version
-TEST_CASE("Mata::Nfa::get_useful_states_old() for profiling", "[.profiling],[useful_states]")
+TEST_CASE("Mata::Nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        aut.get_useful_states_old();
+        aut.get_useful_states();
     }
 }
 

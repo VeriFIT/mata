@@ -195,15 +195,6 @@ public:
     StateSet get_terminating_states() const;
 
     /**
-     * @brief Get a set of useful states.
-     *
-     * Useful states are reachable and terminating states.
-     * @return Set of useful states.
-     * TODO: with the new get_useful_states, we can delete this probably.
-     */
-    StateSet get_useful_states_old() const;
-
-    /**
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
@@ -211,10 +202,8 @@ public:
      */
     BoolVector get_useful_states() const;
 
-    Nfa& trim_inplace(StateRenaming* state_renaming = nullptr);
-    void trim_reverting(StateRenaming* state_renaming = nullptr);
     /**
-     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
      *
      * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
@@ -222,21 +211,8 @@ public:
      *
      * @param[out] state_renaming Mapping of trimmed states to new states.
      * @return @c this after trimming.
-     * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
      */
-    Nfa& trim(StateRenaming* state_renaming = nullptr) { return trim_inplace(state_renaming); }
-
-    /**
-     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
-     *
-     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
-     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
-     * the starting point of a path ending in a final state).
-     *
-     * @param[out] state_renaming Mapping of trimmed states to new states.
-     * @return Trimmed automaton.
-     */
-    Nfa get_trimmed_automaton(StateRenaming* state_renaming = nullptr) const;
+    Nfa& trim(StateRenaming* state_renaming = nullptr);
 
     /**
      * Remove epsilon transitions from the automaton.
