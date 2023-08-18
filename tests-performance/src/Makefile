@@ -18,13 +18,7 @@ CFLAGS= \
 INCLUDE_DIR=../../include
 THIRD_PARTY_DIR=../../3rdparty
 BUILD_DIR := $(shell \
-	if [ -d "../../cmake-build-release" ]; then \
-		echo "../../cmake-build-release"; \
-	elif [ -d "../../cmake-build-debug" ]; then \
-		echo "../../cmake-build-debug"; \
-	else \
 		echo "../../build"; \
-	fi \
 )
 
 INCLUDE=-I$(INCLUDE_DIR) -I$(THIRD_PARTY_DIR)/simlib/include -I$(THIRD_PARTY_DIR)/re2/include -I $(THIRD_PARTY_DIR) -I $(THIRD_PARTY_DIR)/cudd/include
