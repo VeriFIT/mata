@@ -51,7 +51,7 @@ namespace {
      *  are considered as potentially reachable.
      * @return Bool array for reachable states (from initial states): true for reachable, false for unreachable states.
      */
-    StateBoolArray reachable_states_in(const Nfa& nfa,
+    StateBoolArray reachable_states(const Nfa& nfa,
                                        const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
         std::vector<State> worklist{};
         StateBoolArray reachable(nfa.size(), false);
@@ -86,7 +86,7 @@ void Nfa::remove_epsilon(const Symbol epsilon)
 }
 
 StateSet Nfa::get_reachable_states() const {
-    StateBoolArray reachable_bool_array{ reachable_states_in(*this) };
+    StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{size() };
