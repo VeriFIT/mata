@@ -195,6 +195,7 @@ public:
         assert(vectorIsSorted());
     }
 
+    //TODO: I guess these things should be names union (also in SparseSet), it is weird that insert is actually doing union
     virtual void insert(const OrdVector& vec) {
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
@@ -228,7 +229,7 @@ public:
 
     OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
-    OrdVector Union(const OrdVector& rhs) const { return Union(*this, rhs); }
+    //OrdVector Union(const OrdVector& rhs) const { return Union(*this, rhs); }
 
     //TODO: this code of find was duplicated, not nice.
     // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
@@ -403,11 +404,9 @@ public:
         return result;
     }
 
-    static OrdVector Union(const OrdVector& lhs, const OrdVector& rhs) {
+    static void Union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
-
-        OrdVector result;
 
         auto lhs_it = lhs.begin();
         auto rhs_it = rhs.vec_.begin();
@@ -435,7 +434,23 @@ public:
         }
 
         assert(result.vectorIsSorted());
+    }
+
+    static OrdVector Union(const OrdVector& lhs, const OrdVector& rhs) {
+        OrdVector result{};
+        Union(lhs, rhs, result);
         return result;
+    }
+
+    OrdVector Union(const OrdVector& other) {
+        static OrdVector tmp{};
+        tmp.clear();
+        Union(*this,other,tmp);
+
+        //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp_vec_ if possible.
+        //vec_ = tmp.vec_;
+        //return *this;
+        return tmp;
     }
 
     static OrdVector intersection(const OrdVector& lhs, const OrdVector& rhs) {
