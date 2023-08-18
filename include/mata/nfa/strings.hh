@@ -46,14 +46,14 @@ public:
      * @param[in] states States to map shortest words for.
      * @return Set of shortest words.
      */
-    std::set<Word> get_shortest_words_for(const StateSet& states) const;
+    std::set<Word> get_shortest_words_from(const StateSet& states) const;
 
     /**
      * Gets shortest words for the given @p state.
      * @param[in] state State to map shortest words for.
      * @return Set of shortest words.
      */
-    std::set<Word> get_shortest_words_for(State state) const;
+    std::set<Word> get_shortest_words_from(State state) const;
 
 private:
     using WordLength = int; ///< A length of a word.
