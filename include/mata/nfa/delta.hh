@@ -183,16 +183,16 @@ public:
 /**
  * @brief Specialization of Util::SynchronizedExistentialIterator for iterating over SymbolPosts.
  */
-class SynchronizedExistentialIteratorSymbolPost : public Util::SynchronizedExistentialIterator<Util::OrdVector<SymbolPost>::const_iterator> {
+class SynchronizedExistentialSymbolPostIterator : public Util::SynchronizedExistentialIterator<Util::OrdVector<SymbolPost>::const_iterator> {
 public:
     /**
      * @brief Get union of all targets.
      */
     StateSet unify_targets() const {
-        StateSet bigger_succ = {};
         if(!this->is_synchronized()) {
-            return bigger_succ;
+            return {};
         }
+        StateSet bigger_succ = {};
         for (const auto m: this->get_current()) {
             bigger_succ = bigger_succ.Union(m->targets);
         }

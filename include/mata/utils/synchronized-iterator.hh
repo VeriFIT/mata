@@ -163,9 +163,6 @@ public:
 
     /// Returns the vector of current positions.
     std::vector<Iterator> get_current() const {
-        // How to return so that things don't get copied?
-        // Or maybe we should return a copy of positions anyway, to prevent a side effect of advance?
-        // Instead of returning a vector, we could also provide iterators through the result.
         return this->positions;
     };
 

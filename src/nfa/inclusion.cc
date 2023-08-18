@@ -100,8 +100,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
     }
 
     //For synchronised iteration over the set of states
-    SynchronizedExistentialIteratorSymbolPost sync_iterator;
+    SynchronizedExistentialSymbolPostIterator sync_iterator;
 
+    // We use DFS strategy for the worklist processing
     while (!worklist.empty()) {
         // get a next product state
         ProdStateType prod_state = *worklist.rbegin();

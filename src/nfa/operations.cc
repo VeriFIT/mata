@@ -767,7 +767,7 @@ Nfa Mata::Nfa::determinize(
         return result;
 
     using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
-    SynchronizedExistentialIteratorSymbolPost synchronized_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
     while (!worklist.empty()) {
         const auto Spair = worklist.back();
