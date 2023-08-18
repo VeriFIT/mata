@@ -77,6 +77,7 @@ public:
     BoolVector& operator=(const BoolVector&) = default;
     BoolVector& operator=(BoolVector&&) = default;
 
+    /// Count the number of set elements.
     size_t count() const {
         size_t cnt{ 0 };
         for (const uint8_t value : *this) {
@@ -107,7 +108,7 @@ public:
         return element_set;
     }
 
-};
+}; // class BoolVector.
 
 /// log verbosity
 extern unsigned LOG_VERBOSITY;
