@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
     using namespace Mata::Nfa::Algorithms;
 
     auto start = std::chrono::system_clock::now();
-    auto end = std::chrono::system_clock::now();
     Nfa aut75 = intersection(intersection(intersection(intersection(aut7,aut8),aut9),aut32),aut52);
+    auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "intersection: " << elapsed.count() << "\n";
     aut75.print_to_mata(std::cout);
