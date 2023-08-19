@@ -25,10 +25,13 @@ from libmata.nfa.nfa cimport \
 from libmata.alphabets cimport CAlphabet
 from libmata.utils cimport COrdVector, CBinaryRelation, BinaryRelation
 
+
 cdef Symbol EPSILON = CEPSILON
+
 
 def epsilon():
     return EPSILON
+
 
 cdef class Run:
     """Wrapper over the run in NFA."""
@@ -492,8 +495,10 @@ cdef class Nfa:
         Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
+        :return: Self.
         """
         self.thisptr.get().trim(NULL)
+        return self
 
     def trim_with_state_map(self):
         """Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
@@ -502,11 +507,11 @@ cdef class Nfa:
          starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
          the starting point of a path ending in a final state).
 
-        :return: State map of original to new states.
+        :return: Self, State map of original to new states.
         """
         cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
-        return {k: v for k, v in state_map}
+        return self, {k: v for k, v in state_map}
 
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
@@ -637,7 +642,6 @@ cdef class Nfa:
         return_value = self.thisptr.get().post(input_states, symbol).ToVector()
         return {v for v in return_value}
 
-
     def remove_epsilon_inplace(self, Symbol epsilon = CEPSILON):
         """Removes transitions which contain epsilon symbol.
 
@@ -647,20 +651,20 @@ cdef class Nfa:
         """
         self.thisptr.get().remove_epsilon(epsilon)
 
-    def get_epsilon_transitions(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
+    def epsilon_symbol_posts(self, State state, Symbol epsilon = CEPSILON) -> SymbolPost | None:
         """Get epsilon transitions for a state.
 
         :param state: State to get epsilon transitions for.
         :param epsilon: Epsilon symbol.
         :return: Epsilon transitions if there are any epsilon transitions for the passed state. None otherwise.
         """
-        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_transitions_iter = self.thisptr.get().get_epsilon_transitions(
+        cdef COrdVector[CSymbolPost].const_iterator c_epsilon_symbol_posts_iter = self.thisptr.get().delta.epsilon_symbol_posts(
             state, epsilon
         )
-        if c_epsilon_transitions_iter == self.thisptr.get().delta.state_post(state).cend():
+        if c_epsilon_symbol_posts_iter == self.thisptr.get().delta.state_post(state).cend():
             return None
 
-        cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_transitions_iter)
+        cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
         return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
 
@@ -861,11 +865,10 @@ def minimize(Nfa lhs):
     mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
     return result
 
-def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
+def reduce_with_state_map(Nfa aut, params = None):
     """Reduce the automaton.
 
     :param Nfa aut: Original automaton to reduce.
-    :param bool trim_input: Whether to trim the input automaton first or not.
     :param Dict params: Additional parameters for the reduction algorithm:
         - "algorithm": "simulation"
     :return: (Reduced automaton, state map of original to new states)
@@ -873,7 +876,7 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
     params = params or {"algorithm": "simulation"}
     cdef StateRenaming state_map
     result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, &state_map,
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), &state_map,
                     {
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }
@@ -881,10 +884,9 @@ def reduce_with_state_map(Nfa aut, bool trim_input = True, params = None):
 
     return result, {k: v for k, v in state_map}
 
-def reduce(Nfa aut, bool trim_input = True, params = None):
+def reduce(Nfa aut, params = None):
     """Reduce the automaton.
 
-    :param bool trim_input: Whether to trim the input automaton first or not.
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
         - "algorithm": "simulation"
@@ -892,7 +894,7 @@ def reduce(Nfa aut, bool trim_input = True, params = None):
     """
     params = params or {"algorithm": "simulation"}
     result = Nfa()
-    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), trim_input, NULL,
+    mata_nfa.c_reduce(result.thisptr.get(), dereference(aut.thisptr.get()), NULL,
                     {
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }

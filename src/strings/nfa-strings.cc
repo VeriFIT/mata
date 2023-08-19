@@ -21,15 +21,14 @@
 using namespace Mata::Nfa;
 using namespace Mata::Strings;
 
-WordSet Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
+std::set<Mata::Word> Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
-    return ShortestWordsMap{ nfa }.get_shortest_words_for(StateSet{ nfa.initial });
+    return ShortestWordsMap{ nfa }.get_shortest_words_from(StateSet{ nfa.initial });
 }
 
-WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
-{
-    WordSet result{};
+std::set<Mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& states) const {
+    std::set<Word> result{};
 
     if (!shortest_words_map.empty())
     {
@@ -61,9 +60,9 @@ WordSet ShortestWordsMap::get_shortest_words_for(const StateSet& states) const
     return result;
 }
 
-WordSet ShortestWordsMap::get_shortest_words_for(State state) const
+std::set<Mata::Word> ShortestWordsMap::get_shortest_words_from(State state) const
 {
-    return get_shortest_words_for(StateSet{ state });
+    return get_shortest_words_from(StateSet{ state });
 }
 
 void ShortestWordsMap::insert_initial_lengths()
@@ -74,7 +73,7 @@ void ShortestWordsMap::insert_initial_lengths()
         for (const State state: initial_states)
         {
             shortest_words_map.insert(std::make_pair(state, std::make_pair(0,
-                                                                           WordSet{ std::vector<Symbol>{} })));
+                                                                           std::set<Word>{ std::vector<Symbol>{} })));
         }
 
         const auto initial_states_begin{ initial_states.begin() };
@@ -154,8 +153,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
     /// transitions are renamed to a single symbol (e.g., `a`).
     aut.get_one_letter_aut(one_letter);
-    one_letter = determinize(one_letter);
-    one_letter.trim();
+    one_letter = determinize(one_letter).trim();
     if(one_letter.size() == 0) {
         return {};
     }
@@ -201,7 +199,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
 }
 
 bool Mata::Strings::is_lang_eps(const Nfa::Nfa& aut) {
-    Nfa::Nfa tr_aut = aut.get_trimmed_automaton();
+    Nfa::Nfa tr_aut = Nfa::Nfa{ aut }.trim();
     if(tr_aut.initial.size() == 0)
         return false;
     for(const auto& ini : tr_aut.initial) {

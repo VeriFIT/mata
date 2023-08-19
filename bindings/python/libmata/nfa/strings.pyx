@@ -3,7 +3,7 @@ cimport libmata.nfa.strings as mata_strings
 
 from cython.operator import dereference, postincrement as postinc
 
-from libmata.nfa.strings cimport NoodleSequence, CSegmentation
+from libmata.nfa.strings cimport CSegmentation
 from libmata.nfa.nfa cimport CTrans
 
 cdef class Segmentation:
@@ -69,7 +69,7 @@ def noodlify(mata_nfa.Nfa aut, Symbol symbol, include_empty = False):
     :return: List of automata: A list of all (non-empty) noodles.
     """
     noodle_segments = []
-    cdef NoodleSequence c_noodle_segments = mata_strings.c_noodlify(
+    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments = mata_strings.c_noodlify(
         dereference(aut.thisptr.get()), symbol, include_empty
     )
     for c_noodle in c_noodle_segments:
@@ -121,7 +121,7 @@ def noodlify_for_equation(left_side_automata: list, mata_nfa.Nfa right_side_auto
         c_left_side_automata.push_back((<mata_nfa.Nfa>lhs_aut).thisptr.get())
     noodle_segments = []
     params = params or {}
-    cdef NoodleSequence c_noodle_segments = mata_strings.c_noodlify_for_equation(
+    cdef vector[vector[shared_ptr[CNfa]]] c_noodle_segments = mata_strings.c_noodlify_for_equation(
         c_left_side_automata, dereference(right_side_automaton.thisptr.get()), include_empty,
         {
             k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v

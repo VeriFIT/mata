@@ -151,7 +151,7 @@ const std::vector<Nfa>& SegNfa::Segmentation::get_segments()
 {
     if (segments.empty()) {
         get_untrimmed_segments();
-        for (auto& seg_aut: segments_raw) { segments.push_back(seg_aut.get_trimmed_automaton()); }
+        for (auto& seg_aut: segments_raw) { segments.push_back(Nfa::Nfa{ seg_aut }.trim()); }
     }
 
     return segments;

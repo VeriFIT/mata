@@ -46,27 +46,5 @@ int main(int argc, char *argv[]) {
     auto end = std::chrono::system_clock::now();
     std::chrono::duration<double> elapsed = end - start;
     std::cout << "trim: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut2 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.trim_inplace();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "trim-inplace: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut3 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.trim_reverting();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "trim-reverting: " << elapsed.count() << "\n";
-
-    Nfa trimmed_aut4 = aut;
-    start = std::chrono::system_clock::now();
-    trimmed_aut.get_trimmed_automaton();
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "get-trimmed-automaton: " << elapsed.count() << "\n";
-
     return EXIT_SUCCESS;
 }

@@ -195,15 +195,6 @@ public:
     StateSet get_terminating_states() const;
 
     /**
-     * @brief Get a set of useful states.
-     *
-     * Useful states are reachable and terminating states.
-     * @return Set of useful states.
-     * TODO: with the new get_useful_states, we can delete this probably.
-     */
-    StateSet get_useful_states_old() const;
-
-    /**
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
@@ -212,30 +203,16 @@ public:
     BoolVector get_useful_states() const;
 
     /**
-     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
      *
      * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
      * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
      * the starting point of a path ending in a final state).
      *
      * @param[out] state_renaming Mapping of trimmed states to new states.
-     * TODO: we can probably keep just trim_reverting, much faster. But the speed difference and how it is achieved is interesting. Keeping as a demonstration for now.
+     * @return @c this after trimming.
      */
-    void trim_inplace(StateRenaming* state_renaming = nullptr);
-    void trim_reverting(StateRenaming* state_renaming = nullptr);
-    void trim(StateRenaming* state_renaming = nullptr) { trim_inplace(state_renaming); }
-
-    /**
-     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states.
-     *
-     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
-     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
-     * the starting point of a path ending in a final state).
-     *
-     * @param[out] state_renaming Mapping of trimmed states to new states.
-     * @return Trimmed automaton.
-     */
-    Nfa get_trimmed_automaton(StateRenaming* state_renaming = nullptr) const;
+    Nfa& trim(StateRenaming* state_renaming = nullptr);
 
     /**
      * Remove epsilon transitions from the automaton.
@@ -360,24 +337,6 @@ public:
 
     const_iterator begin() const { return const_iterator::for_begin(this); }
     const_iterator end() const { return const_iterator::for_end(this); }
-
-    /**
-     * Return all epsilon transitions from epsilon symbol under a given state.
-     * @param[in] state State from which are epsilon transitions checked
-     * @param[in] epsilon User can define his favourite epsilon or used default
-     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
-     * there are no epsilon transitions.
-     */
-    StatePost::const_iterator get_epsilon_transitions(State state, Symbol epsilon = EPSILON) const;
-
-    /**
-     * Return all epsilon transitions from epsilon symbol under given state transitions.
-     * @param[in] post Post from which are epsilon transitions checked.
-     * @param[in] epsilon User can define his favourite epsilon or used default
-     * @return Returns reference element of transition list with epsilon transitions or end of transition list when
-     * there are no epsilon transitions.
-     */
-    static StatePost::const_iterator get_epsilon_transitions(const StatePost& post, Symbol epsilon = EPSILON);
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
@@ -587,16 +546,15 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzoz
 Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
- * Reduce the size of the automaton.
+ * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
- * @param[in] trim_input Whether to trim the input automaton first or not.
- * @param[out] state_renaming Mapping of trimmed states to new states.
+ * @param[out] state_renaming Mapping of original states to reduced states.
  * @param[in] params Optional parameters to control the reduction algorithm:
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Nfa reduce(const Nfa &aut, bool trim_input = true, StateRenaming *state_renaming = nullptr,
+Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
            const ParameterMap& params = {{ "algorithm", "simulation" } });
 
 /// Is the language of the automaton universal?

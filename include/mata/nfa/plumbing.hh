@@ -56,9 +56,9 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateRenaming *state_renaming = nullptr,
+inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = nullptr,
                    const ParameterMap& params = {{ "algorithm", "simulation"}}) {
-    *result = reduce(aut, trim_result, state_renaming, params);
+    *result = reduce(aut, state_renaming, params);
 }
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }

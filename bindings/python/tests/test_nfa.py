@@ -895,7 +895,7 @@ def test_reduce():
     nfa = mata_nfa.Nfa()
 
     # Test the reduction of an empty automaton.
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.get_num_of_trans() == 0
     assert len(result.initial_states) == 0
     assert len(result.final_states) == 0
@@ -904,7 +904,7 @@ def test_reduce():
     nfa.add_state(2)
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.get_num_of_trans() == 0
     assert result.size() == 2
     assert result.has_initial_state(state_map[1])
@@ -912,7 +912,7 @@ def test_reduce():
     assert state_map[1] == state_map[0]
     assert state_map[2] != state_map[0]
 
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, True)
+    result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
     assert result.get_num_of_trans() == 0
     assert result.size() == 0
 
@@ -936,7 +936,7 @@ def test_reduce():
     nfa.add_transition(9, ord('c'), 0)
     nfa.add_transition(0, ord('a'), 4)
 
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.size() == 6
     assert result.has_initial_state(state_map[1])
     assert result.has_initial_state(state_map[2])
@@ -1032,7 +1032,7 @@ def test_unify():
     assert nfa.has_transition(10, 1, 2)
 
 
-def test_get_epsilon_transitions():
+def test_epsilon_symbol_posts():
     nfa = mata_nfa.Nfa(10)
     nfa.make_initial_state(0)
     nfa.make_final_state(1)
@@ -1041,19 +1041,19 @@ def test_get_epsilon_transitions():
     nfa.add_transition(1, 2, 2)
     nfa.add_transition(1, mata_nfa.epsilon(), 2)
     nfa.add_transition(1, mata_nfa.epsilon(), 3)
-    epsilon_transitions = nfa.get_epsilon_transitions(1)
-    assert epsilon_transitions.symbol == mata_nfa.epsilon()
-    assert epsilon_transitions.targets == [2, 3]
+    epsilon_symbol_posts = nfa.epsilon_symbol_posts(1)
+    assert epsilon_symbol_posts.symbol == mata_nfa.epsilon()
+    assert epsilon_symbol_posts.targets == [2, 3]
 
     nfa.add_transition(0, 1, 2)
     nfa.add_transition(0, 2, 2)
     nfa.add_transition(0, 8, 5)
     nfa.add_transition(0, 8, 6)
-    epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
-    assert epsilon_transitions.symbol == 8
-    assert epsilon_transitions.targets == [5, 6]
+    epsilon_symbol_posts = nfa.epsilon_symbol_posts(0, 8)
+    assert epsilon_symbol_posts.symbol == 8
+    assert epsilon_symbol_posts.targets == [5, 6]
 
-    assert nfa.get_epsilon_transitions(5) is None
+    assert nfa.epsilon_symbol_posts(5) is None
 
 
 def test_is_epsilon():
