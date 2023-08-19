@@ -63,9 +63,8 @@ jobs:
         os: [ ubuntu-latest, macos-latest ]
     steps:
       - uses: actions/checkout@v3
-      # TODO: Uncomment this after the merge
-      #  with:
-      #    ref: ${{ github.event.pull_request.base_ref }}
+        with:
+          ref: ${{ github.event.pull_request.base_ref }}
       - uses: ./.github/workflows/actions/setup
         with:
           os: ${{ matrix.os }}
