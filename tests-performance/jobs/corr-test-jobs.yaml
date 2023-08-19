@@ -1,2 +1,0 @@
-test-unary:
-  cmd: ./bin/test-unary-op $1

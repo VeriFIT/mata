@@ -2,7 +2,7 @@ BUILD_DIR=build
 MAKE_FLAGS=-j 6
 TEST_FLAGS=-j 50 --output-on-failure
 
-.PHONY: all debug debug-werror release release-werror coverage doc clean test
+.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
 
 all:
 	./clean_gcda.sh
@@ -32,6 +32,12 @@ test:
 test-coverage:
 	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
 	gcovr -p -e "3rdparty/*" -j 6 --exclude-unreachable-branches --exclude-throw-branches build/src build/tests
+
+test-performance:
+	./tests-integration/pycobench -c ./tests-integration/jobs/corr-single-param-jobs.yaml < ./tests-integration/inputs/single-automata.input -o ./tests-integration/corr-single-param-jobs.out
+	./tests-integration/pyco_proc --csv ./tests-integration/corr-single-param-jobs.out > ./tests-integration/corr-single-param-jobs.csv
+	./tests-integration/pycobench -c ./tests-integration/jobs/corr-double-param-jobs.yaml < ./tests-integration/inputs/double-automata.input -o ./tests-integration/corr-double-param-jobs.out
+	./tests-integration/pyco_proc --csv --param-no 2 ./tests-integration/corr-double-param-jobs.out > ./tests-integration/corr-double-param-jobs.csv
 
 check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1

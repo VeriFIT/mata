@@ -55,6 +55,114 @@ jobs:
       - name: Test the library
         run: make test
 
+  run-test-performance-base:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.base_ref }}
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+          cache: 'pip'
+      - name: Install Python Dependencies
+        shell: sh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests-integration/requirements.txt
+      - name: Test the library
+        run: make test-performance
+      - name: Cache performance results
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./tests-integration/corr-single-param-jobs.csv
+            ./tests-integration/corr-double-param-jobs.csv
+          key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
+
+  run-test-performance:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/workflows/actions/setup
+        with:
+          os: ${{ matrix.os }}
+      - uses: ./.github/workflows/actions/compile
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+          cache: 'pip'
+      - name: Install Python Dependencies
+        shell: sh
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests-integration/requirements.txt
+      - name: Test the library
+        run: make test-performance
+      - name: Cache performance results
+        uses: actions/cache@v3
+        with:
+          path: |
+            ./tests-integration/corr-single-param-jobs.csv
+            ./tests-integration/corr-double-param-jobs.csv
+          key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
+
+  compare-performance:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest ]
+    needs: [ run-test-performance, run-test-performance-base ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+          cache: 'pip'
+      - name: Install Python Dependencies
+        shell: sh
+        run: |
+          python -m pip install --upgrade pip
+          pip install tabulate pandas
+      - name: Restore target profiles
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ./tests-integration/corr-single-param-jobs.csv
+            ./tests-integration/corr-double-param-jobs.csv
+          key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
+      - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-target.csv
+      - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-target.csv
+      - name: Restore baseline profiles
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            ./tests-integration/corr-single-param-jobs.csv
+            ./tests-integration/corr-double-param-jobs.csv
+          key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
+      - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-baseline.csv
+      - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-baseline.csv
+      - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
+        run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
+      - name: LOOK HERE for Comparison of operations accepting two automata as parameters
+        run: python3 tests-integration/scripts/compare_profiles.py double-param-target.csv double-param-baseline.csv
+
   compare-versions:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -75,17 +183,14 @@ jobs:
           path: ./build_log
           key: build-log-warnings-base-${{ runner.os }}-${{ github.sha }}
       - run: mv build_log base_warnings
-
       - name: Print base warnings
         run: cat base_warnings
       - name: Print new warnings
         run: cat new_warnings
-
       - name: Create comparison diff file
         run: |
           diff base_warnings new_warnings | grep "^> *" | sed "s/^> //g" > comparison
           cat comparison
-
       - name: Count number of warnings
         run: |
           number_of_warnings=`cat comparison | grep "warning:" | wc -l`

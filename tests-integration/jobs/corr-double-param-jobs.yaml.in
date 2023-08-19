@@ -1,0 +1,2 @@
+binary:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/binary-operations $1 $2

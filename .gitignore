@@ -66,4 +66,9 @@ bindings/python/MANIFEST
 
 # Performance and profiling tests
 tests-performance/pycobench.tasks
-
+tests-performance/inputs/double-automata.input
+tests-performance/inputs/single-automata.input
+tests-performance/jobs/corr-double-param-jobs.yaml
+tests-performance/jobs/corr-single-param-jobs.yaml
+tests-performance/jobs/corr-test-jobs.yaml
+tests-performance/src/utils/config.hh

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.15.0)
 project(libMATA)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -8,7 +8,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 # Enable fancy colours
 set(CMAKE_COLOR_MAKEFILE ON)
 # Enable verbose output for 'make'
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+#set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MACOSX_RPATH 1)
 
@@ -130,6 +130,9 @@ add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 add_subdirectory(tests)
+if(IS_DIRECTORY "${CMAKE_SOURCE_DIR}/tests-integration")
+    add_subdirectory(tests-integration)
+endif()
 
 install(TARGETS libmata ARCHIVE DESTINATION lib)
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "**/*.hh")
