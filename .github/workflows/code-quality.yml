@@ -155,7 +155,7 @@ jobs:
           path: |
             ./tests-integration/corr-single-param-jobs.csv
             ./tests-integration/corr-double-param-jobs.csv
-          key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
+          key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
       - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-baseline.csv
       - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-baseline.csv
       - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
