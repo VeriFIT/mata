@@ -25,12 +25,28 @@ using namespace Mata::Nfa;
  * @param[out] aut Automaton instance to load into.
  * @param[out] alphabet Alphabet to use for symbols on transitions.
  * @param[in] skip_mintermization Whether to skip mirmization of the loaded automaton.
- * @param[in] aut_name Automaton name to print in logging outputs.
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */ 
 int load_automaton(
         const std::string& filename,
         Nfa& aut,
+        Mata::OnTheFlyAlphabet& alphabet,
+        const bool skip_mintermization = false
+);
+
+/**
+ * @brief Load automata from list of files at @p filename into list of automata @p aut,
+ * using @p alphabet for symbols on transitions.
+ *
+ * @param[in] filenames Paths to the file with automaton to load.
+ * @param[out] auts Vector of instances to load into.
+ * @param[out] alphabet Alphabet to use for symbols on transitions.
+ * @param[in] skip_mintermization Whether to skip mirmization of the loaded automaton.
+ * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
+ */
+int load_automata(
+        std::vector<std::string>& filenames,
+        std::vector<Nfa>& auts,
         Mata::OnTheFlyAlphabet& alphabet,
         const bool skip_mintermization = false
 );

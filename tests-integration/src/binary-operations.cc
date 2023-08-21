@@ -13,18 +13,15 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::string lhs_filename = argv[1];
-    std::string rhs_filename = argv[2];
-
-    Nfa lhs;
-    Nfa rhs;
+    std::vector<std::string> filenames {argv[1], argv[2]};
+    std::vector<Nfa> automata;
     Mata::OnTheFlyAlphabet alphabet;
-    if (load_automaton(lhs_filename, lhs, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
+    if (load_automata(filenames, automata, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
-    if (load_automaton(rhs_filename, rhs, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
-        return EXIT_FAILURE;
-    }
+    // This might be less-efficient, but more readable.
+    Nfa lhs = automata[0];
+    Nfa rhs = automata[1];
 
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
