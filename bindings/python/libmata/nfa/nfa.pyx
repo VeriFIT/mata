@@ -379,12 +379,12 @@ cdef class Nfa:
         """
         return self.thisptr.get().delta.contains(source, symbol, target)
 
-    def get_num_of_trans(self):
+    def get_num_of_transitions(self):
         """Returns number of transitions in automaton
 
         :return: number of transitions in automaton
         """
-        return self.thisptr.get().delta.transitions.count()
+        return self.thisptr.get().delta.num_of_transitions()
 
     def clear(self):
         """Clears all of the internals in the automaton"""
@@ -401,8 +401,9 @@ cdef class Nfa:
 
         :return: stream of transitions
         """
-        iterator = self.thisptr.get().delta.transitions.begin()
-        while iterator != self.thisptr.get().delta.transitions.end():
+        cdef CTransitions transitions = self.thisptr.get().delta.transitions()
+        cdef CTransitions.const_iterator iterator = transitions.begin()
+        while iterator != transitions.end():
             trans = Transition()
             lhs = dereference(iterator)
             trans.copy_from(lhs)
@@ -448,7 +449,7 @@ cdef class Nfa:
 
         :return: List of automaton transitions.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
+        cdef CTransitions c_transitions = self.thisptr.get().delta.transitions()
         transitions = []
         for c_transition in c_transitions:
             transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))

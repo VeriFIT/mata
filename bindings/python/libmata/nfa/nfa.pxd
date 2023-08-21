@@ -51,20 +51,16 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
 
-    cdef cppclass Ctransitions_const_iterator "Mata::Nfa::Delta::transitions_const_iterator":
-            bool operator==(Ctransitions_const_iterator&)
-            bool operator!=(Ctransitions_const_iterator&)
-            CTrans& operator*()
-            Ctransitions_const_iterator& operator++()
-
-    cdef cppclass CTransitionsView "Mata::Nfa::Delta::TransitionsView":
-        Ctransitions_const_iterator begin()
-        Ctransitions_const_iterator end()
-
     cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
-        Ctransitions_const_iterator begin()
-        Ctransitions_const_iterator end()
-        size_t count()
+        cppclass const_iterator:
+            bool operator==(const_iterator&)
+            bool operator!=(const_iterator&)
+            CTrans& operator*()
+            const_iterator& operator++()
+        const_iterator begin()
+        const_iterator end()
+        CTransitions()
+
 
     cdef cppclass CDelta "Mata::Nfa::Delta":
         vector[CStatePost] state_posts
@@ -86,6 +82,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool contains(State, Symbol, State)
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(State state, Symbol epsilon)
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
+        size_t num_of_transitions()
+        CTransitions transitions()
 
     cdef cppclass CRun "mata::nfa::Run":
         # Public Attributes
@@ -161,7 +159,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         State add_state(State)
         void print_to_DOT(ostream)
         vector[CTrans] get_transitions_to(State)
-        vector[CTrans] get_trans_as_sequence()
         CNfa& trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)

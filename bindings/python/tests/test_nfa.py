@@ -502,7 +502,7 @@ def test_intersection_preserving_epsilon_transitions():
     assert len(result.final_states) == 4
 
     # Check transitions.
-    assert result.get_num_of_trans() == 15
+    assert result.get_num_of_transitions() == 15
 
     assert result.has_transition(product_map[(0, 0)], mata_nfa.epsilon(), product_map[(1, 0)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
@@ -591,11 +591,11 @@ def test_minimize(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
     minimized = mata_nfa.minimize(fa_one_divisible_by_two)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_two.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_two.get_num_of_transitions()
     minimized = mata_nfa.minimize(fa_one_divisible_by_four)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_four.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_four.get_num_of_transitions()
     minimized = mata_nfa.minimize(fa_one_divisible_by_eight)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_eight.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_eight.get_num_of_transitions()
 
     lhs = mata_nfa.Nfa(11)
     lhs.make_initial_state(0)
@@ -604,10 +604,10 @@ def test_minimize(
         lhs.make_final_state(i)
     lhs.add_transition(10, 0, 10)
     lhs.make_final_state(10)
-    assert lhs.get_num_of_trans() == 11
+    assert lhs.get_num_of_transitions() == 11
 
     minimized = mata_nfa.minimize(lhs)
-    assert minimized.get_num_of_trans() == 1
+    assert minimized.get_num_of_transitions() == 1
 
 
 def test_to_dot():
@@ -665,7 +665,7 @@ def test_trim(prepare_automaton_a):
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()
-    assert nfa.get_num_of_trans() == 0
+    assert nfa.get_num_of_transitions() == 0
     assert nfa.size() == 0
 
 
@@ -677,7 +677,7 @@ def test_get_one_letter_automaton(prepare_automaton_a):
     one_letter_automaton = nfa.get_one_letter_aut()
 
     assert one_letter_automaton.size() == nfa.size()
-    assert one_letter_automaton.get_num_of_trans() == 12
+    assert one_letter_automaton.get_num_of_transitions() == 12
     assert one_letter_automaton.has_transition(1, abstract_symbol, 10)
     assert one_letter_automaton.has_transition(10, abstract_symbol, 7)
     assert not one_letter_automaton.has_transition(10, ord('a'), 7)
@@ -896,7 +896,7 @@ def test_reduce():
 
     # Test the reduction of an empty automaton.
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
-    assert result.get_num_of_trans() == 0
+    assert result.get_num_of_transitions() == 0
     assert len(result.initial_states) == 0
     assert len(result.final_states) == 0
 
@@ -905,7 +905,7 @@ def test_reduce():
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
-    assert result.get_num_of_trans() == 0
+    assert result.get_num_of_transitions() == 0
     assert result.size() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
@@ -913,7 +913,7 @@ def test_reduce():
     assert state_map[2] != state_map[0]
 
     result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
-    assert result.get_num_of_trans() == 0
+    assert result.get_num_of_transitions() == 0
     assert result.size() == 0
 
     # Test the reduction of a bigger automaton.
