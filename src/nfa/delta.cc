@@ -192,8 +192,7 @@ bool Delta::empty() const {
     return true;
 }
 
-Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_end)
-    : delta_{ delta }, current_state_{ 0 }, is_end_{ is_end } {
+Delta::Transitions::const_iterator::const_iterator(const Delta* delta): delta_{ delta }, current_state_{ 0 } {
     const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {
         if (!(*delta_)[i].empty()) {
@@ -207,13 +206,12 @@ Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_e
         }
     }
 
-    // no transition found, an empty post
+    // No transition found, delta contains only empty state posts.
     is_end_ = true;
 }
 
-Delta::Transitions::const_iterator::const_iterator(
-        const Delta* delta, State current_state, bool is_end)
-    : delta_{ delta }, current_state_{ current_state }, is_end_{ is_end } {
+Delta::Transitions::const_iterator::const_iterator(const Delta* delta, State current_state)
+    : delta_{ delta }, current_state_{ current_state } {
     const size_t post_size = delta_->num_of_states();
     for (State source{ current_state_ }; source < post_size; ++source) {
         const StatePost& state_post{ delta_->state_post(source) };
@@ -228,7 +226,7 @@ Delta::Transitions::const_iterator::const_iterator(
         }
     }
 
-    // no transition found, an empty post
+    // No transition found, delta from the current state contains only empty state posts.
     is_end_ = true;
 }
 
@@ -367,8 +365,8 @@ bool Delta::operator==(const Delta& other) const {
     return other_transitions_it == other_transitions_end;
 }
 
-StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post, bool is_end)
-    : state_post_{ state_post }, is_end_{ is_end } {
+StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post)
+    : state_post_{ state_post } {
     if (!state_post_->empty()) {
         state_post_it_ = state_post_->begin();
         symbol_post_it_ = state_post_it_->targets.begin();

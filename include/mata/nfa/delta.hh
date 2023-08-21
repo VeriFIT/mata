@@ -394,7 +394,7 @@ public:
         class const_iterator {
         private:
             const Delta* delta_ = nullptr;
-            size_t current_state_;
+            size_t current_state_{};
             StatePost::const_iterator state_post_it_{};
             StateSet::const_iterator symbol_post_it_{};
             bool is_end_{ false };
@@ -407,9 +407,9 @@ public:
             using pointer = Transition*;
             using reference = Transition&;
 
-            const_iterator() = default;
-            explicit const_iterator(const Delta* delta, bool is_end = false);
-            const_iterator(const Delta* delta, State current_state, bool is_end = false);
+            const_iterator(): is_end_{ true } {}
+            explicit const_iterator(const Delta* delta);
+            const_iterator(const Delta* delta, State current_state);
 
             const_iterator(const const_iterator& other) noexcept = default;
             const_iterator(const_iterator&&) = default;
@@ -425,7 +425,6 @@ public:
             const_iterator& operator=(const_iterator&&) = default;
 
             bool operator==(const const_iterator& other) const;
-            bool operator!=(const const_iterator& other) const { return !(*this == other); };
         }; // class Transitions::const_iterator.
 
         Transitions() = default;
@@ -436,7 +435,7 @@ public:
         Transitions& operator=(Transitions&) = default;
 
         const_iterator begin() const { return const_iterator{ delta_ }; };
-        const_iterator end() const { return const_iterator{ delta_, true}; };
+        const_iterator end() const { return const_iterator{}; };
     private:
         const Delta* delta_;
     }; // class Transitions.
