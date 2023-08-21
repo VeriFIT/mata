@@ -126,8 +126,8 @@ public:
      */
     struct moves_const_iterator {
     private:
-        const std::vector<SymbolPost>& symbol_posts_{};
-        std::vector<SymbolPost>::const_iterator symbol_post_it_{};
+        const StatePost* state_post_{};
+        StatePost::const_iterator state_post_it_{};
         StateSet::const_iterator target_states_it_{};
         bool is_end_{ false };
         Move move_{};
@@ -139,10 +139,11 @@ public:
         using pointer = Move*;
         using reference = Move&;
 
-        explicit moves_const_iterator(const std::vector<SymbolPost>& symbol_posts, bool is_end = false);
+        moves_const_iterator() = default;
+        explicit moves_const_iterator(const StatePost* const state_post, bool is_end = false);
 
-        moves_const_iterator(const std::vector<SymbolPost>& symbol_posts,
-                             std::vector<SymbolPost>::const_iterator symbol_posts_it,
+        moves_const_iterator(const StatePost* const symbol_posts,
+                             StatePost::const_iterator state_post_it,
                              StateSet::const_iterator target_states_it, bool is_end = false);
 
         moves_const_iterator(const moves_const_iterator& other) = default;
@@ -154,14 +155,14 @@ public:
         // Postfix increment
         const moves_const_iterator operator++(int);
 
-        moves_const_iterator& operator=(const moves_const_iterator& x);
+        moves_const_iterator& operator=(const moves_const_iterator& other);
 
         bool operator==(const moves_const_iterator& other) const;
         bool operator!=(const moves_const_iterator& other) const { return !(*this == other); };
     };
 
-    moves_const_iterator moves_cbegin() const { return moves_const_iterator(ToVector()); }
-    moves_const_iterator moves_cend() const { return moves_const_iterator(ToVector(), true); }
+    moves_const_iterator moves_cbegin() const { return moves_const_iterator(this); }
+    moves_const_iterator moves_cend() const { return moves_const_iterator(this, true); }
     moves_const_iterator moves_begin() const { return moves_cbegin(); }
     moves_const_iterator moves_end() const { return moves_cend(); }
 
@@ -315,6 +316,11 @@ public:
      * @return Number of states in the whole Delta, including both source and target states.
      */
     size_t num_of_states() const { return state_posts_.size(); }
+
+    /**
+     * @return Number of transitions in Delta.
+     */
+    size_t num_of_transitions() const;
 
     void add(State state_from, Symbol symbol, State state_to);
     void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
@@ -471,7 +477,7 @@ public:
     /**
      * Iterator over transitions represented as 'Transition' instances.
      */
-    Transitions transitions() { return Transitions{ *this }; }
+    Transitions transitions()  const { return Transitions{ *this }; }
 
     transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
     transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
