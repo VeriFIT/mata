@@ -36,7 +36,6 @@ int main(int argc, char *argv[]) {
     Nfa trimmed_aut = aut;
     TIME_BEGIN(trim);
     trimmed_aut.trim();
-    auto end = std::chrono::system_clock::now();
     TIME_END(trim);
 
     return EXIT_SUCCESS;

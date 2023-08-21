@@ -9,6 +9,33 @@ int load_automaton(
         Mata::OnTheFlyAlphabet& alphabet,
         const bool skip_mintermization
 ) {
+    std::vector<Mata::IntermediateAut> inter_auts;
+    if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
+        std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
+        return EXIT_FAILURE;
+    }
+    try {
+        if (skip_mintermization or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
+        } else {
+            Mata::Mintermization mintermization;
+            TIME_BEGIN(mintermization);
+            Mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
+            TIME_END(mintermization);
+            aut = Mata::Nfa::Builder::construct(mintermized, &alphabet);
+        }
+        return EXIT_SUCCESS;
+    }
+    catch (const std::exception& ex) {
+        std::cerr << "error: " << ex.what() << "\n";
+        return EXIT_FAILURE;
+    }
+}
+
+int load_intermediate_automaton(
+        const std::string& filename,
+        std::vector<Mata::IntermediateAut>& out_inter_auts
+) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -30,22 +57,12 @@ int load_automaton(
         }
 
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
-
-        if (skip_mintermization or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
-            aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
-        } else {
-            Mata::Mintermization mintermization;
-            TIME_BEGIN(mintermization);
-            auto mintermized = mintermization.mintermize(inter_auts);
-            TIME_END(mintermization);
-            assert(mintermized.size() == 1);
-            aut = Mata::Nfa::Builder::construct(mintermized[0], &alphabet);
-        }
-        return EXIT_SUCCESS;
-    }
-    catch (const std::exception& ex) {
+        out_inter_auts.push_back(inter_auts[0]);
+    } catch (const std::exception& ex) {
         fs.close();
         std::cerr << "error: " << ex.what() << "\n";
         return EXIT_FAILURE;
     }
+
+    return EXIT_SUCCESS;
 }

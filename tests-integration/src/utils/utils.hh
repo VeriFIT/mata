@@ -35,6 +35,18 @@ int load_automaton(
         const bool skip_mintermization = false
 );
 
+/**
+ * @brief Load automaton from file at @p filename into @p inter_aut
+ *
+ * @param[in] filename Path to the file with automaton to load.
+ * @param[out] inter_aut Intermediate automaton instance to load into.
+ * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
+ */
+int load_intermediate_automaton(
+        const std::string& filename,
+        std::vector<Mata::IntermediateAut>& out_inter_auts
+);
+
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
  */
