@@ -243,7 +243,7 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
     CHECK(result.final.size() == 4);
 
     // Check transitions.
-    CHECK(result.get_num_of_trans() == 15);
+    CHECK(result.delta.num_of_transitions() == 15);
 
     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
     CHECK(result.delta.transitions.from(prod_map[{ 0, 0 }]).count() == 1);

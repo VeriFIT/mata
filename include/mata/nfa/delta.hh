@@ -251,11 +251,6 @@ public:
     };
 
     /**
-     * Size of delta is number of all transitions, i.e. triples of form (state, symbol, state)
-     */
-    size_t size() const;
-
-    /**
      * @brief Get constant reference to the state post of @p src_state.
      *
      * If we try to access a state post of a @p src_state which is present in the automaton as an initial/final state,

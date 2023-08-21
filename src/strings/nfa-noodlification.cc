@@ -206,8 +206,8 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        std::shared_ptr<Nfa> seg = segments_one_initial_final[{ unused_state, fn}];
-        if(seg->final.size() != 1 || seg->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
+        std::shared_ptr<Nfa::Nfa> seg = segments_one_initial_final[{unused_state, fn}];
+        if(seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
             new_item.noodle.emplace_back(seg, def_eps_vector);
         }
         new_item.seg_id = 0;
@@ -247,7 +247,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
                 SegItem new_item = item; // deep copy
                 new_item.seg_id++;
                 // do not include segmets with trivial epsilon language
-                if(seg_iter->second->final.size() != 1 || seg_iter->second->get_num_of_trans() > 0) { // L(seg_iter) != {epsilon}
+                if(seg_iter->second->final.size() != 1 || seg_iter->second->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
                     new_item.noodle.emplace_back(seg_iter->second, process_eps_map(visited_eps[tr.target]));
                 }
                 new_item.fin = fn;

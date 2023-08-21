@@ -59,14 +59,6 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_pos
     return state_post.end();
 }
 
-size_t Delta::size() const {
-    size_t size = 0;
-    for (State q = 0; q < num_of_states(); ++q) {
-        for (const SymbolPost & m: (*this)[q]) { size = size + m.size(); }
-    }
-    return size;
-}
-
 Delta& Delta::operator=(const Delta& other) {
     this->state_posts_ = other.state_posts_;
     return *this;
@@ -189,13 +181,23 @@ bool Delta::contains(const Transition& transition) const {
     return contains(transition.source, transition.symbol, transition.target);
 }
 
-bool Delta::empty() const
-{
-    return this->transitions_begin() == this->transitions_end();
+size_t Delta::num_of_transitions() const {
+    size_t number_of_transitions{ 0 };
+    for (const StatePost& state_post: state_posts_) {
+        for (const SymbolPost& symbol_post: state_post) {
+            number_of_transitions += symbol_post.size();
+        }
+    }
+    return number_of_transitions;
 }
 
-Delta::transitions_const_iterator::transitions_const_iterator(const Delta& delta, bool is_end)
-    : delta_{ &delta }, current_state_{ 0 }, is_end_{ is_end } {
+bool Delta::empty() const {
+    for (const StatePost& state_post: state_posts_) {
+        if (!state_post.empty()) { return false; }
+    }
+    return true;
+}
+
     const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {
         if (!(*delta_)[i].empty()) {

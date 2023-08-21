@@ -225,13 +225,6 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * @brief Get a number of transitions in the whole automaton.
-     *
-     * The operation has constant time complexity.
-     */
-    size_t get_num_of_trans() const { return std::distance(delta.transitions.begin(), delta.transitions.end()); }
-
-    /**
      * Get transitions as a sequence of @c Trans.
      * @return Sequence of transitions as @c Trans.
      */
