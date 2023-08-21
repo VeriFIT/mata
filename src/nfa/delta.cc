@@ -64,12 +64,6 @@ Delta& Delta::operator=(const Delta& other) {
     return *this;
 }
 
-Delta::TransitionsView Delta::Transitions::from(const State source) const {
-    transitions_const_iterator begin_it{ delta_, source };
-    transitions_const_iterator end_it{ delta_, source + 1 };
-    return TransitionsView{ begin_it, end_it };
-}
-
 void Delta::add(State source, Symbol symbol, State target) {
     const State max_state{ std::max(source, target) };
     if (max_state >= state_posts_.size()) {
@@ -198,6 +192,8 @@ bool Delta::empty() const {
     return true;
 }
 
+Delta::Transitions::const_iterator::const_iterator(const Delta* delta, bool is_end)
+    : delta_{ delta }, current_state_{ 0 }, is_end_{ is_end } {
     const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {
         if (!(*delta_)[i].empty()) {
@@ -215,9 +211,9 @@ bool Delta::empty() const {
     is_end_ = true;
 }
 
-Delta::transitions_const_iterator::transitions_const_iterator(
-        const Delta& delta, State current_state, bool is_end)
-    : delta_{ &delta }, current_state_{ current_state }, is_end_{ is_end } {
+Delta::Transitions::const_iterator::const_iterator(
+        const Delta* delta, State current_state, bool is_end)
+    : delta_{ delta }, current_state_{ current_state }, is_end_{ is_end } {
     const size_t post_size = delta_->num_of_states();
     for (State source{ current_state_ }; source < post_size; ++source) {
         const StatePost& state_post{ delta_->state_post(source) };
@@ -236,7 +232,7 @@ Delta::transitions_const_iterator::transitions_const_iterator(
     is_end_ = true;
 }
 
-Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++() {
+Delta::Transitions::const_iterator& Delta::Transitions::const_iterator::operator++() {
     assert(delta_->begin() != delta_->end());
 
     ++symbol_post_it_;
@@ -273,13 +269,13 @@ Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator++
     return *this;
 }
 
-const Delta::transitions_const_iterator Delta::transitions_const_iterator::operator++(int) {
-    const transitions_const_iterator tmp = *this;
+const Delta::Transitions::const_iterator Delta::Transitions::const_iterator::operator++(int) {
+    const Delta::Transitions::const_iterator tmp{ *this };
     ++(*this);
     return tmp;
 }
 
-bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+bool Delta::Transitions::const_iterator::operator==(const Delta::Transitions::const_iterator& other) const {
     if (is_end_ && other.is_end_) {
         return true;
     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
@@ -434,10 +430,12 @@ bool mata::nfa::StatePost::moves_const_iterator::operator==(const StatePost::mov
 }
 
 bool Delta::operator==(const Delta& other) const {
-    transitions_const_iterator this_transitions_it{ transitions_begin() };
-    const transitions_const_iterator this_transitions_end{ transitions_end() };
-    transitions_const_iterator other_transitions_it{ other.transitions_begin() };
-    const transitions_const_iterator other_transitions_end{ other.transitions_end() };
+    Delta::Transitions this_transitions{ transitions() };
+    Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
+    const Delta::Transitions::const_iterator this_transitions_end{ this_transitions.end() };
+    Delta::Transitions other_transitions{ other.transitions() };
+    Delta::Transitions::const_iterator other_transitions_it{ other_transitions.begin() };
+    const Delta::Transitions::const_iterator other_transitions_end{ other_transitions.end() };
     while (this_transitions_it != this_transitions_end) {
         if (other_transitions_it == other_transitions_end || *this_transitions_it != *other_transitions_it) {
             return false;

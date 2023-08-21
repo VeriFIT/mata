@@ -73,7 +73,7 @@ TEST_CASE("Mata::nfa::Delta::state_post()") {
         CHECK_NOTHROW(aut.delta.add(0, 1, { 3, 4, 5, 6 }));
         CHECK_NOTHROW(aut.delta.add(26, 1, StateSet{}));
         CHECK_NOTHROW(aut.delta.add(42, 1, StateSet{ 43 }));
-        CHECK(aut.get_num_of_trans() == 5);
+        CHECK(aut.delta.num_of_transitions() == 5);
     }
 }
 
@@ -210,8 +210,8 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
     std::vector<Transition> expected_transitions{};
 
     SECTION("empty automaton") {
-        Mata::Nfa::Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
-        REQUIRE(it == nfa.delta.transitions.end());
+        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
+        REQUIRE(transitions.begin() == transitions.end());
     }
 
     SECTION("Simple NFA") {
@@ -224,7 +224,7 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         nfa.delta.add(2, 0, 1);
         nfa.delta.add(2, 0, 3);
 
-        mata::nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
+        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
         iterated_transitions.clear();
         for (auto transitions_it{ transitions.begin() };
              transitions_it != transitions.end(); ++transitions_it) {
@@ -239,7 +239,7 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
         CHECK(iterated_transitions == expected_transitions);
 
         iterated_transitions.clear();
-        for (const Transition& transition: nfa.delta.transitions) { iterated_transitions.push_back(transition); }
+        for (const Transition& transition: nfa.delta.transitions()) { iterated_transitions.push_back(transition); }
         CHECK(iterated_transitions == expected_transitions);
     }
 
@@ -249,25 +249,26 @@ TEST_CASE("Mata::nfa::Delta iteration over transitions") {
 
         nfa.delta.add('q', 'a', 'r');
         nfa.delta.add('q', 'b', 'r');
-        Delta::transitions_const_iterator it = nfa.delta.transitions.begin();
-        Delta::transitions_const_iterator jt = nfa.delta.transitions.begin();
+        const Delta::Transitions transitions{ nfa.delta.transitions() };
+        Delta::Transitions::const_iterator it{ transitions.begin() };
+        Delta::Transitions::const_iterator jt{ transitions.begin() };
         CHECK(it == jt);
         ++it;
         CHECK(it != jt);
-        CHECK((it != nfa.delta.transitions.begin() && it != nfa.delta.transitions.end()));
-        CHECK(jt == nfa.delta.transitions.begin());
+        CHECK((it != transitions.begin() && it != transitions.end()));
+        CHECK(jt == transitions.begin());
 
         ++jt;
         CHECK(it == jt);
-        CHECK((jt != nfa.delta.transitions.begin() && jt != nfa.delta.transitions.end()));
+        CHECK((jt != transitions.begin() && jt != transitions.end()));
 
-        jt = nfa.delta.transitions.end();
+        jt = transitions.end();
         CHECK(it != jt);
-        CHECK((jt != nfa.delta.transitions.begin() && jt == nfa.delta.transitions.end()));
+        CHECK((jt != transitions.begin() && jt == transitions.end()));
 
-        it = nfa.delta.transitions.end();
+        it = transitions.end();
         CHECK(it == jt);
-        CHECK((it != nfa.delta.transitions.begin() && it == nfa.delta.transitions.end()));
+        CHECK((it != transitions.begin() && it == transitions.end()));
     }
 }
 
@@ -279,11 +280,11 @@ TEST_CASE("Mata::Nfa::Delta::operator=()") {
 
     Nfa copied_nfa{ nfa };
     nfa.delta.add(1, 'b', 0);
-    CHECK(nfa.delta.transitions.count() == 2);
-    CHECK(copied_nfa.delta.transitions.count() == 1);
+    CHECK(nfa.delta.num_of_transitions() == 2);
+    CHECK(copied_nfa.delta.num_of_transitions() == 1);
 }
 
-TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
+TEST_CASE("Mata::Nfa::StatePost::Moves") {
     Nfa nfa{};
     nfa.initial.insert(0);
     nfa.final.insert(5);
@@ -294,13 +295,14 @@ TEST_CASE("Mata::Nfa::Delta::TransitionsView") {
     nfa.delta.add(2, 'e', 3);
     nfa.delta.add(3, 'e', 4);
     nfa.delta.add(4, 'f', 5);
-    Delta::TransitionsView transitions_from_source{ nfa.delta.transitions.from(0) };
-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } == std::vector<Transition>{ { 0, 'a', 1 }});
-    transitions_from_source = nfa.delta.transitions.from(1);
-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() } ==
-        std::vector<Transition>{ { 1, 'b', 2 }, { 1, 'c', 2 }, { 1, 'd', 2 } });
-    transitions_from_source = nfa.delta.transitions.from(12);
-    CHECK(std::vector<Transition>{ transitions_from_source.begin(), transitions_from_source.end() }.empty());
+    // TODO: rewrite in a check of moves.
+    StatePost::Moves moves_from_source{ nfa.delta[0].moves() };
+    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } == std::vector<Move>{ { 'a', 1 }});
+    moves_from_source = nfa.delta[1].moves();
+    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } ==
+        std::vector<Move>{ { 'b', 2 }, { 'c', 2 }, { 'd', 2 } });
+    moves_from_source = nfa.delta[12].moves();
+    CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() }.empty());
 }
 
 TEST_CASE("Mata::Nfa::Delta::operator==()") {

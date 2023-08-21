@@ -376,108 +376,68 @@ public:
     const_iterator end() const { return state_posts_.end(); }
 
     /**
-     * Iterator over transitions. It iterates over triples (lhs, symbol, rhs) where lhs and rhs are states.
-     */
-    class transitions_const_iterator {
-    private:
-        const Delta* delta_ = nullptr;
-        size_t current_state_;
-        StatePost::const_iterator state_post_it_{};
-        StateSet::const_iterator symbol_post_it_{};
-        bool is_end_{ false };
-        Transition transition_{};
-
-    public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = Transition;
-        using difference_type = unsigned;
-        using pointer = Transition*;
-        using reference = Transition&;
-
-        transitions_const_iterator() = default;
-        explicit transitions_const_iterator(const Delta& delta, bool is_end = false);
-        transitions_const_iterator(const Delta& delta, State current_state, bool is_end = false);
-
-        transitions_const_iterator(const transitions_const_iterator& other) noexcept = default;
-        transitions_const_iterator(transitions_const_iterator&&) = default;
-
-        const Transition& operator*() const { return transition_; }
-
-        // Prefix increment
-        transitions_const_iterator& operator++();
-        // Postfix increment
-        const transitions_const_iterator operator++(int);
-
-        transitions_const_iterator& operator=(const transitions_const_iterator& other) noexcept = default;
-        transitions_const_iterator& operator=(transitions_const_iterator&&) = default;
-
-        bool operator==(const transitions_const_iterator& other) const;
-        bool operator!=(const transitions_const_iterator& other) const { return !(*this == other); };
-    }; // class transitions_const_iterator.
-
-    class TransitionsView {
-    private:
-        transitions_const_iterator begin_;
-        transitions_const_iterator end_;
-    public:
-        TransitionsView() = default;
-        TransitionsView(const TransitionsView&) = default;
-        TransitionsView(TransitionsView&&) = default;
-        TransitionsView(transitions_const_iterator begin, transitions_const_iterator end): begin_{ begin }, end_{ end } {}
-        TransitionsView& operator=(const TransitionsView&) = default;
-        TransitionsView& operator=(TransitionsView&&) = default;
-        transitions_const_iterator begin() const { return begin_; }
-        transitions_const_iterator end() const { return end_; }
-        size_t count() const { return std::distance( begin(), end() ); }
-        size_t empty() const { return count() == 0; }
-    };
-
-    /**
-     * Iterator over transitions represented as 'Transition' instances.
+     * @brief Iterator over transitions represented as @c Transition instances.
+     *
+     * It iterates over triples (source, symbol, target).
      */
     class Transitions {
-    private:
-        const Delta& delta_;
     public:
-        explicit Transitions(const Delta& delta): delta_{ delta } {}
-        transitions_const_iterator begin() const { return delta_.transitions_cbegin(); }
-        transitions_const_iterator end() const { return delta_.transitions_cend(); }
-
         /**
-         * @brief Get a number of transitions in delta.
-         *
-         * The operation has a linear time complexity to the number of transitions in the delta.
+         * Iterator over transitions. 
          */
-        size_t count() const { return std::distance(begin(), end()); }
+        class const_iterator {
+        private:
+            const Delta* delta_ = nullptr;
+            size_t current_state_;
+            StatePost::const_iterator state_post_it_{};
+            StateSet::const_iterator symbol_post_it_{};
+            bool is_end_{ false };
+            Transition transition_{};
 
-        size_t empty() const { return count() == 0; }
+        public:
+            using iterator_category = std::forward_iterator_tag;
+            using value_type = Transition;
+            using difference_type = unsigned;
+            using pointer = Transition*;
+            using reference = Transition&;
 
-        // TODO: Is 'from_source()' than 'from()'?
-        TransitionsView from(State source) const;
-    };
+            const_iterator() = default;
+            explicit const_iterator(const Delta* delta, bool is_end = false);
+            const_iterator(const Delta* delta, State current_state, bool is_end = false);
 
-        /**
-         * @brief Get a number of transitions in delta.
-         *
-         * The operation has a linear time complexity to the number of 'SymbolPost's in the delta.
-         */
-        size_t count() const { return delta_.size(); }
+            const_iterator(const const_iterator& other) noexcept = default;
+            const_iterator(const_iterator&&) = default;
 
-        /**
-         * Whether there are no transitions in the delta.
-         */
-        bool empty() const { return count() == 0; }
+            const Transition& operator*() const { return transition_; }
+
+            // Prefix increment
+            const_iterator& operator++();
+            // Postfix increment
+            const const_iterator operator++(int);
+
+            const_iterator& operator=(const const_iterator& other) noexcept = default;
+            const_iterator& operator=(const_iterator&&) = default;
+
+            bool operator==(const const_iterator& other) const;
+            bool operator!=(const const_iterator& other) const { return !(*this == other); };
+        }; // class const_const_iterator.
+
+        explicit Transitions(const Delta* delta): delta_{ delta } {}
+        Transitions(Transitions&&) = default;
+        Transitions(Transitions&) = default;
+        Transitions& operator=(Transitions&&) = default;
+        Transitions& operator=(Transitions&) = default;
+
+        const_iterator begin() const { return const_iterator{ delta_ }; };
+        const_iterator end() const { return const_iterator{ delta_, true}; };
+    private:
+        const Delta* delta_;
     }; // class Transitions.
 
     /**
      * Iterator over transitions represented as 'Transition' instances.
      */
-    Transitions transitions()  const { return Transitions{ *this }; }
-
-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
+    Transitions transitions()  const { return Transitions{ this }; }
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
@@ -496,11 +456,7 @@ public:
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
 private:
     std::vector<StatePost> state_posts_;
-    transitions_const_iterator transitions_cbegin() const { return transitions_const_iterator(*this); }
-    transitions_const_iterator transitions_cend() const { return transitions_const_iterator(*this, true); }
-    transitions_const_iterator transitions_begin() const { return transitions_cbegin(); }
-    transitions_const_iterator transitions_end() const { return transitions_cend(); }
-}; // struct Delta.
+}; // class Delta.
 
 } // namespace mata::nfa.
 
