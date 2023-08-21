@@ -124,8 +124,9 @@ TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
         size_t transitions_cnt{ 0 };
         std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
         std::vector<Transition> iterated_transitions{};
-        for (Delta::transitions_const_iterator trans_it{ a.delta.transitions.begin()}; 
-             trans_it != a.delta.transitions.end(); ++trans_it) {
+        const Delta::Transitions transitions{ a.delta.transitions() };
+        const Delta::Transitions::const_iterator transitions_end{ transitions.end() };
+        for (Delta::Transitions::const_iterator trans_it{ transitions.begin()}; trans_it != transitions_end; ++trans_it) {
             iterated_transitions.push_back(*trans_it);
             ++transitions_cnt;
         }
@@ -134,7 +135,7 @@ TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
 
         transitions_cnt = 0;
         iterated_transitions.clear();
-        for (const Transition& trans: a.delta.transitions) {
+        for (const Transition& trans: a.delta.transitions()) {
             iterated_transitions.push_back(trans);
             ++transitions_cnt;
         }
@@ -2212,7 +2213,8 @@ TEST_CASE("mata::nfa::get_trans_as_sequence(}") {
     expected.emplace_back(2, 3, 4);
 
 
-    REQUIRE(aut.get_trans_as_sequence() == expected);
+    const Delta::Transitions transitions{ aut.delta.transitions() };
+    REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
 }
 
 TEST_CASE("mata::nfa::remove_epsilon()")

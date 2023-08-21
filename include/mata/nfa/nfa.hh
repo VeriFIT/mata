@@ -225,12 +225,6 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * Get transitions as a sequence of @c Trans.
-     * @return Sequence of transitions as @c Trans.
-     */
-    std::vector<Transition> get_trans_as_sequence() const;
-
-    /**
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
