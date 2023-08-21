@@ -350,85 +350,6 @@ void Delta::defragment(const BoolVector& is_staying, const std::vector<State>& r
     }
 }
 
-StatePost::moves_const_iterator::moves_const_iterator(const StatePost* state_post, bool is_end)
-    : state_post_{ state_post }, state_post_it_{ state_post_->cbegin() }, is_end_{ is_end } {
-    while (state_post_it_ != state_post_->cend()) {
-        if (!state_post_it_->empty()) {
-            target_states_it_ = state_post_it_->targets.begin();
-            move_.symbol = state_post_it_->symbol;
-            move_.target = *target_states_it_;
-            return;
-        }
-        ++state_post_it_;
-    }
-    // No move found. We are at the end of moves.
-    is_end_ = true;
-}
-
-StatePost::moves_const_iterator::moves_const_iterator(
-    const StatePost* const symbol_posts, std::vector<SymbolPost>::const_iterator symbol_posts_it,
-    StateSet::const_iterator target_states_it, bool is_end)
-    : state_post_{ symbol_posts }, state_post_it_{ symbol_posts_it }, target_states_it_{ target_states_it },
-      is_end_{ is_end } {
-        while (state_post_it_ != state_post_->cend()) {
-            if (!state_post_it_->empty()) {
-                target_states_it_ = state_post_it_->targets.begin();
-                move_.symbol = state_post_it_->symbol;
-                move_.target = *target_states_it_;
-                return;
-            }
-        }
-        // No move found. We are at the end of moves.
-        is_end_ = true;
-}
-
-StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator++() {
-    assert(state_post_->begin() != state_post_->end());
-
-    ++target_states_it_;
-    if (target_states_it_ != state_post_it_->targets.end()) {
-        move_.target = *target_states_it_;
-        return *this;
-    }
-
-    ++state_post_it_;
-    if (state_post_it_ != state_post_->cend()) {
-        target_states_it_ = state_post_it_->targets.begin();
-        move_.symbol = state_post_it_->symbol;
-        move_.target = *target_states_it_;
-        return *this;
-    }
-
-    is_end_ = true;
-    return *this;
-}
-
-const StatePost::moves_const_iterator StatePost::moves_const_iterator::operator++(int) {
-    const moves_const_iterator tmp = *this;
-    ++(*this);
-    return tmp;
-}
-
-StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(const StatePost::moves_const_iterator& other) {
-    state_post_ = other.state_post_;
-    is_end_ = other.is_end_;
-    move_.symbol = other.move_.symbol;
-    move_.target = other.move_.target;
-    state_post_it_ = other.state_post_it_;
-    target_states_it_ = other.target_states_it_;
-    return *this;
-}
-
-bool mata::nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
-    if (is_end_ && other.is_end_) {
-        return true;
-    } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
-        return false;
-    } else {
-        return state_post_it_ == other.state_post_it_ && target_states_it_ == other.target_states_it_;
-    }
-}
-
 bool Delta::operator==(const Delta& other) const {
     Delta::Transitions this_transitions{ transitions() };
     Delta::Transitions::const_iterator this_transitions_it{ this_transitions.begin() };
@@ -444,4 +365,59 @@ bool Delta::operator==(const Delta& other) const {
         ++other_transitions_it;
     }
     return other_transitions_it == other_transitions_end;
+}
+
+StatePost::Moves::const_iterator::const_iterator(const StatePost* state_post, bool is_end)
+    : state_post_{ state_post }, is_end_{ is_end } {
+    if (!state_post_->empty()) {
+        state_post_it_ = state_post_->begin();
+        symbol_post_it_ = state_post_it_->targets.begin();
+        move_.symbol = state_post_it_->symbol;
+        move_.target = *symbol_post_it_;
+        return;
+    }
+
+    // No transition found, 'state_post' is an empty state post.
+    is_end_ = true;
+}
+
+StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
+    ++symbol_post_it_;
+    if (symbol_post_it_ != state_post_it_->targets.end()) {
+        move_.target = *symbol_post_it_;
+        return *this;
+    }
+
+    ++state_post_it_;
+    if (state_post_it_ != state_post_->cend()) {
+        symbol_post_it_ = state_post_it_->targets.begin();
+        move_.symbol = state_post_it_->symbol;
+        move_.target = *symbol_post_it_;
+        return *this;
+    }
+    is_end_ = true;
+    return *this;
+}
+
+const StatePost::Moves::const_iterator StatePost::Moves::const_iterator::operator++(int) {
+    const StatePost::Moves::const_iterator tmp{ *this };
+    ++(*this);
+    return tmp;
+}
+
+bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_iterator& other) const {
+    if (is_end_ && other.is_end_) {
+        return true;
+    } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
+        return false;
+    }
+    return state_post_it_ == other.state_post_it_ && symbol_post_it_ == other.symbol_post_it_;
+}
+
+size_t StatePost::num_of_moves() const {
+    size_t counter{ 0 };
+    for (const SymbolPost& symbol_post: *this) {
+        counter += symbol_post.size();
+    }
+    return counter;
 }

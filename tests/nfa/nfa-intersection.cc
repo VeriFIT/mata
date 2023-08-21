@@ -246,45 +246,45 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
     CHECK(result.delta.num_of_transitions() == 15);
 
     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 0, 0 }]).count() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 0, 0 }]).num_of_moves() == 1);
 
     CHECK(result.delta.contains(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
     CHECK(result.delta.contains(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
     CHECK(result.delta.contains(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 1, 0 }]).count() == 3);
+    CHECK(result.delta.state_post(prod_map[{ 1, 0 }]).num_of_moves() == 3);
 
-    CHECK(result.delta.transitions.from(prod_map[{ 1, 1 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 1, 1 }]).empty());
 
     CHECK(result.delta.contains(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
     CHECK(result.delta.contains(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 1, 2 }]).count() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 1, 2 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 1, 3 }]).count() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 1, 3 }]).num_of_moves() == 1);
 
-    CHECK(result.delta.transitions.from(prod_map[{ 1, 4 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 1, 4 }]).empty());
 
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 2, 5 }]).count() == 3);
+    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 3);
 
     CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
     CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 3, 5 }]).count() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 3, 5 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
     CHECK(result.delta.contains(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 2, 6 }]).count() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 2, 6 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
-    CHECK(result.delta.transitions.from(prod_map[{ 3, 6 }]).count() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 3, 6 }]).num_of_moves() == 1);
 
-    CHECK(result.delta.transitions.from(prod_map[{ 4, 7 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 4, 7 }]).empty());
 
-    CHECK(result.delta.transitions.from(prod_map[{ 5, 9 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 5, 9 }]).empty());
 
-    CHECK(result.delta.transitions.from(prod_map[{ 5, 8 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 5, 8 }]).empty());
 }
 
 TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection]")
