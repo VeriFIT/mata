@@ -28,8 +28,13 @@ using namespace Mata::Nfa;
  * @param[in] aut_name Automaton name to print in logging outputs.
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */ 
-int load_automaton(const std::string& filename, Nfa& aut, Mata::OnTheFlyAlphabet& alphabet,
-                   const bool skip_mintermization = false, const std::string& aut_name = "unnamed");
+int load_automaton(
+        const std::string& filename,
+        Nfa& aut,
+        Mata::OnTheFlyAlphabet& alphabet,
+        const bool skip_mintermization = false
+);
+
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
  */

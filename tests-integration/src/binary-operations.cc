@@ -19,10 +19,10 @@ int main(int argc, char *argv[]) {
     Nfa lhs;
     Nfa rhs;
     Mata::OnTheFlyAlphabet alphabet;
-    if (load_automaton(lhs_filename, lhs, alphabet, SKIP_MINTERMIZATION, "lhs") != EXIT_SUCCESS) {
+    if (load_automaton(lhs_filename, lhs, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
-    if (load_automaton(rhs_filename, rhs, alphabet, SKIP_MINTERMIZATION, "rhs") != EXIT_SUCCESS) {
+    if (load_automaton(rhs_filename, rhs, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
