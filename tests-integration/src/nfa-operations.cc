@@ -5,19 +5,12 @@
 
 #include "utils/utils.hh"
 
-#include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/builder.hh"
-#include "mata/nfa/plumbing.hh"
-#include "mata/nfa/algorithms.hh"
-#include "mata/parser/mintermization.hh"
 
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include <chrono>
 #include <string>
-#include <cstring>
 
 using namespace Mata::Nfa;
 
@@ -41,10 +34,10 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(5);
 
     Nfa trimmed_aut = aut;
-    auto start = std::chrono::system_clock::now();
+    TIME_BEGIN(trim);
     trimmed_aut.trim();
     auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "trim: " << elapsed.count() << "\n";
+    TIME_END(trim);
+
     return EXIT_SUCCESS;
 }

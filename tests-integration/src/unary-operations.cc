@@ -1,14 +1,10 @@
 #include "utils/utils.hh"
 
-#include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
-#include "mata/parser/mintermization.hh"
 
 #include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <chrono>
 #include <string>
 
@@ -27,93 +23,75 @@ int main(int argc, char *argv[]) {
     load_automaton(filename, aut, alphabet);
 
     Nfa compl_aut;
-    auto start = std::chrono::system_clock::now();
+    TIME_BEGIN(complement);
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
     Mata::Nfa::Plumbing::complement(&compl_aut, aut, alphabet);
     // > END OF PROFILED CODE
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "complement: " << elapsed.count() << "\n";
+    TIME_END(complement);
 
     Nfa min_compl_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(complement_and_minize);
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
     Mata::Nfa::Plumbing::complement(&min_compl_aut, aut, alphabet, {{"algorithm", "classical"}, {"minimize", "true"}});
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "complement-and-minimize: " << elapsed.count() << "\n";
+    TIME_END(complement_and_minize);
 
     Nfa revert_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(revert);
     // > START OF PROFILED CODE
     // Only revert and its callees will be measured
     Mata::Nfa::Plumbing::revert(&revert_aut, aut);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "revert: " << elapsed.count() << "\n";
+    TIME_END(revert);
 
     Nfa reduced_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(reduce_and_trim);
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
     Nfa trimmed{ aut };
     Mata::Nfa::Plumbing::reduce(&reduced_aut, trimmed.trim());
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "reduce-and-trim: " << elapsed.count() << "\n";
+    TIME_END(reduce_and_trim);
 
     Nfa untrimmed_reduced_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(reduce);
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
     Mata::Nfa::Plumbing::reduce(&untrimmed_reduced_aut, aut);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "reduce: " << elapsed.count() << "\n";
+    TIME_END(reduce);
 
     Nfa minimized_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(minimize);
     // > START OF PROFILED CODE
     // Only minimize and its callees will be measured
     Mata::Nfa::Plumbing::minimize(&minimized_aut, aut);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "minimize: " << elapsed.count() << "\n";
+    TIME_END(minimize);
 
     Nfa det_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(determinize);
     // > START OF PROFILED CODE
     // Only determinize and its callees will be measured
     Mata::Nfa::Plumbing::determinize(&det_aut, aut);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "determinize: " << elapsed.count() << "\n";
+    TIME_END(determinize);
 
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(naive_universality);
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
     Mata::Nfa::Algorithms::is_universal_naive(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "naive-universality: " << elapsed.count() << "\n";
+    TIME_END(naive_universality);
 
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(antichain_universality);
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
     Mata::Nfa::Algorithms::is_universal_antichains(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "antichains-universality: " << elapsed.count() << "\n";
+    TIME_END(antichain_universality);
 
     return EXIT_SUCCESS;
 }

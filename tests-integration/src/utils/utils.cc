@@ -1,7 +1,12 @@
 #include "utils.hh"
 
-int load_automaton(const std::string& filename, Nfa& aut, Mata::OnTheFlyAlphabet& alphabet,
-                   const bool skip_mintermization, const std::string& aut_name) {
+int load_automaton(
+        const std::string& filename,
+        Nfa& aut,
+        Mata::OnTheFlyAlphabet& alphabet,
+        const bool skip_mintermization,
+        const std::string& aut_name
+) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
         std::cerr << "Could not open file \'" << filename << "'\n";
@@ -25,7 +30,8 @@ int load_automaton(const std::string& filename, Nfa& aut, Mata::OnTheFlyAlphabet
 
         std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
 
-        if (skip_mintermization or parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0) {
+        bool is_not_nfa_bits = parsed[0].type.compare(parsed[0].type.length() - bits_str.length(), bits_str.length(), bits_str) != 0;
+        if (skip_mintermization or is_not_nfa_bits) {
             aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
         } else {
             Mata::Mintermization mintermization;

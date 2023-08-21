@@ -30,37 +30,27 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(4);
 
     Nfa intersect_aut;
-    auto start = std::chrono::system_clock::now();
+    TIME_BEGIN(intersection);
     Mata::Nfa::Plumbing::intersection(&intersect_aut, lhs, rhs);
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "intersection: " << elapsed.count() << "\n";
+    TIME_END(intersection);
 
     Nfa concat_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(concatenation);
     Mata::Nfa::Plumbing::concatenate(&concat_aut, lhs, rhs);
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "concatenation: " << elapsed.count() << "\n";
+    TIME_END(concatenation);
 
     Nfa union_aut;
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(union);
     Mata::Nfa::Plumbing::uni(&union_aut, lhs, rhs);
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "union: " << elapsed.count() << "\n";
+    TIME_END(union);
 
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(naive_inclusion);
     Mata::Nfa::Algorithms::is_included_naive(lhs, rhs, &alphabet);
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "naive-inclusion: " << elapsed.count() << "\n";
+    TIME_END(naive_inclusion);
 
-    start = std::chrono::system_clock::now();
+    TIME_BEGIN(antichain_inclusion);
     Mata::Nfa::Algorithms::is_included_antichains(lhs, rhs, &alphabet);
-    end = std::chrono::system_clock::now();
-    elapsed = end - start;
-    std::cout << "antichain-inclusion: " << elapsed.count() << "\n";
+    TIME_END(antichain_inclusion);
 
     return EXIT_SUCCESS;
 }
