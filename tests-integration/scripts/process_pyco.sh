@@ -77,15 +77,15 @@ do
 
     # Each partial result is transformed using `pyco_proc` to csv representation
     echo "Processing $benchmark_file"
-    cat "$benchmark_file" | $rootdir/pyco_proc --csv --param-no $number_of_params > "$result_file.csv"
+    $rootdir/pyco_proc --csv --param-no "$number_of_params" > "$result_file.csv" < "$benchmark_file"
     if [ $processed_header = false ];
     then
       # For first result we ensure that the header will be there
       processed_header=true
-      cat "$result_file.csv" > $output_file
+      cat "$result_file.csv" > "$output_file"
     else
       # We cat rest of the results
-      awk 'FNR > 1' "$result_file.csv" >> $output_file
+      awk 'FNR > 1' "$result_file.csv" >> "$output_file"
     fi
     rm "$result_file.csv"
 done

@@ -106,19 +106,20 @@ do
     echo "[!] Performing benchmarks"
     sub_result_file="$result_file.output"
     intermediate+=( $sub_result_file )
-    cat "$benchmark_file" | $rootdir/pycobench $methods -j $jobs -c $config -t $timeout -o $sub_result_file
+    "$rootdir/"pycobench $methods -j "$jobs" -c "$config" -t "$timeout" -o "$sub_result_file" < "$benchmark_file"
 
-    number_of_params=$(expr `cat "$benchmark_file" | head -1 | tr -cd ';' | wc -c` + 1)
+    number_of_params=$(($(head -1 < "$benchmark_file"  | tr -cd ';' | wc -c) + 1))
 
     echo "[$i] Benchmark measured"
-    $basedir/process_pyco.sh -o "$result_file.csv" -p $number_of_params ${intermediate[@]}
+    "$basedir"/process_pyco.sh -o "$result_file.csv" -p $number_of_params ${intermediate[@]}
     echo "[$i] Benchmark processed"
 
     # All intermediate files are deleted
     rm ${intermediate[@]}
 done
-elapsed_time=$(($SECONDS - $start_time))
 
-python $basedir/compare_profiles.py "$result_file.csv"
+python "$basedir"/compare_profiles.py "$result_file.csv"
 
-eval "echo [!] Benchmarking done in $(date -ud@$elapsed_time -u +'$((%s/3600/24)) days %H:%M:%S')"
+secs=$((SECONDS - start_time))
+formated_elapsed=$(printf "%dd:%dh:%dm:%ds\n" $((secs/86400)) $((secs%86400/3600)) $((secs%3600/60)) $((secs%60)))
+eval "echo [!] Benchmarking done in $formated_elapsed"
