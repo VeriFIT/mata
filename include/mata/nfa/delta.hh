@@ -128,25 +128,43 @@ public:
     class Moves {
     public:
         /**
+         * @brief Whether to look up first symbol to iterate over from the beginning or from the end of @c StatePost
+         *  iterator.
+
+         * Iterates over symbol posts with symbols in interval [first_symbol_, last_symbol_].
+         */
+        enum class FirstSymbolLookupDiretion {
+            Forward, ///< Lookup from the beginning to the end.
+            Backward ///< Lookup from the end to the beginning.
+        };
+
+        /**
          * Iterator over moves.
          */
         class const_iterator {
         private:
-            const StatePost* state_post_ = nullptr;
+            const StatePost* state_post_{ nullptr };
             StatePost::const_iterator state_post_it_{};
             StateSet::const_iterator symbol_post_it_{};
+            Symbol last_symbol_{ Limits::max_symbol };
             bool is_end_{ false };
+            /// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
+            ///  a reference with @c operator*().
             Move move_{};
 
         public:
             using iterator_category = std::forward_iterator_tag;
             using value_type = Move;
-            using difference_type = unsigned;
+            using difference_type = size_t;
             using pointer = Move*;
             using reference = Move&;
 
+             /// Construct end iterator.
             const_iterator(): is_end_{ true } {}
-            const_iterator(const StatePost* state_post);
+            /// Construct all moves iterator, epsilon moves iterator or normal symbols moves iterator (excluding epsilons).
+            const_iterator(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
+                           Symbol last_symbol = Limits::max_symbol,
+                           const FirstSymbolLookupDiretion firest_symbol_lookup_direction = FirstSymbolLookupDiretion::Forward);
             const_iterator(const const_iterator& other) noexcept = default;
             const_iterator(const_iterator&&) = default;
 
@@ -164,25 +182,41 @@ public:
         }; // class const_iterator.
 
         Moves() = default;
-        explicit Moves(const StatePost* state_post): state_post_{ state_post } {}
+        Moves(
+            const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
+            Symbol last_symbol = Limits::max_symbol,
+            FirstSymbolLookupDiretion lookup_first_symbol_side = FirstSymbolLookupDiretion::Forward)
+            : state_post_{ &state_post }, first_symbol_{ first_symbol }, last_symbol_{ last_symbol },
+              first_symbol_lookup_direction_{ lookup_first_symbol_side } {}
         Moves(Moves&&) = default;
         Moves(Moves&) = default;
-        Moves& operator=(Moves&&) = default;
-        Moves& operator=(Moves&) = default;
+        Moves& operator=(Moves&& other) noexcept;
+        Moves& operator=(const Moves& other) noexcept;
 
-        const_iterator begin() const { return const_iterator{ state_post_ }; };
-        const_iterator end() const { return const_iterator{}; };
+        const_iterator begin() const;
+        const_iterator end() const { return const_iterator{}; }
     private:
         const StatePost* state_post_;
+        Symbol first_symbol_{ Limits::min_symbol }; ///< First symbol (included) to iterate over.
+        Symbol last_symbol_{ Limits::max_symbol }; ///< Last symbol (included) to iterate over.
+        FirstSymbolLookupDiretion first_symbol_lookup_direction_{ FirstSymbolLookupDiretion::Forward };
     }; // class Moves.
 
     /**
-     * Iterator over transitions represented as 'Transition' instances.
+     * Iterator over all moves in @c StatePost represented as @c Move instances.
      */
-    Moves moves() const { return Moves{ this }; }
+    Moves moves() const { return { *this }; }
+    /**
+     * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
+     */
+    Moves epsilon_moves(const Symbol first_epsilon = EPSILON) const;
+    /**
+     * Iterator over normal symbols (not over epsilons) in @c StatePost represented as @c Move instances.
+     */
+    Moves symbol_moves(const Symbol last_symbol = EPSILON - 1) const;
 
     /**
-     * Count the number of moves in StatePost.
+     * Count the number of all moves in @c StatePost.
      */
     size_t num_of_moves() const;
 }; // class StatePost.
@@ -403,13 +437,13 @@ public:
         public:
             using iterator_category = std::forward_iterator_tag;
             using value_type = Transition;
-            using difference_type = unsigned;
+            using difference_type = size_t;
             using pointer = Transition*;
             using reference = Transition&;
 
             const_iterator(): is_end_{ true } {}
-            explicit const_iterator(const Delta* delta);
-            const_iterator(const Delta* delta, State current_state);
+            explicit const_iterator(const Delta& delta);
+            const_iterator(const Delta& delta, State current_state);
 
             const_iterator(const const_iterator& other) noexcept = default;
             const_iterator(const_iterator&&) = default;
@@ -434,8 +468,8 @@ public:
         Transitions& operator=(Transitions&&) = default;
         Transitions& operator=(Transitions&) = default;
 
-        const_iterator begin() const { return const_iterator{ delta_ }; };
-        const_iterator end() const { return const_iterator{}; };
+        const_iterator begin() const { return const_iterator{ *delta_ }; }
+        const_iterator end() const { return const_iterator{}; }
     private:
         const Delta* delta_;
     }; // class Transitions.
