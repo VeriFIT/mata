@@ -1,2 +1,5 @@
 b-armc-incl:
     cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-automata-inclusion $1 $2
+
+b-regex:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-email-filter $1 $2 $3 $4 $5
