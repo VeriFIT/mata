@@ -33,7 +33,7 @@ jobs=6
 methods=
 suffix=""
 basedir=$(realpath $(dirname "$0"))
-rootdir=$(realpath $basedir/..)
+rootdir=$(realpath "$basedir/..")
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -86,7 +86,7 @@ prepend_directory() {
 # Prepares configuration
 config=$(escape_extension "$config" "yaml")
 result_dir=$rootdir/results
-mkdir -p $result_dir
+mkdir -p "$result_dir"
 
 [ ${#benchmarks[@]} -gt 0 ] 2>/dev/null || die "error: you must specify some *.input file with benchmarks"
 
@@ -97,7 +97,7 @@ do
     benchmark_file=$(escape_extension "$benchmark" "input")
     # The result contains information about date, timeout, number of jobs and measured subset of tools (if specified)
     # Run the script with -s|--suffix to append other information to your benchmarks
-    benchmark_name=$(basename $benchmark)
+    benchmark_name=$(basename "$benchmark")
     result_file=$result_dir/${benchmark_name%.*}-$(date +%Y-%m-%d-%H-%M-%S)-timeout-$timeout-jobs-$jobs$methods$suffix
     result_file=$(echo -e "${result_file// /-}")
 
@@ -106,12 +106,12 @@ do
     echo "[!] Performing benchmarks"
     sub_result_file="$result_file.output"
     intermediate+=( $sub_result_file )
-    cat $benchmark_file | $rootdir/pycobench $methods -j $jobs -c $config -t $timeout -o $sub_result_file
+    cat "$benchmark_file" | $rootdir/pycobench $methods -j $jobs -c $config -t $timeout -o $sub_result_file
 
-    number_of_params=$(expr `cat $benchmark_file | head -1 | tr -cd ';' | wc -c` + 1)
+    number_of_params=$(expr `cat "$benchmark_file" | head -1 | tr -cd ';' | wc -c` + 1)
 
     echo "[$i] Benchmark measured"
-    $basedir/process_pyco.sh -o $result_file.csv -p $number_of_params ${intermediate[@]}
+    $basedir/process_pyco.sh -o "$result_file.csv" -p $number_of_params ${intermediate[@]}
     echo "[$i] Benchmark processed"
 
     # All intermediate files are deleted
@@ -119,6 +119,6 @@ do
 done
 elapsed_time=$(($SECONDS - $start_time))
 
-python $basedir/compare_profiles.py $result_file.csv
+python $basedir/compare_profiles.py "$result_file.csv"
 
 eval "echo [!] Benchmarking done in $(date -ud@$elapsed_time -u +'$((%s/3600/24)) days %H:%M:%S')"

@@ -22,7 +22,7 @@ usage() { {
 output_file=result.csv
 benchmarks=()
 basedir=$(realpath $(dirname "$0"))
-rootdir=$(realpath $basedir/..)
+rootdir=$(realpath "$basedir/..")
 number_of_params=1
 
 # Processes the arguments
@@ -72,22 +72,22 @@ processed_header=false
 for benchmark in ${benchmarks[@]}
 do
     # We ensure that the results are in results/data directory
-    result_file=$(basename $benchmark)
+    result_file=$(basename "$benchmark")
     benchmark_file=$benchmark
 
     # Each partial result is transformed using `pyco_proc` to csv representation
     echo "Processing $benchmark_file"
-    cat $benchmark_file | $rootdir/pyco_proc --csv --param-no $number_of_params > $result_file.csv
+    cat "$benchmark_file" | $rootdir/pyco_proc --csv --param-no $number_of_params > "$result_file.csv"
     if [ $processed_header = false ];
     then
       # For first result we ensure that the header will be there
       processed_header=true
-      cat $result_file.csv > $output_file
+      cat "$result_file.csv" > $output_file
     else
       # We cat rest of the results
-      awk 'FNR > 1' $result_file.csv >> $output_file
+      awk 'FNR > 1' "$result_file.csv" >> $output_file
     fi
-    rm $result_file.csv
+    rm "$result_file.csv"
 done
 
 echo "[!] Saved results to $output_file"
