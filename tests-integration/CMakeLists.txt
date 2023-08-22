@@ -16,7 +16,7 @@ include_directories(../3rdparty/cudd/include)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
-file(GLOB JOBS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.cc.in")
+file(GLOB JOBS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.yaml.in")
 file(GLOB INPUTS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
 foreach(JOB ${JOBS})
     get_filename_component(TARGET_JOB ${JOB} NAME_WE)

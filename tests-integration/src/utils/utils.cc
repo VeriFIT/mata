@@ -42,7 +42,7 @@ int load_automata(
 ) {
     std::vector<Mata::IntermediateAut> inter_auts;
     TIME_BEGIN(parsing);
-    for (const std::string filename : filenames) {
+    for (const std::string& filename : filenames) {
         if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
             std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
             return EXIT_FAILURE;

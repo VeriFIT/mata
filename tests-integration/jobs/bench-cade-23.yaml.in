@@ -1,0 +1,2 @@
+b-armc-incl:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-automata-inclusion $1 $2
