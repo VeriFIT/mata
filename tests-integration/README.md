@@ -77,3 +77,9 @@ test cases:
 
 The results are saved in `results` directory in `csv` format. Moreover, short summary is printed at the end of the 
 benchmarking process.
+
+If you wish, to benchmark something different run the following:
+
+```shell
+./scripts/run_pyco.sh -c jobs/<JOBS_FILE>.yaml -m "<COMMAND_DELIMITED_BY_;>" inputs/<INPUT_FILE>.input
+```
