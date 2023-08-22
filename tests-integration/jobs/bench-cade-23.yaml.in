@@ -3,3 +3,12 @@ b-armc-incl:
 
 b-regex:
     cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-email-filter $1 $2 $3 $4 $5
+
+b-param-diff:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-bool-comb-cox-diff $1 $2
+
+b-param-inter:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-bool-comb-cox-inter $1 $2
+
+b-param-intersect:
+    cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-bool-comb-intersect $1

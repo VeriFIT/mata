@@ -44,6 +44,7 @@ import sys
 import termcolor
 import threading
 import yaml
+import glob
 
 # thread-safe queue for distributing tasks
 g_task_queue = queue.Queue()
@@ -247,7 +248,13 @@ Executes one benchmark.
 
     try:
         # result = run_subproc(cmd)
-        result = run_subproc_systime(cmd)
+        executed_cmd = []
+        for c in cmd:
+            if '*' in c:
+                executed_cmd.extend(glob.glob(c))
+            else:
+                executed_cmd.append(c)
+        result = run_subproc_systime(executed_cmd)
         return result
     except subprocess.TimeoutExpired:
         return {'timeout': True}
