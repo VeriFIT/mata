@@ -24,12 +24,47 @@ using namespace Mata::Nfa;
  * @param[in] filename Path to the file with automaton to load.
  * @param[out] aut Automaton instance to load into.
  * @param[out] alphabet Alphabet to use for symbols on transitions.
- * @param[in] skip_mintermization Whether to skip mirmization of the loaded automaton.
- * @param[in] aut_name Automaton name to print in logging outputs.
+ * @param[in] mintermize_automata Whether to mintermize the input loaded automaton.
+ *   (Note, that if you want to mintermize multiple automata together, either use `load_automata` or
+ *   `load_intermediate_automaton` and mintermize yourself.)
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */ 
-int load_automaton(const std::string& filename, Nfa& aut, Mata::OnTheFlyAlphabet& alphabet,
-                   const bool skip_mintermization = false, const std::string& aut_name = "unnamed");
+int load_automaton(
+        const std::string& filename,
+        Nfa& aut,
+        Mata::OnTheFlyAlphabet& alphabet,
+        const bool mintermize_automata = true
+);
+
+/**
+ * @brief Load automata from list of files at @p filename into list of automata @p aut,
+ * using @p alphabet for symbols on transitions.
+ *
+ * @param[in] filenames Paths to the file with automaton to load.
+ * @param[out] auts Vector of instances to load into.
+ * @param[out] alphabet Alphabet to use for symbols on transitions.
+ * @param[in] mintermize_automata Whether to mintermize the input loaded automaton.
+ * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
+ */
+int load_automata(
+        std::vector<std::string>& filenames,
+        std::vector<Nfa>& auts,
+        Mata::OnTheFlyAlphabet& alphabet,
+        const bool mintermize_automata = true
+);
+
+/**
+ * @brief Load automaton from file at @p filename into @p inter_aut
+ *
+ * @param[in] filename Path to the file with automaton to load.
+ * @param[out] inter_aut Intermediate automaton instance to load into.
+ * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
+ */
+int load_intermediate_automaton(
+        const std::string& filename,
+        std::vector<Mata::IntermediateAut>& out_inter_auts
+);
+
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
  */

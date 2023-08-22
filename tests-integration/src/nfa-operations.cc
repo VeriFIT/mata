@@ -1,27 +1,20 @@
 /**
  * NOTE: Input automata, that are of type `NFA-bits` are mintermized!
- *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
+ *  - If you want to skip mintermization, set the variable `MINTERMIZE_AUTOMATA` below to `false`
  */
 
 #include "utils/utils.hh"
 
-#include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/nfa/builder.hh"
-#include "mata/nfa/plumbing.hh"
-#include "mata/nfa/algorithms.hh"
-#include "mata/parser/mintermization.hh"
 
 #include <iostream>
 #include <iomanip>
-#include <fstream>
 #include <chrono>
 #include <string>
-#include <cstring>
 
 using namespace Mata::Nfa;
 
-const bool SKIP_MINTERMIZATION{ false };
+const bool MINTERMIZE_AUTOMATA{ true};
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -33,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     Nfa aut;
     Mata::OnTheFlyAlphabet alphabet{};
-    if (load_automaton(filename, aut, alphabet, SKIP_MINTERMIZATION) != EXIT_SUCCESS) {
+    if (load_automaton(filename, aut, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
 
@@ -41,10 +34,9 @@ int main(int argc, char *argv[]) {
     std::cout << std::fixed << std::setprecision(5);
 
     Nfa trimmed_aut = aut;
-    auto start = std::chrono::system_clock::now();
+    TIME_BEGIN(trim);
     trimmed_aut.trim();
-    auto end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = end - start;
-    std::cout << "trim: " << elapsed.count() << "\n";
+    TIME_END(trim);
+
     return EXIT_SUCCESS;
 }
