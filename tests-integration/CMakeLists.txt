@@ -16,11 +16,19 @@ include_directories(../3rdparty/cudd/include)
 include_directories(../3rdparty/re2)
 include_directories(../3rdparty/simlib/include)
 
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-single-param-jobs.yaml.in" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-single-param-jobs.yaml" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-double-param-jobs.yaml.in" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-double-param-jobs.yaml" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-test-jobs.yaml.in" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/corr-test-jobs.yaml" @ONLY)
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inputs/single-automata.input.in" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/single-automata.input" @ONLY)
+file(GLOB JOBS "${CMAKE_CURRENT_SOURCE_DIR}/jobs/*.cc.in")
+file(GLOB INPUTS "${CMAKE_CURRENT_SOURCE_DIR}/inputs/*.input.in")
+foreach(JOB ${JOBS})
+    get_filename_component(TARGET_JOB ${JOB} NAME_WE)
+    configure_file("${JOB}" "${CMAKE_CURRENT_SOURCE_DIR}/jobs/${TARGET_JOB}.yaml" @ONLY)
+endforeach()
+foreach(INPUT ${INPUTS})
+    get_filename_component(TARGET_INPUT ${INPUT} NAME_WE)
+    configure_file("${INPUT}" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/${TARGET_INPUT}.input" @ONLY)
+endforeach()
+
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input.in" "${CMAKE_CURRENT_SOURCE_DIR}/inputs/double-automata.input" @ONLY)
+
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh.in" "${CMAKE_CURRENT_SOURCE_DIR}/src/utils/config.hh" @ONLY)
 
 file(GLOB SOURCES "src/*.cc")
