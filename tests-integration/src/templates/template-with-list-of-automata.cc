@@ -1,6 +1,6 @@
 /**
  * NOTE: Input automata, that are of type `NFA-bits` are mintermized!
- *  - If you want to skip mintermization, set the variable `SKIP_MINTERMIZATION` below to `false`
+ *  - If you want to skip mintermization, set the variable `MINTERMIZE_AUTOMATA` below to `false`
  */
 
 #include "utils/utils.hh"
@@ -16,7 +16,7 @@
 
 using namespace Mata::Nfa;
 
-const bool SKIP_MINTERMIZATION = false;
+const bool MINTERMIZE_AUTOMATA = true;
 
 int main(int argc, char *argv[])
 {
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
     for (const auto& aut_file : source_automata) {
         Mata::OnTheFlyAlphabet alphabet{};
         Nfa nfa{};
-        load_automaton(aut_file, nfa, alphabet, SKIP_MINTERMIZATION);
+        load_automaton(aut_file, nfa, alphabet, MINTERMIZE_AUTOMATA);
 
         std::cout << "Processing " << aut_file << std::endl;
 

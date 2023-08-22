@@ -24,14 +24,16 @@ using namespace Mata::Nfa;
  * @param[in] filename Path to the file with automaton to load.
  * @param[out] aut Automaton instance to load into.
  * @param[out] alphabet Alphabet to use for symbols on transitions.
- * @param[in] skip_mintermization Whether to skip mirmization of the loaded automaton.
+ * @param[in] mintermize_automata Whether to mintermize the input loaded automaton.
+ *   (Note, that if you want to mintermize multiple automata together, either use `load_automata` or
+ *   `load_intermediate_automaton` and mintermize yourself.)
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */ 
 int load_automaton(
         const std::string& filename,
         Nfa& aut,
         Mata::OnTheFlyAlphabet& alphabet,
-        const bool skip_mintermization = false
+        const bool mintermize_automata = true
 );
 
 /**
@@ -41,14 +43,14 @@ int load_automaton(
  * @param[in] filenames Paths to the file with automaton to load.
  * @param[out] auts Vector of instances to load into.
  * @param[out] alphabet Alphabet to use for symbols on transitions.
- * @param[in] skip_mintermization Whether to skip mirmization of the loaded automaton.
+ * @param[in] mintermize_automata Whether to mintermize the input loaded automaton.
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
  */
 int load_automata(
         std::vector<std::string>& filenames,
         std::vector<Nfa>& auts,
         Mata::OnTheFlyAlphabet& alphabet,
-        const bool skip_mintermization = false
+        const bool mintermize_automata = true
 );
 
 /**

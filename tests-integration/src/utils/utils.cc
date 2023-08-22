@@ -7,7 +7,7 @@ int load_automaton(
         const std::string& filename,
         Nfa& aut,
         Mata::OnTheFlyAlphabet& alphabet,
-        const bool skip_mintermization
+        const bool mintermize_automata
 ) {
     std::vector<Mata::IntermediateAut> inter_auts;
     TIME_BEGIN(parsing);
@@ -17,7 +17,7 @@ int load_automaton(
     }
     TIME_END(parsing);
     try {
-        if (skip_mintermization or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
+        if (!mintermize_automata or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
             aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
         } else {
             Mata::Mintermization mintermization;
@@ -38,7 +38,7 @@ int load_automata(
         std::vector<std::string>& filenames,
         std::vector<Nfa>& auts,
         Mata::OnTheFlyAlphabet& alphabet,
-        const bool skip_mintermization
+        const bool mintermize_automata
 ) {
     std::vector<Mata::IntermediateAut> inter_auts;
     TIME_BEGIN(parsing);
@@ -50,7 +50,7 @@ int load_automata(
     }
     TIME_END(parsing);
     try {
-        if (skip_mintermization or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
+        if (!mintermize_automata or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // This is not foolproof and assumes, that everything is BITVECTOR
             for (Mata::IntermediateAut& inter_aut : inter_auts) {
                 assert(inter_aut.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR);
