@@ -1,24 +1,26 @@
 cmake_minimum_required(VERSION 3.15.0)
-project(libMATA)
+project(
+    libMATA
+    #VERSION ???? TODO: set the version automatically during merging
+    DESCRIPTION "A fast and simple automata library "
+    LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 20) # TODO: replace with target_compile_features(Foo PUBLIC cxx_std_20) and set_target_properties(myTarget PROPERTIES CXX_EXTENSIONS OFF)
 
 # 3rd party modules
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-# Enable fancy colours
-set(CMAKE_COLOR_MAKEFILE ON)
-# Enable verbose output for 'make'
-#set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-set(CMAKE_MACOSX_RPATH 1)
 
-##############################################################################
-#                                     CCACHE
-##############################################################################
-find_program(CCACHE_PROGRAM ccache)
-if(CCACHE_PROGRAM)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
-endif()
+# Only do these if this is the main project, and not if it is included through add_subdirectory
+# if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+
+    ############################# CCACHE ######################################
+    # TODO: Should we use CCACHE? Why it might be useful: https://stackoverflow.com/questions/10136761/when-is-the-case-to-use-ccache
+    # Why we use the following code: https://stackoverflow.com/questions/64592095/cmake-ccache-rule-launch-compile-or-cmake-lang-compiler-launcher
+    find_program(CCACHE_PROGRAM ccache)
+    if(CCACHE_PROGRAM)
+        set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
+    endif()
 
 ##############################################################################
 #                             OUTPUT CUSTOMIZATION
@@ -28,7 +30,6 @@ endif()
 set(COMMON_COMPILER_FLAGS
         -fms-extensions
         -fdiagnostics-show-option
-        -fPIC
         -fno-strict-aliasing
         )
 

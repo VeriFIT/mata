@@ -1,20 +1,7 @@
-set(CMAKE_COLOR_MAKEFILE ON)
-#set(CMAKE_VERBOSE_MAKEFILE ON)
-
-project(libmata)
-
-# Export compile commands to be used with YouCompleteMe
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
 # uncomment for profiling
 #add_definitions(-pg)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 
-include_directories(../include)
-include_directories(../3rdparty/) # this is here since it is clearer to include re2/utils than just utils
-include_directories(../3rdparty/cudd/include)
-include_directories(../3rdparty/re2)
-include_directories(../3rdparty/simlib/include)
 
 # create config.cc file that contains definitions of global variables
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
@@ -51,8 +38,10 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
 	target_link_libraries(libmata pthread)
 endif()
 
-add_dependencies(libmata cudd re2 simlib)
-target_link_libraries(libmata simlib cudd)
+target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include")
+
+target_link_libraries(libmata PUBLIC cudd)
+target_link_libraries(libmata PRIVATE re2 simlib)
 
 # Add common compile warnings.
 target_compile_options(libmata PRIVATE "$<$<CONFIG:DEBUG>:${COMMON_WARNINGS}>")

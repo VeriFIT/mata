@@ -29,24 +29,8 @@ add_library(re2
         util/utf.h
         util/util.h)
 
-set(cxx_compiler_flags
-        -Wall
-        -Wfloat-equal
-        -fms-extensions
-        -fdiagnostics-show-option
-        -std=c++14
-        -Wctor-dtor-privacy
-        -Weffc++
-        -fPIC
-        -fno-strict-aliasing
-        )
-
-foreach(flag ${cxx_compiler_flags})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach()
-
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    target_link_libraries(re2 pthread)
+    target_link_libraries(re2 PUBLIC pthread)
 endif()
 
-target_include_directories(re2 PUBLIC ./)
+target_include_directories(re2 PUBLIC "${CMAKE_CURRENT_LIST_DIR}/")
