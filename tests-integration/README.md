@@ -61,3 +61,25 @@ In order to test or measure performance of the code you just built by the above 
     `jobs/corr-single-param-jobs.yaml` (for binaries accepting single argument) and 
     `jobs/corr-double-param-jobs.yaml` (for binaries accepting two arguments).
   5. This will generate `csv` report of measuring binaries registered in `jobs/*.yaml` files on automata listed in the `input/*.input` files.
+ 
+### How to benchmark and reproduce some of our results
+
+We assume, this is executed from `tests-integration` directory.
+In order to reproduce some of our results or run more thorough benchmarking, we recommend running the following 
+test cases:
+
+```shell
+./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-param-diff;b-param-inter" inputs/bench-double-bool-comb-cox.input
+./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-regex" inputs/bench-quintuple-email-filter.input
+./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-armc-incl" inputs/bench-double-automata-inclusion.input
+./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "param-intersect" inputs/bench-variadic-bool-comb-intersect.input
+```
+
+The results are saved in `results` directory in `csv` format. Moreover, short summary is printed at the end of the 
+benchmarking process.
+
+If you wish, to benchmark something different run the following:
+
+```shell
+./scripts/run_pyco.sh -c jobs/<JOBS_FILE>.yaml -m "<COMMAND_DELIMITED_BY_;>" inputs/<INPUT_FILE>.input
+```
