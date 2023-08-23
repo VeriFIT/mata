@@ -155,5 +155,5 @@ target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_LIST_DIR}/cudd"
                                         "${CMAKE_CURRENT_LIST_DIR}/epd"
                                         "${CMAKE_CURRENT_LIST_DIR}/util"
                                         "${CMAKE_CURRENT_LIST_DIR}/cplusplus"
-                                        "${CMAKE_CURRENT_LIST_DIR}")
+                                        "${CMAKE_CURRENT_BINARY_DIR}")
 target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/include")
