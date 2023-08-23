@@ -1,8 +1,3 @@
-# uncomment for profiling
-#add_definitions(-pg)
-#set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
-
-
 # create config.cc file that contains definitions of global variables
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
 
@@ -28,6 +23,11 @@ add_library(libmata STATIC
 	nfa/operations.cc
 	nfa/builder.cc
 )
+
+# libmata needs at least c++20
+target_compile_features(libmata PUBLIC cxx_std_20)
+# we turn off compiler extensions
+set_target_properties(libmata PROPERTIES CXX_EXTENSIONS OFF)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata

@@ -29,6 +29,11 @@ add_library(re2
         util/utf.h
         util/util.h)
 
+# re2 needs at least c++14
+target_compile_features(re2 PUBLIC cxx_std_14)
+# we turn off compiler extensions
+set_target_properties(re2 PROPERTIES CXX_EXTENSIONS OFF)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     target_link_libraries(re2 PUBLIC pthread)
 endif()

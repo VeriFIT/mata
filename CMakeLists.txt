@@ -2,10 +2,8 @@ cmake_minimum_required(VERSION 3.15.0)
 project(
     libMATA
     #VERSION ???? TODO: set the version automatically during merging
-    DESCRIPTION "A fast and simple automata library "
-    LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 20) # TODO: replace with target_compile_features(Foo PUBLIC cxx_std_20) and set_target_properties(myTarget PROPERTIES CXX_EXTENSIONS OFF)
+    DESCRIPTION "A fast and simple automata library"
+    LANGUAGES C CXX)
 
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
@@ -102,9 +100,6 @@ endif()
 ##############################################################################
 #                               COMPILER FUN
 ##############################################################################
-
-# enable C++
-enable_language(CXX)
 
 # get the git revision
 include(GetGitRevisionDescription)
