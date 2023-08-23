@@ -54,13 +54,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
     using ProdStateType = std::pair<State, StateSet>;
     using WorklistType = std::deque<ProdStateType>;
-    using ProcessedType = std::deque<ProdStateType>;
+    // ProcessedType is indexed by states of the smaller nfa
+    // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
+    using ProcessedType = std::vector<std::deque<ProdStateType>>;
 
-    //TODO: This is used in a container (a deque) of pairs, where every new pair means iterating through the entire list,
-    // and testing subsumption with everybody.
-    // Rewrite this as a deque (vector?) indexed by the first component (state) of vectors of the second components.
-    // We will go to the vector of the first component and test subsumption of the second components there.
-    // It may need some more fiddling if we still want to implement pure dfs/bfs however.
     auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
         if (lhs.first != rhs.first) {
             return false;
@@ -71,20 +68,15 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
             return false;
         }
-
+        
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
-        return std::includes(rhs_bigger.begin(), rhs_bigger.end(),
-            lhs_bigger.begin(), lhs_bigger.end());
+        return lhs_bigger.IsSubsetOf(rhs_bigger);
     };
-
-    // process parameters
-    // TODO: set correctly!!!!
-    bool is_dfs = true;
 
     // initialize
     WorklistType worklist = { };
-    ProcessedType processed = { };
+    ProcessedType processed(smaller.size()); // allocate to the number of states of the smaller nfa
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state
@@ -101,27 +93,21 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
         const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
         worklist.push_back(st);
-        processed.push_back(st);
+        processed[state].push_back(st);
 
         if (cex != nullptr)
             paths.insert({ st, {st, 0}});
     }
 
     //For synchronised iteration over the set of states
-    using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
-    Mata::Util::SynchronizedExistentialIterator<Iterator> sync_iterator;
+    SynchronizedExistentialSymbolPostIterator sync_iterator;
 
+    // We use DFS strategy for the worklist processing
     while (!worklist.empty()) {
         // get a next product state
-        ProdStateType prod_state;
-        if (is_dfs) {
-            prod_state = *worklist.rbegin();
-            worklist.pop_back();
-        } else { // BFS
-            prod_state = *worklist.begin();
-            worklist.pop_front();
-        }
-
+        ProdStateType prod_state = *worklist.rbegin();
+        worklist.pop_back();
+    
         const State& smaller_state = prod_state.first;
         const StateSet& bigger_set = prod_state.second;
 
@@ -134,22 +120,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         for (const auto& smaller_move : smaller.delta[smaller_state]) {
             const Symbol& smaller_symbol = smaller_move.symbol;
 
-            do {
-                if (sync_iterator.is_synchronized()) {
-                    auto current_min = sync_iterator.get_current_minimum();
-                    if (*current_min >= smaller_move) {
-                        break;
-                    }
-                }
-            } while (sync_iterator.advance());
-
-            // TODO: this is ugly, the interface of the sync iterator should be redesigned so that this looks ok
             StateSet bigger_succ = {};
-            if(sync_iterator.is_synchronized() && *sync_iterator.get_current_minimum() == smaller_move) {
-                std::vector<Iterator> bigger_moves = sync_iterator.get_current();
-                for (auto m: bigger_moves) {
-                    bigger_succ = bigger_succ.Union(m->targets);
-                }
+            if(sync_iterator.synchronize_with(smaller_move)) {
+                bigger_succ = sync_iterator.unify_targets();
             }
 
             for (const State& smaller_succ : smaller_move.targets) {
@@ -175,7 +148,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                 }
 
                 bool is_subsumed = false;
-                for (const auto& anti_state : processed)
+                for (const auto& anti_state : processed[smaller_succ])
                 { // trying to find a smaller state in processed
                     if (subsumes(anti_state, succ)) {
                         is_subsumed = true;
@@ -185,7 +158,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 
                 if (is_subsumed) { continue; }
 
-                for (std::deque<ProdStateType>* ds : {&processed, &worklist}) {
+                for (std::deque<ProdStateType>* ds : {&processed[smaller_succ], &worklist}) {
                     for (size_t it = 0; it < ds->size(); ++it) {
                         if (subsumes(succ, ds->at(it))) {
                             //Removal though replacement by the last element and removal pob_back.
@@ -201,8 +174,10 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
                     ds->push_back(succ);
                 }
 
-                // also set that succ was accessed from state
-                paths[succ] = {prod_state, smaller_symbol};
+                if(cex != nullptr) {
+                    // also set that succ was accessed from state
+                    paths[succ] = {prod_state, smaller_symbol};
+                }
             }
         }
     }

@@ -4,6 +4,7 @@
 #define MATA_DELTA_HH
 
 #include "mata/nfa/types.hh"
+#include "mata/utils/synchronized-iterator.hh"
 
 #include <iterator>
 
@@ -178,6 +179,44 @@ public:
      */
     Moves moves() const { return { .begin_ = moves_begin(), .end_ = moves_end() }; }
 }; // struct Post.
+
+/**
+ * @brief Specialization of Util::SynchronizedExistentialIterator for iterating over SymbolPosts.
+ */
+class SynchronizedExistentialSymbolPostIterator : public Util::SynchronizedExistentialIterator<Util::OrdVector<SymbolPost>::const_iterator> {
+public:
+    /**
+     * @brief Get union of all targets.
+     */
+    StateSet unify_targets() const {
+        if(!this->is_synchronized()) {
+            return {};
+        }
+        StateSet bigger_succ = {};
+        for (const auto m: this->get_current()) {
+            bigger_succ = bigger_succ.Union(m->targets);
+        }
+        return bigger_succ;
+    }
+
+    /**
+     * @brief Synchronize with the given SymbolPost @p sync. Alignes the synchronized iterator 
+     * to the same symbol as @p sync. 
+     * @return True iff the synchronized iterator points to the same symbol as @p sync.
+     */
+    bool synchronize_with(const SymbolPost& sync) {
+        do {
+            if (this->is_synchronized()) {
+                auto current_min = this->get_current_minimum();
+                if (*current_min >= sync) {
+                    break;
+                }
+            }
+        } while (this->advance());
+        return this->is_synchronized() && *this->get_current_minimum() == sync;
+    }
+
+};
 
 /**
  * @brief Delta is a data structure for representing transition relation.
