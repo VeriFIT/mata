@@ -24,6 +24,8 @@
 #include "re2/re2/prog.h"
 
 namespace {
+    using namespace mata::nfa;
+
     class RegexParser {
     private:
         /**
@@ -76,20 +78,20 @@ namespace {
         }
 
         /**
-         * Converts re2's prog to mata::nfa::Nfa
-         * @param prog Prog* to create mata::nfa::Nfa from
+         * Converts re2's prog to Nfa
+         * @param prog Prog* to create Nfa from
          * @param use_epsilon whether to create NFA with epsilon transitions or not
          * @param epsilon_value value, that will represent epsilon on transitions
-         * @return mata::nfa::Nfa created from prog
+         * @return Nfa created from prog
          */
-        void convert_pro_to_nfa(mata::nfa::Nfa* output_nfa, re2::Prog* prog, const bool use_epsilon, const mata::Symbol epsilon_value) {
+        void convert_pro_to_nfa(Nfa* output_nfa, re2::Prog* prog, const bool use_epsilon, const mata::Symbol epsilon_value) {
             const auto start_state = static_cast<size_t>(prog->start());
             const auto prog_size = static_cast<size_t>(prog->size());
             // The same symbol in lowercase and uppercase is 32 symbols from each other in ASCII
             const int ascii_shift_value = 32;
             int empty_flag;
             std::vector<mata::Symbol> symbols;
-            mata::nfa::Nfa explicit_nfa(prog_size);
+            Nfa explicit_nfa(prog_size);
 
             // Vectors are saved in this->state_cache after this
             this->create_state_cache(prog, use_epsilon);
@@ -145,7 +147,7 @@ namespace {
 
             this->outgoingEdges = std::vector<std::vector<std::pair<mata::Symbol, mata::nfa::State>>> (prog_size);
 
-            // We traverse all the states and create corresponding states and edges in mata::nfa::Nfa
+            // We traverse all the states and create corresponding states and edges in Nfa
             for (mata::nfa::State current_state = start_state; current_state < prog_size; current_state++) {
                 re2::Prog::Inst *inst = prog->inst(static_cast<int>(current_state));
                 // Every type of state can be final (due to epsilon transition), so we check it regardless of its type
@@ -154,7 +156,7 @@ namespace {
                 }
                 switch (inst->opcode()) {
                     default:
-                        LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgTomata::nfa::Nfa";
+                        LOG(DFATAL) << "unhandled " << inst->opcode() << " in convertProgToNfa";
                         break;
 
                     case re2::kInstMatch:
@@ -278,7 +280,7 @@ namespace {
          */
         void create_explicit_nfa_transitions(mata::nfa::State currentState, re2::Prog::Inst *inst,
                                              const std::vector<mata::Symbol>& symbols,
-                                             mata::nfa::Nfa &nfa, bool use_epsilon, mata::Symbol epsilon_value) {
+                                             Nfa &nfa, bool use_epsilon, mata::Symbol epsilon_value) {
             for (auto mappedState: this->state_cache.state_mapping[currentState]) {
                 for (auto mappedTargetState: this->state_cache.state_mapping[static_cast<unsigned long>(inst->out())]) {
                     // There can be more symbols on the edge
@@ -436,11 +438,11 @@ namespace {
         }
 
         /**
-         * Makes all states mapped to the state parameter final in the mata::nfa::Nfa
+         * Makes all states mapped to the state parameter final in the Nfa
          * @param state State which should be made final
-         * @param nfa mata::nfa::Nfa in which the states will be made final
+         * @param nfa Nfa in which the states will be made final
          */
-        void make_state_final(mata::nfa::State state, mata::nfa::Nfa &nfa) {
+        void make_state_final(mata::nfa::State state, Nfa &nfa) {
             for (auto target_state: this->state_cache.state_mapping[state]) {
                 // States without an incoming edge should not be in the automata
                 if (!this->state_cache.has_state_incoming_edge[target_state]) {
@@ -453,14 +455,14 @@ namespace {
         /**
          * Renumbers the states of the input_nfa to be from <0, numberOfStates>
          * @param program_size Size of the RE2 prog
-         * @param input_nfa mata::nfa::Nfa which states should be renumbered
-         * @return Same mata::nfa::Nfa as input_nfa but with states from interval <0, numberOfStates>
+         * @param input_nfa Nfa which states should be renumbered
+         * @return Same Nfa as input_nfa but with states from interval <0, numberOfStates>
          */
-        static mata::nfa::Nfa renumber_states(mata::nfa::Nfa* output_nfa,
+        static Nfa renumber_states(Nfa* output_nfa,
                                               size_t program_size,
-                                              mata::nfa::Nfa &input_nfa) {
+                                              Nfa &input_nfa) {
             std::vector<mata::nfa::State> renumbered_states(program_size, mata::nfa::Limits::max_state);
-            mata::nfa::Nfa& renumbered_explicit_nfa = *output_nfa;
+            Nfa& renumbered_explicit_nfa = *output_nfa;
             for (mata::nfa::State state{ 0 }; state < program_size; state++) {
                 const auto& transition_list = input_nfa.delta.state_post(state);
                 // If the transition list is empty, the state is not used
@@ -557,7 +559,7 @@ namespace {
  * @param use_epsilon whether to create NFA with epsilon transitions or not
  * @param epsilon_value value, that will represent epsilon on transitions
  * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
- * @return mata::nfa::Nfa corresponding to pattern
+ * @return Nfa corresponding to pattern
  */
 void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce) {
     if (nfa == nullptr) {

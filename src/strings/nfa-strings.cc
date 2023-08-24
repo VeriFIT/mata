@@ -21,7 +21,7 @@
 using namespace mata::nfa;
 using namespace mata::strings;
 
-std::set<mata::Word> mata::strings::get_shortest_words(const nfa::Nfa& nfa) {
+std::set<mata::Word> mata::strings::get_shortest_words(const Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return ShortestWordsMap{ nfa }.get_shortest_words_from(StateSet{ nfa.initial });
@@ -136,10 +136,8 @@ void ShortestWordsMap::compute_for_state(const State state)
     }
 }
 
-void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
-{
-    for (auto word : dst.second)
-    {
+void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol) {
+    for (Word word: dst.second) {
         word.insert(word.begin(), symbol);
         act.second.insert(word);
     }
@@ -147,8 +145,8 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 }
 
 
-std::set<std::pair<int, int>> mata::strings::get_word_lengths(const nfa::Nfa& aut) {
-    nfa::Nfa one_letter;
+std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
+    Nfa one_letter;
     /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions.
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
     /// transitions are renamed to a single symbol (e.g., `a`).
@@ -198,8 +196,8 @@ std::set<std::pair<int, int>> mata::strings::get_word_lengths(const nfa::Nfa& au
     return ret;
 }
 
-bool mata::strings::is_lang_eps(const nfa::Nfa& aut) {
-    nfa::Nfa tr_aut = nfa::Nfa{ aut }.trim();
+bool mata::strings::is_lang_eps(const Nfa& aut) {
+    Nfa tr_aut = Nfa{ aut }.trim();
     if(tr_aut.initial.size() == 0)
         return false;
     for(const auto& ini : tr_aut.initial) {

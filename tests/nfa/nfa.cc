@@ -63,7 +63,7 @@ TEST_CASE("mata::nfa::create_alphabet()") {
     Nfa c{1};
     b.delta.add(0, 'c', 0);
 
-    auto alphabet{ mata::nfa::create_alphabet(a, b, c) };
+    auto alphabet{ create_alphabet(a, b, c) };
 
     auto symbols{alphabet.get_alphabet_symbols() };
     CHECK(symbols == mata::utils::OrdVector<Symbol>{ 'c', 'b', 'a' });

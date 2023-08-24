@@ -26,6 +26,7 @@
  */
 namespace mata::strings {
 
+using Nfa = nfa::Nfa;
 using State = nfa::State;
 using StateSet = nfa::StateSet;
 using Transition = nfa::Transition;
@@ -41,7 +42,7 @@ public:
      * Maps states in the automaton @p aut to shortest words accepted by languages of the states.
      * @param aut Automaton to compute shortest words for.
      */
-    explicit ShortestWordsMap(const mata::nfa::Nfa& aut) : reversed_automaton(revert(aut)) {
+    explicit ShortestWordsMap(const Nfa& aut) : reversed_automaton(revert(aut)) {
         insert_initial_lengths();
         compute();
     }
@@ -68,7 +69,7 @@ private:
     std::unordered_map<State, LengthWordsPair> shortest_words_map{};
     std::set<State> processed{}; ///< Set of already processed states.
     std::deque<State> fifo_queue{}; ///< FIFO queue for states to process.
-    const mata::nfa::Nfa reversed_automaton; ///< Reversed input automaton.
+    const Nfa reversed_automaton; ///< Reversed input automaton.
 
     /**
      * @brief Inserts initial lengths into the shortest words map.
@@ -110,7 +111,7 @@ private:
  * Get shortest words (regarding their length) of the automaton using BFS.
  * @return Set of shortest words.
  */
-std::set<Word> get_shortest_words(const mata::nfa::Nfa& nfa);
+std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each
@@ -120,7 +121,7 @@ std::set<Word> get_shortest_words(const mata::nfa::Nfa& nfa);
  * @param aut Input automaton
  * @return Set of pairs describing lengths
  */
-std::set<std::pair<int, int>> get_word_lengths(const mata::nfa::Nfa& aut);
+std::set<std::pair<int, int>> get_word_lengths(const Nfa& aut);
 
 /**
  * @brief Checks if the automaton @p nfa accepts only a single word \eps.
@@ -128,7 +129,7 @@ std::set<std::pair<int, int>> get_word_lengths(const mata::nfa::Nfa& aut);
  * @param nfa Input automaton
  * @return true iff L(nfa) = {\eps}
  */
-bool is_lang_eps(const mata::nfa::Nfa& nfa);
+bool is_lang_eps(const Nfa& nfa);
 
 /**
  * Segment Automata including structs and algorithms.
@@ -139,7 +140,7 @@ bool is_lang_eps(const mata::nfa::Nfa& nfa);
  */
 namespace seg_nfa {
 
-using SegNfa = mata::nfa::Nfa;
+using SegNfa = Nfa;
 using VisitedEpsMap = std::map<State, std::map<Symbol, unsigned>>;
 
 /// Number of visited epsilons.
@@ -185,14 +186,14 @@ public:
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton).
      */
-    const std::vector<mata::nfa::Nfa>& get_segments();
+    const std::vector<Nfa>& get_segments();
 
     /**
      * Get raw segment automata.
      * @return A vector of segments for the segment automaton in the order from the left (initial state in segment automaton)
      * to the right (final states of segment automaton) without trimming (the states are same as in the original automaton).
      */
-    const std::vector<mata::nfa::Nfa>& get_untrimmed_segments();
+    const std::vector<Nfa>& get_untrimmed_segments();
 
     const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
 
@@ -289,7 +290,7 @@ private:
 ///  one ε-transition between each two consecutive segments.
 using Noodle = std::vector<std::shared_ptr<SegNfa>>;
 /// Segment with a counter of visited epsilons.
-using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<mata::nfa::Nfa>, VisitedEpsilonsCounterVector>;
+using SegmentWithEpsilonsCounter = std::pair<std::shared_ptr<Nfa>, VisitedEpsilonsCounterVector>;
 /// Noodles as segments enriched with EpsCntMap
 using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 
@@ -305,8 +306,8 @@ using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
  * TODO: should we use unordered_map? then we need hash
  */
 void segs_one_initial_final(
-    const std::vector<mata::nfa::Nfa>& segments, bool include_empty, const State& unused_state,
-    std::map<std::pair<State, State>, std::shared_ptr<mata::nfa::Nfa>>& out);
+    const std::vector<Nfa>& segments, bool include_empty, const State& unused_state,
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa>>& out);
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -356,8 +357,8 @@ std::vector<NoodleWithEpsilonsCounter> noodlify_mult_eps(const SegNfa& aut, cons
  *                 minimization before noodlification.
  * @return A list of all (non-empty) noodles.
  */
-std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<mata::nfa::Nfa>>& lhs_automata,
-                                     const mata::nfa::Nfa& rhs_automaton,
+std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapper<Nfa>>& lhs_automata,
+                                     const Nfa& rhs_automaton,
                                      bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -381,7 +382,7 @@ std::vector<Noodle> noodlify_for_equation(const std::vector<std::reference_wrapp
  * @return A list of all (non-empty) noodles.
  */
 std::vector<Noodle> noodlify_for_equation(
-                const std::vector<mata::nfa::Nfa*>& lhs_automata, const mata::nfa::Nfa& rhs_automaton, bool include_empty = false,
+                const std::vector<Nfa*>& lhs_automata, const Nfa& rhs_automaton, bool include_empty = false,
                 const ParameterMap& params = {{ "reduce", "false"}});
 
 /**
@@ -396,8 +397,8 @@ std::vector<Noodle> noodlify_for_equation(
  * @return A list of all (non-empty) noodles together with the positions reached from the beginning of left/right side.
  */
 std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
-   const std::vector<std::shared_ptr<mata::nfa::Nfa>>& lhs_automata,
-   const std::vector<std::shared_ptr<mata::nfa::Nfa>>& rhs_automata,
+   const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
+   const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 /**

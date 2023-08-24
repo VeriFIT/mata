@@ -94,14 +94,14 @@ public:
     /**
      * @brief Construct a new explicit NFA from other NFA.
      */
-    Nfa(const mata::nfa::Nfa& other) = default;
+    Nfa(const Nfa& other) = default;
 
-    Nfa(mata::nfa::Nfa&& other) noexcept
+    Nfa(Nfa&& other) noexcept
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
-    Nfa& operator=(const mata::nfa::Nfa& other) = default;
-    Nfa& operator=(mata::nfa::Nfa&& other) noexcept;
+    Nfa& operator=(const Nfa& other) = default;
+    Nfa& operator=(Nfa&& other) noexcept;
 
     /**
      * Clear transitions but keep the automata states.
@@ -222,7 +222,7 @@ public:
     /**
      * @brief In-place concatenation.
      */
-    mata::nfa::Nfa& concatenate(const mata::nfa::Nfa& aut);
+    Nfa& concatenate(const Nfa& aut);
 
     /**
      * @brief Get a number of transitions in the whole automaton.
@@ -351,14 +351,14 @@ public:
   * @param[in] nfa NFA with symbols to fill @p alphabet with.
   * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
   */
-void fill_alphabet(const mata::nfa::Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
+void fill_alphabet(const Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
 
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
 template<bool...> struct bool_pack{};
 /// Checks for all types in the pack.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
 /// Checks whether all types are 'Nfa'.
-template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const mata::nfa::Nfa&>...>::type;
+template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
 
 /**
  * Create alphabet from variable number of NFAs.
@@ -369,7 +369,7 @@ template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts
 template<typename... Nfas, typename = AreAllNfas<Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     mata::OnTheFlyAlphabet alphabet{};
-    auto f = [&alphabet](const mata::nfa::Nfa& aut) {
+    auto f = [&alphabet](const Nfa& aut) {
         fill_alphabet(aut, alphabet);
     };
     (f(nfas), ...);
@@ -610,7 +610,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
- * The current implementation of 'mata::nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
+ * The current implementation of @c Nfa does not accept input alphabet. For this reason, an alphabet
  * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
  * the alphabet has to be computed first.
  *

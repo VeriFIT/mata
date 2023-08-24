@@ -797,12 +797,12 @@ Nfa mata::nfa::determinize(
     return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const mata::nfa::Nfa& nfa) {
+std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
     nfa.print_to_mata(os);
     return os;
 }
 
-void mata::nfa::fill_alphabet(const mata::nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
+void mata::nfa::fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
     for (const StatePost& state_post: nfa.delta) {
         for (const SymbolPost& symbol_post: state_post) {
             alphabet.update_next_symbol_value(symbol_post.symbol);
@@ -829,7 +829,7 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::referen
 
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
-    for (const mata::nfa::Nfa* const nfa: nfas) {
+    for (const Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
     }
     return alphabet;
@@ -837,7 +837,7 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<const Nfa *>
 
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
-    for (const mata::nfa::Nfa* const nfa: nfas) {
+    for (const Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
     }
     return alphabet;
