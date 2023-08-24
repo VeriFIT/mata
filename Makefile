@@ -2,10 +2,9 @@ BUILD_DIR=build
 MAKE_FLAGS=-j 6
 TEST_FLAGS=-j 50 --output-on-failure
 
-.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
+.PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance install uninstall
 
 all:
-	./clean_gcda.sh
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
 
 debug:
@@ -43,7 +42,10 @@ check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
 
 install:
-	cd $(BUILD_DIR) && $(MAKE) install
+	cd $(BUILD_DIR) && sudo $(MAKE) install
+
+uninstall:
+	./scripts/uninstall.sh
 
 clean:
 	cd $(BUILD_DIR) && rm -rf *
