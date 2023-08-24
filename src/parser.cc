@@ -16,7 +16,7 @@
  */
 
 #include "mata/parser/parser.hh"
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 
 #include <algorithm>
 #include <cstring>
@@ -24,9 +24,9 @@
 
 using std::tie;
 
-using Mata::Parser::Parsed;
-using Mata::Parser::ParsedSection;
-using Mata::Util::haskey;
+using mata::parser::Parsed;
+using mata::parser::ParsedSection;
+using mata::utils::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
@@ -235,7 +235,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(const std::vector<std::pa
 } // anonymous namespace
 
 
-Parsed Mata::Parser::parse_mf(
+Parsed mata::parser::parse_mf(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
@@ -244,7 +244,7 @@ Parsed Mata::Parser::parse_mf(
 } // parse_mf(std::string) }}}
 
 
-Parsed Mata::Parser::parse_mf(
+Parsed mata::parser::parse_mf(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -262,7 +262,7 @@ Parsed Mata::Parser::parse_mf(
 } // parse_mf(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_mf_section(
+ParsedSection mata::parser::parse_mf_section(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -389,7 +389,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 } // parse_mf_section(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_mf_section(
+ParsedSection mata::parser::parse_mf_section(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
@@ -398,7 +398,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 	return result;
 } // parse_mf_section(std::string) }}}
 
-const std::vector<std::string>& Mata::Parser::ParsedSection::operator[](const std::string& key) const {
+const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
     auto it = this->dict.find(key);
     if (this->dict.end() == it) {
         assert(false);
@@ -408,7 +408,7 @@ const std::vector<std::string>& Mata::Parser::ParsedSection::operator[](const st
     return it->second;
 }
 
-bool Mata::Parser::ParsedSection::operator==(const ParsedSection& rhs) const {
+bool mata::parser::ParsedSection::operator==(const ParsedSection& rhs) const {
     return
         this->type == rhs.type &&
         this->dict == rhs.dict &&

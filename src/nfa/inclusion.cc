@@ -20,11 +20,11 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Util;
+using namespace mata::nfa;
+using namespace mata::utils;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool Mata::Nfa::Algorithms::is_included_naive(
+bool mata::nfa::algorithms::is_included_naive(
         const Nfa &smaller,
         const Nfa &bigger,
         const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
@@ -43,7 +43,7 @@ bool Mata::Nfa::Algorithms::is_included_naive(
 
 /// language inclusion check using Antichains
 // TODO, what about to construct the separator from this?
-bool Mata::Nfa::Algorithms::is_included_antichains(
+bool mata::nfa::algorithms::is_included_antichains(
     const Nfa&             smaller,
     const Nfa&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
@@ -68,7 +68,7 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
             return false;
         }
-        
+
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
         return lhs_bigger.IsSubsetOf(rhs_bigger);
@@ -107,13 +107,13 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
         // get a next product state
         ProdStateType prod_state = *worklist.rbegin();
         worklist.pop_back();
-    
+
         const State& smaller_state = prod_state.first;
         const StateSet& bigger_set = prod_state.second;
 
         sync_iterator.reset();
         for (State q: bigger_set) {
-            Mata::Util::push_back(sync_iterator, bigger.delta[q]);
+            mata::utils::push_back(sync_iterator, bigger.delta[q]);
         }
 
         // process transitions leaving smaller_state
@@ -186,9 +186,9 @@ bool Mata::Nfa::Algorithms::is_included_antichains(
 } // }}}
 
 namespace {
-    using AlgoType = decltype(Algorithms::is_included_naive)*;
+    using AlgoType = decltype(algorithms::is_included_naive)*;
 
-    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const Mata::Alphabet *const alphabet, const AlgoType &algo) {
+    bool compute_equivalence(const Nfa &lhs, const Nfa &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
         //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr)) {
             if (algo(rhs, lhs, alphabet, nullptr)) {
@@ -206,12 +206,12 @@ namespace {
                                      "received: " + std::to_string(params));
         }
 
-        decltype(Algorithms::is_included_naive) *algo;
+        decltype(algorithms::is_included_naive) *algo;
         const std::string &str_algo = params.at("algorithm");
         if ("naive" == str_algo) {
-            algo = Algorithms::is_included_naive;
+            algo = algorithms::is_included_naive;
         } else if ("antichains" == str_algo) {
-            algo = Algorithms::is_included_antichains;
+            algo = algorithms::is_included_antichains;
         } else {
             throw std::runtime_error(std::to_string(__func__) +
                                      " received an unknown value of the \"algo\" key: " + str_algo);
@@ -223,7 +223,7 @@ namespace {
 }
 
 // The dispatching method that calls the correct one based on parameters
-bool Mata::Nfa::is_included(
+bool mata::nfa::is_included(
         const Nfa &smaller,
         const Nfa &bigger,
         Run *cex,
@@ -233,7 +233,7 @@ bool Mata::Nfa::is_included(
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
+bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
@@ -248,6 +248,6 @@ bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
     return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
-bool Mata::Nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
+bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
     return are_equivalent(lhs, rhs, nullptr, params);
 }

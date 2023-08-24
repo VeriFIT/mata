@@ -24,12 +24,12 @@
 #include "mata/nfa/strings.hh"
 #include "mata/parser/re2parser.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::nfa;
+using namespace mata::strings;
+using namespace mata::utils;
+using namespace mata::parser;
 
-using Symbol = Mata::Symbol;
+using Symbol = mata::Symbol;
 
 // Some common automata {{{
 
@@ -73,7 +73,7 @@ using Symbol = Mata::Symbol;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::concatenate()") {
+TEST_CASE("mata::nfa::concatenate()") {
     Nfa lhs{};
     Nfa rhs{};
     Nfa result{};
@@ -362,7 +362,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
     Nfa lhs{};
     Nfa rhs{};
     Nfa result{};
@@ -592,11 +592,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
 TEST_CASE("(a|b)*") {
     Nfa aut1;
-    Mata::Parser::create_nfa(&aut1, "a*");
+    mata::parser::create_nfa(&aut1, "a*");
     Nfa aut2;
-    Mata::Parser::create_nfa(&aut2, "b*");
+    mata::parser::create_nfa(&aut2, "b*");
     Nfa aut3;
-    Mata::Parser::create_nfa(&aut3, "a*b*");
+    mata::parser::create_nfa(&aut3, "a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
@@ -634,7 +634,7 @@ TEST_CASE("Bug with epsilon transitions") {
     CHECK(are_equivalent(result, expected));
 }
 
-TEST_CASE("Mata::Nfa::concatenate() inplace") {
+TEST_CASE("mata::nfa::concatenate() inplace") {
 
 
     SECTION("Empty automaton without states") {

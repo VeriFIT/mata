@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-using namespace Mata::Nfa;
+using namespace Mata::nfa;
 
 const bool MINTERMIZE_AUTOMATA = true;
 

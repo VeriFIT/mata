@@ -5,19 +5,19 @@ from libcpp.unordered_map cimport unordered_map as umap
 from libmata.utils cimport COrdVector
 
 
-cdef extern from "mata/alphabet.hh" namespace "Mata":
+cdef extern from "mata/alphabet.hh" namespace "mata":
     ctypedef uintptr_t Symbol
 
-    cdef cppclass CAlphabet "Mata::Alphabet":
+    cdef cppclass CAlphabet "mata::Alphabet":
         CAlphabet() except +
 
         Symbol translate_symb(string)
         string reverse_translate_symbol(Symbol)
 
-    cdef cppclass CIntAlphabet "Mata::IntAlphabet" (CAlphabet):
+    cdef cppclass CIntAlphabet "mata::IntAlphabet" (CAlphabet):
         COrdVector[Symbol] get_alphabet_symbols()
 
-    cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
+    cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
         ctypedef umap[string, Symbol] StringToSymbolMap
 
         StringToSymbolMap symbol_map

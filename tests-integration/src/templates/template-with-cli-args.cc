@@ -11,7 +11,7 @@
 #include <chrono>
 #include <string>
 
-using namespace Mata::Nfa;
+using namespace Mata::nfa;
 
 const bool MINTERMIZE_AUTOMATA = true;
 

@@ -17,11 +17,11 @@
 
 #include "mata/nfa/strings.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
+using namespace mata::nfa;
+using namespace mata::strings;
 
-void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
-                                                    std::deque<StateDepthTuple>& worklist) {
+void seg_nfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state_depth_pair,
+                                                     std::deque<StateDepthTuple>& worklist) {
     auto outgoing_post{ automaton.delta[state_depth_pair.state] };
     for (const SymbolPost& outgoing_move: outgoing_post) {
         if (this->epsilons.find(outgoing_move.symbol) != this->epsilons.end()) {
@@ -32,9 +32,9 @@ void SegNfa::Segmentation::process_state_depth_pair(const StateDepthTuple& state
     }
 }
 
-void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& state_depth_pair,
-                                                      const SymbolPost& move,
-                                                      std::deque<StateDepthTuple>& worklist)
+void seg_nfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& state_depth_pair,
+                                                       const SymbolPost& move,
+                                                       std::deque<StateDepthTuple>& worklist)
 {
     /// TODO: Maybe we don't need to keep the transitions in both structures
     this->epsilon_depth_transitions.insert(std::make_pair(state_depth_pair.depth, std::vector<Transition>{}));
@@ -56,9 +56,9 @@ void SegNfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& sta
     }
 }
 
-void SegNfa::Segmentation::add_transitions_to_worklist(const StateDepthTuple& state_depth_pair,
-                                                      const SymbolPost& move,
-                                                      std::deque<StateDepthTuple>& worklist)
+void seg_nfa::Segmentation::add_transitions_to_worklist(const StateDepthTuple& state_depth_pair,
+                                                        const SymbolPost& move,
+                                                        std::deque<StateDepthTuple>& worklist)
 {
     for (State target_state: move.targets)
     {
@@ -67,7 +67,7 @@ void SegNfa::Segmentation::add_transitions_to_worklist(const StateDepthTuple& st
     }
 }
 
-std::deque<SegNfa::Segmentation::StateDepthTuple> SegNfa::Segmentation::initialize_worklist() const
+std::deque<seg_nfa::Segmentation::StateDepthTuple> seg_nfa::Segmentation::initialize_worklist() const
 {
     std::deque<StateDepthTuple> worklist{};
     std::map<Symbol, unsigned> def_eps_map{};
@@ -82,7 +82,7 @@ std::deque<SegNfa::Segmentation::StateDepthTuple> SegNfa::Segmentation::initiali
     return worklist;
 }
 
-std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() const
+std::unordered_map<State, bool> seg_nfa::Segmentation::initialize_visited_map() const
 {
     std::unordered_map<State, bool> visited{};
     const size_t state_num = automaton.size();
@@ -93,7 +93,7 @@ std::unordered_map<State, bool> SegNfa::Segmentation::initialize_visited_map() c
     return visited;
 }
 
-void SegNfa::Segmentation::split_aut_into_segments()
+void seg_nfa::Segmentation::split_aut_into_segments()
 {
     segments_raw = { epsilon_depth_transitions.size() + 1, automaton };
     remove_inner_initial_and_final_states();
@@ -112,7 +112,7 @@ void SegNfa::Segmentation::split_aut_into_segments()
     }
 }
 
-void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
+void seg_nfa::Segmentation::remove_inner_initial_and_final_states() {
     const auto segments_begin{ segments_raw.begin() };
     const auto segments_end{ segments_raw.end() };
     for (auto iter{ segments_begin }; iter != segments_end; ++iter) {
@@ -125,7 +125,7 @@ void SegNfa::Segmentation::remove_inner_initial_and_final_states() {
     }
 }
 
-void SegNfa::Segmentation::update_current_segment(const size_t current_depth, const Transition& transition)
+void seg_nfa::Segmentation::update_current_segment(const size_t current_depth, const Transition& transition)
 {
     assert(this->epsilons.find(transition.symbol) != this->epsilons.end());
     assert(segments_raw[current_depth].delta.contains(transition.source, transition.symbol, transition.target));
@@ -135,7 +135,7 @@ void SegNfa::Segmentation::update_current_segment(const size_t current_depth, co
     segments_raw[current_depth].delta.remove(transition);
 }
 
-void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const Transition& transition)
+void seg_nfa::Segmentation::update_next_segment(const size_t current_depth, const Transition& transition)
 {
     const size_t next_depth = current_depth + 1;
 
@@ -147,24 +147,24 @@ void SegNfa::Segmentation::update_next_segment(const size_t current_depth, const
     segments_raw[next_depth].initial.insert(transition.target);
 }
 
-const std::vector<Nfa>& SegNfa::Segmentation::get_segments()
+const std::vector<Nfa>& seg_nfa::Segmentation::get_segments()
 {
     if (segments.empty()) {
         get_untrimmed_segments();
-        for (auto& seg_aut: segments_raw) { segments.push_back(Nfa::Nfa{ seg_aut }.trim()); }
+        for (auto& seg_aut: segments_raw) { segments.push_back(nfa::Nfa{ seg_aut }.trim()); }
     }
 
     return segments;
 }
 
-const std::vector<Nfa>& SegNfa::Segmentation::get_untrimmed_segments()
+const std::vector<Nfa>& seg_nfa::Segmentation::get_untrimmed_segments()
 {
     if (segments_raw.empty()) { split_aut_into_segments(); }
 
     return segments_raw;
 }
 
-void SegNfa::Segmentation::compute_epsilon_depths()
+void seg_nfa::Segmentation::compute_epsilon_depths()
 {
     std::unordered_map<State, bool> visited{ initialize_visited_map() };
     std::deque<StateDepthTuple> worklist{ initialize_worklist() };

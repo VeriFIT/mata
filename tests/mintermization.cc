@@ -20,12 +20,12 @@
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
 
-using namespace Mata::Parser;
+using namespace mata::parser;
 
-TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
+TEST_CASE("mata::Mintermization::trans_to_bdd_nfa")
 {
     Parsed parsed;
-    Mata::Mintermization mintermization{};
+    mata::Mintermization mintermization{};
 
     SECTION("Empty trans")
     {
@@ -38,7 +38,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
                 "q a r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].first.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
@@ -57,7 +57,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
                 "q (a1 | !a2)  r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -76,7 +76,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
                 "q ((a1 | !a2) | (!a1 & a3 | (a4 & !a2)))  r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -89,10 +89,10 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa")
     }
 } // trans to bdd section
 
-TEST_CASE("Mata::Mintermization::compute_minterms")
+TEST_CASE("mata::Mintermization::compute_minterms")
 {
     Parsed parsed;
-    Mata::Mintermization mintermization{};
+    mata::Mintermization mintermization{};
 
     SECTION("Minterm from trans no elimination")
     {
@@ -106,7 +106,7 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
                 "q (a3 & a4) r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -129,7 +129,7 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
                 "q (a1 & a4) r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -141,10 +141,10 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
     }
 } // compute_minterms
 
-TEST_CASE("Mata::Mintermization::mintermization")
+TEST_CASE("mata::Mintermization::mintermization")
 {
     Parsed parsed;
-    Mata::Mintermization mintermization{};
+    mata::Mintermization mintermization{};
 
     SECTION("Mintermization small")
     {
@@ -158,7 +158,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "s (a3 & a4) t\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
@@ -178,7 +178,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA small")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
         std::string file =
             "@AFA-bits\n"
             "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
@@ -189,7 +189,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
             "q3' q3'\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -216,7 +216,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA small 2")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
         std::string file =
                 "@AFA-bits\n"
                 "%Initial q1\n"
@@ -224,7 +224,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "q1 a2 | q2\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         const auto res = mintermization.mintermize(aut);
         REQUIRE(res.transitions.size() == 3);
@@ -239,7 +239,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA normal")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
 
         std::string file =
                 "@AFA-bits\n"
@@ -251,7 +251,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "q3' q3'\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -282,7 +282,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA complex")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
 
         std::string file =
                 "@AFA-bits\n"
@@ -295,7 +295,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "q3' q3'\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -307,7 +307,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA state conjunction")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
 
         std::string file =
                 "@AFA-bits\n"
@@ -319,7 +319,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "q3' q3'\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -352,7 +352,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization AFA difficult")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
 
         std::string file =
                             "@AFA-bits\n"
@@ -372,7 +372,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                             "q0 a2\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operator());
@@ -393,7 +393,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
             "s false s\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.raw == "true");
@@ -419,7 +419,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
             "q3 true\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.node.is_operator());
         REQUIRE(aut.transitions[0].second.node.raw == "|");
@@ -440,7 +440,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
     SECTION("Mintermization NFA multiple")
     {
         Parsed parsed;
-        Mata::Mintermization mintermization{};
+        mata::Mintermization mintermization{};
 
         std::string file =
                 "@NFA-bits\n"
@@ -458,7 +458,7 @@ TEST_CASE("Mata::Mintermization::mintermization")
                 "q (a1 & a4) r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
 
         const auto res = mintermization.mintermize(auts);
         REQUIRE(res.size() == 2);
@@ -485,11 +485,11 @@ TEST_CASE("Mata::Mintermization::mintermization")
     }
 }
 
-TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
+TEST_CASE("mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
 {
 
     Parsed parsed;
-    Mata::Mintermization mintermization{};
+    mata::Mintermization mintermization{};
 
     SECTION("AFA big")
     {
@@ -609,7 +609,7 @@ TEST_CASE("Mata::Mintermization::trans_to_bdd_nfa with big AFA","[.expensive]")
                  */
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto& aut= auts[0];
         const auto res = mintermization.mintermize(aut);
     }

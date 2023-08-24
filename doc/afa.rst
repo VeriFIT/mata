@@ -4,9 +4,8 @@ Alternating Finite automata
 Structures
 ----------
 
-.. doxygenstruct:: Mata::Afa::Afa
+.. doxygenstruct:: mata::afa::Afa
    :members:
 
 Operations
 ----------
-

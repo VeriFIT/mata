@@ -8,19 +8,19 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 
-using namespace Mata;
-using namespace Mata::Nfa::Algorithms;
-using namespace Mata::Nfa;
-using namespace Mata::Util;
-using namespace Mata::Parser;
-using IntAlphabet = Mata::IntAlphabet;
-using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+using namespace mata;
+using namespace mata::nfa::algorithms;
+using namespace mata::nfa;
+using namespace mata::utils;
+using namespace mata::parser;
+using IntAlphabet = mata::IntAlphabet;
+using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
 
 template<class T> void unused(const T &) {}
 
-TEST_CASE("Mata::IntAlphabet") {
+TEST_CASE("mata::IntAlphabet") {
     auto alphabet1 = IntAlphabet();
     auto alphabet2 = IntAlphabet();
     CHECK(alphabet1.is_equal(alphabet2));
@@ -37,10 +37,10 @@ TEST_CASE("Mata::IntAlphabet") {
     CHECK(different_alphabet.is_equal(&different_alphabet));
 }
 
-TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
+TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
     OnTheFlyAlphabet alphabet{ { "a", 4 }, { "b", 2 }, { "c", 10 } };
     auto symbols{ alphabet.get_alphabet_symbols() };
-    Mata::Util::OrdVector<Symbol> expected{ 4, 2, 10 };
+    mata::utils::OrdVector<Symbol> expected{ 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap{ { "a", 4 }, { "b", 2 }, { "c", 10 } });
@@ -49,7 +49,7 @@ TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
     CHECK_THROWS_AS(alphabet.add_new_symbol("a", 0), std::runtime_error);
 
     symbols = alphabet.get_alphabet_symbols();
-    expected = Mata::Util::OrdVector<Symbol>{ 7, 4, 2, 10 };
+    expected = mata::utils::OrdVector<Symbol>{ 7, 4, 2, 10 };
     CHECK(symbols == expected);
     CHECK(alphabet.get_next_value() == 11);
     CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap {
@@ -57,7 +57,7 @@ TEST_CASE("Mata::OnTheFlyAlphabet::add_symbols_from()") {
     });
 }
 
-TEST_CASE("Mata::EnumAlphabet") {
+TEST_CASE("mata::EnumAlphabet") {
     EnumAlphabet alphabet{};
     EnumAlphabet alphabet2{ 1, 2, 3, 4, 5 };
 

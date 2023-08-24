@@ -23,11 +23,11 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
-using namespace Mata::Util;
-using namespace Mata::Parser;
-using Symbol = Mata::Symbol;
+using namespace mata::nfa;
+using namespace mata::strings;
+using namespace mata::utils;
+using namespace mata::parser;
+using Symbol = mata::Symbol;
 
 // Some common automata {{{
 
@@ -71,7 +71,7 @@ using Symbol = Mata::Symbol;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
+TEST_CASE("mata::nfa::Segmentation::get_epsilon_depths()")
 {
     Nfa aut('q' + 1);
     constexpr Symbol epsilon{'c'};
@@ -80,9 +80,9 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
     SECTION("Automaton A")
     {
         FILL_WITH_AUT_A(aut);
-        auto segmentation{SegNfa::Segmentation{aut, epsilons } };
+        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons } };
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
-        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{{0, std::vector<Transition>{
+        REQUIRE(epsilon_depth_transitions == seg_nfa::Segmentation::EpsilonDepthTransitions{{ 0, std::vector<Transition>{
                 {10, epsilon, 7}, {7, epsilon, 3}, {5, epsilon, 9}}
        }});
     }
@@ -99,10 +99,10 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
         aut.delta.add(6, epsilon, 7);
         aut.delta.add(7, epsilon, 8);
 
-        auto segmentation{SegNfa::Segmentation{aut, epsilons } };
+        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons } };
         const auto& epsilon_depth_transitions{ segmentation.get_epsilon_depths() };
 
-        REQUIRE(epsilon_depth_transitions == SegNfa::Segmentation::EpsilonDepthTransitions{
+        REQUIRE(epsilon_depth_transitions == seg_nfa::Segmentation::EpsilonDepthTransitions{
                 {0, std::vector<Transition>{{ 1, epsilon, 2}}},
                 {1, std::vector<Transition>{{ 6, epsilon, 7}}},
                 {2, std::vector<Transition>{{ 7, epsilon, 8}}},
@@ -111,7 +111,7 @@ TEST_CASE("Mata::Nfa::Segmentation::get_epsilon_depths()")
 
 }
 
-TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
+TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
     Symbol epsilon{ 'c' };
     const std::set<Symbol> epsilons({epsilon});
     SECTION("Large automaton") {
@@ -132,7 +132,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
         aut.delta.add(9, 'a', 11);
         aut.delta.add(10, 'b', 11);
 
-        auto segmentation{SegNfa::Segmentation{aut, epsilons}};
+        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons}};
         auto segments{ segmentation.get_segments() };
         REQUIRE(segments.size() == 4);
 
@@ -171,7 +171,7 @@ TEST_CASE("Mata::Nfa::Segmentation::split_segment_automaton()") {
         aut.delta.add(2, epsilon, 4);
         aut.delta.add(5, epsilon, 6);
 
-        auto segmentation{SegNfa::Segmentation{aut, epsilons}};
+        auto segmentation{ seg_nfa::Segmentation{ aut, epsilons}};
         auto segments{ segmentation.get_segments() };
         CHECK(segments.size() == 3);
 

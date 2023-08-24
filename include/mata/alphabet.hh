@@ -20,10 +20,10 @@
 #include <string>
 #include <utility>
 
-#include "utils/util.hh"
+#include "utils/utils.hh"
 #include "utils/ord-vector.hh"
 
-namespace Mata {
+namespace mata {
 
 using Symbol = unsigned;
 using Word = std::vector<Symbol>;
@@ -62,10 +62,10 @@ public:
      *
      * The result does not have to equal the list of symbols in the automaton using this alphabet.
      */
-    virtual Util::OrdVector<Symbol> get_alphabet_symbols() const { throw std::runtime_error("Unimplemented"); }
+    virtual utils::OrdVector<Symbol> get_alphabet_symbols() const { throw std::runtime_error("Unimplemented"); }
 
     /// complement of a set of symbols wrt the alphabet
-    virtual Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const { // {{{
+    virtual utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const { // {{{
         (void) symbols;
         throw std::runtime_error("Unimplemented");
     } // }}}
@@ -114,11 +114,11 @@ public:
 
     std::string reverse_translate_symbol(Symbol symbol) const override { return std::to_string(symbol); }
 
-    Util::OrdVector<Symbol> get_alphabet_symbols() const override {
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override {
         throw std::runtime_error("Nonsensical use of get_alphabet_symbols() on IntAlphabet.");
     }
 
-    Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
         (void) symbols;
         throw std::runtime_error("Nonsensical use of get_complement() on IntAlphabet.");
     }
@@ -173,7 +173,7 @@ private:
  *  Alphabet alph{ EnumAlphabet{ 0, 4, 6, 8, 9 } };
  *  CHECK(alph.translate_symb("6") == 6);
  *  CHECK_THROWS(alph.translate_symb("5")); // Throws an exception about an unknown symbol.
- *  CHECK(alph.get_complement({ Util::OrdVector<Symbol>{ 0, 6, 9 } }) == Util::OrdVector<Symbol>{ 4, 8 });
+ *  CHECK(alph.get_complement({ utils::OrdVector<Symbol>{ 0, 6, 9 } }) == utils::OrdVector<Symbol>{ 4, 8 });
  *  ```
  */
 class EnumAlphabet : public Alphabet {
@@ -182,8 +182,8 @@ public:
     EnumAlphabet(const EnumAlphabet& rhs) = default;
     EnumAlphabet(EnumAlphabet&& rhs) = default;
 
-    Util::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
-    Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override {
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
         return symbols_.difference(symbols);
     }
 
@@ -199,7 +199,7 @@ public:
      * Adding a symbol name which already exists will throw an exception.
      * @param[in] symbols Vector of symbols to add.
      */
-    void add_symbols_from(const Mata::Util::OrdVector<Symbol>& symbols) { symbols_.insert(symbols); }
+    void add_symbols_from(const mata::utils::OrdVector<Symbol>& symbols) { symbols_.insert(symbols); }
 
     /**
      * @brief Expand alphabet by symbols from the passed @p alphabet.
@@ -247,7 +247,7 @@ public:
     size_t get_number_of_symbols() const { return symbols_.size(); }
 
 private:
-    Mata::Util::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
+    mata::utils::OrdVector<Symbol> symbols_{}; ///< Map of string transition symbols to symbol values.
     Symbol next_symbol_value_{ 0 }; ///< Next value to be used for a newly added symbol.
 
 public:
@@ -295,8 +295,8 @@ public:
         }
     }
 
-    Util::OrdVector<Symbol> get_alphabet_symbols() const override;
-    Util::OrdVector<Symbol> get_complement(const Util::OrdVector<Symbol>& symbols) const override;
+    utils::OrdVector<Symbol> get_alphabet_symbols() const override;
+    utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override;
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
@@ -388,10 +388,10 @@ public:
      */
     void update_next_symbol_value(Symbol value);
 }; // class OnTheFlyAlphabet.
-} // namespace Mata
+} // namespace mata
 
 namespace std
 { // {{{
-    std::ostream& operator<<(std::ostream& os, const Mata::Alphabet& alphabet);
+    std::ostream& operator<<(std::ostream& os, const mata::Alphabet& alphabet);
 }
 #endif //MATA_ALPHABET_HH

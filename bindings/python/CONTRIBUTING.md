@@ -53,16 +53,16 @@ may arise during development.
 
 The following shows minimal example of relation between C++ library source files and Cython binding
 files. It shows link between (1) Cython binding files (`nfa.pxd`, `nfa.pyx`) and C++ library files 
-(`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`Mata::Nfa::Nfa`; 
+(`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`mata::nfa::Nfa`; 
 in binding refered as `CNfa`), and (3) Cython binding function (`union` that takes Python 
-classes `Nfa`) and C++ library function (`uni` that takes C++ classes `Mata::Nfa::Nfa`, 
+classes `Nfa`) and C++ library function (`uni` that takes C++ classes `mata::nfa::Nfa`, 
 in binding refered as `c_uni` and `CNfa` respectively)
 
 ```c++
 // @file: nfa-plumbing.h
 
 // Minimal specification of C++ function, we want to wrap in Binding
-namespace Mata::Nfa::Plumbing {
+namespace mata::nfa::plumbing {
     inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
 //              ^-- C++ function signature with C++ types
 }
@@ -74,18 +74,18 @@ namespace Mata::Nfa::Plumbing {
 # Minimal specification of Cython header file.
 # This specifies, what from C++ will be visible in Cython
 
-cdef extern from "mata/nfa/nfa.hh" namespace "Mata::Nfa":
-#                 ^-- source C++ file and namespace, where Mata::Nfa::Nfa class is defined
-    cdef cppclass CNfa "Mata::Nfa::Nfa":
+cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
+#                 ^-- source C++ file and namespace, where mata::nfa::Nfa class is defined
+    cdef cppclass CNfa "mata::nfa::Nfa":
 #                 ^-- C++ class made visible in binding; it will be refered by its alias `CNfa`
 #                      ^-- full C++ class name
         CNfa()
 #       ^-- constructor of C++ class using alias `CNfa`
 #           (everything listed here will be visible in binding)
     
-cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
+cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 #                 ^-- source C++ header and namespace, where the function is defined
-    cdef void c_uni "Mata::Nfa::Plumbing::uni" (CNfa*, CNfa&, CNfa&)
+    cdef void c_uni "mata::nfa::plumbing::uni" (CNfa*, CNfa&, CNfa&)
 #             ^-- C++ function alias used in Binding   ^-- C++ type alias defined above
 #                   ^-- full C++ function name
 ```
@@ -97,7 +97,7 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "Mata::Nfa::Plumbing":
 # These classes and function will be visible and callable in Python.
 
 cdef class Nfa:
-#          ^- Python class; wrapper for Mata::Nfa::Nfa
+#          ^- Python class; wrapper for mata::nfa::Nfa
     cdef shared_ptr[CNfa] thisptr
 #                         ^-- member that holds wrapped C++ object
     def __cinit__(self, state_number = 0, alph.Alphabet alphabet = None, label=None):
@@ -108,14 +108,14 @@ cdef class Nfa:
 #       ^-- creating C++ object, that is wrapped in Python class Nfa
 
 def union(Nfa lhs, Nfa rhs):
-#   ^-- Python function; wrapper for Mata::Nfa::Plumbing::uni()
+#   ^-- Python function; wrapper for mata::nfa::plumbing::uni()
     result = Nfa()
     mata_nfa.c_uni(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
 #   ^-- call to C++ function `uni()` (it is named as c_uni to avoid collisions with Python)
     return result
-#   ^-- function returns wrapper Python object Nfa, that holds instance of `Mata::Nfa::Nfa` C++ object
+#   ^-- function returns wrapper Python object Nfa, that holds instance of `mata::nfa::Nfa` C++ object
 ```
 
 ## File/Directory Structure
@@ -133,13 +133,13 @@ The directory structure is as follows:
 - `dist/`: Packed binding for PyPI, allowing installation via `pip install libmata`.
 - `libmata/`: Root Python binding package.
     - `__init__.py`: An empty file necessary to define the package.
-    - `nfa/`: Package for nondeterministic finite automata, corresponding to the `Mata::Nfa::` namespace.
-        - `nfa.*`: Wrappers for `Mata::Nfa::Nfa` members and related structures or algorithms.
-        - `strings.*`: Wrappers for `Mata::Strings` members and related structures or algorithms.
-    - `alphabets.*`: Wrappers for `Mata::Alphabet` members and related structures or algorithms.
-    - `parser.*`: Wrappers for `Mata::Parser` members and related structures or algorithms.
+    - `nfa/`: Package for nondeterministic finite automata, corresponding to the `mata::nfa::` namespace.
+        - `nfa.*`: Wrappers for `mata::nfa::Nfa` members and related structures or algorithms.
+        - `strings.*`: Wrappers for `mata::strings` members and related structures or algorithms.
+    - `alphabets.*`: Wrappers for `mata::Alphabet` members and related structures or algorithms.
+    - `parser.*`: Wrappers for `mata::parser` members and related structures or algorithms.
     - `plotting.*`: Helper functions for displaying `libmata` members in Python code, interpreters, Jupyter notebooks, etc.
-    - `utils.*`: Wrappers for `Mata::Utils` members and related structures or algorithms.
+    - `utils.*`: Wrappers for `mata::utils` members and related structures or algorithms.
 - `tests/`: Tests for the Cython wrapper.
     - `conftest.py`: Global configuration of tests, containing fixtures, setups, etc.
 - `Manifest.in`: Specification of the contents of the wrapper distribution for PyPI.
@@ -154,9 +154,9 @@ The directory structure is as follows:
      - For a class function, declare it within the class definition:
 
 ```cython
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
+cdef extern from "mata/nfa.hh" namespace "mata::nfa":
 #                ^-- source file          ^-- namespace
-    cdef cppclass CNfa "Mata::Nfa::Nfa":
+    cdef cppclass CNfa "mata::nfa::Nfa":
     #             ^-- class name used in binding
     #                  ^-- full C/C++ name used in C/C++ library
         void make_initial(State)
@@ -166,7 +166,7 @@ cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
    - For a non-class function, declare it under its corresponding environment:
 
 ```cython
-cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
+cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
 #                ^-- source file                  ^-- namespace
     cdef void get_elements(StateSet*, CBoolVector)
     #    ^-- function signature using previously defined 
@@ -221,9 +221,9 @@ extensions = [
   1. Declare the class in the `.pxd` file
 
 ```cython
-cdef extern from "mata/alphabet.hh" namespace "Mata":
+cdef extern from "mata/alphabet.hh" namespace "mata":
 #                ^-- source file              ^-- namespace
-    cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
+    cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
         
         #         ^-- name in bind  ^-- full name           ^-- inheritance (previously defined) 
         StringToSymbolMap symbol_map
@@ -273,7 +273,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
   1. Locate the function in the `.pxd` file:
 
 ```cython
-cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
+cdef extern from "mata/re2parser.hh" namespace "mata::parser":
 #                ^-- source file               ^-- source namespace
     cdef void create_nfa(CNfa*, string) except +
     #         ^-- function signature    ^-- can fire exceptions
@@ -282,7 +282,7 @@ cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
   2. Now, you can add new parameter to the function:
 
 ```cython
-cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
+cdef extern from "mata/re2parser.hh" namespace "mata::parser":
     #                ^-- source file               ^-- source namespace
     cdef void create_nfa(CNfa*, string, bool) except +
     #         ^-- function signature    ^-- new parameter
@@ -291,7 +291,7 @@ cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
   3. Or you can define new signature:
 
 ```cython
-cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
+cdef extern from "mata/re2parser.hh" namespace "mata::parser":
 #                ^-- source file               ^-- source namespace
     cdef void create_nfa(CNfa*, string) except +
     cdef void create_nfa(CNfa*, string, bool) except +
@@ -309,7 +309,7 @@ cdef extern from "mata/re2parser.hh" namespace "Mata::Parser":
     in Python). 
 
 ```cython
-cdef NoodleSequence c_noodlify "Mata::Strings::SegNfa::noodlify" (CNfa&, Symbol, bool)
+cdef NoodleSequence c_noodlify "mata::strings::seg_nfa::noodlify" (CNfa&, Symbol, bool)
 #                   ^-- name visible in Cython
 #                              ^-- original full C/C++ name
 ``` 
@@ -318,11 +318,11 @@ cdef NoodleSequence c_noodlify "Mata::Strings::SegNfa::noodlify" (CNfa&, Symbol,
 
   * **Problem**: You want to wrap a C/C++ function `func()`, that returns some complex custom type.
   * **Solution**: Cython does not support `std::move` of any kind, hence function returning complex
-    types, e.g. `Mata::Nfa::Nfa`. Hence, you have to implement additional helper function, that
+    types, e.g. `mata::nfa::Nfa`. Hence, you have to implement additional helper function, that
     will return the type as a pointer, i.e., convert `MyClass func()` to `void func(MyClass*)`
 
 ```cython
-cdef extern from "mata/nfa-plumbing.hh" namespace "Mata::Nfa::Plumbing":
+cdef extern from "mata/nfa-plumbing.hh" namespace "mata::nfa::plumbing":
 #                ^-- source file                  ^-- source namespace
     cdef void intersection(CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
     #         ^-- definition of function with returns result through first CNfa* parameter
@@ -339,7 +339,7 @@ def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
     #        ^-- creating returned Python object
     mata_nfa.intersection(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
-    #   ^-- pointer to Mata::Nfa::Nfa object
+    #   ^-- pointer to mata::nfa::Nfa object
     #                         ^-- equivalent of *lhs 
     )
     return result
@@ -356,7 +356,7 @@ def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
   * **Solution**: You simply declare the method under the class in `.pxd` file.
 
 ```cython
-cdef cppclass COnTheFlyAlphabet "Mata::OnTheFlyAlphabet" (CAlphabet):
+cdef cppclass COnTheFlyAlphabet "mata::OnTheFlyAlphabet" (CAlphabet):
 #             ^-- visible class name
 #                               ^-- full C/C++ name
 #                                                         ^-- inheritance
@@ -389,7 +389,7 @@ def determinize_with_subset_map(cls, Nfa lhs):
   will simply not be visible.
 
 ```cython
-cdef cppclass CMove "Mata::Nfa::SymbolPost":
+cdef cppclass CMove "mata::nfa::SymbolPost":
     Symbol symbol
     StateSet targets
 #   ^-- class attributes
@@ -420,9 +420,9 @@ cdef class SymbolPost:
 * **Solution**: You simply declare the C/C++ class with custom name followed by its full name.
 
 ```cython
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
+cdef extern from "mata/nfa.hh" namespace "mata::nfa":
     #                ^-- source file          ^-- namespace
-    cdef cppclass CNfa "Mata::Nfa::Nfa":
+    cdef cppclass CNfa "mata::nfa::Nfa":
 #             ^-- class name and its full C/C++ name
 ```
 
@@ -474,8 +474,8 @@ cdef class SymbolPost:
 * First, declare the corresponding C/C++ operators in `pxd` file.
 ```cython
 # @file: nfa.pxd
-cdef extern from "mata/nfa.hh" namespace "Mata::Nfa":
-    cdef cppclass CMove "Mata::Nfa::SymbolPost":
+cdef extern from "mata/nfa.hh" namespace "mata::nfa":
+    cdef cppclass CMove "mata::nfa::SymbolPost":
         bool operator<(CMove)
         bool operator<=(CMove)
         bool operator>(CMove)
@@ -625,7 +625,7 @@ preinc(iterator)
   your custom classes need to define nested iterator class as shown below.
 
 ```cython
-cdef cppclass CNfa "Mata::Nfa::Nfa":
+cdef cppclass CNfa "mata::nfa::Nfa":
     cppclass const_iterator:
     # ^-- definition of nested iterator; this can be accessed as CNfa.const_iterator type
         const_iterator()
@@ -888,7 +888,7 @@ libmata/nfa/nfa.pyx:687:12: cimported module has no attribute 'determinize'
 
 ```git
 -    cdef void determinize(CNfa*, CNfa&, umap[StateSet, State]*)
-+    cdef void c_determinize "Mata::Nfa::Plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
++    cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
 ```
 
 # Quick glossary

@@ -16,7 +16,7 @@
 #include <string>
 #include <cstring>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 /**
  * @brief Load automaton from file at @p filename into @p aut, using @p alphabet for symbols on transitions.
@@ -28,11 +28,11 @@ using namespace Mata::Nfa;
  *   (Note, that if you want to mintermize multiple automata together, either use `load_automata` or
  *   `load_intermediate_automaton` and mintermize yourself.)
  * @return 0 if loading the automaton succeeded. Otherwise value != 0 if loading failed.
- */ 
+ */
 int load_automaton(
         const std::string& filename,
         Nfa& aut,
-        Mata::OnTheFlyAlphabet& alphabet,
+        mata::OnTheFlyAlphabet& alphabet,
         const bool mintermize_automata = true
 );
 
@@ -49,7 +49,7 @@ int load_automaton(
 int load_automata(
         std::vector<std::string>& filenames,
         std::vector<Nfa>& auts,
-        Mata::OnTheFlyAlphabet& alphabet,
+        mata::OnTheFlyAlphabet& alphabet,
         const bool mintermize_automata = true
 );
 
@@ -62,7 +62,7 @@ int load_automata(
  */
 int load_intermediate_automaton(
         const std::string& filename,
-        std::vector<Mata::IntermediateAut>& out_inter_auts
+        std::vector<mata::IntermediateAut>& out_inter_auts
 );
 
 /*

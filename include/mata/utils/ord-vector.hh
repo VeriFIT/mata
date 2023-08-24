@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <cassert>
 
-#include "util.hh"
+#include "utils.hh"
 
 namespace {
 /**
@@ -45,12 +45,12 @@ std::string ToString(const T& n) {
 
 } // Anonymous namespace.
 
-namespace Mata::Util {
+namespace mata::utils {
 
 template <class Key> class OrdVector;
 
 template <class T>
-bool are_disjoint(const Util::OrdVector<T>& lhs, const Util::OrdVector<T>& rhs) {
+bool are_disjoint(const utils::OrdVector<T>& lhs, const utils::OrdVector<T>& rhs) {
     auto itLhs = lhs.begin();
     auto itRhs = rhs.begin();
     while (itLhs != lhs.end() && itRhs != rhs.end()) {
@@ -95,20 +95,20 @@ private:  // Private data members
     VectorType vec_;
 
 private:  // Private methods
-    bool vectorIsSorted() const { return(Mata::Util::is_sorted(vec_)); }
+    bool vectorIsSorted() const { return(mata::utils::is_sorted(vec_)); }
 
 public:
     OrdVector() : vec_() {}
-    explicit OrdVector(const VectorType& vec) : vec_(vec) { Util::sort_and_rmdupl(vec_); }
-    explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { Util::sort_and_rmdupl(vec_); }
+    explicit OrdVector(const VectorType& vec) : vec_(vec) { utils::sort_and_rmdupl(vec_); }
+    explicit OrdVector(const std::set<Key>& set): vec_{ set.begin(), set.end() } { utils::sort_and_rmdupl(vec_); }
     template <class T>
-    explicit OrdVector(const T & set) : vec_(set.begin(), set.end()) { Util::sort_and_rmdupl(vec_); }
-    OrdVector(std::initializer_list<Key> list) : vec_(list) { Util::sort_and_rmdupl(vec_); }
+    explicit OrdVector(const T & set) : vec_(set.begin(), set.end()) { utils::sort_and_rmdupl(vec_); }
+    OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
     explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
     template <class InputIterator>
-    explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { Util::sort_and_rmdupl(vec_); }
+    explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { utils::sort_and_rmdupl(vec_); }
 
     OrdVector& operator=(const OrdVector& other) {
         if (&other != this) { vec_ = other.vec_; }
@@ -282,13 +282,13 @@ public:
     // Indexes which ar staying are shifted left to take place of those that are not staying.
     template<typename Fun>
     void filter_indexes(const Fun && is_staying) {
-        Util::filter_indexes(vec_, is_staying);
+        utils::filter_indexes(vec_, is_staying);
     }
 
     // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
     template<typename F>
     void filter(F && is_staying) {
-        Util::filter(vec_,is_staying);
+        utils::filter(vec_, is_staying);
     }
 
     virtual inline const_reference back() const { return vec_.back(); }
@@ -379,7 +379,7 @@ public:
     }
 
     // Renames numbers in the vector according to the renaming, q becomes renaming[q].
-    void rename(const std::vector<Key> & renaming) { Util::rename(vec_,renaming); }
+    void rename(const std::vector<Key> & renaming) { utils::rename(vec_, renaming); }
 
     static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
         assert(lhs.vectorIsSorted());
@@ -469,12 +469,12 @@ public:
     }
 }; // Class OrdVector.
 
-} // Namespace Mata::Util.
+} // Namespace mata::utils.
 
 namespace std {
     template <class Key>
-    struct hash<Mata::Util::OrdVector<Key>> {
-        std::size_t operator()(const Mata::Util::OrdVector<Key>& vec) const {
+    struct hash<mata::utils::OrdVector<Key>> {
+        std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
             return std::hash<std::vector<Key>>{}(vec.ToVector());
         }
     };

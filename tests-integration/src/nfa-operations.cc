@@ -12,7 +12,7 @@
 #include <chrono>
 #include <string>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 const bool MINTERMIZE_AUTOMATA{ true};
 
@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
     std::string filename = argv[1];
 
     Nfa aut;
-    Mata::OnTheFlyAlphabet alphabet{};
+    mata::OnTheFlyAlphabet alphabet{};
     if (load_automaton(filename, aut, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }

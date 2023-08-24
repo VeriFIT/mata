@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -22,18 +22,18 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::Parser::Parsed parsed;
+    mata::parser::Parsed parsed;
     Nfa aut;
     try {
-        parsed = Mata::Parser::parse_mf(fs, true);
+        parsed = mata::parser::parse_mf(fs, true);
         fs.close();
 
-        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
         for (const auto& ia : inter_auts)
             std::cout << ia << '\n';
 
         if (inter_auts[0].is_nfa())
-            aut = Mata::Nfa::Builder::construct(inter_auts[0]);
+            aut = mata::nfa::builder::construct(inter_auts[0]);
     }
     catch (const std::exception& ex) {
         fs.close();

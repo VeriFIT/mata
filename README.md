@@ -107,10 +107,10 @@ the standard include.
 #include <mata/nfa.hh>
 ```
 
-We recommend to use the `Mata::Nfa` namespace for easier usage:
+We recommend to use the `mata::nfa` namespace for easier usage:
 
 ```cpp
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 ```
 
 Start by creating an automaton with fixed number of states.

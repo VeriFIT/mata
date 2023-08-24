@@ -1,4 +1,4 @@
-/* util.hh -- various utilities
+/* utils.hh -- various utilities
  *
  * Copyright (c) 2018 Ondrej Lengal <ondra.lengal@gmail.com>
  *
@@ -34,7 +34,7 @@
 
 /// macro for debug outputs
 #define PRINT_VERBOSE_LVL(lvl, title, x) {\
-	if (Mata::LOG_VERBOSITY >= lvl) {\
+	if (mata::LOG_VERBOSITY >= lvl) {\
 		std::cerr << title << ": " << x << "\n";\
 	}\
 }
@@ -61,8 +61,7 @@
  *   3. Mintermization,
  *   4. Closed sets.
  */
-namespace Mata
-{
+namespace mata {
 
 /// Representation of bool vector by a vector of uint8_t.
 class BoolVector : public std::vector<uint8_t> {
@@ -126,8 +125,7 @@ extern const std::string g_GIT_SHA1;
  *   4. Printers,
  *   5. Other helper functions.
  */
-namespace Util
-{
+namespace utils {
 
 /** Are two sets disjoint? */
 template <class T>
@@ -235,7 +233,7 @@ struct hash<std::pair<A,B>>
 	inline size_t operator()(const std::pair<A,B>& k) const
 	{ // {{{
 		size_t accum = std::hash<A>{}(k.first);
-		return Mata::Util::hash_combine(accum, k.second);
+		return mata::utils::hash_combine(accum, k.second);
 	} // operator() }}}
 };
 
@@ -247,7 +245,7 @@ struct hash<std::set<A>>
 {
 	inline size_t operator()(const std::set<A>& cont) const
 	{ // {{{
-		return Mata::Util::hash_range(cont.begin(), cont.end());
+		return mata::utils::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -259,7 +257,7 @@ struct hash<std::vector<A>>
 {
 	inline size_t operator()(const std::vector<A>& cont) const
 	{ // {{{
-		return Mata::Util::hash_range(cont.begin(), cont.end());
+		return mata::utils::hash_range(cont.begin(), cont.end());
 	} // operator() }}}
 };
 
@@ -439,7 +437,7 @@ template <class... Ts>
 std::string to_string(const std::tuple<Ts...>& tup)
 { // {{{
 	std::string str = "<";
-  str += Mata::Util::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
+  str += mata::utils::TuplePrinter<decltype(tup), sizeof...(Ts)>::print(tup);
 	str += ">";
 
 	return str;
@@ -464,10 +462,7 @@ std::string to_string(const A& value)
 
 } // namespace std }}}
 
-namespace Mata
-{
-namespace Util
-{
+namespace mata::utils {
 
 // Taken from
 //   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
@@ -583,6 +578,5 @@ void filter(Vector & vec, F && is_staying) {
         auto it = std::unique(vec.begin(), vec.end());
         vec.reserve(static_cast<size_t>(it - vec.begin()));
     }
-}
-}
+} // namespace mata::utils.
 #endif /* MATA_UTIL_HH_ */

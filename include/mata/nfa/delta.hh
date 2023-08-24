@@ -8,7 +8,7 @@
 
 #include <iterator>
 
-namespace Mata::Nfa {
+namespace mata::nfa {
 
 /// A single transition in Delta represented as a triple(source, symbol, target).
 struct Transition {
@@ -84,7 +84,7 @@ public:
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
-}; // class Mata::Nfa::Move.
+}; // class mata::nfa::Move.
 
 /**
  * @brief A data structure representing possible transitions over different symbols from a source state.
@@ -92,9 +92,9 @@ public:
  * It is an ordered vector containing possible @c SymbolPost (i.e., pair of symbol and target states).
  * @c SymbolPosts in the vector are ordered by symbols in @c SymbolPosts.
  */
-class StatePost : private Util::OrdVector<SymbolPost> {
+class StatePost : private utils::OrdVector<SymbolPost> {
 private:
-    using super = Util::OrdVector<SymbolPost>;
+    using super = utils::OrdVector<SymbolPost>;
 public:
     using super::iterator, super::const_iterator;
     using super::begin, super::end, super::cbegin, super::cend;
@@ -181,9 +181,9 @@ public:
 }; // struct Post.
 
 /**
- * @brief Specialization of Util::SynchronizedExistentialIterator for iterating over SymbolPosts.
+ * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
  */
-class SynchronizedExistentialSymbolPostIterator : public Util::SynchronizedExistentialIterator<Util::OrdVector<SymbolPost>::const_iterator> {
+class SynchronizedExistentialSymbolPostIterator : public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
 public:
     /**
      * @brief Get union of all targets.
@@ -200,8 +200,8 @@ public:
     }
 
     /**
-     * @brief Synchronize with the given SymbolPost @p sync. Alignes the synchronized iterator 
-     * to the same symbol as @p sync. 
+     * @brief Synchronize with the given SymbolPost @p sync. Alignes the synchronized iterator
+     * to the same symbol as @p sync.
      * @return True iff the synchronized iterator points to the same symbol as @p sync.
      */
     bool synchronize_with(const SymbolPost& sync) {
@@ -446,6 +446,6 @@ public:
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
 }; // struct Delta.
 
-} // namespace Mata::Nfa.
+} // namespace mata::nfa.
 
 #endif //MATA_DELTA_HH

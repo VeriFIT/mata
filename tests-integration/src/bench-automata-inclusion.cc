@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> filenames {argv[1], argv[2]};
     std::vector<Nfa> automata;
-    Mata::OnTheFlyAlphabet alphabet;
+    mata::OnTheFlyAlphabet alphabet;
     if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
@@ -41,12 +41,12 @@ int main(int argc, char *argv[]) {
 
     params["algorithm"] = "naive";
     TIME_BEGIN(automata_inclusion_naive);
-    Mata::Nfa::is_included(lhs, rhs, &alphabet, params);
+    mata::nfa::is_included(lhs, rhs, &alphabet, params);
     TIME_END(automata_inclusion_naive);
 
     params["algorithm"] = "antichains";
     TIME_BEGIN(automata_inclusion_antichain);
-    Mata::Nfa::is_included(lhs, rhs, &alphabet, params);
+    mata::nfa::is_included(lhs, rhs, &alphabet, params);
     TIME_END(automata_inclusion_antichain);
 
     return EXIT_SUCCESS;

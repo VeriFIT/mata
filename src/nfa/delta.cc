@@ -12,9 +12,9 @@
 #include <list>
 #include <iterator>
 
-using namespace Mata::Util;
-using namespace Mata::Nfa;
-using Mata::Symbol;
+using namespace mata::utils;
+using namespace mata::nfa;
+using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -265,7 +265,7 @@ Delta::transitions_const_iterator& Delta::transitions_const_iterator::operator=(
     return *this;
 }
 
-bool Mata::Nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
+bool mata::nfa::Delta::transitions_const_iterator::operator==(const Delta::transitions_const_iterator& other) const {
     if (is_end_ && other.is_end_) {
         return true;
     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
@@ -297,7 +297,7 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
 
 StatePost& Delta::mutable_state_post(State q) {
     if (q >= state_posts_.size()) {
-        Util::reserve_on_insert(state_posts_, q);
+        utils::reserve_on_insert(state_posts_, q);
         const size_t new_size{ q + 1 };
         state_posts_.resize(new_size);
     }
@@ -410,7 +410,7 @@ StatePost::moves_const_iterator& StatePost::moves_const_iterator::operator=(cons
     return *this;
 }
 
-bool Mata::Nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
+bool mata::nfa::StatePost::moves_const_iterator::operator==(const StatePost::moves_const_iterator& other) const {
     if (is_end_ && other.is_end_) {
         return true;
     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {

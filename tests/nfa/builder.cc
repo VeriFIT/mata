@@ -8,10 +8,10 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
 
-using namespace Mata::Nfa;
-using Symbol = Mata::Symbol;
-using IntAlphabet = Mata::IntAlphabet;
-using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+using namespace mata::nfa;
+using Symbol = mata::Symbol;
+using IntAlphabet = mata::IntAlphabet;
+using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
 
@@ -25,14 +25,14 @@ TEST_CASE("parse_from_mata()") {
         Nfa nfa{ delta, { 0 }, { 1 } };
 
         SECTION("from string") {
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa.print_to_mata()) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa.print_to_mata()) };
             CHECK(are_equivalent(parsed, nfa));
         }
 
         SECTION("from stream") {
             std::stringstream nfa_stream;
             nfa.print_to_mata(nfa_stream);
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa_stream) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa_stream) };
             CHECK(are_equivalent(parsed, nfa));
         }
 
@@ -40,7 +40,7 @@ TEST_CASE("parse_from_mata()") {
             std::filesystem::path nfa_file{ "./temp-test-parse_from_mata-simple_nfa.mata" };
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc};
             nfa.print_to_mata(file);
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa_file) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa_file) };
             file.close();
             std::filesystem::remove(nfa_file);
 
@@ -70,7 +70,7 @@ TEST_CASE("parse_from_mata()") {
         nfa.final = { 3, 103 };
 
         SECTION("from string") {
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa.print_to_mata()) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa.print_to_mata()) };
             parsed.final.contains(103);
             parsed.initial.contains(50);
             parsed.delta.contains(51, 'z', 42);
@@ -80,7 +80,7 @@ TEST_CASE("parse_from_mata()") {
         SECTION("from stream") {
             std::stringstream nfa_stream;
             nfa.print_to_mata(nfa_stream);
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa_stream) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa_stream) };
             parsed.final.contains(103);
             parsed.initial.contains(50);
             parsed.delta.contains(51, 'z', 42);
@@ -91,7 +91,7 @@ TEST_CASE("parse_from_mata()") {
             std::filesystem::path nfa_file{ "./temp-test-parse_from_mata-larger_nfa.mata" };
             std::fstream file{ nfa_file, std::fstream::in | std::fstream::out | std::fstream::trunc };
             nfa.print_to_mata(file);
-            Nfa parsed{ Mata::Nfa::Builder::parse_from_mata(nfa_file) };
+            Nfa parsed{ mata::nfa::builder::parse_from_mata(nfa_file) };
             file.close();
             std::filesystem::remove(nfa_file);
 

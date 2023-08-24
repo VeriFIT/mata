@@ -23,14 +23,14 @@
 #include <string>
 #include <vector>
 
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 
 /**
  * Parser from `.mata` format to automata (currently `Nfa` and `Afa` are supported).
  *
  * This includes parsing either from files or from other streams (strings, etc.).
  */
-namespace Mata::Parser {
+namespace mata::parser {
 
 // TODO: make into a multimap
 using KeyListStore = std::map<std::string, std::vector<std::string>>;
@@ -76,11 +76,11 @@ ParsedSection parse_mf_section(const std::string& input, bool keepQuotes = false
 /// registers dispatcher
 void init();
 
-} // namespace Mata::Parser.
+} // namespace mata::Parser.
 
 namespace std {
     /// Output stream operator
-    std::ostream& operator<<(std::ostream& os, const Mata::Parser::ParsedSection& parsec);
+    std::ostream& operator<<(std::ostream& os, const mata::parser::ParsedSection& parsec);
 }
 
 #endif /* MATA_PARSER_HH_ */

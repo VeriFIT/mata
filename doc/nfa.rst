@@ -4,22 +4,22 @@ Nondeterministic Finite automata
 Structures
 ----------
 
-.. doxygenstruct:: Mata::Nfa::Nfa
+.. doxygenstruct:: mata::nfa::Nfa
    :members:
 
 Operations
 ----------
 
-.. doxygenfunction:: Mata::Nfa::uni(Nfa*, const Nfa&, const Nfa&)
-.. doxygenfunction:: Mata::Nfa::uni(const Nfa&, const Nfa&)
-.. doxygenfunction:: Mata::Nfa::intersection_preserving_epsilon_transitions(Nfa*, const Nfa&, const Nfa&, Symbol, ProductMap*)
-.. doxygenfunction:: Mata::Nfa::intersection_preserving_epsilon_transitions(const Nfa&, const Nfa&, Symbol, ProductMap*)
-.. doxygenfunction:: Mata::Nfa::determinize(Nfa*, const Nfa&, SubsetMap*)
-.. doxygenfunction:: Mata::Nfa::determinize(const Nfa&, SubsetMap*)
-.. doxygenfunction:: Mata::Nfa::revert(Nfa* result, const Nfa& aut)
-.. doxygenfunction:: Mata::Nfa::minimize(Nfa*, const Nfa&)
-.. doxygenfunction:: Mata::Nfa::minimize(const Nfa&)
-.. doxygenfunction:: Mata::Nfa::is_lang_empty
-.. doxygenfunction:: Mata::Nfa::is_in_lang
-.. doxygenfunction:: Mata::Nfa::is_deterministic
-.. doxygenfunction:: Mata::Nfa::is_complete
+.. doxygenfunction:: mata::nfa::uni(Nfa*, const Nfa&, const Nfa&)
+.. doxygenfunction:: mata::nfa::uni(const Nfa&, const Nfa&)
+.. doxygenfunction:: mata::nfa::intersection_preserving_epsilon_transitions(Nfa*, const Nfa&, const Nfa&, Symbol, ProductMap*)
+.. doxygenfunction:: mata::nfa::intersection_preserving_epsilon_transitions(const Nfa&, const Nfa&, Symbol, ProductMap*)
+.. doxygenfunction:: mata::nfa::determinize(Nfa*, const Nfa&, SubsetMap*)
+.. doxygenfunction:: mata::nfa::determinize(const Nfa&, SubsetMap*)
+.. doxygenfunction:: mata::nfa::revert(Nfa* result, const Nfa& aut)
+.. doxygenfunction:: mata::nfa::minimize(Nfa*, const Nfa&)
+.. doxygenfunction:: mata::nfa::minimize(const Nfa&)
+.. doxygenfunction:: mata::nfa::is_lang_empty
+.. doxygenfunction:: mata::nfa::is_in_lang
+.. doxygenfunction:: mata::nfa::is_deterministic
+.. doxygenfunction:: mata::nfa::is_complete
