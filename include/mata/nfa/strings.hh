@@ -16,16 +16,21 @@
 #ifndef MATA_NFA_STRING_SOLVING_HH_
 #define MATA_NFA_STRING_SOLVING_HH_
 
+#include "mata/alphabet.hh"
+#include "mata/nfa/delta.hh"
+#include "mata/nfa/types.hh"
 #include "nfa.hh"
-
-namespace {
-    using namespace mata::nfa;
-}
 
 /**
  * NFA algorithms usable for solving string constraints.
  */
 namespace mata::strings {
+
+using State = nfa::State;
+using StateSet = nfa::StateSet;
+using Transition = nfa::Transition;
+using ParameterMap = nfa::ParameterMap;
+using SymbolPost = nfa::SymbolPost;
 
 /**
  * Class mapping states to the shortest words accepted by languages of the states.
