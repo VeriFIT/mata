@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html lang="en" data-content_root="./">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,9 +8,9 @@
     <title>Introduction &#8212; mata  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=039e1c02" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=b3ba4146"></script>
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
-    <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="New Generation of Automata Library" href="overview.html" />
@@ -32,9 +32,9 @@
           <div class="body" role="main">
             
   <section id="introduction">
-<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading">¶</a></h1>
+<h1>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h1>
 <section id="mata-the-automata-library">
-<h2>Mata: The Automata Library<a class="headerlink" href="#mata-the-automata-library" title="Permalink to this heading">¶</a></h2>
+<h2>Mata: The Automata Library<a class="headerlink" href="#mata-the-automata-library" title="Link to this heading">¶</a></h2>
 <p><a class="reference external" href="https://github.com/VeriFIT/mata"><img alt="GitHub tag" src="https://img.shields.io/github/tag/VeriFIT/mata.svg" /></a>
 <a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml"><img alt="Quality" src="https://github.com/VeriFIT/mata/actions/workflows/code-quality.yml/badge.svg" /></a>
 <a class="reference external" href="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml"><img alt="Python-Binding (build-&amp;-test)" src="https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel" /></a>
@@ -47,7 +47,7 @@ AFA, etc.). Currently, Mata offers two interfaces:</p>
 </ol>
 </section>
 <section id="building-from-sources">
-<h2>Building from sources<a class="headerlink" href="#building-from-sources" title="Permalink to this heading">¶</a></h2>
+<h2>Building from sources<a class="headerlink" href="#building-from-sources" title="Link to this heading">¶</a></h2>
 <p>To build the the library run the following:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">VeriFIT</span><span class="o">/</span><span class="n">mata</span>
 <span class="n">cd</span> <span class="n">mata</span>
@@ -69,7 +69,7 @@ Run the following to install the dependencies for MacOS:</p>
 </div>
 </section>
 <section id="building-the-python-binding-from-sources">
-<h2>Building the Python binding from sources<a class="headerlink" href="#building-the-python-binding-from-sources" title="Permalink to this heading">¶</a></h2>
+<h2>Building the Python binding from sources<a class="headerlink" href="#building-the-python-binding-from-sources" title="Link to this heading">¶</a></h2>
 <p>Mata offers binding of its efficient library to Python. You can install the binding as an Python
 package on your system as follows. First, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (<code class="docutils literal notranslate"><span class="pre">venv</span></code>) to install and use the library.</p>
@@ -90,7 +90,7 @@ system. We recommend using the virtual environemnt (<code class="docutils litera
 </div>
 </section>
 <section id="getting-started">
-<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this heading">¶</a></h2>
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
 <p>To get started, we refer to the <a class="reference internal" href="#examples/"><span class="xref myst">examples</span></a> in our repository.
 This directory contains examples of various usage in form of:</p>
 <ol class="arabic simple">
@@ -116,7 +116,7 @@ Navigate to generated link to see the available jupyter notebooks:</p></li>
 </pre></div>
 </div>
 <section id="using-the-library">
-<h3>Using the library<a class="headerlink" href="#using-the-library" title="Permalink to this heading">¶</a></h3>
+<h3>Using the library<a class="headerlink" href="#using-the-library" title="Link to this heading">¶</a></h3>
 <p>The library can be used directly in the C/C++ code. The result of compilation is a static
 or dynamic library, that can be linked to ones project. Note, that the library is dependent
 on several other 3rd party libraries (e.g., <code class="docutils literal notranslate"><span class="pre">libre2</span></code> or <code class="docutils literal notranslate"><span class="pre">libsimlib</span></code>), which are included in
@@ -169,7 +169,7 @@ the standard include.</p>
 </div>
 </section>
 <section id="using-the-binding">
-<h3>Using the binding<a class="headerlink" href="#using-the-binding" title="Permalink to this heading">¶</a></h3>
+<h3>Using the binding<a class="headerlink" href="#using-the-binding" title="Link to this heading">¶</a></h3>
 <p>The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.</p>
 <p>You can start using the binding by importing the <code class="docutils literal notranslate"><span class="pre">mata</span></code> package.</p>
@@ -195,7 +195,7 @@ either use the binding in your own scripts or in the python interpreter.</p>
 </section>
 </section>
 <section id="contributing">
-<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading">¶</a></h2>
+<h2>Contributing<a class="headerlink" href="#contributing" title="Link to this heading">¶</a></h2>
 <p>If you’d like to contribute to the libmata,
 please <a class="reference external" href="https://github.com/VeriFIT/mata/fork">fork the repository</a>, create a new
 feature branch, and finally <a class="reference external" href="https://github.com/VeriFIT/mata/compare">create a new pull request</a>.</p>
@@ -205,7 +205,7 @@ either contact us directly through mail or
 When creating a new issue, please, try to include everything necessary for us to know
 (such as the version, operation system, etc.) so we can sucessfully replicate the issue.</p>
 <section id="note-to-main-contributors">
-<h3>Note to main contributors<a class="headerlink" href="#note-to-main-contributors" title="Permalink to this heading">¶</a></h3>
+<h3>Note to main contributors<a class="headerlink" href="#note-to-main-contributors" title="Link to this heading">¶</a></h3>
 <p>By default, each merge automatically increases the <code class="docutils literal notranslate"><span class="pre">minor</span></code> version of the library
 (i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.1.0</span></code> ). This can be overruled using either tag <code class="docutils literal notranslate"><span class="pre">#patch</span></code> (increasing
 patch version, i.e., <code class="docutils literal notranslate"><span class="pre">0.0.0</span> <span class="pre">-&gt;</span> <span class="pre">0.0.1</span></code>) or <code class="docutils literal notranslate"><span class="pre">#major</span></code> (increasing major version, i.e.,
@@ -216,7 +216,7 @@ performance fixes or refactoring.</p>
 </section>
 </section>
 <section id="links">
-<h2>Links<a class="headerlink" href="#links" title="Permalink to this heading">¶</a></h2>
+<h2>Links<a class="headerlink" href="#links" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p>Project (origin) repository: <a class="reference external" href="https://github.com/verifit/mata">https://github.com/verifit/mata</a></p></li>
 <li><p>Issue tracker: <a class="reference external" href="https://github.com/verifit/mata/issues">https://github.com/verifit/mata/issues</a></p>
@@ -240,11 +240,11 @@ formal methods, verification and many more:
 <a class="reference external" href="http://www.fit.vutbr.cz/research/groups/verifit/index.php.en">http://www.fit.vutbr.cz/research/groups/verifit/index.php.en</a>.</p>
 </section>
 <section id="licensing">
-<h2>Licensing<a class="headerlink" href="#licensing" title="Permalink to this heading">¶</a></h2>
+<h2>Licensing<a class="headerlink" href="#licensing" title="Link to this heading">¶</a></h2>
 <p>The code of this project is licensed under GNU GPLv3 license.</p>
 </section>
 <section id="contacts">
-<h2>Contacts<a class="headerlink" href="#contacts" title="Permalink to this heading">¶</a></h2>
+<h2>Contacts<a class="headerlink" href="#contacts" title="Link to this heading">¶</a></h2>
 <ul class="simple">
 <li><p><strong>Lukáš Holík</strong> (<a class="reference external" href="https://github.com/kilohsakul">kilohsakul</a>): the supreme leader, the emperor of theory;</p></li>
 <li><p><strong>Ondřej Lengál</strong> (<a class="reference external" href="https://github.com/ondrik">ondrik</a>): prototype developer and the world’s talest hobbit;</p></li>
@@ -256,7 +256,7 @@ formal methods, verification and many more:
 </ul>
 </section>
 <section id="acknowledgements">
-<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Permalink to this heading">¶</a></h2>
+<h2>Acknowledgements<a class="headerlink" href="#acknowledgements" title="Link to this heading">¶</a></h2>
 <p>We thank for the support received from the Brno University of Technology
 (<a class="reference external" href="https://www.fit.vutbr.cz/">BUT FIT</a>).</p>
 <p>Development of this tool has been supported by the following projects: ???.</p>
@@ -337,7 +337,7 @@ that may be made of the information it contains.</p>
       &copy;2022, VeriFIT Group, BUT, FIT.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.1.2</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.2.3</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
       
       |
