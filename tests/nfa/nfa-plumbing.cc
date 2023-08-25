@@ -23,8 +23,8 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/plumbing.hh"
 
-using Symbol = Mata::Symbol;
-using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+using Symbol = mata::Symbol;
+using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 // Some common automata {{{
 
@@ -68,78 +68,72 @@ using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::Plumbing") {
-    Mata::Nfa::Nfa lhs{};
-    Mata::Nfa::Nfa rhs{};
-    Mata::Nfa::Nfa result{};
+TEST_CASE("Mata::nfa::Plumbing") {
+    mata::nfa::Nfa lhs{};
+    mata::nfa::Nfa rhs{};
+    mata::nfa::Nfa result{};
     OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b", "c" } };
 
-    SECTION("Mata::Nfa::Plumbing::concatenate") {
+    SECTION("Mata::nfa::Plumbing::concatenate") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        Mata::Nfa::Plumbing::concatenate(&result, lhs, rhs);
+        mata::nfa::plumbing::concatenate(&result, lhs, rhs);
         CHECK(is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::intersection") {
+    SECTION("Mata::nfa::Plumbing::intersection") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        Mata::Nfa::Plumbing::intersection(&result, lhs, rhs);
+        mata::nfa::plumbing::intersection(&result, lhs, rhs);
         CHECK(is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::union") {
+    SECTION("Mata::nfa::Plumbing::union") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        Mata::Nfa::Plumbing::uni(&result, lhs, rhs);
+        mata::nfa::plumbing::uni(&result, lhs, rhs);
         CHECK(!is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::remove_epsilon") {
+    SECTION("Mata::nfa::Plumbing::remove_epsilon") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::remove_epsilon(&result, lhs);
+        mata::nfa::plumbing::remove_epsilon(&result, lhs);
         CHECK(!is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::revert") {
+    SECTION("Mata::nfa::Plumbing::revert") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::revert(&result, lhs);
+        mata::nfa::plumbing::revert(&result, lhs);
         CHECK(!is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::reduce") {
+    SECTION("Mata::nfa::Plumbing::reduce") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::reduce(&result, lhs);
+        mata::nfa::plumbing::reduce(&result, lhs);
         CHECK(!is_lang_empty(result));
         CHECK(result.size() <= lhs.size());
     }
 
-    SECTION("Mata::Nfa::Plumbing::determinize") {
+    SECTION("Mata::nfa::Plumbing::determinize") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::determinize(&result, lhs);
+        mata::nfa::plumbing::determinize(&result, lhs);
         CHECK(!is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::minimize") {
+    SECTION("Mata::nfa::Plumbing::minimize") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::minimize(&result, lhs);
+        mata::nfa::plumbing::minimize(&result, lhs);
         CHECK(!is_lang_empty(result));
     }
 
-    SECTION("Mata::Nfa::Plumbing::complement") {
+    SECTION("Mata::nfa::Plumbing::complement") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::complement(&result, lhs, alph);
+        mata::nfa::plumbing::complement(&result, lhs, alph);
         CHECK(!is_lang_empty(result));
     }
-    SECTION("Mata::Nfa::Plumbing::make_complete") {
+    SECTION("Mata::nfa::Plumbing::make_complete") {
         FILL_WITH_AUT_A(lhs);
-        Mata::Nfa::Plumbing::make_complete(&lhs, alph, lhs.size() + 1);
+        mata::nfa::plumbing::make_complete(&lhs, alph, lhs.size() + 1);
         CHECK(!is_lang_empty(lhs));
     }
 }
-
-
-
-
-
-

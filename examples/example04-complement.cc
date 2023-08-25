@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -22,11 +22,11 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::Parser::Parsed parsed;
+    mata::parser::Parsed parsed;
     Nfa aut;
-    Mata::OnTheFlyAlphabet alphabet;
+    mata::OnTheFlyAlphabet alphabet;
     try {
-        parsed = Mata::Parser::parse_mf(fs, true);
+        parsed = mata::parser::parse_mf(fs, true);
         fs.close();
 
         if (parsed.size() != 1) {
@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
-        aut = Mata::Nfa::Builder::construct(parsed[0], &alphabet);
+        aut = mata::nfa::builder::construct(parsed[0], &alphabet);
     }
     catch (const std::exception& ex) {
         fs.close();

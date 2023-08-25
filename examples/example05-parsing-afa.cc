@@ -6,7 +6,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace Mata::Afa;
+using namespace mata::afa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -22,13 +22,13 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::Parser::Parsed parsed;
+    mata::parser::Parsed parsed;
     Afa aut;
     try {
-        parsed = Mata::Parser::parse_mf(fs, true);
+        parsed = mata::parser::parse_mf(fs, true);
         fs.close();
 
-        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
         for (const auto& ia : inter_auts)
             std::cout << ia << '\n';
 

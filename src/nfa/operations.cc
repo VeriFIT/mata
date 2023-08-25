@@ -30,9 +30,9 @@
 
 using std::tie;
 
-using namespace Mata::Util;
-using namespace Mata::Nfa;
-using Mata::Symbol;
+using namespace mata::utils;
+using namespace mata::nfa;
+using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
@@ -60,7 +60,7 @@ namespace {
 
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
         Nfa result;
-        const auto sim_relation = Algorithms::compute_relation(
+        const auto sim_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
@@ -131,17 +131,17 @@ namespace {
     }
 }
 
-std::ostream &std::operator<<(std::ostream &os, const Mata::Nfa::Transition &trans) { // {{{
+std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &trans) { // {{{
     std::string result = "(" + std::to_string(trans.source) + ", " +
                          std::to_string(trans.symbol) + ", " + std::to_string(trans.target) + ")";
     return os << result;
 }
 
-bool Mata::Nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
-    return Mata::Nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
+bool mata::nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
+    return mata::nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
 }
 
-bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols, State sink_state) {
+bool mata::nfa::make_complete(Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
     bool was_something_added{ false };
 
     size_t num_of_states{ aut.size() };
@@ -150,7 +150,7 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
         for (auto const &move : aut.delta[state]) {
             used_symbols.insert(move.symbol);
         }
-        Mata::Util::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
+        mata::utils::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
         for (Symbol symb : unused_symbols) {
             aut.delta.add(state, symb, sink_state);
             was_something_added = true;
@@ -167,7 +167,7 @@ bool Mata::Nfa::make_complete(Nfa& aut, const Mata::Util::OrdVector<Symbol>& sym
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
-Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
+Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
 
@@ -228,7 +228,7 @@ Nfa Mata::Nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     return result;
 }
 
-Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
+Nfa mata::nfa::fragile_revert(const Nfa& aut) {
     const size_t num_of_states{ aut.size() };
 
     Nfa result(num_of_states);
@@ -353,7 +353,7 @@ Nfa Mata::Nfa::fragile_revert(const Nfa& aut) {
     return result;
 }
 
-Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
+Nfa mata::nfa::simple_revert(const Nfa& aut) {
     Nfa result;
     result.clear();
 
@@ -375,7 +375,7 @@ Nfa Mata::Nfa::simple_revert(const Nfa& aut) {
 }
 
 //not so great, can be removed
-Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
+Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
     const size_t num_of_states{ aut.size() };
 
     Nfa result(num_of_states);
@@ -403,7 +403,7 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     //sorting the targets
     for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
         //Post & post = result.delta.get_mutable_post(q);
-        //Util::sort_and_rmdupl(post);
+        //utils::sort_and_rmdupl(post);
         for (auto m = result.delta.mutable_state_post(q).begin(); m != result.delta.mutable_state_post(q).end(); ++m) {
             sort_and_rmdupl(m->targets);
         }
@@ -412,13 +412,13 @@ Nfa Mata::Nfa::somewhat_simple_revert(const Nfa& aut) {
     return result;
 }
 
-Nfa Mata::Nfa::revert(const Nfa& aut) {
+Nfa mata::nfa::revert(const Nfa& aut) {
     return simple_revert(aut);
     //return fragile_revert(aut);
     //return somewhat_simple_revert(aut);
 }
 
-bool Mata::Nfa::is_deterministic(const Nfa& aut)
+bool mata::nfa::is_deterministic(const Nfa& aut)
 {
     if (aut.initial.size() != 1) { return false; }
 
@@ -435,10 +435,10 @@ bool Mata::Nfa::is_deterministic(const Nfa& aut)
 
     return true;
 }
-bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
+bool mata::nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
 {
-    Util::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
-    Util::OrdVector<Symbol> symbs(symbs_ls);
+    utils::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
+    utils::OrdVector<Symbol> symbs(symbs_ls);
 
     // TODO: make a general function for traversal over reachable states that can
     // be shared by other functions?
@@ -475,7 +475,7 @@ bool Mata::Nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
     return true;
 }
 
-std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run)
+std::pair<Run, bool> mata::nfa::get_word_for_path(const Nfa& aut, const Run& run)
 {
     if (run.path.empty())
     {
@@ -516,7 +516,7 @@ std::pair<Run, bool> Mata::Nfa::get_word_for_path(const Nfa& aut, const Run& run
 }
 
 //TODO: this is not efficient
-bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
+bool mata::nfa::is_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur(aut.initial);
 
@@ -531,7 +531,7 @@ bool Mata::Nfa::is_in_lang(const Nfa& aut, const Run& run)
 
 /// Checks whether the prefix of a string is in the language of an automaton
 // TODO: slow and it should share code with is_in_lang
-bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
+bool mata::nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
 {
     StateSet cur =  StateSet{ aut.initial };
 
@@ -545,7 +545,7 @@ bool Mata::Nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
     return aut.final.intersects_with(cur);
 }
 
-bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
+bool mata::nfa::is_lang_empty(const Nfa& aut, Run* cex)
 { // {{{
     std::list<State> worklist(
             aut.initial.begin(), aut.initial.end());
@@ -612,18 +612,18 @@ bool Mata::Nfa::is_lang_empty(const Nfa& aut, Run* cex)
 } // is_lang_empty }}}
 
 
-Nfa Mata::Nfa::Algorithms::minimize_brzozowski(const Nfa& aut) {
+Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     return determinize(revert(determinize(revert(aut))));
 }
 
-Nfa Mata::Nfa::minimize(
+Nfa mata::nfa::minimize(
                 const Nfa& aut,
                 const ParameterMap& params)
 {
     Nfa result;
     // setting the default algorithm
-    decltype(Algorithms::minimize_brzozowski)* algo = Algorithms::minimize_brzozowski;
+    decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
             " requires setting the \"algo\" key in the \"params\" argument; "
@@ -640,7 +640,7 @@ Nfa Mata::Nfa::minimize(
     return algo(aut);
 }
 
-Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
+Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa union_nfa{ rhs };
 
     StateRenaming lhs_state_renaming;
@@ -674,7 +674,7 @@ Nfa Mata::Nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     return union_nfa;
 }
 
-Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
+Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -697,7 +697,7 @@ Simlib::Util::BinaryRelation Mata::Nfa::Algorithms::compute_relation(const Nfa& 
     }
 }
 
-Nfa Mata::Nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const ParameterMap& params) {
+Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
@@ -721,7 +721,7 @@ Nfa Mata::Nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     return result;
 }
 
-Nfa Mata::Nfa::determinize(
+Nfa mata::nfa::determinize(
         const Nfa&  aut,
         std::unordered_map<StateSet, State> *subset_map) {
 
@@ -745,12 +745,12 @@ Nfa Mata::Nfa::determinize(
     }
     worklist.emplace_back(std::make_pair(S0id, S0));
 
-    (*subset_map)[Mata::Util::OrdVector<State>(S0)] = S0id;
+    (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
 
     if (aut.delta.empty())
         return result;
 
-    using Iterator = Mata::Util::OrdVector<SymbolPost>::const_iterator;
+    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
     while (!worklist.empty()) {
@@ -766,7 +766,7 @@ Nfa Mata::Nfa::determinize(
         // add moves of S to the sync ex iterator
         // TODO: shouldn't we also reset first?
         for (State q: S) {
-            Mata::Util::push_back(synchronized_iterator, aut.delta[q]);
+            mata::utils::push_back(synchronized_iterator, aut.delta[q]);
         }
 
         while (synchronized_iterator.advance()) {
@@ -782,7 +782,7 @@ Nfa Mata::Nfa::determinize(
                 Tid = existingTitr->second;
             } else {
                 Tid = result.add_state();
-                (*subset_map)[Mata::Util::OrdVector<State>(T)] = Tid;
+                (*subset_map)[mata::utils::OrdVector<State>(T)] = Tid;
                 if (aut.final.intersects_with(T)) {
                     result.final.insert(Tid);
                 }
@@ -797,12 +797,12 @@ Nfa Mata::Nfa::determinize(
     return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa) {
+std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
     nfa.print_to_mata(os);
     return os;
 }
 
-void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alphabet) {
+void mata::nfa::fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
     for (const StatePost& state_post: nfa.delta) {
         for (const SymbolPost& symbol_post: state_post) {
             alphabet.update_next_symbol_value(symbol_post.symbol);
@@ -811,38 +811,38 @@ void Mata::Nfa::fill_alphabet(const Mata::Nfa::Nfa& nfa, OnTheFlyAlphabet& alpha
     }
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
-    Mata::OnTheFlyAlphabet alphabet{};
+mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
+    mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
     }
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas) {
-    Mata::OnTheFlyAlphabet alphabet{};
+mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas) {
+    mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
         fill_alphabet(nfa, alphabet);
     }
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
-    Mata::OnTheFlyAlphabet alphabet{};
-    for (const Mata::Nfa::Nfa* const nfa: nfas) {
+mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
+    mata::OnTheFlyAlphabet alphabet{};
+    for (const Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
     }
     return alphabet;
 }
 
-Mata::OnTheFlyAlphabet Mata::Nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
-    Mata::OnTheFlyAlphabet alphabet{};
-    for (const Mata::Nfa::Nfa* const nfa: nfas) {
+mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
+    mata::OnTheFlyAlphabet alphabet{};
+    for (const Nfa* const nfa: nfas) {
         fill_alphabet(*nfa, alphabet);
     }
     return alphabet;
 }
 
-Run Mata::Nfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
+Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
     return { .word = alphabet->translate_word(input) };
 }

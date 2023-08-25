@@ -2,7 +2,7 @@
 
 #define CATCH_CONFIG_RUNNER
 #include "../3rdparty/catch.hpp"
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 
 int main( int argc, char* argv[])
 {
@@ -10,7 +10,7 @@ int main( int argc, char* argv[])
 	//   https://github.com/catchorg/Catch2/blob/master/docs/own-main.md
 	Catch::Session session; // There must be exactly one instance
 
-	Mata::LOG_VERBOSITY = 0;
+	mata::LOG_VERBOSITY = 0;
 	int debug_lvl = 0;
 
 	// Build a new parser on top of Catch's
@@ -31,7 +31,7 @@ int main( int argc, char* argv[])
 
 	// if set on the command line then 'height' is now set at this point
 	if (debug_lvl > 0) {
-        Mata::LOG_VERBOSITY = 100;
+        mata::LOG_VERBOSITY = 100;
 	}
 
 	return session.run();

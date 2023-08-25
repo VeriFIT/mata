@@ -5,7 +5,7 @@
 #include <chrono>
 #include <string>
 
-using namespace Mata::Nfa;
+using namespace Mata::nfa;
 
 int main() {
     // Setting precision of the times to fixed points and 4 decimal places

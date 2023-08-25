@@ -17,13 +17,13 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
-namespace Mata::Nfa {
+namespace mata::nfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
-    return Algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
+    return algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
 }
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
@@ -35,7 +35,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
 
     // set accepting states
-    Util::SparseSet<State> new_fin{};
+    utils::SparseSet<State> new_fin{};
     new_fin.reserve(n+aut.size());
     for(const State& aut_fin : aut.final) {
         new_fin.insert(upd_fnc(aut_fin));
@@ -63,7 +63,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     return *this;
 }
 
-Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
+Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon,
                                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
@@ -137,4 +137,4 @@ Nfa Algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
     return result;
 } // concatenate_eps().
-} // Namespace Mata::Nfa.
+} // Namespace mata::nfa.

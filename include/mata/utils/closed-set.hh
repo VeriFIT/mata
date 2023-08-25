@@ -66,13 +66,13 @@
 
 #include <cassert>
 
-#include "util.hh"
+#include "utils.hh"
 #include "ord-vector.hh"
 
-namespace Mata {
+namespace mata {
 
 // Ordered vector.
-template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
+template<typename T> using OrdVec = mata::utils::OrdVector<T>;
 
 // A closed set could be upward-closed or downward-closed.
 enum class ClosedSetType { upward_closed_set, downward_closed_set };
@@ -458,6 +458,6 @@ ClosedSet<T> ClosedSet<T>::complement() const {
     return result;
 } // complement }}}
 
-} // namespace Mata.
+} // namespace mata.
 
 #endif /* MATA_CLOSED_SET_HH_ */

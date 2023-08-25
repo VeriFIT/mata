@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace Mata::PerformanceTesting {
+namespace mata::PerformanceTesting {
     const std::string AUTOMATA_DIR = "@CMAKE_CURRENT_SOURCE_DIR@/automata";
     const std::string BENCHMARK_DIR = "@CMAKE_CURRENT_SOURCE_DIR@/benchmark";
 }

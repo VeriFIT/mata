@@ -27,15 +27,15 @@
 #include "mata/nfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
-using namespace Mata::Util;
-using namespace Mata::Nfa;
-using Mata::Symbol;
-using Mata::Word;
-using Mata::BoolVector;
+using namespace mata::utils;
+using namespace mata::nfa;
+using mata::Symbol;
+using mata::Word;
+using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-const std::string Mata::Nfa::TYPE_NFA = "NFA";
+const std::string mata::nfa::TYPE_NFA = "NFA";
 
 const State Limits::min_state;
 const State Limits::max_state;
@@ -82,7 +82,7 @@ namespace {
 
 void Nfa::remove_epsilon(const Symbol epsilon)
 {
-    *this = Mata::Nfa::remove_epsilon(*this, epsilon);
+    *this = mata::nfa::remove_epsilon(*this, epsilon);
 }
 
 StateSet Nfa::get_reachable_states() const {
@@ -580,7 +580,7 @@ bool Nfa::const_iterator::operator==(const Nfa::const_iterator& rhs) const {
 
 // Other versions, maybe an interesting experiment with speed of data structures.
 // Returns symbols appearing in Delta, pushes back to vector and then sorts
-Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
+mata::utils::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
 #ifdef _STATIC_STRUCTURES_
     static std::vector<Symbol> symbols{};
     symbols.clear();
@@ -590,11 +590,11 @@ Mata::Util::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
     for (State q = 0; q< delta.num_of_states(); ++q) {
         const StatePost & post = delta[q];
         for (const SymbolPost & move: post) {
-            Util::reserve_on_insert(symbols);
+            utils::reserve_on_insert(symbols);
             symbols.push_back(move.symbol);
         }
     }
-    Util::OrdVector<Symbol>  sorted_symbols(symbols);
+    utils::OrdVector<Symbol>  sorted_symbols(symbols);
     return sorted_symbols;
 }
 
@@ -614,19 +614,19 @@ std::set<Symbol> Nfa::get_used_symbols_set() const {
         }
     }
     return symbols;
-    //Util::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
+    //utils::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
     //return sorted_symbols;
 }
 
 // returns symbols appearing in Delta, adds to NumberPredicate,
 // Seems to be the fastest option, but could have problems with large maximum symbols
-Mata::Util::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
+mata::utils::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static Util::SparseSet<Symbol>  symbols(64,false);
+    static utils::SparseSet<Symbol>  symbols(64,false);
     symbols.clear();
 #else
-    Util::SparseSet<Symbol>  symbols(64);
+    utils::SparseSet<Symbol>  symbols(64);
 #endif
     //symbols.dont_track_elements();
     for (State q = 0; q< delta.num_of_states(); ++q) {
@@ -726,7 +726,7 @@ void Nfa::unify_final() {
 
 void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
     size_t aut_num_of_states{size() };
-    for (Mata::Nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
+    for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const SymbolPost& move: delta[state]) {
             target_alphabet.update_next_symbol_value(move.symbol);
             target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
@@ -781,10 +781,10 @@ void Nfa::clear() {
 }
 
 bool Nfa::is_identical(const Nfa& aut) {
-    if (Util::OrdVector<State>(initial) != Util::OrdVector<State>(aut.initial)) {
+    if (utils::OrdVector<State>(initial) != utils::OrdVector<State>(aut.initial)) {
         return false;
     }
-    if (Util::OrdVector<State>(final) != Util::OrdVector<State>(aut.final)) {
+    if (utils::OrdVector<State>(final) != utils::OrdVector<State>(aut.final)) {
         return false;
     }
 
@@ -802,27 +802,27 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
 
     //below are different variant, with different data structures for accumulating symbols,
     //that then must be converted to an OrdVector
-    //measured are times with "Mata::Nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
+    //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
 
     //WITH VECTOR (4.434 s)
     //return get_used_symbols_vec();
 
     //WITH SET (26.5 s)
     //auto from_set = get_used_symbols_set();
-    //return Util::OrdVector<Symbol> (from_set .begin(),from_set.end());
+    //return utils::OrdVector<Symbol> (from_set .begin(),from_set.end());
 
     //WITH NUMBER PREDICATE (4.857s) (NP removed)
-    //return Util::OrdVector(get_used_symbols_np().get_elements());
+    //return utils::OrdVector(get_used_symbols_np().get_elements());
 
     //WITH SPARSE SET (haven't tried)
-    //return Util::OrdVector<State>(get_used_symbols_sps());
+    //return utils::OrdVector<State>(get_used_symbols_sps());
 
     //WITH BOOL VECTOR (error !!!!!!!):
-    //return Util::OrdVector<Symbol>(Util::NumberPredicate<Symbol>(get_used_symbols_bv()));
+    //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
     //WITH BOOL VECTOR (1.9s):
     std::vector<bool> bv = get_used_symbols_bv();
-    Util::OrdVector<Symbol> ov;
+    utils::OrdVector<Symbol> ov;
     for(Symbol i = 0;i<bv.size();i++)
         if (bv[i]) {
             ov.push_back(i);
@@ -832,12 +832,12 @@ OrdVector<Symbol> Nfa::get_used_symbols() const {
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
     //std::vector<bool> bv = get_used_symbols_bv();
     //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-    //return Util::OrdVector<Symbol>(v);
+    //return utils::OrdVector<Symbol>(v);
 
     //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
     //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
     //BoolVector chv = get_used_symbols_chv();
-    //Util::OrdVector<Symbol> ov;
+    //utils::OrdVector<Symbol> ov;
     //for(Symbol i = 0;i<chv.size();i++)
     //    if (chv[i]) {
     //        ov.push_back(i);

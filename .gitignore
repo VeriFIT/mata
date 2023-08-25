@@ -65,7 +65,7 @@ bindings/python/test.dot.pdf
 bindings/python/MANIFEST
 
 # Performance and profiling tests
-tests-performance/pycobench.tasks
-tests-performance/inputs/*.input
-tests-performance/jobs/*.yaml
-tests-performance/src/utils/config.hh
+tests-integration/pycobench.tasks
+tests-integration/inputs/*.input
+tests-integration/jobs/*.yaml
+tests-integration/src/utils/config.hh

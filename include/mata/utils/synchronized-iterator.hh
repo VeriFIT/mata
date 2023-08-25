@@ -18,7 +18,7 @@
 
 #include "ord-vector.hh"
 
-namespace Mata::Util {
+namespace mata::utils {
 
 /**
  * Two classes that provide "synchronized" iterators through a vector of ordered vectors,
@@ -292,6 +292,6 @@ void push_back (SynchronizedIterator<typename Container::const_iterator> &i,cons
     i.push_back(container.begin(),container.end());
 }
 
-} // namespace Mata::Util.
+} // namespace mata::utils.
 
 #endif // MATA_SYNCHRONIZED_ITERATOR_HH.

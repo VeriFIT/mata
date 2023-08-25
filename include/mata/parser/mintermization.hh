@@ -21,7 +21,7 @@
 
 #include "inter-aut.hh"
 
-namespace Mata {
+namespace mata {
 
 class Mintermization {
 private: // data types
@@ -86,7 +86,7 @@ public:
      * @param aut Automaton to be mintermized.
      * @return Mintermized automaton
      */
-    Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
+    mata::IntermediateAut mintermize(const mata::IntermediateAut& aut);
 
     /**
      * Methods mintermize given automata which have bitvector alphabet.
@@ -95,8 +95,8 @@ public:
      * @param auts Automata to be mintermized.
      * @return Mintermized automata corresponding to the input autamata
      */
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<const Mata::IntermediateAut *> &auts);
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<Mata::IntermediateAut> &auts);
+    std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut *> &auts);
+    std::vector<mata::IntermediateAut> mintermize(const std::vector<mata::IntermediateAut> &auts);
 
     /**
      * The method performs the mintermization over @aut with given @minterms.
@@ -105,7 +105,7 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+    void minterms_to_aut_nfa(mata::IntermediateAut& res, const mata::IntermediateAut& aut,
                              const std::unordered_set<BDD>& minterms);
 
     /**
@@ -115,11 +115,11 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+    void minterms_to_aut_afa(mata::IntermediateAut& res, const mata::IntermediateAut& aut,
                              const std::unordered_set<BDD>& minterms);
 
     Mintermization() : bdd_mng(0), symbol_to_bddvar{}, trans_to_bddvar() {}
 }; // class Mintermization.
 
-} // namespace Mata
+} // namespace mata
 #endif //MATA_MINTERM_HH

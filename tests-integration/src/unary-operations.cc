@@ -8,7 +8,7 @@
 #include <chrono>
 #include <string>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -19,14 +19,14 @@ int main(int argc, char *argv[]) {
     std::string filename = argv[1];
 
     Nfa aut{};
-    Mata::OnTheFlyAlphabet alphabet{};
+    mata::OnTheFlyAlphabet alphabet{};
     load_automaton(filename, aut, alphabet);
 
     Nfa compl_aut;
     TIME_BEGIN(complement);
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
-    Mata::Nfa::Plumbing::complement(&compl_aut, aut, alphabet);
+    mata::nfa::plumbing::complement(&compl_aut, aut, alphabet);
     // > END OF PROFILED CODE
     TIME_END(complement);
 
@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(complement_and_minize);
     // > START OF PROFILED CODE
     // Only complement and its callees will be measured
-    Mata::Nfa::Plumbing::complement(&min_compl_aut, aut, alphabet, {{"algorithm", "classical"}, {"minimize", "true"}});
+    mata::nfa::plumbing::complement(&min_compl_aut, aut, alphabet, {{ "algorithm", "classical"}, { "minimize", "true"}});
     // > END OF PROFILED CODE
     TIME_END(complement_and_minize);
 
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(revert);
     // > START OF PROFILED CODE
     // Only revert and its callees will be measured
-    Mata::Nfa::Plumbing::revert(&revert_aut, aut);
+    mata::nfa::plumbing::revert(&revert_aut, aut);
     // > END OF PROFILED CODE
     TIME_END(revert);
 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
     Nfa trimmed{ aut };
-    Mata::Nfa::Plumbing::reduce(&reduced_aut, trimmed.trim());
+    mata::nfa::plumbing::reduce(&reduced_aut, trimmed.trim());
     // > END OF PROFILED CODE
     TIME_END(reduce_and_trim);
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(reduce);
     // > START OF PROFILED CODE
     // Only reduce and its callees will be measured
-    Mata::Nfa::Plumbing::reduce(&untrimmed_reduced_aut, aut);
+    mata::nfa::plumbing::reduce(&untrimmed_reduced_aut, aut);
     // > END OF PROFILED CODE
     TIME_END(reduce);
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(minimize);
     // > START OF PROFILED CODE
     // Only minimize and its callees will be measured
-    Mata::Nfa::Plumbing::minimize(&minimized_aut, aut);
+    mata::nfa::plumbing::minimize(&minimized_aut, aut);
     // > END OF PROFILED CODE
     TIME_END(minimize);
 
@@ -75,21 +75,21 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(determinize);
     // > START OF PROFILED CODE
     // Only determinize and its callees will be measured
-    Mata::Nfa::Plumbing::determinize(&det_aut, aut);
+    mata::nfa::plumbing::determinize(&det_aut, aut);
     // > END OF PROFILED CODE
     TIME_END(determinize);
 
     TIME_BEGIN(naive_universality);
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
-    Mata::Nfa::Algorithms::is_universal_naive(aut, alphabet, nullptr);
+    mata::nfa::algorithms::is_universal_naive(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
     TIME_END(naive_universality);
 
     TIME_BEGIN(antichain_universality);
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured
-    Mata::Nfa::Algorithms::is_universal_antichains(aut, alphabet, nullptr);
+    mata::nfa::algorithms::is_universal_antichains(aut, alphabet, nullptr);
     // > END OF PROFILED CODE
     TIME_END(antichain_universality);
 

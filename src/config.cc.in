@@ -5,9 +5,9 @@
  * This file is a part of libmata.
  */
 
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 
-unsigned Mata::LOG_VERBOSITY = 0;
+unsigned mata::LOG_VERBOSITY = 0;
 
 #define GIT_SHA1 "@GIT_SHA1@"
-const std::string Mata::g_GIT_SHA1 = GIT_SHA1;
+const std::string mata::g_GIT_SHA1 = GIT_SHA1;

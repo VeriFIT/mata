@@ -29,7 +29,7 @@
 
 #include "parser.hh"
 
-namespace Mata {
+namespace mata {
 
 /**
  * A node of graph representing transition formula. A node could be operator (!,&,|) or operand (symbol, state, node).
@@ -127,8 +127,8 @@ struct FormulaGraph {
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
 
-    FormulaGraph& operator=(const Mata::FormulaGraph& other) = default;
-    FormulaGraph& operator=(Mata::FormulaGraph&& other) noexcept = default;
+    FormulaGraph& operator=(const mata::FormulaGraph& other) = default;
+    FormulaGraph& operator=(mata::FormulaGraph&& other) noexcept = default;
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
@@ -222,7 +222,7 @@ public:
      * @param parsed Parsed input in MATA format.
      * @return A vector of InterAutomata from each section in parsed input.
      */
-    static std::vector<IntermediateAut> parse_from_mf(const Mata::Parser::Parsed& parsed);
+    static std::vector<IntermediateAut> parse_from_mf(const mata::parser::Parsed& parsed);
 
     bool are_states_enum_type() const {return state_naming == Naming::ENUM;}
     bool are_symbols_enum_type() const {return symbol_naming == Naming::ENUM;}
@@ -248,16 +248,16 @@ public:
 
     size_t get_number_of_disjuncts() const;
 
-    static void parse_transition(Mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
+    static void parse_transition(mata::IntermediateAut &aut, const std::vector<std::string> &tokens);
     void add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs);
     void add_transition(const FormulaNode& lhs, const FormulaNode& rhs);
     void print_transitions_trees(std::ostream&) const;
 }; // class IntermediateAut.
 
-} // namespace Mata.
+} // namespace mata.
 
 namespace std {
-    std::ostream& operator<<(std::ostream& os, const Mata::IntermediateAut& inter_aut);
+    std::ostream& operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut);
 }
 
 #endif //MATA_INTER_AUT_HH

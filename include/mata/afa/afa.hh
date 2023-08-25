@@ -31,7 +31,7 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/parser.hh"
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/closed-set.hh"
 #include "mata/nfa/builder.hh"
@@ -44,28 +44,28 @@
  *   2. Algorithms (operations, checks, tests),
  *   3. Constructions.
  */
-namespace Mata::Afa {
+namespace mata::afa {
 extern const std::string TYPE_AFA;
 
-using State = Mata::Nfa::State;
+using State = mata::nfa::State;
 
 using SymbolToStringMap = std::unordered_map<Symbol, std::string>;
 
-template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
+template<typename T> using OrdVec = mata::utils::OrdVector<T>;
 
 using Node = OrdVec<State>;
 using Nodes = OrdVec<Node>;
 
 using StateNameMap = std::unordered_map<State, std::string>;
-using NameStateMap = Nfa::Builder::NameStateMap;
+using NameStateMap = nfa::builder::NameStateMap;
 
 using Path = std::vector<State>;
 using Word = std::vector<Symbol>;
 
-using StringDict = Mata::Nfa::ParameterMap;
+using StringDict = mata::nfa::ParameterMap;
 
 using StateSet = OrdVec<State>;
-using StateClosedSet = Mata::ClosedSet<Mata::Afa::State>;
+using StateClosedSet = mata::ClosedSet<mata::afa::State>;
 
 /*
 * A node is an ordered vector of states of the automaton.
@@ -155,7 +155,7 @@ using InverseTransRelation = std::vector<std::vector<InverseTrans>>;
 struct Afa;
 
 /// serializes Afa into a ParsedSection
-Mata::Parser::ParsedSection serialize(
+mata::parser::ParsedSection serialize(
     const Afa&                aut,
     const SymbolToStringMap*  symbol_map = nullptr,
     const StateNameMap*   state_map = nullptr);
@@ -209,7 +209,7 @@ public:
     } // }}}
     bool has_final(State state) const
     { // {{{
-        return Mata::Util::haskey(this->finalstates, state);
+        return mata::utils::haskey(this->finalstates, state);
     } // }}}
 
     void add_trans(const Trans& trans);
@@ -432,9 +432,9 @@ bool is_deterministic(const Afa& aut);
 bool is_complete(const Afa& aut, const Alphabet& alphabet);
 
 /** Loads an automaton from Parsed object */
-Afa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Afa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads automaton from intermediate automaton */
-Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Afa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /**
  * @brief Loads automaton from parsed object (either ParsedSection or Intermediate automaton.
@@ -443,7 +443,7 @@ Afa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameSt
  */
 template <class ParsedObject>
 Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
-    Mata::OnTheFlyAlphabet tmp_alphabet{};
+    mata::OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) {
         alphabet = &tmp_alphabet;
     }
@@ -453,7 +453,7 @@ Afa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr, NameStat
 /** Loads an automaton from Parsed object */
 template <class ParsedObject> void construct(Afa* result, const ParsedObject& parsed,
                                              Alphabet* alphabet = nullptr, NameStateMap* state_map = nullptr) {
-    Mata::OnTheFlyAlphabet tmp_alphabet{};
+    mata::OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) {
         alphabet = &tmp_alphabet;
     }
@@ -491,16 +491,16 @@ std::ostream& operator<<(std::ostream& os, const Afa& afa);
 /// global constructor to be called at program startup (from vm-dispatch)
 void init();
 
-} // namespace Mata::Afa.
+} // namespace mata::afa.
 
 namespace std {
 
-template <> struct hash<Mata::Afa::Trans> {
-    inline size_t operator()(const Mata::Afa::Trans& trans) const;
+template <> struct hash<mata::afa::Trans> {
+    inline size_t operator()(const mata::afa::Trans& trans) const;
 };
 
-std::ostream& operator<<(std::ostream& os, const Mata::Afa::Trans& trans);
-std::ostream& operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap);
+std::ostream& operator<<(std::ostream& os, const mata::afa::Trans& trans);
+std::ostream& operator<<(std::ostream& os, const mata::afa::AfaWrapper& afa_wrap);
 
 } // namespace std.
 

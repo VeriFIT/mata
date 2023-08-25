@@ -11,7 +11,7 @@
 #include <iostream>
 #include <string>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 const bool MINTERMIZE_AUTOMATA = true;
 
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     std::string filename = argv[1];
 
     Nfa aut;
-    Mata::OnTheFlyAlphabet alphabet{};
+    mata::OnTheFlyAlphabet alphabet{};
     if (load_automaton(filename, aut, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
@@ -32,12 +32,12 @@ int main(int argc, char *argv[]) {
     // trim test
     Nfa aut_trim(aut);
     aut_trim.trim();
-    std::cout << "trim:" << (Mata::Nfa::are_equivalent(aut, aut_trim) ? "ok" : "fail") << std::endl;
+    std::cout << "trim:" << (mata::nfa::are_equivalent(aut, aut_trim) ? "ok" : "fail") << std::endl;
 
     // minimization test
     Nfa aut_min(aut);
-    aut_min = Mata::Nfa::minimize(aut_min);
-    std::cout << "minimize:" << (Mata::Nfa::are_equivalent(aut, aut_min) ? "ok" : "fail") << std::endl;
+    aut_min = mata::nfa::minimize(aut_min);
+    std::cout << "minimize:" << (mata::nfa::are_equivalent(aut, aut_min) ? "ok" : "fail") << std::endl;
 
     return EXIT_SUCCESS;
 }

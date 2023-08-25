@@ -22,9 +22,9 @@
 
 #include "mata/nfa/nfa.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::nfa;
+using namespace mata::utils;
+using namespace mata::parser;
 
 // Some common automata {{{
 
@@ -68,7 +68,7 @@ using namespace Mata::Parser;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::intersection()")
+TEST_CASE("mata::nfa::intersection()")
 { // {{{
     Nfa a, b, res;
     std::unordered_map<std::pair<State, State>, State> prod_map;
@@ -186,7 +186,7 @@ TEST_CASE("Mata::Nfa::intersection()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
 {
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
@@ -287,7 +287,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
 }
 
-TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
+TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection]")
 {
     Nfa a{6};
     a.initial.insert(0);

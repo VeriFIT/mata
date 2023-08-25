@@ -1,6 +1,6 @@
 // TODO: some header
 
-#include "nfa-util.hh"
+#include "utils.hh"
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
@@ -9,11 +9,11 @@
 
 #include "../3rdparty/catch.hpp"
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
-using Symbol = Mata::Symbol;
+using Symbol = mata::Symbol;
 
-TEST_CASE("Mata::Nfa::SymbolPost") {
+TEST_CASE("Mata::nfa::SymbolPost") {
     CHECK(SymbolPost{ 0, StateSet{} } == SymbolPost{ 0, StateSet{ 0, 1 } });
     CHECK(SymbolPost{ 1, StateSet{} } != SymbolPost{ 0, StateSet{} });
     CHECK(SymbolPost{ 0, StateSet{ 1 } } < SymbolPost{ 1, StateSet{} });
@@ -24,8 +24,8 @@ TEST_CASE("Mata::Nfa::SymbolPost") {
     CHECK(SymbolPost{ 1, StateSet{ 0 } } >= SymbolPost{ 0, StateSet{ 1 } });
 }
 
-TEST_CASE("Mata::Nfa::Delta::state_post()") {
-    Mata::Nfa::Nfa aut{};
+TEST_CASE("Mata::nfa::Delta::state_post()") {
+    mata::nfa::Nfa aut{};
 
     SECTION("Add new states within the limit") {
         aut.add_state(19);
@@ -77,7 +77,7 @@ TEST_CASE("Mata::Nfa::Delta::state_post()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Delta::contains()") {
+TEST_CASE("Mata::nfa::Delta::contains()") {
     Nfa nfa;
     CHECK(!nfa.delta.contains(0, 1, 0));
     CHECK(!nfa.delta.contains(Transition{ 0, 1, 0 }));
@@ -86,7 +86,7 @@ TEST_CASE("Mata::Nfa::Delta::contains()") {
     CHECK(nfa.delta.contains(Transition{ 0, 1, 0 }));
 }
 
-TEST_CASE("Mata::Nfa::Delta::remove()") {
+TEST_CASE("Mata::nfa::Delta::remove()") {
     Nfa nfa;
 
     SECTION("Simple remove") {
@@ -99,7 +99,7 @@ TEST_CASE("Mata::Nfa::Delta::remove()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Delta::mutable_post()") {
+TEST_CASE("Mata::nfa::Delta::mutable_post()") {
     Nfa nfa;
 
     SECTION("Default initialized") {
@@ -115,7 +115,7 @@ TEST_CASE("Mata::Nfa::Delta::mutable_post()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
+TEST_CASE("Mata::nfa::StatePost iteration over moves") {
     Nfa nfa;
     std::vector<Move> iterated_moves{};
     std::vector<Move> expected_moves{};
@@ -133,7 +133,7 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
 
         state_post = nfa.delta.state_post(0);
         expected_moves = std::vector<Move>{ { 1, 1 }, { 2, 1 }, { 5, 1 } };
-        Mata::Nfa::StatePost::Moves moves{ state_post.moves() };
+        mata::nfa::StatePost::Moves moves{ state_post.moves() };
         iterated_moves.clear();
         for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
             iterated_moves.push_back(*move_it);
@@ -204,7 +204,7 @@ TEST_CASE("Mata::Nfa::StatePost iteration over moves") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
+TEST_CASE("Mata::nfa::Delta iteration over transitions") {
     Nfa nfa;
     std::vector<Transition> iterated_transitions{};
     std::vector<Transition> expected_transitions{};
@@ -219,7 +219,7 @@ TEST_CASE("Mata::Nfa::Delta iteration over transitions") {
         nfa.delta.add(2, 0, 1);
         nfa.delta.add(2, 0, 3);
 
-        Mata::Nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
+        mata::nfa::Delta::Transitions transitions{ nfa.delta.transitions() };
         iterated_transitions.clear();
         for (auto transitions_it{ transitions.begin() };
              transitions_it != transitions.end(); ++transitions_it) {

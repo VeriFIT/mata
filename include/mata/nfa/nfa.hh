@@ -33,7 +33,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/synchronized-iterator.hh"
@@ -49,10 +49,10 @@
  *   2. Algorithms (operations, checks, tests),
  *   3. Constructions.
  *
- * Other algorithms are included in Mata::Nfa::Plumbing (simplified API for, e.g., binding)
- * and Mata::Nfa::Algorithms (concrete implementations of algorithms, such as for complement).
+ * Other algorithms are included in mata::nfa::Plumbing (simplified API for, e.g., binding)
+ * and mata::nfa::algorithms (concrete implementations of algorithms, such as for complement).
  */
-namespace Mata::Nfa {
+namespace mata::nfa {
 
 /**
  * A struct representing an NFA.
@@ -65,8 +65,8 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     Delta delta;
-    Util::SparseSet<State> initial{};
-    Util::SparseSet<State> final{};
+    utils::SparseSet<State> initial{};
+    utils::SparseSet<State> final{};
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -78,8 +78,8 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    explicit Nfa(Delta delta = {}, Util::SparseSet<State> initial_states = {},
-                 Util::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
+    explicit Nfa(Delta delta = {}, utils::SparseSet<State> initial_states = {},
+                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
@@ -94,14 +94,14 @@ public:
     /**
      * @brief Construct a new explicit NFA from other NFA.
      */
-    Nfa(const Mata::Nfa::Nfa& other) = default;
+    Nfa(const Nfa& other) = default;
 
-    Nfa(Mata::Nfa::Nfa&& other) noexcept
+    Nfa(Nfa&& other) noexcept
         : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
-    Nfa& operator=(const Mata::Nfa::Nfa& other) = default;
-    Nfa& operator=(Mata::Nfa::Nfa&& other) noexcept;
+    Nfa& operator=(const Nfa& other) = default;
+    Nfa& operator=(Nfa&& other) noexcept;
 
     /**
      * Clear transitions but keep the automata states.
@@ -163,11 +163,11 @@ public:
      * @return Set of symbols used on the transitions.
      * TODO: this should be a method of Delta?
      */
-    Util::OrdVector<Symbol> get_used_symbols() const;
+    utils::OrdVector<Symbol> get_used_symbols() const;
 
-    Mata::Util::OrdVector<Symbol> get_used_symbols_vec() const;
+    mata::utils::OrdVector<Symbol> get_used_symbols_vec() const;
     std::set<Symbol> get_used_symbols_set() const;
-    Mata::Util::SparseSet<Symbol> get_used_symbols_sps() const;
+    mata::utils::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
     BoolVector get_used_symbols_chv() const;
 
@@ -222,7 +222,7 @@ public:
     /**
      * @brief In-place concatenation.
      */
-    Mata::Nfa::Nfa& concatenate(const Mata::Nfa::Nfa& aut);
+    Nfa& concatenate(const Nfa& aut);
 
     /**
      * @brief Get a number of transitions in the whole automaton.
@@ -351,14 +351,14 @@ public:
   * @param[in] nfa NFA with symbols to fill @p alphabet with.
   * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
   */
-void fill_alphabet(const Mata::Nfa::Nfa& nfa, Mata::OnTheFlyAlphabet& alphabet);
+void fill_alphabet(const Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
 
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
 template<bool...> struct bool_pack{};
 /// Checks for all types in the pack.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
 /// Checks whether all types are 'Nfa'.
-template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const Mata::Nfa::Nfa&>...>::type;
+template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
 
 /**
  * Create alphabet from variable number of NFAs.
@@ -368,8 +368,8 @@ template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts
  */
 template<typename... Nfas, typename = AreAllNfas<Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
-    Mata::OnTheFlyAlphabet alphabet{};
-    auto f = [&alphabet](const Mata::Nfa::Nfa& aut) {
+    mata::OnTheFlyAlphabet alphabet{};
+    auto f = [&alphabet](const Nfa& aut) {
         fill_alphabet(aut, alphabet);
     };
     (f(nfas), ...);
@@ -482,7 +482,7 @@ bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
  * @param[in] sink_state The state into which new transitions are added.
  * @return True if some new transition was added to the automaton.
  */
-bool make_complete(Nfa& aut, const Util::OrdVector<Symbol>& symbols, State sink_state);
+bool make_complete(Nfa& aut, const utils::OrdVector<Symbol>& symbols, State sink_state);
 
 /**
  * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
@@ -523,7 +523,7 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Nfa complement(const Nfa& aut, const Util::OrdVector<Symbol>& symbols,
+Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
@@ -610,7 +610,7 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
- * The current implementation of 'Mata::Nfa::Nfa' does not accept input alphabet. For this reason, an alphabet
+ * The current implementation of @c Nfa does not accept input alphabet. For this reason, an alphabet
  * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
  * the alphabet has to be computed first.
  *
@@ -675,21 +675,21 @@ bool is_prfx_in_lang(const Nfa& aut, const Run& word);
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
-} // namespace Mata::Nfa.
+} // namespace mata::nfa.
 
 namespace std {
 template <>
-struct hash<Mata::Nfa::Transition> {
-	inline size_t operator()(const Mata::Nfa::Transition& trans) const {
-		size_t accum = std::hash<Mata::Nfa::State>{}(trans.source);
-		accum = Mata::Util::hash_combine(accum, trans.symbol);
-		accum = Mata::Util::hash_combine(accum, trans.target);
+struct hash<mata::nfa::Transition> {
+	inline size_t operator()(const mata::nfa::Transition& trans) const {
+		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
+		accum = mata::utils::hash_combine(accum, trans.symbol);
+		accum = mata::utils::hash_combine(accum, trans.target);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Transition& trans);
-std::ostream& operator<<(std::ostream& os, const Mata::Nfa::Nfa& nfa);
+std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);
+std::ostream& operator<<(std::ostream& os, const mata::nfa::Nfa& nfa);
 } // namespace std.
 
 #endif /* MATA_NFA_HH_ */

@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> filenames {argv[1], argv[2]};
     std::vector<Nfa> automata;
-    Mata::OnTheFlyAlphabet alphabet;
+    mata::OnTheFlyAlphabet alphabet;
     if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }
@@ -28,25 +28,25 @@ int main(int argc, char *argv[]) {
 
     Nfa intersect_aut;
     TIME_BEGIN(intersection);
-    Mata::Nfa::Plumbing::intersection(&intersect_aut, lhs, rhs);
+    mata::nfa::plumbing::intersection(&intersect_aut, lhs, rhs);
     TIME_END(intersection);
 
     Nfa concat_aut;
     TIME_BEGIN(concatenation);
-    Mata::Nfa::Plumbing::concatenate(&concat_aut, lhs, rhs);
+    mata::nfa::plumbing::concatenate(&concat_aut, lhs, rhs);
     TIME_END(concatenation);
 
     Nfa union_aut;
     TIME_BEGIN(union);
-    Mata::Nfa::Plumbing::uni(&union_aut, lhs, rhs);
+    mata::nfa::plumbing::uni(&union_aut, lhs, rhs);
     TIME_END(union);
 
     TIME_BEGIN(naive_inclusion);
-    Mata::Nfa::Algorithms::is_included_naive(lhs, rhs, &alphabet);
+    mata::nfa::algorithms::is_included_naive(lhs, rhs, &alphabet);
     TIME_END(naive_inclusion);
 
     TIME_BEGIN(antichain_inclusion);
-    Mata::Nfa::Algorithms::is_included_antichains(lhs, rhs, &alphabet);
+    mata::nfa::algorithms::is_included_antichains(lhs, rhs, &alphabet);
     TIME_END(antichain_inclusion);
 
     return EXIT_SUCCESS;

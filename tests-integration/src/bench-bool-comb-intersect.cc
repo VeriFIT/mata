@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
         filenames.push_back(argv[i]);
     }
     std::vector<Nfa> automata;
-    Mata::OnTheFlyAlphabet alphabet;
+    mata::OnTheFlyAlphabet alphabet;
     if (load_automata(filenames, automata, alphabet, MINTERMIZE_AUTOMATA) != EXIT_SUCCESS) {
         return EXIT_FAILURE;
     }

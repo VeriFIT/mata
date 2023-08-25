@@ -6,10 +6,10 @@
 int load_automaton(
         const std::string& filename,
         Nfa& aut,
-        Mata::OnTheFlyAlphabet& alphabet,
+        mata::OnTheFlyAlphabet& alphabet,
         const bool mintermize_automata
 ) {
-    std::vector<Mata::IntermediateAut> inter_auts;
+    std::vector<mata::IntermediateAut> inter_auts;
     TIME_BEGIN(parsing);
     if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
         std::cerr << "Could not load intermediate autotomaton from \'" << filename << "'\n";
@@ -17,14 +17,14 @@ int load_automaton(
     }
     TIME_END(parsing);
     try {
-        if (!mintermize_automata or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
-            aut = Mata::Nfa::Builder::construct(inter_auts[0], &alphabet);
+        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
         } else {
-            Mata::Mintermization mintermization;
+            mata::Mintermization mintermization;
             TIME_BEGIN(mintermization);
-            Mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
+            mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
             TIME_END(mintermization);
-            aut = Mata::Nfa::Builder::construct(mintermized, &alphabet);
+            aut = mata::nfa::builder::construct(mintermized, &alphabet);
         }
         return EXIT_SUCCESS;
     }
@@ -37,10 +37,10 @@ int load_automaton(
 int load_automata(
         std::vector<std::string>& filenames,
         std::vector<Nfa>& auts,
-        Mata::OnTheFlyAlphabet& alphabet,
+        mata::OnTheFlyAlphabet& alphabet,
         const bool mintermize_automata
 ) {
-    std::vector<Mata::IntermediateAut> inter_auts;
+    std::vector<mata::IntermediateAut> inter_auts;
     TIME_BEGIN(parsing);
     for (const std::string& filename : filenames) {
         if (load_intermediate_automaton(filename, inter_auts) != EXIT_SUCCESS) {
@@ -50,20 +50,20 @@ int load_automata(
     }
     TIME_END(parsing);
     try {
-        if (!mintermize_automata or inter_auts[0].alphabet_type != Mata::IntermediateAut::AlphabetType::BITVECTOR) {
+        if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // This is not foolproof and assumes, that everything is BITVECTOR
-            for (Mata::IntermediateAut& inter_aut : inter_auts) {
-                assert(inter_aut.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR);
-                auts.push_back(Mata::Nfa::Builder::construct(inter_aut, &alphabet));
+            for (mata::IntermediateAut& inter_aut : inter_auts) {
+                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
+                auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         } else {
-            Mata::Mintermization mintermization;
+            mata::Mintermization mintermization;
             TIME_BEGIN(mintermization);
-            std::vector<Mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
+            std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
             TIME_END(mintermization);
-            for (Mata::IntermediateAut& inter_aut : mintermized) {
-                assert(inter_aut.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR);
-                auts.push_back(Mata::Nfa::Builder::construct(inter_aut, &alphabet));
+            for (mata::IntermediateAut& inter_aut : mintermized) {
+                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
+                auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         }
         return EXIT_SUCCESS;
@@ -76,7 +76,7 @@ int load_automata(
 
 int load_intermediate_automaton(
         const std::string& filename,
-        std::vector<Mata::IntermediateAut>& out_inter_auts
+        std::vector<mata::IntermediateAut>& out_inter_auts
 ) {
     std::fstream fs(filename, std::ios::in);
     if (!fs) {
@@ -84,9 +84,9 @@ int load_intermediate_automaton(
         return EXIT_FAILURE;
     }
 
-    Mata::Parser::Parsed parsed;
+    mata::parser::Parsed parsed;
     try {
-        parsed = Mata::Parser::parse_mf(fs, true);
+        parsed = mata::parser::parse_mf(fs, true);
         fs.close();
 
         if (parsed.size() != 1) {
@@ -98,7 +98,7 @@ int load_intermediate_automaton(
             throw std::runtime_error("The type of input automaton is not NFA\n");
         }
 
-        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
         out_inter_auts.push_back(inter_auts[0]);
     } catch (const std::exception& ex) {
         fs.close();

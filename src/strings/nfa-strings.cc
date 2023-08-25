@@ -18,16 +18,16 @@
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/builder.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
+using namespace mata::nfa;
+using namespace mata::strings;
 
-std::set<Mata::Word> Mata::Strings::get_shortest_words(const Nfa::Nfa& nfa) {
+std::set<mata::Word> mata::strings::get_shortest_words(const Nfa& nfa) {
     // Map mapping states to a set of the shortest words accepted by the automaton from the mapped state.
     // Get the shortest words for all initial states accepted by the whole automaton (not just a part of the automaton).
     return ShortestWordsMap{ nfa }.get_shortest_words_from(StateSet{ nfa.initial });
 }
 
-std::set<Mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& states) const {
+std::set<mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& states) const {
     std::set<Word> result{};
 
     if (!shortest_words_map.empty())
@@ -60,7 +60,7 @@ std::set<Mata::Word> ShortestWordsMap::get_shortest_words_from(const StateSet& s
     return result;
 }
 
-std::set<Mata::Word> ShortestWordsMap::get_shortest_words_from(State state) const
+std::set<mata::Word> ShortestWordsMap::get_shortest_words_from(State state) const
 {
     return get_shortest_words_from(StateSet{ state });
 }
@@ -136,10 +136,8 @@ void ShortestWordsMap::compute_for_state(const State state)
     }
 }
 
-void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol)
-{
-    for (auto word : dst.second)
-    {
+void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWordsPair& dst, const Symbol symbol) {
+    for (Word word: dst.second) {
         word.insert(word.begin(), symbol);
         act.second.insert(word);
     }
@@ -147,8 +145,8 @@ void ShortestWordsMap::update_current_words(LengthWordsPair& act, const LengthWo
 }
 
 
-std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& aut) {
-    Nfa::Nfa one_letter;
+std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
+    Nfa one_letter;
     /// if we are interested in lengths of words, it suffices to forget the different symbols on transitions.
     /// The lengths of @p aut are hence equivalent to lengths of the NFA taken from @p aut where all symbols on
     /// transitions are renamed to a single symbol (e.g., `a`).
@@ -161,8 +159,8 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     std::set<std::pair<int, int>> ret;
     std::vector<int> handles(one_letter.size(), 0); // initialized to 0
     assert(one_letter.initial.size() == 1);
-    std::optional<Nfa::State> curr_state = *one_letter.initial.begin();
-    std::set<Nfa::State> visited;
+    std::optional<nfa::State> curr_state = *one_letter.initial.begin();
+    std::set<nfa::State> visited;
     int cnt = 0; // handle counter
     int loop_size = 0; // loop size
     int loop_start = -1; // cnt where the loop starts
@@ -170,13 +168,13 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     while(curr_state.has_value()) {
         visited.insert(curr_state.value());
         handles[curr_state.value()] = cnt++;
-        Nfa::StatePost post = one_letter.delta[curr_state.value()];
+        nfa::StatePost post = one_letter.delta[curr_state.value()];
 
         curr_state.reset();
         assert(post.size() <= 1);
         for(const SymbolPost& move : post) {
             assert(move.targets.size() == 1);
-            Nfa::State tgt = *move.targets.begin();
+            nfa::State tgt = *move.targets.begin();
 
             if(visited.find(tgt) == visited.end()) {
                 curr_state = tgt;
@@ -187,7 +185,7 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
             }
         }
     }
-    for(const Nfa::State& fin : one_letter.final) {
+    for(const nfa::State& fin : one_letter.final) {
         if(handles[fin] >= loop_start) {
             ret.insert({handles[fin], loop_size});
         } else {
@@ -198,8 +196,8 @@ std::set<std::pair<int, int>> Mata::Strings::get_word_lengths(const Nfa::Nfa& au
     return ret;
 }
 
-bool Mata::Strings::is_lang_eps(const Nfa::Nfa& aut) {
-    Nfa::Nfa tr_aut = Nfa::Nfa{ aut }.trim();
+bool mata::strings::is_lang_eps(const Nfa& aut) {
+    Nfa tr_aut = Nfa{ aut }.trim();
     if(tr_aut.initial.size() == 0)
         return false;
     for(const auto& ini : tr_aut.initial) {
