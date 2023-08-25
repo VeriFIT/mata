@@ -206,7 +206,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
 
     for(const State& fn : segments[0].final) {
         SegItem new_item;
-        std::shared_ptr<Nfa::Nfa> seg = segments_one_initial_final[{unused_state, fn}];
+        std::shared_ptr<Nfa> seg = segments_one_initial_final[{unused_state, fn}];
         if(seg->final.size() != 1 || seg->delta.num_of_transitions() > 0) { // L(seg_iter) != {epsilon}
             new_item.noodle.emplace_back(seg, def_eps_vector);
         }

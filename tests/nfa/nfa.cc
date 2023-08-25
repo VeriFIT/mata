@@ -4,10 +4,10 @@
 
 #include <catch2/catch.hpp>
 
-#include "mata/nfa/delta.hh"
-#include "nfa-util.hh"
+#include "utils.hh"
 
 #include "mata/utils/sparse-set.hh"
+#include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/builder.hh"
@@ -15,6 +15,7 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/re2parser.hh"
 
+using namespace mata;
 using namespace mata::nfa::algorithms;
 using namespace mata::nfa;
 using namespace mata::strings;
@@ -69,8 +70,8 @@ TEST_CASE("mata::nfa::create_alphabet()") {
     auto symbols{alphabet.get_alphabet_symbols() };
     CHECK(symbols == mata::utils::OrdVector<Symbol>{ 'c', 'b', 'a' });
 
-    //mata::nfa::create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
-    //mata::nfa::create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
+    // create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+    // create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
 TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
@@ -167,7 +168,7 @@ TEST_CASE("mata::nfa::Delta.transform/append")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_lang_empty()")
+TEST_CASE("mata::nfa::is_lang_empty()")
 { // {{{
     Nfa aut(14);
     Run cex;
@@ -474,7 +475,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
     SECTION("construct an empty automaton")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
 
         aut = builder::construct(parsec);
 
@@ -483,7 +484,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
     SECTION("construct a simple non-empty automaton accepting the empty word")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q1"}});
 
@@ -494,7 +495,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
     SECTION("construct an automaton with more than one initial/final states")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1", "q2"}});
         parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
@@ -506,7 +507,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
     SECTION("construct a simple non-empty automaton accepting only the word 'a'")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q2"}});
         parsec.body = { {"q1", "a", "q2"} };
@@ -524,7 +525,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
     SECTION("construct a more complicated non-empty automaton")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1", "q3"}});
         parsec.dict.insert({"Final", {"q5"}});
         parsec.body.push_back({"q1", "a", "q3"});
@@ -572,7 +573,7 @@ TEST_CASE("mata::nfa::construct() invalid calls")
 
     SECTION("construct() call with an epsilon transition")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.body = { {"q1", "q2"} };
 
         CHECK_THROWS_WITH(builder::construct(parsec),
@@ -581,7 +582,7 @@ TEST_CASE("mata::nfa::construct() invalid calls")
 
     SECTION("construct() call with a nonsense transition")
     {
-        parsec.type = mata::nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.body = { {"q1", "a", "q2", "q3"} };
 
         CHECK_THROWS_WITH(plumbing::construct(&aut, parsec),
@@ -776,7 +777,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        mata::nfa::builder::NameStateMap state_map;
+        nfa::builder::NameStateMap state_map;
         plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.size() == 9);
         CHECK(aut.final[state_map.at("0")]);
@@ -808,7 +809,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        mata::nfa::builder::NameStateMap state_map;
+        nfa::builder::NameStateMap state_map;
         plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.empty());
     }
@@ -925,8 +926,8 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
-        Nfa empty_string_nfa{ mata::nfa::builder::create_sigma_star_nfa(&alph) };
-        CHECK(mata::nfa::are_equivalent(cmpl, empty_string_nfa));
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(cmpl, empty_string_nfa));
     }
 
     SECTION("empty automaton")
@@ -937,13 +938,13 @@ TEST_CASE("mata::nfa::complement()")
                                     {"minimize", "false"}});
 
         REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ mata::nfa::builder::create_sigma_star_nfa(&alph) };
-        CHECK(mata::nfa::are_equivalent(cmpl, sigma_star_nfa));
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(cmpl, sigma_star_nfa));
     }
 
     SECTION("empty automaton accepting epsilon, empty alphabet")
@@ -968,10 +969,10 @@ TEST_CASE("mata::nfa::complement()")
                                     {"minimize", "false"}});
 
         REQUIRE(!is_in_lang(cmpl, { }));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["b"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"]}, {}}));
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
         REQUIRE(cmpl.delta.num_of_transitions() == 4);
@@ -1009,8 +1010,8 @@ TEST_CASE("mata::nfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
-        Nfa empty_string_nfa{ mata::nfa::builder::create_sigma_star_nfa(&alph) };
-        CHECK(mata::nfa::are_equivalent(empty_string_nfa, cmpl));
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(empty_string_nfa, cmpl));
     }
 
     SECTION("empty automaton, minimization")
@@ -1021,13 +1022,13 @@ TEST_CASE("mata::nfa::complement()")
                                     {"minimize", "true"}});
 
         REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, mata::nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ mata::nfa::builder::create_sigma_star_nfa(&alph) };
-        CHECK(mata::nfa::are_equivalent(sigma_star_nfa, cmpl));
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(sigma_star_nfa, cmpl));
     }
 
     SECTION("minimization vs no minimization")
@@ -1570,11 +1571,11 @@ TEST_CASE("mata::nfa::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        mata::nfa::Nfa aut;
+        Nfa aut;
         mata::parser::create_nfa(&aut, "a*");
-        mata::nfa::Nfa aut2;
+        Nfa aut2;
         mata::parser::create_nfa(&aut2, "(a|b)*");
-        CHECK(!mata::nfa::are_equivalent(aut, aut2));
+        CHECK(!are_equivalent(aut, aut2));
     }
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
@@ -2088,8 +2089,8 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()")
 
         result = reduce(aut.trim(), &state_renaming);
         CHECK(result.size() == 3);
-        CHECK(result.initial == SparseSet<Mata::Nfa::State>{ 0, 1 });
-        CHECK(result.final == SparseSet<Mata::Nfa::State>{ 2 });
+        CHECK(result.initial == SparseSet<State>{ 0, 1 });
+        CHECK(result.final == SparseSet<State>{ 2 });
         CHECK(result.delta.num_of_transitions() == 6);
         CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
         CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
@@ -2104,7 +2105,7 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()")
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
         Nfa result = reduce(aut.trim(), &state_renaming);
-        CHECK(mata::nfa::are_equivalent(result, aut));
+        CHECK(are_equivalent(result, aut));
     }
 }
 
@@ -2802,14 +2803,14 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 	}
 
     SECTION("from regex (a+b*a*)") {
-        mata::nfa::Nfa aut;
+        Nfa aut;
         mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
         mata::BoolVector bv = aut.get_useful_states();
         mata::BoolVector ref({ 1, 0, 1, 0, 1, 0, 1, 0, 0});
         CHECK(bv == ref);
 
-        aut = mata::nfa::reduce(aut.trim());
+        aut = reduce(aut.trim());
         bv = aut.get_useful_states();
         CHECK(bv == mata::BoolVector({ 1, 1, 1, 1}));
     }

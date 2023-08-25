@@ -51,7 +51,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
 
-    cdef cppclass CTransitions "Mata::Nfa::Delta::Transitions":
+    cdef cppclass CTransitions "mata::nfa::Delta::Transitions":
         cppclass const_iterator:
             bool operator==(const_iterator&)
             bool operator!=(const_iterator&)
@@ -62,7 +62,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CTransitions()
 
 
-    cdef cppclass CDelta "Mata::Nfa::Delta":
+    cdef cppclass CDelta "mata::nfa::Delta":
         vector[CStatePost] state_posts
         CTransitions transitions
 
@@ -126,7 +126,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[State].const_iterator begin()
         COrdVector[State].const_iterator end()
 
-    cdef cppclass CNfa "Mata::Nfa::Nfa":
+    cdef cppclass CNfa "mata::nfa::Nfa":
         # Public Attributes
         CSparseSet[State] initial
         CSparseSet[State] final
