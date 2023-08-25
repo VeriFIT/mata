@@ -4,6 +4,6 @@ New Generation of Automata Library
 Supported Classes of Automata
 -----------------------------
 
-.. doxygenstruct:: Mata::Nfa::Nfa
+.. doxygenstruct:: mata::nfa::Nfa
 
-.. doxygenstruct:: Mata::Afa::Afa
+.. doxygenstruct:: mata::afa::Afa
