@@ -120,92 +120,12 @@ public:
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 
-    /**
-     * @brief Iterator over moves represented as @c Move instances.
-     *
-     * It iterates over pairs (symbol, target) for the given @c StatePost.
-     */
-    class Moves {
-    public:
-        /**
-         * @brief Whether to look up first symbol to iterate over from the beginning or from the end of @c StatePost
-         *  iterator.
-
-         * Iterates over symbol posts with symbols in interval [first_symbol_, last_symbol_].
-         */
-        enum class FirstSymbolLookupDiretion {
-            Forward, ///< Lookup from the beginning to the end.
-            Backward ///< Lookup from the end to the beginning.
-        };
-
-        /**
-         * Iterator over moves.
-         */
-        class const_iterator {
-        private:
-            const StatePost* state_post_{ nullptr };
-            StatePost::const_iterator state_post_it_{};
-            StateSet::const_iterator symbol_post_it_{};
-            Symbol last_symbol_{ Limits::max_symbol };
-            bool is_end_{ false };
-            /// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
-            ///  a reference with @c operator*().
-            Move move_{};
-
-        public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = Move;
-            using difference_type = size_t;
-            using pointer = Move*;
-            using reference = Move&;
-
-             /// Construct end iterator.
-            const_iterator(): is_end_{ true } {}
-            /// Construct all moves iterator, epsilon moves iterator or normal symbols moves iterator (excluding epsilons).
-            const_iterator(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
-                           Symbol last_symbol = Limits::max_symbol,
-                           const FirstSymbolLookupDiretion firest_symbol_lookup_direction = FirstSymbolLookupDiretion::Forward);
-            const_iterator(const const_iterator& other) noexcept = default;
-            const_iterator(const_iterator&&) = default;
-
-            const Move& operator*() const { return move_; }
-
-            // Prefix increment
-            const_iterator& operator++();
-            // Postfix increment
-            const const_iterator operator++(int);
-
-            const_iterator& operator=(const const_iterator& other) noexcept = default;
-            const_iterator& operator=(const_iterator&&) = default;
-
-            bool operator==(const const_iterator& other) const;
-        }; // class const_iterator.
-
-        Moves() = default;
-        Moves(
-            const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
-            Symbol last_symbol = Limits::max_symbol,
-            FirstSymbolLookupDiretion lookup_first_symbol_side = FirstSymbolLookupDiretion::Forward)
-            : state_post_{ &state_post }, first_symbol_{ first_symbol }, last_symbol_{ last_symbol },
-              first_symbol_lookup_direction_{ lookup_first_symbol_side } {}
-        Moves(Moves&&) = default;
-        Moves(Moves&) = default;
-        Moves& operator=(Moves&& other) noexcept;
-        Moves& operator=(const Moves& other) noexcept;
-
-        const_iterator begin() const;
-        const_iterator end() const { return const_iterator{}; }
-    private:
-        const StatePost* state_post_;
-        Symbol first_symbol_{ Limits::min_symbol }; ///< First symbol (included) to iterate over.
-        Symbol last_symbol_{ Limits::max_symbol }; ///< Last symbol (included) to iterate over.
-        FirstSymbolLookupDiretion first_symbol_lookup_direction_{ FirstSymbolLookupDiretion::Forward };
-    }; // class Moves.
+    class Moves;
 
     /**
      * Iterator over all moves in @c StatePost represented as @c Move instances.
      */
-    Moves moves() const { return { *this }; }
+    Moves moves() const;
     /**
      * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
      */
@@ -220,6 +140,90 @@ public:
      */
     size_t num_of_moves() const;
 }; // class StatePost.
+
+/**
+ * @brief Iterator over moves represented as @c Move instances.
+ *
+ * It iterates over pairs (symbol, target) for the given @c StatePost.
+ */
+class StatePost::Moves {
+public:
+    /**
+     * @brief Whether to look up first symbol to iterate over from the beginning or from the end of @c StatePost
+     *  iterator.
+
+     * Iterates over symbol posts with symbols in interval [first_symbol_, last_symbol_].
+     */
+    enum class FirstSymbolLookupDiretion {
+        Forward, ///< Lookup from the beginning to the end.
+        Backward ///< Lookup from the end to the beginning.
+    };
+
+    class const_iterator;
+
+    Moves() = default;
+    Moves(
+        const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
+        Symbol last_symbol = Limits::max_symbol,
+        FirstSymbolLookupDiretion lookup_first_symbol_side = FirstSymbolLookupDiretion::Forward)
+        : state_post_{ &state_post }, first_symbol_{ first_symbol }, last_symbol_{ last_symbol },
+          first_symbol_lookup_direction_{ lookup_first_symbol_side } {}
+    Moves(Moves&&) = default;
+    Moves(Moves&) = default;
+    Moves& operator=(Moves&& other) noexcept;
+    Moves& operator=(const Moves& other) noexcept;
+
+    const_iterator begin() const;
+    const_iterator end() const;
+private:
+    const StatePost* state_post_;
+    Symbol first_symbol_{ Limits::min_symbol }; ///< First symbol (included) to iterate over.
+    Symbol last_symbol_{ Limits::max_symbol }; ///< Last symbol (included) to iterate over.
+    FirstSymbolLookupDiretion first_symbol_lookup_direction_{ FirstSymbolLookupDiretion::Forward };
+}; // class Moves.
+
+/**
+ * Iterator over moves.
+ */
+class StatePost::Moves::const_iterator {
+private:
+    const StatePost* state_post_{ nullptr };
+    StatePost::const_iterator state_post_it_{};
+    StateSet::const_iterator symbol_post_it_{};
+    Symbol last_symbol_{ Limits::max_symbol };
+    bool is_end_{ false };
+    /// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
+    ///  a reference with @c operator*().
+    Move move_{};
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Move;
+    using difference_type = size_t;
+    using pointer = Move*;
+    using reference = Move&;
+
+     /// Construct end iterator.
+    const_iterator(): is_end_{ true } {}
+    /// Construct all moves iterator, epsilon moves iterator or normal symbols moves iterator (excluding epsilons).
+    const_iterator(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
+                   Symbol last_symbol = Limits::max_symbol,
+                   const FirstSymbolLookupDiretion firest_symbol_lookup_direction = FirstSymbolLookupDiretion::Forward);
+    const_iterator(const const_iterator& other) noexcept = default;
+    const_iterator(const_iterator&&) = default;
+
+    const Move& operator*() const { return move_; }
+
+    // Prefix increment
+    const_iterator& operator++();
+    // Postfix increment
+    const const_iterator operator++(int);
+
+    const_iterator& operator=(const const_iterator& other) noexcept = default;
+    const_iterator& operator=(const_iterator&&) = default;
+
+    bool operator==(const const_iterator& other) const;
+}; // class const_iterator.
 
 /**
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
@@ -415,69 +419,12 @@ public:
     const_iterator begin() const { return state_posts_.begin(); }
     const_iterator end() const { return state_posts_.end(); }
 
-    /**
-     * @brief Iterator over transitions represented as @c Transition instances.
-     *
-     * It iterates over triples (source, symbol, target).
-     */
-    class Transitions {
-    public:
-        /**
-         * Iterator over transitions.
-         */
-        class const_iterator {
-        private:
-            const Delta* delta_ = nullptr;
-            size_t current_state_{};
-            StatePost::const_iterator state_post_it_{};
-            StateSet::const_iterator symbol_post_it_{};
-            bool is_end_{ false };
-            Transition transition_{};
-
-        public:
-            using iterator_category = std::forward_iterator_tag;
-            using value_type = Transition;
-            using difference_type = size_t;
-            using pointer = Transition*;
-            using reference = Transition&;
-
-            const_iterator(): is_end_{ true } {}
-            explicit const_iterator(const Delta& delta);
-            const_iterator(const Delta& delta, State current_state);
-
-            const_iterator(const const_iterator& other) noexcept = default;
-            const_iterator(const_iterator&&) = default;
-
-            const Transition& operator*() const { return transition_; }
-
-            // Prefix increment
-            const_iterator& operator++();
-            // Postfix increment
-            const const_iterator operator++(int);
-
-            const_iterator& operator=(const const_iterator& other) noexcept = default;
-            const_iterator& operator=(const_iterator&&) = default;
-
-            bool operator==(const const_iterator& other) const;
-        }; // class Transitions::const_iterator.
-
-        Transitions() = default;
-        explicit Transitions(const Delta* delta): delta_{ delta } {}
-        Transitions(Transitions&&) = default;
-        Transitions(Transitions&) = default;
-        Transitions& operator=(Transitions&&) = default;
-        Transitions& operator=(Transitions&) = default;
-
-        const_iterator begin() const { return const_iterator{ *delta_ }; }
-        const_iterator end() const { return const_iterator{}; }
-    private:
-        const Delta* delta_;
-    }; // class Transitions.
+    class Transitions;
 
     /**
-     * Iterator over transitions represented as 'Transition' instances.
+     * Iterator over transitions represented as @c Transition instances.
      */
-    Transitions transitions() const { return Transitions{ this }; }
+    Transitions transitions() const;
 
     /**
      * Iterate over @p epsilon symbol posts under the given @p state.
@@ -497,6 +444,66 @@ public:
 private:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+/**
+ * @brief Iterator over transitions represented as @c Transition instances.
+ *
+ * It iterates over triples (State source, Symbol symbol, State target).
+ */
+class Delta::Transitions {
+public:
+    Transitions() = default;
+    explicit Transitions(const Delta* delta): delta_{ delta } {}
+    Transitions(Transitions&&) = default;
+    Transitions(Transitions&) = default;
+    Transitions& operator=(Transitions&&) = default;
+    Transitions& operator=(Transitions&) = default;
+
+    class const_iterator;
+    const_iterator begin() const;
+    const_iterator end() const;
+private:
+    const Delta* delta_;
+}; // class Transitions.
+
+/**
+ * Iterator over transitions.
+ */
+class Delta::Transitions::const_iterator {
+private:
+    const Delta* delta_ = nullptr;
+    size_t current_state_{};
+    StatePost::const_iterator state_post_it_{};
+    StateSet::const_iterator symbol_post_it_{};
+    bool is_end_{ false };
+    Transition transition_{};
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Transition;
+    using difference_type = size_t;
+    using pointer = Transition*;
+    using reference = Transition&;
+
+    const_iterator(): is_end_{ true } {}
+    explicit const_iterator(const Delta& delta);
+    const_iterator(const Delta& delta, State current_state);
+
+    const_iterator(const const_iterator& other) noexcept = default;
+    const_iterator(const_iterator&&) = default;
+
+    const Transition& operator*() const { return transition_; }
+
+    // Prefix increment
+    const_iterator& operator++();
+    // Postfix increment
+    const const_iterator operator++(int);
+
+    const_iterator& operator=(const const_iterator& other) noexcept = default;
+    const_iterator& operator=(const_iterator&&) = default;
+
+    bool operator==(const const_iterator& other) const;
+}; // class Delta::Transitions::const_iterator.
 
 } // namespace mata::nfa.
 

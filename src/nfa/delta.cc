@@ -482,3 +482,12 @@ StatePost::Moves StatePost::symbol_moves(const Symbol last_symbol) const {
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
      return { *state_post_, first_symbol_, last_symbol_, first_symbol_lookup_direction_ }; 
 }
+
+Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
+
+Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
+Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
+
+StatePost::Moves StatePost::moves() const { return { *this }; }
+
+StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
