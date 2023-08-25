@@ -152,11 +152,11 @@ add_library(cudd STATIC
 # cudd needs at least c++11
 target_compile_features(cudd PUBLIC cxx_std_11)
 
-target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_LIST_DIR}/cudd"
-                                        "${CMAKE_CURRENT_LIST_DIR}/st"
-                                        "${CMAKE_CURRENT_LIST_DIR}/mtr"
-                                        "${CMAKE_CURRENT_LIST_DIR}/epd"
-                                        "${CMAKE_CURRENT_LIST_DIR}/util"
-                                        "${CMAKE_CURRENT_LIST_DIR}/cplusplus"
-                                        "${CMAKE_CURRENT_BINARY_DIR}")
-target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/include")
+target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_LIST_DIR}/cudd/"
+                                        "${CMAKE_CURRENT_LIST_DIR}/st/"
+                                        "${CMAKE_CURRENT_LIST_DIR}/mtr/"
+                                        "${CMAKE_CURRENT_LIST_DIR}/epd/"
+                                        "${CMAKE_CURRENT_LIST_DIR}/util/"
+                                        "${CMAKE_CURRENT_LIST_DIR}/cplusplus/"
+                                        "${CMAKE_CURRENT_BINARY_DIR}/")
+target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_LIST_DIR}/include/")

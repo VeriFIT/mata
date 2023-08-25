@@ -132,7 +132,9 @@ endif()
 
 install(TARGETS libmata
         ARCHIVE DESTINATION lib)
-# TODO: should headers be installed in some nicer way? 
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "**/*.hh")
+# TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
+get_target_property(LIBMATA_PUBLIC_INCLUDES libmata INTERFACE_INCLUDE_DIRECTORIES)
+install(DIRECTORY "${LIBMATA_PUBLIC_INCLUDES}" TYPE INCLUDE)
 # TODO remove this after we remove PUBLIC dependency on CUDD
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd/include/mata DESTINATION include FILES_MATCHING PATTERN "*.h*")
+get_target_property(CUDD_PUBLIC_INCLUDES cudd INTERFACE_INCLUDE_DIRECTORIES)
+install(DIRECTORY "${CUDD_PUBLIC_INCLUDES}" TYPE INCLUDE)

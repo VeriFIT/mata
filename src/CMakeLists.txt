@@ -33,7 +33,7 @@ set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
 )
 
-target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include")
+target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include/")
 
 target_link_libraries(libmata PUBLIC cudd)
 target_link_libraries(libmata PRIVATE re2 simlib)
