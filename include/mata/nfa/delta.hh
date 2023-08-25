@@ -151,7 +151,7 @@ public:
     /**
      * @brief Whether to look up first symbol to iterate over from the beginning or from the end of @c StatePost
      *  iterator.
-
+     *
      * Iterates over symbol posts with symbols in interval [first_symbol_, last_symbol_].
      */
     enum class FirstSymbolLookupDiretion {
@@ -286,7 +286,7 @@ public:
     Delta(const Delta& other): state_posts_{ other.state_posts_ } {}
     explicit Delta(size_t n): state_posts_{ n } {}
 
-    Delta& operator=(const Delta& other);
+    Delta& operator=(const Delta& other) = default;
 
     bool operator==(const Delta& other) const;
 
