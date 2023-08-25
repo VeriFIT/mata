@@ -130,7 +130,9 @@ if(IS_DIRECTORY "${CMAKE_SOURCE_DIR}/tests-integration")
     add_subdirectory(tests-integration)
 endif()
 
-install(TARGETS libmata ARCHIVE DESTINATION lib)
+install(TARGETS libmata
+        ARCHIVE DESTINATION lib)
+# TODO: should headers be installed in some nicer way? 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/mata DESTINATION include FILES_MATCHING PATTERN "**/*.hh")
+# TODO remove this after we remove PUBLIC dependency on CUDD
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/cudd/include/mata DESTINATION include FILES_MATCHING PATTERN "*.h*")
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/simlib/include/mata DESTINATION include FILES_MATCHING PATTERN "*.hh")

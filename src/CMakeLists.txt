@@ -1,4 +1,4 @@
-# create config.cc file that contains definitions of global variables
+# create config.cc file that contains definitions of global variables (such as version, verbosity, etc.)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
 
 add_library(libmata STATIC
@@ -31,12 +31,7 @@ set_target_properties(libmata PROPERTIES CXX_EXTENSIONS OFF)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
-  CLEAN_DIRECT_OUTPUT 1
 )
-
-if (${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
-	target_link_libraries(libmata pthread)
-endif()
 
 target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include")
 
@@ -55,6 +50,7 @@ endif()
 
 target_compile_options(libmata PRIVATE "${COMMON_COMPILER_FLAGS}")
 
+# Put all dependencies of mata into one .a file, so we do not need to install them independently
 add_custom_command(TARGET libmata POST_BUILD
 		COMMAND ${CMAKE_SOURCE_DIR}/scripts/merge_static_libraries.sh libcombined.a ${CMAKE_BINARY_DIR}/src/libmata.a
 		${CMAKE_BINARY_DIR}/3rdparty/simlib/libsimlib.a ${CMAKE_BINARY_DIR}/3rdparty/re2/libre2.a

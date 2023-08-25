@@ -151,8 +151,6 @@ add_library(cudd STATIC
 
 # cudd needs at least c++11
 target_compile_features(cudd PUBLIC cxx_std_11)
-# we turn off compiler extensions
-set_target_properties(cudd PROPERTIES CXX_EXTENSIONS OFF)
 
 target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_LIST_DIR}/cudd"
                                         "${CMAKE_CURRENT_LIST_DIR}/st"
