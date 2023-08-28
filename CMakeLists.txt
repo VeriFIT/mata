@@ -119,6 +119,11 @@ add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 
+option(MATA_BUILD_EXAMPLES "MATA_BUILD_EXAMPLES" ON)
+if(MATA_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
+
 # Build tests only if Mata is the main project (can be overriden by MATA_BUILD_TESTING)
 # and we enabled testing
 if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MATA_BUILD_TESTING) AND BUILD_TESTING)
