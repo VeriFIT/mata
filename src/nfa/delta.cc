@@ -466,6 +466,8 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
     return *this;
 }
 
+StatePost::Moves StatePost::moves() const { return { *this }; }
+
 StatePost::Moves StatePost::epsilon_moves(const Symbol first_epsilon) const {
     return { *this, first_epsilon, Limits::max_symbol, Moves::FirstSymbolLookupDiretion::Backward};
 }
@@ -478,11 +480,9 @@ StatePost::Moves::const_iterator StatePost::Moves::begin() const {
      return { *state_post_, first_symbol_, last_symbol_, first_symbol_lookup_direction_ }; 
 }
 
+StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
+
 Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
 
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
 Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
-
-StatePost::Moves StatePost::moves() const { return { *this }; }
-
-StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
