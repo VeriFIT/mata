@@ -3,4 +3,4 @@ add_library(simlib STATIC src/explicit_lts_sim.cc)
 # simlib needs at least c++11
 target_compile_features(simlib PUBLIC cxx_std_11)
 
-target_include_directories(simlib PUBLIC "${CMAKE_CURRENT_LIST_DIR}/include/")
+target_include_directories(simlib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
