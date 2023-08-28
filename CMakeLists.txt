@@ -101,13 +101,16 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
 message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 
-##############################################################################
-#                                 PROJECT
-##############################################################################
-
-# Include CTest so that sophisticated testing can be done now
 include(CTest)
-enable_testing()
+include(FetchContent)
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG        v2.13.9 # or a later release
+)
+FetchContent_MakeAvailable(Catch2)
+list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
+include(Catch)
 
 ##############################################################################
 #                                SUB-MODULES

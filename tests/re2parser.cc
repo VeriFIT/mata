@@ -1,4 +1,4 @@
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"

@@ -2,7 +2,7 @@
 // Created by Lukáš Holík on 06.12.2022.
 //
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 

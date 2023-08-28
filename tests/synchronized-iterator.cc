@@ -2,7 +2,7 @@
 // Created by Lukáš Holík on 29.10.2022.
 //
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/utils/utils.hh"
 #include "mata/utils/synchronized-iterator.hh"
