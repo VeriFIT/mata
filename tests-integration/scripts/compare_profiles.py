@@ -20,8 +20,8 @@ def load_dataframe(path):
                 return cell
     df = pandas.read_csv(path, sep=';')
     df = df.applymap(transform).drop(columns=['name'])
-    avgs = df.mean(numeric_only=False, skipna=True)
-    meds = df.median(numeric_only=False, skipna=True)
+    avgs = df.mean(numeric_only=True, skipna=True)
+    meds = df.median(numeric_only=True, skipna=True)
     return avgs, meds
 
 
