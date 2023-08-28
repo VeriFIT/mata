@@ -26,8 +26,6 @@ add_library(libmata STATIC
 
 # libmata needs at least c++20
 target_compile_features(libmata PUBLIC cxx_std_20)
-# we turn off compiler extensions
-set_target_properties(libmata PROPERTIES CXX_EXTENSIONS OFF)
 
 set_target_properties(libmata PROPERTIES
   OUTPUT_NAME mata
