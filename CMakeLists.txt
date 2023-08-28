@@ -24,13 +24,6 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 #                             OUTPUT CUSTOMIZATION
 ##############################################################################
 
-# Common compiler flags.
-set(COMMON_COMPILER_FLAGS
-        -fms-extensions
-        -fdiagnostics-show-option
-        -fno-strict-aliasing
-        )
-
 # Common warnings compiler flags.
 set(COMMON_WARNINGS
         -Wextra
