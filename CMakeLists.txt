@@ -138,3 +138,6 @@ install(DIRECTORY "${LIBMATA_PUBLIC_INCLUDES}" TYPE INCLUDE)
 # TODO remove this after we remove PUBLIC dependency on CUDD
 get_target_property(CUDD_PUBLIC_INCLUDES cudd INTERFACE_INCLUDE_DIRECTORIES)
 install(DIRECTORY "${CUDD_PUBLIC_INCLUDES}" TYPE INCLUDE)
+# TODO remove this after we remove PUBLIC dependency on simlib
+get_target_property(CUDD_PUBLIC_INCLUDES simlib INTERFACE_INCLUDE_DIRECTORIES)
+install(DIRECTORY "${SIMLIB_PUBLIC_INCLUDES}" TYPE INCLUDE)

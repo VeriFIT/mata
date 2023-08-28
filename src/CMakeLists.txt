@@ -35,8 +35,8 @@ set_target_properties(libmata PROPERTIES
 
 target_include_directories(libmata PUBLIC "${PROJECT_SOURCE_DIR}/include/")
 
-target_link_libraries(libmata PUBLIC cudd)
-target_link_libraries(libmata PRIVATE re2 simlib)
+target_link_libraries(libmata PUBLIC cudd simlib)
+target_link_libraries(libmata PRIVATE re2)
 
 # Add common compile warnings.
 target_compile_options(libmata PRIVATE "$<$<CONFIG:DEBUG>:${COMMON_WARNINGS}>")
