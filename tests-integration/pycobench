@@ -251,7 +251,7 @@ Executes one benchmark.
         executed_cmd = []
         for c in cmd:
             if '*' in c:
-                executed_cmd.extend(glob.glob(c))
+                executed_cmd.extend(sorted(glob.glob(c)))
             else:
                 executed_cmd.append(c)
         result = run_subproc_systime(executed_cmd)

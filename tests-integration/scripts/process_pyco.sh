@@ -68,7 +68,7 @@ prepend_directory() {
 processed_header=false
 
 
-# For each benchmakr
+# For each benchmark
 for benchmark in ${benchmarks[@]}
 do
     # We ensure that the results are in results/data directory

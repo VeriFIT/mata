@@ -64,7 +64,7 @@ In order to test or measure performance of the code you just built by the above 
  
 ### How to benchmark and reproduce some of our results
 
-We assume, this is executed from `tests-integration` directory.
+We assume this is executed from `tests-integration` directory.
 In order to reproduce some of our results or run more thorough benchmarking, we recommend running the following 
 test cases:
 
