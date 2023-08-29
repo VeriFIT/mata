@@ -101,12 +101,12 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
 message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 
-include(CTest)
+include(CTest) # also enables testing
 include(FetchContent)
 FetchContent_Declare(
   Catch2
   GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v2.13.9 # or a later release
+  GIT_TAG        v2.13.9 # TODO: maybe we should move to v3
 )
 FetchContent_MakeAvailable(Catch2)
 list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
