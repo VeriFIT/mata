@@ -3,6 +3,7 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
+#include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
 #include "mata/utils/synchronized-iterator.hh"
 
@@ -120,20 +121,54 @@ public:
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 
-    class Moves;
+    /**
+     * @brief Iterator over moves represented as @c Move instances.
+     *
+     * It iterates over pairs (symbol, target) for the given @c StatePost.
+     */
+    class Moves {
+    public:
+        /**
+         * @brief Over which symbol posts to iterate.
+         */
+        enum class Iterate {
+            All, ///< Iterate over all symbol posts including epsilons.
+            Symbols, ///< Iterate over only normal symbols excluding epsilons.
+            Epsilons ///< Iterate over only epsilons.
+        };
+
+        class const_iterator;
+
+        Moves() = default;
+        Moves(const StatePost& state_post, Iterate iterate = Iterate::All, Symbol first_symbol = Limits::min_symbol, 
+              Symbol last_symbol = Limits::max_symbol);
+        Moves(Moves&&) = default;
+        Moves(Moves&) = default;
+        Moves& operator=(Moves&& other) noexcept;
+        Moves& operator=(const Moves& other) noexcept;
+
+        const_iterator begin() const;
+        const_iterator end() const;
+    private:
+        const StatePost* state_post_;
+        StatePost::const_iterator symbol_post_it_{}; ///< First symbol post (included) to iterate over.
+        StatePost::const_iterator symbol_post_it_end_{}; ///< Last symbol post (included) to iterate over.
+        Iterate iterate_{ Iterate::All };
+    }; // class Moves.
 
     /**
      * Iterator over all moves in @c StatePost represented as @c Move instances.
      */
-    Moves moves() const;
+    Moves moves(Moves::Iterate iterate = Moves::Iterate::All, Symbol first_symbol = Limits::min_symbol,
+                Symbol last_symbol = Limits::max_symbol) const;
     /**
      * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
      */
     Moves epsilon_moves(const Symbol first_epsilon = EPSILON) const;
     /**
-     * Iterator over normal symbols (not over epsilons) in @c StatePost represented as @c Move instances.
+     * Iterator over alphabet (normal) symbols (not over epsilons) in @c StatePost represented as @c Move instances.
      */
-    Moves symbol_moves(const Symbol last_symbol = EPSILON - 1) const;
+    Moves alphabet_symbol_moves(const Symbol last_symbol = EPSILON - 1) const;
 
     /**
      * Count the number of all moves in @c StatePost.
@@ -142,55 +177,14 @@ public:
 }; // class StatePost.
 
 /**
- * @brief Iterator over moves represented as @c Move instances.
- *
- * It iterates over pairs (symbol, target) for the given @c StatePost.
- */
-class StatePost::Moves {
-public:
-    /**
-     * @brief Whether to look up first symbol to iterate over from the beginning or from the end of @c StatePost
-     *  iterator.
-     *
-     * Iterates over symbol posts with symbols in interval [first_symbol_, last_symbol_].
-     */
-    enum class FirstSymbolLookupDiretion {
-        Forward, ///< Lookup from the beginning to the end.
-        Backward ///< Lookup from the end to the beginning.
-    };
-
-    class const_iterator;
-
-    Moves() = default;
-    Moves(
-        const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
-        Symbol last_symbol = Limits::max_symbol,
-        FirstSymbolLookupDiretion lookup_first_symbol_side = FirstSymbolLookupDiretion::Forward)
-        : state_post_{ &state_post }, first_symbol_{ first_symbol }, last_symbol_{ last_symbol },
-          first_symbol_lookup_direction_{ lookup_first_symbol_side } {}
-    Moves(Moves&&) = default;
-    Moves(Moves&) = default;
-    Moves& operator=(Moves&& other) noexcept;
-    Moves& operator=(const Moves& other) noexcept;
-
-    const_iterator begin() const;
-    const_iterator end() const;
-private:
-    const StatePost* state_post_;
-    Symbol first_symbol_{ Limits::min_symbol }; ///< First symbol (included) to iterate over.
-    Symbol last_symbol_{ Limits::max_symbol }; ///< Last symbol (included) to iterate over.
-    FirstSymbolLookupDiretion first_symbol_lookup_direction_{ FirstSymbolLookupDiretion::Forward };
-}; // class Moves.
-
-/**
  * Iterator over moves.
  */
 class StatePost::Moves::const_iterator {
 private:
     const StatePost* state_post_{ nullptr };
-    StatePost::const_iterator state_post_it_{};
-    StateSet::const_iterator symbol_post_it_{};
-    Symbol last_symbol_{ Limits::max_symbol };
+    StatePost::const_iterator symbol_post_it_{};
+    StateSet::const_iterator target_it_{};
+    StatePost::const_iterator symbol_post_it_end_{};
     bool is_end_{ false };
     /// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
     ///  a reference with @c operator*().
@@ -205,10 +199,11 @@ public:
 
      /// Construct end iterator.
     const_iterator(): is_end_{ true } {}
-    /// Construct all moves iterator, epsilon moves iterator or normal symbols moves iterator (excluding epsilons).
-    const_iterator(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol,
-                   Symbol last_symbol = Limits::max_symbol,
-                   const FirstSymbolLookupDiretion firest_symbol_lookup_direction = FirstSymbolLookupDiretion::Forward);
+    /// Const all moves iterator.
+    const_iterator(const StatePost& state_post);
+    /// Construct iterator from @p symbol_post_it (including) to @p symbol_post_it_end (excluding).
+    const_iterator(const StatePost& state_post, StatePost::const_iterator symbol_post_it, 
+                   StatePost::const_iterator symbol_post_it_end);
     const_iterator(const const_iterator& other) noexcept = default;
     const_iterator(const_iterator&&) = default;
 

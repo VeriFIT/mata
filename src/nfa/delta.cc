@@ -361,65 +361,49 @@ bool Delta::operator==(const Delta& other) const {
 }
 
 StatePost::Moves::const_iterator::const_iterator(
-    const StatePost& state_post, const Symbol first_symbol, const Symbol last_symbol,
-    const Moves::FirstSymbolLookupDiretion first_symbol_lookup_direction)
-    : state_post_{ &state_post }, last_symbol_{ last_symbol } {
-    if (state_post_->empty()) {
+    const StatePost& state_post, const StatePost::const_iterator symbol_post_it,
+    const StatePost::const_iterator symbol_post_it_end)
+    : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_it_end_{ symbol_post_it_end } {
+    if (symbol_post_it_ == symbol_post_it_end_) {
         is_end_ = true;
         return;
     }
-    const StatePost::const_iterator state_post_begin{ state_post_->begin() };
-    const StatePost::const_iterator state_post_end{ state_post_->end() };
-    if (first_symbol_lookup_direction == Moves::FirstSymbolLookupDiretion::Forward) {
-        state_post_it_ = state_post_begin;
-        while (state_post_it_ != state_post_end && first_symbol > state_post_it_->symbol) { ++state_post_it_; }
-        if (state_post_it_ == state_post_end || state_post_it_->symbol > last_symbol_) {
-            is_end_ = true;
-            return;
-        }
-    } else { // first_symbol_lookup_direction == Moves::FirstSymbolLookupDiretion::Backward.
-        auto previous_state_post_it = state_post_end;
-        do {
-            state_post_it_ = previous_state_post_it;
-            --previous_state_post_it;
-        } while (previous_state_post_it != state_post_begin && first_symbol < previous_state_post_it->symbol);
-        if (previous_state_post_it == state_post_begin || first_symbol == previous_state_post_it->symbol) {
-            state_post_it_ = previous_state_post_it;
-        }
-        if (state_post_it_->symbol < first_symbol) {
-            is_end_ = true;
-            return;
-        }
+
+    move_.symbol = symbol_post_it_->symbol;
+    target_it_ = symbol_post_it_->targets.cbegin();
+    move_.target = *target_it_;
+}
+
+StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
+    : state_post_{ &state_post }, symbol_post_it_{ state_post.begin() }, symbol_post_it_end_{ state_post.end() } {
+    if (symbol_post_it_ == symbol_post_it_end_) {
+        is_end_ = true;
+        return;
     }
-    symbol_post_it_ = state_post_it_->targets.begin();
-    move_.symbol = state_post_it_->symbol;
-    move_.target = *symbol_post_it_;
+
+    move_.symbol = symbol_post_it_->symbol;
+    target_it_ = symbol_post_it_->targets.cbegin();
+    move_.target = *target_it_;
 }
 
 StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++() {
-    ++symbol_post_it_;
-    if (symbol_post_it_ != state_post_it_->targets.end()) {
-        move_.target = *symbol_post_it_;
+    ++target_it_;
+    if (target_it_ != symbol_post_it_->targets.end()) {
+        move_.target = *target_it_;
         return *this;
     }
 
-    if (state_post_it_->symbol >= last_symbol_) {
-        // Last symbol symbol post was reached and fully iterated over. We would now iterate to the next symbol, but
-        //  that would already be over the iteration end specified by 'last_symbol_'.
-        is_end_ = true;
-        return *this;
-    }
     // Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
     //  symbol <= last_symbol_.
-    ++state_post_it_;
-    if (state_post_it_ == state_post_->cend() || state_post_it_->symbol > last_symbol_) {
+    ++symbol_post_it_;
+    if (symbol_post_it_ == symbol_post_it_end_) {
         is_end_ = true;
         return *this;
     }
-    // The current symbol post is valid (not end iterator and symbol <= last_symbol_).
-    symbol_post_it_ = state_post_it_->targets.begin();
-    move_.symbol = state_post_it_->symbol;
-    move_.target = *symbol_post_it_;
+    // The current symbol post is valid (not equal symbol_post_it_end_).
+    move_.symbol = symbol_post_it_->symbol;
+    target_it_ = symbol_post_it_->targets.begin();
+    move_.target = *target_it_;
     return *this;
 }
 
@@ -435,7 +419,8 @@ bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_
     } else if ((is_end_ && !other.is_end_) || (!is_end_ && other.is_end_)) {
         return false;
     }
-    return state_post_it_ == other.state_post_it_ && symbol_post_it_ == other.symbol_post_it_;
+    return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_
+           && symbol_post_it_end_ == other.symbol_post_it_end_;
 }
 
 size_t StatePost::num_of_moves() const {
@@ -449,9 +434,8 @@ size_t StatePost::num_of_moves() const {
 StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept {
     if (&other != this) {
         state_post_ = other.state_post_;
-        first_symbol_ = other.first_symbol_;
-        last_symbol_ = other.last_symbol_;
-        first_symbol_lookup_direction_ = other.first_symbol_lookup_direction_;
+        symbol_post_it_ = std::move(other.symbol_post_it_);
+        symbol_post_it_end_ = std::move(other.symbol_post_it_end_);
     }
     return *this;
 }
@@ -459,25 +443,27 @@ StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept
 StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
     if (&other != this) {
         state_post_ = other.state_post_;
-        first_symbol_ = other.first_symbol_;
-        last_symbol_ = other.last_symbol_;
-        first_symbol_lookup_direction_ = other.first_symbol_lookup_direction_;
+        symbol_post_it_ = other.symbol_post_it_;
+        symbol_post_it_end_ = other.symbol_post_it_end_;
     }
     return *this;
 }
 
-StatePost::Moves StatePost::moves() const { return { *this }; }
-
-StatePost::Moves StatePost::epsilon_moves(const Symbol first_epsilon) const {
-    return { *this, first_epsilon, Limits::max_symbol, Moves::FirstSymbolLookupDiretion::Backward};
+StatePost::Moves StatePost::moves(
+    const Moves::Iterate iterate, const Symbol first_symbol, const Symbol last_symbol) const { 
+    return { *this, iterate, first_symbol, last_symbol }; 
 }
 
-StatePost::Moves StatePost::symbol_moves(const Symbol last_symbol) const {
-    return { *this, Limits::min_symbol, last_symbol };
+StatePost::Moves StatePost::epsilon_moves(const Symbol first_epsilon) const {
+    return { *this, Moves::Iterate::Epsilons, first_epsilon, Limits::max_symbol };
+}
+
+StatePost::Moves StatePost::alphabet_symbol_moves(const Symbol last_symbol) const {
+    return { *this, Moves::Iterate::Symbols, Limits::min_symbol, last_symbol };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
-     return { *state_post_, first_symbol_, last_symbol_, first_symbol_lookup_direction_ }; 
+     return { *state_post_, symbol_post_it_, symbol_post_it_end_ };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
@@ -486,3 +472,42 @@ Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
 
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
 Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
+
+StatePost::Moves::Moves(const StatePost& state_post, Moves::Iterate iterate, Symbol first_symbol, Symbol last_symbol)
+    : state_post_{ &state_post } {
+    const StatePost::const_iterator state_post_end{ state_post_->end() };
+    if (state_post_->empty()) {
+        symbol_post_it_ = state_post_end;
+        symbol_post_it_end_ = state_post_end;
+        return;
+    }
+
+    if (state_post_->back().symbol <= last_symbol) { symbol_post_it_end_ = state_post_end; } else {
+        symbol_post_it_end_ = std::upper_bound(state_post_->begin(), state_post_->end(), SymbolPost{ last_symbol });
+    }
+
+    const StatePost::const_iterator state_post_begin{ state_post_->begin() };
+    StatePost::const_iterator symbol_post_it;
+    if (iterate == Iterate::All || iterate == Iterate::Symbols) {
+        symbol_post_it = state_post_begin;
+        while (symbol_post_it != symbol_post_it_end_ && first_symbol > symbol_post_it->symbol) { ++symbol_post_it; }
+        if (symbol_post_it == symbol_post_it_end_) {
+            symbol_post_it_ = symbol_post_it_end_;
+            return;
+        }
+    } else { // iterate == Iterate::Epsilons.
+        StatePost::const_iterator previous_symbol_post_it = state_post_end;
+        do {
+            symbol_post_it = previous_symbol_post_it;
+            --previous_symbol_post_it;
+        } while (previous_symbol_post_it != state_post_begin && first_symbol < previous_symbol_post_it->symbol);
+        if (previous_symbol_post_it == state_post_begin || first_symbol == previous_symbol_post_it->symbol) {
+            symbol_post_it = previous_symbol_post_it;
+        }
+        if (symbol_post_it->symbol < first_symbol) {
+            symbol_post_it_ = symbol_post_it_end_;
+            return;
+        }
+    }
+    symbol_post_it_ = symbol_post_it;
+}
