@@ -129,19 +129,19 @@ public:
     class Moves {
     public:
         /**
-         * @brief Over which symbol posts to iterate.
+         * @brief From which direction to seek the first symbol in the vector.
          */
-        enum class Iterate {
-            All, ///< Iterate over all symbol posts including epsilons.
-            Symbols, ///< Iterate over only normal symbols excluding epsilons.
-            Epsilons ///< Iterate over only epsilons.
+        enum class SeekFirstSymbolDirection {
+            Forward, //< Seek first symbol from the beginning of the vector.
+            Backward //< Seek first symbol from the end of the vector.
         };
 
         class const_iterator;
 
         Moves() = default;
-        Moves(const StatePost& state_post, Iterate iterate = Iterate::All, Symbol first_symbol = Limits::min_symbol, 
-              Symbol last_symbol = Limits::max_symbol);
+        Moves(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol, 
+              Symbol last_symbol = Limits::max_symbol, 
+              SeekFirstSymbolDirection seek_first_symbol = SeekFirstSymbolDirection::Forward);
         Moves(Moves&&) = default;
         Moves(Moves&) = default;
         Moves& operator=(Moves&& other) noexcept;
@@ -153,22 +153,26 @@ public:
         const StatePost* state_post_;
         StatePost::const_iterator symbol_post_it_{}; ///< First symbol post (included) to iterate over.
         StatePost::const_iterator symbol_post_it_end_{}; ///< Last symbol post (included) to iterate over.
-        Iterate iterate_{ Iterate::All };
+        SeekFirstSymbolDirection iterate_{ SeekFirstSymbolDirection::Forward };
     }; // class Moves.
 
     /**
      * Iterator over all moves in @c StatePost represented as @c Move instances.
      */
-    Moves moves(Moves::Iterate iterate = Moves::Iterate::All, Symbol first_symbol = Limits::min_symbol,
-                Symbol last_symbol = Limits::max_symbol) const;
+    Moves moves() const { return { *this }; }
+    /**
+     * Iterator over specified moves in @c StatePost represented as @c Move instances.
+     */
+    Moves moves(Symbol first_symbol, Symbol last_symbol, 
+                Moves::SeekFirstSymbolDirection seek_first_symbol = Moves::SeekFirstSymbolDirection::Forward) const;
     /**
      * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
      */
-    Moves epsilon_moves(const Symbol first_epsilon = EPSILON) const;
+    Moves moves_epsilons(const Symbol first_epsilon = EPSILON) const;
     /**
      * Iterator over alphabet (normal) symbols (not over epsilons) in @c StatePost represented as @c Move instances.
      */
-    Moves alphabet_symbol_moves(const Symbol last_symbol = EPSILON - 1) const;
+    Moves moves_alphabet_symbols(const Symbol last_symbol = EPSILON - 1) const;
 
     /**
      * Count the number of all moves in @c StatePost.

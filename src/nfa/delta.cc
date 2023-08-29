@@ -450,16 +450,16 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
 }
 
 StatePost::Moves StatePost::moves(
-    const Moves::Iterate iterate, const Symbol first_symbol, const Symbol last_symbol) const { 
-    return { *this, iterate, first_symbol, last_symbol }; 
+    const Symbol first_symbol, const Symbol last_symbol, const Moves::SeekFirstSymbolDirection direction) const { 
+    return { *this, first_symbol, last_symbol, direction }; 
 }
 
-StatePost::Moves StatePost::epsilon_moves(const Symbol first_epsilon) const {
-    return { *this, Moves::Iterate::Epsilons, first_epsilon, Limits::max_symbol };
+StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
+    return { *this, first_epsilon, Limits::max_symbol, Moves::SeekFirstSymbolDirection::Backward };
 }
 
-StatePost::Moves StatePost::alphabet_symbol_moves(const Symbol last_symbol) const {
-    return { *this, Moves::Iterate::Symbols, Limits::min_symbol, last_symbol };
+StatePost::Moves StatePost::moves_alphabet_symbols(const Symbol last_symbol) const {
+    return { *this, Limits::min_symbol, last_symbol, Moves::SeekFirstSymbolDirection::Forward };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
@@ -473,7 +473,7 @@ Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
 Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
 
-StatePost::Moves::Moves(const StatePost& state_post, Moves::Iterate iterate, Symbol first_symbol, Symbol last_symbol)
+StatePost::Moves::Moves(const StatePost& state_post, Symbol first_symbol, Symbol last_symbol, Moves::SeekFirstSymbolDirection direction)
     : state_post_{ &state_post } {
     const StatePost::const_iterator state_post_end{ state_post_->end() };
     if (state_post_->empty()) {
@@ -488,14 +488,14 @@ StatePost::Moves::Moves(const StatePost& state_post, Moves::Iterate iterate, Sym
 
     const StatePost::const_iterator state_post_begin{ state_post_->begin() };
     StatePost::const_iterator symbol_post_it;
-    if (iterate == Iterate::All || iterate == Iterate::Symbols) {
+    if (direction == SeekFirstSymbolDirection::Forward) {
         symbol_post_it = state_post_begin;
         while (symbol_post_it != symbol_post_it_end_ && first_symbol > symbol_post_it->symbol) { ++symbol_post_it; }
         if (symbol_post_it == symbol_post_it_end_) {
             symbol_post_it_ = symbol_post_it_end_;
             return;
         }
-    } else { // iterate == Iterate::Epsilons.
+    } else { // direction == SeekFirstSymbolDirection::Backward.
         StatePost::const_iterator previous_symbol_post_it = state_post_end;
         do {
             symbol_post_it = previous_symbol_post_it;
