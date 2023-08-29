@@ -65,6 +65,23 @@ In order to test or measure performance of the code you just built by the above 
 ### How to benchmark and reproduce some of our results
 
 We assume this is executed from `tests-integration` directory.
+
+We recommend to use our `./scripts/run_pyco.sh` scripts with is called as follows:
+```shell
+./scripts/run_pyco.sh -c <jobs/JOBS.yaml> -m <method1;method2;...;methodn> -t <TIMEOUT> -j <JOBS> -s <SUFFIX_TAG> <inputs/INPUT.input>
+```
+
+You can specify following parameters
+  1. `-c <jobs/JOBS.yaml>`: picks `YAML` file, where commands for measured binaries are specified.
+  2. (optional) `-m <method1;method2;...;methodn>`: list of commands specified in the `YAML` file, which will only be measured; by default everything is measured.
+  3. (optional) `-t <TIMEOUT>`: timeout in seconds for each run binary; (default = 60s).
+  4. (optional) `-j <JOBS>`: number of parallel jobs that are run; (default = 6 jobs).
+  5. (optional) ` -s <SUFFIX_TAG>`: adds suffix to the generated `.csv` file, for better organization; (default = empty).
+  6. `<inputs/INPUT.input>`: any number of input file, where list of automata that are fed to binaries are listed.
+
+Note that if you are missing any dependencies (for Python), the script will automatically ask you if
+you wish to install them and should work with minimal user input.
+
 In order to reproduce some of our results or run more thorough benchmarking, we recommend running the following 
 test cases:
 
