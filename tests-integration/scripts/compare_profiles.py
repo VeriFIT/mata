@@ -19,7 +19,7 @@ def load_dataframe(path):
                 return cell
     df = pandas.read_csv(path, sep=';')
     timeouts = {
-        col: df[col].value_counts()['TO'] for col in df.columns if col.endswith('runtime')
+        col: df[col].value_counts().get('TO', 0) for col in df.columns if col.endswith('runtime')
     }
     df = df.applymap(transform).drop(columns=['name'])
     avgs = df.mean(numeric_only=True, skipna=True)
@@ -41,7 +41,6 @@ if __name__ == "__main__":
         averages.append(avg)
         medians.append(med)
         timeouts.append(tos)
-        print(tos)
         to_columns.update(list(tos.keys()))
 
     headers = ['metric'] + ['target (avg)', 'target (med)']
