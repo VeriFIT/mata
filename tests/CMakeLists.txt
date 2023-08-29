@@ -20,7 +20,7 @@ add_executable(tests
 		strings/nfa-string-solving.cc
 )
 
-target_link_libraries(tests PRIVATE libmata re2 cudd libmata Catch2::Catch2)
+target_link_libraries(tests PRIVATE libmata Catch2::Catch2)
 
 # Add common compile warnings.
 target_compile_options(tests PRIVATE "$<$<CONFIG:DEBUG>:${COMMON_WARNINGS}>")
