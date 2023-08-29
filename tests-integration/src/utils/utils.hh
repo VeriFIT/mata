@@ -68,7 +68,7 @@ int load_intermediate_automaton(
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
  */
-#define TIME_PRINT(timer) std::cout << #timer ": " << timer##_elapsed.count() << "\n"
+#define TIME_PRINT(timer) std::cout << #timer ": " << timer##_elapsed.count() << "\n" << std::flush
 
 /*
  * Use to create initial timer with user-defined prefix `timer`
