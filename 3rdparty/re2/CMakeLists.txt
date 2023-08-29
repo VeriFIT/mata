@@ -1,4 +1,4 @@
-add_library(re2 STATIC
+add_library(re2 OBJECT
         re2/bitmap256.h
         re2/compile.cc
         re2/parse.cc

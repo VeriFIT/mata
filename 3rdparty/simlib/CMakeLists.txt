@@ -1,4 +1,4 @@
-add_library(simlib STATIC src/explicit_lts_sim.cc)
+add_library(simlib OBJECT src/explicit_lts_sim.cc)
 
 # simlib needs at least c++11
 target_compile_features(simlib PUBLIC cxx_std_11)

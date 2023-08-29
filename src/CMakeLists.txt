@@ -45,11 +45,3 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") # Using regular Clang or AppleClan
 	target_compile_options(libmata PRIVATE "$<$<CONFIG:DEBUG>:${CLANG_WARNINGS}>")
 	target_compile_options(libmata PRIVATE "$<$<CONFIG:RELEASE>:${CLANG_WARNINGS}>")
 endif()
-
-# Put all dependencies of mata into one .a file, so we do not need to install them independently
-add_custom_command(TARGET libmata POST_BUILD
-		COMMAND ${CMAKE_SOURCE_DIR}/scripts/merge_static_libraries.sh libcombined.a ${CMAKE_BINARY_DIR}/src/libmata.a
-		${CMAKE_BINARY_DIR}/3rdparty/simlib/libsimlib.a ${CMAKE_BINARY_DIR}/3rdparty/re2/libre2.a
-		${CMAKE_BINARY_DIR}/3rdparty/cudd/libcudd.a 2>&1
-		COMMAND mv ${CMAKE_BINARY_DIR}/src/libcombined.a ${CMAKE_BINARY_DIR}/src/libmata.a 2>&1
-)

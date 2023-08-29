@@ -29,7 +29,7 @@ set(CUDD_VERSION "3.0.0")
 
 configure_file(cudd_config.h.in cudd_config.h @ONLY)
 
-add_library(cudd STATIC
+add_library(cudd OBJECT
         cplusplus/cuddObj.cc
         include/mata/cudd/cuddObj.hh
         cudd/cuddAddAbs.c
