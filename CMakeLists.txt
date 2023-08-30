@@ -5,20 +5,21 @@ project(
     DESCRIPTION "A fast and simple automata library"
     LANGUAGES C CXX)
 
-option(MATA_WERROR "WERROR" OFF)
-option(MATA_BUILD_EXAMPLES "MATA_BUILD_EXAMPLES" ON)
-option(MATA_ENABLE_COVERAGE "Mata coverage" OFF)
-
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
-# -fPIC, needed for python binding
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+option(MATA_WERROR "Warnings should be handled as errors" OFF)
+option(MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
-# if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    option(MATA_BUILD_EXAMPLES "Build Mata examples" ON)
 
-    ############################# CCACHE ######################################
+    message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
+
+    include(FetchContent)
+
+    ### CCACHE ###
     # TODO: Should we use CCACHE? Why it might be useful: https://stackoverflow.com/questions/10136761/when-is-the-case-to-use-ccache
     # Why we use the following code: https://stackoverflow.com/questions/64592095/cmake-ccache-rule-launch-compile-or-cmake-lang-compiler-launcher
     find_program(CCACHE_PROGRAM ccache)
@@ -26,9 +27,39 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
         set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
     endif()
 
-##############################################################################
-#                             OUTPUT CUSTOMIZATION
-##############################################################################
+    ### Doxygen - voluntary ###
+    find_package(Doxygen)
+    if (DOXYGEN_FOUND)
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
+        ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY
+        )
+        add_custom_target(doc
+            ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            COMMENT "Generating API documentation with Doxygen" VERBATIM
+        )
+    else()
+        message(WARNING "Doxygen not found. Documentation will not be built")
+    endif()
+
+    ### Testing ###
+    include(CTest) # also enables testing
+
+    # Catch2 library for writing tests
+    FetchContent_Declare(
+    Catch2
+    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+    GIT_TAG        v2.13.9 # TODO: maybe we should move to v3
+    )
+    FetchContent_MakeAvailable(Catch2)
+    list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
+    include(Catch)
+    # Adds Catch2::Catch2
+
+endif()
+
+# -fPIC, needed for python binding
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Common warnings compiler flags.
 set(MATA_COMMON_WARNINGS
@@ -43,7 +74,6 @@ set(MATA_COMMON_WARNINGS
         -Wsign-compare
         -Wunused-parameter
         -Wpedantic
-        #-pedantic-errors
         -Wconversion
         -Wsign-conversion
         -Wreturn-type
@@ -57,68 +87,25 @@ set(MATA_CLANG_WARNINGS
         )
 
 # Set whether to treat warnings as errors.
-message("-- Treating warnings as errors: ${MATA_WERROR}")
 if (MATA_WERROR)
+    message("-- Treating warnings in mata as errors")
     set(MATA_COMMON_WARNINGS "${MATA_COMMON_WARNINGS}" -Werror)
 endif ()
 
-##############################################################################
-#                                COVERAGE
-##############################################################################
-
 # if DEBUG, also test coverage
-if((CMAKE_BUILD_TYPE MATCHES "Debug") AND MATA_ENABLE_COVERAGE)
+if(MATA_ENABLE_COVERAGE)
+    if(NOT (CMAKE_BUILD_TYPE STREQUAL "Debug"))
+        message(WARNING "Code coverage results with an optimised (non-Debug) build may be misleading")
+    endif() 
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
 endif()
 
-##############################################################################
-#                                DEPENDENCIES
-##############################################################################
-
-# find_package(Valgrind)
-
-# Doxygen - voluntary
-find_package(Doxygen)
-if (DOXYGEN_FOUND)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
-       ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY
-    )
-    add_custom_target(doc
-        ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
-else()
-    message(WARNING "Doxygen not found. Documentation will not be built")
-endif()
-
-##############################################################################
-#                               COMPILER FUN
-##############################################################################
-
-# get the git revision
+# Get git hash (used in src/)
 include(GetGitRevisionDescription)
-git_describe(GIT_DESCRIBE)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 
-message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
 
-include(CTest) # also enables testing
-include(FetchContent)
-FetchContent_Declare(
-  Catch2
-  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-  GIT_TAG        v2.13.9 # TODO: maybe we should move to v3
-)
-FetchContent_MakeAvailable(Catch2)
-list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
-include(Catch)
-
-##############################################################################
-#                                SUB-MODULES
-##############################################################################
-
-# Process subdirectories
+##### SUBDIRECTORIES #####
 add_subdirectory(src)
 add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
@@ -135,6 +122,8 @@ if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MATA_BUILD_TESTING) AND BUILD_TE
     add_subdirectory(tests-integration)
 endif()
 
+
+##### INSTALLING AND UNINSTALLING #####
 install(TARGETS libmata
         ARCHIVE DESTINATION lib)
 # TODO: should headers be installed in some nicer way? there is something called FILE_SET in cmake, but I do not feel it will make it better
