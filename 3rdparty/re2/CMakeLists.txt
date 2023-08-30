@@ -30,7 +30,7 @@ add_library(re2 OBJECT
         util/util.h)
 
 # re2 needs at least c++14
-target_compile_features(re2 PUBLIC cxx_std_14)
+target_compile_features(re2 PUBLIC cxx_std_20)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     target_link_libraries(re2 PUBLIC pthread)
