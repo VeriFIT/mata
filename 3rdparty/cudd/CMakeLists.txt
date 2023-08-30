@@ -134,7 +134,6 @@ add_library(cudd OBJECT
         util/util.h
     )
 
-# cudd needs at least c++11
 target_compile_features(cudd PUBLIC cxx_std_20)
 
 target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cudd/"
