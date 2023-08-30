@@ -90,8 +90,9 @@ def _copy_sources():
     shutil.copy(os.path.join(project_dir, 'Makefile'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'CMakeLists.txt'), sdist_dir)
     shutil.copy(os.path.join(project_dir, 'Doxyfile.in'), sdist_dir)
+    shutil.copy(os.path.join(project_dir, 'cmake_uninstall.cmake.in'), sdist_dir)
     for mata_dir in (
-            'src', 'include', '3rdparty', 'cmake', 'tests', 'scripts'
+            'src', 'include', '3rdparty', 'cmake'
     ):
         shutil.copytree(
             os.path.join(project_dir, mata_dir),
