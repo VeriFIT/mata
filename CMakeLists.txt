@@ -41,6 +41,7 @@ set(COMMON_WARNINGS
         -Wconversion
         -Wsign-conversion
         -Wreturn-type
+        -fPIC
         )
 # Clang-specific warnings compiler flags.
 set(CLANG_WARNINGS
