@@ -5,7 +5,6 @@ TEST_FLAGS=-j 50 --output-on-failure
 .PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
 
 all:
-	./clean_gcda.sh
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
 
 debug:
@@ -44,6 +43,9 @@ check:
 
 install:
 	cd $(BUILD_DIR) && $(MAKE) install
+
+uninstall:
+	cd $(BUILD_DIR) && $(MAKE) uninstall
 
 clean:
 	cd $(BUILD_DIR) && rm -rf *

@@ -137,7 +137,8 @@ get_target_property(SIMLIB_PUBLIC_INCLUDES simlib INTERFACE_INCLUDE_DIRECTORIES)
 install(DIRECTORY "${SIMLIB_PUBLIC_INCLUDES}" TYPE INCLUDE)
 
 # Uninstall target from https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#can-i-do-make-uninstall-with-cmake
-if(NOT TARGET uninstall)
+# Add it only if we are building mata as main project
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND NOT TARGET uninstall)
   configure_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake_uninstall.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake"
