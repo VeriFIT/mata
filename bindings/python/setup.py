@@ -50,7 +50,7 @@ extensions = [
         f"libmata.{pkg}",
         sources=[f"libmata{os.sep}{pkg.replace('.', os.sep)}.pyx"],
         include_dirs=project_includes,
-        libraries=['mata', 're2', 'cudd', 'simlib'],
+        libraries=['mata'],
         library_dirs=project_library_dirs,
         language="c++",
         extra_compile_args=["-std=c++20", "-DNO_THROW_DISPATCHER"],
