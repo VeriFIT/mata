@@ -132,16 +132,25 @@ public:
          * @brief From which direction to seek the first symbol in the vector.
          */
         enum class SeekFirstSymbolDirection {
-            Forward, //< Seek first symbol from the beginning of the vector.
-            Backward //< Seek first symbol from the end of the vector.
+            Forward, //< Seek the first symbol from the beginning of the vector.
+            Backward //< Seek the first symbol from the end of the vector.
         };
 
         class const_iterator;
 
         Moves() = default;
+        /**
+         * @brief construct moves iterating over a closed interval @p first_symbol and @p last_symbol.
+         *
+         * @param[in] state_post State post to iterate over.
+         * @param[in] first_symbol First symbol to iterate over (including the @p first_symbol).
+         * @param[in] last_symbol Last symbol to iterate over (including the @p last_symbol).
+         * @param[in] seek_first_symbol_direction Direction of how to look for the symbol post to iterate over (equal
+         *  to or first larger than @p first_symbol) in the state post.
+         */
         Moves(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol, 
               Symbol last_symbol = Limits::max_symbol, 
-              SeekFirstSymbolDirection seek_first_symbol = SeekFirstSymbolDirection::Forward);
+              SeekFirstSymbolDirection seek_first_symbol_direction = SeekFirstSymbolDirection::Forward);
         Moves(Moves&&) = default;
         Moves(Moves&) = default;
         Moves& operator=(Moves&& other) noexcept;
@@ -151,9 +160,11 @@ public:
         const_iterator end() const;
     private:
         const StatePost* state_post_;
-        StatePost::const_iterator symbol_post_it_{}; ///< First symbol post (included) to iterate over.
-        StatePost::const_iterator symbol_post_it_end_{}; ///< Last symbol post (included) to iterate over.
-        SeekFirstSymbolDirection iterate_{ SeekFirstSymbolDirection::Forward };
+        StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
+        /// Symbol post iterator end for specified @p last_symbol (one symbol post after the @c last_symbol, or 'end()').
+        StatePost::const_iterator symbol_post_it_end_{}; 
+        /// Direction of how to look up the @c first_symbol to iterate over.
+        SeekFirstSymbolDirection direction_{ SeekFirstSymbolDirection::Forward };
     }; // class Moves.
 
     /**
