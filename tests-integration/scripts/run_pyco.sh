@@ -83,6 +83,20 @@ prepend_directory() {
   fi
 }
 
+# Check that dependencies for running pycobench were installed
+
+tmp_output=$(mktemp)
+"$rootdir/"pycobench >& "$tmp_output"
+if grep -q ModuleNotFoundError "$tmp_output"; then
+  echo "[!] Your system is missing python modules for running pycobench."
+  read -p "Do you wish to install these requirements? [y/n] " choice
+  case "$choice" in
+    y|Y ) python3 -m pip install -r requirements.txt;;
+    * ) die "missing pycobench depedencies; please, install then from 'test-integration/requirements.txt'";;
+  esac
+fi
+rm "$tmp_output"
+
 # Prepares configuration
 config=$(escape_extension "$config" "yaml")
 result_dir=$rootdir/results
@@ -118,7 +132,7 @@ do
     rm ${intermediate[@]}
 done
 
-python "$basedir"/compare_profiles.py "$result_file.csv"
+python3 "$basedir"/compare_profiles.py "$result_file.csv"
 
 secs=$((SECONDS - start_time))
 formated_elapsed=$(printf "%dd:%dh:%dm:%ds\n" $((secs/86400)) $((secs%86400/3600)) $((secs%3600/60)) $((secs%60)))

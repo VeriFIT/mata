@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
     std::vector<std::string> filenames;
     for (int i = 1; i < argc; ++i) {
-        filenames.push_back(argv[i]);
+        filenames.emplace_back(argv[i]);
     }
     std::vector<Nfa> automata;
     mata::OnTheFlyAlphabet alphabet;
@@ -35,7 +35,8 @@ int main(int argc, char *argv[]) {
 
     TIME_BEGIN(intersection_emptiness);
     Nfa result = automata[0];
-    for (int i = 1; i < argc - 1; ++i) {
+    auto uargc = static_cast<unsigned int>(argc - 1);
+    for (unsigned int i = 1; i < uargc; ++i) {
         result = intersection(result, automata[i]);
     }
     is_lang_empty(result);

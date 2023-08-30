@@ -41,12 +41,15 @@ def proc_res(fd, args):
         # we don't have some results twice
         assert eng not in results[params]
 
-        if status == 'finished':
+        if status == 'finished' or status == 'timeout':
             retcode, out, err, runtime = row_tail[0], row_tail[1], \
                                          row_tail[2], row_tail[3]
 
             eng_res = dict()
-            eng_res["runtime"] = runtime
+            if status == 'finished':
+                eng_res["runtime"] = runtime
+            elif status == 'timeout':
+                eng_res["runtime"] = "TO"
             eng_res["retcode"] = retcode
             eng_res["error"] = err
             eng_res["output"] = dict()
@@ -66,9 +69,6 @@ def proc_res(fd, args):
 
         if status == 'error':
             results[params][eng] = "ERR"
-
-        if status == 'timeout':
-            results[params][eng] = "TO"
 
     list_ptrns = list()
     for bench in results:

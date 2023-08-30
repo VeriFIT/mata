@@ -69,3 +69,6 @@ tests-integration/pycobench.tasks
 tests-integration/inputs/*.input
 tests-integration/jobs/*.yaml
 tests-integration/src/utils/config.hh
+tests-integration/results/*.csv
+tests-integration/results/*.out
+tests-integration/results/*.output

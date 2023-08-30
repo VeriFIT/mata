@@ -68,7 +68,7 @@ int load_intermediate_automaton(
 /*
  * Use to print elapsed time of set of timers with user-defined prefix `timer`
  */
-#define TIME_PRINT(timer) std::cout << #timer ": " << timer##_elapsed.count() << "\n"
+#define TIME_PRINT(timer) std::cout << #timer ": " << timer##_elapsed.count() << "\n" << std::flush
 
 /*
  * Use to create initial timer with user-defined prefix `timer`
@@ -90,12 +90,13 @@ int load_intermediate_automaton(
 /*
  * Use to profile single statement.
  *
- * Warning: typing `,` in your statements might cause trouble, e.g., when used as `TIME_STATEMENT(intersection(lhs, rhs))`.
+ * Warning: typing `,` in your statements might cause trouble,
+ *   e.g., when used as `TIME_STATEMENT(intersection, intersection(lhs, rhs))`.
  *   The C/C++ macros are not omnipotent, and might consider the `,` as delimiter of parameters.
  *   Use `TIME_BLOCK` instead then, which might be less error-prone.
  *
  * ```c
- *    TIME_STATEMENT(lhs.size() == rhs.size());
+ *    TIME_STATEMENT(size, lhs.size() == rhs.size());
  * ```
  */
 #define TIME_STATEMENT(timer, stmt) do { \
@@ -110,7 +111,7 @@ int load_intermediate_automaton(
  * Warning: this might fail for some blocks. Use pair of `TIME_BEGIN()` and `TIME_END()` instead then.
  *
  * ```c
- *    TIME_BLOCK(
+ *    TIME_BLOCK(intersection_with_complement,
  *        result = intersection(lhs, rhs);
  *        complement(result)
  *    );
