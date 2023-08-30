@@ -5,6 +5,10 @@ project(
     DESCRIPTION "A fast and simple automata library"
     LANGUAGES C CXX)
 
+option(WERROR "WERROR" OFF)
+option(MATA_BUILD_EXAMPLES "MATA_BUILD_EXAMPLES" ON)
+option(MATA_ENABLE_COVERAGE "Mata coverage" OFF)
+
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
@@ -53,7 +57,6 @@ set(CLANG_WARNINGS
         )
 
 # Set whether to treat warnings as errors.
-option(WERROR "WERROR" OFF)
 message("-- Treating warnings as errors: ${WERROR}")
 if (WERROR)
     set(COMMON_WARNINGS "${COMMON_WARNINGS}" -Werror)
@@ -63,7 +66,6 @@ endif ()
 #                                COVERAGE
 ##############################################################################
 
-option(MATA_ENABLE_COVERAGE "Mata coverage" OFF)
 # if DEBUG, also test coverage
 if((CMAKE_BUILD_TYPE MATCHES "Debug") AND MATA_ENABLE_COVERAGE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
@@ -122,7 +124,6 @@ add_subdirectory(3rdparty/re2 EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/simlib EXCLUDE_FROM_ALL)
 add_subdirectory(3rdparty/cudd EXCLUDE_FROM_ALL)
 
-option(MATA_BUILD_EXAMPLES "MATA_BUILD_EXAMPLES" ON)
 if(MATA_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
