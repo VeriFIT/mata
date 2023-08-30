@@ -25,13 +25,14 @@ root_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.abspath(os.path.join(os.path.join(root_dir, "..", "..")))
 sdist_dir = os.path.join(os.path.join(root_dir, "mata"))
 src_dir = sdist_dir if os.path.exists(sdist_dir) else project_dir
+mata_build_dir = "build-python"
 
 # Build stuff
 project_library_dirs = [
-    os.path.join(src_dir, "build", "src"),
-    os.path.join(src_dir, "build", "3rdparty", "cudd"),
-    os.path.join(src_dir, "build", "3rdparty", "simlib"),
-    os.path.join(src_dir, "build", "3rdparty", "re2"),
+    os.path.join(src_dir, mata_build_dir, "src"),
+    os.path.join(src_dir, mata_build_dir, "3rdparty", "cudd"),
+    os.path.join(src_dir, mata_build_dir, "3rdparty", "simlib"),
+    os.path.join(src_dir, mata_build_dir, "3rdparty", "re2"),
 ]
 
 with open(os.path.join(src_dir, "README.md")) as readme_handle:
@@ -132,7 +133,7 @@ def get_version():
 def _build_mata():
     """Builds mata library"""
     with subprocess.Popen(
-        shlex.split("make release"),
+        shlex.split(f"make release-small BUILD_DIR={mata_build_dir}"),
         cwd=src_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
     ) as p:
         for line in p.stdout:

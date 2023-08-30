@@ -19,6 +19,9 @@ release:
 release-werror:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
 
+release-small:
+	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF .. && $(MAKE) $(MAKE_FLAGS)
+
 coverage:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DMATA_ENABLE_COVERAGE:BOOL=ON .. && $(MAKE) $(MAKE_FLAGS)
 
