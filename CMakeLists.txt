@@ -63,6 +63,7 @@ endif ()
 #                                COVERAGE
 ##############################################################################
 
+option(MATA_ENABLE_COVERAGE "Mata coverage" OFF)
 # if DEBUG, also test coverage
 if(CMAKE_BUILD_TYPE MATCHES "Debug")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g --coverage")
