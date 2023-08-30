@@ -66,7 +66,7 @@ In order to test or measure performance of the code you just built by the above 
 
 We assume this is executed from `tests-integration` directory.
 
-We recommend to use our `./scripts/run_pyco.sh` scripts with is called as follows:
+We recommend to use our `./scripts/run_pyco.sh` scripts which is called as follows:
 ```shell
 ./scripts/run_pyco.sh -c <jobs/JOBS.yaml> -m <method1;method2;...;methodn> -t <TIMEOUT> -j <JOBS> -s <SUFFIX_TAG> <inputs/INPUT.input>
 ```
