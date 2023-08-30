@@ -85,8 +85,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ./tests-integration/corr-single-param-jobs.csv
-            ./tests-integration/corr-double-param-jobs.csv
+            ./tests-integration/results/corr-single-param-jobs.csv
+            ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
 
   run-test-performance:
@@ -117,8 +117,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: |
-            ./tests-integration/corr-single-param-jobs.csv
-            ./tests-integration/corr-double-param-jobs.csv
+            ./tests-integration/results/corr-single-param-jobs.csv
+            ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
 
   compare-performance:
@@ -144,20 +144,20 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            ./tests-integration/corr-single-param-jobs.csv
-            ./tests-integration/corr-double-param-jobs.csv
+            ./tests-integration/results/corr-single-param-jobs.csv
+            ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-target-${{ runner.os }}-${{ github.sha }}
-      - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-target.csv
-      - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-target.csv
+      - run: mv ./tests-integration/results/corr-single-param-jobs.csv single-param-target.csv
+      - run: mv ./tests-integration/results/corr-double-param-jobs.csv double-param-target.csv
       - name: Restore baseline profiles
         uses: actions/cache/restore@v3
         with:
           path: |
-            ./tests-integration/corr-single-param-jobs.csv
-            ./tests-integration/corr-double-param-jobs.csv
+            ./tests-integration/results/corr-single-param-jobs.csv
+            ./tests-integration/results/corr-double-param-jobs.csv
           key: performance-tests-baseline-${{ runner.os }}-${{ github.sha }}
-      - run: mv ./tests-integration/corr-single-param-jobs.csv single-param-baseline.csv
-      - run: mv ./tests-integration/corr-double-param-jobs.csv double-param-baseline.csv
+      - run: mv ./tests-integration/results/corr-single-param-jobs.csv single-param-baseline.csv
+      - run: mv ./tests-integration/results/corr-double-param-jobs.csv double-param-baseline.csv
       - name: LOOK HERE for Comparison of operations accepting single automaton as parameters
         run: python3 tests-integration/scripts/compare_profiles.py single-param-target.csv single-param-baseline.csv
       - name: LOOK HERE for Comparison of operations accepting two automata as parameters
