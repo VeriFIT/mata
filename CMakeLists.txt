@@ -5,7 +5,7 @@ project(
     DESCRIPTION "A fast and simple automata library"
     LANGUAGES C CXX)
 
-option(WERROR "WERROR" OFF)
+option(MATA_WERROR "WERROR" OFF)
 option(MATA_BUILD_EXAMPLES "MATA_BUILD_EXAMPLES" ON)
 option(MATA_ENABLE_COVERAGE "Mata coverage" OFF)
 
@@ -57,9 +57,9 @@ set(MATA_CLANG_WARNINGS
         )
 
 # Set whether to treat warnings as errors.
-message("-- Treating warnings as errors: ${WERROR}")
-if (WERROR)
-    set(COMMON_WARNINGS "${COMMON_WARNINGS}" -Werror)
+message("-- Treating warnings as errors: ${MATA_WERROR}")
+if (MATA_WERROR)
+    set(MATA_COMMON_WARNINGS "${MATA_COMMON_WARNINGS}" -Werror)
 endif ()
 
 ##############################################################################
