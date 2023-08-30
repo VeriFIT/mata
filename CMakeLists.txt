@@ -31,7 +31,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ##############################################################################
 
 # Common warnings compiler flags.
-set(COMMON_WARNINGS
+set(MATA_COMMON_WARNINGS
         -Wextra
         -Wall
         -Wfloat-equal
@@ -49,7 +49,7 @@ set(COMMON_WARNINGS
         -Wreturn-type
         )
 # Clang-specific warnings compiler flags.
-set(CLANG_WARNINGS
+set(MATA_CLANG_WARNINGS
         -Winconsistent-missing-override
         -Wgnu-anonymous-struct
         -Wnested-anon-types
