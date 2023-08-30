@@ -8,6 +8,8 @@ project(
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
+# -fPIC, needed for python binding
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 # if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
@@ -41,7 +43,6 @@ set(COMMON_WARNINGS
         -Wconversion
         -Wsign-conversion
         -Wreturn-type
-        -fPIC
         )
 # Clang-specific warnings compiler flags.
 set(CLANG_WARNINGS
