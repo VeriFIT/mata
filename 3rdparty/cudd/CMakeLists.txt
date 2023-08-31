@@ -143,4 +143,4 @@ target_include_directories(cudd PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/cudd/"
                                         "${CMAKE_CURRENT_SOURCE_DIR}/util/"
                                         "${CMAKE_CURRENT_SOURCE_DIR}/cplusplus/"
                                         "${CMAKE_CURRENT_BINARY_DIR}/")
-target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+target_include_directories(cudd PUBLIC  "${CMAKE_CURRENT_SOURCE_DIR}/include/") # for cudd_config.h
