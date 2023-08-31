@@ -147,7 +147,7 @@ public:
         const_iterator end() const;
 
     private:
-        const StatePost* state_post_;
+        const StatePost* state_post_{ nullptr };
         StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
         /// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
         ///  end()).
@@ -188,7 +188,7 @@ private:
     const StatePost* state_post_{ nullptr };
     StatePost::const_iterator symbol_post_it_{};
     StateSet::const_iterator target_it_{};
-    StatePost::const_iterator symbol_post_it_end_{};
+    StatePost::const_iterator symbol_post_end_{};
     bool is_end_{ false };
     /// Internal allocated instance of @c Move which is set for the move currently iterated over and returned as
     ///  a reference with @c operator*().

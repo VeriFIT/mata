@@ -362,9 +362,9 @@ bool Delta::operator==(const Delta& other) const {
 
 StatePost::Moves::const_iterator::const_iterator(
     const StatePost& state_post, const StatePost::const_iterator symbol_post_it,
-    const StatePost::const_iterator symbol_post_it_end)
-    : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_it_end_{ symbol_post_it_end } {
-    if (symbol_post_it_ == symbol_post_it_end_) {
+    const StatePost::const_iterator symbol_post_end)
+    : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_end_{ symbol_post_end } {
+    if (symbol_post_it_ == symbol_post_end_) {
         is_end_ = true;
         return;
     }
@@ -375,8 +375,8 @@ StatePost::Moves::const_iterator::const_iterator(
 }
 
 StatePost::Moves::const_iterator::const_iterator(const StatePost& state_post)
-    : state_post_{ &state_post }, symbol_post_it_{ state_post.begin() }, symbol_post_it_end_{ state_post.end() } {
-    if (symbol_post_it_ == symbol_post_it_end_) {
+    : state_post_{ &state_post }, symbol_post_it_{ state_post.begin() }, symbol_post_end_{ state_post.end() } {
+    if (symbol_post_it_ == symbol_post_end_) {
         is_end_ = true;
         return;
     }
@@ -394,13 +394,13 @@ StatePost::Moves::const_iterator& StatePost::Moves::const_iterator::operator++()
     }
 
     // Iterate over to the next symbol post, which can be either an end iterator, or symbol post whose
-    //  symbol <= last_symbol_.
+    //  symbol <= symbol_post_end_.
     ++symbol_post_it_;
-    if (symbol_post_it_ == symbol_post_it_end_) {
+    if (symbol_post_it_ == symbol_post_end_) {
         is_end_ = true;
         return *this;
     }
-    // The current symbol post is valid (not equal symbol_post_it_end_).
+    // The current symbol post is valid (not equal symbol_post_end_).
     move_.symbol = symbol_post_it_->symbol;
     target_it_ = symbol_post_it_->targets.begin();
     move_.target = *target_it_;
@@ -420,7 +420,7 @@ bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_
         return false;
     }
     return symbol_post_it_ == other.symbol_post_it_ && target_it_ == other.target_it_
-           && symbol_post_it_end_ == other.symbol_post_it_end_;
+           && symbol_post_end_ == other.symbol_post_end_;
 }
 
 size_t StatePost::num_of_moves() const {

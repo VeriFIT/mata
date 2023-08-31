@@ -152,6 +152,13 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
 
         state_post = nfa.delta.state_post(1);
         moves = state_post.moves();
+        StatePost::Moves moves_custom;
+        moves_custom = moves;
+        CHECK(std::vector<Move>{ moves.begin(), moves.end() }
+              == std::vector<Move>{ moves_custom.begin(), moves_custom.end() });
+        moves_custom = state_post.moves(state_post.begin(), state_post.end());
+        CHECK(std::vector<Move>{ moves.begin(), moves.end() }
+              == std::vector<Move>{ moves_custom.begin(), moves_custom.end() });
         iterated_moves.clear();
         for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
             iterated_moves.push_back(*move_it);
@@ -189,6 +196,7 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
             iterated_moves.push_back(*move_it);
         }
         CHECK(iterated_moves.empty());
+        CHECK(StatePost::Moves::const_iterator{ state_post } == moves.end());
         iterated_moves = { moves.begin(), moves.end() };
         CHECK(iterated_moves.empty());
         iterated_moves.clear();
@@ -246,6 +254,11 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
         iterated_moves.clear();
         for (const Move& move: symbol_moves) { iterated_moves.push_back(move); }
         CHECK(iterated_moves == std::vector<Move>{ { 1, 1 }, { 2, 1 } });
+        symbol_moves = state_post.moves_symbols(0);
+        iterated_moves.clear();
+        for (const Move& move: symbol_moves) { iterated_moves.push_back(move); }
+        CHECK(iterated_moves.empty());
+
         state_post = nfa.delta.state_post(1);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 3, 2 } });
@@ -255,6 +268,17 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
         state_post = nfa.delta.state_post(4);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() }.empty());
+
+        // Create custom moves iterator.
+        state_post = nfa.delta[0];
+        moves = { state_post, state_post.cbegin(), state_post.cbegin() + 2 };
+        iterated_moves = { moves.begin(), moves.end() };
+        CHECK(iterated_moves == std::vector<Move>{ { 1, 1 }, { 2, 1 } });
+
+        state_post = nfa.delta[20];
+        moves = { state_post, state_post.cbegin(), state_post.cend() };
+        iterated_moves = { moves.begin(), moves.end() };
+        CHECK(iterated_moves.empty());
     }
 }
 
@@ -265,7 +289,11 @@ TEST_CASE("mata::nfa::Delta iteration over transitions") {
 
     SECTION("empty automaton") {
         Delta::Transitions transitions{ nfa.delta.transitions() };
-        REQUIRE(transitions.begin() == transitions.end());
+        CHECK(transitions.begin() == transitions.end());
+        Delta::Transitions::const_iterator transition_it{ nfa.delta };
+        CHECK(transition_it == transitions.end());
+        transition_it = { nfa.delta, 0 };
+        CHECK(transition_it == transitions.end());
     }
 
     SECTION("Simple NFA") {
