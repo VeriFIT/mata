@@ -150,7 +150,6 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
         StatePost::Moves epsilon_moves{ state_post.moves_epsilons() };
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-
         state_post = nfa.delta.state_post(1);
         moves = state_post.moves();
         iterated_moves.clear();
@@ -229,13 +228,12 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
         state_post = nfa.delta.state_post(0);
         epsilon_moves = state_post.moves_epsilons(3);
         iterated_moves.clear();
-        for (const Move& move: epsilon_moves) {
-           iterated_moves.push_back(move);
-        }
+        for (const Move& move: epsilon_moves) { iterated_moves.push_back(move); }
         CHECK(iterated_moves == std::vector<Move>{ { 5, 1 }, { EPSILON, 2 }});
         state_post = nfa.delta.state_post(1);
         epsilon_moves = state_post.moves_epsilons(3);
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { 3, 2 }, { EPSILON, 3 } });
+
         state_post = nfa.delta.state_post(2);
         epsilon_moves = state_post.moves_epsilons(3);
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
@@ -246,16 +244,14 @@ TEST_CASE("mata::nfa::StatePost iteration over moves") {
         state_post = nfa.delta.state_post(0);
         StatePost::Moves symbol_moves = state_post.moves_symbols(3);
         iterated_moves.clear();
-        for (const Move& move: symbol_moves) {
-           iterated_moves.push_back(move);
-        }
+        for (const Move& move: symbol_moves) { iterated_moves.push_back(move); }
         CHECK(iterated_moves == std::vector<Move>{ { 1, 1 }, { 2, 1 } });
         state_post = nfa.delta.state_post(1);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 3, 2 } });
         state_post = nfa.delta.state_post(2);
         symbol_moves = state_post.moves_symbols(3);
-        CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 0, 1}, { 0 , 3 } });
+        CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 0, 1 }, { 0 , 3 } });
         state_post = nfa.delta.state_post(4);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() }.empty());

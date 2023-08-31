@@ -435,7 +435,7 @@ StatePost::Moves& StatePost::Moves::operator=(StatePost::Moves&& other) noexcept
     if (&other != this) {
         state_post_ = other.state_post_;
         symbol_post_it_ = std::move(other.symbol_post_it_);
-        symbol_post_it_end_ = std::move(other.symbol_post_it_end_);
+        symbol_post_end_ = std::move(other.symbol_post_end_);
     }
     return *this;
 }
@@ -444,26 +444,63 @@ StatePost::Moves& StatePost::Moves::operator=(const Moves& other) noexcept {
     if (&other != this) {
         state_post_ = other.state_post_;
         symbol_post_it_ = other.symbol_post_it_;
-        symbol_post_it_end_ = other.symbol_post_it_end_;
+        symbol_post_end_ = other.symbol_post_end_;
     }
     return *this;
 }
 
 StatePost::Moves StatePost::moves(
-    const Symbol first_symbol, const Symbol last_symbol, const bool iterate_only_epsilons) const { 
-    return { *this, first_symbol, last_symbol, iterate_only_epsilons }; 
+    const StatePost::const_iterator symbol_post_it, const StatePost::const_iterator symbol_post_end) const {
+    return { *this, symbol_post_it, symbol_post_end };
 }
 
 StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
-    return { *this, first_epsilon, Limits::max_symbol, true };
+    const StatePost::const_iterator symbol_post_begin{ cbegin() };
+    const StatePost::const_iterator symbol_post_end{ cend() };
+    if (empty()) {
+        return { *this, symbol_post_end, symbol_post_end };
+    }
+    if (symbol_post_begin->symbol >= first_epsilon) {
+        return { *this, symbol_post_begin, symbol_post_end };
+    }
+
+    StatePost::const_iterator previous_symbol_post_it{ std::prev(symbol_post_end) };
+    StatePost::const_iterator symbol_post_it{ previous_symbol_post_it };
+    while (previous_symbol_post_it != symbol_post_begin && first_epsilon < previous_symbol_post_it->symbol) {
+        symbol_post_it = previous_symbol_post_it;
+        --previous_symbol_post_it;
+    }
+    if (first_epsilon <= previous_symbol_post_it->symbol) {
+        return { *this, previous_symbol_post_it, symbol_post_end };
+    }
+    if (first_epsilon <= symbol_post_it->symbol) {
+        return { *this, symbol_post_it, symbol_post_end };
+    }
+    return { *this, symbol_post_end, symbol_post_end };
 }
 
 StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
-    return { *this, Limits::min_symbol, last_symbol, false };
+    const StatePost::const_iterator symbol_post_end{ cend() };
+    const StatePost::const_iterator symbol_post_begin{ cbegin() };
+    const Symbol symbol_post_begin_symbol{ symbol_post_begin->symbol };
+    if (empty() || symbol_post_begin_symbol > last_symbol) {
+        return { *this, symbol_post_end, symbol_post_end };
+    }
+
+    StatePost::const_iterator end_symbol_post_it { symbol_post_end };
+    StatePost::const_iterator previous_end_symbol_post_it{ std::prev(symbol_post_end) };
+    while (previous_end_symbol_post_it != symbol_post_begin && last_symbol < previous_end_symbol_post_it->symbol) {
+        end_symbol_post_it = previous_end_symbol_post_it;
+        --previous_end_symbol_post_it;
+    }
+    if (last_symbol >= previous_end_symbol_post_it->symbol) {
+        return { *this, symbol_post_begin, end_symbol_post_it };
+    }
+    return { *this, symbol_post_end, symbol_post_end };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
-     return { *state_post_, symbol_post_it_, symbol_post_it_end_ };
+     return { *state_post_, symbol_post_it_, symbol_post_end_ };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::end() const { return const_iterator{}; }
@@ -473,50 +510,6 @@ Delta::Transitions Delta::transitions() const { return Transitions{ this }; }
 Delta::Transitions::const_iterator Delta::Transitions::begin() const { return const_iterator{ *delta_ }; }
 Delta::Transitions::const_iterator Delta::Transitions::end() const { return const_iterator{}; }
 
-StatePost::Moves::Moves(const StatePost& state_post, Symbol first_symbol, Symbol last_symbol, 
-                        const bool iterate_only_epsilons): state_post_{ &state_post } {
-    const StatePost::const_iterator state_post_end{ state_post_->end() };
-    if (state_post_->empty()) {
-        symbol_post_it_ = state_post_end;
-        symbol_post_it_end_ = state_post_end;
-        return;
-    }
-
-    const StatePost::const_iterator symbol_post_it_begin{ state_post_->begin() };
-
-    StatePost::const_iterator previous_symbol_post_it = state_post_end;
-    do {
-        symbol_post_it_end_ = previous_symbol_post_it;
-        --previous_symbol_post_it;
-    } while (previous_symbol_post_it != symbol_post_it_begin && last_symbol < previous_symbol_post_it->symbol);
-    if (previous_symbol_post_it == symbol_post_it_begin && last_symbol < previous_symbol_post_it->symbol) {
-        symbol_post_it_ = state_post_end;
-        symbol_post_it_end_ = state_post_end;
-        return;
-    } // Else, symbol_post_it_end_ is already set to the symbol post with symbol greater than last_symbol (it can be
-      //  even state_post_end).
-
-    StatePost::const_iterator symbol_post_it;
-    if (iterate_only_epsilons) { // Iterate only over epsilons.
-        StatePost::const_iterator previous_symbol_post_it = state_post_end;
-        do {
-            symbol_post_it = previous_symbol_post_it;
-            --previous_symbol_post_it;
-        } while (previous_symbol_post_it != symbol_post_it_begin && first_symbol < previous_symbol_post_it->symbol);
-        if (previous_symbol_post_it == symbol_post_it_begin || first_symbol == previous_symbol_post_it->symbol) {
-            symbol_post_it = previous_symbol_post_it;
-        }
-        if (symbol_post_it->symbol < first_symbol) {
-            symbol_post_it_ = symbol_post_it_end_;
-            return;
-        }
-    } else { // Iterate over all labels or over only symbols.
-        symbol_post_it = symbol_post_it_begin;
-        while (symbol_post_it != symbol_post_it_end_ && first_symbol > symbol_post_it->symbol) { ++symbol_post_it; }
-        if (symbol_post_it == symbol_post_it_end_) {
-            symbol_post_it_ = symbol_post_it_end_;
-            return;
-        }
-    }
-    symbol_post_it_ = symbol_post_it;
-}
+StatePost::Moves::Moves(
+    const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end)
+    : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_end_{ symbol_post_end } {}

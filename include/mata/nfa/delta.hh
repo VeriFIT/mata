@@ -128,56 +128,42 @@ public:
      */
     class Moves {
     public:
-        /**
-         * @brief From which direction to seek the first symbol in the vector.
-         */
-        enum class SeekFirstSymbolDirection {
-            Forward, //< Seek the first symbol from the beginning of the vector.
-            Backward //< Seek the first symbol from the end of the vector.
-        };
-
-        class const_iterator;
-
         Moves() = default;
         /**
-         * @brief construct moves iterating over a closed interval @p first_symbol and @p last_symbol.
+         * @brief construct moves iterating over a range @p symbol_post_it (including) to @p symbol_post_end (excluding).
          *
          * @param[in] state_post State post to iterate over.
-         * @param[in] first_symbol First symbol to iterate over (including the @p first_symbol).
-         * @param[in] last_symbol Last symbol to iterate over (including the @p last_symbol).
-         * @param[in] iterate_only_epsilons Whether to iterate only over epsilons. Set to 'true' if you want to iterate
-         *  only over epsilons.
+         * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
+         * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
          */
-        Moves(const StatePost& state_post, Symbol first_symbol = Limits::min_symbol, 
-              Symbol last_symbol = Limits::max_symbol, bool iterate_only_epsilons = false);
+        Moves(const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
         Moves(Moves&&) = default;
         Moves(Moves&) = default;
         Moves& operator=(Moves&& other) noexcept;
         Moves& operator=(const Moves& other) noexcept;
 
+        class const_iterator;
         const_iterator begin() const;
         const_iterator end() const;
+
     private:
         const StatePost* state_post_;
         StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
         /// Symbol post iterator end for specified @p last_symbol (one symbol post after the @c last_symbol, or 'end()').
-        StatePost::const_iterator symbol_post_it_end_{}; 
-        bool iterate_only_epsilons_{ false };
+        StatePost::const_iterator symbol_post_end_{}; 
     }; // class Moves.
 
     /**
      * Iterator over all moves (over all labels) in @c StatePost represented as @c Move instances.
      */
-    Moves moves() const { return { *this }; }
+    Moves moves() const { return { *this, this->cbegin(), this->cend() }; }
     /**
      * Iterator over specified moves in @c StatePost represented as @c Move instances.
      *
-     * @param[in] first_symbol First symbol to iterate over.
-     * @param[in] last_symbol Last symbol to iterate over.
-     * @param[in] iterate_only_epsilons Whether to iterate only over epsilons. Set to 'true' if you want to iterate 
-     *  over only epsilons.
+     * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
+     * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
      */
-    Moves moves(Symbol first_symbol, Symbol last_symbol, bool iterate_only_epsilons = false) const;
+    Moves moves(StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end) const;
     /**
      * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
      */
