@@ -35,6 +35,7 @@ test:
 	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
 
 test-coverage:
+	find . -name "**.gcda" -delete
 	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
 	gcovr -p -e "3rdparty/*" -j 6 --exclude-unreachable-branches --exclude-throw-branches $(BUILD_DIR)/src $(BUILD_DIR)/tests
 
