@@ -134,7 +134,7 @@ public:
          *
          * @param[in] state_post State post to iterate over.
          * @param[in] symbol_post_it First iterator over symbol posts to iterate over.
-         * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel, is not iterated over).
+         * @param[in] symbol_post_end End iterator over symbol posts (which functions as an sentinel; is not iterated over).
          */
         Moves(const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end);
         Moves(Moves&&) = default;
@@ -149,7 +149,8 @@ public:
     private:
         const StatePost* state_post_;
         StatePost::const_iterator symbol_post_it_{}; ///< Current symbol post iterator to iterate over.
-        /// Symbol post iterator end for specified @p last_symbol (one symbol post after the @c last_symbol, or 'end()').
+        /// End symbol post iterator which is no longer iterated over (one after the last symbol post iterated over or
+        ///  end()).
         StatePost::const_iterator symbol_post_end_{}; 
     }; // class Moves.
 

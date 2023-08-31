@@ -482,8 +482,7 @@ StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
 StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
     const StatePost::const_iterator symbol_post_end{ cend() };
     const StatePost::const_iterator symbol_post_begin{ cbegin() };
-    const Symbol symbol_post_begin_symbol{ symbol_post_begin->symbol };
-    if (empty() || symbol_post_begin_symbol > last_symbol) {
+    if (empty() || symbol_post_begin->symbol > last_symbol) {
         return { *this, symbol_post_end, symbol_post_end };
     }
 
@@ -493,10 +492,10 @@ StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
         end_symbol_post_it = previous_end_symbol_post_it;
         --previous_end_symbol_post_it;
     }
-    if (last_symbol >= previous_end_symbol_post_it->symbol) {
-        return { *this, symbol_post_begin, end_symbol_post_it };
-    }
-    return { *this, symbol_post_end, symbol_post_end };
+    // Either previous_end_symbol_post_it is == symbol_post_begin, at which case we should iterate only over the first
+    //  symbol post (that is, end_symbol_post_it == symbol_post_begin + 1); or, previous_end_symbol_post_it jumped over
+    //  last_symbol and end_symbol_post_it is the first symbol post (or end()) after last symbol.
+    return { *this, symbol_post_begin, end_symbol_post_it };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
