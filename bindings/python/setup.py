@@ -134,7 +134,7 @@ def get_version():
 def _build_mata():
     """Builds mata library"""
     with subprocess.Popen(
-        shlex.split(f"make release-small BUILD_DIR={mata_build_dir}"),
+        shlex.split(f"make release-lib BUILD_DIR={mata_build_dir}"),
         cwd=src_dir, bufsize=1, universal_newlines=True, stdout=subprocess.PIPE, shell=False
     ) as p:
         for line in p.stdout:
