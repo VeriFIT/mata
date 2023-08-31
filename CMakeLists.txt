@@ -43,18 +43,20 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     endif()
 
     ### Testing ###
-    include(CTest) # also enables testing
+    include(CTest) # also enables testing, if it was not disabled from command line
 
-    # Catch2 library for writing tests
-    FetchContent_Declare(
-    Catch2
-    GIT_REPOSITORY https://github.com/catchorg/Catch2.git
-    GIT_TAG        v2.13.9 # TODO: maybe we should move to v3
-    )
-    FetchContent_MakeAvailable(Catch2)
-    list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
-    include(Catch)
-    # Adds Catch2::Catch2
+    if (BUILD_TESTING)
+        # Catch2 library for writing tests
+        FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v2.13.9 # TODO: maybe we should move to v3
+        )
+        FetchContent_MakeAvailable(Catch2)
+        list(APPEND CMAKE_MODULE_PATH ${Catch2_SOURCE_DIR}/contrib)
+        include(Catch)
+        # Adds Catch2::Catch2
+    endif()
 
 endif()
 
@@ -115,9 +117,8 @@ if(MATA_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-# Build tests only if Mata is the main project (can be overriden by MATA_BUILD_TESTING)
-# and we enabled testing
-if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR MATA_BUILD_TESTING) AND BUILD_TESTING)
+# Build tests only if Mata is the main project and we enabled testing
+if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND BUILD_TESTING)
     add_subdirectory(tests)
     add_subdirectory(tests-integration)
 endif()
