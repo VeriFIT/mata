@@ -3,7 +3,7 @@ project(
     libMATA
     #VERSION ???? TODO: set the version automatically during merging
     DESCRIPTION "A fast and simple automata library"
-    LANGUAGES C CXX)
+    LANGUAGES C CXX) # C is needed for CUDD
 
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
