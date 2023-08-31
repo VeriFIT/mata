@@ -3,7 +3,7 @@ project(
     libMATA
     #VERSION ???? TODO: set the version automatically during merging
     DESCRIPTION "A fast and simple automata library"
-    LANGUAGES CXX)
+    LANGUAGES C CXX)
 
 # 3rd party modules
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
