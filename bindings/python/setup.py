@@ -25,7 +25,7 @@ root_dir = os.path.abspath(os.path.dirname(__file__))
 project_dir = os.path.abspath(os.path.join(os.path.join(root_dir, "..", "..")))
 sdist_dir = os.path.join(os.path.join(root_dir, "mata"))
 src_dir = sdist_dir if os.path.exists(sdist_dir) else project_dir
-mata_build_dir = "build-python"
+mata_build_dir = "build"
 
 # Build stuff
 project_library_dirs = [

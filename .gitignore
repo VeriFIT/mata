@@ -34,7 +34,6 @@
 
 # the build directory
 build/
-/build-python/
 Testing/
 
 # documentation
