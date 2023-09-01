@@ -7,11 +7,11 @@ TEST_FLAGS=-j 50 --output-on-failure
 all:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
 
-# Builds everything (library, tests, examples) in debug mode
+# Builds everything (library, unit tests, integration tests, examples) in debug mode
 debug:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
 
-# Builds everything (library, tests, examples) in debug mode with warnings turned into errors
+# Builds everything (library, unit tests, integration tests, examples) in debug mode with warnings turned into errors
 debug-werror:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
 
@@ -19,11 +19,11 @@ debug-werror:
 debug-lib:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF .. && $(MAKE) $(MAKE_FLAGS)
 
-# Builds everything (library, tests, examples) in release mode
+# Builds everything (library, unit tests, integration tests, examples) in release mode
 release:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
 
-# Builds everything (library, tests, examples) in debreleaseug mode with warnings turned into errors
+# Builds everything (library, unit tests, integration tests, examples) in debreleaseug mode with warnings turned into errors
 release-werror:
 	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
 
