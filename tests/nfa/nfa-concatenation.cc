@@ -419,7 +419,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[1]);
         CHECK(result.size() == 2);
-        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.delta.num_of_transitions() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
 
@@ -437,7 +437,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.delta.num_of_transitions() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
 
@@ -456,7 +456,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 2);
+        CHECK(result.delta.num_of_transitions() == 2);
         CHECK(result.delta.contains(1, 'a', 2));
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
@@ -477,7 +477,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
         CHECK(result.size() == 4);
-        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.delta.num_of_transitions() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
         CHECK(result.delta.contains(1, EPSILON, 2));
@@ -504,7 +504,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
         CHECK(result.size() == 6);
-        CHECK(result.get_num_of_trans() == 4);
+        CHECK(result.delta.num_of_transitions() == 4);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
         CHECK(result.delta.contains(2, 'c', 5));
@@ -535,7 +535,7 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.delta.num_of_transitions() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 2));
         CHECK(result.delta.contains(1, EPSILON, 2));

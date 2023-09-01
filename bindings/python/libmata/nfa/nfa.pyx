@@ -379,12 +379,12 @@ cdef class Nfa:
         """
         return self.thisptr.get().delta.contains(source, symbol, target)
 
-    def get_num_of_trans(self):
+    def get_num_of_transitions(self):
         """Returns number of transitions in automaton
 
         :return: number of transitions in automaton
         """
-        return self.thisptr.get().get_num_of_trans()
+        return self.thisptr.get().delta.num_of_transitions()
 
     def clear(self):
         """Clears all of the internals in the automaton"""
@@ -401,8 +401,9 @@ cdef class Nfa:
 
         :return: stream of transitions
         """
-        iterator = self.thisptr.get().begin()
-        while iterator != self.thisptr.get().end():
+        cdef CTransitions transitions = self.thisptr.get().delta.transitions()
+        cdef CTransitions.const_iterator iterator = transitions.begin()
+        while iterator != transitions.end():
             trans = Transition()
             lhs = dereference(iterator)
             trans.copy_from(lhs)
@@ -444,23 +445,35 @@ cdef class Nfa:
     def get_trans_as_sequence(self):
         """Get automaton transitions as a sequence.
 
+        TODO: Refactor into a generator.
+
         :return: List of automaton transitions.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_as_sequence()
+        cdef CTransitions c_transitions = self.thisptr.get().delta.transitions()
         transitions = []
         for c_transition in c_transitions:
             transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
         return transitions
 
-    def get_trans_from_state_as_sequence(self, State state_from):
+    def get_trans_from_state_as_sequence(self, State source) -> list[Transition]:
         """Get automaton transitions from state_from as a sequence.
+
+        TODO: Refactor into a generator.
 
         :return: List of automaton transitions.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_trans_from_as_sequence(state_from)
         transitions = []
-        for c_transition in c_transitions:
-            transitions.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
+        cdef CStatePost c_state_post = self.thisptr.get().delta[source]
+        cdef COrdVector[CSymbolPost].const_iterator c_state_post_it = c_state_post.cbegin()
+        cdef CSymbolPost c_symbol_post
+        cdef COrdVector[State].const_iterator c_symbol_post_it
+        while c_state_post_it != c_state_post.cend():
+            c_symbol_post = dereference(c_state_post_it)
+            c_symbol_post_it = c_symbol_post.begin()
+            while c_symbol_post_it != c_symbol_post.end():
+                transitions.append(Transition(source, c_symbol_post.symbol, dereference(c_symbol_post_it)))
+                preinc(c_symbol_post_it)
+            preinc(c_state_post_it)
         return transitions
 
     def get_useful_states(self):

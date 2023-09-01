@@ -180,7 +180,7 @@ TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
         CHECK(segments[0].final.size() == 2);
         CHECK(segments[0].final[0]);
         CHECK(segments[0].final[1]);
-        CHECK(segments[0].get_num_of_trans() == 1);
+        CHECK(segments[0].delta.num_of_transitions() == 1);
         CHECK(segments[0].delta.contains(0, 'a', 1));
 
         CHECK(segments[1].initial.size() == 2);
@@ -189,7 +189,7 @@ TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
         CHECK(segments[1].final.size() == 2);
         CHECK(segments[1].final[0]);
         CHECK(segments[1].final[2]);
-        CHECK(segments[1].get_num_of_trans() == 1);
+        CHECK(segments[1].delta.num_of_transitions() == 1);
         CHECK(segments[1].delta.contains(1, 'b', 2));
 
         CHECK(segments[2].initial.size() == 2);
@@ -198,6 +198,6 @@ TEST_CASE("mata::nfa::Segmentation::split_segment_automaton()") {
         CHECK(segments[2].final.size() == 2);
         CHECK(segments[2].final[0]);
         CHECK(segments[2].final[1]);
-        CHECK(segments[2].get_num_of_trans() == 0);
+        CHECK(segments[2].delta.num_of_transitions() == 0);
     }
 }

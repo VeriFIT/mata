@@ -436,7 +436,7 @@ TEST_CASE("correct use of mata::Parser::parse_mf_section()")
         CHECK(aut.final.size() == 1);
         CHECK(aut.initial.contains(0));
         CHECK(aut.delta.contains(0, 0, 0) == 1);
-        CHECK(aut.delta.size() == 1);
+        CHECK(aut.delta.num_of_transitions() == 1);
     }
 } // parse_mf_section correct }}}
 

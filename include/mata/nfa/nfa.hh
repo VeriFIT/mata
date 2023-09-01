@@ -225,27 +225,6 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * @brief Get a number of transitions in the whole automaton.
-     *
-     * The operation has constant time complexity.
-     */
-    size_t get_num_of_trans() const { return static_cast<size_t>(std::distance(delta.transitions_begin(),
-                                                                               delta.transitions_end())); }
-
-    /**
-     * Get transitions as a sequence of @c Trans.
-     * @return Sequence of transitions as @c Trans.
-     */
-    std::vector<Transition> get_trans_as_sequence() const;
-
-    /**
-     * Get transitions from @p state_from as a sequence of @c Trans.
-     * @param state_from[in] Source state_from of transitions to get.
-     * @return Sequence of transitions as @c Trans from @p state_from.
-     */
-    std::vector<Transition> get_trans_from_as_sequence(State state_from) const;
-
-    /**
      * Get transitions leading to @p state_to.
      * @param state_to[in] Target state for transitions to get.
      * @return Sequence of @c Trans transitions leading to @p state_to.
@@ -310,33 +289,6 @@ public:
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
-
-    struct const_iterator {
-        const Nfa* nfa;
-        size_t trIt;
-        StatePost::const_iterator tlIt;
-        StateSet::const_iterator ssIt;
-        Transition trans;
-        bool is_end = { false };
-
-        const_iterator() : nfa(), trIt(0), tlIt(), ssIt(), trans() { };
-        static const_iterator for_begin(const Nfa* nfa);
-        static const_iterator for_end(const Nfa* nfa);
-
-        // FIXME: He, what is this? Some comment would help.
-        // I am thinking about that removing everything having to do with Transition might be a good thing. Transition
-        //  adds clutter and makes people write inefficient code.
-        void refresh_trans() { this->trans = {trIt, this->tlIt->symbol, *(this->ssIt)}; }
-
-        const Transition& operator*() const { return this->trans; }
-
-        bool operator==(const const_iterator& rhs) const;
-        bool operator!=(const const_iterator& rhs) const { return !(*this == rhs);}
-        const_iterator& operator++();
-    }; // }}}
-
-    const_iterator begin() const { return const_iterator::for_begin(this); }
-    const_iterator end() const { return const_iterator::for_end(this); }
 
     /**
      * @brief Expand alphabet by symbols from this automaton to given alphabet
