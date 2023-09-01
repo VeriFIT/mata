@@ -21,7 +21,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
 using namespace mata::parser;
 using namespace mata::utils;

@@ -7,7 +7,7 @@
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 using namespace mata::nfa;
 

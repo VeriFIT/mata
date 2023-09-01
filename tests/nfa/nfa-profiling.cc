@@ -1,6 +1,6 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 #include "utils.hh"
 
 #include "mata/nfa/nfa.hh"

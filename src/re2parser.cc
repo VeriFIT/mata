@@ -20,8 +20,8 @@
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"
-#include "re2/re2/regexp.h"
-#include "re2/re2/prog.h"
+#include "re2/regexp.h"
+#include "re2/prog.h"
 
 namespace {
     using namespace mata::nfa;

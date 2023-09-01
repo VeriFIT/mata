@@ -2,7 +2,7 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/alphabet.hh"
 #include "mata/nfa/nfa.hh"

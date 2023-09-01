@@ -15,7 +15,7 @@
  * GNU General Public License for more details.
  */
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
