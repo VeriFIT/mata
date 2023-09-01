@@ -4,7 +4,7 @@
 
 #include <iostream>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main() {
     Nfa aut(10);

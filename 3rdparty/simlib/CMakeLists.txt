@@ -1,19 +1,5 @@
-add_library(simlib src/explicit_lts_sim.cc)
+add_library(simlib OBJECT src/explicit_lts_sim.cc)
 
-set(cxx_compiler_flags
-        -Wall
-        -Wfloat-equal
-        -fms-extensions
-        -fdiagnostics-show-option
-        -std=c++14
-        -Wctor-dtor-privacy
-        -Weffc++
-        -fPIC
-        -fno-strict-aliasing
-        )
+target_compile_features(simlib PUBLIC cxx_std_20)
 
-foreach(flag ${cxx_compiler_flags})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach()
-
-target_include_directories(simlib PUBLIC ./include/)
+target_include_directories(simlib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")

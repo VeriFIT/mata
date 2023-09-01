@@ -2,14 +2,14 @@
 // Created by Lukáš Holík on 29.10.2022.
 //
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 #include "mata/utils/synchronized-iterator.hh"
 
-using namespace Mata::Util;
+using namespace mata::utils;
 
-TEST_CASE("Mata::Util::SynchronizedIterator")
+TEST_CASE("mata::utils::SynchronizedIterator")
 {
 
     SECTION("synchronized_universal_iterator, basic functionality")

@@ -15,14 +15,14 @@
  * GNU General Public License for more details.
  */
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
 
-using namespace Mata::Util;
+using namespace mata::utils;
 
-TEST_CASE("Mata::Util::OrdVector::remove()") {
+TEST_CASE("mata::utils::OrdVector::remove()") {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set{ 1, 2, 3, 4, 6 };
     set.remove(3);
@@ -38,7 +38,7 @@ TEST_CASE("Mata::Util::OrdVector::remove()") {
     CHECK_THROWS(set.remove(0));
 }
 
-TEST_CASE("Mata::Util::OrdVector::intersection(}")
+TEST_CASE("mata::utils::OrdVector::intersection(}")
 {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set1{};
@@ -74,7 +74,7 @@ TEST_CASE("Mata::Util::OrdVector::intersection(}")
     }
 }
 
-TEST_CASE("Mata::Util::OrdVector::difference()") {
+TEST_CASE("mata::utils::OrdVector::difference()") {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set1{};
     OrdVectorT set2{};
@@ -100,7 +100,7 @@ TEST_CASE("Mata::Util::OrdVector::difference()") {
 
         set1 = { 1, 2, 3 };
         set2 = { 1, 3 };
-        CHECK(set1.difference(set2) == Mata::Util::OrdVector<int>{ 2 });
+        CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{ 2 });
 
         set1 = { 1, 3 };
         set2 = { 1, 2, 3 };
@@ -108,6 +108,6 @@ TEST_CASE("Mata::Util::OrdVector::difference()") {
 
         set1 = { 1, 2, 3 };
         set2 = { 3 };
-        CHECK(set1.difference(set2) == Mata::Util::OrdVector<int>{ 1, 2 });
+        CHECK(set1.difference(set2) == mata::utils::OrdVector<int>{ 1, 2 });
     }
 }

@@ -1,4 +1,4 @@
-add_library(re2
+add_library(re2 OBJECT
         re2/bitmap256.h
         re2/compile.cc
         re2/parse.cc
@@ -29,24 +29,10 @@ add_library(re2
         util/utf.h
         util/util.h)
 
-set(cxx_compiler_flags
-        -Wall
-        -Wfloat-equal
-        -fms-extensions
-        -fdiagnostics-show-option
-        -std=c++14
-        -Wctor-dtor-privacy
-        -Weffc++
-        -fPIC
-        -fno-strict-aliasing
-        )
-
-foreach(flag ${cxx_compiler_flags})
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
-endforeach()
+target_compile_features(re2 PUBLIC cxx_std_20)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    target_link_libraries(re2 pthread)
+    target_link_libraries(re2 PUBLIC pthread)
 endif()
 
-target_include_directories(re2 PUBLIC ./)
+target_include_directories(re2 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/")

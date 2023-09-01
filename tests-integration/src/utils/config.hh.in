@@ -1,0 +1,11 @@
+#ifndef LIBMATA_PERFTEST_CONFIG_H
+#define LIBMATA_PERFTEST_CONFIG_H
+
+#include <string>
+
+namespace mata::PerformanceTesting {
+    const std::string AUTOMATA_DIR = "@CMAKE_CURRENT_SOURCE_DIR@/automata";
+    const std::string BENCHMARK_DIR = "@CMAKE_CURRENT_SOURCE_DIR@/benchmark";
+}
+
+#endif //LIBMATA_PERFTEST_CONFIG_H

@@ -15,18 +15,18 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 #include "mata/parser/parser.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/builder.hh"
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
-using namespace Mata::Parser;
-using namespace Mata::Util;
+using namespace mata::parser;
+using namespace mata::utils;
 
-TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
+TEST_CASE("correct use of mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -430,18 +430,18 @@ TEST_CASE("correct use of Mata::Parser::parse_mf_section()")
         "%Final q0\n"
         "q0 0 q0";
         std::istringstream stream(file);
-        Mata::Nfa::Nfa aut = Mata::Nfa::Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
+        mata::nfa::Nfa aut = mata::nfa::builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(file))[0]);
         CHECK(aut.initial.size() == 1);
         CHECK(aut.initial.contains(0));
         CHECK(aut.final.size() == 1);
         CHECK(aut.initial.contains(0));
         CHECK(aut.delta.contains(0, 0, 0) == 1);
-        CHECK(aut.delta.size() == 1);
+        CHECK(aut.delta.num_of_transitions() == 1);
     }
 } // parse_mf_section correct }}}
 
 
-TEST_CASE("incorrect use of Mata::Parser::parse_mf_section()")
+TEST_CASE("incorrect use of mata::Parser::parse_mf_section()")
 { // {{{
 	ParsedSection parsec;
 
@@ -639,7 +639,7 @@ TEST_CASE("incorrect use of Mata::Parser::parse_mf_section()")
 } // parse_mf_section incorrect }}}
 
 
-TEST_CASE("correct use of Mata::Parser::parse_mf()")
+TEST_CASE("correct use of mata::Parser::parse_mf()")
 { // {{{
 	Parsed parsed;
 
@@ -698,9 +698,9 @@ TEST_CASE("parsing automata to intermediate representation")
            "q symbol & r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::IntermediateAut& aut = auts.back();
+        const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -732,9 +732,9 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q symbol r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::IntermediateAut& aut = auts.back();
+        const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -760,9 +760,9 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q symbol r\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::IntermediateAut& aut = auts.back();
+        const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
         REQUIRE(aut.initial_enumerated);
         REQUIRE(aut.final_enumerated);
@@ -791,8 +791,8 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
                 "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        const Mata::IntermediateAut inter_aut = auts[0];
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const mata::IntermediateAut inter_aut = auts[0];
 
         auto final_states = inter_aut.get_positive_finals();
         REQUIRE(final_states.size() == 5);
@@ -818,8 +818,8 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q3 (!a2 & !a3 & !a4 & (!a0 | a0)) q6\n"
                 "q5 (!a1 & !a2 & !a3 & (!a0 | a0)) q7\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
-        const Mata::IntermediateAut inter_aut = auts[0];
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const mata::IntermediateAut inter_aut = auts[0];
 
         auto final_states = inter_aut.get_positive_finals();
         REQUIRE(final_states.size() == 8);
@@ -833,6 +833,25 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(final_states.count("8"));
     }
 
+    SECTION("NFA - true/false constants")
+    {
+        std::string file =
+R"(@NFA-bits
+%Alphabet-auto
+%Initial q1
+%Final \true
+q0 \true q1
+q1 \false q2
+)";
+
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const mata::IntermediateAut inter_aut = auts[0];
+
+        CHECK(inter_aut.final_formula.node.is_true());
+		CHECK(inter_aut.transitions.at(0).second.children.at(0).node.is_true());
+		CHECK(inter_aut.transitions.at(1).second.children.at(0).node.is_false());
+    }
+
     SECTION("AFA explicit")
     {
         std::string file =
@@ -843,9 +862,9 @@ TEST_CASE("parsing automata to intermediate representation")
                 "r !b & ! c & (\"(r,s)\")\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         REQUIRE(auts.size() == 1);
-        const Mata::IntermediateAut& aut = auts.back();
+        const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 2);
         REQUIRE(aut.transitions.front().first.name == "q");
         REQUIRE(aut.transitions.front().first.is_operand());
@@ -891,7 +910,7 @@ TEST_CASE("parsing automata to intermediate representation")
         bool exception = false;
         try {
             parsed = parse_mf(file);
-            std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
+            std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         } catch (std::exception& e) {
             exception = true;
 
@@ -909,8 +928,8 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q1 a & !q2 & b\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const Mata::IntermediateAut aut = auts[0];
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+        const mata::IntermediateAut aut = auts[0];
         REQUIRE(aut.transitions.front().first.name == "1");
         REQUIRE(aut.transitions.front().first.raw == "q1");
 
@@ -925,8 +944,8 @@ TEST_CASE("parsing automata to intermediate representation")
                 "q1 ((a & !q2) & b) | c\n";
 
         parsed = parse_mf(file);
-        std::vector<Mata::IntermediateAut> auts = Mata::IntermediateAut::parse_from_mf(parsed);
-        const Mata::IntermediateAut aut = auts[0];
+        std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
+        const mata::IntermediateAut aut = auts[0];
         REQUIRE(aut.transitions.front().first.name == "1");
         REQUIRE(aut.transitions.front().first.raw == "q1");
     }
@@ -942,7 +961,7 @@ TEST_CASE("parsing automata to intermediate representation")
         bool exception = false;
         parsed = parse_mf(file);
         try {
-            Mata::IntermediateAut::parse_from_mf(parsed);
+            mata::IntermediateAut::parse_from_mf(parsed);
         } catch (const std::runtime_error& e) {
             exception = true;
         }
@@ -952,11 +971,11 @@ TEST_CASE("parsing automata to intermediate representation")
     } // parse_mf }}}
 
 
-TEST_CASE("Mata::Parser::ParsedSection::operator<<(ostream&)")
+TEST_CASE("mata::Parser::ParsedSection::operator<<(ostream&)")
 { // {{{
 	SECTION("aux")
 	{
-		WARN_PRINT("Insufficient testing of Mata::Parser::ParsedSection::operator<<(ostream&)");
+		WARN_PRINT("Insufficient testing of mata::Parser::ParsedSection::operator<<(ostream&)");
 	}
 
 } // }}}

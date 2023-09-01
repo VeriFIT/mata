@@ -18,18 +18,18 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/parser/re2parser.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::nfa;
+using namespace mata::strings;
+using namespace mata::utils;
+using namespace mata::parser;
 
-using Symbol = Mata::Symbol;
+using Symbol = mata::Symbol;
 
 // Some common automata {{{
 
@@ -73,7 +73,7 @@ using Symbol = Mata::Symbol;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::concatenate()") {
+TEST_CASE("mata::nfa::concatenate()") {
     Nfa lhs{};
     Nfa rhs{};
     Nfa result{};
@@ -362,7 +362,7 @@ TEST_CASE("Mata::Nfa::concatenate()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
+TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
     Nfa lhs{};
     Nfa rhs{};
     Nfa result{};
@@ -419,7 +419,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[1]);
         CHECK(result.size() == 2);
-        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.delta.num_of_transitions() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
 
@@ -437,7 +437,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 1);
+        CHECK(result.delta.num_of_transitions() == 1);
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
 
@@ -456,7 +456,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 2);
+        CHECK(result.delta.num_of_transitions() == 2);
         CHECK(result.delta.contains(1, 'a', 2));
         CHECK(result.delta.contains(0, EPSILON, 1));
     }
@@ -477,7 +477,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
         CHECK(result.size() == 4);
-        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.delta.num_of_transitions() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
         CHECK(result.delta.contains(1, EPSILON, 2));
@@ -504,7 +504,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[3]);
         CHECK(result.size() == 6);
-        CHECK(result.get_num_of_trans() == 4);
+        CHECK(result.delta.num_of_transitions() == 4);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 3));
         CHECK(result.delta.contains(2, 'c', 5));
@@ -535,7 +535,7 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
         CHECK(result.initial[0]);
         CHECK(result.final[2]);
         CHECK(result.size() == 3);
-        CHECK(result.get_num_of_trans() == 3);
+        CHECK(result.delta.num_of_transitions() == 3);
         CHECK(result.delta.contains(0, 'b', 1));
         CHECK(result.delta.contains(2, 'a', 2));
         CHECK(result.delta.contains(1, EPSILON, 2));
@@ -592,11 +592,11 @@ TEST_CASE("Mata::Nfa::concatenate() over epsilon symbol") {
 
 TEST_CASE("(a|b)*") {
     Nfa aut1;
-    Mata::Parser::create_nfa(&aut1, "a*");
+    mata::parser::create_nfa(&aut1, "a*");
     Nfa aut2;
-    Mata::Parser::create_nfa(&aut2, "b*");
+    mata::parser::create_nfa(&aut2, "b*");
     Nfa aut3;
-    Mata::Parser::create_nfa(&aut3, "a*b*");
+    mata::parser::create_nfa(&aut3, "a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
@@ -634,7 +634,7 @@ TEST_CASE("Bug with epsilon transitions") {
     CHECK(are_equivalent(result, expected));
 }
 
-TEST_CASE("Mata::Nfa::concatenate() inplace") {
+TEST_CASE("mata::nfa::concatenate() inplace") {
 
 
     SECTION("Empty automaton without states") {

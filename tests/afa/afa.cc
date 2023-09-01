@@ -1,39 +1,39 @@
 // TODO: some header
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include <unordered_set>
 
 #include "mata/afa/afa.hh"
 
-using namespace Mata::Afa;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::afa;
+using namespace mata::utils;
+using namespace mata::parser;
 
-TEST_CASE("Mata::Afa::Trans::operator<<")
+TEST_CASE("mata::afa::Trans::operator<<")
 { // {{{
 	Trans trans(1, 0, {{0, 1}, {0, 2}});
 
 	REQUIRE(std::to_string(trans) == "(1, 0, { { 0, 1}, { 0, 2}})");
 } // }}}
 
-TEST_CASE("Mata::Afa::ClosedSet creating closed sets")
+TEST_CASE("mata::afa::ClosedSet creating closed sets")
 { // {{{
-	StateClosedSet c1 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes());
-	StateClosedSet c2 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 10, 20, Nodes());
+	StateClosedSet c1 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes());
+	StateClosedSet c2 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 10, 20, Nodes());
 
-	REQUIRE(c1.type() == Mata::ClosedSetType::upward_closed_set);
-	REQUIRE(c2.type() == Mata::ClosedSetType::downward_closed_set);
+	REQUIRE(c1.type() == mata::ClosedSetType::upward_closed_set);
+	REQUIRE(c2.type() == mata::ClosedSetType::downward_closed_set);
 	REQUIRE(c1.type() != c2.type());
 	REQUIRE(c1.antichain().size() == 0);
 	REQUIRE(c2.antichain().size() == 0);
 
 } // }}}
 
-TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
+TEST_CASE("mata::afa::ClosedSet operation over closed sets")
 { // {{{
-	StateClosedSet c1 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
-	StateClosedSet c2 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
+	StateClosedSet c1 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
+	StateClosedSet c2 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
 
 	REQUIRE(!c1.contains(Node{0}));
 	REQUIRE(!c2.contains(Node{0}));
@@ -52,8 +52,8 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	REQUIRE(!c1.contains(Node{}));
 	REQUIRE(c2.contains(Node{}));
 
-	StateClosedSet c3 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{Node{0, 1}});
-	StateClosedSet c4 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{Node{0, 3}});
+	StateClosedSet c3 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{ Node{ 0, 1}});
+	StateClosedSet c4 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{ Node{ 0, 3}});
 
 	REQUIRE(c3.Union(c4).contains(Node{0, 1}));
 	REQUIRE(c3.Union(c4).contains(Node{0, 3}));
@@ -65,8 +65,8 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	REQUIRE(!c3.Union(c4).contains(Node{}));
 	REQUIRE(!c3.intersection(c4).contains(Node{}));
 
-	StateClosedSet c5 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{Node{0, 1}});
-	StateClosedSet c6 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{Node{0, 3}});
+	StateClosedSet c5 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{ Node{ 0, 1}});
+	StateClosedSet c6 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{ Node{ 0, 3}});
 
 	REQUIRE(c5.Union(c6).contains(Node{0, 1}));
 	REQUIRE(c5.Union(c6).contains(Node{0, 3}));
@@ -81,7 +81,7 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	REQUIRE(std::to_string(c5.Union(c6).antichain()) == "{ { 0, 1}, { 0, 3}}");
 	REQUIRE(std::to_string(c5.intersection(c6).antichain()) == "{ { 0}}");
 
-	StateClosedSet c7 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{Node{0, 3}});
+	StateClosedSet c7 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes{ Node{ 0, 3}});
 	c7.insert(Node{0});
 	REQUIRE(std::to_string(c7.antichain()) == "{ { 0, 3}}");
 	c7.insert(Node{0, 2});
@@ -89,7 +89,7 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	c7.insert(Node{0, 2, 3});
 	REQUIRE(std::to_string(c7.antichain()) == "{ { 0, 2, 3}}");
 
-	StateClosedSet c8 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{Node{0, 3}});
+	StateClosedSet c8 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes{ Node{ 0, 3}});
 	c8.insert(Node{0, 1, 3});
 	REQUIRE(std::to_string(c8.antichain()) == "{ { 0, 3}}");
 	c8.insert(Node{0, 2});
@@ -97,7 +97,7 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	c8.insert(Node{0});
 	REQUIRE(std::to_string(c8.antichain()) == "{ { 0}}");
 
-	StateClosedSet c9 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 4, Nodes());
+	StateClosedSet c9 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 4, Nodes());
 
 	c9.insert(Node{1, 4});
 	c9.insert(Node{1, 2, 3});
@@ -108,35 +108,35 @@ TEST_CASE("Mata::Afa::ClosedSet operation over closed sets")
 	REQUIRE(c9.complement().complement().antichain() == Nodes{{1, 4}, {1, 2, 3}});
 	REQUIRE(!(c9.complement().complement().antichain() == Nodes{{0, 1, 4}, {1, 2, 3}}));
 
-	StateClosedSet c10 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
+	StateClosedSet c10 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
 
 	c10.insert(Node{1, 2});
 	c10.insert(Node{2, 3});
 
 	REQUIRE(c10.complement().antichain() == Nodes{{0}, {1, 3}});
 
-	REQUIRE(c10.type() == Mata::ClosedSetType::downward_closed_set);
+	REQUIRE(c10.type() == mata::ClosedSetType::downward_closed_set);
 	c10 = c10.complement();
-	REQUIRE(c10.type() == Mata::ClosedSetType::upward_closed_set);
+	REQUIRE(c10.type() == mata::ClosedSetType::upward_closed_set);
 
-	StateClosedSet c11 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
+	StateClosedSet c11 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
 	REQUIRE(c11.complement().antichain() == Nodes{{}});
 
-	StateClosedSet c12 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
+	StateClosedSet c12 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
 	REQUIRE(c12.complement().antichain() == Nodes{{0, 1, 2, 3}});
 
-	StateClosedSet c13 = StateClosedSet(Mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
+	StateClosedSet c13 = StateClosedSet(mata::ClosedSetType::downward_closed_set, 0, 3, Nodes());
 	c13.insert(Node{0, 1, 2, 3});
 	REQUIRE(c13.complement().antichain() == Nodes{});
 
-	StateClosedSet c14 = StateClosedSet(Mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
+	StateClosedSet c14 = StateClosedSet(mata::ClosedSetType::upward_closed_set, 0, 3, Nodes());
 	c14.insert(Node{0, 1, 2, 3});
 	REQUIRE(c14.complement().antichain() == Nodes{{0, 1, 2}, {0, 1, 3}, {0, 2, 3}, {1, 2, 3}});
 
 } // }}}
 
 
-TEST_CASE("Mata::Afa creating an AFA, basic properties")
+TEST_CASE("mata::afa creating an AFA, basic properties")
 { // {{{
 
 	Afa aut(4);
@@ -199,7 +199,7 @@ TEST_CASE("Mata::Afa creating an AFA, basic properties")
 
 } // }}}
 
-TEST_CASE("Mata::Afa transition test")
+TEST_CASE("mata::afa transition test")
 { // {{{
 
 	Afa aut(3);
@@ -218,37 +218,37 @@ TEST_CASE("Mata::Afa transition test")
 	REQUIRE(std::to_string(aut.post(Node{0}, 0).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{0}}, 0).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{0}}), 0).antichain()) == "{ { 0}}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 0}}), 0).antichain()) == "{ { 0}}");
 
 	REQUIRE(std::to_string(aut.post(0, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.post(Node{0}, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{0}}, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{0}}), 1).antichain()) == "{ { 1}}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 0}}), 1).antichain()) == "{ { 1}}");
 
 	REQUIRE(std::to_string(aut.post(1, 0).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(Node{1}, 0).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{1}}, 0).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{1}}), 0).antichain()) == "{}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 1}}), 0).antichain()) == "{}");
 
 	REQUIRE(std::to_string(aut.post(1, 1).antichain()) == "{ { 0}, { 1, 2}}");
 	REQUIRE(std::to_string(aut.post(Node{1}, 1).antichain()) == "{ { 0}, { 1, 2}}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{1}}, 1).antichain()) == "{ { 0}, { 1, 2}}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{1}}), 1).antichain()) == "{ { 0}, { 1, 2}}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 1}}), 1).antichain()) == "{ { 0}, { 1, 2}}");
 
 	REQUIRE(std::to_string(aut.post(2, 0).antichain()) == "{ { 0, 1}, { 2}}");
 	REQUIRE(std::to_string(aut.post(Node{2}, 0).antichain()) == "{ { 0, 1}, { 2}}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{2}}, 0).antichain()) == "{ { 0, 1}, { 2}}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{2}}), 0).antichain()) == "{ { 0, 1}, { 2}}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 2}}), 0).antichain()) == "{ { 0, 1}, { 2}}");
 
 	REQUIRE(std::to_string(aut.post(2, 1).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(Node{2}, 1).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(Nodes{Node{2}}, 1).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(StateClosedSet
-	(Mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{Node{2}}), 1).antichain()) == "{}");
+	(mata::ClosedSetType::upward_closed_set, 0, 2, Nodes{ Node{ 2}}), 1).antichain()) == "{}");
 
 	REQUIRE(std::to_string(aut.post(Node{0, 1}, 0).antichain()) == "{}");
 	REQUIRE(std::to_string(aut.post(Node{0, 2}, 0).antichain()) == "{ { 0, 1}, { 0, 2}}");
@@ -266,7 +266,7 @@ TEST_CASE("Mata::Afa transition test")
 
 } // }}}
 
-TEST_CASE("Mata::Afa inverse transition test")
+TEST_CASE("mata::afa inverse transition test")
 { // {{{
 
 	Afa aut(3);
@@ -285,38 +285,38 @@ TEST_CASE("Mata::Afa inverse transition test")
 	REQUIRE(std::to_string(aut.pre(Node{0}, 0).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{0}}, 0).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{0}}), 0).antichain()) == "{ { 0}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 0}}), 0).antichain()) == "{ { 0}}");
 
 	REQUIRE(std::to_string(aut.pre(1, 0).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(Node{1}, 0).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{1}}, 0).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{1}}), 0).antichain()) == "{ {}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 1}}), 0).antichain()) == "{ {}}");
 
 	REQUIRE(std::to_string(aut.pre(2, 0).antichain()) == "{ { 2}}");
 	REQUIRE(std::to_string(aut.pre(Node{2}, 0).antichain()) == "{ { 2}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{2}}, 0).antichain()) == "{ { 2}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{2}}), 0).antichain()) == "{ { 2}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 2}}), 0).antichain()) == "{ { 2}}");
 
 
 	REQUIRE(std::to_string(aut.pre(0, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.pre(Node{0}, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{0}}, 1).antichain()) == "{ { 1}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{0}}), 1).antichain()) == "{ { 1}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 0}}), 1).antichain()) == "{ { 1}}");
 
 	REQUIRE(std::to_string(aut.pre(1, 1).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.pre(Node{1}, 1).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{1}}, 1).antichain()) == "{ { 0}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{1}}), 1).antichain()) == "{ { 0}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 1}}), 1).antichain()) == "{ { 0}}");
 
 	REQUIRE(std::to_string(aut.pre(2, 1).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(Node{2}, 1).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(Nodes{Node{2}}, 1).antichain()) == "{ {}}");
 	REQUIRE(std::to_string(aut.pre(StateClosedSet
-	(Mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{Node{2}}), 1).antichain()) == "{ {}}");
+	(mata::ClosedSetType::downward_closed_set, 0, 2, Nodes{ Node{ 2}}), 1).antichain()) == "{ {}}");
 
 
 	REQUIRE(std::to_string(aut.pre(Node{0, 1}, 0).antichain()) == "{ { 0, 2}}");
@@ -335,7 +335,7 @@ TEST_CASE("Mata::Afa inverse transition test")
 
 } // }}}
 
-TEST_CASE("Mata::Afa antichain emptiness test")
+TEST_CASE("mata::afa antichain emptiness test")
 {
 	/////////////////////////////////
 	// Example of an automaton
@@ -466,16 +466,16 @@ TEST_CASE("Mata::Afa antichain emptiness test")
 	REQUIRE(!antichain_concrete_backward_emptiness_test_new(aut2));
 }
 
-TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
+TEST_CASE("mata::afa::construct() from IntermediateAut correct calls")
 { // {{{
     Afa aut;
-    Mata::IntermediateAut inter_aut;
-    Mata::OnTheFlyAlphabet alphabet;
+    mata::IntermediateAut inter_aut;
+    mata::OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::AFA;
-        aut = Mata::Afa::construct(inter_aut, &alphabet);
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::AFA;
+        aut = mata::afa::construct(inter_aut, &alphabet);
         REQUIRE(true);
     }
 
@@ -487,7 +487,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p | q\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         aut = construct(inter_aut);
@@ -503,7 +503,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p & q & r\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -520,7 +520,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q\n"
                 "%Final p q r\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -537,7 +537,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q r\n"
                 "%Final p q m n\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         construct(&aut, inter_aut);
@@ -556,7 +556,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "%Final q2\n"
                 "q1 a & q2\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
         construct(&aut, inter_aut, &alphabet);
     }
@@ -575,7 +575,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "q2 a & ((q3 & q4) | (q4 & q5) | (q3 & q6))\n"
                 "q3 a & ((q3 & q4) | (q4 & q5) | (q3 & q6 & q4) & q5)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         NameStateMap state_map;
@@ -608,7 +608,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "qQC1_0 a & qQC1_1\n"
                 "qQC0_0 a & (qQC0_2 | qQC0_1)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         NameStateMap state_map;
@@ -634,7 +634,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "q2 a2 & (q0 & q3)\n"
                 "q3 a1 & (q0 | q2)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         NameStateMap state_map;
@@ -656,7 +656,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "q2 a2 & (q0 & q3)\n"
                 "q3 a1 & (q0 | q2)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         NameStateMap state_map;
@@ -678,7 +678,7 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
                 "q2 a1 & (q3 | q2)\n"
                 "q2 a2 & (q4 & q1)\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
         NameStateMap state_map;
@@ -692,14 +692,14 @@ TEST_CASE("Mata::Afa::construct() from IntermediateAut correct calls")
 
 } // }}}
 
-TEST_CASE("Mata::Afa::construct() correct calls")
+TEST_CASE("mata::afa::construct() correct calls")
 { // {{{
 	Afa aut;
-	Mata::Parser::ParsedSection parsec;
+	mata::parser::ParsedSection parsec;
 
 	SECTION("construct an empty automaton")
 	{
-		parsec.type = Mata::Afa::TYPE_AFA;
+		parsec.type = mata::afa::TYPE_AFA;
 
 		construct(&aut, parsec);
 
@@ -708,7 +708,7 @@ TEST_CASE("Mata::Afa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting the empty word")
 	{
-		parsec.type = Mata::Afa::TYPE_AFA;
+		parsec.type = mata::afa::TYPE_AFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q1"}});
 
@@ -719,7 +719,7 @@ TEST_CASE("Mata::Afa::construct() correct calls")
 
 	SECTION("construct an automaton with more than one initial/final states")
 	{
-		parsec.type = Mata::Afa::TYPE_AFA;
+		parsec.type = mata::afa::TYPE_AFA;
 		parsec.dict.insert({"Initial", {"q1", "q2"}});
 		parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
@@ -731,7 +731,7 @@ TEST_CASE("Mata::Afa::construct() correct calls")
 
 	SECTION("construct a simple non-empty automaton accepting only the word 'a'")
 	{
-		parsec.type = Mata::Afa::TYPE_AFA;
+		parsec.type = mata::afa::TYPE_AFA;
 		parsec.dict.insert({"Initial", {"q1"}});
 		parsec.dict.insert({"Final", {"q2"}});
 		parsec.body = { {"q1", "a AND q2"} };

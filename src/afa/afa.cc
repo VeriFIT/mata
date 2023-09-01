@@ -35,12 +35,12 @@
 
 using std::tie;
 
-using namespace Mata::Util;
-using namespace Mata::Afa;
+using namespace mata::utils;
+using namespace mata::afa;
 
-const std::string Mata::Afa::TYPE_AFA = "AFA";
+const std::string mata::afa::TYPE_AFA = "AFA";
 
-std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::Trans& trans) {
+std::ostream& std::operator<<(std::ostream& os, const mata::afa::Trans& trans) {
 	std::string result = "(" + std::to_string(trans.src) + ", "
                        + std::to_string(trans.symb) + ", "
                        + std::to_string(trans.dst) + ")";
@@ -303,8 +303,8 @@ StateClosedSet Afa::post(const Nodes& nodes, const Symbol symb) const
 */
 StateClosedSet Afa::post(const StateClosedSet& closed_set, const Symbol symb) const
 {
-	assert(closed_set.type() == Mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
-	" post can be computed only over upward-closed sets.");
+	assert(closed_set.type() == mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
+           " post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain(), symb);
 } // post }}}
 
@@ -370,8 +370,8 @@ StateClosedSet Afa::post(const Nodes& nodes) const
 */
 StateClosedSet Afa::post(const StateClosedSet& closed_set) const
 {
-	assert(closed_set.type() == Mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
-	" post can be computed only over upward-closed sets.");
+	assert(closed_set.type() == mata::ClosedSetType::upward_closed_set && "The predicate transformer " &&
+           " post can be computed only over upward-closed sets.");
 	return post(closed_set.antichain());
 };
 
@@ -566,13 +566,13 @@ StateClosedSet Afa::get_initial_nodes() const {
 }
 
 
-std::ostream& Mata::Afa::operator<<(std::ostream& os, const Afa& afa)
+std::ostream& mata::afa::operator<<(std::ostream& os, const Afa& afa)
 { // {{{
 	return os << std::to_string(serialize(afa));
 } // Nfa::operator<<(ostream) }}}
 
 
-bool Mata::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
+bool mata::afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
 { // {{{
   assert(&lhs);
   assert(&rhs);
@@ -583,7 +583,7 @@ bool Mata::Afa::are_state_disjoint(const Afa& lhs, const Afa& rhs)
 } // are_disjoint }}}
 
 
-void Mata::Afa::union_norename(
+void mata::afa::union_norename(
 	Afa*        result,
 	const Afa&  lhs,
 	const Afa&  rhs)
@@ -598,7 +598,7 @@ void Mata::Afa::union_norename(
 } // union_norename }}}
 
 
-Afa Mata::Afa::union_rename(
+Afa mata::afa::union_rename(
 	const Afa&  lhs,
 	const Afa&  rhs)
 { // {{{
@@ -611,7 +611,7 @@ Afa Mata::Afa::union_rename(
 } // union_rename }}}
 
 
-bool Mata::Afa::is_lang_empty(const Afa& aut, Path* cex)
+bool mata::afa::is_lang_empty(const Afa& aut, Path* cex)
 { // {{{
   assert(&aut);
   assert(&cex);
@@ -622,7 +622,7 @@ bool Mata::Afa::is_lang_empty(const Afa& aut, Path* cex)
 } // is_lang_empty }}}
 
 
-bool Mata::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
+bool mata::afa::is_lang_empty_cex(const Afa& aut, Word* cex)
 { // {{{
 	assert(nullptr != cex);
 
@@ -640,7 +640,7 @@ bool Mata::Afa::is_lang_empty_cex(const Afa& aut, Word* cex)
 * @param aut a given automaton
 * @return true iff the automaton is empty
 */
-bool Mata::Afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
+bool mata::afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
 {
     // We will iteratively build a set of reachable nodes (next) until
 	// we reach a fixed point or until we find out that there exists
@@ -669,7 +669,7 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_old(const Afa& aut)
 * @param aut a given automaton
 * @return true iff the automaton is empty
 */
-bool Mata::Afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
+bool mata::afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
 {
 	StateClosedSet goal = aut.get_non_final_nodes();
 	StateClosedSet result = aut.get_initial_nodes();
@@ -713,7 +713,7 @@ bool Mata::Afa::antichain_concrete_forward_emptiness_test_new(const Afa& aut)
 * @param aut a given automaton
 * @return true iff the automaton is empty
 */
-bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
+bool mata::afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
 {
 	// We will iteratively build a set of terminating nodes (next)
 	// until we reach a fixed point or until we find out that there exists
@@ -743,7 +743,7 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_old(const Afa& aut)
 * @param aut a given automaton
 * @return true iff the automaton is empty
 */
-bool Mata::Afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
+bool mata::afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
 {
 	StateClosedSet goal = aut.get_non_initial_nodes();
 	StateClosedSet result = aut.get_final_nodes();
@@ -782,7 +782,7 @@ bool Mata::Afa::antichain_concrete_backward_emptiness_test_new(const Afa& aut)
 }
 
 
-void Mata::Afa::make_complete(
+void mata::afa::make_complete(
 	Afa*             aut,
 	const Alphabet&  alphabet,
 	State            sink_state)
@@ -797,13 +797,13 @@ void Mata::Afa::make_complete(
 } // make_complete }}}
 
 
-Mata::Parser::ParsedSection Mata::Afa::serialize(
+mata::parser::ParsedSection mata::afa::serialize(
 	const Afa&                aut,
 	const SymbolToStringMap*  symbol_map,
 	const StateNameMap*   state_map)
 { // {{{
-	Mata::Parser::ParsedSection parsec;
-	parsec.type = Mata::Afa::TYPE_AFA;
+	mata::parser::ParsedSection parsec;
+	parsec.type = mata::afa::TYPE_AFA;
 
 	using bool_str_pair = std::pair<bool, std::string>;
 
@@ -868,7 +868,7 @@ Mata::Parser::ParsedSection Mata::Afa::serialize(
 } // serialize }}}
 
 
-void Mata::Afa::revert(Afa* result, const Afa& aut)
+void mata::afa::revert(Afa* result, const Afa& aut)
 { // {{{
 	assert(nullptr != result);
 
@@ -879,7 +879,7 @@ void Mata::Afa::revert(Afa* result, const Afa& aut)
 } // revert }}}
 
 
-void Mata::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
+void mata::afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
 { // {{{
 	assert(nullptr != result);
 
@@ -891,7 +891,7 @@ void Mata::Afa::remove_epsilon(Afa* result, const Afa& aut, Symbol epsilon)
 } // remove_epsilon }}}
 
 
-void Mata::Afa::minimize(
+void mata::afa::minimize(
 	Afa*               result,
 	const Afa&         aut,
 	const StringDict&  params)
@@ -906,17 +906,17 @@ void Mata::Afa::minimize(
 } // minimize }}}
 
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Afa Mata::Afa::construct(
-        const Mata::Parser::ParsedSection&  parsec,
+Afa mata::afa::construct(
+        const mata::parser::ParsedSection&  parsec,
         Alphabet*                            alphabet,
         NameStateMap*                    state_map)
 { // {{{
 	assert(nullptr != alphabet);
 	Afa aut;
 
-	if (parsec.type != Mata::Afa::TYPE_AFA) {
+	if (parsec.type != mata::afa::TYPE_AFA) {
 		throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 Mata::Afa::TYPE_AFA + "\"");
+                                 mata::afa::TYPE_AFA + "\"");
 	}
 
 	bool remove_state_map = false;
@@ -983,8 +983,8 @@ Afa Mata::Afa::construct(
     return aut;
 } // construct }}}
 
-Afa Mata::Afa::construct(
-        const Mata::IntermediateAut&         inter_aut,
+Afa mata::afa::construct(
+        const mata::IntermediateAut&         inter_aut,
         Alphabet*                            alphabet,
         NameStateMap*                    state_map)
 { // {{{
@@ -993,7 +993,7 @@ Afa Mata::Afa::construct(
 
     if (!inter_aut.is_afa()) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 Mata::Afa::TYPE_AFA + "\"");
+                                 mata::afa::TYPE_AFA + "\"");
     }
 
     NameStateMap tmp_state_map;
@@ -1133,7 +1133,7 @@ Afa Mata::Afa::construct(
     return aut;
 } // construct }}}
 
-bool Mata::Afa::is_in_lang(const Afa& aut, const Word& word)
+bool mata::afa::is_in_lang(const Afa& aut, const Word& word)
 { // {{{
   assert(&aut);
   assert(&word);
@@ -1143,7 +1143,7 @@ bool Mata::Afa::is_in_lang(const Afa& aut, const Word& word)
 } // is_in_lang }}}
 
 
-bool Mata::Afa::is_prfx_in_lang(const Afa& aut, const Word& word)
+bool mata::afa::is_prfx_in_lang(const Afa& aut, const Word& word)
 { // {{{
   assert(&aut);
   assert(&word);
@@ -1153,7 +1153,7 @@ bool Mata::Afa::is_prfx_in_lang(const Afa& aut, const Word& word)
 } // is_prfx_in_lang }}}
 
 
-bool Mata::Afa::is_deterministic(const Afa& aut)
+bool mata::afa::is_deterministic(const Afa& aut)
 { // {{{
   assert(&aut);
 
@@ -1162,7 +1162,7 @@ bool Mata::Afa::is_deterministic(const Afa& aut)
 } // is_deterministic }}}
 
 
-bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
+bool mata::afa::is_complete(const Afa& aut, const Alphabet& alphabet)
 { // {{{
   assert(&aut);
   assert(&alphabet);
@@ -1172,16 +1172,16 @@ bool Mata::Afa::is_complete(const Afa& aut, const Alphabet& alphabet)
   return {};
 } // is_complete }}}
 
-bool Mata::Afa::accepts_epsilon(const Afa& aut) {
+bool mata::afa::accepts_epsilon(const Afa& aut) {
     return std::any_of(aut.initialstates.cbegin(), aut.initialstates.cend(),
         [&aut](const Node& node) { return node.IsSubsetOf(aut.finalstates); });
 }
 
-Word encode_word(const Mata::Alphabet& alphabet, const std::vector<std::string> &input) {
+Word encode_word(const mata::Alphabet& alphabet, const std::vector<std::string> &input) {
     return alphabet.translate_word(input);
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa_wrap)
+std::ostream& std::operator<<(std::ostream& os, const mata::afa::AfaWrapper& afa_wrap)
 { // {{{
 	os << "{AFA wrapper|AFA: " << afa_wrap.afa << "|alphabet: " << afa_wrap.alphabet <<
 		"|state_dict: " << std::to_string(afa_wrap.state_dict) << "}";
@@ -1189,10 +1189,10 @@ std::ostream& std::operator<<(std::ostream& os, const Mata::Afa::AfaWrapper& afa
 } // operator<<(AfaWrapper) }}}
 
 namespace std {
-    inline size_t hash<Mata::Afa::Trans>::operator()(const Mata::Afa::Trans& trans) const {
-        size_t accum = std::hash<Mata::Afa::State>{}(trans.src);
-        accum = Mata::Util::hash_combine(accum, trans.symb);
-        accum = Mata::Util::hash_combine(accum, trans.dst);
+    inline size_t hash<mata::afa::Trans>::operator()(const mata::afa::Trans& trans) const {
+        size_t accum = std::hash<mata::afa::State>{}(trans.src);
+        accum = mata::utils::hash_combine(accum, trans.symb);
+        accum = mata::utils::hash_combine(accum, trans.dst);
         return accum;
     }
 }

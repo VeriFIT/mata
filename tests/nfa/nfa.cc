@@ -2,10 +2,12 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
-#include "nfa-util.hh"
+#include "utils.hh"
 
+#include "mata/utils/sparse-set.hh"
+#include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/builder.hh"
@@ -13,19 +15,19 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/parser/re2parser.hh"
 
-using namespace Mata::Nfa::Algorithms;
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
-using namespace Mata::Nfa::Plumbing;
-using namespace Mata::Util;
-using namespace Mata::Parser;
-using Symbol = Mata::Symbol;
-using IntAlphabet = Mata::IntAlphabet;
-using OnTheFlyAlphabet = Mata::OnTheFlyAlphabet;
+using namespace mata;
+using namespace mata::nfa::algorithms;
+using namespace mata::nfa;
+using namespace mata::strings;
+using namespace mata::nfa::plumbing;
+using namespace mata::utils;
+using namespace mata::parser;
+using Symbol = mata::Symbol;
+using Word = mata::Word;
+using IntAlphabet = mata::IntAlphabet;
+using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
-using Word = std::vector<Symbol>;
-
-TEST_CASE("Mata::Nfa::size()") {
+TEST_CASE("mata::nfa::size()") {
     Nfa nfa{};
     CHECK(nfa.size() == 0);
 
@@ -48,12 +50,12 @@ TEST_CASE("Mata::Nfa::size()") {
     CHECK(nfa.size() == 0);
 }
 
-TEST_CASE("Mata::Nfa::Trans::operator<<") {
+TEST_CASE("mata::nfa::Trans::operator<<") {
     Transition trans(1, 2, 3);
     REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 }
 
-TEST_CASE("Mata::Nfa::create_alphabet()") {
+TEST_CASE("mata::nfa::create_alphabet()") {
     Nfa a{1};
     a.delta.add(0, 'a', 0);
 
@@ -63,16 +65,16 @@ TEST_CASE("Mata::Nfa::create_alphabet()") {
     Nfa c{1};
     b.delta.add(0, 'c', 0);
 
-    auto alphabet{Mata::Nfa::create_alphabet(a, b, c) };
+    auto alphabet{ create_alphabet(a, b, c) };
 
     auto symbols{alphabet.get_alphabet_symbols() };
-    CHECK(symbols == Mata::Util::OrdVector<Symbol>{ 'c', 'b', 'a' });
+    CHECK(symbols == mata::utils::OrdVector<Symbol>{ 'c', 'b', 'a' });
 
-    //Mata::Nfa::create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
-    //Mata::Nfa::create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
+    // create_alphabet(1, 3, 4); // Will not compile: '1', '3', '4' are not of the required type.
+    // create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
-TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
+TEST_CASE("mata::nfa::Nfa::delta.add()/delta.contains()")
 { // {{{
     Nfa a(3);
 
@@ -123,7 +125,9 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
         size_t transitions_cnt{ 0 };
         std::vector<Transition> expected_transitions{ t1, t2, t3, t4 };
         std::vector<Transition> iterated_transitions{};
-        for (auto trans_it{ a.delta.transitions_begin()}; trans_it != a.delta.transitions_end(); ++trans_it) {
+        const Delta::Transitions transitions{ a.delta.transitions() };
+        const Delta::Transitions::const_iterator transitions_end{ transitions.end() };
+        for (Delta::Transitions::const_iterator trans_it{ transitions.begin()}; trans_it != transitions_end; ++trans_it) {
             iterated_transitions.push_back(*trans_it);
             ++transitions_cnt;
         }
@@ -142,7 +146,7 @@ TEST_CASE("Mata::Nfa::Nfa::delta.add()/delta.contains()")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::Delta.transform/append")
+TEST_CASE("mata::nfa::Delta.transform/append")
 { // {{{
     Nfa a(3);
     a.delta.add(1, 'a', 1);
@@ -153,7 +157,7 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
         auto upd_fnc = [&](State st) {
             return st + 5;
         };
-        std::vector<StatePost> state_posts = a.delta.transform(upd_fnc);
+        std::vector<StatePost> state_posts = a.delta.renumber_targets(upd_fnc);
         a.delta.append(state_posts);
 
         REQUIRE(a.delta.contains(4, 'a', 6));
@@ -164,46 +168,7 @@ TEST_CASE("Mata::Nfa::Delta.transform/append")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::Nfa iteration")
-{ // {{{
-    Nfa aut;
-
-    SECTION("empty automaton")
-    {
-        auto it = aut.begin();
-        REQUIRE(it == aut.end());
-    }
-
-    const size_t state_num = 'r'+1;
-    aut.delta.increase_size(state_num);
-
-    SECTION("a non-empty automaton")
-    {
-        aut.delta.add('q', 'a', 'r');
-        aut.delta.add('q', 'b', 'r');
-        auto it = aut.delta.transitions_begin();
-        auto jt = aut.delta.transitions_begin();
-        REQUIRE(it == jt);
-        ++it;
-        REQUIRE(it != jt);
-        REQUIRE((it != aut.delta.transitions_begin() && it != aut.delta.transitions_end()));
-        REQUIRE(jt == aut.delta.transitions_begin());
-
-        ++jt;
-        REQUIRE(it == jt);
-        REQUIRE((jt != aut.delta.transitions_begin() && jt != aut.delta.transitions_end()));
-
-        jt = aut.delta.transitions_end();
-        REQUIRE(it != jt);
-        REQUIRE((jt != aut.delta.transitions_begin() && jt == aut.delta.transitions_end()));
-
-        it = aut.delta.transitions_end();
-        REQUIRE(it == jt);
-        REQUIRE((it != aut.delta.transitions_begin() && it == aut.delta.transitions_end()));
-    }
-} // }}}
-
-TEST_CASE("Mata::Nfa::is_lang_empty()")
+TEST_CASE("mata::nfa::is_lang_empty()")
 { // {{{
     Nfa aut(14);
     Run cex;
@@ -298,7 +263,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::get_word_for_path()")
+TEST_CASE("mata::nfa::get_word_for_path()")
 { // {{{
     Nfa aut(5);
     Run path;
@@ -376,7 +341,7 @@ TEST_CASE("Mata::Nfa::get_word_for_path()")
 }
 
 
-TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
+TEST_CASE("mata::nfa::is_lang_empty_cex()")
 {
     Nfa aut(10);
     Run cex;
@@ -403,7 +368,7 @@ TEST_CASE("Mata::Nfa::is_lang_empty_cex()")
 }
 
 
-TEST_CASE("Mata::Nfa::determinize()")
+TEST_CASE("mata::nfa::determinize()")
 {
     Nfa aut(3);
     Nfa result;
@@ -462,7 +427,7 @@ TEST_CASE("Mata::Nfa::determinize()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
+TEST_CASE("mata::nfa::minimize() for profiling", "[.profiling],[minimize]") {
     Nfa aut(4);
     Nfa result;
     std::unordered_map<StateSet, State> subset_map;
@@ -502,39 +467,39 @@ TEST_CASE("Mata::Nfa::minimize() for profiling", "[.profiling],[minimize]") {
     minimize(&result, aut);
 }
 
-TEST_CASE("Mata::Nfa::construct() correct calls")
+TEST_CASE("mata::nfa::construct() correct calls")
 { // {{{
     Nfa aut(10);
-    Mata::Parser::ParsedSection parsec;
+    mata::parser::ParsedSection parsec;
     OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
 
-        aut = Builder::construct(parsec);
+        aut = builder::construct(parsec);
 
         REQUIRE(is_lang_empty(aut));
     }
 
     SECTION("construct a simple non-empty automaton accepting the empty word")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q1"}});
 
-        aut = Builder::construct(parsec);
+        aut = builder::construct(parsec);
 
         REQUIRE(!is_lang_empty(aut));
     }
 
     SECTION("construct an automaton with more than one initial/final states")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1", "q2"}});
         parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
-        aut = Builder::construct(parsec);
+        aut = builder::construct(parsec);
 
         REQUIRE(aut.initial.size() == 2);
         REQUIRE(aut.final.size() == 3);
@@ -542,12 +507,12 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
     SECTION("construct a simple non-empty automaton accepting only the word 'a'")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q2"}});
         parsec.body = { {"q1", "a", "q2"} };
 
-        aut = Builder::construct(parsec, &alphabet);
+        aut = builder::construct(parsec, &alphabet);
 
         Run cex;
         REQUIRE(!is_lang_empty(aut, &cex));
@@ -560,7 +525,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
 
     SECTION("construct a more complicated non-empty automaton")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.dict.insert({"Initial", {"q1", "q3"}});
         parsec.dict.insert({"Final", {"q5"}});
         parsec.body.push_back({"q1", "a", "q3"});
@@ -579,7 +544,7 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
         parsec.body.push_back({"q5", "a", "q5"});
         parsec.body.push_back({"q5", "c", "q9"});
 
-        aut = Builder::construct(parsec, &alphabet);
+        aut = builder::construct(parsec, &alphabet);
 
         // some samples
         REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
@@ -593,49 +558,49 @@ TEST_CASE("Mata::Nfa::construct() correct calls")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::construct() invalid calls")
+TEST_CASE("mata::nfa::construct() invalid calls")
 { // {{{
     Nfa aut;
-    Mata::Parser::ParsedSection parsec;
+    mata::parser::ParsedSection parsec;
 
     SECTION("construct() call with invalid ParsedSection object")
     {
         parsec.type = "FA";
 
-        CHECK_THROWS_WITH(Builder::construct(parsec),
+        CHECK_THROWS_WITH(builder::construct(parsec),
                           Catch::Contains("expecting type"));
     }
 
     SECTION("construct() call with an epsilon transition")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.body = { {"q1", "q2"} };
 
-        CHECK_THROWS_WITH(Builder::construct(parsec),
+        CHECK_THROWS_WITH(builder::construct(parsec),
                           Catch::Contains("Epsilon transition"));
     }
 
     SECTION("construct() call with a nonsense transition")
     {
-        parsec.type = Mata::Nfa::TYPE_NFA;
+        parsec.type = nfa::TYPE_NFA;
         parsec.body = { {"q1", "a", "q2", "q3"} };
 
-        CHECK_THROWS_WITH(Plumbing::construct(&aut, parsec),
-            Catch::Contains("Invalid transition"));
+        CHECK_THROWS_WITH(plumbing::construct(&aut, parsec),
+                          Catch::Contains("Invalid transition"));
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
+TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 { // {{{
     Nfa aut;
-    Mata::IntermediateAut inter_aut;
+    mata::IntermediateAut inter_aut;
     OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = Mata::IntermediateAut::AutomatonType::NFA;
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
         REQUIRE(is_lang_empty(aut));
-        aut = Builder::construct(inter_aut);
+        aut = builder::construct(inter_aut);
         REQUIRE(is_lang_empty(aut));
     }
 
@@ -647,10 +612,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p | q\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        aut = Builder::construct(inter_aut);
+        aut = builder::construct(inter_aut);
 
         REQUIRE(!is_lang_empty(aut));
     }
@@ -663,10 +628,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
                 "%Final p | q | r\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut);
+        plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 2);
         REQUIRE(aut.final.size() == 3);
@@ -680,10 +645,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q\n"
                 "%Final p q r\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut);
+        plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 2);
         REQUIRE(aut.final.size() == 3);
@@ -697,10 +662,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "%Alphabet-auto\n"
                 "%Initial p q r\n"
                 "%Final p q m n\n";
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut);
+        plumbing::construct(&aut, inter_aut);
 
         REQUIRE(aut.initial.size() == 3);
         REQUIRE(aut.final.size() == 4);
@@ -716,9 +681,9 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "%Final q2\n"
                 "q1 a q2\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
-        Plumbing::construct(&aut, inter_aut, &alphabet);
+        plumbing::construct(&aut, inter_aut, &alphabet);
 
         Run cex;
         REQUIRE(!is_lang_empty(aut, &cex));
@@ -752,10 +717,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "q7 a q5\n"
                 "q5 c q9\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut, &alphabet);
+        plumbing::construct(&aut, inter_aut, &alphabet);
 
         // some samples
         REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
@@ -783,10 +748,10 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "q3 a6 q6\n"
                 "q5 a7 q7\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Plumbing::construct(&aut, inter_aut, &alphabet);
+        plumbing::construct(&aut, inter_aut, &alphabet);
         REQUIRE(aut.final.size() == 4);
         REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2"})));
         REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3"})));
@@ -800,7 +765,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "@NFA-bits\n"
                 "%Alphabet-auto\n"
                 "%Initial q0 q8\n"
-                "%Final true\n"
+                "%Final \\true\n"
                 "q0 a1 q1\n"
                 "q1 a2 q2\n"
                 "q2 a3 q3\n"
@@ -809,11 +774,11 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "q3 a6 q6\n"
                 "q5 a7 q7\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Mata::Nfa::Builder::NameStateMap state_map;
-        Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
+        nfa::builder::NameStateMap state_map;
+        plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.size() == 9);
         CHECK(aut.final[state_map.at("0")]);
         CHECK(aut.final[state_map.at("1")]);
@@ -832,7 +797,7 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "@NFA-bits\n"
                 "%Alphabet-auto\n"
                 "%Initial q0 q8\n"
-                "%Final false\n"
+                "%Final \\false\n"
                 "q0 a1 q1\n"
                 "q1 a2 q2\n"
                 "q2 a3 q3\n"
@@ -841,16 +806,16 @@ TEST_CASE("Mata::Nfa::construct() from IntermediateAut correct calls")
                 "q3 a6 q6\n"
                 "q5 a7 q7\n";
 
-        const auto auts = Mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        Mata::Nfa::Builder::NameStateMap state_map;
-        Plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
+        nfa::builder::NameStateMap state_map;
+        plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.empty());
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::make_complete()")
+TEST_CASE("mata::nfa::make_complete()")
 { // {{{
     Nfa aut(11);
 
@@ -950,7 +915,7 @@ TEST_CASE("Mata::Nfa::make_complete()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::complement()")
+TEST_CASE("mata::nfa::complement()")
 { // {{{
     Nfa aut(3);
     Nfa cmpl;
@@ -961,8 +926,8 @@ TEST_CASE("Mata::Nfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
-        Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
-        CHECK(Mata::Nfa::are_equivalent(cmpl, empty_string_nfa));
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(cmpl, empty_string_nfa));
     }
 
     SECTION("empty automaton")
@@ -973,13 +938,13 @@ TEST_CASE("Mata::Nfa::complement()")
                                     {"minimize", "false"}});
 
         REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
-        CHECK(Mata::Nfa::are_equivalent(cmpl, sigma_star_nfa));
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(cmpl, sigma_star_nfa));
     }
 
     SECTION("empty automaton accepting epsilon, empty alphabet")
@@ -1004,13 +969,13 @@ TEST_CASE("Mata::Nfa::complement()")
                                     {"minimize", "false"}});
 
         REQUIRE(!is_in_lang(cmpl, { }));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"]},{}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"]}, {}}));
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
-        REQUIRE(cmpl.get_num_of_trans() == 4);
+        REQUIRE(cmpl.delta.num_of_transitions() == 4);
     }
 
     SECTION("non-empty automaton accepting a*b*")
@@ -1036,7 +1001,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
-        REQUIRE(cmpl.get_num_of_trans() == 6);
+        REQUIRE(cmpl.delta.num_of_transitions() == 6);
     }
 
     SECTION("empty automaton, empty alphabet, minimization")
@@ -1045,8 +1010,8 @@ TEST_CASE("Mata::Nfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
-        Nfa empty_string_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
-        CHECK(Mata::Nfa::are_equivalent(empty_string_nfa, cmpl));
+        Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(empty_string_nfa, cmpl));
     }
 
     SECTION("empty automaton, minimization")
@@ -1057,13 +1022,13 @@ TEST_CASE("Mata::Nfa::complement()")
                                     {"minimize", "true"}});
 
         REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"] },{}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Mata::Nfa::Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Nfa sigma_star_nfa{ Mata::Nfa::Builder::create_sigma_star_nfa(&alph) };
-        CHECK(Mata::Nfa::are_equivalent(sigma_star_nfa, cmpl));
+        Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
+        CHECK(are_equivalent(sigma_star_nfa, cmpl));
     }
 
     SECTION("minimization vs no minimization")
@@ -1091,7 +1056,7 @@ TEST_CASE("Mata::Nfa::complement()")
 
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_universal()")
+TEST_CASE("mata::nfa::is_universal()")
 { // {{{
     Nfa aut(6);
     Run cex;
@@ -1307,7 +1272,7 @@ TEST_CASE("Mata::Nfa::is_universal()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_included()")
+TEST_CASE("mata::nfa::is_included()")
 { // {{{
     Nfa smaller(10);
     Nfa bigger(16);
@@ -1506,7 +1471,7 @@ TEST_CASE("Mata::Nfa::is_included()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::are_equivalent")
+TEST_CASE("mata::nfa::are_equivalent")
 {
     Nfa smaller(10);
     Nfa bigger(16);
@@ -1606,11 +1571,11 @@ TEST_CASE("Mata::Nfa::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        Mata::Nfa::Nfa aut;
-        Mata::Parser::create_nfa(&aut, "a*");
-        Mata::Nfa::Nfa aut2;
-        Mata::Parser::create_nfa(&aut2, "(a|b)*");
-        CHECK(!Mata::Nfa::are_equivalent(aut, aut2));
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "a*");
+        Nfa aut2;
+        mata::parser::create_nfa(&aut2, "(a|b)*");
+        CHECK(!are_equivalent(aut, aut2));
     }
 
     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
@@ -1672,7 +1637,7 @@ TEST_CASE("Mata::Nfa::are_equivalent")
     }
 }
 
-TEST_CASE("Mata::Nfa::revert()")
+TEST_CASE("mata::nfa::revert()")
 { // {{{
     Nfa aut(9);
 
@@ -1713,7 +1678,7 @@ TEST_CASE("Mata::Nfa::revert()")
         REQUIRE(result.initial[2]);
         REQUIRE(result.final[1]);
         REQUIRE(result.delta.contains(2, 'a', 1));
-        REQUIRE(result.delta.size() == aut.delta.size());
+        REQUIRE(result.delta.num_of_transitions() == aut.delta.num_of_transitions());
     }
 
     SECTION("bigger automaton")
@@ -1754,7 +1719,7 @@ TEST_CASE("Mata::Nfa::revert()")
         CHECK(res.initial[5]);
         CHECK(res.final[1]);
         CHECK(res.final[3]);
-        CHECK(res.get_num_of_trans() == 15);
+        CHECK(res.delta.num_of_transitions() == 15);
         CHECK(res.delta.contains(5, 'a', 5));
         CHECK(res.delta.contains(5, 'a', 7));
         CHECK(res.delta.contains(9, 'a', 9));
@@ -1779,7 +1744,7 @@ TEST_CASE("Mata::Nfa::revert()")
         CHECK(res.initial[2]);
         CHECK(res.initial[12]);
         CHECK(res.final[4]);
-        CHECK(res.get_num_of_trans() == 12);
+        CHECK(res.delta.num_of_transitions() == 12);
         CHECK(res.delta.contains(8, 'a', 4));
         CHECK(res.delta.contains(8, 'c', 4));
         CHECK(res.delta.contains(4, 'b', 8));
@@ -1796,7 +1761,7 @@ TEST_CASE("Mata::Nfa::revert()")
 } // }}}
 
 
-TEST_CASE("Mata::Nfa::is_deterministic()")
+TEST_CASE("mata::nfa::is_deterministic()")
 { // {{{
     Nfa aut('s'+1);
 
@@ -1854,7 +1819,7 @@ TEST_CASE("Mata::Nfa::is_deterministic()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_complete()")
+TEST_CASE("mata::nfa::is_complete()")
 { // {{{
     Nfa aut('q'+1);
 
@@ -1917,7 +1882,7 @@ TEST_CASE("Mata::Nfa::is_complete()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
+TEST_CASE("mata::nfa::is_prfx_in_lang()")
 { // {{{
     Nfa aut('q'+1);
 
@@ -1975,7 +1940,7 @@ TEST_CASE("Mata::Nfa::is_prfx_in_lang()")
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::fw-direct-simulation()")
+TEST_CASE("mata::nfa::fw-direct-simulation()")
 { // {{{
     Nfa aut;
 
@@ -2054,14 +2019,14 @@ TEST_CASE("Mata::Nfa::fw-direct-simulation()")
     }
 } // }}
 
-TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
+TEST_CASE("mata::nfa::reduce_size_by_simulation()")
 {
     Nfa aut;
     StateRenaming state_renaming;
 
     SECTION("empty automaton")
     {
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2074,7 +2039,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2106,7 +2071,7 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         aut.final = {3, 9};
 
 
-        Nfa result = reduce(aut, false, &state_renaming);
+        Nfa result = reduce(aut, &state_renaming);
 
         REQUIRE(result.size() == 6);
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2122,35 +2087,29 @@ TEST_CASE("Mata::Nfa::reduce_size_by_simulation()")
         REQUIRE(result.final[state_renaming[9]]);
         REQUIRE(result.final[state_renaming[3]]);
 
-        result = reduce(aut, true, &state_renaming);
+        result = reduce(aut.trim(), &state_renaming);
         CHECK(result.size() == 3);
-        CHECK(result.initial.size() == 2);
-        for (State initial : result.initial) {
-            CHECK(((initial == state_renaming[1]) || (initial == state_renaming[2])));
-        }
-        REQUIRE(result.final.size() == 1);
-        for (State final : result.final) {
-            CHECK(final == state_renaming[3]);
-        }
-        CHECK(result.delta.size() == 6);
-        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[3]));
+        CHECK(result.initial == SparseSet<State>{ 0, 1 });
+        CHECK(result.final == SparseSet<State>{ 2 });
+        CHECK(result.delta.num_of_transitions() == 6);
+        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[0], 'a', state_renaming[1]));
+        CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[1]));
+        CHECK(result.delta.contains(state_renaming[1], 'b', state_renaming[1]));
         CHECK(result.delta.contains(state_renaming[1], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[2]));
-        CHECK(result.delta.contains(state_renaming[2], 'a', state_renaming[3]));
-        CHECK(result.delta.contains(state_renaming[3], 'b', state_renaming[2]));
+        CHECK(result.delta.contains(state_renaming[2], 'b', state_renaming[1]));
     }
 
     SECTION("no transitions from non-final state")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        Nfa result = reduce(aut, true, &state_renaming);
-        CHECK(Mata::Nfa::are_equivalent(result, aut));
+        Nfa result = reduce(aut.trim(), &state_renaming);
+        CHECK(are_equivalent(result, aut));
     }
 }
 
-TEST_CASE("Mata::Nfa::union_norename()") {
+TEST_CASE("mata::nfa::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};
 
@@ -2175,7 +2134,7 @@ TEST_CASE("Mata::Nfa::union_norename()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::remove_final()")
+TEST_CASE("mata::nfa::remove_final()")
 {
     Nfa aut('q' + 1);
 
@@ -2190,7 +2149,7 @@ TEST_CASE("Mata::Nfa::remove_final()")
     }
 }
 
-TEST_CASE("Mata::Nfa::delta.remove()")
+TEST_CASE("mata::nfa::delta.remove()")
 {
     Nfa aut('q' + 1);
 
@@ -2243,7 +2202,7 @@ TEST_CASE("Mata::Nfa::delta.remove()")
     }
 }
 
-TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
+TEST_CASE("mata::nfa::get_trans_as_sequence(}") {
     Nfa aut('q' + 1);
     std::vector<Transition> expected{};
 
@@ -2255,10 +2214,11 @@ TEST_CASE("Mata::Nfa::get_trans_as_sequence(}") {
     expected.emplace_back(2, 3, 4);
 
 
-    REQUIRE(aut.get_trans_as_sequence() == expected);
+    const Delta::Transitions transitions{ aut.delta.transitions() };
+    REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
 }
 
-TEST_CASE("Mata::Nfa::remove_epsilon()")
+TEST_CASE("mata::nfa::remove_epsilon()")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
@@ -2276,7 +2236,7 @@ TEST_CASE("Mata::Nfa::remove_epsilon()")
     REQUIRE(aut.delta.contains(5, 'a', 9));
 }
 
-TEST_CASE("Profile Mata::Nfa::remove_epsilon()", "[.profiling]")
+TEST_CASE("Profile mata::nfa::remove_epsilon()", "[.profiling]")
 {
     for (size_t n{}; n < 100000; ++n) {
         Nfa aut{20};
@@ -2285,14 +2245,14 @@ TEST_CASE("Profile Mata::Nfa::remove_epsilon()", "[.profiling]")
     }
 }
 
-TEST_CASE("Mata::Nfa::get_num_of_trans()")
+TEST_CASE("mata::nfa::get_num_of_trans()")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
-    REQUIRE(aut.get_num_of_trans() == 15);
+    REQUIRE(aut.delta.num_of_transitions() == 15);
 }
 
-TEST_CASE("Mata::Nfa::get_one_letter_aut()")
+TEST_CASE("mata::nfa::get_one_letter_aut()")
 {
     Nfa aut(11);
     Symbol abstract_symbol{'x'};
@@ -2301,7 +2261,7 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
     Nfa digraph{aut.get_one_letter_aut() };
 
     REQUIRE(digraph.size() == aut.size());
-    REQUIRE(digraph.get_num_of_trans() == 12);
+    REQUIRE(digraph.delta.num_of_transitions() == 12);
     REQUIRE(digraph.delta.contains(1, abstract_symbol, 10));
     REQUIRE(digraph.delta.contains(10, abstract_symbol, 7));
     REQUIRE(!digraph.delta.contains(10, 'a', 7));
@@ -2309,33 +2269,30 @@ TEST_CASE("Mata::Nfa::get_one_letter_aut()")
     REQUIRE(!digraph.delta.contains(10, 'c', 7));
 }
 
-TEST_CASE("Mata::Nfa::get_reachable_states()")
-{
+TEST_CASE("mata::nfa::get_reachable_states()") {
     Nfa aut{20};
 
-    SECTION("Automaton A")
-    {
+    SECTION("Automaton A") {
         FILL_WITH_AUT_A(aut);
         aut.delta.remove(3, 'b', 9);
         aut.delta.remove(5, 'c', 9);
         aut.delta.remove(1, 'a', 10);
 
-        auto reachable{aut.get_reachable_states()};
-        CHECK(reachable.find(0) == reachable.end());
-        CHECK(reachable.find(1) != reachable.end());
-        CHECK(reachable.find(2) == reachable.end());
-        CHECK(reachable.find(3) != reachable.end());
-        CHECK(reachable.find(4) == reachable.end());
-        CHECK(reachable.find(5) != reachable.end());
-        CHECK(reachable.find(6) == reachable.end());
-        CHECK(reachable.find(7) != reachable.end());
-        CHECK(reachable.find(8) == reachable.end());
-        CHECK(reachable.find(9) == reachable.end());
-        CHECK(reachable.find(10) == reachable.end());
+        StateSet reachable{ aut.get_reachable_states() };
+        CHECK(!reachable.contains(0));
+        CHECK(reachable.contains(1));
+        CHECK(!reachable.contains(2));
+        CHECK(reachable.contains(3));
+        CHECK(!reachable.contains(4));
+        CHECK(reachable.contains(5));
+        CHECK(!reachable.contains(6));
+        CHECK(reachable.contains(7));
+        CHECK(!reachable.contains(8));
+        CHECK(!reachable.contains(9));
+        CHECK(!reachable.contains(10));
 
         aut.initial.erase(1);
         aut.initial.erase(3);
-
         reachable = aut.get_reachable_states();
         CHECK(reachable.empty());
     }
@@ -2371,7 +2328,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
         CHECK(reachable.find(2) != reachable.end());
         CHECK(reachable.find(4) != reachable.end());
         CHECK(reachable.find(6) != reachable.end());
-        CHECK(aut.get_useful_states_old().empty());
+        CHECK(aut.get_useful_states().count() == 0);
 
         aut.final.insert(4);
         reachable = aut.get_reachable_states();
@@ -2379,7 +2336,7 @@ TEST_CASE("Mata::Nfa::get_reachable_states()")
     }
 }
 
-TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
+TEST_CASE("mata::nfa::trim() for profiling", "[.profiling],[trim]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
@@ -2392,25 +2349,25 @@ TEST_CASE("Mata::Nfa::trim() for profiling", "[.profiling],[trim]")
 }
 
 //TODO: make this a test for the new version
-TEST_CASE("Mata::Nfa::get_useful_states_old() for profiling", "[.profiling],[useful_states]")
+TEST_CASE("mata::nfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        aut.get_useful_states_old();
+        aut.get_useful_states();
     }
 }
 
-TEST_CASE("Mata::Nfa::trim() trivial") {
+TEST_CASE("mata::nfa::trim() trivial") {
     Nfa aut{1};
     aut.initial.insert(0);
     aut.final.insert(0);
     aut.trim();
 }
 
-TEST_CASE("Mata::Nfa::trim()")
+TEST_CASE("mata::nfa::trim()")
 {
     Nfa orig_aut{20};
     FILL_WITH_AUT_A(orig_aut);
@@ -2459,7 +2416,7 @@ TEST_CASE("Mata::Nfa::trim()")
     }
 }
 
-TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
+TEST_CASE("mata::nfa::Nfa::delta.empty()")
 {
     Nfa aut{};
 
@@ -2509,11 +2466,11 @@ TEST_CASE("Mata::Nfa::Nfa::delta.empty()")
     }
 }
 
-TEST_CASE("Mata::Nfa::delta.operator[]")
+TEST_CASE("mata::nfa::delta.operator[]")
 {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
-    REQUIRE(aut.get_num_of_trans() == 15);
+    REQUIRE(aut.delta.num_of_transitions() == 15);
     aut.delta[25];
     REQUIRE(aut.size() == 20);
 
@@ -2536,7 +2493,7 @@ TEST_CASE("Mata::Nfa::delta.operator[]")
     REQUIRE(aut2.delta[60].empty());
 }
 
-TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
+TEST_CASE("mata::nfa::Nfa::unify_(initial/final)()") {
     Nfa nfa{10};
 
     SECTION("No initial") {
@@ -2645,7 +2602,7 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
 
     SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
         Nfa aut;
-        Mata::Parser::create_nfa(&aut, "a*b*");
+        mata::parser::create_nfa(&aut, "a*b*");
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
             aut.unify_final();
@@ -2654,17 +2611,17 @@ TEST_CASE("Mata::Nfa::Nfa::unify_(initial/final)()") {
     }
 }
 
-TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
+TEST_CASE("mata::nfa::Nfa::get_delta.epsilon_symbol_posts()") {
     Nfa aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.add(0, EPSILON, 3);
     aut.delta.add(3, EPSILON, 3);
     aut.delta.add(3, EPSILON, 4);
 
-    auto state_eps_trans{ aut.get_epsilon_transitions(0) };
+    auto state_eps_trans{ aut.delta.epsilon_symbol_posts(0) };
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
-    state_eps_trans = aut.get_epsilon_transitions(3);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(3);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
@@ -2672,32 +2629,32 @@ TEST_CASE("Mata::Nfa::Nfa::get_epsilon_transitions()") {
     aut.delta.add(8, 42, 4);
     aut.delta.add(8, 42, 6);
 
-    state_eps_trans = aut.get_epsilon_transitions(8, 42);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(8, 42);
     CHECK(state_eps_trans->symbol == 42);
     CHECK(state_eps_trans->targets == StateSet{3, 4, 6 });
 
-    CHECK(aut.get_epsilon_transitions(1) == aut.delta.state_post(1).end());
-    CHECK(aut.get_epsilon_transitions(5) == aut.delta.state_post(5).end());
-    CHECK(aut.get_epsilon_transitions(19) == aut.delta.state_post(19).end());
+    CHECK(aut.delta.epsilon_symbol_posts(1) == aut.delta.state_post(1).end());
+    CHECK(aut.delta.epsilon_symbol_posts(5) == aut.delta.state_post(5).end());
+    CHECK(aut.delta.epsilon_symbol_posts(19) == aut.delta.state_post(19).end());
 
     StatePost state_post{ aut.delta[0] };
-    state_eps_trans = aut.get_epsilon_transitions(state_post);
+    state_eps_trans = aut.delta.epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3 });
     state_post = aut.delta[3];
-    state_eps_trans = Nfa::get_epsilon_transitions(state_post);
+    state_eps_trans = Delta::epsilon_symbol_posts(state_post);
     CHECK(state_eps_trans->symbol == EPSILON);
     CHECK(state_eps_trans->targets == StateSet{3, 4 });
 
     state_post = aut.delta.state_post(1);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(5);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
     state_post = aut.delta.state_post(19);
-    CHECK(aut.get_epsilon_transitions(state_post) == state_post.end());
+    CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
-TEST_CASE("Mata::Nfa::Nfa::delta()") {
+TEST_CASE("mata::nfa::Nfa::delta()") {
     Delta delta(6);
 }
 
@@ -2714,13 +2671,13 @@ TEST_CASE("A segmentation fault in the make_complement") {
     REQUIRE(is_complete(r, alph));
 }
 
-TEST_CASE("Mata::Nfa:: create simple automata") {
-    Nfa nfa{ Builder::create_empty_string_nfa() };
+TEST_CASE("mata::nfa:: create simple automata") {
+    Nfa nfa{ builder::create_empty_string_nfa() };
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    nfa = Builder::create_sigma_star_nfa(&alphabet);
+    nfa = builder::create_sigma_star_nfa(&alphabet);
     CHECK(is_in_lang(nfa, { {}, {} }));
     CHECK(is_in_lang(nfa, { { 0 }, {} }));
     CHECK(is_in_lang(nfa, { { 1 }, {} }));
@@ -2732,7 +2689,7 @@ TEST_CASE("Mata::Nfa:: create simple automata") {
     CHECK(!is_in_lang(nfa, { { 3 }, {} }));
 }
 
-TEST_CASE("Mata::Nfa:: print_to_mata") {
+TEST_CASE("mata::nfa:: print_to_mata") {
     Nfa aut_big;
     aut_big.initial = {1, 2};
     aut_big.delta.add(1, 'a', 2);
@@ -2752,12 +2709,12 @@ TEST_CASE("Mata::Nfa:: print_to_mata") {
     std::string aut_big_mata = aut_big.print_to_mata();
     // for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
     IntAlphabet int_alph;
-    Nfa aut_big_from_mata = Builder::construct(Mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+    Nfa aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
     CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
 
-TEST_CASE("Mata::Nfa::trim bug") {
+TEST_CASE("mata::nfa::Nfa::trim() bug") {
 	Nfa aut(5, {0}, {4});
 	aut.delta.add(0, 122, 1);
 	aut.delta.add(1, 98, 1);
@@ -2769,11 +2726,10 @@ TEST_CASE("Mata::Nfa::trim bug") {
 	aut.delta.add(3, 97, 4);
 
 	Nfa aut_copy {aut};
-	aut.trim();
-	CHECK(are_equivalent(aut_copy, aut));
+	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
-TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
+TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 	SECTION("Nfa 1") {
 		Nfa aut(5, {0}, {4});
 		aut.delta.add(0, 122, 1);
@@ -2785,27 +2741,27 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 97, 4);
 		aut.delta.add(3, 97, 4);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 1, 1, 0, 1});
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({ 1, 1, 1, 0, 1});
 		CHECK(bv == ref);
 	}
 
 	SECTION("Empty NFA") {
 		Nfa aut;
-		Mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == Mata::BoolVector({}));
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({}));
 	}
 
 	SECTION("Single-state NFA") {
 		Nfa aut(1, {0}, {});
-		Mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == Mata::BoolVector({0}));
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({ 0}));
 	}
 
 	SECTION("Single-state NFA acc") {
 		Nfa aut(1, {0}, {0});
-		Mata::BoolVector bv = aut.get_useful_states();
-		CHECK(bv == Mata::BoolVector({1}));
+		mata::BoolVector bv = aut.get_useful_states();
+		CHECK(bv == mata::BoolVector({ 1}));
 	}
 
 	SECTION("Nfa 2") {
@@ -2815,8 +2771,8 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 98, 4);
 		aut.delta.add(4, 97, 3);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 0, 1, 0, 0});
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({ 1, 0, 1, 0, 0});
 		CHECK(bv == ref);
 	}
 
@@ -2825,8 +2781,8 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(0, 122, 0);
 		aut.delta.add(1, 98, 1);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 1});
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({ 1, 1});
 		CHECK(bv == ref);
 	}
 
@@ -2841,33 +2797,28 @@ TEST_CASE("Mata::Nfa::get_useful_states_tarjan") {
 		aut.delta.add(1, 97, 4);
 		aut.delta.add(3, 97, 4);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({0, 0, 0, 0, 0});
+		mata::BoolVector bv = aut.get_useful_states();
+		mata::BoolVector ref({ 0, 0, 0, 0, 0});
 		CHECK(bv == ref);
 	}
 
-	SECTION("from regex (a+b*a*)") {
-		Mata::Nfa::Nfa aut;
-		Mata::Parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
+    SECTION("from regex (a+b*a*)") {
+        Nfa aut;
+        mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 0, 1, 0, 1, 0, 1, 0, 0});
-		CHECK(bv == ref);
+        mata::BoolVector bv = aut.get_useful_states();
+        mata::BoolVector ref({ 1, 0, 1, 0, 1, 0, 1, 0, 0});
+        CHECK(bv == ref);
 
-		aut = Mata::Nfa::reduce(aut);
-		bv = aut.get_useful_states();
-		CHECK(bv == Mata::BoolVector({1,1,1,1}));
-	}
+        aut = reduce(aut.trim());
+        bv = aut.get_useful_states();
+        CHECK(bv == mata::BoolVector({ 1, 1, 1, 1}));
+    }
 
     SECTION("more initials") {
-
         Nfa aut(4, {0, 1, 2}, {0, 3});
-		aut.delta.add(1, 48, 0);
+        aut.delta.add(1, 48, 0);
         aut.delta.add(2, 53, 3);
-
-		Mata::BoolVector bv = aut.get_useful_states();
-		Mata::BoolVector ref({1, 1, 1, 1});
-		CHECK(bv == ref);
-	}
-
+        CHECK(aut.get_useful_states() == mata::BoolVector{ 1, 1, 1, 1});
+    }
 }

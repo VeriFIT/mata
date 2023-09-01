@@ -11,9 +11,9 @@
 /**
  * Namespace providing options to build NFAs.
  */
-namespace Mata::Nfa::Builder {
+namespace mata::nfa::builder {
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 using NameStateMap = std::unordered_map<std::string, State>;
 
@@ -47,10 +47,10 @@ Nfa create_sigma_star_nfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Nfa construct(const Mata::Parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
-Nfa construct(const Mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Nfa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 template<class ParsedObject>
 Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
@@ -87,6 +87,6 @@ Nfa parse_from_mata(const std::string& nfa_in_mata);
  */
 Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
-} // namespace Mata::Nfa::Builder.
+} // namespace mata::nfa::builder.
 
 #endif //LIBMATA_BUILDER_HH
