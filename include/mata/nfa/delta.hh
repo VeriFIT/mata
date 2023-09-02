@@ -238,7 +238,7 @@ public:
         }
         StateSet bigger_succ = {};
         for (const auto m: this->get_current()) {
-            bigger_succ = bigger_succ.Union(m->targets);
+            bigger_succ.insert(m->targets);
         }
         return bigger_succ;
     }

@@ -195,13 +195,17 @@ public:
         assert(vectorIsSorted());
     }
 
-    //TODO: I guess these things should be names union (also in SparseSet), it is weird that insert is actually doing union
+    //TODO: it is a little weird that insert is actually doing union, and we have other function called uni and unite
     virtual void insert(const OrdVector& vec) {
+        static OrdVector tmp{};
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
+        tmp.clear();
 
         // TODO: sometimes it is not efficient to copy both vectors to create a new one
-        vec_ = OrdVector::Union(*this, vec).vec_;
+        unite(*this,vec,tmp);
+        //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp.vec_ if possible.
+        vec_ = tmp.vec_;
         assert(vectorIsSorted());
     }
 
@@ -228,8 +232,6 @@ public:
     OrdVector difference(const OrdVector& rhs) const { return difference(*this, rhs); }
 
     OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
-
-    //OrdVector Union(const OrdVector& rhs) const { return Union(*this, rhs); }
 
     //TODO: this code of find was duplicated, not nice.
     // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
@@ -409,7 +411,7 @@ public:
         return result;
     }
 
-    static void Union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
+    static void unite(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
 
@@ -441,21 +443,10 @@ public:
         assert(result.vectorIsSorted());
     }
 
-    static OrdVector Union(const OrdVector& lhs, const OrdVector& rhs) {
+    static OrdVector uni(const OrdVector& lhs, const OrdVector& rhs) {
         OrdVector result{};
-        Union(lhs, rhs, result);
+        unite(lhs, rhs, result);
         return result;
-    }
-
-    OrdVector Union(const OrdVector& other) {
-        static OrdVector tmp{};
-        tmp.clear();
-        Union(*this,other,tmp);
-
-        //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp_vec_ if possible.
-        //vec_ = tmp.vec_;
-        //return *this;
-        return tmp;
     }
 
     static OrdVector intersection(const OrdVector& lhs, const OrdVector& rhs) {

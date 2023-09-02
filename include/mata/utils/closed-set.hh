@@ -354,6 +354,8 @@ ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T>& rhs) const {
 */
 template <typename T>
 ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
+    static int fn = 0;
+    fn++;
     assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
     "Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_);
@@ -361,9 +363,11 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
     // Iterates through all the tuples from Antichan1 X Antichan2
     // and creates an union of them
     if(type_ == ClosedSetType::upward_closed_set) {
-        for(auto element1 : antichain_) {
-            for(auto element2 : rhs.antichain()) {
-               result.insert(element1.Union(element2));
+        for(Node element1 : antichain_) {
+            for(Node element2 : rhs.antichain()) {
+                Node tmp = element1;
+                tmp.insert(element2);
+                result.insert(tmp);
             }
         }
     }
