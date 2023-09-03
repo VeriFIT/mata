@@ -12,7 +12,7 @@
     Integers of any length are written as sequences of "linked" bytes.
     For each byte 7 bits are used for data and one (MSBit) as link with
     a further byte (MSB = 1 means one more byte).
-    Low level read/write of bytes filter <CR>, <LF> and <ctrl-Z>
+    Low level read/write of bytes filter_values <CR>, <LF> and <ctrl-Z>
     with escape sequences.
     ]
 
@@ -239,7 +239,7 @@ DddmpReadInt (
   Synopsis    [Writes a byte to file filtering <CR>, <LF> and <ctrl-Z>]
 
   Description [outputs a byte to file fp. Uses 0x00 as escape character
-    to filter <CR>, <LF> and <ctrl-Z>.
+    to filter_values <CR>, <LF> and <ctrl-Z>.
     This is done for compatibility between unix and dos/windows systems.
     ]
 
@@ -295,7 +295,7 @@ WriteByteBinary (
   Synopsis    [Reads a byte from file with escaped <CR>, <LF> and <ctrl-Z>]
 
   Description [inputs a byte to file fp. 0x00 has been used as escape character
-    to filter <CR>, <LF> and <ctrl-Z>. This is done for
+    to filter_values <CR>, <LF> and <ctrl-Z>. This is done for
     compatibility between unix and dos/windows systems.
     ]
 

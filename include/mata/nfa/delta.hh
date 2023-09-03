@@ -81,7 +81,7 @@ public:
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
     void inline push_back(const State s) { targets.push_back(s); }
 
-    void remove(State s) { targets.remove(s); }
+    void remove(State s) { targets.erase(s); }
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
@@ -107,15 +107,16 @@ public:
     StatePost& operator=(StatePost&&) = default;
     using super::insert;
     using super::reserve;
-    using super::remove;
     using super::empty, super::size;
     using super::ToVector;
-    using super::erase;
     // dangerous, breaks the sortedness invariant
     using super::push_back;
     // is adding non-const version as well ok?
     using super::back;
-    using super::filter;
+    using super::filter_values;
+
+    void erase(const SymbolPost& s) {super::erase(s);}
+    void erase(const_iterator first, const_iterator last) {super::erase(first,last);}
 
     using super::find;
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }

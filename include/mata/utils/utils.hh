@@ -211,9 +211,123 @@ Map<T2, T1> invert_map(const Map<T1, T2>& mp)
 	return result;
 } // invert_map }}}
 
-
 template<class Tuple, std::size_t N>
 struct TuplePrinter;
+
+// Taken from
+//   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
+template<class Tuple, size_t N>
+struct TuplePrinter
+{
+    static std::string print(const Tuple& t)
+    {
+        std::string res = TuplePrinter<Tuple, N-1>::print(t);
+        return res + ", " + std::to_string(std::get<N-1>(t));
+    }
+};
+
+
+template<class Tuple>
+struct TuplePrinter<Tuple, 1> {
+    static std::string print(const Tuple& t)
+    {
+        return std::to_string(std::get<0>(t));
+    }
+};
+
+// This reserves space in a vector, to be used before push_back or insert.
+// Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the doubling.
+// Might be worth thinking about it.
+//  around 30% speedup for fragile revert,
+//  more than 50% for simple revert,
+// (when testing on a stupid test case)
+template<class Vector>
+void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 32) {
+    //return; //Try this to see the effect of calling this. It should not affect functionality.
+    if (vec.capacity() < extension) //if the size is already large enough, leave it to the default doubling strategy. This if seems to make a barely noticeable difference :).
+    {
+        if (vec.capacity() < std::max(vec.size() + 1, needed_capacity))
+            vec.reserve(vec.size() + extension);
+    }
+}
+
+//This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
+// It might be useful in revert and trim, but so far it is useless. It was hard to get right, so I am reluctant to remove ....
+// It assumes that renaming[i] <= i.
+// It assumes that vec is not longer than renaming.
+// The function is very fragile.
+template<class Vector,typename Index>
+void defragment(Vector & vec, const std::vector<Index> & renaming) {
+    //assert(vec.size() <= renaming.size());
+    size_t i = 0;
+    for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
+        if (renaming[i] != i)
+        {
+            if(! (renaming[i]<vsize) )
+                break;
+            assert(renaming[i] < i);
+            vec[i] = std::move(vec[renaming[i]]);
+        }
+    }
+    vec.reserve(i);
+}
+
+//In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
+template<class Vector,typename Index>
+void rename(Vector & vec, const std::vector<Index> & renaming) {
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (i != vec[i])
+            vec[i] = renaming[vec[i]];
+    }
+}
+
+template<class Vector, typename Fun>
+void filter_indexes(Vector & vec, const Fun && is_staying) {
+    // TODO: Rewrite with erase and remove_if.
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (is_staying(i)) {
+            if (i!=last) {
+                vec[last] = std::move(vec[i]);
+            }
+            last++;
+        }
+    }
+    vec.reserve(last);
+}
+
+template<class Vector, typename Fun>
+void filter_values(Vector & vec, const Fun && is_staying) {
+    // TODO: Rewrite with erase and remove_if.
+    size_t last = 0;
+    for (size_t i = 0,size = vec.size();i < size; ++i)
+    {
+        if (is_staying(vec[i])) {
+            if (i!=last) {
+                vec[last] = std::move(vec[i]);
+            }
+            last++;
+        }
+    }
+    vec.reserve(last);
+}
+
+template<class Vector>
+void inline sort_and_rmdupl(Vector & vec)
+{
+    //TODO: try this?
+    //if (vectorIsSorted()) return;//probably useless
+
+    // sort
+    //TODO: is this the best available sorting algo?
+    std::sort(vec.begin(), vec.end());
+
+    // remove duplicates
+    auto it = std::unique(vec.begin(), vec.end());
+    vec.reserve(static_cast<size_t>(it - vec.begin()));
+}
 
 // CLOSING NAMESPACES AND GUARDS
 } /* util */
@@ -462,121 +576,4 @@ std::string to_string(const A& value)
 
 } // namespace std }}}
 
-namespace mata::utils {
-
-// Taken from
-//   http://en.cppreference.com/w/cpp/utility/tuple/tuple_cat
-template<class Tuple, size_t N>
-struct TuplePrinter
-{
-    static std::string print(const Tuple& t)
-    {
-			std::string res = TuplePrinter<Tuple, N-1>::print(t);
-			return res + ", " + std::to_string(std::get<N-1>(t));
-    }
-};
-
-
-template<class Tuple>
-struct TuplePrinter<Tuple, 1> {
-    static std::string print(const Tuple& t)
-    {
-        return std::to_string(std::get<0>(t));
-    }
-};
-
-// This reserves space in a vector, to be used before push_back or insert.
-// Assuming the doubling extension strategy, it only makes the first reserve large, after that it leaves it to the doubling.
-// Might be worth thinking about it.
-//  around 30% speedup for fragile revert,
-//  more than 50% for simple revert,
-// (when testing on a stupid test case)
-template<class Vector>
-void inline reserve_on_insert(Vector & vec,size_t needed_capacity = 0,size_t extension = 32) {
-    //return; //Try this to see the effect of calling this. It should not affect functionality.
-    if (vec.capacity() < extension) //if the size is already large enough, leave it to the default doubling strategy. This if seems to make a barely noticeable difference :).
-    {
-        if (vec.capacity() < std::max(vec.size() + 1, needed_capacity))
-            vec.reserve(vec.size() + extension);
-    }
-}
-
-//This function reindexes vector, that is, the content of each index i will be moved to the index renaming[i].
-// It might be useful in revert and trim, but so far it is useless. It was hard to get right, so I am reluctant to remove ....
-// It assumes that renaming[i] <= i.
-// It assumes that vec is not longer than renaming.
-// The function is very fragile.
-template<class Vector,typename Index>
-void defragment(Vector & vec, const std::vector<Index> & renaming) {
-    //assert(vec.size() <= renaming.size());
-    size_t i = 0;
-    for (size_t rsize=renaming.size(),vsize=vec.size(); i<vsize && i<rsize ; i++) {
-        if (renaming[i] != i)
-        {
-            if(! (renaming[i]<vsize) )
-                break;
-            assert(renaming[i] < i);
-            vec[i] = std::move(vec[renaming[i]]);
-        }
-    }
-        vec.reserve(i);
-}
-
-//In a vector of numbers, rename the numbers according to the renaming: renaming[old_name]=new_name
-template<class Vector,typename Index>
-void rename(Vector & vec, const std::vector<Index> & renaming) {
-    for (size_t i = 0,size = vec.size();i < size; ++i)
-    {
-        if (i != vec[i])
-            vec[i] = renaming[vec[i]];
-    }
-}
-
-template<class Vector, typename F>
-void filter_indexes(Vector & vec, F && is_staying) {
-    // TODO: Rewrite with erase and remove_if.
-    size_t last = 0;
-    for (size_t i = 0,size = vec.size();i < size; ++i)
-    {
-        if (is_staying(i)) {
-            if (i!=last) {
-                vec[last] = std::move(vec[i]);
-            }
-            last++;
-        }
-    }
-    vec.reserve(last);
-}
-
-template<class Vector, typename F>
-void filter(Vector & vec, F && is_staying) {
-    // TODO: Rewrite with erase and remove_if.
-    size_t last = 0;
-    for (size_t i = 0,size = vec.size();i < size; ++i)
-    {
-        if (is_staying(vec[i])) {
-            if (i!=last) {
-                vec[last] = std::move(vec[i]);
-            }
-            last++;
-        }
-    }
-    vec.reserve(last);
-}
-
-    template<class Vector>
-    void inline sort_and_rmdupl(Vector & vec)
-    {
-        //TODO: try this?
-        //if (vectorIsSorted()) return;//probably useless
-
-        // sort
-        //TODO: is this the best available sorting algo?
-        std::sort(vec.begin(), vec.end());
-
-        // remove duplicates
-        auto it = std::unique(vec.begin(), vec.end());
-        vec.reserve(static_cast<size_t>(it - vec.begin()));
-    }
-} // namespace mata::utils.
 #endif /* MATA_UTIL_HH_ */

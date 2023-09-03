@@ -146,6 +146,13 @@ public:
         vec_.emplace_back(x);
     }
 
+    //I added this, and noticed that that push_back above does emplace_back.
+    // Isn't that somehow wrong? Is emplace_back really always better?
+    virtual inline void emplace_back(const Key& x) {
+        reserve_on_insert(vec_);
+        vec_.emplace_back(x);
+    }
+
     virtual inline void reserve(size_t  size) { vec_.reserve(size); }
 
     virtual inline void erase(const_iterator first, const_iterator last) { vec_.erase(first, last); }
@@ -266,7 +273,7 @@ public:
      *
      * This function expects the vector to be sorted.
      */
-    inline void remove(const Key& k) {
+    inline void erase(const Key& k) {
         assert(vectorIsSorted());
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {
@@ -289,9 +296,9 @@ public:
     }
 
     // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
-    template<typename F>
-    void filter(F && is_staying) {
-        utils::filter(vec_, is_staying);
+    template<typename Fun>
+    void filter_values(const Fun && is_staying) {
+        utils::filter_values(vec_, is_staying);
     }
 
     virtual inline const_reference back() const { return vec_.back(); }

@@ -326,7 +326,7 @@ void ClosedSet<T>::insert(const Node& node) {
     }
 
     for(auto element : to_erase) {
-        antichain_.remove(element);
+        antichain_.erase(element);
     }
     antichain_.insert(node);
 } // insert }}}
@@ -354,8 +354,6 @@ ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T>& rhs) const {
 */
 template <typename T>
 ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
-    static int fn = 0;
-    fn++;
     assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
     "Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_);

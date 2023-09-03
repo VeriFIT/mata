@@ -3,7 +3,7 @@
  *
  * The benchmark program reproduces the results of CADE'23 for benchmarks in directory /nfa-bench/benchmarks/email_filter
  *
- * Optimal Inputs: inputs/bench-quintuple-email-filter.in
+ * Optimal Inputs: inputs/bench-quintuple-email-filter_values.in
  *
  * The original benchmark had the following statistics:
  *   1. Average: 0.2s

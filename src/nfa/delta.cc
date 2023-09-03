@@ -139,7 +139,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
         } else {
             symbol_transitions->remove(tgt);
             if (symbol_transitions->empty()) {
-                state_posts_[src].remove(*symbol_transitions);
+                state_posts_[src].erase(*symbol_transitions);
             }
         }
     }
