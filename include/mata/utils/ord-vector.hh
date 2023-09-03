@@ -168,10 +168,11 @@ public:
         // desirable insertion in case the searched element is not present in the
         // range)
         // Someone else: Or we can use lower_bound like this, and remove all these comments and code? Is there a problem (except the one additional comparison)?
-        auto pos  = std::lower_bound( vec_.begin(), vec_.end(), x);
+        auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
         if (pos == vec_.end() || *pos != x)
             vec_.insert(pos,x);
 
+        //TODO: measure, if there is not benefit to this custom version, remove
         //size_t first = 0;
         //size_t last = vec_.size();
 
@@ -215,7 +216,6 @@ public:
         assert(vec.vectorIsSorted());
         tmp.clear();
 
-        // TODO: sometimes it is not efficient to copy both vectors to create a new one
         unite(*this,vec,tmp);
         //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp.vec_ if possible.
         vec_ = tmp.vec_;
@@ -428,30 +428,34 @@ public:
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
 
-        auto lhs_it = lhs.begin();
-        auto rhs_it = rhs.vec_.begin();
+        result.reserve(lhs.size()+rhs.size());
+        std::set_union(lhs.vec_.begin(),lhs.vec_.end(),rhs.vec_.begin(),rhs.vec_.end(),std::back_inserter(result.vec_));
 
-        while ((lhs_it != lhs.end()) || (rhs_it != rhs.end())) { // Until we get to the end of both vectors.
-            if (lhs_it == lhs.end()) { // If we are finished with the left-hand side vector.
-                result.push_back(*rhs_it);
-                ++rhs_it;
-            } else if (rhs_it == rhs.end()) { // If we are finished with the right-hand side vector.
-                result.push_back(*lhs_it);
-                ++lhs_it;
-            } else {
-                if (*lhs_it < *rhs_it) {
-                    result.push_back(*lhs_it);
-                    ++lhs_it;
-                } else if (*rhs_it < *lhs_it) {
-                    result.push_back(*rhs_it);
-                    ++rhs_it;
-                } else { // In case they are equal.
-                    result.push_back(*rhs_it);
-                    ++rhs_it;
-                    ++lhs_it;
-                }
-            }
-        }
+        //TODO: measure, if there is not benefit to this custom version, remove
+        //auto lhs_it = lhs.begin();
+        //auto rhs_it = rhs.vec_.begin();
+
+        //while ((lhs_it != lhs.end()) || (rhs_it != rhs.end())) { // Until we get to the end of both vectors.
+        //    if (lhs_it == lhs.end()) { // If we are finished with the left-hand side vector.
+        //        result.push_back(*rhs_it);
+        //        ++rhs_it;
+        //    } else if (rhs_it == rhs.end()) { // If we are finished with the right-hand side vector.
+        //        result.push_back(*lhs_it);
+        //        ++lhs_it;
+        //    } else {
+        //        if (*lhs_it < *rhs_it) {
+        //            result.push_back(*lhs_it);
+        //            ++lhs_it;
+        //        } else if (*rhs_it < *lhs_it) {
+        //            result.push_back(*rhs_it);
+        //            ++rhs_it;
+        //        } else { // In case they are equal.
+        //            result.push_back(*rhs_it);
+        //            ++rhs_it;
+        //            ++lhs_it;
+        //        }
+        //    }
+        //}
 
         assert(result.vectorIsSorted());
     }
