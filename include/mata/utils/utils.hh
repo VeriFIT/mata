@@ -299,7 +299,7 @@ void filter_indexes(Vector & vec, const Fun && is_staying) {
 }
 
 template<class Vector, typename Fun>
-void filter_values(Vector & vec, const Fun && is_staying) {
+void filter(Vector & vec, const Fun && is_staying) {
     // TODO: Rewrite with erase and remove_if.
     size_t last = 0;
     for (size_t i = 0,size = vec.size();i < size; ++i)

@@ -87,7 +87,7 @@ test cases:
 
 ```shell
 ./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-param-diff;b-param-inter" inputs/bench-double-bool-comb-cox.input
-./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-regex" inputs/bench-quintuple-email-filter_values.input
+./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-regex" inputs/bench-quintuple-email-filter.input
 ./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "b-armc-incl" inputs/bench-double-automata-inclusion.input
 ./scripts/run_pyco.sh -c jobs/bench-cade-23.yaml -m "param-intersect" inputs/bench-variadic-bool-comb-intersect.input
 ```

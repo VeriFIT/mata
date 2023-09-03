@@ -113,7 +113,7 @@ public:
     using super::push_back;
     // is adding non-const version as well ok?
     using super::back;
-    using super::filter_values;
+    using super::filter;
 
     void erase(const SymbolPost& s) {super::erase(s);}
     void erase(const_iterator first, const_iterator last) {super::erase(first,last);}

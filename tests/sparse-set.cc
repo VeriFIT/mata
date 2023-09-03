@@ -63,7 +63,7 @@ TEST_CASE("mata::utils::SparseSet") {
         CHECK(OrdVector<State>(p.begin(),p.end()) == OrdVector<State>({2}));
     }
 
-    SECTION("filter_values") {
+    SECTION("filter") {
         p = {0, 1, 2, 3, 4, 5, 6};
         mata::BoolVector v = { 0, 1, 1};
         auto f = [&v](State x) { return x < v.size() ? v[x] : 0; };
