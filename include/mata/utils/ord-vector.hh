@@ -162,42 +162,48 @@ public:
 
         reserve_on_insert(vec_);
 
-        // perform binary search (cannot use std::binary_search because it is
+        // A conversation between someone and someone else:
+        // Someone: perform binary search (cannot use std::binary_search because it is
         // ineffective due to not returning the iterator to the position of the
         // desirable insertion in case the searched element is not present in the
         // range)
-        size_t first = 0;
-        size_t last = vec_.size();
+        // Someone else: Or we can use lower_bound like this, and remove all these comments and code? Is there a problem (except the one additional comparison)?
+        auto pos  = std::lower_bound( vec_.begin(), vec_.end(), x);
+        if (pos == vec_.end() || *pos != x)
+            vec_.insert(pos,x);
 
-        if ((last != 0) && (vec_.back() < x))
-        {	// for the case which would be prevalent
-            // that is, the added thing can is larger than the largest thing and can be just bushed back
-            vec_.push_back(x);
-            return;
-        }
+        //size_t first = 0;
+        //size_t last = vec_.size();
 
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == x)
-            {	// in case we found x
-                return;
-            }
-            else if (vec_[middle] < x)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
+        //if ((last != 0) && (vec_.back() < x))
+        //{	// for the case which would be prevalent
+        //    // that is, the added thing can is larger than the largest thing and can be just bushed back
+        //    vec_.push_back(x);
+        //    return;
+        //}
 
-        vec_.resize(vec_.size() + 1);
-        std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
+        //while (first < last)
+        //{	// while the pointers do not overlap
+        //    size_t middle = first + (last - first) / 2;
+        //    if (vec_[middle] == x)
+        //    {	// in case we found x
+        //        return;
+        //    }
+        //    else if (vec_[middle] < x)
+        //    {	// in case middle is less than x
+        //        first = middle + 1;
+        //    }
+        //    else
+        //    {	// in case middle is greater than x
+        //        last = middle;
+        //    }
+        //}
 
-        // insert the new element
-        vec_[first] = x;
+        //vec_.resize(vec_.size() + 1);
+        //std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
+
+        //// insert the new element
+        //vec_[first] = x;
 
         assert(vectorIsSorted());
     }
