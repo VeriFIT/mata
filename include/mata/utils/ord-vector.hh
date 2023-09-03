@@ -168,6 +168,7 @@ public:
         // desirable insertion in case the searched element is not present in the
         // range)
         // Someone else: Or we can use lower_bound like this, and remove all these comments and code? Is there a problem (except the one additional comparison)?
+        // Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
         auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
         if (pos == vec_.end() || *pos != x)
             vec_.insert(pos,x);
@@ -427,6 +428,9 @@ public:
     static void unite(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
+
+        if (lhs.empty()) { result = rhs; return; }
+        if (rhs.empty()) { result = lhs; return; }
 
         result.reserve(lhs.size()+rhs.size());
         std::set_union(lhs.vec_.begin(),lhs.vec_.end(),rhs.vec_.begin(),rhs.vec_.end(),std::back_inserter(result.vec_));

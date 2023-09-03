@@ -63,7 +63,7 @@ in binding refered as `c_uni` and `CNfa` respectively)
 
 // Minimal specification of C++ function, we want to wrap in Binding
 namespace mata::nfa::plumbing {
-    inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = unite(lhs, rhs); }
+    inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
 //              ^-- C++ function signature with C++ types
 }
 ```
