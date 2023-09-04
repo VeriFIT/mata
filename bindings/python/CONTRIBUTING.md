@@ -55,7 +55,7 @@ The following shows minimal example of relation between C++ library source files
 files. It shows link between (1) Cython binding files (`nfa.pxd`, `nfa.pyx`) and C++ library files 
 (`nfa-plumbing.h`), (2) Cython binding class (`Nfa`) and C++ library class (`mata::nfa::Nfa`; 
 in binding refered as `CNfa`), and (3) Cython binding function (`union` that takes Python 
-classes `Nfa`) and C++ library function (`unite` that takes C++ classes `mata::nfa::Nfa`, 
+classes `Nfa`) and C++ library function (`uni` that takes C++ classes `mata::nfa::Nfa`, 
 in binding refered as `c_uni` and `CNfa` respectively)
 
 ```c++
@@ -85,7 +85,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
 #                 ^-- source C++ header and namespace, where the function is defined
-    cdef void c_uni "mata::nfa::plumbing::unite" (CNfa*, CNfa&, CNfa&)
+    cdef void c_uni "mata::nfa::plumbing::uni" (CNfa*, CNfa&, CNfa&)
 #             ^-- C++ function alias used in Binding   ^-- C++ type alias defined above
 #                   ^-- full C++ function name
 ```
@@ -108,12 +108,12 @@ cdef class Nfa:
 #       ^-- creating C++ object, that is wrapped in Python class Nfa
 
 def union(Nfa lhs, Nfa rhs):
-#   ^-- Python function; wrapper for mata::nfa::plumbing::unite()
+#   ^-- Python function; wrapper for mata::nfa::plumbing::uni()
     result = Nfa()
     mata_nfa.c_uni(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
-#   ^-- call to C++ function `unite()` (it is named as c_uni to avoid collisions with Python)
+#   ^-- call to C++ function `uni()` (it is named as c_uni to avoid collisions with Python)
     return result
 #   ^-- function returns wrapper Python object Nfa, that holds instance of `mata::nfa::Nfa` C++ object
 ```
