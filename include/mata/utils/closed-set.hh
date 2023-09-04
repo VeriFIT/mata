@@ -361,8 +361,8 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
     // Iterates through all the tuples from Antichan1 X Antichan2
     // and creates an union of them
     if(type_ == ClosedSetType::upward_closed_set) {
-        for(Node element1 : antichain_) {
-            for(Node element2 : rhs.antichain()) {
+        for(const Node& element1 : antichain_) {
+            for(const Node& element2 : rhs.antichain()) {
                 Node tmp = element1;
                 tmp.insert(element2);
                 result.insert(tmp);
