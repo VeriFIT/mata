@@ -11,7 +11,7 @@ Operations
 ----------
 
 .. doxygenfunction:: mata::nfa::uni(Nfa*, const Nfa&, const Nfa&)
-.. doxygenfunction:: mata::nfa::unite(const Nfa&, const Nfa&)
+.. doxygenfunction:: mata::nfa::uni(const Nfa&, const Nfa&)
 .. doxygenfunction:: mata::nfa::intersection_preserving_epsilon_transitions(Nfa*, const Nfa&, const Nfa&, Symbol, ProductMap*)
 .. doxygenfunction:: mata::nfa::intersection_preserving_epsilon_transitions(const Nfa&, const Nfa&, Symbol, ProductMap*)
 .. doxygenfunction:: mata::nfa::determinize(Nfa*, const Nfa&, SubsetMap*)
