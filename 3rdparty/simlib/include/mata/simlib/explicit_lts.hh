@@ -21,6 +21,7 @@ namespace Simlib { class ExplicitLTS; }
 
 class Simlib::ExplicitLTS {
 
+	std::unordered_map<size_t, size_t> symbol_map{};
 	size_t states_{};
 	size_t transitions_;
 	std::vector<
