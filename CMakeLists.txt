@@ -13,6 +13,9 @@ option(MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
+    # Store compile commands into 'build/compile_commands.json', which are needed, beside others, for linters.
+    set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
     option(MATA_BUILD_EXAMPLES "Build Mata examples" ON)
 
     message("-- Default C++ compiler: ${CMAKE_CXX_COMPILER}")
