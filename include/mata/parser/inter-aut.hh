@@ -121,7 +121,7 @@ public:
  */
 struct FormulaGraph {
     FormulaNode node{};
-    std::vector<FormulaGraph> children{};
+    std::deque<FormulaGraph> children{};
 
     FormulaGraph() = default;
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
