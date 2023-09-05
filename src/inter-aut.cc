@@ -265,31 +265,30 @@ namespace {
      * @param postfix A postfix representation of transition formula
      * @return A parsed graph
      */
-    mata::FormulaGraph postfix_to_graph(const std::vector<mata::FormulaNode> &postfix)
-    {
-        std::vector<mata::FormulaGraph> opstack;
-
-        for (const auto& node : postfix) {
-            mata::FormulaGraph gr(node);
+    mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
+            std::vector<mata::FormulaGraph> opstack{};
+            opstack.reserve(4);
+            for (mata::FormulaNode& node: postfix) {
+            mata::FormulaGraph gr(std::move(node));
             switch (node.type) {
                 case mata::FormulaNode::Type::OPERAND:
-                    opstack.push_back(gr);
+                    opstack.emplace_back(std::move(gr));
                     break;
                 case mata::FormulaNode::Type::OPERATOR:
                     switch (node.operator_type) {
                         case mata::FormulaNode::OperatorType::NEG:
                             assert(!opstack.empty());
-                            gr.children.push_back(opstack.back());
+                            gr.children.emplace_back(std::move(opstack.back()));
                             opstack.pop_back();
-                            opstack.push_back(gr);
+                            opstack.emplace_back(std::move(gr));
                             break;
                         default:
                             assert(opstack.size() > 1);
-                            gr.children.push_back(opstack.back());
+                            gr.children.emplace_back(std::move(opstack.back()));
                             opstack.pop_back();
-                            gr.children.insert(gr.children.begin(), opstack.back());
+                            gr.children.emplace(gr.children.cbegin(), std::move(opstack.back()));
                             opstack.pop_back();
-                            opstack.push_back(gr);
+                            opstack.emplace_back(std::move(gr));
                     }
                     break;
                 default: assert(false && "Unknown type of node");
@@ -297,9 +296,8 @@ namespace {
         }
 
         assert(opstack.size() == 1);
-
-        return opstack.back();
-    }
+        return std::move(opstack[0]);
+}
 
     /**
      * Function adds disjunction operators to a postfix form when there are no operators at all.
@@ -383,14 +381,15 @@ namespace {
                     aut.initial_enumerated = true;
                     postfix = add_disjunction_implicitly(postfix);
                 }
-                aut.initial_formula = postfix_to_graph(postfix);
+                aut.initial_formula = postfix_to_graph(std::move(postfix));
             } else if (key.find("Final") != std::string::npos) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (no_operators(postfix)) {
                     postfix = add_disjunction_implicitly(postfix);
                     aut.final_enumerated = true;
                 }
-                aut.final_formula = postfix_to_graph(postfix);
+
+                aut.final_formula = postfix_to_graph(std::move(postfix));;
             }
         }
 
@@ -438,7 +437,7 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const
 void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const std::vector<std::string> &tokens)
 {
     assert(tokens.size() > 1); // transition formula has at least two items
-    const mata::FormulaNode lhs = create_node(aut, tokens[0]);
+    mata::FormulaNode lhs = create_node(aut, tokens[0]);
     const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
     std::vector<mata::FormulaNode> postfix;
@@ -471,9 +470,7 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
         assert(node.is_rightpar() || node.name != ")");
     }
     #endif // #ifndef NDEBUG.
-    const mata::FormulaGraph graph = postfix_to_graph(postfix);
-
-    aut.transitions.emplace_back(lhs, graph);
+    aut.transitions.emplace_back(std::move(lhs), postfix_to_graph(std::move(postfix)));
 }
 
 std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const

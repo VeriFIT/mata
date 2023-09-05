@@ -125,10 +125,12 @@ struct FormulaGraph {
 
     FormulaGraph() = default;
     FormulaGraph(const FormulaNode& n) : node(n), children() {}
+    FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() {}
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
+    FormulaGraph(FormulaGraph&& g) : node(std::move(g.node)), children(std::move(g.children)) {}
 
-    FormulaGraph& operator=(const mata::FormulaGraph& other) = default;
-    FormulaGraph& operator=(mata::FormulaGraph&& other) noexcept = default;
+    FormulaGraph& operator=(const mata::FormulaGraph&) = default;
+    FormulaGraph& operator=(mata::FormulaGraph&&) noexcept = default;
 
     std::unordered_set<std::string> collect_node_names() const;
     void print_tree(std::ostream& os) const;
