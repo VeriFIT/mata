@@ -187,7 +187,7 @@ bool Delta::empty() const {
     return true;
 }
 
-Delta::Transitions::const_iterator::const_iterator(const Delta& delta): delta_{ &delta }, current_state_{ 0 } {
+Delta::Transitions::const_iterator::const_iterator(const Delta& delta): delta_{ &delta } {
     const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {
         if (!(*delta_)[i].empty()) {

@@ -45,13 +45,14 @@ void seg_nfa::Segmentation::handle_epsilon_transitions(const StateDepthTuple& st
 
     for (State target_state: move.targets)
     {
-        this->epsilon_depth_transitions[state_depth_pair.depth].push_back(
-                Transition{ state_depth_pair.state, move.symbol, target_state }
+        // TODO: Use vector indexed by depths instead of a map.
+        this->epsilon_depth_transitions[state_depth_pair.depth].emplace_back(
+                state_depth_pair.state, move.symbol, target_state
         );
-        this->eps_depth_trans_map[state_depth_pair.depth][state_depth_pair.state].push_back(
-                Transition{ state_depth_pair.state, move.symbol, target_state }
+        this->eps_depth_trans_map[state_depth_pair.depth][state_depth_pair.state].emplace_back(
+             state_depth_pair.state, move.symbol, target_state
         );
-        worklist.push_back(StateDepthTuple{ target_state, state_depth_pair.depth + 1, visited_eps_aux });
+        worklist.push_back({ target_state, state_depth_pair.depth + 1, visited_eps_aux });
         this->visited_eps[target_state] = visited_eps_aux;
     }
 }
