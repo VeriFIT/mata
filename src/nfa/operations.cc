@@ -398,9 +398,7 @@ Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
     for (State q = 0, states_num = result.delta.num_of_states(); q < states_num; ++q) {
         //Post & post = result.delta.get_mutable_post(q);
         //utils::sort_and_rmdupl(post);
-        for (auto m = result.delta.mutable_state_post(q).begin(); m != result.delta.mutable_state_post(q).end(); ++m) {
-            sort_and_rmdupl(m->targets);
-        }
+        for (SymbolPost& m: result.delta.mutable_state_post(q)) { sort_and_rmdupl(m.targets); }
     }
 
     return result;

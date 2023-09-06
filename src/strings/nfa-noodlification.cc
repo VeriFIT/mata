@@ -407,7 +407,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
     VisitedEpsilonsCounterVector ret;
-    for(auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); it++) {
+    for (auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); ++it) {
         ret.push_back(it->second);
     }
     return ret;
