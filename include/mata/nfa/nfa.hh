@@ -104,11 +104,6 @@ public:
     Nfa& operator=(Nfa&& other) noexcept;
 
     /**
-     * Clear transitions but keep the automata states.
-     */
-    void clear_transitions();
-
-    /**
      * Add a new (fresh) state to the automaton.
      * @return The newly created state.
      */

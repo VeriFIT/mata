@@ -602,13 +602,6 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
     return *this;
 }
 
-void Nfa::clear_transitions() {
-    const size_t delta_size = delta.num_of_states();
-    for (size_t i = 0; i < delta_size; ++i) {
-        delta.mutable_state_post(i) = StatePost();
-    }
-}
-
 State Nfa::add_state() {
     const size_t num_of_states{ size() };
     delta.increase_size(num_of_states + 1);
