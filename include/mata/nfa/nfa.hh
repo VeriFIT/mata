@@ -151,20 +151,6 @@ public:
      */
     bool is_identical(const Nfa & aut);
 
-    /**
-     * @brief Get the set of symbols used on the transitions in the automaton.
-     *
-     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
-     * @return Set of symbols used on the transitions.
-     * TODO: this should be a method of Delta?
-     */
-    utils::OrdVector<Symbol> get_used_symbols() const;
-
-    mata::utils::OrdVector<Symbol> get_used_symbols_vec() const;
-    std::set<Symbol> get_used_symbols_set() const;
-    mata::utils::SparseSet<Symbol> get_used_symbols_sps() const;
-    std::vector<bool> get_used_symbols_bv() const;
-    BoolVector get_used_symbols_chv() const;
 
     /**
      * @brief Get the maximum non-e used symbol.

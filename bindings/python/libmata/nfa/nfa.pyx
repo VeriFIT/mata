@@ -687,7 +687,7 @@ cdef class Nfa:
 
         :return: Set of symbols.
         """
-        cdef COrdVector[Symbol] symbols = self.thisptr.get().get_used_symbols()
+        cdef COrdVector[Symbol] symbols = self.thisptr.get().delta.get_used_symbols()
         return {s for s in symbols}
 
 

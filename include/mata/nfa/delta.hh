@@ -3,9 +3,10 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
-#include "mata/utils/synchronized-iterator.hh"
 
 #include <iterator>
 
@@ -448,6 +449,20 @@ public:
      * The value of the already existing symbols will NOT be overwritten.
      */
     void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
+
+    /**
+     * @brief Get the set of symbols used on the transitions in the automaton.
+     *
+     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+     * @return Set of symbols used on the transitions.
+     */
+    utils::OrdVector<Symbol> get_used_symbols() const;
+
+    utils::OrdVector<Symbol> get_used_symbols_vec() const;
+    std::set<Symbol> get_used_symbols_set() const;
+    utils::SparseSet<Symbol> get_used_symbols_sps() const;
+    std::vector<bool> get_used_symbols_bv() const;
+    BoolVector get_used_symbols_chv() const;
 private:
     std::vector<StatePost> state_posts_;
 }; // class Delta.

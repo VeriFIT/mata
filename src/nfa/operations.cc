@@ -233,13 +233,10 @@ Nfa mata::nfa::fragile_revert(const Nfa& aut) {
     result.initial = aut.final;
     result.final = aut.initial;
 
-    //COMPUTE NON-e SYMBOLS
-    //This stuff is ugly because of our handling of epsilon, what about negative numbers?
-    OrdVector<Symbol> symbols = aut.get_used_symbols();
-    if (symbols.empty())
-        return result;
-    if (symbols.back() == EPSILON)
-        symbols.pop_back();
+    // Compute non-epsilon symbols.
+    OrdVector<Symbol> symbols = aut.delta.get_used_symbols();
+    if (symbols.empty()) { return result; }
+    if (symbols.back() == EPSILON) { symbols.pop_back(); }
     // size of the "used alphabet", i.e. max symbol+1 or 0
     Symbol alphasize =  (symbols.empty()) ? 0 : (symbols.back()+1);
 
