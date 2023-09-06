@@ -512,3 +512,13 @@ Delta::Transitions::const_iterator Delta::Transitions::end() const { return cons
 StatePost::Moves::Moves(
     const StatePost& state_post, StatePost::const_iterator symbol_post_it, StatePost::const_iterator symbol_post_end)
     : state_post_{ &state_post }, symbol_post_it_{ symbol_post_it }, symbol_post_end_{ symbol_post_end } {}
+
+void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
+    size_t aut_num_of_states{ num_of_states() };
+    for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
+        for (const SymbolPost& move: state_post(state)) {
+            target_alphabet.update_next_symbol_value(move.symbol);
+            target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
+        }
+    }
+}

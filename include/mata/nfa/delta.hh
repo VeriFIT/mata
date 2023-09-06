@@ -441,6 +441,13 @@ public:
      * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
      */
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+
+    /**
+     * @brief Expand @p target_alphabet by symbols from this delta.
+     *
+     * The value of the already existing symbols will NOT be overwritten.
+     */
+    void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
 private:
     std::vector<StatePost> state_posts_;
 }; // class Delta.

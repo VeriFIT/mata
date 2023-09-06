@@ -590,16 +590,6 @@ void Nfa::unify_final() {
     final.insert(new_final_state);
 }
 
-void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
-    size_t aut_num_of_states{size() };
-    for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const SymbolPost& move: delta[state]) {
-            target_alphabet.update_next_symbol_value(move.symbol);
-            target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
-        }
-    }
-}
-
 Nfa& Nfa::operator=(Nfa&& other) noexcept {
     if (this != &other) {
         delta = std::move(other.delta);

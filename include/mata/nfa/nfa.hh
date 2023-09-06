@@ -289,13 +289,6 @@ public:
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
-
-    /**
-     * @brief Expand alphabet by symbols from this automaton to given alphabet
-     *
-     * The value of the already existing symbols will NOT be overwritten.
-     */
-    void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
 }; // struct Nfa.
 
 /**
