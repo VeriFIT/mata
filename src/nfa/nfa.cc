@@ -444,20 +444,6 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     return res;
 }
 
-
-// returns max non-e symbol in Delta
-Symbol Nfa::get_max_symbol() const {
-    Symbol max = 0;
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            if (move.symbol > max)
-                max = move.symbol;
-        }
-    }
-    return max;
-}
-
  void Nfa::unify_initial() {
     if (initial.empty() || initial.size() == 1) { return; }
     const State new_initial_state{add_state() };

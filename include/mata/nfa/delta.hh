@@ -463,6 +463,11 @@ public:
     utils::SparseSet<Symbol> get_used_symbols_sps() const;
     std::vector<bool> get_used_symbols_bv() const;
     BoolVector get_used_symbols_chv() const;
+
+    /**
+     * @brief Get the maximum non-epsilon used symbol.
+     */
+    Symbol get_max_symbol() const;
 private:
     std::vector<StatePost> state_posts_;
 }; // class Delta.

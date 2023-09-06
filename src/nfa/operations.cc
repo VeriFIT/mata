@@ -38,8 +38,8 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Symbol maxSymbol{ aut.get_max_symbol() };
-        const size_t state_num = aut.size();
+        Symbol maxSymbol{ aut.delta.get_max_symbol() };
+        const size_t state_num{ aut.num_of_states() };
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
         for (const Transition& transition : aut.delta.transitions()) {

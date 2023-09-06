@@ -151,12 +151,6 @@ public:
      */
     bool is_identical(const Nfa & aut);
 
-
-    /**
-     * @brief Get the maximum non-e used symbol.
-     * TODO: this should be a method of Delta?
-     */
-    Symbol get_max_symbol() const;
     /**
      * @brief Get set of reachable states.
      *

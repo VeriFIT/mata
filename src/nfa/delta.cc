@@ -668,3 +668,13 @@ mata::BoolVector Delta::get_used_symbols_chv() const {
     //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
     return symbols;
 }
+
+Symbol Delta::get_max_symbol() const {
+    Symbol max{ 0 };
+    for (const StatePost& state_post: state_posts_) {
+        for (const SymbolPost& symbol_post: state_post) {
+            if (symbol_post.symbol > max) { max = symbol_post.symbol; }
+        }
+    }
+    return max;
+}
