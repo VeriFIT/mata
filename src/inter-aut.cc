@@ -202,11 +202,11 @@ namespace {
      * @return A postfix notation for input
      */
     std::vector<mata::FormulaNode> infix_to_postfix(
-            const mata::IntermediateAut &aut, const std::vector<std::string> &tokens) {
+            const mata::IntermediateAut &aut, const std::vector<std::string>& tokens) {
         std::vector<mata::FormulaNode> opstack;
         std::vector<mata::FormulaNode> output;
 
-        for (const auto& token : tokens) {
+        for (const std::string& token: tokens) {
             mata::FormulaNode node = create_node(aut, token);
             switch (node.type) {
                 case mata::FormulaNode::Type::OPERAND:
@@ -432,7 +432,7 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
 {
     assert(tokens.size() > 1); // transition formula has at least two items
     mata::FormulaNode lhs = create_node(aut, tokens[0]);
-    const std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
+    std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
     std::vector<mata::FormulaNode> postfix;
 
@@ -443,11 +443,13 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
         if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             assert(rhs.size() == 2);
             postfix.emplace_back(mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0], mata::FormulaNode::OperandType::SYMBOL);
-            postfix.emplace_back(create_node(aut,rhs[1]));
+            postfix.emplace_back(create_node(aut, rhs[1]));
         } else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
-            // this is a case where rhs state not separated by conjunction from rest of trans
-            postfix = infix_to_postfix(aut, std::vector<std::string>(rhs.begin(), rhs.end()-1));
-            postfix.emplace_back(create_node(aut,rhs.back()));
+            // This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
+            std::string last_token{ rhs.back() };
+            rhs.pop_back();
+            postfix = infix_to_postfix(aut, rhs);
+            postfix.emplace_back(create_node(aut, last_token));
         } else
             assert(false && "Unknown NFA type");
 
@@ -456,7 +458,7 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
         postfix = infix_to_postfix(aut, rhs);
 
     #ifndef NDEBUG
-    for (const auto& node : postfix) {
+    for (const auto& node: postfix) {
         assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
         assert(node.is_leftpar() || node.name != "(");
         assert(node.is_rightpar() || node.name != ")");
