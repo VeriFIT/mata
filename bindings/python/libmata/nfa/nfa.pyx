@@ -536,6 +536,12 @@ cdef class Nfa:
         else:
             return self.thisptr.get().is_lang_empty(NULL)
 
+    def is_deterministic(self):
+        """Tests if the NFA is determinstic.
+
+        :return: true if the NFA is deterministic.
+        """
+        return self.thisptr.get().is_deterministic()
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
          one letter for all transitions).
@@ -949,14 +955,6 @@ def compute_relation(Nfa lhs, params = None):
     return result
 
 # Tests
-def is_deterministic(Nfa lhs):
-    """Tests if the lhs is determinstic
-
-    :param Nfa lhs: non-determinstic finite automaton
-    :return: true if the lhs is deterministic
-    """
-    return mata_nfa.c_is_deterministic(dereference(lhs.thisptr.get()))
-
 def is_universal(Nfa lhs, alph.Alphabet alphabet, params = None):
     """Tests if lhs is universal wrt given alphabet
 

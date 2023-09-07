@@ -185,16 +185,14 @@ def test_post(binary_alphabet):
 
 
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
-    """
-    Tests determinisation
-    """
+    """Tests determinisation."""
     lhs = nfa_two_states_uni
-    assert not mata_nfa.is_deterministic(lhs)
+    assert not lhs.is_deterministic()
     rhs = dfa_one_state_uni
-    assert mata_nfa.is_deterministic(rhs)
+    assert rhs.is_deterministic()
 
     chs, sm_map = mata_nfa.determinize_with_subset_map(lhs)
-    assert mata_nfa.is_deterministic(chs)
+    assert chs.is_deterministic()
     assert sm_map == {(0,): 0, (0, 1): 1}
 
 

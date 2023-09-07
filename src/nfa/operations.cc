@@ -410,17 +410,14 @@ Nfa mata::nfa::revert(const Nfa& aut) {
     //return somewhat_simple_revert(aut);
 }
 
-bool mata::nfa::is_deterministic(const Nfa& aut)
-{
-    if (aut.initial.size() != 1) { return false; }
+bool mata::nfa::Nfa::is_deterministic() const {
+    if (initial.size() != 1) { return false; }
 
-    if (aut.delta.empty()) { return true; }
+    if (delta.empty()) { return true; }
 
-    const size_t aut_size = aut.num_of_states();
-    for (size_t i = 0; i < aut_size; ++i)
-    {
-        for (const auto& symStates : aut.delta[i])
-        {
+    const size_t aut_size = num_of_states();
+    for (size_t i = 0; i < aut_size; ++i) {
+        for (const auto& symStates : delta[i]) {
             if (symStates.num_of_targets() != 1) { return false; }
         }
     }

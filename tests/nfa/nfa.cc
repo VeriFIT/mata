@@ -1761,61 +1761,57 @@ TEST_CASE("mata::nfa::revert()")
 } // }}}
 
 
-TEST_CASE("mata::nfa::is_deterministic()")
+TEST_CASE("mata::nfa::Nfa::is_deterministic()")
 { // {{{
     Nfa aut('s'+1);
 
-    SECTION("(almost) empty automaton")
-    {
+    SECTION("(almost) empty automaton") {
         // no initial states
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
 
         // add an initial state
         aut.initial.insert('q');
-        REQUIRE(is_deterministic(aut));
+        REQUIRE(aut.is_deterministic());
 
         // add the same initial state
         aut.initial.insert('q');
-        REQUIRE(is_deterministic(aut));
+        REQUIRE(aut.is_deterministic());
 
         // add another initial state
         aut.initial.insert('r');
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
 
         // add a final state
         aut.final.insert('q');
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
     }
 
-    SECTION("trivial automata")
-    {
+    SECTION("trivial automata") {
         aut.initial.insert('q');
         aut.delta.add('q', 'a', 'r');
-        REQUIRE(is_deterministic(aut));
+        REQUIRE(aut.is_deterministic());
 
         // unreachable states
         aut.delta.add('s', 'a', 'r');
-        REQUIRE(is_deterministic(aut));
+        REQUIRE(aut.is_deterministic());
 
         // transitions over a different symbol
         aut.delta.add('q', 'b', 'h');
-        REQUIRE(is_deterministic(aut));
+        REQUIRE(aut.is_deterministic());
 
         // nondeterminism
         aut.delta.add('q', 'a', 's');
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
     }
 
-    SECTION("larger automaton 1")
-    {
+    SECTION("larger automaton 1") {
         FILL_WITH_AUT_A(aut);
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
     }
 
-    SECTION("larger automaton 2")
-    {
+    SECTION("larger automaton 2") {
         FILL_WITH_AUT_B(aut);
-        REQUIRE(!is_deterministic(aut));
+        REQUIRE(!aut.is_deterministic());
     }
 } // }}}
 

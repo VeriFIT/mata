@@ -264,6 +264,14 @@ public:
      */
     bool is_lang_empty(Run* cex = nullptr) const;
 
+    /**
+     * @brief Test whether an automaton is deterministic.
+     *
+     * I.e., whether it has exactly one initial state and every state has at most one outgoing transition over every
+     *  symbol.
+     * Checks the whole automaton, not only the reachable part
+     */
+    bool is_deterministic() const;
 }; // struct Nfa.
 
 /**
@@ -564,11 +572,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-/// Test whether an automaton is deterministic, i.e., whether it has exactly
-/// one initial state and every state has at most one outgoing transition over
-/// every symbol.  Checks the whole automaton, not only the reachable part
-bool is_deterministic(const Nfa& aut);
 
 /// Test for automaton completeness wrt an alphabet.  An automaton is complete
 /// if every reachable state has at least one outgoing transition over every
