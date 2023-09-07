@@ -121,7 +121,7 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t size() const;
+     size_t num_of_states() const;
 
     /**
      * Unify initial states into a single new initial state.
@@ -133,7 +133,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check < size(); }
+    bool is_state(const State &state_to_check) const { return state_to_check < num_of_states(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -373,7 +373,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
 /**
  * Make @c aut complete in place.
  *
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ * For each state 0,...,aut.num_of_states()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
  *  it, but only in the case that some transition to @p sink_state was added.
  * In the case that @p aut does not contain any states, this function does nothing.
@@ -388,7 +388,7 @@ bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
 /**
  * Make @c aut complete in place.
  *
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ * For each state 0,...,aut.num_of_states()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
  *  it, but only in the case that some transition to @p sink_state was added.
  * In the case that @p aut does not contain any states, this function does nothing.
@@ -405,7 +405,7 @@ bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
 bool make_complete(Nfa& aut, const utils::OrdVector<Symbol>& symbols, State sink_state);
 
 /**
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
+ * For each state 0,...,aut.num_of_states()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
  * on transitions from given state) to new sink state (if no new transitions are added, this sink state is not created).
  * In the case that @p aut does not contain any states, this function does nothing.
  *
@@ -413,7 +413,7 @@ bool make_complete(Nfa& aut, const utils::OrdVector<Symbol>& symbols, State sink
  * @param[in] alphabet Alphabet to use for computing "missing" symbols.
  * @return True if some new transition (and sink state) was added to the automaton.
  */
-inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_complete(aut, alphabet, aut.size()); }
+inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_complete(aut, alphabet, aut.num_of_states()); }
 
 /**
  * @brief Compute automaton accepting complement of @p aut.

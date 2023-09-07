@@ -76,7 +76,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 
     // initialize
     WorklistType worklist = { };
-    ProcessedType processed(smaller.size()); // allocate to the number of states of the smaller nfa
+    ProcessedType processed(smaller.num_of_states()); // allocate to the number of states of the smaller nfa
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state

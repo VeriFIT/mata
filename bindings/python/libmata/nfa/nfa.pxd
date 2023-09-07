@@ -167,7 +167,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
         void clear()
-        size_t size()
+        size_t num_of_states()
 
     # Automata tests
     cdef bool c_is_deterministic "mata::nfa::is_deterministic" (CNfa&)

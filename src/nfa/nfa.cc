@@ -54,7 +54,7 @@ namespace {
     StateBoolArray reachable_states(const Nfa& nfa,
                                        const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
         std::vector<State> worklist{};
-        StateBoolArray reachable(nfa.size(), false);
+        StateBoolArray reachable(nfa.num_of_states(), false);
         for (const State state: nfa.initial) {
             if (!states_to_consider.has_value() || states_to_consider.value()[state]) {
                 worklist.push_back(state);
@@ -89,7 +89,7 @@ StateSet Nfa::get_reachable_states() const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
-    const size_t num_of_states{size() };
+    const size_t num_of_states{ this->num_of_states() };
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
     {
         if (reachable_bool_array[original_state])
@@ -245,8 +245,8 @@ namespace {
  * @return BoolVector
  */
 BoolVector Nfa::get_useful_states() const {
-    BoolVector useful(this->size(),false);
-    std::vector<TarjanNodeData> node_info(this->size());
+    BoolVector useful(this->num_of_states(),false);
+    std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
     unsigned long index_cnt = 0;
@@ -400,7 +400,7 @@ void Nfa::print_to_mata(std::ostream &output) const {
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{size(), StateSet(initial), StateSet(final) };
+    Nfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
         // Directly try to add the transition. Finding out whether the transition is already in the digraph
@@ -487,7 +487,7 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 }
 
 State Nfa::add_state() {
-    const size_t num_of_states{ size() };
+    const size_t num_of_states{ this->num_of_states() };
     delta.increase_size(num_of_states + 1);
     return num_of_states;
 }
@@ -499,7 +499,7 @@ State Nfa::add_state(State state) {
     return state;
 }
 
-size_t Nfa::size() const {
+size_t Nfa::num_of_states() const {
     return std::max({
         static_cast<unsigned long>(initial.domain_size()),
         static_cast<unsigned long>(final.domain_size()),

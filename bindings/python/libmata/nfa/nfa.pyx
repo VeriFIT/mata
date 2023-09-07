@@ -390,11 +390,11 @@ cdef class Nfa:
         """Clears all of the internals in the automaton"""
         self.thisptr.get().clear()
 
-    def size(self) -> int:
+    def num_of_states(self) -> int:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
         """
-        return self.thisptr.get().size()
+        return self.thisptr.get().num_of_states()
 
     def iterate(self):
         """Iterates over all transitions
@@ -844,7 +844,7 @@ def make_complete(Nfa lhs, State sink_state, alph.Alphabet alphabet):
     :param OnTheFlyAlphabet alphabet: alphabet of the
     """
     if not lhs.thisptr.get().is_state(sink_state):
-        lhs.thisptr.get().add_state(lhs.size())
+        lhs.thisptr.get().add_state(lhs.num_of_states())
     mata_nfa.c_make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
 def revert(Nfa lhs):

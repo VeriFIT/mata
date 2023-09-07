@@ -67,7 +67,7 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-        const size_t num_of_states = aut.size();
+        const size_t num_of_states = aut.num_of_states();
 
         // map each state q of aut to the state of the reduced automaton representing the simulation class of q
         for (State q = 0; q < num_of_states; ++q) {
@@ -141,7 +141,7 @@ bool mata::nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_sta
 bool mata::nfa::make_complete(Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
     bool was_something_added{ false };
 
-    size_t num_of_states{ aut.size() };
+    size_t num_of_states{ aut.num_of_states() };
     for (State state = 0; state < num_of_states; ++state) {
         OrdVector<Symbol> used_symbols{};
         for (auto const &move : aut.delta[state]) {
@@ -170,7 +170,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
-    const size_t num_of_states{aut.size() };
+    const size_t num_of_states{aut.num_of_states() };
     for (size_t i{ 0 }; i < num_of_states; ++i)
     {
         for (const auto& trans: aut.delta[i])
@@ -226,7 +226,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
 }
 
 Nfa mata::nfa::fragile_revert(const Nfa& aut) {
-    const size_t num_of_states{ aut.size() };
+    const size_t num_of_states{ aut.num_of_states() };
 
     Nfa result(num_of_states);
 
@@ -351,7 +351,7 @@ Nfa mata::nfa::simple_revert(const Nfa& aut) {
     Nfa result;
     result.clear();
 
-    const size_t num_of_states{ aut.size() };
+    const size_t num_of_states{ aut.num_of_states() };
     result.delta.increase_size(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
@@ -370,7 +370,7 @@ Nfa mata::nfa::simple_revert(const Nfa& aut) {
 
 //not so great, can be removed
 Nfa mata::nfa::somewhat_simple_revert(const Nfa& aut) {
-    const size_t num_of_states{ aut.size() };
+    const size_t num_of_states{ aut.num_of_states() };
 
     Nfa result(num_of_states);
 
@@ -416,7 +416,7 @@ bool mata::nfa::is_deterministic(const Nfa& aut)
 
     if (aut.delta.empty()) { return true; }
 
-    const size_t aut_size = aut.size();
+    const size_t aut_size = aut.num_of_states();
     for (size_t i = 0; i < aut_size; ++i)
     {
         for (const auto& symStates : aut.delta[i])
@@ -636,7 +636,7 @@ Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     Nfa union_nfa{ rhs };
 
     StateRenaming lhs_state_renaming;
-    const size_t size = lhs.size();
+    const size_t size = lhs.num_of_states();
     for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
         lhs_state_renaming[lhs_state] = union_nfa.add_state();
     }

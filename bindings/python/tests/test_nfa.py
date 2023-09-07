@@ -16,7 +16,7 @@ def test_adding_states():
     lhs = mata_nfa.Nfa(5)
 
     # Test adding states
-    assert lhs.size() == 5
+    assert lhs.num_of_states() == 5
     assert not lhs.has_initial_state(0)
     assert not lhs.has_final_state(0)
     lhs.make_initial_state(0)
@@ -38,25 +38,25 @@ def test_adding_states():
     assert lhs.has_final_state(0)
 
     rhs = mata_nfa.Nfa()
-    assert rhs.size() == 0
+    assert rhs.num_of_states() == 0
     state = rhs.add_new_state()
     assert state == 0
-    assert rhs.size() == 1
+    assert rhs.num_of_states() == 1
     state = rhs.add_new_state()
     assert state == 1
-    assert rhs.size() == 2
+    assert rhs.num_of_states() == 2
 
     rhs.add_state(9)
-    assert rhs.size() == 10
+    assert rhs.num_of_states() == 10
     for i in range(0, 10):
         assert rhs.is_state(i)
 
-    assert rhs.size() == 10
+    assert rhs.num_of_states() == 10
     rhs.clear()
-    assert rhs.size() == 0
+    assert rhs.num_of_states() == 0
 
     rhs.add_state(0)
-    assert rhs.size() == 1
+    assert rhs.num_of_states() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
 
@@ -64,7 +64,7 @@ def test_adding_states():
         rhs.add_state(-10)
 
     rhs.add_state(11)
-    assert rhs.size() == 12
+    assert rhs.num_of_states() == 12
     assert rhs.is_state(11)
     assert not rhs.is_state(12)
 
@@ -348,7 +348,7 @@ def test_concatenate():
     result = mata_nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.size() == 4
+    assert result.num_of_states() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -356,7 +356,7 @@ def test_concatenate():
     result, _, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.size() == 4
+    assert result.num_of_states() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -478,7 +478,7 @@ def test_intersection_preserving_epsilon_transitions():
     result, product_map = mata_nfa.intersection_with_product_map(a, b, True)
 
     # Check states.
-    assert result.size() == 13
+    assert result.num_of_states() == 13
     assert result.is_state(product_map[(0, 0)])
     assert result.is_state(product_map[(1, 0)])
     assert result.is_state(product_map[(1, 1)])
@@ -666,7 +666,7 @@ def test_trim(prepare_automaton_a):
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()
     assert nfa.get_num_of_transitions() == 0
-    assert nfa.size() == 0
+    assert nfa.num_of_states() == 0
 
 
 def test_get_one_letter_automaton(prepare_automaton_a):
@@ -676,7 +676,7 @@ def test_get_one_letter_automaton(prepare_automaton_a):
 
     one_letter_automaton = nfa.get_one_letter_aut()
 
-    assert one_letter_automaton.size() == nfa.size()
+    assert one_letter_automaton.num_of_states() == nfa.num_of_states()
     assert one_letter_automaton.get_num_of_transitions() == 12
     assert one_letter_automaton.has_transition(1, abstract_symbol, 10)
     assert one_letter_automaton.has_transition(10, abstract_symbol, 7)
@@ -906,7 +906,7 @@ def test_reduce():
     nfa.make_final_state(2)
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.get_num_of_transitions() == 0
-    assert result.size() == 2
+    assert result.num_of_states() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
     assert state_map[1] == state_map[0]
@@ -914,7 +914,7 @@ def test_reduce():
 
     result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
     assert result.get_num_of_transitions() == 0
-    assert result.size() == 0
+    assert result.num_of_states() == 0
 
     # Test the reduction of a bigger automaton.
     nfa.add_state(9)
@@ -937,7 +937,7 @@ def test_reduce():
     nfa.add_transition(0, ord('a'), 4)
 
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
-    assert result.size() == 6
+    assert result.num_of_states() == 6
     assert result.has_initial_state(state_map[1])
     assert result.has_initial_state(state_map[2])
     assert result.has_final_state(state_map[9])

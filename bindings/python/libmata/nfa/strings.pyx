@@ -47,7 +47,7 @@ cdef class Segmentation:
         segments = []
         cdef vector[CNfa] c_segments = self.thisptr.get_segments()
         for c_segment in c_segments:
-            segment = mata_nfa.Nfa(c_segment.size())
+            segment = mata_nfa.Nfa(c_segment.num_of_states())
             (<mata_nfa.Nfa>segment).thisptr.get().initial = c_segment.initial
             (<mata_nfa.Nfa>segment).thisptr.get().final = c_segment.final
             (<mata_nfa.Nfa>segment).thisptr.get().delta = c_segment.delta

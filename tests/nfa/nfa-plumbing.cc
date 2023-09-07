@@ -111,7 +111,7 @@ TEST_CASE("Mata::nfa::Plumbing") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::reduce(&result, lhs);
         CHECK(!is_lang_empty(result));
-        CHECK(result.size() <= lhs.size());
+        CHECK(result.num_of_states() <= lhs.num_of_states());
     }
 
     SECTION("Mata::nfa::Plumbing::determinize") {
@@ -133,7 +133,7 @@ TEST_CASE("Mata::nfa::Plumbing") {
     }
     SECTION("Mata::nfa::Plumbing::make_complete") {
         FILL_WITH_AUT_A(lhs);
-        mata::nfa::plumbing::make_complete(&lhs, alph, lhs.size() + 1);
+        mata::nfa::plumbing::make_complete(&lhs, alph, lhs.num_of_states() + 1);
         CHECK(!is_lang_empty(lhs));
     }
 }

@@ -34,7 +34,7 @@ Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<
             // which can be the sink state (so we do not create unnecessary one)
             sink_state = *result.initial.begin();
         } else {
-            sink_state = result.size();
+            sink_state = result.num_of_states();
         }
     } else {
         std::unordered_map<StateSet, State> subset_map;
@@ -44,12 +44,12 @@ Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<
         if (sink_state_iter != subset_map.end()) {
             sink_state = sink_state_iter->second;
         } else {
-            sink_state = result.size();
+            sink_state = result.num_of_states();
         }
     }
 
     make_complete(result, symbols, sink_state);
-    result.final.complement(result.size());
+    result.final.complement(result.num_of_states());
     return result;
 }
 

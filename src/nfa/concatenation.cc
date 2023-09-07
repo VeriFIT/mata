@@ -27,7 +27,7 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
 }
 
 Nfa& Nfa::concatenate(const Nfa& aut) {
-    size_t n = this->size();
+    size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
     };
@@ -36,7 +36,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
 
     // set accepting states
     utils::SparseSet<State> new_fin{};
-    new_fin.reserve(n+aut.size());
+    new_fin.reserve(n+aut.num_of_states());
     for(const State& aut_fin : aut.final) {
         new_fin.insert(upd_fnc(aut_fin));
     }
@@ -68,13 +68,13 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
-    if (lhs.size() == 0 || rhs.size() == 0 || lhs.initial.empty() || lhs.final.empty() ||
+    if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
         return Nfa{};
     }
 
-    const unsigned long lhs_states_num{lhs.size() };
-    const unsigned long rhs_states_num{rhs.size() };
+    const unsigned long lhs_states_num{lhs.num_of_states() };
+    const unsigned long rhs_states_num{rhs.num_of_states() };
     Nfa result{}; // Concatenated automaton.
     StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
     StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
