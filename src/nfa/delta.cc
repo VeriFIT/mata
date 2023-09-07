@@ -59,6 +59,20 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_pos
     return state_post.end();
 }
 
+std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
+    std::vector<Transition> transitions_to_state{};
+    const size_t num_of_states{ this->num_of_states() };
+    for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
+        for (const SymbolPost& state_from_move: state_post(state_from)) {
+            const auto target_state{ state_from_move.targets.find(state_to) };
+            if (target_state != state_from_move.targets.end()) {
+                transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to);
+            }
+        }
+    }
+    return transitions_to_state;
+}
+
 void Delta::add(State source, Symbol symbol, State target) {
     const State max_state{ std::max(source, target) };
     if (max_state >= state_posts_.size()) {

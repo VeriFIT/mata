@@ -200,14 +200,6 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * Get transitions leading to @p state_to.
-     * @param state_to[in] Target state for transitions to get.
-     * @return Sequence of @c Trans transitions leading to @p state_to.
-     * (!slow!, traverses the entire delta)
-     */
-    std::vector<Transition> get_transitions_to(State state_to) const;
-
-    /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.

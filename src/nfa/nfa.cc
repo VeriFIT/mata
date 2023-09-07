@@ -414,20 +414,6 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-std::vector<Transition> Nfa::get_transitions_to(State state_to) const {
-    std::vector<Transition> transitions_to_state{};
-    const size_t num_of_states{ delta.num_of_states() };
-    for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const SymbolPost& state_from_move: delta[state_from]) {
-            const auto target_state{ state_from_move.targets.find(state_to) };
-            if (target_state != state_from_move.targets.end()) {
-                transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to );
-            }
-        }
-    }
-    return transitions_to_state;
-}
-
 StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     StateSet res{};
     if (delta.empty()) {
@@ -464,7 +450,7 @@ void Nfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
-        const auto transitions_to{ get_transitions_to(orig_final_state) };
+        const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
         for (const auto& transitions: transitions_to) {
             delta.add(transitions.source, transitions.symbol, new_final_state);
         }

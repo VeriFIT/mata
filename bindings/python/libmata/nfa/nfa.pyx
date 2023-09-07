@@ -436,7 +436,7 @@ cdef class Nfa:
 
         :return: List mata_nfa.CTrans: List of transitions leading to state_to.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
+        cdef vector[CTrans] c_transitions = self.thisptr.get().delta.get_transitions_to(state_to)
         trans = []
         for c_transition in c_transitions:
             trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))

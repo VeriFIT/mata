@@ -435,6 +435,15 @@ public:
     Transitions transitions() const;
 
     /**
+     * Get transitions leading to @p state_to.
+     * @param state_to[in] Target state for transitions to get.
+     * @return Transitions leading to @p state_to.
+     *
+     * Operation is slow, traverses over all symbol posts.
+     */
+    std::vector<Transition> get_transitions_to(State state_to) const;
+
+    /**
      * Iterate over @p epsilon symbol posts under the given @p state.
      * @param[in] state State from which epsilon transitions are checked.
      * @param[in] epsilon User can define his favourite epsilon or used default.

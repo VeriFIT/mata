@@ -83,6 +83,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         size_t num_of_transitions()
         CTransitions transitions()
+        vector[CTrans] get_transitions_to(State)
         COrdVector[Symbol] get_used_symbols()
 
     cdef cppclass CRun "mata::nfa::Run":
@@ -157,7 +158,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         State add_state()
         State add_state(State)
         void print_to_DOT(ostream)
-        vector[CTrans] get_transitions_to(State)
         CNfa& trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
