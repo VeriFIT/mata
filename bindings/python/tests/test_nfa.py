@@ -366,23 +366,23 @@ def test_completeness(
     alph = alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
-    assert mata_nfa.is_complete(fa_one_divisible_by_two, alph)
-    assert mata_nfa.is_complete(fa_one_divisible_by_four, alph)
-    assert mata_nfa.is_complete(fa_one_divisible_by_eight, alph)
+    assert fa_one_divisible_by_two.is_complete(alph)
+    assert fa_one_divisible_by_four.is_complete(alph)
+    assert fa_one_divisible_by_eight.is_complete(alph)
 
     l = mata_nfa.Nfa(1)
     l.make_initial_state(0)
     l.add_transition(0, 0, 0)
-    assert not mata_nfa.is_complete(l, alph)
+    assert not l.is_complete(alph)
     l.add_transition(0, 1, 0)
-    assert mata_nfa.is_complete(l, alph)
+    assert l.is_complete(alph)
 
     r = mata_nfa.Nfa(1)
     r.make_initial_state(0)
     r.add_transition(0, 0, 0)
-    assert not mata_nfa.is_complete(r, alph)
+    assert not r.is_complete(alph)
     mata_nfa.make_complete(r, 1, alph)
-    assert mata_nfa.is_complete(r, alph)
+    assert r.is_complete(alph)
 
 
 def test_in_language(

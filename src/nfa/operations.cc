@@ -424,26 +424,29 @@ bool mata::nfa::Nfa::is_deterministic() const {
 
     return true;
 }
-bool mata::nfa::is_complete(const Nfa& aut, const Alphabet& alphabet)
-{
-    utils::OrdVector<Symbol> symbs_ls = alphabet.get_alphabet_symbols();
+bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
+    if (alphabet == nullptr) {
+        if (this->alphabet != nullptr) {
+            alphabet = this->alphabet;
+        } else {
+            throw std::runtime_error("Checking for completeness without any alphabet to check againts.");
+        }
+    }
+    utils::OrdVector<Symbol> symbs_ls = alphabet->get_alphabet_symbols();
     utils::OrdVector<Symbol> symbs(symbs_ls);
 
     // TODO: make a general function for traversal over reachable states that can
     // be shared by other functions?
-    std::list<State> worklist(aut.initial.begin(),
-                              aut.initial.end());
-    std::unordered_set<State> processed(aut.initial.begin(),
-                                        aut.initial.end());
+    std::list<State> worklist(initial.begin(), initial.end());
+    std::unordered_set<State> processed(initial.begin(), initial.end());
 
-    while (!worklist.empty())
-    {
+    while (!worklist.empty()) {
         State state = *worklist.begin();
         worklist.pop_front();
 
         size_t n = 0;      // counter of symbols
-        if (!aut.delta.empty()) {
-            for (const auto &symb_stateset: aut.delta[state]) {
+        if (!delta.empty()) {
+            for (const auto &symb_stateset: delta[state]) {
                 ++n;
                 if (!haskey(symbs, symb_stateset.symbol)) {
                     throw std::runtime_error(std::to_string(__func__) +

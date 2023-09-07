@@ -169,6 +169,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         size_t num_of_states()
         bool is_lang_empty(CRun*)
         bool is_deterministic()
+        bool is_complete(CAlphabet*) except +
+        bool is_complete() except +
 
     # Automata tests
     cdef bool c_is_universal "mata::nfa::is_universal" (CNfa&, CAlphabet&, ParameterMap&) except +
@@ -176,7 +178,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&)
-    cdef bool c_is_complete "mata::nfa::is_complete" (CNfa&, CAlphabet&) except +
     cdef bool c_is_in_lang "mata::nfa::is_in_lang" (CNfa&, CRun&)
     cdef bool c_is_prfx_in_lang "mata::nfa::is_prfx_in_lang" (CNfa&, CRun&)
 

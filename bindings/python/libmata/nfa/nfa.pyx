@@ -542,6 +542,19 @@ cdef class Nfa:
         :return: true if the NFA is deterministic.
         """
         return self.thisptr.get().is_deterministic()
+
+    def is_complete(self, alph.Alphabet alphabet = None):
+        """Test if automaton is complete.
+
+        :param alph.Alphabet alphabet: Alphabet to check completeness againts. If 'None', self.alphabet is used. If
+          self.alphabet is empty, throws an exception.
+        :return: true if the automaton is complete.
+        """
+        if alphabet:
+            return self.thisptr.get().is_complete(alphabet.as_base())
+        else:
+            return self.thisptr.get().is_complete()
+
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
          one letter for all transitions).
@@ -1057,18 +1070,6 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
                 for k, v in params.items()
             }
         )
-
-def is_complete(Nfa lhs, alph.Alphabet alphabet):
-    """Test if automaton is complete
-
-    :param Nf lhs: tested automaton
-    :param OnTheFlyAlphabet alphabet: alphabet of the automaton
-    :return: true if the automaton is complete
-    """
-    return mata_nfa.c_is_complete(
-        dereference(lhs.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base())
-    )
 
 def is_in_lang(Nfa lhs, vector[Symbol] word):
     """Tests if word is in language

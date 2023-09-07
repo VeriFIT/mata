@@ -272,6 +272,13 @@ public:
      * Checks the whole automaton, not only the reachable part
      */
     bool is_deterministic() const;
+
+    /**
+     * @brief Test for automaton completeness with regard to an alphabet.
+     *
+     * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
+     */
+    bool is_complete(Alphabet const* alphabet = nullptr) const;
 }; // struct Nfa.
 
 /**
@@ -572,11 +579,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-/// Test for automaton completeness wrt an alphabet.  An automaton is complete
-/// if every reachable state has at least one outgoing transition over every
-/// symbol.
-bool is_complete(const Nfa& aut, const Alphabet& alphabet);
 
 std::pair<Run, bool> get_word_for_path(const Nfa& aut, const Run& run);
 

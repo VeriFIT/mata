@@ -1824,17 +1824,17 @@ TEST_CASE("mata::nfa::is_complete()")
         OnTheFlyAlphabet alph{};
 
         // is complete for the empty alphabet
-        REQUIRE(is_complete(aut, alph));
+        REQUIRE(aut.is_complete(&alph));
 
         alph.translate_symb("a1");
         alph.translate_symb("a2");
 
         // the empty automaton is complete even for a non-empty alphabet
-        REQUIRE(is_complete(aut, alph));
+        REQUIRE(aut.is_complete(&alph));
 
         // add a non-reachable state (the automaton should still be complete)
         aut.delta.add('q', alph["a1"], 'q');
-        REQUIRE(is_complete(aut, alph));
+        REQUIRE(aut.is_complete(&alph));
     }
 
     SECTION("small automaton")
@@ -1856,10 +1856,10 @@ TEST_CASE("mata::nfa::is_complete()")
         aut.delta.add(14, alph["b"], 12);
         aut.final.insert({2, 12});
 
-        REQUIRE(!is_complete(aut, alph));
+        REQUIRE(!aut.is_complete(&alph));
 
         make_complete(aut, alph, 100);
-        REQUIRE(is_complete(aut, alph));
+        REQUIRE(aut.is_complete(&alph));
     }
 
     SECTION("using a non-alphabet symbol")
@@ -1873,7 +1873,7 @@ TEST_CASE("mata::nfa::is_complete()")
         aut.delta.add(4, alph["b"], 6);
         aut.delta.add(6, 100, 4);
 
-        CHECK_THROWS_WITH(is_complete(aut, alph),
+        CHECK_THROWS_WITH(aut.is_complete(&alph),
             Catch::Contains("symbol that is not in the provided alphabet"));
     }
 } // }}}
@@ -2662,9 +2662,9 @@ TEST_CASE("A segmentation fault in the make_complement") {
 
     r.initial = {0};
     r.delta.add(0, 0, 0);
-    REQUIRE(not is_complete(r, alph));
+    REQUIRE(not r.is_complete(&alph));
     make_complete(r, alph, 1);
-    REQUIRE(is_complete(r, alph));
+    REQUIRE(r.is_complete(&alph));
 }
 
 TEST_CASE("mata::nfa:: create simple automata") {
