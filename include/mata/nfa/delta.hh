@@ -347,9 +347,16 @@ public:
 
     void clear() { state_posts_.clear(); }
 
-    void increase_size(size_t n) {
-        assert(n >= state_posts_.size());
-        state_posts_.resize(n);
+    /**
+     * @brief Allocate state posts up to @p num_of_states states, creating empty @c StatePost for yet unallocated state
+     *  posts.
+     *
+     * @param[in] num_of_states Number of states in @c Delta to allocate state posts for. Have to be at least
+     *  num_of_states() + 1.
+     */
+    void allocate(const size_t num_of_states) {
+        assert(num_of_states >= this->num_of_states());
+        state_posts_.resize(num_of_states);
     }
 
     /**

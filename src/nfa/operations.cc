@@ -352,7 +352,7 @@ Nfa mata::nfa::simple_revert(const Nfa& aut) {
     result.clear();
 
     const size_t num_of_states{ aut.num_of_states() };
-    result.delta.increase_size(num_of_states);
+    result.delta.allocate(num_of_states);
 
     for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const SymbolPost &transition: aut.delta[sourceState]) {

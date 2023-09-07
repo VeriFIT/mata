@@ -488,13 +488,13 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
 
 State Nfa::add_state() {
     const size_t num_of_states{ this->num_of_states() };
-    delta.increase_size(num_of_states + 1);
+    delta.allocate(num_of_states + 1);
     return num_of_states;
 }
 
 State Nfa::add_state(State state) {
     if (state >= delta.num_of_states()) {
-        delta.increase_size(state + 1);
+        delta.allocate(state + 1);
     }
     return state;
 }

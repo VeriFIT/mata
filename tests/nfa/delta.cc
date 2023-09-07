@@ -344,7 +344,7 @@ TEST_CASE("mata::nfa::Delta iteration over transitions") {
 
     SECTION("Sparse automaton") {
         const size_t state_num = 'r'+1;
-        nfa.delta.increase_size(state_num);
+        nfa.delta.reserve(state_num);
 
         nfa.delta.add('q', 'a', 'r');
         nfa.delta.add('q', 'b', 'r');
