@@ -264,6 +264,14 @@ public:
 
     // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
     StateSet post(const StateSet& states, const Symbol& symbol) const;
+
+    /**
+     * Check whether the language of NFA is empty.
+     * @param[out] cex Counter-example path for a case the language is not empty.
+     * @return True if the language is empty, false otherwise.
+     */
+    bool is_lang_empty(Run* cex = nullptr) const;
+
 }; // struct Nfa.
 
 /**
@@ -327,14 +335,6 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
  * @return Created alphabet.
  */
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
-
-/**
- * Check whether is the language of the automaton empty.
- * @param[in] aut Automaton to check.
- * @param[out] cex Counter-example path for a case the language is not empty.
- * @return True if the language is empty, false otherwise.
- */
-bool is_lang_empty(const Nfa& aut, Run* cex = nullptr);
 
 Nfa uni(const Nfa &lhs, const Nfa &rhs);
 

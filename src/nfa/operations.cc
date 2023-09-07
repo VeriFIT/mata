@@ -537,71 +537,51 @@ bool mata::nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
     return aut.final.intersects_with(cur);
 }
 
-bool mata::nfa::is_lang_empty(const Nfa& aut, Run* cex)
-{ // {{{
-    std::list<State> worklist(
-            aut.initial.begin(), aut.initial.end());
-    std::unordered_set<State> processed(
-            aut.initial.begin(), aut.initial.end());
+bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
+    std::list<State> worklist(initial.begin(), initial.end());
+    std::unordered_set<State> processed(initial.begin(), initial.end());
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state
     std::map<State, State> paths;
-    for (State s : worklist)
-    {	// initialize
-        paths[s] = s;
-    }
+    // Initialize paths.
+    for (const State s: worklist) { paths[s] = s; }
 
-    while (!worklist.empty())
-    {
-        State state = worklist.front();
+    State state;
+    while (!worklist.empty()) {
+        state = worklist.front();
         worklist.pop_front();
 
-        if (aut.final[state])
-        {
-            // TODO process the CEX
-            if (nullptr != cex)
-            {
+        if (final[state]) {
+            if (nullptr != cex) {
                 cex->path.clear();
                 cex->path.push_back(state);
-                while (paths[state] != state)
-                {
+                while (paths[state] != state) {
                     state = paths[state];
                     cex->path.push_back(state);
                 }
-
                 std::reverse(cex->path.begin(), cex->path.end());
-                cex->word = get_word_for_path(aut, *cex).first.word;
+                cex->word = get_word_for_path(*this, *cex).first.word;
             }
             return false;
         }
 
-        if (aut.delta.empty())
-            continue;
+        if (delta.empty()) { continue; }
 
-        for (const auto& symb_stateset : aut.delta[state])
-        {
-            for (const auto& tgt_state : symb_stateset.targets)
-            {
+        for (const SymbolPost& symbol_post: delta[state]) {
+            for (const State& target: symbol_post.targets) {
                 bool inserted;
-                tie(std::ignore, inserted) = processed.insert(tgt_state);
-                if (inserted)
-                {
-                    worklist.push_back(tgt_state);
-                    // also set that tgt_state was accessed from state
-                    paths[tgt_state] = state;
-                }
-                else
-                {
-                    // the invariant
-                    assert(haskey(paths, tgt_state));
-                }
+                tie(std::ignore, inserted) = processed.insert(target);
+                if (inserted) {
+                    worklist.push_back(target);
+                    // Also set that tgt_state was accessed from state.
+                    paths[target] = state;
+                } else { assert(haskey(paths, target)); /* Invariant. */ }
             }
         }
-    }
-
+    } // while (!worklist.empty()).
     return true;
-} // is_lang_empty }}}
+} // is_lang_empty().
 
 
 Nfa mata::nfa::algorithms::minimize_brzozowski(const Nfa& aut) {

@@ -78,62 +78,62 @@ TEST_CASE("Mata::nfa::Plumbing") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
         mata::nfa::plumbing::concatenate(&result, lhs, rhs);
-        CHECK(is_lang_empty(result));
+        CHECK(result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::intersection") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
         mata::nfa::plumbing::intersection(&result, lhs, rhs);
-        CHECK(is_lang_empty(result));
+        CHECK(result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::union") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
         mata::nfa::plumbing::uni(&result, lhs, rhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::remove_epsilon") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::remove_epsilon(&result, lhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::revert") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::revert(&result, lhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::reduce") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::reduce(&result, lhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
         CHECK(result.num_of_states() <= lhs.num_of_states());
     }
 
     SECTION("Mata::nfa::Plumbing::determinize") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::determinize(&result, lhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::minimize") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::minimize(&result, lhs);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
 
     SECTION("Mata::nfa::Plumbing::complement") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::complement(&result, lhs, alph);
-        CHECK(!is_lang_empty(result));
+        CHECK(!result.is_lang_empty());
     }
     SECTION("Mata::nfa::Plumbing::make_complete") {
         FILL_WITH_AUT_A(lhs);
         mata::nfa::plumbing::make_complete(&lhs, alph, lhs.num_of_states() + 1);
-        CHECK(!is_lang_empty(lhs));
+        CHECK(!lhs.empty_language());
     }
 }

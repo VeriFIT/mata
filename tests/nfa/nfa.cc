@@ -175,7 +175,7 @@ TEST_CASE("mata::nfa::is_lang_empty()")
 
     SECTION("An empty automaton has an empty language")
     {
-        REQUIRE(is_lang_empty(aut));
+        REQUIRE(aut.is_lang_empty());
     }
 
     SECTION("An automaton with a state that is both initial and final does not have an empty language")
@@ -183,7 +183,7 @@ TEST_CASE("mata::nfa::is_lang_empty()")
         aut.initial = {1, 2};
         aut.final = {2, 3};
 
-        bool is_empty = is_lang_empty(aut, &cex);
+        bool is_empty = aut.is_lang_empty(&cex);
         REQUIRE(!is_empty);
     }
 
@@ -204,19 +204,19 @@ TEST_CASE("mata::nfa::is_lang_empty()")
         SECTION("with final states")
         {
             aut.final = {7};
-            REQUIRE(!is_lang_empty(aut));
+            REQUIRE(!aut.is_lang_empty());
         }
 
         SECTION("without final states")
         {
-            REQUIRE(is_lang_empty(aut));
+            REQUIRE(aut.is_lang_empty());
         }
 
         SECTION("another complicated automaton")
         {
             FILL_WITH_AUT_A(aut);
 
-            REQUIRE(!is_lang_empty(aut));
+            REQUIRE(!aut.is_lang_empty());
         }
 
         SECTION("a complicated automaton with unreachable final states")
@@ -224,7 +224,7 @@ TEST_CASE("mata::nfa::is_lang_empty()")
             FILL_WITH_AUT_A(aut);
             aut.final = {13};
 
-            REQUIRE(is_lang_empty(aut));
+            REQUIRE(aut.is_lang_empty());
         }
     }
 
@@ -233,7 +233,7 @@ TEST_CASE("mata::nfa::is_lang_empty()")
         aut.initial = {1, 2};
         aut.final = {2, 3};
 
-        bool is_empty = is_lang_empty(aut, &cex);
+        bool is_empty = aut.is_lang_empty(&cex);
         REQUIRE(!is_empty);
 
         // check the counterexample
@@ -252,7 +252,7 @@ TEST_CASE("mata::nfa::is_lang_empty()")
         aut.delta.add(3, 'e', 5);
         aut.delta.add(4, 'c', 8);
 
-        bool is_empty = is_lang_empty(aut, &cex);
+        bool is_empty = aut.is_lang_empty(&cex);
         REQUIRE(!is_empty);
 
         // check the counterexample
@@ -357,7 +357,7 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()")
         aut.delta.add(3, 'e', 5);
         aut.delta.add(4, 'c', 8);
 
-        bool is_empty = is_lang_empty(aut, &cex);
+        bool is_empty = aut.is_lang_empty(&cex);
         REQUIRE(!is_empty);
 
         // check the counterexample
@@ -380,7 +380,7 @@ TEST_CASE("mata::nfa::determinize()")
 
         REQUIRE(result.final.empty());
         REQUIRE(result.delta.empty());
-        CHECK(is_lang_empty(result));
+        CHECK(result.is_lang_empty());
     }
 
     SECTION("simple automaton 1")
@@ -479,7 +479,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
         aut = builder::construct(parsec);
 
-        REQUIRE(is_lang_empty(aut));
+        REQUIRE(aut.is_lang_empty());
     }
 
     SECTION("construct a simple non-empty automaton accepting the empty word")
@@ -490,7 +490,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
         aut = builder::construct(parsec);
 
-        REQUIRE(!is_lang_empty(aut));
+        REQUIRE(!aut.is_lang_empty());
     }
 
     SECTION("construct an automaton with more than one initial/final states")
@@ -515,7 +515,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
         aut = builder::construct(parsec, &alphabet);
 
         Run cex;
-        REQUIRE(!is_lang_empty(aut, &cex));
+        REQUIRE(!aut.is_lang_empty(&cex));
         auto word_bool_pair = get_word_for_path(aut, cex);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a"}).word);
@@ -599,9 +599,9 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
     SECTION("construct an empty automaton")
     {
         inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
-        REQUIRE(is_lang_empty(aut));
+        REQUIRE(aut.is_lang_empty());
         aut = builder::construct(inter_aut);
-        REQUIRE(is_lang_empty(aut));
+        REQUIRE(aut.is_lang_empty());
     }
 
     SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton")
@@ -617,7 +617,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
         aut = builder::construct(inter_aut);
 
-        REQUIRE(!is_lang_empty(aut));
+        REQUIRE(!aut.is_lang_empty());
     }
 
     SECTION("construct an automaton with more than one initial/final states from intermediate automaton")
@@ -686,7 +686,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
         plumbing::construct(&aut, inter_aut, &alphabet);
 
         Run cex;
-        REQUIRE(!is_lang_empty(aut, &cex));
+        REQUIRE(!aut.is_lang_empty(&cex));
         auto word_bool_pair = get_word_for_path(aut, cex);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a" }).word);
@@ -956,7 +956,7 @@ TEST_CASE("mata::nfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-        CHECK(is_lang_empty(cmpl));
+        CHECK(cmpl.is_lang_empty());
     }
 
     SECTION("empty automaton accepting epsilon")

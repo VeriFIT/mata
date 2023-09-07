@@ -227,7 +227,7 @@ def test_encode_word():
 
 def test_language_emptiness(fa_one_divisible_by_two):
     cex = mata_nfa.Run()
-    assert not mata_nfa.is_lang_empty(fa_one_divisible_by_two, cex)
+    assert not fa_one_divisible_by_two.is_lang_empty(cex)
     assert cex.path == [0, 1, 2]
     assert cex.word == [1, 1]
 
@@ -237,7 +237,7 @@ def test_language_emptiness(fa_one_divisible_by_two):
     lhs.add_transition(1, 0, 2)
     lhs.add_transition(2, 0, 3)
     cex = mata_nfa.Run()
-    assert mata_nfa.is_lang_empty(lhs, cex)
+    assert lhs.is_lang_empty(cex)
     assert cex.word == []
     assert cex.path == []
 
@@ -340,7 +340,7 @@ def test_concatenate():
 
     result = mata_nfa.concatenate(lhs, rhs)
 
-    assert not mata_nfa.is_lang_empty(result)
+    assert not result.is_lang_empty()
     shortest_words = mata_strings.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words

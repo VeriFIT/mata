@@ -269,7 +269,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
         (*lhs_aut_iter).get().unify_final();
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
+    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_lhs{ *lhs_aut_begin };
@@ -280,7 +280,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, rhs_automaton, true).trim() };
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (utils::haskey(params, "reduce")) {
@@ -318,7 +318,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
         }
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
+    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_lhs{ *(*lhs_aut_begin) };
@@ -329,7 +329,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, rhs_automaton, true).trim() };
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (!reduce_value.empty()) {
@@ -388,7 +388,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     auto product_pres_eps_trans{
             intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons).trim() };
 
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (utils::haskey(params, "reduce")) {

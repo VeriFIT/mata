@@ -182,7 +182,7 @@ TEST_CASE("mata::nfa::intersection()")
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
-        REQUIRE(is_lang_empty(res));
+        REQUIRE(res.is_lang_empty());
     }
 } // }}}
 

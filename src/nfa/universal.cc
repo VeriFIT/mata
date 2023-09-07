@@ -35,7 +35,7 @@ bool mata::nfa::algorithms::is_universal_naive(
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
 
-	return is_lang_empty(cmpl, cex);
+	return cmpl.is_lang_empty(cex);
 } // is_universal_naive }}}
 
 

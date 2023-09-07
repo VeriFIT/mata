@@ -37,7 +37,7 @@ bool mata::nfa::algorithms::is_included_naive(
     }
     Nfa nfa_isect = intersection(smaller, bigger_cmpl, false, nullptr);
 
-    return is_lang_empty(nfa_isect, cex);
+    return nfa_isect.is_lang_empty(cex);
 } // is_included_naive }}}
 
 

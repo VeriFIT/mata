@@ -526,6 +526,16 @@ cdef class Nfa:
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
 
+    def is_lang_empty(self, Run run = None):
+        """Check if language of automaton is empty.
+
+        :return: true if the language of NFA is empty; path of states as a counter example if not.
+        """
+        if run:
+            return self.thisptr.get().is_lang_empty(run.thisptr)
+        else:
+            return self.thisptr.get().is_lang_empty(NULL)
+
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
          one letter for all transitions).
@@ -946,18 +956,6 @@ def is_deterministic(Nfa lhs):
     :return: true if the lhs is deterministic
     """
     return mata_nfa.c_is_deterministic(dereference(lhs.thisptr.get()))
-
-def is_lang_empty(Nfa lhs, Run run = None):
-    """Checks if language of automaton lhs is empty, if not, returns path of states as counter
-    example.
-
-    :param Nfa lhs:
-    :return: true if the lhs is empty, counter example if lhs is not empty
-    """
-    if run:
-        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
-    else:
-        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), NULL)
 
 def is_universal(Nfa lhs, alph.Alphabet alphabet, params = None):
     """Tests if lhs is universal wrt given alphabet

@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
 
     TIME_BEGIN(emptiness_check);
     Nfa intersect_aut = intersection(lhs, rhs);
-    is_lang_empty(intersect_aut);
+    intersect_aut.is_lang_empty();
     TIME_END(emptiness_check);
 
     return EXIT_SUCCESS;
