@@ -273,20 +273,24 @@ public:
   */
 void fill_alphabet(const Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
 
+// Allow variadic number of arguments of the same type.
+//
+// Using parameter pack and variadic arguments.
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
+/// Pack of bools for reasoning about a sequence of parameters.
 template<bool...> struct bool_pack{};
-/// Checks for all types in the pack.
+/// Check that for all values in a pack @p Ts are 'true'.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
-/// Checks whether all types are 'Nfa'.
-template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
+/// Check that all types in a sequence of parameters @p Ts are of type @p T.
+template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
 
 /**
- * Create alphabet from variable number of NFAs.
+ * Create alphabet from variadic number of NFAs given as arguments.
  * @tparam[in] Nfas Type Nfa.
  * @param[in] nfas NFAs to create alphabet from.
  * @return Created alphabet.
  */
-template<typename... Nfas, typename = AreAllNfas<Nfas...>>
+template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     auto f = [&alphabet](const Nfa& aut) {
