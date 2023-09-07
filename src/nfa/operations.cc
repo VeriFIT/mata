@@ -421,7 +421,7 @@ bool mata::nfa::is_deterministic(const Nfa& aut)
     {
         for (const auto& symStates : aut.delta[i])
         {
-            if (symStates.size() != 1) { return false; }
+            if (symStates.num_of_targets() != 1) { return false; }
         }
     }
 

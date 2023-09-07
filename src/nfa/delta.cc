@@ -174,7 +174,7 @@ size_t Delta::num_of_transitions() const {
     size_t number_of_transitions{ 0 };
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            number_of_transitions += symbol_post.size();
+            number_of_transitions += symbol_post.num_of_targets();
         }
     }
     return number_of_transitions;
@@ -287,7 +287,7 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
         copied_state_post.reserve(state_post.size());
         for(const SymbolPost& symbol_post: state_post) {
             StateSet copied_targets;
-            copied_targets.reserve(symbol_post.size());
+            copied_targets.reserve(symbol_post.num_of_targets());
             for(const State& state: symbol_post.targets) {
                 copied_targets.push_back(std::move(target_renumberer(state)));
             }
@@ -426,7 +426,7 @@ bool StatePost::Moves::const_iterator::operator==(const StatePost::Moves::const_
 size_t StatePost::num_of_moves() const {
     size_t counter{ 0 };
     for (const SymbolPost& symbol_post: *this) {
-        counter += symbol_post.size();
+        counter += symbol_post.num_of_targets();
     }
     return counter;
 }

@@ -72,7 +72,7 @@ public:
 
     size_t count(State s) const { return targets.count(s); }
     bool empty() const { return targets.empty(); }
-    size_t size() const { return targets.size(); }
+    size_t num_of_targets() const { return targets.size(); }
 
     void insert(State s);
     void insert(const StateSet& states);
