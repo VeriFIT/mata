@@ -108,6 +108,8 @@ public:
     FormulaNode(const FormulaNode& n)
         : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type), operand_type(n.operand_type) {}
 
+    FormulaNode(FormulaNode&&) = default;
+
     FormulaNode& operator=(const FormulaNode& other) = default;
     FormulaNode& operator=(FormulaNode&& other) = default;
 };
