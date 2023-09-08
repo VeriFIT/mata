@@ -92,9 +92,15 @@ namespace {
         return std::find(vec.begin(), vec.end(), item) != vec.end();
     }
 
-    bool no_operators(const std::vector<mata::FormulaNode>& nodes)
-    {
-        return std::ranges::all_of(nodes, [](const mata::FormulaNode& node){ return !node.is_operator();});
+    bool no_operators(const std::vector<mata::FormulaNode>& nodes) {
+        // Refactor using all_of() when Clang adds support for it.
+        // return std::ranges::all_of(nodes, [](const mata::FormulaNode& node){ return !node.is_operator();});
+        for (const auto& node: nodes) {
+            if (node.is_operator()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     std::string serialize_graph(const mata::FormulaGraph& graph)
@@ -179,7 +185,6 @@ namespace {
         }
 
         throw std::runtime_error("Unknown token " + token);
-        assert(false);
     }
 
     /**
