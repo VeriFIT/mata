@@ -24,27 +24,25 @@
 
 namespace Mata {
     struct MintermizationAlgebra {
-        static Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+        Cudd* bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
         BDD val;
 
-        MintermizationAlgebra() {
-            this->val = BDD();
-        }
+        MintermizationAlgebra(Cudd* mng) : bdd_mng(mng), val(BDD()) {}
 
-        MintermizationAlgebra(BDD val) {
-            this->val = val;
-        }
+        MintermizationAlgebra(BDD val, Cudd* mng) : val(val), bdd_mng(mng) {};
+
+        MintermizationAlgebra(const MintermizationAlgebra& alg) : bdd_mng(alg.bdd_mng), val(alg.val) {};
 
         friend MintermizationAlgebra operator&&(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
-            return {lhs.val * rhs.val};
+            return MintermizationAlgebra(lhs.val * rhs.val, lhs.bdd_mng);
         }
 
         friend MintermizationAlgebra operator||(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
-            return {lhs.val + rhs.val};
+            return {lhs.val + rhs.val, lhs.bdd_mng};
         }
 
         friend MintermizationAlgebra operator!(const MintermizationAlgebra &lhs) {
-            return {!lhs.val};
+            return {!lhs.val, lhs.bdd_mng};
         }
 
         bool operator==(const MintermizationAlgebra &rhs) const {
@@ -55,9 +53,9 @@ namespace Mata {
             return val.IsZero();
         }
 
-        static MintermizationAlgebra getTrue();
-        static MintermizationAlgebra getFalse();
-        static MintermizationAlgebra getVar();
+        MintermizationAlgebra getTrue() const;
+        MintermizationAlgebra getFalse() const;
+        MintermizationAlgebra getVar() const;
 };
 }
 
@@ -78,7 +76,7 @@ private: // data types
         enum class TYPE {NOTHING_E, VALUE_E};
 
         TYPE type{};
-        MintermizationAlgebra val{};
+        MintermizationAlgebra val{&bdd_mng};
 
         OptionalValue() = default;
         explicit OptionalValue(TYPE t) : type(t) {}
@@ -93,6 +91,7 @@ private: // data types
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
+    static Cudd bdd_mng;
     std::unordered_map<std::string, MintermizationAlgebra> symbol_to_var{};
     std::unordered_map<const FormulaGraph*, MintermizationAlgebra> trans_to_var{};
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
@@ -167,7 +166,9 @@ public:
     void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
                              const std::unordered_set<MintermizationAlgebra>& minterms);
 
-    Mintermization() : symbol_to_var{}, trans_to_var() {}
+    Mintermization() : symbol_to_var{}, trans_to_var() {
+        Mintermization::bdd_mng = Cudd(0);
+    }
 }; // class Mintermization.
 
 } // namespace Mata

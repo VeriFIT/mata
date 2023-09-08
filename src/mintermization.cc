@@ -58,19 +58,19 @@ namespace {
     }
 }
 
-Cudd Mata::MintermizationAlgebra::bdd_mng = Cudd{};
-
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getTrue() {
-    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddOne());
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getTrue() const {
+    return MintermizationAlgebra(bdd_mng->bddOne(), bdd_mng);
 }
 
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getFalse() {
-    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddZero());
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getFalse() const {
+    return MintermizationAlgebra(bdd_mng->bddZero(), bdd_mng);
 }
 
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getVar() {
-    return MintermizationAlgebra(MintermizationAlgebra::bdd_mng.bddVar());
+struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getVar() const {
+    return MintermizationAlgebra(bdd_mng->bddVar(), bdd_mng);
 }
+
+Cudd Mata::Mintermization::bdd_mng = Cudd(0);
 
 void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
 {
@@ -85,7 +85,7 @@ void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
         if (val.isFalse())
             continue;
         vars.insert(val);
-        trans_to_var[&symbol_part] = val;
+        trans_to_var.insert(std::make_pair(&symbol_part, val));
     }
 }
 
@@ -124,12 +124,12 @@ void Mata::Mintermization::trans_to_vars_afa(const IntermediateAut &aut)
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create val for the whole disjunct
             const auto val = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
-                    OptionalValue(MintermizationAlgebra::getTrue()) : // transition from state to states -> add true as symbol
+                    OptionalValue(MintermizationAlgebra(&bdd_mng).getTrue()) : // transition from state to states -> add true as symbol
                              graph_to_vars_afa(*ds_pair.first);
             assert(val.type == OptionalValue::TYPE::VALUE_E);
             if (val.val.isFalse())
                 continue;
-            trans_to_var[ds_pair.first] = val.val;
+            trans_to_var.insert(std::make_pair(ds_pair.first, val.val));
             vars.insert(val.val);
         }
     }
@@ -138,7 +138,7 @@ void Mata::Mintermization::trans_to_vars_afa(const IntermediateAut &aut)
 std::unordered_set<MintermizationAlgebra> Mata::Mintermization::compute_minterms(
         const std::unordered_set<MintermizationAlgebra>& source_bdds)
 {
-    std::unordered_set<MintermizationAlgebra> stack{ MintermizationAlgebra::getTrue() };
+    std::unordered_set<MintermizationAlgebra> stack{ MintermizationAlgebra(&bdd_mng).getTrue() };
     for (const MintermizationAlgebra& b: source_bdds) {
         std::unordered_set<MintermizationAlgebra> next;
         /**
@@ -172,9 +172,10 @@ Mata::Mintermization::OptionalValue Mata::Mintermization::graph_to_vars_afa(cons
         if (symbol_to_var.count(node.name)) {
             return OptionalValue(symbol_to_var.at(node.name));
         } else {
-            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra::getTrue() :
-                    (node.name == "false" ? MintermizationAlgebra::getFalse() : MintermizationAlgebra::getVar());
-            symbol_to_var[node.name] = res;
+            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra(&bdd_mng).getTrue() :
+                    (node.name == "false" ? MintermizationAlgebra(&bdd_mng).getFalse() :
+                    MintermizationAlgebra(&bdd_mng).getVar());
+            symbol_to_var.insert(std::make_pair(node.name, res));
             return OptionalValue(res);
         }
     } else if (node.is_operator()) {
@@ -208,9 +209,10 @@ MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph
         if (symbol_to_var.count(node.name)) {
             return symbol_to_var.at(node.name);
         } else {
-            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra::getTrue() :
-                      (node.name == "false" ? MintermizationAlgebra::getFalse() : MintermizationAlgebra::getVar());
-            symbol_to_var[node.name] = res;
+            MintermizationAlgebra res = (node.name == "true") ? MintermizationAlgebra(&bdd_mng).getTrue() :
+                      (node.name == "false" ? MintermizationAlgebra(&bdd_mng).getFalse() :
+                      MintermizationAlgebra(&bdd_mng).getVar());
+            symbol_to_var.insert(std::make_pair(node.name, res));
             return res;
         }
     } else if (node.is_operator()) {
@@ -233,7 +235,6 @@ MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph
     }
 
     assert(false);
-    return {};
 }
 
 void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
@@ -246,7 +247,7 @@ void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const
         size_t symbol = 0;
         if(trans_to_var.count(&symbol_part) == 0)
             continue; // Transition had zero var so it was not added to map
-        const MintermizationAlgebra &var = trans_to_var[&symbol_part];
+        const MintermizationAlgebra &var = trans_to_var.at(&symbol_part);
 
         for (const auto &minterm: minterms) {
             // for each minterm x:
@@ -271,7 +272,7 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
 
             if (!trans_to_var.count(disjunct))
                 continue; // Transition had zero var so it was not added to map
-            const MintermizationAlgebra &var = trans_to_var[disjunct];
+            const MintermizationAlgebra var = trans_to_var.at(disjunct);
 
             size_t symbol = 0;
             for (const auto &minterm: minterms) {
