@@ -279,10 +279,11 @@ namespace {
                             break;
                         default:
                             assert(opstack.size() > 1);
+                            mata::FormulaGraph second_child{ std::move(opstack.back()) };
+                            opstack.pop_back();
                             gr.children.emplace_back(std::move(opstack.back()));
                             opstack.pop_back();
-                            gr.children.emplace_front(std::move(opstack.back()));
-                            opstack.pop_back();
+                            gr.children.emplace_back(std::move(second_child));
                             opstack.emplace_back(std::move(gr));
                     }
                     break;
