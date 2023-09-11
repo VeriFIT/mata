@@ -467,23 +467,16 @@ bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
     return true;
 }
 
-std::pair<Run, bool> mata::nfa::get_word_for_path(const Nfa& aut, const Run& run)
-{
-    if (run.path.empty())
-    {
-        return {{}, true};
-    }
+std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
+    if (run.path.empty()) { return {{}, true}; }
 
     Run word;
     State cur = run.path[0];
-    for (size_t i = 1; i < run.path.size(); ++i)
-    {
+    for (size_t i = 1; i < run.path.size(); ++i) {
         State newSt = run.path[i];
         bool found = false;
-
-        if (!aut.delta.empty())
-        {
-            for (const auto &symbolMap: aut.delta[cur]) {
+        if (!this->delta.empty()) {
+            for (const auto &symbolMap: this->delta[cur]) {
                 for (State st: symbolMap.targets) {
                     if (st == newSt) {
                         word.word.push_back(symbolMap.symbol);
@@ -491,19 +484,12 @@ std::pair<Run, bool> mata::nfa::get_word_for_path(const Nfa& aut, const Run& run
                         break;
                     }
                 }
-
                 if (found) { break; }
             }
         }
-
-        if (!found)
-        {
-            return {{}, false};
-        }
-
+        if (!found) { return {{}, false}; }
         cur = newSt;    // update current state
     }
-
     return {word, true};
 }
 
@@ -553,7 +539,7 @@ bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
                     cex->path.push_back(state);
                 }
                 std::reverse(cex->path.begin(), cex->path.end());
-                cex->word = get_word_for_path(*this, *cex).first.word;
+                cex->word = this->get_word_for_path(*cex).first.word;
             }
             return false;
         }

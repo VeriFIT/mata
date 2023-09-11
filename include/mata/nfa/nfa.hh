@@ -301,6 +301,7 @@ public:
     /// Checks whether the prefix of a string is in the language of an automaton
     bool is_prfx_in_lang(const Run& word) const;
 
+    std::pair<Run, bool> get_word_for_path(const Run& run) const;
 }; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -586,8 +587,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-std::pair<Run, bool> get_word_for_path(const Nfa& aut, const Run& run);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

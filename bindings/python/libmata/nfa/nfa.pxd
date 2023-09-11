@@ -174,6 +174,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_universal(CAlphabet&, ParameterMap&) except +
         bool is_in_lang(CRun&)
         bool is_prfx_in_lang(CRun&)
+        pair[CRun, bool] get_word_for_path(CRun&)
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
@@ -185,7 +186,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
     cdef void compute_fw_direct_simulation(const CNfa&)
 
     # Helper functions
-    cdef pair[CRun, bool] c_get_word_for_path "mata::nfa::get_word_for_path" (CNfa&, CRun&)
     cdef CRun c_encode_word "mata::nfa::encode_word" (CAlphabet*, vector[string])
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":

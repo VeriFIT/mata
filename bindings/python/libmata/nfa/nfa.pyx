@@ -746,6 +746,21 @@ cdef class Nfa:
         run.thisptr.word = word
         return self.thisptr.get().is_prfx_in_lang(dereference(run.thisptr))
 
+    def get_word_for_path(self, path):
+        """For a given path (set of states) returns a corresponding word
+
+        >>> lhs.get_word_for_path([0, 1, 2])
+        ([1, 1], True)
+
+        :param Nfa lhs: source automaton
+        :param list path: list of states
+        :return: pair of word (list of symbols) and true or false, whether the search was successful
+        """
+        input = Run()
+        input.path = path
+        cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
+        return result.first.word, result.second
+
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
 
@@ -1098,22 +1113,6 @@ def accepts_epsilon(Nfa lhs):
     return False
 
 # Helper functions
-def get_word_for_path(Nfa lhs, path):
-    """For a given path (set of states) returns a corresponding word
-
-    >>> mata_nfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
-    ([1, 1], True)
-
-    :param Nfa lhs: source automaton
-    :param list path: list of states
-    :return: pair of word (list of symbols) and true or false, whether the search was successful
-    """
-    cdef pair[CRun, bool] result
-    input = Run()
-    input.path = path
-    result = mata_nfa.c_get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
-    return result.first.word, result.second
-
 def encode_word(alph.Alphabet alphabet, word):
     """Encodes word based on a passed alphabet
 

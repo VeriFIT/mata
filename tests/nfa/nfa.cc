@@ -273,7 +273,7 @@ TEST_CASE("mata::nfa::get_word_for_path()")
     {
         path = { };
 
-        auto word_bool_pair = get_word_for_path(aut, path);
+        auto word_bool_pair = aut.get_word_for_path(path);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word.empty());
     }
@@ -283,7 +283,7 @@ TEST_CASE("mata::nfa::get_word_for_path()")
         aut.initial = {1};
         path.path = {1};
 
-        auto word_bool_pair = get_word_for_path(aut, path);
+        auto word_bool_pair = aut.get_word_for_path(path);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word.empty());
     }
@@ -298,7 +298,7 @@ TEST_CASE("mata::nfa::get_word_for_path()")
 
         path.path = {1,2,3};
 
-        auto word_bool_pair = get_word_for_path(aut, path);
+        auto word_bool_pair = aut.get_word_for_path(path);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == Word({'c', 'b'}));
     }
@@ -315,7 +315,7 @@ TEST_CASE("mata::nfa::get_word_for_path()")
 
         path.path = {1,2,3,2,4};
 
-        auto word_bool_pair = get_word_for_path(aut, path);
+        auto word_bool_pair = aut.get_word_for_path(path);
         std::set<Word> possible({
             Word({'c', 'b', 'd', 'a'}),
             Word({'a', 'b', 'd', 'a'})});
@@ -335,7 +335,7 @@ TEST_CASE("mata::nfa::get_word_for_path()")
 
         path.path = {1,2,3,1,2};
 
-        auto word_bool_pair = get_word_for_path(aut, path);
+        auto word_bool_pair = aut.get_word_for_path(path);
         REQUIRE(!word_bool_pair.second);
     }
 }
@@ -516,7 +516,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
 
         Run cex;
         REQUIRE(!aut.is_lang_empty(&cex));
-        auto word_bool_pair = get_word_for_path(aut, cex);
+        auto word_bool_pair = aut.get_word_for_path(cex);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a"}).word);
 
@@ -687,7 +687,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
         Run cex;
         REQUIRE(!aut.is_lang_empty(&cex));
-        auto word_bool_pair = get_word_for_path(aut, cex);
+        auto word_bool_pair = aut.get_word_for_path(cex);
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a" }).word);
 

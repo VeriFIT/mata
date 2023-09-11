@@ -207,15 +207,11 @@ def test_forward_reach_states(
 def test_get_word_for_path(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2]) == ([1, 1], True)
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 0]) == ([], False)
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 2]) == ([1, 1, 0], True)
-    assert mata_nfa.get_word_for_path(
-        fa_one_divisible_by_four, [0, 1, 2, 3, 4]
-    ) == ([1, 1, 1, 1], True)
-    assert mata_nfa.get_word_for_path(
-        fa_one_divisible_by_eight, [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    ) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2]) == ([1, 1], True)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 0]) == ([], False)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 2]) == ([1, 1, 0], True)
+    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == ([1, 1, 1, 1], True)
+    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
 
 
 def test_encode_word():
