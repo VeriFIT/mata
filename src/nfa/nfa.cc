@@ -499,7 +499,7 @@ void Nfa::clear() {
     final.clear();
 }
 
-bool Nfa::is_identical(const Nfa& aut) {
+bool Nfa::is_identical(const Nfa& aut) const {
     if (utils::OrdVector<State>(initial) != utils::OrdVector<State>(aut.initial)) {
         return false;
     }

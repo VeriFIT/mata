@@ -149,7 +149,7 @@ public:
      *  essentially only useful for testing purposes.
      * @return True if automata are exactly identical, false otherwise.
      */
-    bool is_identical(const Nfa & aut);
+    bool is_identical(const Nfa& aut) const;
 
     /**
      * @brief Get set of reachable states.
