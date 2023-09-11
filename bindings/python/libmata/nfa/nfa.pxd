@@ -175,6 +175,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_in_lang(CRun&)
         bool is_prfx_in_lang(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
+        void make_complete(CAlphabet&, State) except +
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
@@ -198,7 +199,6 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
-    cdef void c_make_complete "mata::nfa::plumbing::make_complete" (CNfa*, CAlphabet&, State) except +
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&)

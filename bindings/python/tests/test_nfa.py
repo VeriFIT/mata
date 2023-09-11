@@ -377,7 +377,7 @@ def test_completeness(
     r.make_initial_state(0)
     r.add_transition(0, 0, 0)
     assert not r.is_complete(alph)
-    mata_nfa.make_complete(r, 1, alph)
+    r.make_complete(1, alph)
     assert r.is_complete(alph)
 
 

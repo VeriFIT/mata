@@ -761,6 +761,16 @@ cdef class Nfa:
         cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
         return result.first.word, result.second
 
+    def make_complete(self, State sink_state, alph.Alphabet alphabet):
+        """Makes NFA complete.
+
+        :param Symbol sink_state: sink state of the automaton
+        :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        """
+        if not self.thisptr.get().is_state(sink_state):
+            self.thisptr.get().add_state(self.thisptr.get().num_of_states())
+        self.thisptr.get().make_complete(<CAlphabet&>dereference(alphabet.as_base()), sink_state)
+
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
 
@@ -913,17 +923,6 @@ def complement(Nfa lhs, alph.Alphabet alphabet, params = None):
         },
     )
     return result
-
-def make_complete(Nfa lhs, State sink_state, alph.Alphabet alphabet):
-    """Makes lhs complete
-
-    :param Nfa lhs: automaton that will be made complete
-    :param Symbol sink_state: sink state of the automaton
-    :param OnTheFlyAlphabet alphabet: alphabet of the
-    """
-    if not lhs.thisptr.get().is_state(sink_state):
-        lhs.thisptr.get().add_state(lhs.num_of_states())
-    mata_nfa.c_make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
 def revert(Nfa lhs):
     """Reverses transitions in the lhs

@@ -823,7 +823,7 @@ TEST_CASE("mata::nfa::make_complete()")
     {
         OnTheFlyAlphabet alph{};
 
-        make_complete(aut, alph, 0);
+        aut.make_complete(alph, 0);
 
         REQUIRE(aut.initial.empty());
         REQUIRE(aut.final.empty());
@@ -834,7 +834,7 @@ TEST_CASE("mata::nfa::make_complete()")
     {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        make_complete(aut, alph, 0);
+        aut.make_complete(alph, 0);
 
         REQUIRE(aut.initial.empty());
         REQUIRE(aut.final.empty());
@@ -848,7 +848,7 @@ TEST_CASE("mata::nfa::make_complete()")
 
         aut.initial = {1};
 
-        make_complete(aut, alphabet, 0);
+        aut.make_complete(alphabet, 0);
 
         REQUIRE(aut.initial.size() == 1);
         REQUIRE(*aut.initial.begin() == 1);
@@ -863,7 +863,7 @@ TEST_CASE("mata::nfa::make_complete()")
 
         aut.initial = {1};
 
-        make_complete(aut, alph, SINK);
+        aut.make_complete(alph, SINK);
 
         REQUIRE(aut.initial.size() == 1);
         REQUIRE(*aut.initial.begin() == 1);
@@ -888,7 +888,7 @@ TEST_CASE("mata::nfa::make_complete()")
         aut.delta.add(3, alph["b"], 5);
         aut.delta.add(4, alph["c"], 8);
 
-        make_complete(aut, alph, SINK);
+        aut.make_complete(alph, SINK);
 
         REQUIRE(aut.delta.contains(1, alph["a"], 2));
         REQUIRE(aut.delta.contains(1, alph["b"], SINK));
@@ -1858,7 +1858,7 @@ TEST_CASE("mata::nfa::is_complete()")
 
         REQUIRE(!aut.is_complete(&alph));
 
-        make_complete(aut, alph, 100);
+        aut.make_complete(alph, 100);
         REQUIRE(aut.is_complete(&alph));
     }
 
@@ -2663,7 +2663,7 @@ TEST_CASE("A segmentation fault in the make_complement") {
     r.initial = {0};
     r.delta.add(0, 0, 0);
     REQUIRE(not r.is_complete(&alph));
-    make_complete(r, alph, 1);
+    r.make_complete(alph, 1);
     REQUIRE(r.is_complete(&alph));
 }
 

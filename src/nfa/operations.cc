@@ -134,29 +134,29 @@ std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &tra
     return os << result;
 }
 
-bool mata::nfa::make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state) {
-    return mata::nfa::make_complete(aut, alphabet.get_alphabet_symbols(), sink_state);
+bool mata::nfa::Nfa::make_complete(const Alphabet& alphabet, State sink_state) {
+    return this->make_complete(alphabet.get_alphabet_symbols(), sink_state);
 }
 
-bool mata::nfa::make_complete(Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
+bool mata::nfa::Nfa::make_complete(const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
     bool was_something_added{ false };
 
-    size_t num_of_states{ aut.num_of_states() };
+    size_t num_of_states{ this->num_of_states() };
     for (State state = 0; state < num_of_states; ++state) {
         OrdVector<Symbol> used_symbols{};
-        for (auto const &move : aut.delta[state]) {
+        for (auto const &move : this->delta[state]) {
             used_symbols.insert(move.symbol);
         }
         mata::utils::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
         for (Symbol symb : unused_symbols) {
-            aut.delta.add(state, symb, sink_state);
+            this->delta.add(state, symb, sink_state);
             was_something_added = true;
         }
     }
 
     if (was_something_added && num_of_states <= sink_state) {
         for (Symbol symbol : symbols) {
-            aut.delta.add(sink_state, symbol, sink_state);
+            this->delta.add(sink_state, symbol, sink_state);
         }
     }
 

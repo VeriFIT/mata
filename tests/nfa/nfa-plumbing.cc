@@ -131,9 +131,4 @@ TEST_CASE("Mata::nfa::Plumbing") {
         mata::nfa::plumbing::complement(&result, lhs, alph);
         CHECK(!result.is_lang_empty());
     }
-    SECTION("Mata::nfa::Plumbing::make_complete") {
-        FILL_WITH_AUT_A(lhs);
-        mata::nfa::plumbing::make_complete(&lhs, alph, lhs.num_of_states() + 1);
-        CHECK(!lhs.empty_language());
-    }
 }
