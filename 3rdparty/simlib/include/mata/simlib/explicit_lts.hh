@@ -21,7 +21,9 @@ namespace Simlib { class ExplicitLTS; }
 
 class Simlib::ExplicitLTS {
 
-	std::unordered_map<size_t, size_t> symbol_map{};
+    /// Map mapping label to a unique number in interval [0, <number of labels in automaton>].
+    /// The unique number is used as an index for accessing data of explicit LTS corresponding to the given label.
+    std::unordered_map<size_t, size_t> symbol_map{};
 	size_t states_{};
 	size_t transitions_;
 	std::vector<
