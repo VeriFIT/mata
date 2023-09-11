@@ -286,6 +286,12 @@ public:
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
      */
     void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
+
+    /// Is the language of the automaton universal?
+    bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
+                      const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
+    /// Is the language of the automaton universal?
+    bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 }; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -487,14 +493,6 @@ Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map 
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
            const ParameterMap& params = {{ "algorithm", "simulation" } });
-
-/// Is the language of the automaton universal?
-bool is_universal(const Nfa& aut, const Alphabet& alphabet, Run* cex = nullptr,
-                  const ParameterMap& params = {{ "algorithm", "antichains" }});
-
-inline bool is_universal(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return is_universal(aut, alphabet, nullptr, params);
-}
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).

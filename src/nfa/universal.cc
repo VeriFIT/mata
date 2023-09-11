@@ -144,14 +144,8 @@ bool mata::nfa::algorithms::is_universal_antichains(
 	return true;
 } // }}}
 
-// The dispatching method that calls the correct one based on parameters
-bool mata::nfa::is_universal(
-	const Nfa&         aut,
-	const Alphabet&    alphabet,
-	Run*               cex,
-	const ParameterMap&  params)
-{ // {{{
-
+// The dispatching method that calls the correct one based on parameters.
+bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
@@ -168,6 +162,9 @@ bool mata::nfa::is_universal(
 		throw std::runtime_error(std::to_string(__func__) +
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
+	return algo(*this, alphabet, cex);
+} // is_universal()
 
-	return algo(aut, alphabet, cex);
-} // is_universal }}}
+bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+    return this->is_universal(alphabet, nullptr, params);
+}

@@ -1073,7 +1073,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, params);
+            bool is_univ = aut.is_universal(alph, params);
 
             REQUIRE(!is_univ);
         }
@@ -1087,7 +1087,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(is_univ);
             REQUIRE(cex.word.empty());
@@ -1102,7 +1102,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(!is_univ);
             REQUIRE(((cex.word == Word{alph["a"]}) || (cex.word == Word{alph["b"]})));
@@ -1121,7 +1121,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, params);
+            bool is_univ = aut.is_universal(alph, params);
 
             REQUIRE(!is_univ);
         }
@@ -1138,7 +1138,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, params);
+            bool is_univ = aut.is_universal(alph, params);
 
             REQUIRE(!is_univ);
         }
@@ -1155,7 +1155,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, params);
+            bool is_univ = aut.is_universal(alph, params);
 
             REQUIRE(is_univ);
         }
@@ -1180,7 +1180,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(!is_univ);
 
@@ -1208,7 +1208,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(is_univ);
         }
@@ -1232,7 +1232,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(is_univ);
         }
@@ -1248,7 +1248,7 @@ TEST_CASE("mata::nfa::is_universal()")
 
         for (const auto& algo : ALGORITHMS) {
             params["algorithm"] = algo;
-            bool is_univ = is_universal(aut, alph, &cex, params);
+            bool is_univ = aut.is_universal(alph, &cex, params);
 
             REQUIRE(is_univ);
         }
@@ -1258,7 +1258,7 @@ TEST_CASE("mata::nfa::is_universal()")
     {
         OnTheFlyAlphabet alph{};
 
-        CHECK_THROWS_WITH(is_universal(aut, alph, params),
+        CHECK_THROWS_WITH(aut.is_universal(alph, params),
             Catch::Contains("requires setting the \"algo\" key"));
     }
 
@@ -1267,7 +1267,7 @@ TEST_CASE("mata::nfa::is_universal()")
         OnTheFlyAlphabet alph{};
         params["algorithm"] = "foo";
 
-        CHECK_THROWS_WITH(is_universal(aut, alph, params),
+        CHECK_THROWS_WITH(aut.is_universal(alph, params),
             Catch::Contains("received an unknown value"));
     }
 } // }}}

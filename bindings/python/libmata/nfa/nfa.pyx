@@ -709,7 +709,22 @@ cdef class Nfa:
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
         return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
+    def is_universal(self, alph.Alphabet alphabet, params = None):
+        """Tests if NFA is universal with regard to the given alphabet.
 
+        :param OnTheFlyAlphabet alphabet: on the fly alphabet.
+        :param dict params: additional params to the function, currently supports key 'algorithm',
+            which determines used universality test.
+        :return: true if NFA is universal.
+        """
+        params = params or {'algorithm': 'antichains'}
+        return self.thisptr.get().is_universal(
+            <CAlphabet&>dereference(alphabet.as_base()),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
+        )
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
@@ -718,7 +733,6 @@ cdef class Nfa:
         """
         cdef COrdVector[Symbol] symbols = self.thisptr.get().delta.get_used_symbols()
         return {s for s in symbols}
-
 
 
 # Operations
@@ -968,25 +982,6 @@ def compute_relation(Nfa lhs, params = None):
     return result
 
 # Tests
-def is_universal(Nfa lhs, alph.Alphabet alphabet, params = None):
-    """Tests if lhs is universal wrt given alphabet
-
-    :param Nfa lhs: automaton tested for universality
-    :param OnTheFlyAlphabet alphabet: on the fly alphabet
-    :param dict params: additional params to the function, currently supports key 'algorithm',
-        which determines used universality test
-    :return: true if lhs is universal
-    """
-    params = params or {'algorithm': 'antichains'}
-    return mata_nfa.c_is_universal(
-        dereference(lhs.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
-
 def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     """Test inclusion between two automata
 

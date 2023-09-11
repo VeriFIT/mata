@@ -171,9 +171,9 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_deterministic()
         bool is_complete(CAlphabet*) except +
         bool is_complete() except +
+        bool is_universal(CAlphabet&, ParameterMap&) except +
 
     # Automata tests
-    cdef bool c_is_universal "mata::nfa::is_universal" (CNfa&, CAlphabet&, ParameterMap&) except +
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)

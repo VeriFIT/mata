@@ -244,14 +244,14 @@ def test_universality(fa_one_divisible_by_two):
     alph = alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
-    assert mata_nfa.is_universal(fa_one_divisible_by_two, alph) == False
+    assert fa_one_divisible_by_two.is_universal(alph) == False
 
     l = mata_nfa.Nfa(1)
     l.make_initial_state(0)
     l.add_transition(0, 0, 0)
     l.add_transition(0, 1, 0)
     l.make_final_state(0)
-    assert mata_nfa.is_universal(l, alph) == True
+    assert l.is_universal(alph) == True
 
 
 def test_inclusion(
