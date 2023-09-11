@@ -774,8 +774,8 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
     return os;
 }
 
-void mata::nfa::fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
-    for (const StatePost& state_post: nfa.delta) {
+void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet) const {
+    for (const StatePost& state_post: this->delta) {
         for (const SymbolPost& symbol_post: state_post) {
             alphabet.update_next_symbol_value(symbol_post.symbol);
             alphabet.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
@@ -786,7 +786,7 @@ void mata::nfa::fill_alphabet(const Nfa& nfa, OnTheFlyAlphabet& alphabet) {
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::reference_wrapper<const Nfa>>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
-        fill_alphabet(nfa, alphabet);
+        nfa.get().fill_alphabet(alphabet);
     }
     return alphabet;
 }
@@ -794,7 +794,7 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::referen
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::reference_wrapper<Nfa>>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     for (const auto& nfa: nfas) {
-        fill_alphabet(nfa, alphabet);
+        nfa.get().fill_alphabet(alphabet);
     }
     return alphabet;
 }
@@ -802,7 +802,7 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<std::referen
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<const Nfa *>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     for (const Nfa* const nfa: nfas) {
-        fill_alphabet(*nfa, alphabet);
+        nfa->fill_alphabet(alphabet);
     }
     return alphabet;
 }
@@ -810,7 +810,7 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<const Nfa *>
 mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<Nfa*>& nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     for (const Nfa* const nfa: nfas) {
-        fill_alphabet(*nfa, alphabet);
+        nfa->fill_alphabet(alphabet);
     }
     return alphabet;
 }

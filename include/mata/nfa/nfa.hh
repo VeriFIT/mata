@@ -279,14 +279,14 @@ public:
      * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
      */
     bool is_complete(Alphabet const* alphabet = nullptr) const;
-}; // struct Nfa.
 
-/**
-  * Fill @p alphabet with symbols from @p nfa.
-  * @param[in] nfa NFA with symbols to fill @p alphabet with.
-  * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
-  */
-void fill_alphabet(const Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
+    /**
+     * Fill @p alphabet with symbols from @p nfa.
+     * @param[in] nfa NFA with symbols to fill @p alphabet with.
+     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
+     */
+    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
+}; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
 //
@@ -309,7 +309,7 @@ template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     auto f = [&alphabet](const Nfa& aut) {
-        fill_alphabet(aut, alphabet);
+        aut.fill_alphabet(alphabet);
     };
     (f(nfas), ...);
     return alphabet;
