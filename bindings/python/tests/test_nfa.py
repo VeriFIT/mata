@@ -388,11 +388,11 @@ def test_completeness(
 def test_in_language(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    assert mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
-    assert not mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1, 1])
+    assert fa_one_divisible_by_two.is_in_lang([1, 1])
+    assert not fa_one_divisible_by_two.is_in_lang([1, 1, 1])
 
-    assert mata_nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 1, 0])
-    assert not mata_nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 0, 0])
+    assert fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 1, 0])
+    assert not fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 0, 0])
     assert not mata_nfa.accepts_epsilon(fa_one_divisible_by_four)
 
     lhs = mata_nfa.Nfa(2)
@@ -413,13 +413,13 @@ def test_union(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
-    assert mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
-    assert not mata_nfa.is_in_lang(fa_one_divisible_by_four, [1, 1])
+    assert fa_one_divisible_by_two.is_in_lang([1, 1])
+    assert not fa_one_divisible_by_four.is_in_lang([1, 1])
     uni = mata_nfa.union(fa_one_divisible_by_two, fa_one_divisible_by_four)
-    assert mata_nfa.is_in_lang(uni, [1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1, 1, 1, ])
+    assert uni.is_in_lang([1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1, 1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata_nfa.is_included(fa_one_divisible_by_two, uni, alph)
     assert mata_nfa.is_included(fa_one_divisible_by_four, uni, alph)
 
@@ -436,10 +436,10 @@ def test_intersection(
 
     inter, product_map = mata_nfa.intersection_with_product_map(fa_one_divisible_by_two, fa_one_divisible_by_four)
 
-    assert not mata_nfa.is_in_lang(inter, [1, 1])
-    assert mata_nfa.is_in_lang(inter, [1, 1, 1, 1])
-    assert not mata_nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1, ])
+    assert not inter.is_in_lang([1, 1])
+    assert inter.is_in_lang([1, 1, 1, 1])
+    assert not inter.is_in_lang([1, 1, 1, 1, 1, 1])
+    assert inter.is_in_lang([1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata_nfa.is_included(inter, fa_one_divisible_by_two, alph)
     assert mata_nfa.is_included(inter, fa_one_divisible_by_four, alph)
     assert mata_nfa.is_included(inter, fa_one_divisible_by_two)
@@ -552,9 +552,9 @@ def test_complement(
     alph.translate_symbol("b")
 
     res = mata_nfa.complement(fa_one_divisible_by_two, alph)
-    assert not mata_nfa.is_in_lang(res, [1, 1])
-    assert mata_nfa.is_in_lang(res, [1, 1, 1])
-    assert not mata_nfa.is_in_lang(res, [1, 1, 1, 1])
+    assert not res.is_in_lang([1, 1])
+    assert res.is_in_lang([1, 1, 1])
+    assert not res.is_in_lang([1, 1, 1, 1])
 
 
 def test_revert():
@@ -563,12 +563,12 @@ def test_revert():
     lhs.add_transition(0, 0, 1)
     lhs.add_transition(1, 1, 2)
     lhs.make_final_state(2)
-    assert mata_nfa.is_in_lang(lhs, [0, 1])
-    assert not mata_nfa.is_in_lang(lhs, [1, 0])
+    assert lhs.is_in_lang([0, 1])
+    assert not lhs.is_in_lang([1, 0])
 
     rhs = mata_nfa.revert(lhs)
-    assert not mata_nfa.is_in_lang(rhs, [0, 1])
-    assert mata_nfa.is_in_lang(rhs, [1, 0])
+    assert not rhs.is_in_lang([0, 1])
+    assert rhs.is_in_lang([1, 0])
 
 
 def test_removing_epsilon():
@@ -659,7 +659,7 @@ def test_trim(prepare_automaton_a):
     assert len(nfa.final_states) == len(old_nfa.final_states)
 
     for word in mata_strings.get_shortest_words(old_nfa):
-        assert mata_nfa.is_in_lang(nfa, word)
+        assert nfa.is_in_lang(word)
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()

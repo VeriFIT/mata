@@ -508,33 +508,25 @@ std::pair<Run, bool> mata::nfa::get_word_for_path(const Nfa& aut, const Run& run
 }
 
 //TODO: this is not efficient
-bool mata::nfa::is_in_lang(const Nfa& aut, const Run& run)
-{
-    StateSet cur(aut.initial);
-
-    for (Symbol sym : run.word)
-    {
-        cur = aut.post(cur, sym);
-        if (cur.empty()) { return false; }
+bool mata::nfa::Nfa::is_in_lang(const Run& run) const {
+    StateSet current_post(this->initial);
+    for (const Symbol sym : run.word) {
+        current_post = this->post(current_post, sym);
+        if (current_post.empty()) { return false; }
     }
-
-    return aut.final.intersects_with(cur);
+    return this->final.intersects_with(current_post);
 }
 
 /// Checks whether the prefix of a string is in the language of an automaton
 // TODO: slow and it should share code with is_in_lang
-bool mata::nfa::is_prfx_in_lang(const Nfa& aut, const Run& run)
-{
-    StateSet cur =  StateSet{ aut.initial };
-
-    for (Symbol sym : run.word)
-    {
-        if (aut.final.intersects_with(cur)) { return true; }
-        cur = aut.post(cur, sym);
-        if (cur.empty()) { return false; }
+bool mata::nfa::Nfa::is_prfx_in_lang(const Run& run) const {
+    StateSet current_post{ this->initial };
+    for (const Symbol sym : run.word) {
+        if (this->final.intersects_with(current_post)) { return true; }
+        current_post = this->post(current_post, sym);
+        if (current_post.empty()) { return false; }
     }
-
-    return aut.final.intersects_with(cur);
+    return this->final.intersects_with(current_post);
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {

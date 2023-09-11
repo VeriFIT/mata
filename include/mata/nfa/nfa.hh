@@ -292,6 +292,15 @@ public:
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
+
+    /// Checks whether a word is in the language of an automaton.
+    bool is_in_lang(const Run& word) const;
+    /// Checks whether a word is in the language of an automaton.
+    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
+
+    /// Checks whether the prefix of a string is in the language of an automaton
+    bool is_prfx_in_lang(const Run& word) const;
+
 }; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -579,12 +588,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
 
 std::pair<Run, bool> get_word_for_path(const Nfa& aut, const Run& run);
-
-/// Checks whether a string is in the language of an automaton
-bool is_in_lang(const Nfa& aut, const Run& word);
-
-/// Checks whether the prefix of a string is in the language of an automaton
-bool is_prfx_in_lang(const Nfa& aut, const Run& word);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

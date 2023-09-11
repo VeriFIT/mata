@@ -726,6 +726,26 @@ cdef class Nfa:
             }
         )
 
+    def is_in_lang(self, vector[Symbol] word):
+        """Tests if word is in language.
+
+        :param vector[Symbol] word: tested word.
+        :return: true if word is in language of the NFA.
+        """
+        run = Run()
+        run.thisptr.word = word
+        return self.thisptr.get().is_in_lang(dereference(run.thisptr))
+
+    def is_prefix_in_lang(self, vector[Symbol] word):
+        """Test if any prefix of the word is in the language.
+
+        :param vector[Symbol] word: tested word
+        :return: true if any prefix of word is in language of the NFA.
+        """
+        run = Run()
+        run.thisptr.word = word
+        return self.thisptr.get().is_prfx_in_lang(dereference(run.thisptr))
+
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
 
@@ -1065,28 +1085,6 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
                 for k, v in params.items()
             }
         )
-
-def is_in_lang(Nfa lhs, vector[Symbol] word):
-    """Tests if word is in language
-
-    :param Nfa lhs: tested automaton
-    :param vector[Symbol] word: tested word
-    :return: true if word is in language of automaton lhs
-    """
-    run = Run()
-    run.thisptr.word = word
-    return mata_nfa.c_is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
-
-def is_prefix_in_lang(Nfa lhs, vector[Symbol] word):
-    """Test if any prefix of the word is in the language
-
-    :param Nfa lhs: tested automaton
-    :param vector[Symbol] word: tested word
-    :return: true if any prefix of word is in language of automaton lhs
-    """
-    run = Run()
-    run.thisptr.word = word
-    return mata_nfa.c_is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
 
 def accepts_epsilon(Nfa lhs):
     """Tests if automaton accepts epsilon

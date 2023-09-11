@@ -172,14 +172,14 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_complete(CAlphabet*) except +
         bool is_complete() except +
         bool is_universal(CAlphabet&, ParameterMap&) except +
+        bool is_in_lang(CRun&)
+        bool is_prfx_in_lang(CRun&)
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&)
-    cdef bool c_is_in_lang "mata::nfa::is_in_lang" (CNfa&, CRun&)
-    cdef bool c_is_prfx_in_lang "mata::nfa::is_prfx_in_lang" (CNfa&, CRun&)
 
     # Automata operations
     cdef void compute_fw_direct_simulation(const CNfa&)

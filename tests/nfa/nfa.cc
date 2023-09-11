@@ -520,7 +520,7 @@ TEST_CASE("mata::nfa::construct() correct calls")
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a"}).word);
 
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a"})));
     }
 
     SECTION("construct a more complicated non-empty automaton")
@@ -547,14 +547,14 @@ TEST_CASE("mata::nfa::construct() correct calls")
         aut = builder::construct(parsec, &alphabet);
 
         // some samples
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a", "c", "a", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet,
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "b", "a"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a", "c", "a", "a"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet,
                                             {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
         // some wrong samples
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "c"})));
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a", "c", "c", "a"})));
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "a", "c", "b"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "c"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "a", "c", "c", "a"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "a", "c", "b"})));
     }
 } // }}}
 
@@ -691,7 +691,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
         REQUIRE(word_bool_pair.second);
         REQUIRE(word_bool_pair.first.word == encode_word(&alphabet, { "a" }).word);
 
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a" })));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a" })));
     }
 
     SECTION("construct a more complicated non-empty automaton from intermediate automaton")
@@ -723,14 +723,14 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
         plumbing::construct(&aut, inter_aut, &alphabet);
 
         // some samples
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "b", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a", "c", "a", "a"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet,
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "b", "a"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a", "c", "a", "a"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet,
                                             {"a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a", "a"})));
         // some wrong samples
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "c"})));
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a", "c", "c", "a"})));
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "b", "a", "c", "b"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "c"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "a", "c", "c", "a"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "b", "a", "c", "b"})));
     }
 
     SECTION("construct - final states from negation")
@@ -753,10 +753,10 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
         plumbing::construct(&aut, inter_aut, &alphabet);
         REQUIRE(aut.final.size() == 4);
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3"})));
-        REQUIRE(!is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3", "a4"})));
-        REQUIRE(is_in_lang(aut, encode_word(&alphabet, { "a1", "a2", "a3", "a5", "a7"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a1", "a2"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a1", "a2", "a3"})));
+        REQUIRE(!aut.is_in_lang(encode_word(&alphabet, { "a1", "a2", "a3", "a4"})));
+        REQUIRE(aut.is_in_lang(encode_word(&alphabet, { "a1", "a2", "a3", "a5", "a7"})));
     }
 
     SECTION("construct - final states given as true")
@@ -937,11 +937,11 @@ TEST_CASE("mata::nfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-        REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
         Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(cmpl, sigma_star_nfa));
@@ -968,11 +968,11 @@ TEST_CASE("mata::nfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-        REQUIRE(!is_in_lang(cmpl, { }));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"]}, {}}));
+        REQUIRE(!cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["b"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"]}, {}}));
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
         REQUIRE(cmpl.delta.num_of_transitions() == 4);
@@ -991,13 +991,13 @@ TEST_CASE("mata::nfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-        REQUIRE(!is_in_lang(cmpl, { }));
-        REQUIRE(!is_in_lang(cmpl, {{ alph["a"] }, {}}));
-        REQUIRE(!is_in_lang(cmpl, {{ alph["b"] }, {}}));
-        REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, {{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
-        REQUIRE(!is_in_lang(cmpl, {{ alph["a"], alph["a"], alph["b"], alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, {{ alph["b"], alph["a"], alph["a"], alph["a"] }, {}}));
+        REQUIRE(!cmpl.is_in_lang(Word{}));
+        REQUIRE(!cmpl.is_in_lang(Word{ alph["a"] }));
+        REQUIRE(!cmpl.is_in_lang(Word{ alph["b"] }));
+        REQUIRE(!cmpl.is_in_lang(Word{ alph["a"], alph["a"] }));
+        REQUIRE(cmpl.is_in_lang(Word{ alph["a"], alph["b"], alph["b"], alph["a"] }));
+        REQUIRE(!cmpl.is_in_lang(Word{ alph["a"], alph["a"], alph["b"], alph["b"] }));
+        REQUIRE(cmpl.is_in_lang(Word{ alph["b"], alph["a"], alph["a"], alph["a"] }));
 
         REQUIRE(cmpl.initial.size() == 1);
         REQUIRE(cmpl.final.size() == 1);
@@ -1021,11 +1021,11 @@ TEST_CASE("mata::nfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
 
-        REQUIRE(is_in_lang(cmpl, {}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["b"] }, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["a"]}, {}}));
-        REQUIRE(is_in_lang(cmpl, Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang({}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["b"] }, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
+        REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
         Nfa sigma_star_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(sigma_star_nfa, cmpl));
@@ -1886,10 +1886,10 @@ TEST_CASE("mata::nfa::is_prfx_in_lang()")
     {
         Run w;
         w.word = {'a', 'b', 'd'};
-        REQUIRE(!is_prfx_in_lang(aut, w));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = { };
-        REQUIRE(!is_prfx_in_lang(aut, w));
+        REQUIRE(!aut.is_prfx_in_lang(w));
     }
 
     SECTION("automaton accepting only epsilon")
@@ -1899,10 +1899,10 @@ TEST_CASE("mata::nfa::is_prfx_in_lang()")
 
         Run w;
         w.word = { };
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'a', 'b'};
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
     }
 
     SECTION("small automaton")
@@ -1911,28 +1911,28 @@ TEST_CASE("mata::nfa::is_prfx_in_lang()")
 
         Run w;
         w.word = {'b', 'a'};
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = { };
-        REQUIRE(!is_prfx_in_lang(aut, w));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'a'};
-        REQUIRE(!is_prfx_in_lang(aut, w));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'a', 'a'};
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'a', 'a'};
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = Word(100000, 'a');
-        REQUIRE(is_prfx_in_lang(aut, w));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = Word(100000, 'b');
-        REQUIRE(!is_prfx_in_lang(aut, w));
+        REQUIRE(!aut.is_prfx_in_lang(w));
     }
 } // }}}
 
@@ -2113,20 +2113,20 @@ TEST_CASE("mata::nfa::union_norename()") {
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.final.insert(1);
-    REQUIRE(!is_in_lang(lhs, one));
-    REQUIRE(is_in_lang(lhs, zero));
+    REQUIRE(!lhs.is_in_lang(one));
+    REQUIRE(lhs.is_in_lang(zero));
 
     Nfa rhs(2);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.final.insert(1);
-    REQUIRE(is_in_lang(rhs, one));
-    REQUIRE(!is_in_lang(rhs, zero));
+    REQUIRE(rhs.is_in_lang(one));
+    REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
         Nfa result = uni(lhs, rhs);
-        REQUIRE(is_in_lang(result, one));
-        REQUIRE(is_in_lang(result, zero));
+        REQUIRE(result.is_in_lang(one));
+        REQUIRE(result.is_in_lang(zero));
     }
 }
 
@@ -2378,7 +2378,7 @@ TEST_CASE("mata::nfa::trim()")
         CHECK(aut.num_of_states() == 4);
         for (const Word& word: get_shortest_words(orig_aut))
         {
-            CHECK(is_in_lang(aut, Run{word,{}}));
+            CHECK(aut.is_in_lang(Run{word,{}}));
         }
 
         aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
@@ -2396,7 +2396,7 @@ TEST_CASE("mata::nfa::trim()")
         CHECK(aut.num_of_states() == 4);
         for (const Word& word: get_shortest_words(orig_aut))
         {
-            CHECK(is_in_lang(aut, Run{word,{}}));
+            CHECK(aut.is_in_lang(Run{word,{}}));
         }
         REQUIRE(state_map.size() == 4);
         CHECK(state_map.at(1) == 0);
@@ -2669,20 +2669,20 @@ TEST_CASE("A segmentation fault in the make_complement") {
 
 TEST_CASE("mata::nfa:: create simple automata") {
     Nfa nfa{ builder::create_empty_string_nfa() };
-    CHECK(is_in_lang(nfa, { {}, {} }));
+    CHECK(nfa.is_in_lang(Word{}));
     CHECK(get_word_lengths(nfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
     nfa = builder::create_sigma_star_nfa(&alphabet);
-    CHECK(is_in_lang(nfa, { {}, {} }));
-    CHECK(is_in_lang(nfa, { { 0 }, {} }));
-    CHECK(is_in_lang(nfa, { { 1 }, {} }));
-    CHECK(is_in_lang(nfa, { { 2 }, {} }));
-    CHECK(is_in_lang(nfa, { { 0, 1 }, {} }));
-    CHECK(is_in_lang(nfa, { { 1, 0 }, {} }));
-    CHECK(is_in_lang(nfa, { { 2, 2, 2 }, {} }));
-    CHECK(is_in_lang(nfa, { { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
-    CHECK(!is_in_lang(nfa, { { 3 }, {} }));
+    CHECK(nfa.is_in_lang({ {}, {} }));
+    CHECK(nfa.is_in_lang({  0 , {} }));
+    CHECK(nfa.is_in_lang({  1 , {} }));
+    CHECK(nfa.is_in_lang({  2 , {} }));
+    CHECK(nfa.is_in_lang({ { 0, 1 }, {} }));
+    CHECK(nfa.is_in_lang({ { 1, 0 }, {} }));
+    CHECK(nfa.is_in_lang({ { 2, 2, 2 }, {} }));
+    CHECK(nfa.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
+    CHECK(!nfa.is_in_lang({  3 , {} }));
 }
 
 TEST_CASE("mata::nfa:: print_to_mata") {

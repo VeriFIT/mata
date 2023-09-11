@@ -208,7 +208,7 @@ TEST_CASE("mata::nfa::concatenate()") {
         result = concatenate(lhs, rhs);
 
         CHECK(!result.is_lang_empty());
-        CHECK(is_in_lang(result, Run{ {}, {} }));
+        CHECK(result.is_in_lang(Run{ {}, {} }));
         CHECK(result.delta.empty());
     }
 
@@ -291,11 +291,11 @@ TEST_CASE("mata::nfa::concatenate()") {
         rhs.delta.add(0, 'a', 0);
 
         result = concatenate(lhs, rhs);
-        CHECK(is_in_lang(result, Run{ { 'b' }, {} }));
-        CHECK(is_in_lang(result, Run{ { 'b', 'a' }, {} }));
-        CHECK(is_in_lang(result, Run{ { 'b', 'a', 'a' }, {} }));
-        CHECK(!is_in_lang(result, Run{ { 'a' }, {} }));
-        CHECK(!is_in_lang(result, Run{ { 'a', 'b' }, {} }));
+        CHECK(result.is_in_lang(Run{ { 'b' }, {} }));
+        CHECK(result.is_in_lang(Run{ { 'b', 'a' }, {} }));
+        CHECK(result.is_in_lang(Run{ { 'b', 'a', 'a' }, {} }));
+        CHECK(!result.is_in_lang(Run{ { 'a' }, {} }));
+        CHECK(!result.is_in_lang(Run{ { 'a', 'b' }, {} }));
         auto shortest_words{ get_shortest_words(result) };
         CHECK(shortest_words.size() == 1);
         CHECK(shortest_words.find(std::vector<Symbol>{ 'b' }) != shortest_words.end());
