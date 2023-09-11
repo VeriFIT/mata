@@ -38,15 +38,12 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Symbol maxSymbol = 0;
+        Symbol maxSymbol{ aut.get_max_symbol() };
         const size_t state_num = aut.size();
         Simlib::ExplicitLTS LTSforSimulation(state_num);
 
         for (const Transition& transition : aut.delta.transitions()) {
             LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
-            if (transition.symbol > maxSymbol) {
-                maxSymbol = transition.symbol;
-            }
         }
 
         // final states cannot be simulated by nonfinal -> we add new selfloops over final states with new symbol in LTS
