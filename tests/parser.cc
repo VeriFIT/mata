@@ -833,6 +833,25 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(final_states.count("8"));
     }
 
+    SECTION("NFA - true/false constants")
+    {
+        std::string file =
+R"(@NFA-bits
+%Alphabet-auto
+%Initial q1
+%Final \true
+q0 \true q1
+q1 \false q2
+)";
+
+        const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
+        const mata::IntermediateAut inter_aut = auts[0];
+
+        CHECK(inter_aut.final_formula.node.is_true());
+		CHECK(inter_aut.transitions.at(0).second.children.at(0).node.is_true());
+		CHECK(inter_aut.transitions.at(1).second.children.at(0).node.is_false());
+    }
+
     SECTION("AFA explicit")
     {
         std::string file =

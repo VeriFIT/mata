@@ -182,7 +182,7 @@ TEST_CASE("mata::Mintermization::mintermization")
         std::string file =
             "@AFA-bits\n"
             "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
-            "%Final true & (!q3' | (!q1))\n"
+            "%Final \\true & (!q3' | (!q1))\n"
             "q1 (!a0 & !a1 & (q2))\n"
             "q1 (a1 & !a2 & (q3))\n"
             "q1' q1'\n"
@@ -244,7 +244,7 @@ TEST_CASE("mata::Mintermization::mintermization")
         std::string file =
                 "@AFA-bits\n"
                 "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
-                "%Final true & (!q3' | (!q1))\n"
+                "%Final \\true & (!q3' | (!q1))\n"
                 "q1 (!a0 & !a1 & !a2 & !a3 & (q2))\n"
                 "q0 (a4 & !a5 & !a6 & !a7 & (q0)) | (!a4 & a5 & !a6 & !a7 & (q1)) | (a4 & a5 & !a6 & !a7 & (q2))\n"
                 "q1' q1'\n"
@@ -287,7 +287,7 @@ TEST_CASE("mata::Mintermization::mintermization")
         std::string file =
                 "@AFA-bits\n"
                 "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
-                "%Final true & (!q3' | (!q1))\n"
+                "%Final \\true & (!q3' | (!q1))\n"
                 "q1 (!a0 & !a1 & !a2 & !a3 & (q2))\n"
                 "q0 (a4 & !a5 & !a6 & !a7 & (q0)) | (!a4 & a5 & !a6 & !a7 & (q0)) | (a4 & a5 & !a6 & !a7 & (q0)) | (!a4 & !a5 & a6 & !a7 & (q0)) | (a4 & !a5 & a6 & !a7 & (q0)) | (!a4 & a5 & a6 & !a7 & (q0)) | (a4 & a5 & a6 & !a7 & (q0)) | (!a4 & !a5 & !a6 & a7 & (q0)) | (a4 & !a5 & !a6 & a7 & (q0)) | (!a4 & a5 & !a6 & a7 & (q0)) | (a4 & a5 & !a6 & a7 & (q0)) | (!a4 & !a5 & a6 & a7 & (q0)) | (!a4 & !a5 & !a6 & !a7 & (q0)) | (a4 & !a5 & a6 & a7 & (q0))\n"
                 "q3 (a8 & !a9 & !a10 & !a11 & (q3)) | (!a8 & a9 & !a10 & !a11 & (q3)) | (a8 & a9 & !a10 & !a11 & (q3)) | (!a8 & !a9 & a10 & !a11 & (q3)) | (a8 & !a9 & a10 & !a11 & (q3)) | (!a8 & a9 & a10 & !a11 & (q3)) | (a8 & a9 & a10 & !a11 & (q3)) | (!a8 & !a9 & !a10 & a11 & (q3)) | (a8 & !a9 & !a10 & a11 & (q3)) | (!a8 & a9 & !a10 & a11 & (q3)) | (a8 & a9 & !a10 & a11 & (q3)) | (!a8 & !a9 & a10 & a11 & (q3)) | (!a8 & !a9 & !a10 & !a11 & (q3)) | (a8 & !a9 & a10 & a11 & (q3))\n"
@@ -312,7 +312,7 @@ TEST_CASE("mata::Mintermization::mintermization")
         std::string file =
                 "@AFA-bits\n"
                 "%Initial (q0) & ((q1 & q1' & q3 & q3'))\n"
-                "%Final true & (!q3' | (!q1))\n"
+                "%Final \\true & (!q3' | (!q1))\n"
                 "q1 (!a0 & !a1 & !a2 & !a3 & (q2 & q3 & q0))\n"
                 "q0 (a4 & !a5 & !a6 & !a7 & (q0 & q1 & q1')) | (!a4 & a5 & !a6 & !a7 & (q1)) | (a4 & a5 & !a6 & !a7 & q2 & q1')\n"
                 "q1' q1'\n"
@@ -388,15 +388,15 @@ TEST_CASE("mata::Mintermization::mintermization")
             "%Alphabet-auto\n"
             "%Initial q\n"
             "%Final r\n"
-            "q true r\n"
+            "q \\true r\n"
             "r a1 & a2 s\n"
-            "s false s\n";
+            "s \\false s\n";
 
         parsed = parse_mf(file);
         std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const auto &aut = auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-        REQUIRE(aut.transitions[0].second.children[0].node.raw == "true");
+        REQUIRE(aut.transitions[0].second.children[0].node.raw == "\\true");
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
         REQUIRE(aut.transitions[0].second.children[1].node.raw == "r");
 
@@ -413,10 +413,10 @@ TEST_CASE("mata::Mintermization::mintermization")
             "@AFA-bits\n"
             "%Initial q0\n"
             "%Final q3\n"
-            "q0 (true & q2 & q3 & q0) | (a4 & !a5 & !a6 & !a7 & q0 & q1 & q2)\n"
-            "q1 false\n"
+            "q0 (\\true & q2 & q3 & q0) | (a4 & !a5 & !a6 & !a7 & q0 & q1 & q2)\n"
+            "q1 \\false\n"
             "q2 q1\n"
-            "q3 true\n";
+            "q3 \\true\n";
 
         parsed = parse_mf(file);
         std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
