@@ -24,27 +24,27 @@
 
 namespace Mata {
     struct MintermizationAlgebra {
-        Cudd* bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
+        Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
         BDD val;
 
-        MintermizationAlgebra() : bdd_mng(nullptr), val(BDD()) {}
+        MintermizationAlgebra() : bdd_mng(0), val(BDD()) {}
 
-        MintermizationAlgebra(Cudd* mng) : bdd_mng(mng), val(BDD()) {}
+        MintermizationAlgebra(Cudd mng) : bdd_mng(mng), val(BDD()) {}
 
-        MintermizationAlgebra(BDD val, Cudd* mng) : bdd_mng(mng), val(val) {};
+        MintermizationAlgebra(Cudd mng, BDD val) : bdd_mng(mng), val(val) {};
 
         MintermizationAlgebra(const MintermizationAlgebra& alg) = default;
 
         friend MintermizationAlgebra operator&&(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
-            return MintermizationAlgebra(lhs.val * rhs.val, lhs.bdd_mng);
+            return {lhs.bdd_mng, lhs.val * rhs.val};
         }
 
         friend MintermizationAlgebra operator||(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
-            return {lhs.val + rhs.val, lhs.bdd_mng};
+            return {lhs.bdd_mng, lhs.val + rhs.val};
         }
 
         friend MintermizationAlgebra operator!(const MintermizationAlgebra &lhs) {
-            return {!lhs.val, lhs.bdd_mng};
+            return {lhs.bdd_mng, !lhs.val};
         }
 
         bool operator==(const MintermizationAlgebra &rhs) const {
@@ -92,7 +92,7 @@ private: // data types
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
-    Cudd bdd_mng;
+    MintermizationAlgebra domain_base;
     std::unordered_map<std::string, MintermizationAlgebra> symbol_to_var{};
     std::unordered_map<const FormulaGraph*, MintermizationAlgebra> trans_to_var{};
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
@@ -167,8 +167,7 @@ public:
     void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
                              const std::unordered_set<MintermizationAlgebra>& minterms);
 
-    Mintermization() : symbol_to_var{}, trans_to_var() {
-        Mintermization::bdd_mng = Cudd(0);
+    Mintermization() : symbol_to_var{}, trans_to_var(), domain_base() {
     }
 }; // class Mintermization.
 
