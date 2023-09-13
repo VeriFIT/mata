@@ -149,13 +149,13 @@ public:
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
-    reference push_back(const Key & t) { return emplace_back(t); }
+    reference push_back(const Key& t) { return emplace_back(t); }
 
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     // btw, do we need move here?
-    reference push_back(Key && t) { return emplace_back(std::move(t)); }
+    reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
     virtual inline void reserve(size_t  size) { vec_.reserve(size); }
 
