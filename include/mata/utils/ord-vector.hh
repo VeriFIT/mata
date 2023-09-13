@@ -216,7 +216,6 @@ public:
 
         unite(*this,vec,tmp);
 
-        //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp.vec_ if possible.
         vec_ = tmp.vec_;
         /*
          * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
