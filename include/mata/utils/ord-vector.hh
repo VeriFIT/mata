@@ -138,20 +138,24 @@ public:
         vec_.insert(itr,x);
     }
 
+    // EMPLACE_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    template <typename... Args>
+    reference emplace_back(Args&&... args) {
+       return vec_.emplace_back(std::forward<Args>(args)...);
+    }
+
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
-    virtual inline void push_back(const Key& x) {
-        reserve_on_insert(vec_);
-        vec_.emplace_back(x);
-    }
+    reference push_back(const Key & t) { return emplace_back(t); }
 
-    //I added this, and then noticed that that push_back above does emplace_back already.
-    // Isn't that somehow wrong? Is emplace_back really always better?
-    virtual inline void emplace_back(const Key& x) {
-        reserve_on_insert(vec_);
-        vec_.emplace_back(x);
-    }
+    // PUSH_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    // btw, do we need move here?
+    reference push_back(Key && t) { return emplace_back(std::move(t)); }
 
     virtual inline void reserve(size_t  size) { vec_.reserve(size); }
 
