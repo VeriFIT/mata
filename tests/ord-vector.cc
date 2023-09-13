@@ -22,20 +22,28 @@
 
 using namespace mata::utils;
 
-TEST_CASE("mata::utils::OrdVector::remove()") {
+TEST_CASE("mata::utils::OrdVector::erase()") {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set{ 1, 2, 3, 4, 6 };
-    set.remove(3);
+    set.erase(3);
     CHECK(set == OrdVectorT{ 1, 2, 4, 6 });
-    set.remove(4);
+    set.erase(4);
     CHECK(set == OrdVectorT{ 1, 2, 6 });
-    CHECK_THROWS(set.remove(5));
-    set.remove(2);
+    CHECK_THROWS(set.erase(5));
+    set.erase(2);
     CHECK(set == OrdVectorT{ 1, 6 });
-    set.remove(1);
-    set.remove(6);
+    set.erase(1);
+    set.erase(6);
     CHECK(set.empty());
-    CHECK_THROWS(set.remove(0));
+    set.push_back(3);
+    CHECK(set == OrdVectorT{ 3 });
+    set.erase(3);
+    CHECK(set.empty());
+    CHECK_THROWS(set.erase(0));
+    set.emplace_back(3);
+    set.emplace_back(4);
+    CHECK(set == OrdVectorT{ 3, 4 });
+    CHECK_THROWS(set.erase(0));
 }
 
 TEST_CASE("mata::utils::OrdVector::intersection(}")

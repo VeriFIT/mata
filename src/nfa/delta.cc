@@ -137,9 +137,9 @@ void Delta::remove(State src, Symbol symb, State tgt) {
                     "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                     std::to_string(tgt) + "] does not exist.");
         } else {
-            symbol_transitions->remove(tgt);
+            symbol_transitions->erase(tgt);
             if (symbol_transitions->empty()) {
-                state_posts_[src].remove(*symbol_transitions);
+                state_posts_[src].erase(*symbol_transitions);
             }
         }
     }
@@ -291,7 +291,7 @@ std::vector<StatePost> Delta::renumber_targets(const std::function<State(State)>
             for(const State& state: symbol_post.targets) {
                 copied_targets.push_back(std::move(target_renumberer(state)));
             }
-            copied_state_post.push_back(std::move(SymbolPost(symbol_post.symbol, copied_targets)));
+            copied_state_post.push_back(SymbolPost(symbol_post.symbol, copied_targets));
         }
         copied_state_posts.emplace_back(copied_state_post);
     }

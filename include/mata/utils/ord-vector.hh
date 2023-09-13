@@ -138,13 +138,24 @@ public:
         vec_.insert(itr,x);
     }
 
+    // EMPLACE_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    template <typename... Args>
+    reference emplace_back(Args&&... args) {
+       return vec_.emplace_back(std::forward<Args>(args)...);
+    }
+
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
-    virtual inline void push_back(const Key& x) {
-        reserve_on_insert(vec_);
-        vec_.emplace_back(x);
-    }
+    reference push_back(const Key& t) { return emplace_back(t); }
+
+    // PUSH_BACK WHICH BREAKS SORTEDNESS,
+    // dangerous,
+    // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
+    // btw, do we need move here?
+    reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
     virtual inline void reserve(size_t  size) { vec_.reserve(size); }
 
@@ -155,52 +166,63 @@ public:
 
         reserve_on_insert(vec_);
 
-        // perform binary search (cannot use std::binary_search because it is
-        // ineffective due to not returning the iterator to the position of the
-        // desirable insertion in case the searched element is not present in the
-        // range)
-        size_t first = 0;
-        size_t last = vec_.size();
+        // Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
+        auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
+        if (pos == vec_.end() || *pos != x)
+            vec_.insert(pos,x);
 
-        if ((last != 0) && (vec_.back() < x))
-        {	// for the case which would be prevalent
-            // that is, the added thing can is larger than the largest thing and can be just bushed back
-            vec_.push_back(x);
-            return;
-        }
+        //TODO: measure, if there is not benefit to this custom version, remove
+        //size_t first = 0;
+        //size_t last = vec_.size();
 
-        while (first < last)
-        {	// while the pointers do not overlap
-            size_t middle = first + (last - first) / 2;
-            if (vec_[middle] == x)
-            {	// in case we found x
-                return;
-            }
-            else if (vec_[middle] < x)
-            {	// in case middle is less than x
-                first = middle + 1;
-            }
-            else
-            {	// in case middle is greater than x
-                last = middle;
-            }
-        }
+        //if ((last != 0) && (vec_.back() < x))
+        //{	// for the case which would be prevalent
+        //    // that is, the added thing can is larger than the largest thing and can be just bushed back
+        //    vec_.push_back(x);
+        //    return;
+        //}
 
-        vec_.resize(vec_.size() + 1);
-        std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
+        //while (first < last)
+        //{	// while the pointers do not overlap
+        //    size_t middle = first + (last - first) / 2;
+        //    if (vec_[middle] == x)
+        //    {	// in case we found x
+        //        return;
+        //    }
+        //    else if (vec_[middle] < x)
+        //    {	// in case middle is less than x
+        //        first = middle + 1;
+        //    }
+        //    else
+        //    {	// in case middle is greater than x
+        //        last = middle;
+        //    }
+        //}
 
-        // insert the new element
-        vec_[first] = x;
+        //vec_.resize(vec_.size() + 1);
+        //std::copy_backward(vec_.begin() + static_cast<long>(first), vec_.end() - 1, vec_.end());
+
+        //// insert the new element
+        //vec_[first] = x;
 
         assert(vectorIsSorted());
     }
 
     virtual void insert(const OrdVector& vec) {
+        static OrdVector tmp{};
         assert(vectorIsSorted());
         assert(vec.vectorIsSorted());
+        tmp.clear();
 
-        // TODO: sometimes it is not efficient to copy both vectors to create a new one
-        vec_ = OrdVector::Union(*this, vec).vec_;
+        set_union(*this,vec,tmp);
+
+        vec_ = tmp.vec_;
+        /*
+         * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
+         * But it defeats the idea of having tmp vector shared between all the unions and allocated only once.
+         * It would be good to try it with removing epsilon transitions or determinization.
+         */
+        //std::swap(tmp.vec_,vec_);
         assert(vectorIsSorted());
     }
 
@@ -227,8 +249,6 @@ public:
     OrdVector difference(const OrdVector& rhs) const { return difference(*this, rhs); }
 
     OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
-
-    OrdVector Union(const OrdVector& rhs) const { return Union(*this, rhs); }
 
     //TODO: this code of find was duplicated, not nice.
     // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
@@ -263,7 +283,7 @@ public:
      *
      * This function expects the vector to be sorted.
      */
-    inline void remove(const Key& k) {
+    inline void erase(const Key& k) {
         assert(vectorIsSorted());
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {
@@ -286,8 +306,8 @@ public:
     }
 
     // Indexes with content which is staying are shifted left to take place of indexes with content that is not staying.
-    template<typename F>
-    void filter(F && is_staying) {
+    template<typename Fun>
+    void filter(const Fun && is_staying) {
         utils::filter(vec_, is_staying);
     }
 
@@ -408,38 +428,48 @@ public:
         return result;
     }
 
-    static OrdVector Union(const OrdVector& lhs, const OrdVector& rhs) {
+    static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
 
-        OrdVector result;
+        if (lhs.empty()) { result = rhs; return; }
+        if (rhs.empty()) { result = lhs; return; }
 
-        auto lhs_it = lhs.begin();
-        auto rhs_it = rhs.vec_.begin();
+        result.reserve(lhs.size()+rhs.size());
+        std::set_union(lhs.vec_.begin(),lhs.vec_.end(),rhs.vec_.begin(),rhs.vec_.end(),std::back_inserter(result.vec_));
 
-        while ((lhs_it != lhs.end()) || (rhs_it != rhs.end())) { // Until we get to the end of both vectors.
-            if (lhs_it == lhs.end()) { // If we are finished with the left-hand side vector.
-                result.push_back(*rhs_it);
-                ++rhs_it;
-            } else if (rhs_it == rhs.end()) { // If we are finished with the right-hand side vector.
-                result.push_back(*lhs_it);
-                ++lhs_it;
-            } else {
-                if (*lhs_it < *rhs_it) {
-                    result.push_back(*lhs_it);
-                    ++lhs_it;
-                } else if (*rhs_it < *lhs_it) {
-                    result.push_back(*rhs_it);
-                    ++rhs_it;
-                } else { // In case they are equal.
-                    result.push_back(*rhs_it);
-                    ++rhs_it;
-                    ++lhs_it;
-                }
-            }
-        }
+        //TODO: measure, if there is not benefit to this custom version, remove
+        //auto lhs_it = lhs.begin();
+        //auto rhs_it = rhs.vec_.begin();
+
+        //while ((lhs_it != lhs.end()) || (rhs_it != rhs.end())) { // Until we get to the end of both vectors.
+        //    if (lhs_it == lhs.end()) { // If we are finished with the left-hand side vector.
+        //        result.push_back(*rhs_it);
+        //        ++rhs_it;
+        //    } else if (rhs_it == rhs.end()) { // If we are finished with the right-hand side vector.
+        //        result.push_back(*lhs_it);
+        //        ++lhs_it;
+        //    } else {
+        //        if (*lhs_it < *rhs_it) {
+        //            result.push_back(*lhs_it);
+        //            ++lhs_it;
+        //        } else if (*rhs_it < *lhs_it) {
+        //            result.push_back(*rhs_it);
+        //            ++rhs_it;
+        //        } else { // In case they are equal.
+        //            result.push_back(*rhs_it);
+        //            ++rhs_it;
+        //            ++lhs_it;
+        //        }
+        //    }
+        //}
 
         assert(result.vectorIsSorted());
+    }
+
+    static OrdVector set_union(const OrdVector& lhs, const OrdVector& rhs) {
+        OrdVector result{};
+        set_union(lhs, rhs, result);
         return result;
     }
 
