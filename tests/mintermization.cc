@@ -42,7 +42,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].first.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-        const Mata::MintermizationAlgebra alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const Mata::MintermizationDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 2);
     }
 
@@ -61,7 +61,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const Mata::MintermizationAlgebra alg  = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const Mata::MintermizationDomain alg  = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 3);
     }
 
@@ -80,7 +80,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const Mata::MintermizationAlgebra alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const Mata::MintermizationDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 4);
         int inputs[] = {0,0,0,0};
         REQUIRE(alg.val.Eval(inputs).IsOne());
@@ -110,7 +110,7 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<Mata::MintermizationAlgebra> vars;
+        std::unordered_set<Mata::MintermizationDomain> vars;
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
         auto res = mintermization.compute_minterms(vars);
@@ -133,7 +133,7 @@ TEST_CASE("Mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<struct Mata::MintermizationAlgebra> vars;
+        std::unordered_set<struct Mata::MintermizationDomain> vars;
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
         auto res = mintermization.compute_minterms(vars);

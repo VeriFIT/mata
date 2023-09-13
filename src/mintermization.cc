@@ -19,7 +19,7 @@
 
 #include<vector>
 
-using MintermizationAlgebra = struct Mata::MintermizationAlgebra;
+using MintermizationDomain = struct Mata::MintermizationDomain;
 
 namespace {
     const Mata::FormulaGraph* detect_state_part(const Mata::FormulaGraph* node)
@@ -58,16 +58,16 @@ namespace {
     }
 }
 
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getTrue() const {
-    return MintermizationAlgebra(bdd_mng, bdd_mng.bddOne());
+struct Mata::MintermizationDomain Mata::MintermizationDomain::getTrue() const {
+    return MintermizationDomain(bdd_mng, bdd_mng.bddOne());
 }
 
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getFalse() const {
-    return MintermizationAlgebra(bdd_mng, bdd_mng.bddZero());
+struct Mata::MintermizationDomain Mata::MintermizationDomain::getFalse() const {
+    return MintermizationDomain(bdd_mng, bdd_mng.bddZero());
 }
 
-struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getVar() const {
-    return MintermizationAlgebra(bdd_mng, bdd_mng.bddVar());
+struct Mata::MintermizationDomain Mata::MintermizationDomain::getVar() const {
+    return MintermizationDomain(bdd_mng, bdd_mng.bddVar());
 }
 
 void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
@@ -75,11 +75,11 @@ void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
     assert(aut.is_nfa());
 
     for (const auto& trans : aut.transitions) {
-        // Foreach transition create a MintermizationAlgebra
+        // Foreach transition create a MintermizationDomain
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
         assert((symbol_part.node.is_operator() || symbol_part.children.empty()) &&
             "Symbol part must be either formula or single symbol");
-        const MintermizationAlgebra val = graph_to_vars_nfa(symbol_part);
+        const MintermizationDomain val = graph_to_vars_nfa(symbol_part);
         if (val.isFalse())
             continue;
         vars.insert(val);
@@ -118,7 +118,7 @@ void Mata::Mintermization::trans_to_vars_afa(const IntermediateAut &aut)
                                                                                            act_graph));
         }
 
-        // Foreach disjunct create a MintermizationAlgebra
+        // Foreach disjunct create a MintermizationDomain
         for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
             // create val for the whole disjunct
             const auto val = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
@@ -133,23 +133,23 @@ void Mata::Mintermization::trans_to_vars_afa(const IntermediateAut &aut)
     }
 }
 
-std::unordered_set<MintermizationAlgebra> Mata::Mintermization::compute_minterms(
-        const std::unordered_set<MintermizationAlgebra>& source_bdds)
+std::unordered_set<MintermizationDomain> Mata::Mintermization::compute_minterms(
+        const std::unordered_set<MintermizationDomain>& source_bdds)
 {
-    std::unordered_set<MintermizationAlgebra> stack{ domain_base.getTrue() };
-    for (const MintermizationAlgebra& b: source_bdds) {
-        std::unordered_set<MintermizationAlgebra> next;
+    std::unordered_set<MintermizationDomain> stack{ domain_base.getTrue() };
+    for (const MintermizationDomain& b: source_bdds) {
+        std::unordered_set<MintermizationDomain> next;
         /**
          * TODO: Possible optimization - we can remember which transition belongs to the currently processed vars
          * and mintermize automaton somehow directly here. However, it would be better to do such optimization
          * in copy of this function and this one keep clean and straightforward.
          */
         for (const auto& minterm : stack) {
-            MintermizationAlgebra b1 = minterm && b;
+            MintermizationDomain b1 = minterm && b;
             if (!b1.isFalse()) {
                 next.insert(b1);
             }
-            MintermizationAlgebra b0 = minterm && !b;
+            MintermizationDomain b0 = minterm && !b;
             if (!b0.isFalse()) {
                 next.insert(b0);
             }
@@ -170,7 +170,7 @@ Mata::Mintermization::OptionalValue Mata::Mintermization::graph_to_vars_afa(cons
         if (symbol_to_var.count(node.name)) {
             return OptionalValue(symbol_to_var.at(node.name));
         } else {
-            MintermizationAlgebra res = (node.name == "true") ? domain_base.getTrue() :
+            MintermizationDomain res = (node.name == "true") ? domain_base.getTrue() :
                     (node.name == "false" ? domain_base.getFalse() :
                     domain_base.getVar());
             symbol_to_var.insert(std::make_pair(node.name, res));
@@ -199,7 +199,7 @@ Mata::Mintermization::OptionalValue Mata::Mintermization::graph_to_vars_afa(cons
     return {};
 }
 
-MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph &graph)
+MintermizationDomain Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph &graph)
 {
     const FormulaNode& node = graph.node;
 
@@ -207,7 +207,7 @@ MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph
         if (symbol_to_var.count(node.name)) {
             return symbol_to_var.at(node.name);
         } else {
-            MintermizationAlgebra res = (node.name == "true") ? domain_base.getTrue() :
+            MintermizationDomain res = (node.name == "true") ? domain_base.getTrue() :
                       (node.name == "false" ? domain_base.getFalse() :
                       domain_base.getVar());
             symbol_to_var.insert(std::make_pair(node.name, res));
@@ -216,17 +216,17 @@ MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph
     } else if (node.is_operator()) {
         if (node.operator_type == FormulaNode::OperatorType::AND) {
             assert(graph.children.size() == 2);
-            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
-            const MintermizationAlgebra op2 = graph_to_vars_nfa(graph.children[1]);
+            const MintermizationDomain op1 = graph_to_vars_nfa(graph.children[0]);
+            const MintermizationDomain op2 = graph_to_vars_nfa(graph.children[1]);
             return op1 && op2;
         } else if (node.operator_type == FormulaNode::OperatorType::OR) {
             assert(graph.children.size() == 2);
-            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
-            const MintermizationAlgebra op2 = graph_to_vars_nfa(graph.children[1]);
+            const MintermizationDomain op1 = graph_to_vars_nfa(graph.children[0]);
+            const MintermizationDomain op2 = graph_to_vars_nfa(graph.children[1]);
             return op1 || op2;
         } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
             assert(graph.children.size() == 1);
-            const MintermizationAlgebra op1 = graph_to_vars_nfa(graph.children[0]);
+            const MintermizationDomain op1 = graph_to_vars_nfa(graph.children[0]);
             return !op1;
         } else
             assert(false);
@@ -236,7 +236,7 @@ MintermizationAlgebra Mata::Mintermization::graph_to_vars_nfa(const FormulaGraph
 }
 
 void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::unordered_set<MintermizationAlgebra>& minterms)
+                                           const std::unordered_set<MintermizationDomain>& minterms)
 {
     for (const auto& trans : aut.transitions) {
             // for each t=(q1,s,q2)
@@ -245,12 +245,12 @@ void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const
         size_t symbol = 0;
         if(trans_to_var.count(&symbol_part) == 0)
             continue; // Transition had zero var so it was not added to map
-        const MintermizationAlgebra &var = trans_to_var.at(&symbol_part);
+        const MintermizationDomain &var = trans_to_var.at(&symbol_part);
 
         for (const auto &minterm: minterms) {
             // for each minterm x:
             if (!((var && minterm).isFalse())) {
-                // if for symbol s of t is MintermizationAlgebra_s < x
+                // if for symbol s of t is MintermizationDomain_s < x
                 // add q1,x,q2 to transitions
                 IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
                                                         trans.second.children[1].node.raw});
@@ -261,7 +261,7 @@ void Mata::Mintermization::minterms_to_aut_nfa(Mata::IntermediateAut& res, const
 }
 
 void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                                           const std::unordered_set<MintermizationAlgebra>& minterms)
+                                           const std::unordered_set<MintermizationDomain>& minterms)
 {
     for (const auto& trans : aut.transitions) {
         for (const auto& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
@@ -270,13 +270,13 @@ void Mata::Mintermization::minterms_to_aut_afa(Mata::IntermediateAut& res, const
 
             if (!trans_to_var.count(disjunct))
                 continue; // Transition had zero var so it was not added to map
-            const MintermizationAlgebra var = trans_to_var.at(disjunct);
+            const MintermizationDomain var = trans_to_var.at(disjunct);
 
             size_t symbol = 0;
             for (const auto &minterm: minterms) {
                 // for each minterm x:
                 if (!((var && minterm).isFalse())) {
-                    // if for symbol s of t is MintermizationAlgebra_s < x
+                    // if for symbol s of t is MintermizationDomain_s < x
                     // add q1,x,q2 to transitions
                     const auto str_symbol = std::to_string(symbol);
                     FormulaNode node_symbol(FormulaNode::Type::OPERAND, str_symbol, str_symbol,
@@ -306,7 +306,7 @@ std::vector<Mata::IntermediateAut> Mata::Mintermization::mintermize(const std::v
         aut->is_nfa() ? trans_to_vars_nfa(*aut) : trans_to_vars_afa(*aut);
     }
 
-    // Build minterm tree over MintermizationAlgebras
+    // Build minterm tree over MintermizationDomains
     auto minterms = compute_minterms(vars);
 
     std::vector<Mata::IntermediateAut> res;
