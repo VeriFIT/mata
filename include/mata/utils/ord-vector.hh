@@ -214,7 +214,7 @@ public:
         assert(vec.vectorIsSorted());
         tmp.clear();
 
-        unite(*this,vec,tmp);
+        set_union(*this,vec,tmp);
 
         vec_ = tmp.vec_;
         /*
@@ -428,7 +428,7 @@ public:
         return result;
     }
 
-    static void unite(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
+    static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.vectorIsSorted());
         assert(rhs.vectorIsSorted());
 
@@ -467,9 +467,9 @@ public:
         assert(result.vectorIsSorted());
     }
 
-    static OrdVector uni(const OrdVector& lhs, const OrdVector& rhs) {
+    static OrdVector set_union(const OrdVector& lhs, const OrdVector& rhs) {
         OrdVector result{};
-        unite(lhs, rhs, result);
+        set_union(lhs, rhs, result);
         return result;
     }
 
