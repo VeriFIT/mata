@@ -42,6 +42,8 @@ public:
         SYMBOL,
         STATE,
         NODE,
+        TRUE,
+        FALSE,
         NOT_OPERAND
     };
 
@@ -88,9 +90,9 @@ public:
     bool is_neg() const { return type == Type::OPERATOR && operator_type == OperatorType::NEG; }
 
     // TODO: should constant be its own operand type?
-    bool is_constant() const { return type == Type::OPERAND && (name == "true" || name == "false"); }
-    bool is_true() const { return type == Type::OPERAND && name == "true"; }
-    bool is_false() const { return type == Type::OPERAND && name == "false"; }
+    bool is_constant() const { return is_true() || is_false(); }
+    bool is_true() const { return is_operand() && operand_type == OperandType::TRUE; }
+    bool is_false() const { return is_operand() && operand_type == OperandType::FALSE; }
 
     FormulaNode()
         : type(Type::UNKNOWN), raw(), name(), operator_type(OperatorType::NOT_OPERATOR),

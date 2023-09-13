@@ -149,12 +149,12 @@ namespace {
             return { mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
         } else if (token == ")") {
             return { mata::FormulaNode::Type::RIGHT_PARENTHESIS, token};
-        } else if (token == "true") {
+        } else if (token == "\\true") {
             return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::SYMBOL};
-        } else if (token == "false") {
+                                      mata::FormulaNode::OperandType::TRUE};
+        } else if (token == "\\false") {
             return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::SYMBOL};
+                                      mata::FormulaNode::OperandType::FALSE};
         } else if (is_naming_enum(mata.state_naming) && contains(mata.states_names, token)) {
             return { mata::FormulaNode::Type::OPERAND, token, token,
                                       mata::FormulaNode::OperandType::STATE};

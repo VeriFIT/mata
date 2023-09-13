@@ -153,8 +153,8 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
         if (symbol_to_bddvar.count(node.name)) {
             return OptionalBdd(symbol_to_bddvar.at(node.name));
         } else {
-            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
-                    (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
+            BDD res = (node.is_true()) ? bdd_mng.bddOne() :
+                    (node.is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
             symbol_to_bddvar[node.name] = res;
             return OptionalBdd(res);
         }
@@ -189,8 +189,8 @@ BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
         if (symbol_to_bddvar.count(node.name)) {
             return symbol_to_bddvar.at(node.name);
         } else {
-            BDD res = (node.name == "true") ? bdd_mng.bddOne() :
-                      (node.name == "false" ? bdd_mng.bddZero() : bdd_mng.bddVar());
+            BDD res = (node.is_true()) ? bdd_mng.bddOne() :
+                      (node.is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
             symbol_to_bddvar[node.name] = res;
             return res;
         }
