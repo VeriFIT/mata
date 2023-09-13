@@ -740,7 +740,7 @@ Nfa mata::nfa::determinize(
     if (aut.final.intersects_with(S0)) {
         result.final.insert(S0id);
     }
-    worklist.emplace_back(std::make_pair(S0id, S0));
+    worklist.emplace_back(S0id, S0);
 
     (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
 
@@ -783,7 +783,7 @@ Nfa mata::nfa::determinize(
                 if (aut.final.intersects_with(T)) {
                     result.final.insert(Tid);
                 }
-                worklist.emplace_back(std::make_pair(Tid, T));
+                worklist.emplace_back(Tid, T);
             }
             result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
         }
