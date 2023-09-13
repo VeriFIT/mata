@@ -173,6 +173,15 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
     return aut;
 } // construct().
 
+void builder::construct(
+        mata::nfa::Nfa *result,
+        const mata::IntermediateAut &inter_aut,
+        mata::Alphabet *alphabet,
+        mata::nfa::builder::NameStateMap *state_map
+) {
+    *result = construct(inter_aut, alphabet, state_map);
+}
+
 Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     const size_t word_size{ word.size() };
     Nfa nfa{ word_size + 1, { 0 }, { word_size } };

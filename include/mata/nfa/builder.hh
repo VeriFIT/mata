@@ -51,6 +51,10 @@ Nfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, Nam
 
 /** Loads an automaton from Parsed object */
 Nfa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+/** Loads an automaton from Parsed object; version for python binding */
+void construct(
+    Nfa* result, const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
+);
 
 template<class ParsedObject>
 Nfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
