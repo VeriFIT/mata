@@ -36,6 +36,8 @@ def from_mata(src, alph.Alphabet alphabet):
     cdef parser.ifstream fs
     cdef vector[parser.CInterAut] inter_aut
     cdef vector[parser.CInterAut] res_inter_aut
+    cdef vector[parser.CInterAut] mintermized_inter_aut
+    cdef parser.CMintermization mintermization
 
     if alphabet:
         c_alphabet = alphabet.as_base()
@@ -45,12 +47,18 @@ def from_mata(src, alph.Alphabet alphabet):
         fs = parser.ifstream(src.encode('utf-8'))
         res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
         result = mata_nfa.Nfa()
-
-        parser.construct(
-            (<mata_nfa.Nfa>result).thisptr.get(),
-            res_inter_aut[0],
-            c_alphabet
-        )
+        if res_inter_aut[0].is_bitvector():
+            parser.construct(
+                (<mata_nfa.Nfa>result).thisptr.get(),
+                mintermization.c_mintermize(res_inter_aut[0]),
+                c_alphabet
+            )
+        else:
+            parser.construct(
+                (<mata_nfa.Nfa>result).thisptr.get(),
+                res_inter_aut[0],
+                c_alphabet
+            )
         return result
     # load multiple automata
     else:
@@ -58,11 +66,16 @@ def from_mata(src, alph.Alphabet alphabet):
         for file in src:
             fs = parser.ifstream(file.encode('utf-8'))
             res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
+            inter_aut.emplace_back(res_inter_aut[0])
+        if inter_aut[0].is_bitvector():
+            mintermized_inter_aut = mintermization.c_mintermize_vec(inter_aut)
+        else:
+            mintermized_inter_aut = inter_aut
+        for ia in mintermized_inter_aut:
             result = mata_nfa.Nfa()
-
             parser.construct(
                 (<mata_nfa.Nfa>result).thisptr.get(),
-                res_inter_aut[0],
+                ia,
                 c_alphabet
             )
             automata.append(result)

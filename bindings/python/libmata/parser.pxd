@@ -20,7 +20,9 @@ cdef extern from "mata/parser/re2parser.hh" namespace "mata::parser":
 
 cdef extern from "mata/parser/inter-aut.hh" namespace "mata":
     cdef struct CInterAut "mata::IntermediateAut":
-       CInterAut() except +
+        CInterAut() except +
+        bool is_bitvector()
+
 
 cdef extern from "mata/nfa/builder.hh" namespace "mata::nfa::builder":
     cdef void construct(CNfa*, CInterAut&, CAlphabet*);
@@ -39,4 +41,5 @@ cdef extern from "mata/parser/inter-aut.hh" namespace "mata::IntermediateAut":
 cdef extern from "mata/parser/mintermization.hh" namespace "mata":
     cdef cppclass CMintermization "mata::Mintermization":
         CMintermization()
-        vector[CInterAut]  mintermize(vector[CInterAut]);
+        CInterAut  c_mintermize "mata::Mintermization::mintermize" (CInterAut&);
+        vector[CInterAut]  c_mintermize_vec "mata::Mintermization::mintermize" (vector[CInterAut]&);
