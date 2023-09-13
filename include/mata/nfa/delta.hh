@@ -85,7 +85,7 @@ public:
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
-}; // class mata::nfa::Move.
+}; // class mata::nfa::SymbolPost.
 
 /**
  * @brief A data structure representing possible transitions over different symbols from a source state.
