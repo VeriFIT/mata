@@ -22,7 +22,7 @@
 
 using namespace mata::utils;
 
-TEST_CASE("mata::utils::OrdVector::remove()") {
+TEST_CASE("mata::utils::OrdVector::erase()") {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set{ 1, 2, 3, 4, 6 };
     set.erase(3);
@@ -35,6 +35,14 @@ TEST_CASE("mata::utils::OrdVector::remove()") {
     set.erase(1);
     set.erase(6);
     CHECK(set.empty());
+    set.push_back(3);
+    CHECK(set == OrdVectorT{ 3 });
+    set.erase(3);
+    CHECK(set.empty());
+    CHECK_THROWS(set.erase(0));
+    set.emplace_back(3);
+    set.emplace_back(4);
+    CHECK(set == OrdVectorT{ 3, 4 });
     CHECK_THROWS(set.erase(0));
 }
 
