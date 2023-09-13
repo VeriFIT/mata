@@ -70,8 +70,6 @@ struct Mata::MintermizationAlgebra Mata::MintermizationAlgebra::getVar() const {
     return MintermizationAlgebra(bdd_mng->bddVar(), bdd_mng);
 }
 
-Cudd Mata::Mintermization::bdd_mng = Cudd(0);
-
 void Mata::Mintermization::trans_to_vars_nfa(const IntermediateAut &aut)
 {
     assert(aut.is_nfa());
@@ -168,7 +166,7 @@ Mata::Mintermization::OptionalValue Mata::Mintermization::graph_to_vars_afa(cons
 
     if (node.is_operand()) {
         if (node.is_state())
-            return OptionalValue(OptionalValue::TYPE::NOTHING_E);
+            return OptionalValue();
         if (symbol_to_var.count(node.name)) {
             return OptionalValue(symbol_to_var.at(node.name));
         } else {
@@ -360,7 +358,7 @@ Mata::Mintermization::OptionalValue Mata::Mintermization::OptionalValue::operato
 
 Mata::Mintermization::OptionalValue Mata::Mintermization::OptionalValue::operator!() const {
     if (this->type == TYPE::NOTHING_E) {
-        return OptionalValue(TYPE::NOTHING_E);
+        return OptionalValue();
     } else {
         return OptionalValue{TYPE::VALUE_E, !this->val };
     }

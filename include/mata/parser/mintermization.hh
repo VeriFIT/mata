@@ -27,11 +27,13 @@ namespace Mata {
         Cudd* bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
         BDD val;
 
+        MintermizationAlgebra() : bdd_mng(nullptr), val(BDD()) {}
+
         MintermizationAlgebra(Cudd* mng) : bdd_mng(mng), val(BDD()) {}
 
-        MintermizationAlgebra(BDD val, Cudd* mng) : val(val), bdd_mng(mng) {};
+        MintermizationAlgebra(BDD val, Cudd* mng) : bdd_mng(mng), val(val) {};
 
-        MintermizationAlgebra(const MintermizationAlgebra& alg) : bdd_mng(alg.bdd_mng), val(alg.val) {};
+        MintermizationAlgebra(const MintermizationAlgebra& alg) = default;
 
         friend MintermizationAlgebra operator&&(const MintermizationAlgebra& lhs, const MintermizationAlgebra &rhs) {
             return MintermizationAlgebra(lhs.val * rhs.val, lhs.bdd_mng);
@@ -75,11 +77,10 @@ private: // data types
     struct OptionalValue {
         enum class TYPE {NOTHING_E, VALUE_E};
 
-        TYPE type{};
-        MintermizationAlgebra val{&bdd_mng};
+        TYPE type;
+        MintermizationAlgebra val;
 
-        OptionalValue() = default;
-        explicit OptionalValue(TYPE t) : type(t) {}
+        OptionalValue() : type(TYPE::NOTHING_E) {}
         explicit OptionalValue(const MintermizationAlgebra& algebra) : type(TYPE::VALUE_E), val(algebra) {}
         OptionalValue(TYPE t, const MintermizationAlgebra& algebra) : type(t), val(algebra) {}
 
@@ -91,7 +92,7 @@ private: // data types
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
-    static Cudd bdd_mng;
+    Cudd bdd_mng;
     std::unordered_map<std::string, MintermizationAlgebra> symbol_to_var{};
     std::unordered_map<const FormulaGraph*, MintermizationAlgebra> trans_to_var{};
     std::unordered_map<const FormulaNode*, std::vector<DisjunctStatesPair>> lhs_to_disjuncts_and_states{};
