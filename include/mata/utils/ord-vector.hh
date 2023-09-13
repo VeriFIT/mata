@@ -162,12 +162,6 @@ public:
 
         reserve_on_insert(vec_);
 
-        // A conversation between someone and someone else:
-        // Someone: perform binary search (cannot use std::binary_search because it is
-        // ineffective due to not returning the iterator to the position of the
-        // desirable insertion in case the searched element is not present in the
-        // range)
-        // Someone else: Or we can use lower_bound like this, and remove all these comments and code? Is there a problem (except the one additional comparison)?
         // Tomas Fiedor: article about better binary search here https://mhdm.dev/posts/sb_lower_bound/.
         auto pos  = std::lower_bound(vec_.begin(), vec_.end(), x);
         if (pos == vec_.end() || *pos != x)
@@ -210,7 +204,6 @@ public:
         assert(vectorIsSorted());
     }
 
-    //TODO: it is a little weird that insert is actually doing union, and we have other function called uni and unite
     virtual void insert(const OrdVector& vec) {
         static OrdVector tmp{};
         assert(vectorIsSorted());
@@ -218,8 +211,15 @@ public:
         tmp.clear();
 
         unite(*this,vec,tmp);
+
         //Is this efficient? We want to use the existing memory of vec_ for a copy of tmp.vec_ if possible.
         vec_ = tmp.vec_;
+        /*
+         * Swap, commented below (test do pass) may be better in some cases, such as uniting many vectors into one.
+         * But it defeats the idea of having tmp vector shared between all the unions and allocated only once.
+         * It would be good to try it with removing epsilon transitions or determinization.
+         */
+        //std::swap(tmp.vec_,vec_);
         assert(vectorIsSorted());
     }
 
