@@ -137,7 +137,7 @@ void Delta::remove(State src, Symbol symb, State tgt) {
                     "Transition [" + std::to_string(src) + ", " + std::to_string(symb) + ", " +
                     std::to_string(tgt) + "] does not exist.");
         } else {
-            symbol_transitions->remove(tgt);
+            symbol_transitions->erase(tgt);
             if (symbol_transitions->empty()) {
                 state_posts_[src].erase(*symbol_transitions);
             }

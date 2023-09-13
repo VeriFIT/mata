@@ -81,7 +81,7 @@ public:
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
     void inline push_back(const State s) { targets.push_back(s); }
 
-    void remove(State s) { targets.erase(s); }
+    void erase(State s) { targets.erase(s); }
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
