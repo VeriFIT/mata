@@ -234,6 +234,7 @@ public:
     bool are_symbols_enum_type() const {return symbol_naming == Naming::ENUM;}
     bool are_nodes_enum_type() const {return node_naming == Naming::ENUM;}
 
+    bool is_bitvector() const {return alphabet_type == AlphabetType::BITVECTOR;}
     bool is_nfa() const {return automaton_type == AutomatonType::NFA;}
     bool is_afa() const {return automaton_type == AutomatonType::AFA;}
 
