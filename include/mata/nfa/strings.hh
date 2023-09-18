@@ -116,7 +116,7 @@ std::set<Word> get_shortest_words(const Nfa& nfa);
 /**
  * @brief Get all the symbols accepted by @p nfa.
  */
-std::set<Mata::Symbol> get_one_symbol_words(const Nfa::Nfa& nfa);
+std::set<mata::Symbol> get_one_symbol_words(const Nfa& nfa);
 
 /**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each

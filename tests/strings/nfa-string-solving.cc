@@ -340,9 +340,9 @@ TEST_CASE("mata::nfa::create_single_word_nfa()") {
     }
 }
 
-TEST_CASE("Mata::Strings::get_one_symbol_words()") {
+TEST_CASE("mata::strings::get_one_symbol_words()") {
     Nfa x;
-    std::set<Mata::Symbol> symbols;
+    std::set<mata::Symbol> symbols;
 
     SECTION("basic") {
         create_nfa(&x, "a|bc");
