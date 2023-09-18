@@ -365,6 +365,11 @@ public:
     size_t num_of_states() const { return state_posts_.size(); }
 
     /**
+     * Check whether the @p state is used in @c Delta.
+     */
+    bool uses_state(const State state) const { return state < num_of_states(); }
+
+    /**
      * @return Number of transitions in Delta.
      */
     size_t num_of_transitions() const;

@@ -487,9 +487,9 @@ State Nfa::add_state(State state) {
 
 size_t Nfa::num_of_states() const {
     return std::max({
-        static_cast<unsigned long>(initial.domain_size()),
-        static_cast<unsigned long>(final.domain_size()),
-        static_cast<unsigned long>(delta.num_of_states())
+        static_cast<size_t>(initial.domain_size()),
+        static_cast<size_t>(final.domain_size()),
+        static_cast<size_t>(delta.num_of_states())
     });
 }
 

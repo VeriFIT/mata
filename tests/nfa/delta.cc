@@ -104,14 +104,22 @@ TEST_CASE("mata::nfa::Delta::mutable_post()") {
 
     SECTION("Default initialized") {
         CHECK(nfa.delta.num_of_states() == 0);
+        CHECK(!nfa.delta.uses_state(0));
         CHECK(nfa.delta.mutable_state_post(0).empty());
         CHECK(nfa.delta.num_of_states() == 1);
+        CHECK(nfa.delta.uses_state(0));
 
         CHECK(nfa.delta.mutable_state_post(9).empty());
         CHECK(nfa.delta.num_of_states() == 10);
+        CHECK(nfa.delta.uses_state(1));
+        CHECK(nfa.delta.uses_state(2));
+        CHECK(nfa.delta.uses_state(9));
+        CHECK(!nfa.delta.uses_state(10));
 
         CHECK(nfa.delta.mutable_state_post(9).empty());
         CHECK(nfa.delta.num_of_states() == 10);
+        CHECK(nfa.delta.uses_state(9));
+        CHECK(!nfa.delta.uses_state(10));
     }
 }
 
