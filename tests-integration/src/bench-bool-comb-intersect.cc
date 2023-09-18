@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     for (unsigned int i = 1; i < uargc; ++i) {
         result = intersection(result, automata[i]);
     }
-    is_lang_empty(result);
+    result.is_lang_empty();
     TIME_END(intersection_emptiness);
 
     return EXIT_SUCCESS;

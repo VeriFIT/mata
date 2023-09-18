@@ -85,7 +85,7 @@ TEST_CASE("mata::nfa::get_used_symbols speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols();
+        A.delta.get_used_symbols();
     }
 }
 
@@ -93,7 +93,7 @@ TEST_CASE("mata::nfa::get_used_symbols_bv speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols_bv();
+        A.delta.get_used_symbols_bv();
     }
 }
 
@@ -101,7 +101,7 @@ TEST_CASE("mata::nfa::get_used_symbols_vec speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols_vec();
+        A.delta.get_used_symbols_vec();
     }
 }
 
@@ -109,7 +109,7 @@ TEST_CASE("mata::nfa::get_used_symbols_set speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols_set();
+        A.delta.get_used_symbols_set();
     }
 }
 
@@ -117,7 +117,7 @@ TEST_CASE("mata::nfa::get_used_symbols_sps speed, harder", "[.profiling]") {
     Nfa A;
     create_nfa(&A, "((.*){10})*");
     for (int i = 0; i < 2000000; i++) {
-        A.get_used_symbols_sps();
+        A.delta.get_used_symbols_sps();
     }
 }
 

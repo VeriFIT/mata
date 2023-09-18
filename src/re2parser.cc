@@ -488,8 +488,8 @@ namespace {
                         if (renumbered_states[stateTo] == mata::nfa::Limits::max_state) {
                             renumbered_states[stateTo] = renumbered_explicit_nfa.add_state();
                         }
-                        assert(renumbered_states[state] <= renumbered_explicit_nfa.size());
-                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.size());
+                        assert(renumbered_states[state] <= renumbered_explicit_nfa.num_of_states());
+                        assert(renumbered_states[stateTo] <= renumbered_explicit_nfa.num_of_states());
                         renumbered_explicit_nfa.delta.add(renumbered_states[state], transition.symbol,
                                                           renumbered_states[stateTo]);
                     }

@@ -46,7 +46,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void push_back(CSymbolPost&)
         void remove(CSymbolPost&)
         bool empty()
-        size_t size()
         vector[CSymbolPost] ToVector()
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
@@ -84,6 +83,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         COrdVector[CSymbolPost].const_iterator epsilon_symbol_posts(CStatePost& post, Symbol epsilon)
         size_t num_of_transitions()
         CTransitions transitions()
+        vector[CTrans] get_transitions_to(State)
+        COrdVector[Symbol] get_used_symbols()
 
     cdef cppclass CRun "mata::nfa::Run":
         # Public Attributes
@@ -152,13 +153,11 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void clear_final()
         void unify_initial()
         void unify_final()
-        COrdVector[Symbol] get_used_symbols()
         bool is_state(State)
         StateSet post(StateSet&, Symbol)
         State add_state()
         State add_state(State)
         void print_to_DOT(ostream)
-        vector[CTrans] get_transitions_to(State)
         CNfa& trim(StateRenaming*)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
@@ -167,25 +166,27 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet get_terminating_states()
         void remove_epsilon(Symbol) except +
         void clear()
-        size_t size()
+        size_t num_of_states()
+        bool is_lang_empty(CRun*)
+        bool is_deterministic()
+        bool is_complete(CAlphabet*) except +
+        bool is_complete() except +
+        bool is_universal(CAlphabet&, ParameterMap&) except +
+        bool is_in_lang(CRun&)
+        bool is_prfx_in_lang(CRun&)
+        pair[CRun, bool] get_word_for_path(CRun&)
+        void make_complete(CAlphabet&, State) except +
 
     # Automata tests
-    cdef bool c_is_deterministic "mata::nfa::is_deterministic" (CNfa&)
-    cdef bool c_is_lang_empty "mata::nfa::is_lang_empty" (CNfa&, CRun*)
-    cdef bool c_is_universal "mata::nfa::is_universal" (CNfa&, CAlphabet&, ParameterMap&) except +
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CRun*, CAlphabet*, ParameterMap&) except +
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)
     cdef bool c_are_equivalent "mata::nfa::are_equivalent" (CNfa&, CNfa&, ParameterMap&)
-    cdef bool c_is_complete "mata::nfa::is_complete" (CNfa&, CAlphabet&) except +
-    cdef bool c_is_in_lang "mata::nfa::is_in_lang" (CNfa&, CRun&)
-    cdef bool c_is_prfx_in_lang "mata::nfa::is_prfx_in_lang" (CNfa&, CRun&)
 
     # Automata operations
     cdef void compute_fw_direct_simulation(const CNfa&)
 
     # Helper functions
-    cdef pair[CRun, bool] c_get_word_for_path "mata::nfa::get_word_for_path" (CNfa&, CRun&)
     cdef CRun c_encode_word "mata::nfa::encode_word" (CAlphabet*, vector[string])
 
 cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
@@ -198,7 +199,6 @@ cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, bool, umap[pair[State, State], State]*)
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +
-    cdef void c_make_complete "mata::nfa::plumbing::make_complete" (CNfa*, CAlphabet&, State) except +
     cdef void c_revert "mata::nfa::plumbing::revert" (CNfa*, CNfa&)
     cdef void c_remove_epsilon "mata::nfa::plumbing::remove_epsilon" (CNfa*, CNfa&, Symbol) except +
     cdef void c_minimize "mata::nfa::plumbing::minimize" (CNfa*, CNfa&)

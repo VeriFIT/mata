@@ -108,7 +108,7 @@ def plot_using_graphviz(
                     )
     else:
         # Only print reachable states
-        for state in range(0, aut.size()):
+        for state in range(0, aut.num_of_states()):
             # Helper node to simulate initial automaton
             _plot_state(
                 aut, dot, state,

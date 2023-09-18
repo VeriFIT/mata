@@ -39,9 +39,6 @@ inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     }
 }
 
-/// Make the transition relation complete.
-inline void make_complete(Nfa* aut, const Alphabet& alphabet, State sink_state) { make_complete(*aut, alphabet, sink_state); }
-
 inline void complement(
         Nfa*               result,
         const Nfa&         aut,

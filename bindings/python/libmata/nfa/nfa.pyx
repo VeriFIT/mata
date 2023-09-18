@@ -390,11 +390,11 @@ cdef class Nfa:
         """Clears all of the internals in the automaton"""
         self.thisptr.get().clear()
 
-    def size(self) -> int:
+    def num_of_states(self) -> int:
         """Get the current number of states in the whole automaton.
         :return: The number of states.
         """
-        return self.thisptr.get().size()
+        return self.thisptr.get().num_of_states()
 
     def iterate(self):
         """Iterates over all transitions
@@ -436,7 +436,7 @@ cdef class Nfa:
 
         :return: List mata_nfa.CTrans: List of transitions leading to state_to.
         """
-        cdef vector[CTrans] c_transitions = self.thisptr.get().get_transitions_to(state_to)
+        cdef vector[CTrans] c_transitions = self.thisptr.get().delta.get_transitions_to(state_to)
         trans = []
         for c_transition in c_transitions:
             trans.append(Transition(c_transition.source, c_transition.symbol, c_transition.target))
@@ -525,6 +525,35 @@ cdef class Nfa:
         cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
+
+    def is_lang_empty(self, Run run = None):
+        """Check if language of automaton is empty.
+
+        :return: true if the language of NFA is empty; path of states as a counter example if not.
+        """
+        if run:
+            return self.thisptr.get().is_lang_empty(run.thisptr)
+        else:
+            return self.thisptr.get().is_lang_empty(NULL)
+
+    def is_deterministic(self):
+        """Tests if the NFA is determinstic.
+
+        :return: true if the NFA is deterministic.
+        """
+        return self.thisptr.get().is_deterministic()
+
+    def is_complete(self, alph.Alphabet alphabet = None):
+        """Test if automaton is complete.
+
+        :param alph.Alphabet alphabet: Alphabet to check completeness againts. If 'None', self.alphabet is used. If
+          self.alphabet is empty, throws an exception.
+        :return: true if the automaton is complete.
+        """
+        if alphabet:
+            return self.thisptr.get().is_complete(alphabet.as_base())
+        else:
+            return self.thisptr.get().is_complete()
 
     def get_one_letter_aut(self) -> Nfa:
         """Unify transitions to create a directed graph with at most a single transition between two states (using only
@@ -680,16 +709,75 @@ cdef class Nfa:
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
         return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
 
+    def is_universal(self, alph.Alphabet alphabet, params = None):
+        """Tests if NFA is universal with regard to the given alphabet.
 
+        :param OnTheFlyAlphabet alphabet: on the fly alphabet.
+        :param dict params: additional params to the function, currently supports key 'algorithm',
+            which determines used universality test.
+        :return: true if NFA is universal.
+        """
+        params = params or {'algorithm': 'antichains'}
+        return self.thisptr.get().is_universal(
+            <CAlphabet&>dereference(alphabet.as_base()),
+            {
+                k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
+                for k, v in params.items()
+            }
+        )
+
+    def is_in_lang(self, vector[Symbol] word):
+        """Tests if word is in language.
+
+        :param vector[Symbol] word: tested word.
+        :return: true if word is in language of the NFA.
+        """
+        run = Run()
+        run.thisptr.word = word
+        return self.thisptr.get().is_in_lang(dereference(run.thisptr))
+
+    def is_prefix_in_lang(self, vector[Symbol] word):
+        """Test if any prefix of the word is in the language.
+
+        :param vector[Symbol] word: tested word
+        :return: true if any prefix of word is in language of the NFA.
+        """
+        run = Run()
+        run.thisptr.word = word
+        return self.thisptr.get().is_prfx_in_lang(dereference(run.thisptr))
+
+    def get_word_for_path(self, path):
+        """For a given path (set of states) returns a corresponding word
+
+        >>> lhs.get_word_for_path([0, 1, 2])
+        ([1, 1], True)
+
+        :param Nfa lhs: source automaton
+        :param list path: list of states
+        :return: pair of word (list of symbols) and true or false, whether the search was successful
+        """
+        input = Run()
+        input.path = path
+        cdef pair[CRun, bool] result = self.thisptr.get().get_word_for_path(dereference(input.thisptr))
+        return result.first.word, result.second
+
+    def make_complete(self, State sink_state, alph.Alphabet alphabet):
+        """Makes NFA complete.
+
+        :param Symbol sink_state: sink state of the automaton
+        :param OnTheFlyAlphabet alphabet: alphabet to make complete against.
+        """
+        if not self.thisptr.get().is_state(sink_state):
+            self.thisptr.get().add_state(self.thisptr.get().num_of_states())
+        self.thisptr.get().make_complete(<CAlphabet&>dereference(alphabet.as_base()), sink_state)
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
 
         :return: Set of symbols.
         """
-        cdef COrdVector[Symbol] symbols = self.thisptr.get().get_used_symbols()
+        cdef COrdVector[Symbol] symbols = self.thisptr.get().delta.get_used_symbols()
         return {s for s in symbols}
-
 
 
 # Operations
@@ -836,17 +924,6 @@ def complement(Nfa lhs, alph.Alphabet alphabet, params = None):
     )
     return result
 
-def make_complete(Nfa lhs, State sink_state, alph.Alphabet alphabet):
-    """Makes lhs complete
-
-    :param Nfa lhs: automaton that will be made complete
-    :param Symbol sink_state: sink state of the automaton
-    :param OnTheFlyAlphabet alphabet: alphabet of the
-    """
-    if not lhs.thisptr.get().is_state(sink_state):
-        lhs.thisptr.get().add_state(lhs.size())
-    mata_nfa.c_make_complete(lhs.thisptr.get(), <CAlphabet&>dereference(alphabet.as_base()), sink_state)
-
 def revert(Nfa lhs):
     """Reverses transitions in the lhs
 
@@ -939,45 +1016,6 @@ def compute_relation(Nfa lhs, params = None):
     return result
 
 # Tests
-def is_deterministic(Nfa lhs):
-    """Tests if the lhs is determinstic
-
-    :param Nfa lhs: non-determinstic finite automaton
-    :return: true if the lhs is deterministic
-    """
-    return mata_nfa.c_is_deterministic(dereference(lhs.thisptr.get()))
-
-def is_lang_empty(Nfa lhs, Run run = None):
-    """Checks if language of automaton lhs is empty, if not, returns path of states as counter
-    example.
-
-    :param Nfa lhs:
-    :return: true if the lhs is empty, counter example if lhs is not empty
-    """
-    if run:
-        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), run.thisptr)
-    else:
-        return mata_nfa.c_is_lang_empty(dereference(lhs.thisptr.get()), NULL)
-
-def is_universal(Nfa lhs, alph.Alphabet alphabet, params = None):
-    """Tests if lhs is universal wrt given alphabet
-
-    :param Nfa lhs: automaton tested for universality
-    :param OnTheFlyAlphabet alphabet: on the fly alphabet
-    :param dict params: additional params to the function, currently supports key 'algorithm',
-        which determines used universality test
-    :return: true if lhs is universal
-    """
-    params = params or {'algorithm': 'antichains'}
-    return mata_nfa.c_is_universal(
-        dereference(lhs.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base()),
-        {
-            k.encode('utf-8'): v.encode('utf-8') if isinstance(v, str) else v
-            for k, v in params.items()
-        }
-    )
-
 def is_included_with_cex(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = None):
     """Test inclusion between two automata
 
@@ -1062,40 +1100,6 @@ def equivalence_check(Nfa lhs, Nfa rhs, alph.Alphabet alphabet = None, params = 
             }
         )
 
-def is_complete(Nfa lhs, alph.Alphabet alphabet):
-    """Test if automaton is complete
-
-    :param Nf lhs: tested automaton
-    :param OnTheFlyAlphabet alphabet: alphabet of the automaton
-    :return: true if the automaton is complete
-    """
-    return mata_nfa.c_is_complete(
-        dereference(lhs.thisptr.get()),
-        <CAlphabet&>dereference(alphabet.as_base())
-    )
-
-def is_in_lang(Nfa lhs, vector[Symbol] word):
-    """Tests if word is in language
-
-    :param Nfa lhs: tested automaton
-    :param vector[Symbol] word: tested word
-    :return: true if word is in language of automaton lhs
-    """
-    run = Run()
-    run.thisptr.word = word
-    return mata_nfa.c_is_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
-
-def is_prefix_in_lang(Nfa lhs, vector[Symbol] word):
-    """Test if any prefix of the word is in the language
-
-    :param Nfa lhs: tested automaton
-    :param vector[Symbol] word: tested word
-    :return: true if any prefix of word is in language of automaton lhs
-    """
-    run = Run()
-    run.thisptr.word = word
-    return mata_nfa.c_is_prfx_in_lang(dereference(lhs.thisptr.get()), dereference(run.thisptr))
-
 def accepts_epsilon(Nfa lhs):
     """Tests if automaton accepts epsilon
 
@@ -1108,22 +1112,6 @@ def accepts_epsilon(Nfa lhs):
     return False
 
 # Helper functions
-def get_word_for_path(Nfa lhs, path):
-    """For a given path (set of states) returns a corresponding word
-
-    >>> mata_nfa.Nfa.get_word_for_path(lhs, [0, 1, 2])
-    ([1, 1], True)
-
-    :param Nfa lhs: source automaton
-    :param list path: list of states
-    :return: pair of word (list of symbols) and true or false, whether the search was successful
-    """
-    cdef pair[CRun, bool] result
-    input = Run()
-    input.path = path
-    result = mata_nfa.c_get_word_for_path(dereference(lhs.thisptr.get()), dereference(input.thisptr))
-    return result.first.word, result.second
-
 def encode_word(alph.Alphabet alphabet, word):
     """Encodes word based on a passed alphabet
 

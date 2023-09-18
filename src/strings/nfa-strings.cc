@@ -152,12 +152,12 @@ std::set<std::pair<int, int>> mata::strings::get_word_lengths(const Nfa& aut) {
     /// transitions are renamed to a single symbol (e.g., `a`).
     aut.get_one_letter_aut(one_letter);
     one_letter = determinize(one_letter).trim();
-    if(one_letter.size() == 0) {
+    if(one_letter.num_of_states() == 0) {
         return {};
     }
 
     std::set<std::pair<int, int>> ret;
-    std::vector<int> handles(one_letter.size(), 0); // initialized to 0
+    std::vector<int> handles(one_letter.num_of_states(), 0); // initialized to 0
     assert(one_letter.initial.size() == 1);
     std::optional<nfa::State> curr_state = *one_letter.initial.begin();
     std::set<nfa::State> visited;

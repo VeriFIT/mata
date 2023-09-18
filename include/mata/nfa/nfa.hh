@@ -104,11 +104,6 @@ public:
     Nfa& operator=(Nfa&& other) noexcept;
 
     /**
-     * Clear transitions but keep the automata states.
-     */
-    void clear_transitions();
-
-    /**
      * Add a new (fresh) state to the automaton.
      * @return The newly created state.
      */
@@ -126,7 +121,7 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t size() const;
+     size_t num_of_states() const;
 
     /**
      * Unify initial states into a single new initial state.
@@ -138,7 +133,7 @@ public:
      */
     void unify_final();
 
-    bool is_state(const State &state_to_check) const { return state_to_check < size(); }
+    bool is_state(const State &state_to_check) const { return state_to_check < num_of_states(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -154,28 +149,8 @@ public:
      *  essentially only useful for testing purposes.
      * @return True if automata are exactly identical, false otherwise.
      */
-    bool is_identical(const Nfa & aut);
+    bool is_identical(const Nfa& aut) const;
 
-    /**
-     * @brief Get the set of symbols used on the transitions in the automaton.
-     *
-     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
-     * @return Set of symbols used on the transitions.
-     * TODO: this should be a method of Delta?
-     */
-    utils::OrdVector<Symbol> get_used_symbols() const;
-
-    mata::utils::OrdVector<Symbol> get_used_symbols_vec() const;
-    std::set<Symbol> get_used_symbols_set() const;
-    mata::utils::SparseSet<Symbol> get_used_symbols_sps() const;
-    std::vector<bool> get_used_symbols_bv() const;
-    BoolVector get_used_symbols_chv() const;
-
-    /**
-     * @brief Get the maximum non-e used symbol.
-     * TODO: this should be a method of Delta?
-     */
-    Symbol get_max_symbol() const;
     /**
      * @brief Get set of reachable states.
      *
@@ -223,14 +198,6 @@ public:
      * @brief In-place concatenation.
      */
     Nfa& concatenate(const Nfa& aut);
-
-    /**
-     * Get transitions leading to @p state_to.
-     * @param state_to[in] Target state for transitions to get.
-     * @return Sequence of @c Trans transitions leading to @p state_to.
-     * (!slow!, traverses the entire delta)
-     */
-    std::vector<Transition> get_transitions_to(State state_to) const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -291,38 +258,119 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * @brief Expand alphabet by symbols from this automaton to given alphabet
-     *
-     * The value of the already existing symbols will NOT be overwritten.
+     * Check whether the language of NFA is empty.
+     * @param[out] cex Counter-example path for a case the language is not empty.
+     * @return True if the language is empty, false otherwise.
      */
-    void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
+    bool is_lang_empty(Run* cex = nullptr) const;
+
+    /**
+     * @brief Test whether an automaton is deterministic.
+     *
+     * I.e., whether it has exactly one initial state and every state has at most one outgoing transition over every
+     *  symbol.
+     * Checks the whole automaton, not only the reachable part
+     */
+    bool is_deterministic() const;
+
+    /**
+     * @brief Test for automaton completeness with regard to an alphabet.
+     *
+     * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
+     */
+    bool is_complete(Alphabet const* alphabet = nullptr) const;
+
+    /**
+     * Fill @p alphabet with symbols from @p nfa.
+     * @param[in] nfa NFA with symbols to fill @p alphabet with.
+     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
+     */
+    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
+
+    /// Is the language of the automaton universal?
+    bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
+                      const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
+    /// Is the language of the automaton universal?
+    bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
+
+    /// Checks whether a word is in the language of an automaton.
+    bool is_in_lang(const Run& word) const;
+    /// Checks whether a word is in the language of an automaton.
+    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
+
+    /// Checks whether the prefix of a string is in the language of an automaton
+    bool is_prfx_in_lang(const Run& word) const;
+
+    std::pair<Run, bool> get_word_for_path(const Run& run) const;
+
+    /**
+     * @brief Make NFA complete in place.
+     *
+     * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
+     *  (symbols that do not occur on transitions from given state) to @p sink_state. If @p sink_state does not belong
+     *  to the NFA, it is added to it, but only in the case that some transition to @p sink_state was added.
+     * In the case that NFA does not contain any states, this function does nothing.
+     *
+     * @param[in] alphabet Alphabet to use for computing "missing" symbols.
+     * @param[in] sink_state The state into which new transitions are added.
+     * @return True if some new transition was added to the NFA.
+     */
+    bool make_complete(const Alphabet& alphabet, State sink_state);
+
+    /**
+     * @brief Make NFA complete in place.
+     *
+     * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
+     *  (symbols that do not occur on transitions from given state) to @p sink_state. If @p sink_state does not belong
+     *  to the NFA, it is added to it, but only in the case that some transition to @p sink_state was added.
+     * In the case that NFA does not contain any states, this function does nothing.
+     *
+     * This overloaded version is a more efficient version which does not need to compute the set of symbols to
+     *  complete to from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan
+     *  to complete multiple automata over the same set of symbols.
+     *
+     * @param[in] symbols Symbols to compute missing symbols from.
+     * @param[in] sink_state The state into which new transitions are added.
+     * @return True if some new transition was added to the automaton.
+     */
+    bool make_complete(const utils::OrdVector<Symbol>& symbols, State sink_state);
+
+    /**
+     * @brief Make NFA complete in place.
+     *
+     * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
+     *  (symbols that do not occur on transitions from given state) to new sink state (if no new transitions are added,
+     *  this sink state is not created).
+     * In the case that NFA does not contain any states, this function does nothing.
+     *
+     * @param[in] alphabet Alphabet to use for computing "missing" symbols.
+     * @return True if some new transition (and sink state) was added to the automaton.
+     */
+    bool make_complete(const Alphabet& alphabet) { return this->make_complete(alphabet, this->num_of_states()); }
 }; // struct Nfa.
 
-/**
-  * Fill @p alphabet with symbols from @p nfa.
-  * @param[in] nfa NFA with symbols to fill @p alphabet with.
-  * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
-  */
-void fill_alphabet(const Nfa& nfa, mata::OnTheFlyAlphabet& alphabet);
-
+// Allow variadic number of arguments of the same type.
+//
+// Using parameter pack and variadic arguments.
 // Adapted from: https://www.fluentcpp.com/2019/01/25/variadic-number-function-parameters-type/.
+/// Pack of bools for reasoning about a sequence of parameters.
 template<bool...> struct bool_pack{};
-/// Checks for all types in the pack.
+/// Check that for all values in a pack @p Ts are 'true'.
 template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::value...>, bool_pack<Ts::value..., true>>;
-/// Checks whether all types are 'Nfa'.
-template<typename... Ts> using AreAllNfas = typename conjunction<std::is_same<Ts, const Nfa&>...>::type;
+/// Check that all types in a sequence of parameters @p Ts are of type @p T.
+template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
 
 /**
- * Create alphabet from variable number of NFAs.
+ * Create alphabet from variadic number of NFAs given as arguments.
  * @tparam[in] Nfas Type Nfa.
  * @param[in] nfas NFAs to create alphabet from.
  * @return Created alphabet.
  */
-template<typename... Nfas, typename = AreAllNfas<Nfas...>>
+template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
 inline OnTheFlyAlphabet create_alphabet(const Nfas&... nfas) {
     mata::OnTheFlyAlphabet alphabet{};
     auto f = [&alphabet](const Nfa& aut) {
-        fill_alphabet(aut, alphabet);
+        aut.fill_alphabet(alphabet);
     };
     (f(nfas), ...);
     return alphabet;
@@ -355,14 +403,6 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
  * @return Created alphabet.
  */
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
-
-/**
- * Check whether is the language of the automaton empty.
- * @param[in] aut Automaton to check.
- * @param[out] cex Counter-example path for a case the language is not empty.
- * @return True if the language is empty, false otherwise.
- */
-bool is_lang_empty(const Nfa& aut, Run* cex = nullptr);
 
 Nfa uni(const Nfa &lhs, const Nfa &rhs);
 
@@ -401,51 +441,6 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs,
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
-
-/**
- * Make @c aut complete in place.
- *
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
- *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
- *  it, but only in the case that some transition to @p sink_state was added.
- * In the case that @p aut does not contain any states, this function does nothing.
- *
- * @param[in] aut Automaton to make complete.
- * @param[in] alphabet Alphabet to use for computing "missing" symbols.
- * @param[in] sink_state The state into which new transitions are added.
- * @return True if some new transition was added to the automaton.
- */
-bool make_complete(Nfa& aut, const Alphabet& alphabet, State sink_state);
-
-/**
- * Make @c aut complete in place.
- *
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
- *  on transitions from given state) to @p sink_state. If @p sink_state does not belong to the automaton, it is added to
- *  it, but only in the case that some transition to @p sink_state was added.
- * In the case that @p aut does not contain any states, this function does nothing.
- *
- * This overloaded version is a more efficient version which does not need to compute the set of symbols to complete to
- *  from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan to complete
- *  multiple automata over the same set of symbols.
- *
- * @param[in] aut Automaton to make complete.
- * @param[in] symbols Symbols to compute missing symbols from.
- * @param[in] sink_state The state into which new transitions are added.
- * @return True if some new transition was added to the automaton.
- */
-bool make_complete(Nfa& aut, const utils::OrdVector<Symbol>& symbols, State sink_state);
-
-/**
- * For each state 0,...,aut.size()-1, add transitions with "missing" symbols from @p alphabet (symbols that do not occur
- * on transitions from given state) to new sink state (if no new transitions are added, this sink state is not created).
- * In the case that @p aut does not contain any states, this function does nothing.
- *
- * @param[in] aut Automaton to make complete.
- * @param[in] alphabet Alphabet to use for computing "missing" symbols.
- * @return True if some new transition (and sink state) was added to the automaton.
- */
-inline bool make_complete(Nfa& aut, const Alphabet& alphabet) { return make_complete(aut, alphabet, aut.size()); }
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -508,14 +503,6 @@ Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map 
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
            const ParameterMap& params = {{ "algorithm", "simulation" } });
-
-/// Is the language of the automaton universal?
-bool is_universal(const Nfa& aut, const Alphabet& alphabet, Run* cex = nullptr,
-                  const ParameterMap& params = {{ "algorithm", "antichains" }});
-
-inline bool is_universal(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return is_universal(aut, alphabet, nullptr, params);
-}
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
@@ -600,24 +587,6 @@ Nfa somewhat_simple_revert(const Nfa& aut);
 
 // Removing epsilon transitions
 Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
-
-/// Test whether an automaton is deterministic, i.e., whether it has exactly
-/// one initial state and every state has at most one outgoing transition over
-/// every symbol.  Checks the whole automaton, not only the reachable part
-bool is_deterministic(const Nfa& aut);
-
-/// Test for automaton completeness wrt an alphabet.  An automaton is complete
-/// if every reachable state has at least one outgoing transition over every
-/// symbol.
-bool is_complete(const Nfa& aut, const Alphabet& alphabet);
-
-std::pair<Run, bool> get_word_for_path(const Nfa& aut, const Run& run);
-
-/// Checks whether a string is in the language of an automaton
-bool is_in_lang(const Nfa& aut, const Run& word);
-
-/// Checks whether the prefix of a string is in the language of an automaton
-bool is_prfx_in_lang(const Nfa& aut, const Run& word);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

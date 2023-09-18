@@ -3,9 +3,10 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
-#include "mata/utils/synchronized-iterator.hh"
 
 #include <iterator>
 
@@ -71,7 +72,7 @@ public:
 
     size_t count(State s) const { return targets.count(s); }
     bool empty() const { return targets.empty(); }
-    size_t size() const { return targets.size(); }
+    size_t num_of_targets() const { return targets.size(); }
 
     void insert(State s);
     void insert(const StateSet& states);
@@ -346,15 +347,27 @@ public:
 
     void clear() { state_posts_.clear(); }
 
-    void increase_size(size_t n) {
-        assert(n >= state_posts_.size());
-        state_posts_.resize(n);
+    /**
+     * @brief Allocate state posts up to @p num_of_states states, creating empty @c StatePost for yet unallocated state
+     *  posts.
+     *
+     * @param[in] num_of_states Number of states in @c Delta to allocate state posts for. Have to be at least
+     *  num_of_states() + 1.
+     */
+    void allocate(const size_t num_of_states) {
+        assert(num_of_states >= this->num_of_states());
+        state_posts_.resize(num_of_states);
     }
 
     /**
      * @return Number of states in the whole Delta, including both source and target states.
      */
     size_t num_of_states() const { return state_posts_.size(); }
+
+    /**
+     * Check whether the @p state is used in @c Delta.
+     */
+    bool uses_state(const State state) const { return state < num_of_states(); }
 
     /**
      * @return Number of transitions in Delta.
@@ -427,6 +440,15 @@ public:
     Transitions transitions() const;
 
     /**
+     * Get transitions leading to @p state_to.
+     * @param state_to[in] Target state for transitions to get.
+     * @return Transitions leading to @p state_to.
+     *
+     * Operation is slow, traverses over all symbol posts.
+     */
+    std::vector<Transition> get_transitions_to(State state_to) const;
+
+    /**
      * Iterate over @p epsilon symbol posts under the given @p state.
      * @param[in] state State from which epsilon transitions are checked.
      * @param[in] epsilon User can define his favourite epsilon or used default.
@@ -441,6 +463,32 @@ public:
      * @return An iterator to @c SymbolPost with epsilon symbol. End iterator when there are no epsilon transitions.
      */
     static StatePost::const_iterator epsilon_symbol_posts(const StatePost& state_post, Symbol epsilon = EPSILON);
+
+    /**
+     * @brief Expand @p target_alphabet by symbols from this delta.
+     *
+     * The value of the already existing symbols will NOT be overwritten.
+     */
+    void add_symbols_to(OnTheFlyAlphabet& target_alphabet) const;
+
+    /**
+     * @brief Get the set of symbols used on the transitions in the automaton.
+     *
+     * Does not necessarily have to equal the set of symbols in the alphabet used by the automaton.
+     * @return Set of symbols used on the transitions.
+     */
+    utils::OrdVector<Symbol> get_used_symbols() const;
+
+    utils::OrdVector<Symbol> get_used_symbols_vec() const;
+    std::set<Symbol> get_used_symbols_set() const;
+    utils::SparseSet<Symbol> get_used_symbols_sps() const;
+    std::vector<bool> get_used_symbols_bv() const;
+    BoolVector get_used_symbols_chv() const;
+
+    /**
+     * @brief Get the maximum non-epsilon used symbol.
+     */
+    Symbol get_max_symbol() const;
 private:
     std::vector<StatePost> state_posts_;
 }; // class Delta.

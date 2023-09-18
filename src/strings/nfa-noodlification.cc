@@ -54,14 +54,14 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol e
     if (segments.size() == 1) {
         std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
         segment->trim();
-        if (segment->size() > 0 || include_empty) {
+        if (segment->num_of_states() > 0 || include_empty) {
             return {{ segment }};
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.size(); // get some State not used in aut
+    State unused_state = aut.num_of_states(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -139,7 +139,7 @@ void seg_nfa::segs_one_initial_final(
                 segment_one_final.final = {final_state };
                 segment_one_final = reduce(segment_one_final.trim());
 
-                if (segment_one_final.size() > 0 || include_empty) {
+                if (segment_one_final.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(unused_state, final_state)] = std::make_shared<Nfa>(segment_one_final);
                 }
             }
@@ -149,7 +149,7 @@ void seg_nfa::segs_one_initial_final(
                 segment_one_init.initial = {init_state };
                 segment_one_init = reduce(segment_one_init.trim());
 
-                if (segment_one_init.size() > 0 || include_empty) {
+                if (segment_one_init.num_of_states() > 0 || include_empty) {
                     out[std::make_pair(init_state, unused_state)] = std::make_shared<Nfa>(segment_one_init);
                 }
             }
@@ -160,7 +160,7 @@ void seg_nfa::segs_one_initial_final(
                     segment_one_init_final.initial = {init_state };
                     segment_one_init_final.final = {final_state };
                     segment_one_init_final = reduce(segment_one_init_final.trim());
-                    if (segment_one_init_final.size() > 0 || include_empty) {
+                    if (segment_one_init_final.num_of_states() > 0 || include_empty) {
                         out[std::make_pair(init_state, final_state)] = std::make_shared<Nfa>(segment_one_init_final);
                     }
                 }
@@ -182,14 +182,14 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_mult_eps(const
     if (segments.size() == 1) {
         std::shared_ptr<Nfa> segment = std::make_shared<Nfa>(segments[0]);
         segment->trim();
-        if (segment->size() > 0 || include_empty) {
+        if (segment->num_of_states() > 0 || include_empty) {
             return {{ {segment, def_eps_vector} } };
         } else {
             return {};
         }
     }
 
-    State unused_state = aut.size(); // get some State not used in aut
+    State unused_state = aut.num_of_states(); // get some State not used in aut
     std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final;
     segs_one_initial_final(segments, include_empty, unused_state, segments_one_initial_final);
 
@@ -269,7 +269,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
         (*lhs_aut_iter).get().unify_final();
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
+    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_lhs{ *lhs_aut_begin };
@@ -280,7 +280,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, rhs_automaton, true).trim() };
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (utils::haskey(params, "reduce")) {
@@ -318,7 +318,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
         }
     }
 
-    if (lhs_automata.empty() || is_lang_empty(rhs_automaton)) { return {}; }
+    if (lhs_automata.empty() || rhs_automaton.is_lang_empty()) { return {}; }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_lhs{ *(*lhs_aut_begin) };
@@ -329,7 +329,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, rhs_automaton, true).trim() };
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (!reduce_value.empty()) {
@@ -388,7 +388,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     auto product_pres_eps_trans{
             intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons).trim() };
 
-    if (is_lang_empty(product_pres_eps_trans)) {
+    if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
     if (utils::haskey(params, "reduce")) {
@@ -407,7 +407,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
     VisitedEpsilonsCounterVector ret;
-    for(auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); it++) {
+    for (auto it = eps_cnt.rbegin(); it != eps_cnt.rend(); ++it) {
         ret.push_back(it->second);
     }
     return ret;

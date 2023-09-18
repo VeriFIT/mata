@@ -104,14 +104,22 @@ TEST_CASE("mata::nfa::Delta::mutable_post()") {
 
     SECTION("Default initialized") {
         CHECK(nfa.delta.num_of_states() == 0);
+        CHECK(!nfa.delta.uses_state(0));
         CHECK(nfa.delta.mutable_state_post(0).empty());
         CHECK(nfa.delta.num_of_states() == 1);
+        CHECK(nfa.delta.uses_state(0));
 
         CHECK(nfa.delta.mutable_state_post(9).empty());
         CHECK(nfa.delta.num_of_states() == 10);
+        CHECK(nfa.delta.uses_state(1));
+        CHECK(nfa.delta.uses_state(2));
+        CHECK(nfa.delta.uses_state(9));
+        CHECK(!nfa.delta.uses_state(10));
 
         CHECK(nfa.delta.mutable_state_post(9).empty());
         CHECK(nfa.delta.num_of_states() == 10);
+        CHECK(nfa.delta.uses_state(9));
+        CHECK(!nfa.delta.uses_state(10));
     }
 }
 
@@ -344,7 +352,7 @@ TEST_CASE("mata::nfa::Delta iteration over transitions") {
 
     SECTION("Sparse automaton") {
         const size_t state_num = 'r'+1;
-        nfa.delta.increase_size(state_num);
+        nfa.delta.reserve(state_num);
 
         nfa.delta.add('q', 'a', 'r');
         nfa.delta.add('q', 'b', 'r');
@@ -434,4 +442,28 @@ TEST_CASE("mata::nfa::Delta::operator==()") {
     CHECK(delta != delta2);
     delta.add(0, 0, 3);
     CHECK(delta == delta2);
+}
+
+TEST_CASE("mata::nfa::Delta::add_symbols_to()") {
+    mata::OnTheFlyAlphabet empty_alphabet{};
+    mata::OnTheFlyAlphabet alphabet{};
+    Delta delta{};
+    delta.add_symbols_to(alphabet);
+    CHECK(alphabet.get_symbol_map().empty());
+    delta.add(0, 0, 0);
+    delta.add_symbols_to(alphabet);
+    CHECK(alphabet.get_symbol_map().size() == 1);
+    delta.add(0, 0, 0);
+    delta.add_symbols_to(alphabet);
+    CHECK(alphabet.get_symbol_map().size() == 1);
+    delta.add(0, 1, 0);
+    delta.add_symbols_to(alphabet);
+    CHECK(alphabet.get_symbol_map().size() == 2);
+    delta.add(0, 2, 0);
+    delta.add(0, 3, 0);
+    delta.add_symbols_to(alphabet);
+    CHECK(alphabet.get_symbol_map().size() == 4);
+    CHECK(alphabet.get_symbol_map() == std::unordered_map<std::string, mata::Symbol>{
+        { "0", 0 }, { "1", 1 }, { "2", 2 }, { "3", 3 }
+    });
 }

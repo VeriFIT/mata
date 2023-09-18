@@ -54,7 +54,7 @@ namespace {
     StateBoolArray reachable_states(const Nfa& nfa,
                                        const std::optional<const StateBoolArray>& states_to_consider = std::nullopt) {
         std::vector<State> worklist{};
-        StateBoolArray reachable(nfa.size(), false);
+        StateBoolArray reachable(nfa.num_of_states(), false);
         for (const State state: nfa.initial) {
             if (!states_to_consider.has_value() || states_to_consider.value()[state]) {
                 worklist.push_back(state);
@@ -89,7 +89,7 @@ StateSet Nfa::get_reachable_states() const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
-    const size_t num_of_states{size() };
+    const size_t num_of_states{ this->num_of_states() };
     for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
     {
         if (reachable_bool_array[original_state])
@@ -245,8 +245,8 @@ namespace {
  * @return BoolVector
  */
 BoolVector Nfa::get_useful_states() const {
-    BoolVector useful(this->size(),false);
-    std::vector<TarjanNodeData> node_info(this->size());
+    BoolVector useful(this->num_of_states(),false);
+    std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::deque<State> program_stack;
     std::deque<State> tarjan_stack;
     unsigned long index_cnt = 0;
@@ -400,7 +400,7 @@ void Nfa::print_to_mata(std::ostream &output) const {
 }
 
 Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Nfa digraph{size(), StateSet(initial), StateSet(final) };
+    Nfa digraph{num_of_states(), StateSet(initial), StateSet(final) };
     // Add directed transitions for digraph.
     for (const Transition& transition: delta.transitions()) {
         // Directly try to add the transition. Finding out whether the transition is already in the digraph
@@ -412,20 +412,6 @@ Nfa Nfa::get_one_letter_aut(Symbol abstract_symbol) const {
 
 void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
-}
-
-std::vector<Transition> Nfa::get_transitions_to(State state_to) const {
-    std::vector<Transition> transitions_to_state{};
-    const size_t num_of_states{ delta.num_of_states() };
-    for (State state_from{ 0 }; state_from < num_of_states; ++state_from) {
-        for (const SymbolPost& state_from_move: delta[state_from]) {
-            const auto target_state{ state_from_move.targets.find(state_to) };
-            if (target_state != state_from_move.targets.end()) {
-                transitions_to_state.emplace_back(state_from, state_from_move.symbol, state_to );
-            }
-        }
-    }
-    return transitions_to_state;
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
@@ -442,122 +428,6 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
         }
     }
     return res;
-}
-
-// Other versions, maybe an interesting experiment with speed of data structures.
-// Returns symbols appearing in Delta, pushes back to vector and then sorts
-mata::utils::OrdVector<Symbol> Nfa::get_used_symbols_vec() const {
-#ifdef _STATIC_STRUCTURES_
-    static std::vector<Symbol> symbols{};
-    symbols.clear();
-#else
-    std::vector<Symbol>  symbols{};
-#endif
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            utils::reserve_on_insert(symbols);
-            symbols.push_back(move.symbol);
-        }
-    }
-    utils::OrdVector<Symbol>  sorted_symbols(symbols);
-    return sorted_symbols;
-}
-
-// returns symbols appearing in Delta, inserts to a std::set
-std::set<Symbol> Nfa::get_used_symbols_set() const {
-    //static should prevent reallocation, seems to speed things up a little
-#ifdef _STATIC_STRUCTURES_
-    static std::set<Symbol>  symbols;
-    symbols.clear();
-#else
-    static std::set<Symbol>  symbols{};
-#endif
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            symbols.insert(move.symbol);
-        }
-    }
-    return symbols;
-    //utils::OrdVector<Symbol>  sorted_symbols(symbols.begin(),symbols.end());
-    //return sorted_symbols;
-}
-
-// returns symbols appearing in Delta, adds to NumberPredicate,
-// Seems to be the fastest option, but could have problems with large maximum symbols
-mata::utils::SparseSet<Symbol> Nfa::get_used_symbols_sps() const {
-#ifdef _STATIC_STRUCTURES_
-    //static seems to speed things up a little
-    static utils::SparseSet<Symbol>  symbols(64,false);
-    symbols.clear();
-#else
-    utils::SparseSet<Symbol>  symbols(64);
-#endif
-    //symbols.dont_track_elements();
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            symbols.insert(move.symbol);
-        }
-    }
-    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
-    return symbols;
-}
-
-// returns symbols appearing in Delta, adds to NumberPredicate,
-// Seems to be the fastest option, but could have problems with large maximum symbols
-std::vector<bool> Nfa::get_used_symbols_bv() const {
-#ifdef _STATIC_STRUCTURES_
-    //static seems to speed things up a little
-    static std::vector<bool>  symbols(64,false);
-    symbols.clear();
-#else
-    std::vector<bool> symbols(64,false);
-#endif
-    //symbols.dont_track_elements();
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            reserve_on_insert(symbols,move.symbol);
-            symbols[move.symbol]=true;
-        }
-    }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
-    return symbols;
-}
-
-BoolVector Nfa::get_used_symbols_chv() const {
-#ifdef _STATIC_STRUCTURES_
-    //static seems to speed things up a little
-    static BoolVector  symbols(64,false);
-    symbols.clear();
-#else
-    BoolVector symbols(64,false);
-#endif
-    //symbols.dont_track_elements();
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            reserve_on_insert(symbols,move.symbol);
-            symbols[move.symbol]=true;
-        }
-    }
-    //TODO: is it necessary to return ordered vector? Would the number predicate suffice?
-    return symbols;
-}
-
-// returns max non-e symbol in Delta
-Symbol Nfa::get_max_symbol() const {
-    Symbol max = 0;
-    for (State q = 0; q< delta.num_of_states(); ++q) {
-        const StatePost & post = delta[q];
-        for (const SymbolPost & move: post) {
-            if (move.symbol > max)
-                max = move.symbol;
-        }
-    }
-    return max;
 }
 
  void Nfa::unify_initial() {
@@ -580,7 +450,7 @@ void Nfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
-        const auto transitions_to{ get_transitions_to(orig_final_state) };
+        const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
         for (const auto& transitions: transitions_to) {
             delta.add(transitions.source, transitions.symbol, new_final_state);
         }
@@ -588,16 +458,6 @@ void Nfa::unify_final() {
     }
     final.clear();
     final.insert(new_final_state);
-}
-
-void Nfa::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
-    size_t aut_num_of_states{size() };
-    for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
-        for (const SymbolPost& move: delta[state]) {
-            target_alphabet.update_next_symbol_value(move.symbol);
-            target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
-        }
-    }
 }
 
 Nfa& Nfa::operator=(Nfa&& other) noexcept {
@@ -612,31 +472,24 @@ Nfa& Nfa::operator=(Nfa&& other) noexcept {
     return *this;
 }
 
-void Nfa::clear_transitions() {
-    const size_t delta_size = delta.num_of_states();
-    for (size_t i = 0; i < delta_size; ++i) {
-        delta.mutable_state_post(i) = StatePost();
-    }
-}
-
 State Nfa::add_state() {
-    const size_t num_of_states{ size() };
-    delta.increase_size(num_of_states + 1);
+    const size_t num_of_states{ this->num_of_states() };
+    delta.allocate(num_of_states + 1);
     return num_of_states;
 }
 
 State Nfa::add_state(State state) {
     if (state >= delta.num_of_states()) {
-        delta.increase_size(state + 1);
+        delta.allocate(state + 1);
     }
     return state;
 }
 
-size_t Nfa::size() const {
+size_t Nfa::num_of_states() const {
     return std::max({
-        static_cast<unsigned long>(initial.domain_size()),
-        static_cast<unsigned long>(final.domain_size()),
-        static_cast<unsigned long>(delta.num_of_states())
+        static_cast<size_t>(initial.domain_size()),
+        static_cast<size_t>(final.domain_size()),
+        static_cast<size_t>(delta.num_of_states())
     });
 }
 
@@ -646,7 +499,7 @@ void Nfa::clear() {
     final.clear();
 }
 
-bool Nfa::is_identical(const Nfa& aut) {
+bool Nfa::is_identical(const Nfa& aut) const {
     if (utils::OrdVector<State>(initial) != utils::OrdVector<State>(aut.initial)) {
         return false;
     }
@@ -656,52 +509,3 @@ bool Nfa::is_identical(const Nfa& aut) {
     return delta == aut.delta;
 }
 
-OrdVector<Symbol> Nfa::get_used_symbols() const {
-    //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
-    // for instance figure out why NumberPredicate and OrdVedctor are slow,
-    // try also with _STATIC_DATA_STRUCTURES_, it changes things.
-
-    //below are different variant, with different data structures for accumulating symbols,
-    //that then must be converted to an OrdVector
-    //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
-
-    //WITH VECTOR (4.434 s)
-    //return get_used_symbols_vec();
-
-    //WITH SET (26.5 s)
-    //auto from_set = get_used_symbols_set();
-    //return utils::OrdVector<Symbol> (from_set .begin(),from_set.end());
-
-    //WITH NUMBER PREDICATE (4.857s) (NP removed)
-    //return utils::OrdVector(get_used_symbols_np().get_elements());
-
-    //WITH SPARSE SET (haven't tried)
-    //return utils::OrdVector<State>(get_used_symbols_sps());
-
-    //WITH BOOL VECTOR (error !!!!!!!):
-    //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
-
-    //WITH BOOL VECTOR (1.9s):
-    std::vector<bool> bv = get_used_symbols_bv();
-    utils::OrdVector<Symbol> ov;
-    for(Symbol i = 0;i<bv.size();i++)
-        if (bv[i]) {
-            ov.push_back(i);
-        }
-    return ov;
-
-    ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
-    //std::vector<bool> bv = get_used_symbols_bv();
-    //std::vector<Symbol> v(std::count(bv.begin(), bv.end(), true));
-    //return utils::OrdVector<Symbol>(v);
-
-    //WITH CHAR VECTOR (should be the fastest, haven't tried in this branch):
-    //BEWARE: failing in one noodlificatoin test ("Simple automata -- epsilon result") ... strange
-    //BoolVector chv = get_used_symbols_chv();
-    //utils::OrdVector<Symbol> ov;
-    //for(Symbol i = 0;i<chv.size();i++)
-    //    if (chv[i]) {
-    //        ov.push_back(i);
-    //    }
-    //return ov;
-}

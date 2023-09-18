@@ -61,9 +61,8 @@ Symbol mata::OnTheFlyAlphabet::translate_symb(const std::string& str) {
     const auto it_insert_pair = symbol_map_.insert({str, next_symbol_value_});
     if (it_insert_pair.second) {
         return next_symbol_value_++;
-    } else {
-        return it_insert_pair.first->second;
     }
+    return it_insert_pair.first->second;
 
     // TODO: How can the user specify to throw exceptions when we encounter an unknown symbol? How to specify that
     //  the alphabet should have only the previously fixed symbols?
