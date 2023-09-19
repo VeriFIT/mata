@@ -114,7 +114,7 @@ private:
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
- * @brief Get all the symbols accepted by @p nfa.
+ * @brief Get all the one symbol words accepted by @p nfa.
  */
 std::set<mata::Symbol> get_one_symbol_words(const Nfa& nfa);
 
