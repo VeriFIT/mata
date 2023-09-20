@@ -114,6 +114,11 @@ private:
 std::set<Word> get_shortest_words(const Nfa& nfa);
 
 /**
+ * @brief Get all the one symbol words accepted by @p nfa.
+ */
+std::set<Symbol> get_accepted_symbols(const Nfa& nfa);
+
+/**
  * @brief Get the lengths of all words in the automaton @p aut. The function returns a set of pairs <u,v> where for each
  * such a pair there is a word with length u+k*v for all ks. The disjunction of such formulae of all pairs hence precisely
  * describe lengths of all words in the automaton.
