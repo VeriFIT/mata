@@ -150,7 +150,8 @@ std::set<mata::Symbol> mata::strings::get_accepted_symbols(const Nfa& nfa) {
         for (const SymbolPost& symbol_post_init : nfa.delta[init]) {
             mata::Symbol sym = symbol_post_init.symbol;
             auto symbol_it = accepted_symbols.lower_bound(sym);
-            if (*symbol_it != sym && nfa.final.intersects_with(symbol_post_init.targets)) {
+            if ((symbol_it == accepted_symbols.end() || *symbol_it != sym)
+                 && nfa.final.intersects_with(symbol_post_init.targets)) {
                 accepted_symbols.insert(symbol_it, sym);
             }
         }
