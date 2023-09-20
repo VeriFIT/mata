@@ -13,6 +13,7 @@ cdef extern from "<fstream>" namespace "std":
     cdef cppclass ifstream(istream):
         ifstream() except+
         ifstream(const char*) except +
+        void open(const char*)
 
 cdef extern from "mata/parser/re2parser.hh" namespace "mata::parser":
     cdef void create_nfa(CNfa*, string) except +
