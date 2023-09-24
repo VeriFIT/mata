@@ -424,14 +424,11 @@ Nfa uni(const Nfa &lhs, const Nfa &rhs);
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection_old(const Nfa& lhs, const Nfa& rhs,
-                 bool preserve_epsilon = false, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
 Nfa intersection(
         const Nfa& lhs_nfa, const Nfa& rhs_nfa,
         std::unordered_map<std::pair<State, State>, State> *prod_map_ptr = nullptr,
         Symbol first_epsilon = Limits::max_symbol);
-
 
 /**
  * @brief Concatenate two NFAs.
