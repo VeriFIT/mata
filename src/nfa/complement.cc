@@ -74,6 +74,7 @@ Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Sym
                                  " received an unknown value of the \"algo\" key: " + str_algo);
     }
 
+    //TODO: what is this thing? Explain plz in a comment.
     bool minimize_during_determinization = false;
     if (params.find("minimize") != params.end()) {
         const std::string& minimize_arg = params.at("minimize");

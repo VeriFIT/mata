@@ -123,6 +123,8 @@ public:
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 
+    const_iterator first_epsilon_it(Symbol first_epsilon) const;
+
     /**
      * @brief Iterator over moves represented as @c Move instances.
      *

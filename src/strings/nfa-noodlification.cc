@@ -279,7 +279,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true).trim() };
+            intersection(concatenated_lhs, rhs_automaton).trim() };
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
@@ -328,7 +328,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true).trim() };
+            intersection(concatenated_lhs, rhs_automaton).trim() };
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }

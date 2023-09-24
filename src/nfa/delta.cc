@@ -469,6 +469,18 @@ StatePost::Moves StatePost::moves(
     return { *this, symbol_post_it, symbol_post_end };
 }
 
+//returns an iterator to the smallest epsilon, or end() if there is no epsilon
+StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) const {
+    for (auto it = end(); it != begin(); ) {
+        --it;
+        if (it->symbol < first_epsilon) {
+            ++it;
+            return it;
+        }
+    }
+    return end();
+}
+
 StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
     const StatePost::const_iterator symbol_post_begin{ cbegin() };
     const StatePost::const_iterator symbol_post_end{ cend() };
@@ -479,6 +491,7 @@ StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
         return { *this, symbol_post_begin, symbol_post_end };
     }
 
+    //TODO: some comments, my brain hurts. Can we use first_epsilon_it above (or rewrite its code as below)
     StatePost::const_iterator previous_symbol_post_it{ std::prev(symbol_post_end) };
     StatePost::const_iterator symbol_post_it{ previous_symbol_post_it };
     while (previous_symbol_post_it != symbol_post_begin && first_epsilon < previous_symbol_post_it->symbol) {

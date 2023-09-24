@@ -115,8 +115,6 @@ Simlib::Util::BinaryRelation compute_relation(
 Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
     std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
-Nfa intersection_eps2(const Nfa& lhs_nfa, const Nfa& rhs_nfa, bool preserve_epsilon, const std::set<Symbol>& epsilons,
-                      std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 /**
  * @brief Concatenate two NFAs.
  *

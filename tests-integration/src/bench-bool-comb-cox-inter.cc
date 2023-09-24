@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
  //   TIME_END(intersection);
 
     TIME_BEGIN(intersection2);
-    Nfa intersect_aut2 = intersection2(lhs, rhs);
+    Nfa intersect_aut2 = intersection(lhs, rhs);
     TIME_END(intersection2);
 
 //    TIME_BEGIN(emptiness_check);

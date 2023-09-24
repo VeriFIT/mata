@@ -191,7 +191,7 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
         noodle.delta.add(0, 0, 1);
         noodle.final.insert(1);
         auto result{ seg_nfa::noodlify_for_equation({ left1, left2 }, right) };
-        REQUIRE(result.size() == 1);
+       REQUIRE(result.size() == 1);
     }
 
     SECTION("Larger automata") {
