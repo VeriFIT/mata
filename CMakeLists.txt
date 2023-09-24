@@ -91,6 +91,11 @@ set(MATA_CLANG_WARNINGS
         -Wno-system-headers
         )
 
+# set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+# add_compile_options(-fno-omit-frame-pointer -mno-omit-leaf-frame-pointer)
+# add_compile_options(-DNDEBUG -g)
+
 # Set whether to treat warnings as errors.
 if (MATA_WERROR)
     message("-- Treating warnings in mata as errors")

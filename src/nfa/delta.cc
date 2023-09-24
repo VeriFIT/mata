@@ -39,6 +39,7 @@ void SymbolPost::insert(State s) {
     }
 }
 
+//TODO: slow! This should be doing merge, not inserting one by one.
 void SymbolPost::insert(const StateSet& states) {
     for (State s : states) {
         insert(s);

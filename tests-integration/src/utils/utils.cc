@@ -62,7 +62,7 @@ int load_automata(
             std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
             TIME_END(mintermization);
             for (mata::IntermediateAut& inter_aut : mintermized) {
-                assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
+                //assert(inter_aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR);
                 auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         }

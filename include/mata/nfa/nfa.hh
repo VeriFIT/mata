@@ -427,6 +427,10 @@ Nfa uni(const Nfa &lhs, const Nfa &rhs);
 Nfa intersection(const Nfa& lhs, const Nfa& rhs,
                  bool preserve_epsilon = false, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
+Nfa intersection2(const Nfa& lhs, const Nfa& rhs,
+                 bool preserve_epsilon = false, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
+
+
 /**
  * @brief Concatenate two NFAs.
  *
