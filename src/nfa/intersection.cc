@@ -50,7 +50,8 @@ Nfa mata::nfa::algorithms::intersection_eps(
     product_map_t  product_map{};
     std::deque<State> pairs_to_process{}; // Set of state pairs of original states to process.
 
-    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 100000000;
+    //const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 100000000;
+    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 0;
 
     product_matrix_t product_matrix;
     product_vec_map_t product_vec_map;
@@ -88,7 +89,7 @@ Nfa mata::nfa::algorithms::intersection_eps(
 
     auto product_contains = [&product_matrix,&product_vec_map,&large_product,&are_in_range](State lhs_state, State rhs_state) {
         if (!large_product)
-            return product_matrix[lhs_state][rhs_state] == Limits::max_state;
+            return !(product_matrix[lhs_state][rhs_state] == Limits::max_state);
         else
             return are_in_range(lhs_state,rhs_state) &&
                           product_vec_map[lhs_state].find(rhs_state) != product_vec_map[lhs_state].end();
@@ -162,7 +163,7 @@ Nfa mata::nfa::algorithms::intersection_eps(
                 product.final.insert(product_target);
             }
         } else {
-            get_product_state(lhs_target,rhs_target);
+            product_target = get_product_state(lhs_target,rhs_target);
         }
         //TODO: would push_back and sort at the end be faster?
         product_symbol_post.insert(product_target);
