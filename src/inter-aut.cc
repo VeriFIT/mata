@@ -307,9 +307,9 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      * @param postfix Postfix to which operators are eventually added
      * @return A postfix with eventually added operators
      */
-    std::vector<mata::FormulaNode> add_disjunction_implicitly(std::vector<mata::FormulaNode> postfix)
-    {
-        if (postfix.size() == 1) // no need to add operators
+    std::vector<mata::FormulaNode> add_disjunction_implicitly(std::vector<mata::FormulaNode> postfix) {
+        const size_t postfix_size{ postfix.size() };
+        if (postfix_size == 1) // no need to add operators
             return postfix;
 
         for (const auto& op : postfix) {
@@ -318,15 +318,15 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         }
 
         std::vector<mata::FormulaNode> res;
-        if (postfix.size() >= 2) {
-            res.push_back(postfix[0]);
-            res.push_back(postfix[1]);
+        if (postfix_size >= 2) {
+            res.push_back(std::move(postfix[0]));
+            res.push_back(std::move(postfix[1]));
             res.emplace_back(
                     mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR);
         }
 
-        for (size_t i = 2; i < postfix.size(); ++i) {
-            res.push_back(postfix[i]);
+        for (size_t i{ 2 }; i < postfix_size; ++i) {
+            res.push_back(std::move(postfix[i]));
             res.emplace_back(
                     mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR);
         }
@@ -375,20 +375,19 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         for (const auto& keypair : section.dict) {
             const std::string &key = keypair.first;
 
-            if (key.find("Initial") != std::string::npos) {
+            if (key.starts_with("Initial")) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (no_operators(postfix)) {
                     aut.initial_enumerated = true;
                     postfix = add_disjunction_implicitly(std::move(postfix));
                 }
                 aut.initial_formula = postfix_to_graph(std::move(postfix));
-            } else if (key.find("Final") != std::string::npos) {
+            } else if (key.starts_with("Final")) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (no_operators(postfix)) {
                     postfix = add_disjunction_implicitly(std::move(postfix));
                     aut.final_enumerated = true;
                 }
-
                 aut.final_formula = postfix_to_graph(std::move(postfix));;
             }
         }
@@ -403,7 +402,7 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
 
         return aut;
     }
-} // anonymous
+} // Anonymous namespace.
 
 size_t mata::IntermediateAut::get_number_of_disjuncts() const
 {
