@@ -111,7 +111,7 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         if (graph.children.size() == 1) { // unary operator
             const auto& child = graph.children.front();
             std::string child_name = child.node.is_operand() ? child.node.raw :
-                    "(" + serialize_graph(child.node) + ")";
+                    "(" + serialize_graph(mata::FormulaGraph{ std::move(child.node) }) + ")";
             return graph.node.raw + child_name;
         }
 
