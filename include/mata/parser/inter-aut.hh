@@ -128,8 +128,8 @@ struct FormulaGraph {
     std::vector<FormulaGraph> children{};
 
     FormulaGraph() = default;
-    FormulaGraph(const FormulaNode& n) : node(n), children() {}
-    FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() {}
+    explicit FormulaGraph(const FormulaNode& n) : node(n), children() { children.reserve(2); }
+    explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() { children.reserve(2); }
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
     FormulaGraph(FormulaGraph&& g) : node(std::move(g.node)), children(std::move(g.children)) {}
 
