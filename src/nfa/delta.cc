@@ -376,15 +376,18 @@ bool Delta::operator==(const Delta& other) const {
 
 //returns an iterator to the smallest epsilon, or end() if there is no epsilon
 StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) const {
-    for (auto it = end(); it != begin(); ) {
+    auto it = end();
+    while (it != begin()) {
         --it;
-        if (it->symbol <= first_epsilon) {
-            if (it->symbol < first_epsilon) {
-                ++it;
-            }
+        if (it->symbol < first_epsilon) { //is it normal symbol already?
+            ++it; // go back to the smallest epsilon or end and return it
             return it;
         }
     }
+
+    if (it != end() && it->symbol >= first_epsilon) //special case when begin is the smallest epsilon
+        return it;
+
     return end();
 }
 

@@ -23,8 +23,9 @@ using namespace mata::nfa;
 
 namespace {
 
-using pair_to_state_t = std::vector<std::vector<State>>;
 using product_map_t = std::unordered_map<std::pair<State,State>,State>;
+using product_matrix_t = std::vector<std::vector<State>>;
+using product_vec_map_t = std::vector<std::unordered_map<State,State>>;
 
 /**
  * Add transition to the product.
@@ -33,11 +34,11 @@ using product_map_t = std::unordered_map<std::pair<State,State>,State>;
  * @param[in] pair_to_process Currently processed pair of original states.
  * @param[in] new_product_symbol_post State transitions to add to the product.
  */
-void add_product_symbol_post(Nfa& product, pair_to_state_t & pair_to_state,
+void add_product_symbol_post(Nfa& product, product_matrix_t & product_matrix,
                              const State lhs, const State rhs, SymbolPost& new_product_symbol_post) {
         if (new_product_symbol_post.empty()) { return; }
 
-        StatePost &product_state_post{product.delta.mutable_state_post(pair_to_state[lhs][rhs])};
+        StatePost &product_state_post{product.delta.mutable_state_post(product_matrix[lhs][rhs])};
         if (product_state_post.empty() || new_product_symbol_post.symbol > product_state_post.back().symbol) {
             product_state_post.push_back(std::move(new_product_symbol_post));
         }
@@ -63,15 +64,15 @@ void add_product_symbol_post(Nfa& product, pair_to_state_t & pair_to_state,
  * @param[out] product_symbol_post Transitions of the product state.
  */
 void create_product_state_and_move(
-        Nfa& product_nfa,
-        pair_to_state_t & pair_to_state,
-        product_map_t & product_map,
-        const Nfa& lhs_nfa,
-        const Nfa& rhs_nfa,
-        std::deque<State>& pairs_to_process,
-        const State lhs_target,
-        const State rhs_target,
-        SymbolPost& product_symbol_post
+            Nfa& product_nfa,
+            product_matrix_t & pair_to_state,
+            product_map_t & product_map,
+            const Nfa& lhs_nfa,
+            const Nfa& rhs_nfa,
+            std::deque<State>& pairs_to_process,
+            const State lhs_target,
+            const State rhs_target,
+            SymbolPost& product_symbol_post
 ) {
     State intersect_target;
     if (pair_to_state[lhs_target][rhs_target] == Limits::max_state) {
@@ -113,11 +114,13 @@ Nfa mata::nfa::algorithms::intersection_eps(
         const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon,
         product_map_t *prod_map) {
     Nfa product{}; // Product of the intersection.
+    //.std::cout<<lhs.print_to_DOT()<<std::endl;;
+    //std::cout<<rhs.print_to_DOT()<<std::endl;;
     // Product map for the generated intersection mapping original state pairs to new product states.
     product_map_t  product_map{};
     std::deque<State> pairs_to_process{}; // Set of state pairs of original states to process.
 
-    pair_to_state_t pair_to_state(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
+    product_matrix_t pair_to_state(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
 
     // Initialize pairs to process with initial state pairs.
     for (const State lhs_initial_state : lhs.initial) {
@@ -182,6 +185,7 @@ Nfa mata::nfa::algorithms::intersection_eps(
 
             // Add epsilon transitions, from lhs e-transitions.
             const StatePost& lhs_state_post{lhs.delta[lhs_source] };
+
             auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
             if (lhs_first_epsilon_it != lhs_state_post.end()) {
                 for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); lhs_symbol_post++) {
@@ -215,6 +219,8 @@ Nfa mata::nfa::algorithms::intersection_eps(
     }
 
     if (prod_map != nullptr) { *prod_map = product_map; }
+
+    //std::cout<<product.print_to_DOT()<<std::endl;
     return product;
 } // intersection().
 
