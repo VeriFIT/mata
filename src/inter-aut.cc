@@ -206,8 +206,8 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      * @param tokens Series of tokens representing transition formula parsed from the input text
      * @return A postfix notation for input
      */
-    std::vector<mata::FormulaNode> infix_to_postfix(
-            const mata::IntermediateAut &aut, const std::vector<std::string>& tokens) {
+    std::vector<mata::FormulaNode> infix_to_postfix(const mata::IntermediateAut &aut,
+                                                    const std::vector<std::string>& tokens) {
         std::vector<mata::FormulaNode> opstack;
         std::vector<mata::FormulaNode> output;
 
@@ -229,13 +229,14 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
                     break;
                 case mata::FormulaNode::Type::OPERATOR:
                     for (int j = static_cast<int>(opstack.size())-1; j >= 0; --j) {
-                        size_t j_size_t{ static_cast<size_t>(j) };
-                        assert(!opstack[j_size_t].is_operand());
-                        if (opstack[j_size_t].is_leftpar())
+                        auto formula_node_opstack_it{ opstack.begin() + j };
+                        assert(!formula_node_opstack_it->is_operand());
+                        if (formula_node_opstack_it->is_leftpar()) {
                             break;
-                        if (lower_precedence(node.operator_type, opstack[j_size_t].operator_type)) {
-                            output.emplace_back(std::move(opstack[j_size_t]));
-                            opstack.erase(opstack.begin()+j);
+                        }
+                        if (lower_precedence(node.operator_type, formula_node_opstack_it->operator_type)) {
+                            output.emplace_back(std::move(*formula_node_opstack_it));
+                            opstack.erase(formula_node_opstack_it);
                         }
                     }
                     opstack.emplace_back(std::move(node));
