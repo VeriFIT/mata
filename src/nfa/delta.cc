@@ -39,6 +39,7 @@ void SymbolPost::insert(State s) {
     }
 }
 
+//TODO: slow! This should be doing merge, not inserting one by one.
 void SymbolPost::insert(const StateSet& states) {
     for (State s : states) {
         insert(s);
@@ -496,6 +497,7 @@ StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
         return { *this, symbol_post_begin, symbol_post_end };
     }
 
+    //TODO: some comments, my brain hurts. Can we use first_epsilon_it above (or rewrite its code as below)
     StatePost::const_iterator previous_symbol_post_it{ std::prev(symbol_post_end) };
     StatePost::const_iterator symbol_post_it{ previous_symbol_post_it };
     while (previous_symbol_post_it != symbol_post_begin && first_epsilon < previous_symbol_post_it->symbol) {

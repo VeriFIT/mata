@@ -425,7 +425,7 @@ Nfa uni(const Nfa &lhs, const Nfa &rhs);
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 Nfa intersection(const Nfa& lhs, const Nfa& rhs,
-                 std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
+                 const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFAs.

@@ -112,8 +112,8 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection_eps(const Nfa& lhs_source, const Nfa& rhs, const Symbol first_epsilon,
-                     std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+Nfa product(const Nfa& lhs_source, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
+            const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFAs.
