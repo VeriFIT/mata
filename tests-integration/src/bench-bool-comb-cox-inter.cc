@@ -35,9 +35,15 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(intersection);
     Nfa intersect_aut = intersection(lhs, rhs);
     TIME_END(intersection);
+    std::cout<<"states: "<<intersect_aut.num_of_states()<<std::endl;
     TIME_BEGIN(is_lang_empty);
     intersect_aut.is_lang_empty();
     TIME_END(is_lang_empty);
+    //intersect_aut.final.clear();
+    TIME_BEGIN(trim);
+    intersect_aut.trim();
+    TIME_END(trim);
+    std::cout<<"states: "<<intersect_aut.num_of_states()<<std::endl;
 
     return EXIT_SUCCESS;
 }
