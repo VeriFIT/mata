@@ -105,15 +105,15 @@ Simlib::Util::BinaryRelation compute_relation(
 /**
  * @brief Compute intersection of two NFAs with a possibility of using multiple epsilons.
  *
- * @param[in] lhs First NFA to compute intersection for.
+ * @param[in] lhs_source First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
  * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
  * @param[in] epsilons Set of symbols to be considered as epsilons
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon,
-    std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+Nfa intersection_eps(const Nfa& lhs_source, const Nfa& rhs, const Symbol first_epsilon,
+                     std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFAs.
