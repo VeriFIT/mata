@@ -110,10 +110,10 @@ public:
     FormulaNode(const FormulaNode& n)
         : type(n.type), raw(n.raw), name(n.name), operator_type(n.operator_type), operand_type(n.operand_type) {}
 
-    FormulaNode(FormulaNode&&) = default;
+    FormulaNode(FormulaNode&&) noexcept = default;
 
     FormulaNode& operator=(const FormulaNode& other) = default;
-    FormulaNode& operator=(FormulaNode&& other) = default;
+    FormulaNode& operator=(FormulaNode&& other) noexcept = default;
 };
 
 /**
@@ -123,7 +123,8 @@ public:
  * E.g., a formula q1 & s1 will be transformed to a tree with & as a root node
  * and q1 and s2 being children nodes of the root.
  */
-struct FormulaGraph {
+class FormulaGraph {
+public:
     FormulaNode node{};
     std::vector<FormulaGraph> children{};
 
@@ -131,7 +132,7 @@ struct FormulaGraph {
     explicit FormulaGraph(const FormulaNode& n) : node(n), children() { children.reserve(2); }
     explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() { children.reserve(2); }
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
-    FormulaGraph(FormulaGraph&& g) : node(std::move(g.node)), children(std::move(g.children)) {}
+    FormulaGraph(FormulaGraph&& g) noexcept : node(std::move(g.node)), children(std::move(g.children)) {}
 
     FormulaGraph& operator=(const mata::FormulaGraph&) = default;
     FormulaGraph& operator=(mata::FormulaGraph&&) noexcept = default;
@@ -146,7 +147,7 @@ struct FormulaGraph {
  * and type of alphabet. It contains also the transitions formula and formula for initial and final
  * states. The formulas are represented as tree where nodes are either operands or operators.
  */
-struct IntermediateAut {
+class IntermediateAut {
 public:
     /**
      * Type of automaton. So far we support nondeterministic finite automata (NFA) and
@@ -218,7 +219,8 @@ public:
     const FormulaGraph& get_symbol_part_of_transition(const std::pair<FormulaNode, FormulaGraph>& trans) const;
 
     /**
-     * A method for building a vector of IntermediateAut for a parsed input.
+     * @brief A method for building a vector of IntermediateAut for a parsed input.
+     *
      * For each section in input is created one IntermediateAut.
      * It parses basic information about type of automata, its naming conventions etc.
      * Then it parses input and final formula of automaton.
