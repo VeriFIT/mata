@@ -269,35 +269,41 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
             std::vector<mata::FormulaGraph> opstack{};
             opstack.reserve(4);
             for (mata::FormulaNode& node: postfix) {
-            mata::FormulaGraph gr(std::move(node));
-            switch (gr.node.type) {
+                switch (node.type) {
                 case mata::FormulaNode::Type::OPERAND:
-                    opstack.emplace_back(std::move(gr));
+                    opstack.emplace_back(std::move(node));
                     break;
-                case mata::FormulaNode::Type::OPERATOR:
-                    switch (gr.node.operator_type) {
-                        case mata::FormulaNode::OperatorType::NEG:
+                case mata::FormulaNode::Type::OPERATOR: {
+                    switch (node.operator_type) {
+                        case mata::FormulaNode::OperatorType::NEG: { // 1 child: graph will be a NEG node.
                             assert(!opstack.empty());
-                            gr.children.emplace_back(std::move(opstack.back()));
+                            mata::FormulaGraph child{ std::move(opstack.back()) };
                             opstack.pop_back();
-                            opstack.emplace_back(std::move(gr));
+                            mata::FormulaGraph& gr{ opstack.emplace_back(std::move(node)) };
+                            gr.children.emplace_back(std::move(child));
                             break;
-                        default:
+                        }
+                        default: { // 2 children: Graph will be either an AND node, or an OR node.
                             assert(opstack.size() > 1);
                             mata::FormulaGraph second_child{ std::move(opstack.back()) };
                             opstack.pop_back();
-                            gr.children.emplace_back(std::move(opstack.back()));
+                            mata::FormulaGraph first_child{ std::move(opstack.back()) };
                             opstack.pop_back();
+                            mata::FormulaGraph& gr{ opstack.emplace_back(std::move(node)) };
+                            gr.children.emplace_back(std::move(first_child));
                             gr.children.emplace_back(std::move(second_child));
-                            opstack.emplace_back(std::move(gr));
+                            break;
+                        }
                     }
                     break;
-                default: assert(false && "Unknown type of node");
+                }
+                default:
+                    assert(false && "Unknown type of node");
             }
         }
 
         assert(opstack.size() == 1);
-        return std::move(opstack[0]);
+        return std::move(*opstack.begin());
 }
 
     /**
