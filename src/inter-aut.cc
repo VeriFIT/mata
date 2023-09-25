@@ -20,11 +20,11 @@
 #include "mata/parser/inter-aut.hh"
 
 namespace {
-    bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut)
-    {
-        return !(!(aut.node_naming == mata::IntermediateAut::Naming::AUTO &&
-                   aut.symbol_naming == mata::IntermediateAut::Naming::AUTO) &&
-                 (aut.state_naming == mata::IntermediateAut::Naming::AUTO));
+
+bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
+  return !(!(aut.node_naming == mata::IntermediateAut::Naming::AUTO &&
+             aut.symbol_naming == mata::IntermediateAut::Naming::AUTO) &&
+           (aut.state_naming == mata::IntermediateAut::Naming::AUTO));
     }
 
     bool is_logical_operator(char ch)
@@ -130,7 +130,7 @@ namespace {
         return lhs + " " + graph.node.raw + " " + rhs;
     }
 
-    mata::FormulaNode create_node(const mata::IntermediateAut &mata, const std::string &token) {
+    mata::FormulaNode create_node(const mata::IntermediateAut &mata, const std::string& token) {
         if (is_logical_operator(token[0])) {
             switch (token[0]) {
                 case '&':
