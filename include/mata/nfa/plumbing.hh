@@ -86,9 +86,8 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
  * Automata must share alphabets.
  */
 inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
-                  bool preserve_epsilon = false,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
-    *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
+    *res = intersection(lhs, rhs, prod_map);
 }
 
 /**

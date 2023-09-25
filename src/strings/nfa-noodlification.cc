@@ -279,7 +279,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true).trim() };
+            intersection(concatenated_lhs, rhs_automaton).trim() };
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
@@ -328,7 +328,7 @@ std::vector<seg_nfa::Noodle> seg_nfa::noodlify_for_equation(
     }
 
     auto product_pres_eps_trans{
-            intersection(concatenated_lhs, rhs_automaton, true).trim() };
+            intersection(concatenated_lhs, rhs_automaton).trim() };
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};
     }
@@ -386,7 +386,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
 
     const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
     auto product_pres_eps_trans{
-            intersection_eps(concatenated_lhs, concatenated_rhs, true, epsilons).trim() };
+            intersection_eps(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
 
     if (product_pres_eps_trans.is_lang_empty()) {
         return {};

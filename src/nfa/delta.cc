@@ -374,6 +374,20 @@ bool Delta::operator==(const Delta& other) const {
     return other_transitions_it == other_transitions_end;
 }
 
+//returns an iterator to the smallest epsilon, or end() if there is no epsilon
+StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) const {
+    for (auto it = end(); it != begin(); ) {
+        --it;
+        if (it->symbol <= first_epsilon) {
+            if (it->symbol < first_epsilon) {
+                ++it;
+            }
+            return it;
+        }
+    }
+    return end();
+}
+
 StatePost::Moves::const_iterator::const_iterator(
     const StatePost& state_post, const StatePost::const_iterator symbol_post_it,
     const StatePost::const_iterator symbol_post_end)
