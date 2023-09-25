@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     Nfa rhs = automata[1];
 
     // Setting precision of the times to fixed points and 4 decimal places
-    std::cout << std::fixed << std::setprecision(4);
+
 
     TIME_BEGIN(intersection);
     Nfa intersect_aut = intersection(lhs, rhs);
