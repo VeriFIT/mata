@@ -520,8 +520,8 @@ bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
     // Perhaps make the get_useful_states return a witness on demand somehow.
     if (!cex) {
         BoolVector useful_states = get_useful_states();
-        for (auto useful: useful_states)
-            if (useful)
+        for (auto state_is_useful: useful_states)
+            if (state_is_useful)
                 return false;
         return true;
     }
