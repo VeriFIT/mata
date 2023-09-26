@@ -44,7 +44,7 @@ def from_mata(src, alph.Alphabet alphabet):
 
     # either load single automata
     if isinstance(src, str):
-        fs.open(src.encode('utf-8'))
+        fs = parser.ifstream(src.encode('utf-8'))
         res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
         result = mata_nfa.Nfa()
         if res_inter_aut[0].is_bitvector():
@@ -64,9 +64,9 @@ def from_mata(src, alph.Alphabet alphabet):
     else:
         automata = []
         for file in src:
-            fs.open(file.encode('utf-8'))
+            fs = parser.ifstream(file.encode('utf-8'))
             res_inter_aut = parser.parse_from_mf(parser.parse_mf(fs, True))
-            inter_aut.push_back(res_inter_aut[0])
+            inter_aut.emplace_back(res_inter_aut[0])
         if inter_aut[0].is_bitvector():
             mintermized_inter_aut = mintermization.c_mintermize_vec(inter_aut)
         else:
