@@ -420,7 +420,7 @@ Nfa uni(const Nfa &lhs, const Nfa &rhs);
  *
  * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
- * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
+ * @param[in] first_epsilon smallest epsilon. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */

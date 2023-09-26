@@ -35,7 +35,7 @@ namespace mata::nfa {
 
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, ProductMap *prod_map) {
 
-    auto both_final = [&lhs,&rhs](const State lhs_state,const State rhs_state) {
+    auto both_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
     };
 
@@ -46,6 +46,8 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, Pro
 Nfa mata::nfa::algorithms::product(
         const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,
         const Symbol first_epsilon, ProductMap *product_map) {
+    //static int hits = 0;
+    //static int misses = 0;
     Nfa product{}; // Product of the intersection.
     // Product map for the generated intersection mapping original state pairs to new product states.
     std::deque<State> pairs_to_process{}; // Set of state pairs of original states to process.
@@ -60,7 +62,7 @@ Nfa mata::nfa::algorithms::product(
     // This is several times faster compared to pure product_vec_map, which is turn is notably faster that one unordered map from pairs to states.
     // (but Juraj says that rewriting hash function may help unordered map significantly, so maybe that would be enough ... ?)
     // TODO: where to put this magical constant? It should not be here.
-    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 100000000;
+    const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 10000000;
 
     ProductMatrix product_matrix;
     ProductVecMap product_vec_map;
@@ -69,7 +71,7 @@ Nfa mata::nfa::algorithms::product(
     std::vector<State> min_lhs;
     std::vector<State> max_lhs;
 
-    auto update_ranges = [&min_rhs,&max_rhs,&min_lhs,&max_lhs](State lhs_state, State rhs_state)
+    auto update_ranges = [&](State lhs_state, State rhs_state)
     {
         if (min_rhs[lhs_state] > rhs_state)
             min_rhs[lhs_state] = rhs_state;
@@ -81,7 +83,7 @@ Nfa mata::nfa::algorithms::product(
             max_lhs[rhs_state] = lhs_state;
     };
 
-    auto are_in_range = [&min_rhs,&max_rhs,&min_lhs,&max_lhs](State lhs_state, State rhs_state) {
+    auto are_in_range = [&](State lhs_state, State rhs_state) {
         return (rhs_state <= max_rhs[lhs_state] && rhs_state >= min_rhs[lhs_state] && lhs_state <= max_lhs[rhs_state] && lhs_state >= min_lhs[rhs_state]) ;
     };
 
@@ -96,22 +98,27 @@ Nfa mata::nfa::algorithms::product(
         max_lhs = std::vector<State>(rhs.num_of_states(), 0);
     }
 
-    auto product_contains = [&product_matrix,&product_vec_map,&large_product,&are_in_range](State lhs_state, State rhs_state) {
+    auto product_contains = [&](State lhs_state, State rhs_state) {
         if (!large_product)
             return product_matrix[lhs_state][rhs_state] != Limits::max_state;
-        else
+        else {
             return are_in_range(lhs_state,rhs_state) &&
                           product_vec_map[lhs_state].find(rhs_state) != product_vec_map[lhs_state].end();
+            //bool inrange = are_in_range(lhs_state,rhs_state);
+            //if (inrange) hits++; else misses++;
+            //return inrange &&
+            //              product_vec_map[lhs_state].find(rhs_state) != product_vec_map[lhs_state].end();
+        }
     };
 
-    auto get_product_state = [&product_matrix,&product_vec_map,&large_product](State lhs_state, State rhs_state) {
+    auto get_product_state = [&](State lhs_state, State rhs_state) {
         if (!large_product)
             return product_matrix[lhs_state][rhs_state];
         else
             return product_vec_map[lhs_state][rhs_state];
     };
 
-    auto insert_product_state = [&product_matrix,&product_vec_map,product_map,&large_product,&update_ranges](State lhs_state, State rhs_state, State product_state) {
+    auto insert_product_state = [&](State lhs_state, State rhs_state, State product_state) {
         if (!large_product)
             product_matrix[lhs_state][rhs_state] = product_state;
         else {
@@ -128,7 +135,7 @@ Nfa mata::nfa::algorithms::product(
  * @param[in] pair_to_process Currently processed pair of original states.
  * @param[in] new_product_symbol_post State transitions to add to the product.
  */
-    auto add_product_symbol_post = [&product,&get_product_state](const State lhs_source, const State rhs_source, SymbolPost& new_product_symbol_post)
+    auto add_product_symbol_post = [&](const State lhs_source, const State rhs_source, SymbolPost& new_product_symbol_post)
     {
         if (new_product_symbol_post.empty()) { return; }
 
@@ -156,8 +163,7 @@ Nfa mata::nfa::algorithms::product(
  * @param[in] rhs_target Target state in NFA @c rhs.
  * @param[out] product_symbol_post Transitions of the product state.
  */
-    auto create_product_state_and_move = [&product, &pairs_to_process, &product_contains, &get_product_state, &insert_product_state, &final_condition]
-            (const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
+    auto create_product_state_and_move = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
     {
         State product_target;
         if ( !product_contains(lhs_target,rhs_target ) )
@@ -226,7 +232,6 @@ Nfa mata::nfa::algorithms::product(
                         create_product_state_and_move(lhs_target, rhs_target, product_symbol_post);
                     }
                 }
-                //add_product_symbol_post(product, pair_to_state, lhs_source, rhs_source, product_symbol_post);
                 StatePost &product_state_post{product.delta.mutable_state_post(get_product_state(lhs_source,rhs_source))};
                 product_state_post.push_back(std::move(product_symbol_post));
             }
@@ -263,7 +268,7 @@ Nfa mata::nfa::algorithms::product(
             }
         }
     }
-
+    //std::cout<<"hits = "<<hits<<", misses = "<<misses<<std::endl;
     return product;
 } // intersection().
 

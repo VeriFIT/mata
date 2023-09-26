@@ -91,7 +91,7 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 /**
  * Universality checking based on subset construction with antichain.
- * @param[in] aut Automaton which universality is checked
+ * @param[in] aut Automaton which universality is checke
  * @param[in] alphabet Alphabet of the automaton
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the automaton is universal, otherwise false.
@@ -103,16 +103,16 @@ Simlib::Util::BinaryRelation compute_relation(
         const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
 
 /**
- * @brief Compute intersection of two NFAs with a possibility of using multiple epsilons.
+ * @brief Compute product of two NFAs, final condition is to be specified, with a possibility of using multiple epsilons.
  *
- * @param[in] lhs_source First NFA to compute intersection for.
+ * @param[in] lhs First NFA to compute intersection for.
  * @param[in] rhs Second NFA to compute intersection for.
- * @param[in] preserve_epsilon Whether to compute intersection preserving epsilon transitions.
- * @param[in] epsilons Set of symbols to be considered as epsilons
+ * @param[in] first_epsilons The smallest epsilon.
+ * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-Nfa product(const Nfa& lhs_source, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
+Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
             const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**

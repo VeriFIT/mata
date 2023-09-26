@@ -43,7 +43,9 @@ int main(int argc, char *argv[]) {
     TIME_BEGIN(trim);
     intersect_aut.trim();
     TIME_END(trim);
-    std::cout<<"states: "<<intersect_aut.num_of_states()<<std::endl;
+    std::cout<<"lhs states: "<<lhs.num_of_states()<<std::endl;
+    std::cout<<"lhs states: "<<rhs.num_of_states()<<std::endl;
+    std::cout<<"prod states: "<<intersect_aut.num_of_states()<<std::endl;
 
     return EXIT_SUCCESS;
 }

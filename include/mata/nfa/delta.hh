@@ -123,7 +123,7 @@ public:
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
     const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
 
-    //returns an iterator to the smallest epsilon, or end() if there is no epsilon
+    ///returns an iterator to the smallest epsilon, or end() if there is no epsilon
     const_iterator first_epsilon_it(Symbol first_epsilon) const;
 
 
