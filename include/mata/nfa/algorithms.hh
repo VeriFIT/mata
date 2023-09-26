@@ -109,7 +109,9 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[in] rhs Second NFA to compute intersection for.
  * @param[in] first_epsilons The smallest epsilon.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
- * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states.
+ * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
+ *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
+ *   because this one is too slow.
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)> && final_condition,
