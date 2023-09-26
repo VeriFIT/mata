@@ -25,8 +25,8 @@ using namespace mata::nfa;
 namespace {
 
 using ProductMap = std::unordered_map<std::pair<State,State>,State>;
-using ProductMatrix = std::vector<std::vector<State>>;
-using ProductVecMap = std::vector<std::unordered_map<State,State>>;
+using MatrixProductStorage = std::vector<std::vector<State>>;
+using VecMapProductStorage = std::vector<std::unordered_map<State,State>>;
 //Unordered map seems to be faster than ordered map here, but still very much slower than matrix.
 
 } // Anonymous namespace.
@@ -58,34 +58,34 @@ Nfa mata::nfa::algorithms::product(
     // TODO: where to put this magical constant? It should not be here.
     const bool large_product = lhs.num_of_states() * rhs.num_of_states() > 50000000;
 
-    ProductMatrix product_matrix;
-    ProductVecMap product_vec_map;
+    MatrixProductStorage matrix_product_storage;
+    VecMapProductStorage vec_map_product_storage;
 
     //Initialize the storage, according to the number of possible state pairs.
     if (!large_product)
-        product_matrix = ProductMatrix(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
+        matrix_product_storage = MatrixProductStorage(lhs.num_of_states(), std::vector<State>(rhs.num_of_states(), Limits::max_state));
     else
-        product_vec_map = ProductVecMap(lhs.num_of_states());
+        vec_map_product_storage = VecMapProductStorage(lhs.num_of_states());
 
-    auto product_contains = [&](State lhs_state, State rhs_state) {
+    auto product_storage_contains = [&](State lhs_state, State rhs_state) {
         if (!large_product)
-            return product_matrix[lhs_state][rhs_state] != Limits::max_state;
+            return matrix_product_storage[lhs_state][rhs_state] != Limits::max_state;
         else
-            return product_vec_map[lhs_state].find(rhs_state) != product_vec_map[lhs_state].end();
+            return vec_map_product_storage[lhs_state].find(rhs_state) != vec_map_product_storage[lhs_state].end();
     };
 
-    auto get_product_state = [&](State lhs_state, State rhs_state) {
+    auto get_state_from_product_storage = [&](State lhs_state, State rhs_state) {
         if (!large_product)
-            return product_matrix[lhs_state][rhs_state];
+            return matrix_product_storage[lhs_state][rhs_state];
         else
-            return product_vec_map[lhs_state][rhs_state];
+            return vec_map_product_storage[lhs_state][rhs_state];
     };
 
-    auto insert_product_state = [&](State lhs_state, State rhs_state, State product_state) {
+    auto insert_to_product_storage = [&](State lhs_state, State rhs_state, State product_state) {
         if (!large_product)
-            product_matrix[lhs_state][rhs_state] = product_state;
+            matrix_product_storage[lhs_state][rhs_state] = product_state;
         else
-            product_vec_map[lhs_state][rhs_state] = product_state;
+            vec_map_product_storage[lhs_state][rhs_state] = product_state;
         if (product_map != nullptr)
             (*product_map)[std::pair<State,State>(lhs_state,rhs_state)] = product_state;
     };
@@ -100,7 +100,7 @@ Nfa mata::nfa::algorithms::product(
     {
         if (new_product_symbol_post.empty()) { return; }
 
-        State product_source = get_product_state(lhs_source,rhs_source);
+        State product_source = get_state_from_product_storage(lhs_source, rhs_source);
 
         StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
         if (product_state_post.empty() || new_product_symbol_post.symbol > product_state_post.back().symbol) {
@@ -127,11 +127,11 @@ Nfa mata::nfa::algorithms::product(
     auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
     {
         State product_target;
-        if ( !product_contains(lhs_target,rhs_target ) )
+        if ( !product_storage_contains(lhs_target, rhs_target ) )
         {
             product_target = product.add_state();
 
-            insert_product_state(lhs_target,rhs_target, product_target);
+            insert_to_product_storage(lhs_target,rhs_target, product_target);
 
             pairs_to_process.push_back(lhs_target);
             pairs_to_process.push_back(rhs_target);
@@ -140,7 +140,7 @@ Nfa mata::nfa::algorithms::product(
                 product.final.insert(product_target);
             }
         } else {
-            product_target = get_product_state(lhs_target,rhs_target);
+            product_target = get_state_from_product_storage(lhs_target, rhs_target);
         }
         //TODO: would push_back and sort at the end be faster?
         product_symbol_post.insert(product_target);
@@ -152,7 +152,7 @@ Nfa mata::nfa::algorithms::product(
             // Update product with initial state pairs.
             const State product_initial_state = product.add_state();
 
-            insert_product_state(lhs_initial_state,rhs_initial_state,product_initial_state);
+            insert_to_product_storage(lhs_initial_state,rhs_initial_state,product_initial_state);
 
             pairs_to_process.push_back(lhs_initial_state);
             pairs_to_process.push_back(rhs_initial_state);
@@ -193,7 +193,7 @@ Nfa mata::nfa::algorithms::product(
                         create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                     }
                 }
-                StatePost &product_state_post{product.delta.mutable_state_post(get_product_state(lhs_source,rhs_source))};
+                StatePost &product_state_post{product.delta.mutable_state_post(get_state_from_product_storage(lhs_source, rhs_source))};
                 product_state_post.push_back(std::move(product_symbol_post));
             }
             else
