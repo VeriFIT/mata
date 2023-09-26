@@ -469,7 +469,7 @@ def test_intersection_preserving_epsilon_transitions():
     b.add_transition(6, ord('a'), 9)
     b.add_transition(6, ord('b'), 7)
 
-    result, product_map = mata_nfa.intersection_with_product_map(a, b, True)
+    result, product_map = mata_nfa.intersection_with_product_map(a, b)
 
     # Check states.
     assert result.num_of_states() == 13
@@ -496,7 +496,7 @@ def test_intersection_preserving_epsilon_transitions():
     assert len(result.final_states) == 4
 
     # Check transitions.
-    assert result.get_num_of_transitions() == 15
+    assert result.get_num_of_transitions() == 14
 
     assert result.has_transition(product_map[(0, 0)], mata_nfa.epsilon(), product_map[(1, 0)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
@@ -519,8 +519,8 @@ def test_intersection_preserving_epsilon_transitions():
 
     assert result.has_transition(product_map[(2, 5)], mata_nfa.epsilon(), product_map[(3, 5)])
     assert result.has_transition(product_map[(2, 5)], mata_nfa.epsilon(), product_map[(2, 6)])
-    assert result.has_transition(product_map[(2, 5)], mata_nfa.epsilon(), product_map[(3, 6)])
-    assert len(result.get_trans_from_state_as_sequence(product_map[(2, 5)])) == 3
+    assert not result.has_transition(product_map[(2, 5)], mata_nfa.epsilon(), product_map[(3, 6)])
+    assert len(result.get_trans_from_state_as_sequence(product_map[(2, 5)])) == 2
 
     assert result.has_transition(product_map[(3, 5)], ord('a'), product_map[(5, 8)])
     assert result.has_transition(product_map[(3, 5)], mata_nfa.epsilon(), product_map[(3, 6)])

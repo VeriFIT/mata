@@ -127,6 +127,7 @@ def get_version():
             return version_handle.read().split()[0]
     else:
         version, _ = run_safely_external_command("git describe --tags --abbrev=0 HEAD")
+        print(version) 
         assert re.match(r"\d+\.\d+\.\d+(.*)", version)
         return version.strip()
 
