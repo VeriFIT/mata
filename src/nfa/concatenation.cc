@@ -32,6 +32,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
         return st + n;
     };
 
+    this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
 
     // set accepting states

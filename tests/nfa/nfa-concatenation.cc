@@ -711,6 +711,25 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
         CHECK(!result.is_lang_empty());
         // TODO: Add more checks.
     }
+
+    SECTION("Delta smaller than states") {
+        Nfa lhs{};
+        Nfa rhs{};
+        
+        lhs.delta.add(0, 65, 5);
+        lhs.initial.insert(0);
+        lhs.initial.insert(7);
+        lhs.final.insert(5);
+        lhs.final.insert(7);
+
+        rhs.delta.add(0, 65, 7);
+        rhs.initial.insert(0);
+        rhs.final.insert(7);
+
+        Nfa result = lhs.concatenate(rhs);
+        CHECK(!result.is_lang_empty());
+    }
+
 }
 
 TEST_CASE("Concat_inplace performance", "[.profiling]") {
