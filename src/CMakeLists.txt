@@ -4,7 +4,6 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINAR
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	alphabet.cc
-	afa/afa.cc
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
 	mintermization.cc

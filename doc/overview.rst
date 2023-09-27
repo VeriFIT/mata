@@ -5,5 +5,3 @@ Supported Classes of Automata
 -----------------------------
 
 .. doxygenstruct:: mata::nfa::Nfa
-
-.. doxygenstruct:: mata::afa::Afa

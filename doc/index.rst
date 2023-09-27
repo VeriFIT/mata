@@ -13,7 +13,6 @@ Welcome to automata-library's documentation!
    introduction
    overview
    nfa
-   afa
 
 
 Indices and tables
