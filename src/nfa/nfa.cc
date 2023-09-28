@@ -243,8 +243,11 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  * @return BoolVector
+ *
+ * If stop_at_first_useful_state is true, then the algo stops at the first found useful state.
+ * This is used at emptiness test.
  */
-BoolVector Nfa::get_useful_states() const {
+BoolVector Nfa::get_useful_states(bool stop_at_first_useful_state) const {
     BoolVector useful(this->num_of_states(),false);
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::deque<State> program_stack;
@@ -273,6 +276,8 @@ BoolVector Nfa::get_useful_states() const {
             tarjan_stack.push_back(act_state);
             if(this->final.contains(act_state)) {
                 useful[act_state] = true;
+                if (stop_at_first_useful_state)
+                    return useful;
             }
         } else { // return from the recursive call
             State act_succ = act_state_data.get_curr_succ();

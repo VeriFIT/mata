@@ -815,7 +815,7 @@ def union(Nfa lhs, Nfa rhs):
     )
     return result
 
-def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
+def intersection(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     """Performs intersection of lhs and rhs.
 
     Supports epsilon symbols when preserve_epsilon is set to True.
@@ -827,18 +827,18 @@ def intersection(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
 
     Automata must share alphabets.
 
-    :param preserve_epsilon: Whether to compute intersection preserving epsilon transitions.
     :param Nfa lhs: First automaton.
     :param Nfa rhs: Second automaton.
+    :param Symbol first_epsilon: the smallest epsilon.
     :return: Intersection of lhs and rhs.
     """
     result = Nfa()
     mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon, NULL
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, NULL
     )
     return result
 
-def intersection_with_product_map(Nfa lhs, Nfa rhs, preserve_epsilon: bool = False):
+def intersection_with_product_map(Nfa lhs, Nfa rhs, Symbol first_epsilon = CEPSILON):
     """Performs intersection of lhs and rhs.
 
     Supports epsilon symbols when preserve_epsilon is set to True.
@@ -858,9 +858,7 @@ def intersection_with_product_map(Nfa lhs, Nfa rhs, preserve_epsilon: bool = Fal
     result = Nfa()
     cdef umap[pair[State, State], State] c_product_map
     mata_nfa.c_intersection(
-        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), preserve_epsilon,
-        &c_product_map
-    )
+        result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get()), first_epsilon, &c_product_map)
     return result, {tuple(k): v for k, v in c_product_map}
 
 def concatenate(Nfa lhs, Nfa rhs, use_epsilon: bool = False) -> Nfa:

@@ -32,10 +32,11 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
+    TIME_BEGIN(intersection);
+    Nfa intersect_aut = intersection(rhs, rhs);
+    TIME_END(intersection);
     TIME_BEGIN(emptiness_check);
-    Nfa intersect_aut = intersection(lhs, rhs);
     intersect_aut.is_lang_empty();
     TIME_END(emptiness_check);
-
     return EXIT_SUCCESS;
 }

@@ -516,6 +516,16 @@ bool mata::nfa::Nfa::is_prfx_in_lang(const Run& run) const {
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
+    //TOOD: hot fix for performance reasons for TACAS.
+    // Perhaps make the get_useful_states return a witness on demand somehow.
+    if (!cex) {
+        BoolVector useful_states = get_useful_states(true);
+        for (State is_state_useful: useful_states)
+            if (is_state_useful)
+                return false;
+        return true;
+    }
+
     std::list<State> worklist(initial.begin(), initial.end());
     std::unordered_set<State> processed(initial.begin(), initial.end());
 
