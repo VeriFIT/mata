@@ -57,7 +57,7 @@ Nfa mata::nfa::algorithms::product(
     std::deque<State> worklist{};
 
     //The largest matrix (product_matrix) of pairs of states we are brave enough to allocate.
-    // Let's way we are fine with allocating large_product * (about 8 Bytes) space.
+    // Let's say we are fine with allocating large_product * (about 8 Bytes) space.
     // So ten million cells is close to 100 MB.
     // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (product_vec_map).
     // The unordered_map seems to be about twice slower.
