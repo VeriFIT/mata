@@ -80,6 +80,13 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
  * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
  *
  * Automata must share alphabets.
+ *
+ * @param[out] res The resulting intersection NFA.
+ * @param[in] lhs Input NFA.
+ * @param[in] rhs Input NFA.
+ * @param[in] first_epsilon smallest epsilon.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
 inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
