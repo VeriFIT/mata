@@ -58,8 +58,8 @@ Nfa mata::nfa::algorithms::product(
     // So ten million cells is close to 100 MB.
     // If the number is larger, then we do not allocate a matrix, but use a vector of unordered maps (product_vec_map).
     // The unordered_map seems to be about twice slower.
-    //constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 50'000'000;
-    constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 0;
+    constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 50'000'000;
+    //constexpr size_t MAX_PRODUCT_MATRIX_SIZE = 0;
     const bool large_product = lhs.num_of_states() * rhs.num_of_states() > MAX_PRODUCT_MATRIX_SIZE;
     assert(lhs.num_of_states() < Limits::max_state);
     assert(rhs.num_of_states() < Limits::max_state);
