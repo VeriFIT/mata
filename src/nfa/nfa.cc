@@ -163,8 +163,7 @@ namespace {
         TarjanNodeData() = default;
 
         TarjanNodeData(State q, const Delta & delta, unsigned long index)
-            : current_move(delta[q].moves().begin()), end_move(delta[q].moves().end()), index(index), lowlink(index), initilized(true), on_stack(true) {
-        };
+            : current_move(delta[q].moves().begin()), end_move(delta[q].moves().end()), index(index), lowlink(index), initilized(true), on_stack(true) {};
     };
 };
 
