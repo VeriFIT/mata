@@ -29,31 +29,14 @@ int main(int argc, char *argv[]) {
     Nfa lhs = automata[0];
     Nfa rhs = automata[1];
 
-
     // Setting precision of the times to fixed points and 4 decimal places
+    std::cout << std::fixed << std::setprecision(4);
 
     TIME_BEGIN(intersection);
     Nfa intersect_aut = intersection(rhs, rhs);
     TIME_END(intersection);
-    TIME_BEGIN(uni);
-    Nfa uni_aut = uni(intersect_aut,intersect_aut);
-    TIME_BEGIN(is_lang_empty1);
-    uni_aut.is_lang_empty();
-    TIME_END(is_lang_empty1);
-    TIME_BEGIN(is_lang_empty2);
-    uni_aut.is_lang_empty();
-    TIME_END(is_lang_empty2);
-    TIME_BEGIN(get_useful_states1);
-    uni_aut.get_useful_states();
-    TIME_END(get_useful_states1);
-    TIME_BEGIN(get_useful_states2);
-    uni_aut.get_useful_states();
-    TIME_END(get_useful_states2);
-    //intersect_aut.final.clear();
-    TIME_BEGIN(trim);
-    uni_aut.trim();
-    TIME_END(trim);
-    std::cout<<"trimmed states: "<<intersect_aut.num_of_states()<<std::endl;
-
+    TIME_BEGIN(emptiness_check);
+    intersect_aut.is_lang_empty();
+    TIME_END(emptiness_check);
     return EXIT_SUCCESS;
 }
