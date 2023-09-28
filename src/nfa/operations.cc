@@ -634,6 +634,29 @@ Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
     return union_nfa;
 }
 
+Nfa& Nfa::uni(const Nfa& aut) {
+    size_t n = this->num_of_states();
+    auto upd_fnc = [&](State st) {
+        return st + n;
+    };
+
+    this->delta.allocate(n);
+    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+
+    // set accepting states
+    this->final.reserve(n+aut.num_of_states());
+    for(const State& aut_fin : aut.final) {
+        this->final.insert(upd_fnc(aut_fin));
+    }
+    // set unitial states
+    this->initial.reserve(n+aut.num_of_states());
+    for(const State& aut_ini : aut.initial) {
+        this->initial.insert(upd_fnc(aut_ini));
+    }
+    
+    return *this;
+}
+
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
