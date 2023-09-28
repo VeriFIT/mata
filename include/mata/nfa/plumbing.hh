@@ -19,7 +19,7 @@
 #include "nfa.hh"
 #include "builder.hh"
 
-using namespace Mata::Nfa::Builder;
+using namespace mata::nfa::builder;
 
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
@@ -27,7 +27,7 @@ using namespace Mata::Nfa::Builder;
  * In particular, this mostly includes operations and checks, that do not return Automaton,
  * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
  */
-namespace Mata::Nfa::Plumbing {
+namespace mata::nfa::plumbing {
 
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     element_set->clear();
@@ -38,9 +38,6 @@ inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
         }
     }
 }
-
-/// Make the transition relation complete.
-inline void make_complete(Nfa* aut, const Alphabet& alphabet, State sink_state) { make_complete(*aut, alphabet, sink_state); }
 
 inline void complement(
         Nfa*               result,
@@ -56,9 +53,9 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Nfa* result, const Nfa &aut, bool trim_result = true, StateRenaming *state_renaming = nullptr,
+inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = nullptr,
                    const ParameterMap& params = {{ "algorithm", "simulation"}}) {
-    *result = reduce(aut, trim_result, state_renaming, params);
+    *result = reduce(aut, state_renaming, params);
 }
 
 inline void revert(Nfa* result, const Nfa& aut) { *result = revert(aut); }
@@ -71,7 +68,7 @@ void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nul
                NameStateMap* state_map = nullptr) {
     OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) { alphabet = &tmp_alphabet; }
-    *result = Builder::construct(parsed, alphabet, state_map);
+    *result = builder::construct(parsed, alphabet, state_map);
 }
 
 inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
@@ -104,6 +101,6 @@ inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsil
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
-} // namespace Mata::Nfa::Plumbing.
+} // namespace mata::nfa::Plumbing.
 
 #endif // MATA_NFA_PLUMBING_HH_

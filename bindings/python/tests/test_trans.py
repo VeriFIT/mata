@@ -98,22 +98,22 @@ def test_transitions():
     t4 = mata_nfa.Transition(2, 2, 2)
 
     # Test adding transition.
-    assert lhs.get_num_of_trans() == 0
+    assert lhs.get_num_of_transitions() == 0
     lhs.add_transition(0, 0, 0)
-    assert lhs.get_num_of_trans() == 1
+    assert lhs.get_num_of_transitions() == 1
     assert lhs.has_transition(t1.source, t1.symbol, t1.target)
 
     lhs.add_transition_object(t2)
-    assert lhs.get_num_of_trans() == 2
+    assert lhs.get_num_of_transitions() == 2
     assert lhs.has_transition(t2.source, t2.symbol, t2.target)
 
     # Test adding add-hoc transition.
     lhs.add_transition(1, 1, 1)
-    assert lhs.get_num_of_trans() == 3
+    assert lhs.get_num_of_transitions() == 3
     assert lhs.has_transition(t3.source, t3.symbol, t3.target)
     assert not lhs.has_transition(2, 2, 2)
     lhs.add_transition_object(t4)
-    assert lhs.get_num_of_trans() == 4
+    assert lhs.get_num_of_transitions() == 4
     assert lhs.has_transition(2, 2, 2)
 
     # Test that transitions are not duplicated.

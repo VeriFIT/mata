@@ -4,12 +4,12 @@
 
 #include <iostream>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main() {
     Nfa aut(10);
 
-    std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
+    std::cout << "Language empty: " << aut.is_lang_empty() << "\n";
 
     aut.initial = {0, 2};
     aut.final = {4};
@@ -29,5 +29,5 @@ int main() {
     aut.delta.add(4, 0, 4);
     aut.delta.add(4, 2, 8);
 
-    std::cout << "Language empty: " << is_lang_empty(aut) << "\n";
+    std::cout << "Language empty: " << aut.is_lang_empty() << "\n";
 }

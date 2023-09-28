@@ -1,0 +1,5 @@
+nfa:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/nfa-operations $1
+
+unary:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/unary-operations $1

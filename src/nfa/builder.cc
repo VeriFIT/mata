@@ -5,11 +5,11 @@
 
 #include <fstream>
 
-using namespace Mata::Nfa;
-using Mata::Nfa::Nfa;
-using Mata::Symbol;
+using namespace mata::nfa;
+using mata::nfa::Nfa;
+using mata::Symbol;
 
-Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet* alphabet, NameStateMap* state_map) {
+Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -94,7 +94,7 @@ Nfa Builder::construct(const Mata::Parser::ParsedSection& parsec, Mata::Alphabet
     return aut;
 } // construct().
 
-Nfa Builder::construct(const Mata::IntermediateAut& inter_aut, Mata::Alphabet* alphabet, NameStateMap* state_map) {
+Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
 
@@ -173,7 +173,16 @@ Nfa Builder::construct(const Mata::IntermediateAut& inter_aut, Mata::Alphabet* a
     return aut;
 } // construct().
 
-Nfa Builder::create_single_word_nfa(const std::vector<Symbol>& word) {
+void builder::construct(
+        mata::nfa::Nfa *result,
+        const mata::IntermediateAut &inter_aut,
+        mata::Alphabet *alphabet,
+        mata::nfa::builder::NameStateMap *state_map
+) {
+    *result = construct(inter_aut, alphabet, state_map);
+}
+
+Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     const size_t word_size{ word.size() };
     Nfa nfa{ word_size + 1, { 0 }, { word_size } };
 
@@ -183,7 +192,7 @@ Nfa Builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     return nfa;
 }
 
-Nfa Builder::create_single_word_nfa(const std::vector<std::string>& word, Mata::Alphabet *alphabet) {
+Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
     if (!alphabet) {
         alphabet = new OnTheFlyAlphabet{ word };
     }
@@ -196,21 +205,21 @@ Nfa Builder::create_single_word_nfa(const std::vector<std::string>& word, Mata::
     return nfa;
 }
 
-Nfa Builder::create_empty_string_nfa() {
+Nfa builder::create_empty_string_nfa() {
     return Nfa{ 1, StateSet{ 0 }, StateSet{ 0 } };
 }
 
-Nfa Builder::create_sigma_star_nfa(Mata::Alphabet* alphabet) {
+Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
     Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
-    for (const Mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
+    for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, 0);
     }
     return nfa;
 }
 
-Nfa Builder::parse_from_mata(std::istream& nfa_stream) {
+Nfa builder::parse_from_mata(std::istream& nfa_stream) {
     const std::string nfa_str = "NFA";
-    Parser::Parsed parsed{ Parser::parse_mf(nfa_stream) };
+    parser::Parsed parsed{ parser::parse_mf(nfa_stream) };
     if (parsed.size() != 1) {
         throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
             + "'. Required is '1'.\n");
@@ -223,7 +232,7 @@ Nfa Builder::parse_from_mata(std::istream& nfa_stream) {
     return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
 }
 
-Nfa Builder::parse_from_mata(const std::filesystem::path& nfa_file) {
+Nfa builder::parse_from_mata(const std::filesystem::path& nfa_file) {
     std::ifstream file_stream{ nfa_file };
     if (!file_stream) {
         throw std::runtime_error("Could not open file \'" + nfa_file.string() + "'\n");
@@ -239,7 +248,7 @@ Nfa Builder::parse_from_mata(const std::filesystem::path& nfa_file) {
     return nfa;
 }
 
-Nfa Builder::parse_from_mata(const std::string& nfa_in_mata) {
+Nfa builder::parse_from_mata(const std::string& nfa_in_mata) {
     std::istringstream nfa_stream(nfa_in_mata);
     return parse_from_mata(nfa_stream);
 }

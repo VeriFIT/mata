@@ -66,13 +66,13 @@
 
 #include <cassert>
 
-#include "util.hh"
+#include "utils.hh"
 #include "ord-vector.hh"
 
-namespace Mata {
+namespace mata {
 
 // Ordered vector.
-template<typename T> using OrdVec = Mata::Util::OrdVector<T>;
+template<typename T> using OrdVec = mata::utils::OrdVector<T>;
 
 // A closed set could be upward-closed or downward-closed.
 enum class ClosedSetType { upward_closed_set, downward_closed_set };
@@ -326,7 +326,7 @@ void ClosedSet<T>::insert(const Node& node) {
     }
 
     for(auto element : to_erase) {
-        antichain_.remove(element);
+        antichain_.erase(element);
     }
     antichain_.insert(node);
 } // insert }}}
@@ -361,9 +361,11 @@ ClosedSet<T> ClosedSet<T>::intersection(const ClosedSet<T>& rhs) const {
     // Iterates through all the tuples from Antichan1 X Antichan2
     // and creates an union of them
     if(type_ == ClosedSetType::upward_closed_set) {
-        for(auto element1 : antichain_) {
-            for(auto element2 : rhs.antichain()) {
-               result.insert(element1.Union(element2));
+        for(const Node& element1 : antichain_) {
+            for(const Node& element2 : rhs.antichain()) {
+                Node tmp = element1;
+                tmp.insert(element2);
+                result.insert(tmp);
             }
         }
     }
@@ -458,6 +460,6 @@ ClosedSet<T> ClosedSet<T>::complement() const {
     return result;
 } // complement }}}
 
-} // namespace Mata.
+} // namespace mata.
 
 #endif /* MATA_CLOSED_SET_HH_ */

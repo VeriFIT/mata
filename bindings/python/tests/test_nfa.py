@@ -16,7 +16,7 @@ def test_adding_states():
     lhs = mata_nfa.Nfa(5)
 
     # Test adding states
-    assert lhs.size() == 5
+    assert lhs.num_of_states() == 5
     assert not lhs.has_initial_state(0)
     assert not lhs.has_final_state(0)
     lhs.make_initial_state(0)
@@ -38,25 +38,25 @@ def test_adding_states():
     assert lhs.has_final_state(0)
 
     rhs = mata_nfa.Nfa()
-    assert rhs.size() == 0
+    assert rhs.num_of_states() == 0
     state = rhs.add_new_state()
     assert state == 0
-    assert rhs.size() == 1
+    assert rhs.num_of_states() == 1
     state = rhs.add_new_state()
     assert state == 1
-    assert rhs.size() == 2
+    assert rhs.num_of_states() == 2
 
     rhs.add_state(9)
-    assert rhs.size() == 10
+    assert rhs.num_of_states() == 10
     for i in range(0, 10):
         assert rhs.is_state(i)
 
-    assert rhs.size() == 10
+    assert rhs.num_of_states() == 10
     rhs.clear()
-    assert rhs.size() == 0
+    assert rhs.num_of_states() == 0
 
     rhs.add_state(0)
-    assert rhs.size() == 1
+    assert rhs.num_of_states() == 1
     assert rhs.is_state(0)
     assert not rhs.is_state(1)
 
@@ -64,7 +64,7 @@ def test_adding_states():
         rhs.add_state(-10)
 
     rhs.add_state(11)
-    assert rhs.size() == 12
+    assert rhs.num_of_states() == 12
     assert rhs.is_state(11)
     assert not rhs.is_state(12)
 
@@ -185,16 +185,14 @@ def test_post(binary_alphabet):
 
 
 def test_determinisation(nfa_two_states_uni, dfa_one_state_uni):
-    """
-    Tests determinisation
-    """
+    """Tests determinisation."""
     lhs = nfa_two_states_uni
-    assert not mata_nfa.is_deterministic(lhs)
+    assert not lhs.is_deterministic()
     rhs = dfa_one_state_uni
-    assert mata_nfa.is_deterministic(rhs)
+    assert rhs.is_deterministic()
 
     chs, sm_map = mata_nfa.determinize_with_subset_map(lhs)
-    assert mata_nfa.is_deterministic(chs)
+    assert chs.is_deterministic()
     assert sm_map == {(0,): 0, (0, 1): 1}
 
 
@@ -209,15 +207,11 @@ def test_forward_reach_states(
 def test_get_word_for_path(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2]) == ([1, 1], True)
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 0]) == ([], False)
-    assert mata_nfa.get_word_for_path(fa_one_divisible_by_two, [0, 1, 2, 2]) == ([1, 1, 0], True)
-    assert mata_nfa.get_word_for_path(
-        fa_one_divisible_by_four, [0, 1, 2, 3, 4]
-    ) == ([1, 1, 1, 1], True)
-    assert mata_nfa.get_word_for_path(
-        fa_one_divisible_by_eight, [0, 1, 2, 3, 4, 5, 6, 7, 8]
-    ) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2]) == ([1, 1], True)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 0]) == ([], False)
+    assert fa_one_divisible_by_two.get_word_for_path([0, 1, 2, 2]) == ([1, 1, 0], True)
+    assert fa_one_divisible_by_four.get_word_for_path([0, 1, 2, 3, 4]) == ([1, 1, 1, 1], True)
+    assert fa_one_divisible_by_eight.get_word_for_path([0, 1, 2, 3, 4, 5, 6, 7, 8]) == ([1, 1, 1, 1, 1, 1, 1, 1], True)
 
 
 def test_encode_word():
@@ -227,7 +221,7 @@ def test_encode_word():
 
 def test_language_emptiness(fa_one_divisible_by_two):
     cex = mata_nfa.Run()
-    assert not mata_nfa.is_lang_empty(fa_one_divisible_by_two, cex)
+    assert not fa_one_divisible_by_two.is_lang_empty(cex)
     assert cex.path == [0, 1, 2]
     assert cex.word == [1, 1]
 
@@ -237,7 +231,7 @@ def test_language_emptiness(fa_one_divisible_by_two):
     lhs.add_transition(1, 0, 2)
     lhs.add_transition(2, 0, 3)
     cex = mata_nfa.Run()
-    assert mata_nfa.is_lang_empty(lhs, cex)
+    assert lhs.is_lang_empty(cex)
     assert cex.word == []
     assert cex.path == []
 
@@ -246,14 +240,14 @@ def test_universality(fa_one_divisible_by_two):
     alph = alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
-    assert mata_nfa.is_universal(fa_one_divisible_by_two, alph) == False
+    assert fa_one_divisible_by_two.is_universal(alph) == False
 
     l = mata_nfa.Nfa(1)
     l.make_initial_state(0)
     l.add_transition(0, 0, 0)
     l.add_transition(0, 1, 0)
     l.make_final_state(0)
-    assert mata_nfa.is_universal(l, alph) == True
+    assert l.is_universal(alph) == True
 
 
 def test_inclusion(
@@ -340,7 +334,7 @@ def test_concatenate():
 
     result = mata_nfa.concatenate(lhs, rhs)
 
-    assert not mata_nfa.is_lang_empty(result)
+    assert not result.is_lang_empty()
     shortest_words = mata_strings.get_shortest_words(result)
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
@@ -348,7 +342,7 @@ def test_concatenate():
     result = mata_nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.size() == 4
+    assert result.num_of_states() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -356,7 +350,7 @@ def test_concatenate():
     result, _, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
-    assert result.size() == 4
+    assert result.num_of_states() == 4
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
@@ -368,33 +362,33 @@ def test_completeness(
     alph = alphabets.OnTheFlyAlphabet()
     alph.translate_symbol("a")
     alph.translate_symbol("b")
-    assert mata_nfa.is_complete(fa_one_divisible_by_two, alph)
-    assert mata_nfa.is_complete(fa_one_divisible_by_four, alph)
-    assert mata_nfa.is_complete(fa_one_divisible_by_eight, alph)
+    assert fa_one_divisible_by_two.is_complete(alph)
+    assert fa_one_divisible_by_four.is_complete(alph)
+    assert fa_one_divisible_by_eight.is_complete(alph)
 
     l = mata_nfa.Nfa(1)
     l.make_initial_state(0)
     l.add_transition(0, 0, 0)
-    assert not mata_nfa.is_complete(l, alph)
+    assert not l.is_complete(alph)
     l.add_transition(0, 1, 0)
-    assert mata_nfa.is_complete(l, alph)
+    assert l.is_complete(alph)
 
     r = mata_nfa.Nfa(1)
     r.make_initial_state(0)
     r.add_transition(0, 0, 0)
-    assert not mata_nfa.is_complete(r, alph)
-    mata_nfa.make_complete(r, 1, alph)
-    assert mata_nfa.is_complete(r, alph)
+    assert not r.is_complete(alph)
+    r.make_complete(1, alph)
+    assert r.is_complete(alph)
 
 
 def test_in_language(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
-    assert mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
-    assert not mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1, 1])
+    assert fa_one_divisible_by_two.is_in_lang([1, 1])
+    assert not fa_one_divisible_by_two.is_in_lang([1, 1, 1])
 
-    assert mata_nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 1, 0])
-    assert not mata_nfa.is_prefix_in_lang(fa_one_divisible_by_four, [1, 1, 1, 0, 0])
+    assert fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 1, 0])
+    assert not fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 0, 0])
     assert not mata_nfa.accepts_epsilon(fa_one_divisible_by_four)
 
     lhs = mata_nfa.Nfa(2)
@@ -415,13 +409,13 @@ def test_union(
     alph.translate_symbol("a")
     alph.translate_symbol("b")
 
-    assert mata_nfa.is_in_lang(fa_one_divisible_by_two, [1, 1])
-    assert not mata_nfa.is_in_lang(fa_one_divisible_by_four, [1, 1])
+    assert fa_one_divisible_by_two.is_in_lang([1, 1])
+    assert not fa_one_divisible_by_four.is_in_lang([1, 1])
     uni = mata_nfa.union(fa_one_divisible_by_two, fa_one_divisible_by_four)
-    assert mata_nfa.is_in_lang(uni, [1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(uni, [1, 1, 1, 1, 1, 1, 1, 1, ])
+    assert uni.is_in_lang([1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1, 1, 1])
+    assert uni.is_in_lang([1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata_nfa.is_included(fa_one_divisible_by_two, uni, alph)
     assert mata_nfa.is_included(fa_one_divisible_by_four, uni, alph)
 
@@ -438,10 +432,10 @@ def test_intersection(
 
     inter, product_map = mata_nfa.intersection_with_product_map(fa_one_divisible_by_two, fa_one_divisible_by_four)
 
-    assert not mata_nfa.is_in_lang(inter, [1, 1])
-    assert mata_nfa.is_in_lang(inter, [1, 1, 1, 1])
-    assert not mata_nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1])
-    assert mata_nfa.is_in_lang(inter, [1, 1, 1, 1, 1, 1, 1, 1, ])
+    assert not inter.is_in_lang([1, 1])
+    assert inter.is_in_lang([1, 1, 1, 1])
+    assert not inter.is_in_lang([1, 1, 1, 1, 1, 1])
+    assert inter.is_in_lang([1, 1, 1, 1, 1, 1, 1, 1, ])
     assert mata_nfa.is_included(inter, fa_one_divisible_by_two, alph)
     assert mata_nfa.is_included(inter, fa_one_divisible_by_four, alph)
     assert mata_nfa.is_included(inter, fa_one_divisible_by_two)
@@ -478,7 +472,7 @@ def test_intersection_preserving_epsilon_transitions():
     result, product_map = mata_nfa.intersection_with_product_map(a, b, True)
 
     # Check states.
-    assert result.size() == 13
+    assert result.num_of_states() == 13
     assert result.is_state(product_map[(0, 0)])
     assert result.is_state(product_map[(1, 0)])
     assert result.is_state(product_map[(1, 1)])
@@ -502,7 +496,7 @@ def test_intersection_preserving_epsilon_transitions():
     assert len(result.final_states) == 4
 
     # Check transitions.
-    assert result.get_num_of_trans() == 15
+    assert result.get_num_of_transitions() == 15
 
     assert result.has_transition(product_map[(0, 0)], mata_nfa.epsilon(), product_map[(1, 0)])
     assert len(result.get_trans_from_state_as_sequence(product_map[(0, 0)])) == 1
@@ -554,9 +548,9 @@ def test_complement(
     alph.translate_symbol("b")
 
     res = mata_nfa.complement(fa_one_divisible_by_two, alph)
-    assert not mata_nfa.is_in_lang(res, [1, 1])
-    assert mata_nfa.is_in_lang(res, [1, 1, 1])
-    assert not mata_nfa.is_in_lang(res, [1, 1, 1, 1])
+    assert not res.is_in_lang([1, 1])
+    assert res.is_in_lang([1, 1, 1])
+    assert not res.is_in_lang([1, 1, 1, 1])
 
 
 def test_revert():
@@ -565,12 +559,12 @@ def test_revert():
     lhs.add_transition(0, 0, 1)
     lhs.add_transition(1, 1, 2)
     lhs.make_final_state(2)
-    assert mata_nfa.is_in_lang(lhs, [0, 1])
-    assert not mata_nfa.is_in_lang(lhs, [1, 0])
+    assert lhs.is_in_lang([0, 1])
+    assert not lhs.is_in_lang([1, 0])
 
     rhs = mata_nfa.revert(lhs)
-    assert not mata_nfa.is_in_lang(rhs, [0, 1])
-    assert mata_nfa.is_in_lang(rhs, [1, 0])
+    assert not rhs.is_in_lang([0, 1])
+    assert rhs.is_in_lang([1, 0])
 
 
 def test_removing_epsilon():
@@ -591,11 +585,11 @@ def test_minimize(
         fa_one_divisible_by_two, fa_one_divisible_by_four, fa_one_divisible_by_eight
 ):
     minimized = mata_nfa.minimize(fa_one_divisible_by_two)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_two.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_two.get_num_of_transitions()
     minimized = mata_nfa.minimize(fa_one_divisible_by_four)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_four.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_four.get_num_of_transitions()
     minimized = mata_nfa.minimize(fa_one_divisible_by_eight)
-    assert minimized.get_num_of_trans() <= fa_one_divisible_by_eight.get_num_of_trans()
+    assert minimized.get_num_of_transitions() <= fa_one_divisible_by_eight.get_num_of_transitions()
 
     lhs = mata_nfa.Nfa(11)
     lhs.make_initial_state(0)
@@ -604,10 +598,10 @@ def test_minimize(
         lhs.make_final_state(i)
     lhs.add_transition(10, 0, 10)
     lhs.make_final_state(10)
-    assert lhs.get_num_of_trans() == 11
+    assert lhs.get_num_of_transitions() == 11
 
     minimized = mata_nfa.minimize(lhs)
-    assert minimized.get_num_of_trans() == 1
+    assert minimized.get_num_of_transitions() == 1
 
 
 def test_to_dot():
@@ -661,12 +655,12 @@ def test_trim(prepare_automaton_a):
     assert len(nfa.final_states) == len(old_nfa.final_states)
 
     for word in mata_strings.get_shortest_words(old_nfa):
-        assert mata_nfa.is_in_lang(nfa, word)
+        assert nfa.is_in_lang(word)
 
     nfa.remove_final_state(2)  # '2' is the new final state in the earlier trimmed automaton.
     nfa.trim()
-    assert nfa.get_num_of_trans() == 0
-    assert nfa.size() == 0
+    assert nfa.get_num_of_transitions() == 0
+    assert nfa.num_of_states() == 0
 
 
 def test_get_one_letter_automaton(prepare_automaton_a):
@@ -676,8 +670,8 @@ def test_get_one_letter_automaton(prepare_automaton_a):
 
     one_letter_automaton = nfa.get_one_letter_aut()
 
-    assert one_letter_automaton.size() == nfa.size()
-    assert one_letter_automaton.get_num_of_trans() == 12
+    assert one_letter_automaton.num_of_states() == nfa.num_of_states()
+    assert one_letter_automaton.get_num_of_transitions() == 12
     assert one_letter_automaton.has_transition(1, abstract_symbol, 10)
     assert one_letter_automaton.has_transition(10, abstract_symbol, 7)
     assert not one_letter_automaton.has_transition(10, ord('a'), 7)
@@ -895,8 +889,8 @@ def test_reduce():
     nfa = mata_nfa.Nfa()
 
     # Test the reduction of an empty automaton.
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
-    assert result.get_num_of_trans() == 0
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
+    assert result.get_num_of_transitions() == 0
     assert len(result.initial_states) == 0
     assert len(result.final_states) == 0
 
@@ -904,17 +898,17 @@ def test_reduce():
     nfa.add_state(2)
     nfa.make_initial_state(1)
     nfa.make_final_state(2)
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
-    assert result.get_num_of_trans() == 0
-    assert result.size() == 2
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
+    assert result.get_num_of_transitions() == 0
+    assert result.num_of_states() == 2
     assert result.has_initial_state(state_map[1])
     assert result.has_final_state(state_map[2])
     assert state_map[1] == state_map[0]
     assert state_map[2] != state_map[0]
 
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, True)
-    assert result.get_num_of_trans() == 0
-    assert result.size() == 0
+    result, state_map = mata_nfa.reduce_with_state_map(nfa.trim())
+    assert result.get_num_of_transitions() == 0
+    assert result.num_of_states() == 0
 
     # Test the reduction of a bigger automaton.
     nfa.add_state(9)
@@ -936,8 +930,8 @@ def test_reduce():
     nfa.add_transition(9, ord('c'), 0)
     nfa.add_transition(0, ord('a'), 4)
 
-    result, state_map = mata_nfa.reduce_with_state_map(nfa, False)
-    assert result.size() == 6
+    result, state_map = mata_nfa.reduce_with_state_map(nfa)
+    assert result.num_of_states() == 6
     assert result.has_initial_state(state_map[1])
     assert result.has_initial_state(state_map[2])
     assert result.has_final_state(state_map[9])
@@ -1032,7 +1026,7 @@ def test_unify():
     assert nfa.has_transition(10, 1, 2)
 
 
-def test_get_epsilon_transitions():
+def test_epsilon_symbol_posts():
     nfa = mata_nfa.Nfa(10)
     nfa.make_initial_state(0)
     nfa.make_final_state(1)
@@ -1041,19 +1035,19 @@ def test_get_epsilon_transitions():
     nfa.add_transition(1, 2, 2)
     nfa.add_transition(1, mata_nfa.epsilon(), 2)
     nfa.add_transition(1, mata_nfa.epsilon(), 3)
-    epsilon_transitions = nfa.get_epsilon_transitions(1)
-    assert epsilon_transitions.symbol == mata_nfa.epsilon()
-    assert epsilon_transitions.targets == [2, 3]
+    epsilon_symbol_posts = nfa.epsilon_symbol_posts(1)
+    assert epsilon_symbol_posts.symbol == mata_nfa.epsilon()
+    assert epsilon_symbol_posts.targets == [2, 3]
 
     nfa.add_transition(0, 1, 2)
     nfa.add_transition(0, 2, 2)
     nfa.add_transition(0, 8, 5)
     nfa.add_transition(0, 8, 6)
-    epsilon_transitions = nfa.get_epsilon_transitions(0, 8)
-    assert epsilon_transitions.symbol == 8
-    assert epsilon_transitions.targets == [5, 6]
+    epsilon_symbol_posts = nfa.epsilon_symbol_posts(0, 8)
+    assert epsilon_symbol_posts.symbol == 8
+    assert epsilon_symbol_posts.targets == [5, 6]
 
-    assert nfa.get_epsilon_transitions(5) is None
+    assert nfa.epsilon_symbol_posts(5) is None
 
 
 def test_is_epsilon():

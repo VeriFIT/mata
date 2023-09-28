@@ -1,8 +1,0 @@
-nfa:
-  cmd: ./bin/nfa-operations $1
-
-binary:
-  cmd: ./bin/binary-operations $1 $2
-
-unary:
-  cmd: ./bin/unary-operations $1

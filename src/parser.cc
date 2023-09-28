@@ -16,7 +16,7 @@
  */
 
 #include "mata/parser/parser.hh"
-#include "mata/utils/util.hh"
+#include "mata/utils/utils.hh"
 
 #include <algorithm>
 #include <cstring>
@@ -24,9 +24,9 @@
 
 using std::tie;
 
-using Mata::Parser::Parsed;
-using Mata::Parser::ParsedSection;
-using Mata::Util::haskey;
+using mata::parser::Parsed;
+using mata::parser::ParsedSection;
+using mata::utils::haskey;
 
 // macro for debug prints in the parser
 // #define PARSER_DEBUG_PRINT_LN(x) { DEBUG_PRINT_LN(x) }
@@ -63,12 +63,10 @@ bool is_logical_operator(char ch)
  *
  * The function assumes that the stream does not span lines
  */
-std::string get_token_from_line(std::istream& input, bool* quoted)
-{ // {{{
+std::string get_token_from_line(std::istream& input, bool* quoted) {
 	assert(nullptr != quoted);
 
-	enum class TokenizerState
-	{
+	enum class TokenizerState {
 		INIT,
 		UNQUOTED,
 		QUOTED,
@@ -199,35 +197,35 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 	return result;
 } // tokenize_line(string) }}}
 
-std::vector<std::pair<std::string, bool>> split_tokens(const std::vector<std::pair<std::string, bool>>& tokens)
-{ // {{{
+std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
     std::vector<std::pair<std::string, bool>> result;
     for (const auto& token : tokens) {
         if (token.second) { // is quoted?
-            result.push_back(token);
+            result.push_back(std::move(token));
             continue;
         }
 
-        const std::string& token_string = token.first;
+        const std::string_view token_string = token.first;
         size_t last_operator = 0;
-        const size_t size = token_string.size();
-        for (size_t i = 0; i < size; ++i) {
+        for (size_t i = 0, token_string_size{ token_string.size() }; i < token_string_size; ++i) {
             if (is_logical_operator(token_string[i])) {
-                const std::string token_candidate = token_string.substr(last_operator, i - last_operator);
+                const std::string_view token_candidate = token_string.substr(last_operator, i - last_operator);
 
                 // there is token before logical operator (this is case of binary operators, e.g., a&b)
-                if (!token_candidate.empty())
+                if (!token_candidate.empty()) {
                     result.emplace_back(token_candidate, false);
+								}
                 result.emplace_back(std::string(1,token_string[i]), false);
-                last_operator = i+1;
+                last_operator = i + 1;
             }
         }
 
-        const size_t length = token_string.length();
+				const size_t length{ token_string.length() };
         if (last_operator == 0) {
-            result.push_back(token);
-        } else if (last_operator != length){ // operator was not last, we need parse rest of token
-            result.emplace_back(token_string.substr(last_operator, length-last_operator), false); }
+            result.emplace_back(std::move(token));
+        } else if (last_operator != length) { // operator was not last, we need parse rest of token
+            result.emplace_back(token_string.substr(last_operator, length-last_operator), false);
+        }
     }
 
     return result;
@@ -235,7 +233,7 @@ std::vector<std::pair<std::string, bool>> split_tokens(const std::vector<std::pa
 } // anonymous namespace
 
 
-Parsed Mata::Parser::parse_mf(
+Parsed mata::parser::parse_mf(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
@@ -244,7 +242,7 @@ Parsed Mata::Parser::parse_mf(
 } // parse_mf(std::string) }}}
 
 
-Parsed Mata::Parser::parse_mf(
+Parsed mata::parser::parse_mf(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -262,7 +260,7 @@ Parsed Mata::Parser::parse_mf(
 } // parse_mf(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_mf_section(
+ParsedSection mata::parser::parse_mf_section(
 	std::istream&  input,
 	bool           keepQuotes)
 { // {{{
@@ -351,7 +349,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 		    continue;
 		}
 
-		token_line = split_tokens(token_line);
+		token_line = split_tokens(std::move(token_line));
 
 		const std::string& maybe_key = token_line[0].first;
 		const bool& quoted = token_line[0].second;
@@ -389,7 +387,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 } // parse_mf_section(std::istream) }}}
 
 
-ParsedSection Mata::Parser::parse_mf_section(
+ParsedSection mata::parser::parse_mf_section(
 	const std::string&  input,
 	bool                keepQuotes)
 { // {{{
@@ -398,7 +396,7 @@ ParsedSection Mata::Parser::parse_mf_section(
 	return result;
 } // parse_mf_section(std::string) }}}
 
-const std::vector<std::string>& Mata::Parser::ParsedSection::operator[](const std::string& key) const {
+const std::vector<std::string>& mata::parser::ParsedSection::operator[](const std::string& key) const {
     auto it = this->dict.find(key);
     if (this->dict.end() == it) {
         assert(false);
@@ -408,7 +406,7 @@ const std::vector<std::string>& Mata::Parser::ParsedSection::operator[](const st
     return it->second;
 }
 
-bool Mata::Parser::ParsedSection::operator==(const ParsedSection& rhs) const {
+bool mata::parser::ParsedSection::operator==(const ParsedSection& rhs) const {
     return
         this->type == rhs.type &&
         this->dict == rhs.dict &&

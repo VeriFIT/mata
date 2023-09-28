@@ -26,7 +26,7 @@
 
 #include "ord-vector.hh"
 
-namespace Mata::Util {
+namespace mata::utils {
 
 template <typename T>
 concept Iterable = requires(T t) {
@@ -188,6 +188,10 @@ concept Iterable = requires(T t) {
             return *this;
         }
 
+        // TODO: How do we want to define equality of sparse sets? The default one is member-wise, but maybe simply
+        //  comparing contained elements should be enough?
+        bool operator==(const SparseSet<Number>&) const = default;
+
 // Things
 
         // Tests the basic invariant of the sparse set.
@@ -325,7 +329,7 @@ concept Iterable = requires(T t) {
             assert(consistent());
         }
 
-        // This could be a template with types of A and B both as parameters, in Util?
+        // This could be a template with types of A and B both as parameters, in utils?
         friend bool are_disjoint(const SparseSet & A, const SparseSet & B) {
             if (A.size() > B.size())
                 return are_disjoint(B,A);

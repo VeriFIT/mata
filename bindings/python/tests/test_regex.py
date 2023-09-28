@@ -12,14 +12,14 @@ def test_regex():
     rhs = parser.from_regex("b|c")
 
     union = mata_nfa.union(lhs, rhs)
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "a"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "b"))
-    assert mata_nfa.is_in_lang(union, mata_nfa.encode_word(alphabet, "c"))
+    assert union.is_in_lang(mata_nfa.encode_word(alphabet, "a"))
+    assert union.is_in_lang(mata_nfa.encode_word(alphabet, "b"))
+    assert union.is_in_lang(mata_nfa.encode_word(alphabet, "c"))
 
     intersection = mata_nfa.intersection(lhs, rhs)
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "a"))
-    assert mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "b"))
-    assert not mata_nfa.is_in_lang(intersection, mata_nfa.encode_word(alphabet, "c"))
+    assert not intersection.is_in_lang(mata_nfa.encode_word(alphabet, "a"))
+    assert intersection.is_in_lang(mata_nfa.encode_word(alphabet, "b"))
+    assert not intersection.is_in_lang(mata_nfa.encode_word(alphabet, "c"))
 
 
 def test_stars_concatenation():

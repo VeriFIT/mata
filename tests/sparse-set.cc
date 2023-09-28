@@ -2,14 +2,14 @@
 // Created by Lukáš Holík on 06.12.2022.
 //
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 
-using namespace Mata::Util;
-using namespace Mata::Nfa;
+using namespace mata::utils;
+using namespace mata::nfa;
 
-TEST_CASE("Mata::Util::SparseSet") {
+TEST_CASE("mata::utils::SparseSet") {
     SparseSet<State> p;
 
     SECTION("basic functionality: insert, erase, access, constructor, size, get_elements ") {
@@ -65,7 +65,7 @@ TEST_CASE("Mata::Util::SparseSet") {
 
     SECTION("filter") {
         p = {0, 1, 2, 3, 4, 5, 6};
-        Mata::BoolVector v = {0, 1, 1};
+        mata::BoolVector v = { 0, 1, 1};
         auto f = [&v](State x) { return x < v.size() ? v[x] : 0; };
         p.filter(f);
         CHECK(OrdVector<State>(p.begin(), p.end()) == OrdVector<State>({1, 2}));

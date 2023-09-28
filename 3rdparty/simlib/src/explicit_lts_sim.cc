@@ -903,11 +903,9 @@ BinaryRelation Simlib::ExplicitLTS::compute_simulation()
 }
 
 
-void Simlib::ExplicitLTS::add_transition(
-	size_t   q,
-	size_t   a,
-	size_t   r)
-{
+void Simlib::ExplicitLTS::add_transition(size_t q, size_t a, size_t r) {
+	if (!symbol_map.contains(a)) { symbol_map[a] = symbol_map.size(); };
+	a = symbol_map[a];
 	if (a >= this->data_.size())
 	{
 		this->data_.resize(a + 1);

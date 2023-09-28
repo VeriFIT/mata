@@ -2,16 +2,16 @@
 
 #include <unordered_set>
 
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/parser/re2parser.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Strings;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::nfa;
+using namespace mata::strings;
+using namespace mata::utils;
+using namespace mata::parser;
 
 // Some common automata {{{
 
@@ -57,7 +57,7 @@ using namespace Mata::Parser;
 
 template<class T> void unused(const T &) {}
 
-TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
+TEST_CASE("mata::nfa::SegNfa::noodlify()")
 {
     Nfa aut{20};
 
@@ -70,12 +70,12 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
         noodle.initial.insert(0);
         noodle.delta.add(0, 'a', 1);
         noodle.final.insert(1);
-        auto result{ SegNfa::noodlify(aut, 'c') };
+        auto result{ seg_nfa::noodlify(aut, 'c') };
         REQUIRE(result.size() == 1);
         REQUIRE(result[0].size() == 1);
         CHECK(are_equivalent(*result[0][0], noodle));
 
-        auto result_segments{ SegNfa::noodlify_for_equation({ aut } , aut) };
+        auto result_segments{ seg_nfa::noodlify_for_equation({ aut } , aut) };
         REQUIRE(result_segments.size() == 1);
         REQUIRE(result_segments[0].size() == 1);
         CHECK(are_equivalent(*result_segments[0][0], noodle));
@@ -93,7 +93,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
         aut.delta.add(2, 'e', 6);
         aut.delta.add(3, 'e', 7);
 
-        auto noodles{ SegNfa::noodlify(aut, 'e') };
+        auto noodles{ seg_nfa::noodlify(aut, 'e') };
 
         CHECK(noodles.size() == 4);
     }
@@ -122,7 +122,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
         aut.delta.add(9, 'e', 15);
         aut.delta.add(10, 'e', 16);
 
-        auto noodles{ SegNfa::noodlify(aut, 'e') };
+        auto noodles{ seg_nfa::noodlify(aut, 'e') };
 
         CHECK(noodles.size() == 12);
     }
@@ -144,35 +144,35 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify()")
         aut.delta.add(5, 'e', 7);
         aut.delta.add(6, 'e', 7);
 
-        auto noodles{ SegNfa::noodlify(aut, 'e') };
+        auto noodles{ seg_nfa::noodlify(aut, 'e') };
 
         CHECK(noodles.size() == 3);
     }
 }
 
-TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation()") {
     SECTION("Empty input") {
-        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, Nfa{}).empty());
+        CHECK(seg_nfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, Nfa{}).empty());
     }
 
     SECTION("Empty left side") {
         Nfa right{1};
         right.initial.insert(0);
         right.final.insert(0);
-        CHECK(SegNfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, right).empty());
+        CHECK(seg_nfa::noodlify_for_equation(std::vector<std::reference_wrapper<Nfa>>{}, right).empty());
     }
 
     SECTION("Empty right side") {
         Nfa left{ 1};
         left.initial.insert(0);
         left.final.insert(0);
-        CHECK(SegNfa::noodlify_for_equation({ left }, Nfa{}).empty());
+        CHECK(seg_nfa::noodlify_for_equation({ left }, Nfa{}).empty());
     }
 
     SECTION("Small automata without initial and final states") {
         Nfa left{ 1};
         Nfa right{ 2};
-        CHECK(SegNfa::noodlify_for_equation({ left }, right).empty());
+        CHECK(seg_nfa::noodlify_for_equation({ left }, right).empty());
     }
 
     SECTION("Small automata") {
@@ -190,7 +190,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         noodle.initial.insert(0);
         noodle.delta.add(0, 0, 1);
         noodle.final.insert(1);
-        auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right) };
+        auto result{ seg_nfa::noodlify_for_equation({ left1, left2 }, right) };
         REQUIRE(result.size() == 1);
     }
 
@@ -215,7 +215,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         noodle.delta.add(0, 'a', 1);
         noodle.delta.add(1, 'c', 2); // The automatically chosen epsilon symbol (one larger than 'b').
         noodle.delta.add(2, 'b', 3);
-        auto result{ SegNfa::noodlify_for_equation({ left1, left2 }, right_side) };
+        auto result{ seg_nfa::noodlify_for_equation({ left1, left2 }, right_side) };
         REQUIRE(result.size() == 1);
         //CHECK(are_equivalent(result[0], noodle));
     }
@@ -252,7 +252,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
         right_side.delta.add(0, 117, 0);
         right_side.delta.add(0, 122, 0);
 
-        auto result{ SegNfa::noodlify_for_equation({ left }, right_side) };
+        auto result{ seg_nfa::noodlify_for_equation({ left }, right_side) };
         REQUIRE(result.size() == 1);
         REQUIRE(result[0].size() == 1);
         CHECK(are_equivalent(*result[0][0], left));
@@ -320,9 +320,9 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             std::vector<std::shared_ptr<Nfa>> noodle2_segments{ std::make_shared<Nfa>(noodle2_segment1),
                     std::make_shared<Nfa>(noodle2_segment2), std::make_shared<Nfa>(noodle2_segment3) };
 
-            SegNfa::NoodleSequence expected{ noodle1_segments, noodle2_segments };
+            std::vector<seg_nfa::Noodle> expected{ noodle1_segments, noodle2_segments };
 
-            auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
+            auto result{ seg_nfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 2);
 
             CHECK(are_equivalent(*result[0][0], *expected[0][0]));
@@ -345,7 +345,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
             right_side.delta.add(5, 'b', 6);
             right_side.final.insert(3);
 
-            auto result{ SegNfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
+            auto result{ seg_nfa::noodlify_for_equation({ left1, left2, left3 }, right_side) };
             REQUIRE(result.size() == 1);
             CHECK(are_equivalent(*result[0][0], *noodle1_segments[0]));
             CHECK(are_equivalent(*result[0][1], *noodle1_segments[1]));
@@ -355,9 +355,9 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation()") {
 }
 
 
-TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
     SECTION("Empty input") {
-        CHECK(SegNfa::noodlify_for_equation(std::vector<std::shared_ptr<Nfa>>{},std::vector<std::shared_ptr<Nfa>>{}).empty());
+        CHECK(seg_nfa::noodlify_for_equation(std::vector<std::shared_ptr<Nfa>>{}, std::vector<std::shared_ptr<Nfa>>{}).empty());
     }
 
     SECTION("Simple automata") {
@@ -367,17 +367,17 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
+        auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }},
                 {{x, {0, 0} }, {y, {1, 0} }, {y, {1, 1} }} } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
                 CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                auto used_symbols{ noodles[i][j].first->get_used_symbols() };
+                auto used_symbols{ noodles[i][j].first->delta.get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
@@ -391,20 +391,20 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&w, "(a|b)+");
         create_nfa(&astar, "a*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
+        auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 1} }, {z, {1, 1} }},
                 {{x, {0, 0} }, {w, {1, 1} }},
                 {{x, {0, 0} }, {x, {0, 1} }, {z, {1, 1} }},
                 {{x, {0, 0} }, {z, {1, 0} }, {w, {1, 1} }},
          } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         for(size_t i = 0; i < noodles.size(); i++) {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
                 CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                auto used_symbols{ noodles[i][j].first->get_used_symbols() };
+                auto used_symbols{ noodles[i][j].first->delta.get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
@@ -417,8 +417,8 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({} );
-       SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({} );
+       std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(y), std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         CHECK(noodles.size() == 1);
@@ -426,7 +426,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
                 CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                auto used_symbols{ noodles[i][j].first->get_used_symbols() };
+                auto used_symbols{ noodles[i][j].first->delta.get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
@@ -439,11 +439,11 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "(a|b)*");
         create_nfa(&w, "(a|b)*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
+        auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{y, {1, 1} }},
                 {{y, {1, 0} }, {y, {1, 1} }},
             } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(w)});
         CHECK(noodles.size() == 2);
@@ -451,7 +451,7 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
                 CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                auto used_symbols{ noodles[i][j].first->get_used_symbols() };
+                auto used_symbols{ noodles[i][j].first->delta.get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
@@ -464,10 +464,10 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
         create_nfa(&z, "ab*");
         create_nfa(&u, "a*");
 
-        auto res = std::vector<std::vector<std::pair<Nfa, SegNfa::VisitedEpsilonsCounterVector>>>({
+        auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {1, 1} }},
             } );
-        SegNfa::NoodleSubstSequence noodles = SegNfa::noodlify_for_equation(
+        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(x), std::make_shared<Nfa>(y) },
             std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(z), std::make_shared<Nfa>(u)});
         CHECK(noodles.size() == 1);
@@ -475,14 +475,14 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() both sides") {
             for(size_t j = 0; j < noodles[i].size(); j++) {
                 CHECK(noodles[i][j].second == res[i][j].second);
                 CHECK(are_equivalent(*noodles[i][j].first.get(), res[i][j].first, nullptr));
-                auto used_symbols{ noodles[i][j].first->get_used_symbols() };
+                auto used_symbols{ noodles[i][j].first->delta.get_used_symbols() };
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
     }
 }
 
-TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() for profiling", "[.profiling][noodlify]") {
     Nfa left1{ 3};
     left1.initial.insert(0);
     left1.final.insert({1, 2});
@@ -509,6 +509,6 @@ TEST_CASE("Mata::Nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
 
     std::vector<Nfa*> left_side{ &left1, &left2, &left3 };
     for (size_t i{}; i < 10000; ++i) {
-        SegNfa::noodlify_for_equation(left_side, right_side);
+        seg_nfa::noodlify_for_equation(left_side, right_side);
     }
 }

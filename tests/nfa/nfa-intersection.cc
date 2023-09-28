@@ -18,13 +18,13 @@
 
 #include <unordered_set>
 
-#include "../3rdparty/catch.hpp"
+#include <catch2/catch.hpp>
 
 #include "mata/nfa/nfa.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Util;
-using namespace Mata::Parser;
+using namespace mata::nfa;
+using namespace mata::utils;
+using namespace mata::parser;
 
 // Some common automata {{{
 
@@ -68,7 +68,7 @@ using namespace Mata::Parser;
 
 // }}}
 
-TEST_CASE("Mata::Nfa::intersection()")
+TEST_CASE("mata::nfa::intersection()")
 { // {{{
     Nfa a, b, res;
     std::unordered_map<std::pair<State, State>, State> prod_map;
@@ -182,11 +182,11 @@ TEST_CASE("Mata::Nfa::intersection()")
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
-        REQUIRE(is_lang_empty(res));
+        REQUIRE(res.is_lang_empty());
     }
 } // }}}
 
-TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
+TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
 {
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
@@ -231,7 +231,7 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     CHECK(result.is_state(prod_map[{4, 7}]));
     CHECK(result.is_state(prod_map[{5, 9}]));
     CHECK(result.is_state(prod_map[{5, 8}]));
-    CHECK(result.size() == 13);
+    CHECK(result.num_of_states() == 13);
 
     CHECK(result.initial[prod_map[{0, 0}]]);
     CHECK(result.initial.size() == 1);
@@ -243,51 +243,51 @@ TEST_CASE("Mata::Nfa::intersection() with preserving epsilon transitions")
     CHECK(result.final.size() == 4);
 
     // Check transitions.
-    CHECK(result.get_num_of_trans() == 15);
+    CHECK(result.delta.num_of_transitions() == 15);
 
     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 0, 0 }]).size() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 0, 0 }]).num_of_moves() == 1);
 
     CHECK(result.delta.contains(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
     CHECK(result.delta.contains(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
     CHECK(result.delta.contains(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 0 }]).size() == 3);
+    CHECK(result.delta.state_post(prod_map[{ 1, 0 }]).num_of_moves() == 3);
 
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 1 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 1, 1 }]).empty());
 
     CHECK(result.delta.contains(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
     CHECK(result.delta.contains(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 2 }]).size() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 1, 2 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 3 }]).size() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 1, 3 }]).num_of_moves() == 1);
 
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 1, 4 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 1, 4 }]).empty());
 
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 5 }]).size() == 3);
+    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 3);
 
     CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
     CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 5 }]).size() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 3, 5 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
     CHECK(result.delta.contains(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 2, 6 }]).size() == 2);
+    CHECK(result.delta.state_post(prod_map[{ 2, 6 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 3, 6 }]).size() == 1);
+    CHECK(result.delta.state_post(prod_map[{ 3, 6 }]).num_of_moves() == 1);
 
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 4, 7 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 4, 7 }]).empty());
 
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 9 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 5, 9 }]).empty());
 
-    CHECK(result.get_trans_from_as_sequence(prod_map[{ 5, 8 }]).empty());
+    CHECK(result.delta.state_post(prod_map[{ 5, 8 }]).empty());
 }
 
-TEST_CASE("Mata::Nfa::intersection() for profiling", "[.profiling],[intersection]")
+TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection]")
 {
     Nfa a{6};
     a.initial.insert(0);

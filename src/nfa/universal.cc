@@ -20,27 +20,27 @@
 #include "mata/nfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Util;
+using namespace mata::nfa;
+using namespace mata::utils;
 
 //TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
 // it is not something needed in practice, so some little overhead is ok
 
 
 /// naive universality check (complementation + emptiness)
-bool Mata::Nfa::Algorithms::is_universal_naive(
+bool mata::nfa::algorithms::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
 { // {{{
 	Nfa cmpl = complement(aut, alphabet);
 
-	return is_lang_empty(cmpl, cex);
+	return cmpl.is_lang_empty(cex);
 } // is_universal_naive }}}
 
 
 /// universality check using Antichains
-bool Mata::Nfa::Algorithms::is_universal_antichains(
+bool mata::nfa::algorithms::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
@@ -70,7 +70,7 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 	// initialize
 	WorklistType worklist = { StateSet(aut.initial) };
 	ProcessedType processed = { StateSet(aut.initial) };
-	Mata::Util::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
+	mata::utils::OrdVector<Symbol> alph_symbols = alphabet.get_alphabet_symbols();
 
 	// 'paths[s] == t' denotes that state 's' was accessed from state 't',
 	// 'paths[s] == s' means that 's' is an initial state
@@ -144,16 +144,10 @@ bool Mata::Nfa::Algorithms::is_universal_antichains(
 	return true;
 } // }}}
 
-// The dispatching method that calls the correct one based on parameters
-bool Mata::Nfa::is_universal(
-	const Nfa&         aut,
-	const Alphabet&    alphabet,
-	Run*               cex,
-	const ParameterMap&  params)
-{ // {{{
-
+// The dispatching method that calls the correct one based on parameters.
+bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
-	decltype(Algorithms::is_universal_naive)* algo = Algorithms::is_universal_naive;
+	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
 		throw std::runtime_error(std::to_string(__func__) +
 			" requires setting the \"algo\" key in the \"params\" argument; "
@@ -163,11 +157,14 @@ bool Mata::Nfa::is_universal(
 	const std::string& str_algo = params.at("algorithm");
 	if ("naive" == str_algo) { /* default */ }
 	else if ("antichains" == str_algo) {
-		algo = Algorithms::is_universal_antichains;
+		algo = algorithms::is_universal_antichains;
 	} else {
 		throw std::runtime_error(std::to_string(__func__) +
 			" received an unknown value of the \"algo\" key: " + str_algo);
 	}
+	return algo(*this, alphabet, cex);
+} // is_universal()
 
-	return algo(aut, alphabet, cex);
-} // is_universal }}}
+bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+    return this->is_universal(alphabet, nullptr, params);
+}

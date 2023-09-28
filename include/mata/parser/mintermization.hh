@@ -21,8 +21,7 @@
 
 #include "inter-aut.hh"
 
-
-namespace Mata {
+namespace mata {
     struct MintermizationDomain {
         Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
         BDD val;
@@ -58,20 +57,20 @@ namespace Mata {
         MintermizationDomain getTrue() const;
         MintermizationDomain getFalse() const;
         MintermizationDomain getVar() const;
-};
+    };
 }
 
 // custom specialization of std::hash can be injected in namespace std
 namespace std {
     template<>
-    struct hash<struct Mata::MintermizationDomain> {
-        size_t operator()(const struct Mata::MintermizationDomain &algebra) const noexcept {
+    struct hash<struct mata::MintermizationDomain> {
+        size_t operator()(const struct mata::MintermizationDomain &algebra) const noexcept {
             return hash<BDD>{}(algebra.val);
         }
     };
 }
 
-namespace Mata {
+namespace mata {
 class Mintermization {
 private: // data types
     struct OptionalValue {
@@ -100,7 +99,6 @@ private: // private data members
 
 private:
     void trans_to_vars_nfa(const IntermediateAut& aut);
-    void trans_to_vars_afa(const IntermediateAut& aut);
 
 public:
     /**
@@ -120,22 +118,13 @@ public:
     MintermizationDomain graph_to_vars_nfa(const FormulaGraph& graph);
 
     /**
-     * Transforms a graph representing formula at transition to bdd.
-     * This version of method is a more general one and accepts also
-     * formula including states.
-     * @param graph Graph to be transformed
-     * @return Resulting BDD
-     */
-    OptionalValue graph_to_vars_afa(const FormulaGraph& graph);
-
-    /**
      * Method mintermizes given automaton which has bitvector alphabet.
      * It transforms its transitions to BDDs, then build a minterm tree over the BDDs
      * and finally transforms automaton to explicit one.
      * @param aut Automaton to be mintermized.
      * @return Mintermized automaton
      */
-    Mata::IntermediateAut mintermize(const Mata::IntermediateAut& aut);
+    mata::IntermediateAut mintermize(const mata::IntermediateAut& aut);
 
     /**
      * Methods mintermize given automata which have bitvector alphabet.
@@ -144,8 +133,8 @@ public:
      * @param auts Automata to be mintermized.
      * @return Mintermized automata corresponding to the input autamata
      */
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<const Mata::IntermediateAut *> &auts);
-    std::vector<Mata::IntermediateAut> mintermize(const std::vector<Mata::IntermediateAut> &auts);
+    std::vector<mata::IntermediateAut> mintermize(const std::vector<const mata::IntermediateAut *> &auts);
+    std::vector<mata::IntermediateAut> mintermize(const std::vector<mata::IntermediateAut> &auts);
 
     /**
      * The method performs the mintermization over @aut with given @minterms.
@@ -154,23 +143,11 @@ public:
      * @param aut Automaton to be mintermized
      * @param minterms Set of minterms for mintermization
      */
-    void minterms_to_aut_nfa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
-                             const std::unordered_set<MintermizationDomain>& minterms);
-
-    /**
-     * The method for mintermization of alternating finite automaton using
-     * a given set of minterms
-     * @param res The resulting mintermized automaton
-     * @param aut Automaton to be mintermized
-     * @param minterms Set of minterms for mintermization
-     */
-    void minterms_to_aut_afa(Mata::IntermediateAut& res, const Mata::IntermediateAut& aut,
+    void minterms_to_aut_nfa(mata::IntermediateAut& res, const mata::IntermediateAut& aut,
                              const std::unordered_set<MintermizationDomain>& minterms);
 
     Mintermization() : symbol_to_var{}, trans_to_var(), domain_base() {
     }
 }; // class Mintermization.
-
-} // namespace Mata
-
+} // namespace mata
 #endif //MATA_MINTERM_HH

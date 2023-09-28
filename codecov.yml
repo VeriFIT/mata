@@ -1,2 +1,5 @@
 ignore:
   - 3rdparty
+  - tests-integration
+  - tests
+  - examples

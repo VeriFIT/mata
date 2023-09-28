@@ -5,8 +5,7 @@
 [![Python-Binding (build-&-test)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml/badge.svg?branch=devel)](https://github.com/VeriFIT/mata/actions/workflows/python-binding.yml)
 [![codecov](https://codecov.io/gh/VeriFIT/mata/branch/devel/graph/badge.svg?token=9VAVD19N4D)](https://codecov.io/gh/VeriFIT/mata)
 
-Mata is an open source automata library that offers interface for different kinds of automata (NFA,
-AFA, etc.). Currently, Mata offers two interfaces:
+Mata is an open source automata library that offers interface for different kinds of automata (NFA, etc.). Currently, Mata offers two interfaces:
 
   1. An efficient library implemented in C/C++
   2. A flexible wrapper implemented in Python that uses the efficient library
@@ -71,11 +70,10 @@ make -C bindings/python test
 To get started, we refer to the [examples](examples/) in our repository.
 This directory contains examples of various usage in form of:
 
-  1. C/C++ example programs. To run the program run the following:
+  1. C/C++ example programs. By default, they are built with the library. To run for example the first example:
 
 ```
-make -C examples
-./examples/example01-simple
+./build/examples/example01-simple
 ```
 
   3. Python example scripts. To run the scripts run the following.
@@ -107,10 +105,10 @@ the standard include.
 #include <mata/nfa.hh>
 ```
 
-We recommend to use the `Mata::Nfa` namespace for easier usage:
+We recommend to use the `mata::nfa` namespace for easier usage:
 
 ```cpp
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 ```
 
 Start by creating an automaton with fixed number of states.
@@ -198,7 +196,7 @@ If you'd like to contribute to the libmata,
 please [fork the repository](https://github.com/VeriFIT/mata/fork), create a new 
 feature branch, and finally [create a new pull request](https://github.com/VeriFIT/mata/compare).
 
-In case you run into some unexpected behaviour, error or anything suspicions
+In case you run into some unexpected behaviour, error or anything suspicious
 either contact us directly through mail or 
 [create a new issue](https://github.com/VeriFIT/mata/issues/new/choose).
 When creating a new issue, please, try to include everything necessary for us to know

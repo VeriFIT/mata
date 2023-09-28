@@ -19,10 +19,10 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 
-using namespace Mata::Nfa;
-using namespace Mata::Util;
+using namespace mata::nfa;
+using namespace mata::utils;
 
-Nfa Mata::Nfa::Algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols,
+Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols,
                                                 bool minimize_during_determinization) {
     Nfa result;
     State sink_state;
@@ -34,7 +34,7 @@ Nfa Mata::Nfa::Algorithms::complement_classical(const Nfa& aut, const OrdVector<
             // which can be the sink state (so we do not create unnecessary one)
             sink_state = *result.initial.begin();
         } else {
-            sink_state = result.size();
+            sink_state = result.num_of_states();
         }
     } else {
         std::unordered_map<StateSet, State> subset_map;
@@ -44,23 +44,23 @@ Nfa Mata::Nfa::Algorithms::complement_classical(const Nfa& aut, const OrdVector<
         if (sink_state_iter != subset_map.end()) {
             sink_state = sink_state_iter->second;
         } else {
-            sink_state = result.size();
+            sink_state = result.num_of_states();
         }
     }
 
-    make_complete(result, symbols, sink_state);
-    result.final.complement(result.size());
+    result.make_complete(symbols, sink_state);
+    result.final.complement(result.num_of_states());
     return result;
 }
 
-Nfa Mata::Nfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return Mata::Nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
+Nfa mata::nfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
+    return mata::nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Nfa Mata::Nfa::complement(const Nfa& aut, const Mata::Util::OrdVector<Mata::Symbol>& symbols, const ParameterMap& params) {
+Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
     Nfa result;
     // Setting the requested algorithm.
-    decltype(Algorithms::complement_classical)* algo = Algorithms::complement_classical;
+    decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algo\" key in the \"params\" argument; "

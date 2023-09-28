@@ -1,4 +1,4 @@
-/* nfa-internals.hh -- Wrapping up algorithms for Nfa manipulation which would be otherwise in anonymous namespaces.
+/* algorithms.hh -- Wrapping up algorithms for Nfa manipulation which would be otherwise in anonymous namespaces.
  *
  * This file is a part of libmata.
  *
@@ -22,8 +22,8 @@
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
  *
- * This is a separation of the implementation from the interface defined in Mata::Nfa.
- * Note, that in Mata::Nfa interface, there are particular dispatch functions calling
+ * This is a separation of the implementation from the interface defined in mata::nfa.
+ * Note, that in mata::nfa interface, there are particular dispatch functions calling
  * these function according to parameters provided by a user.
  * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
  * to check for universality based on antichain-based algorithm.
@@ -35,7 +35,7 @@
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace Mata::Nfa::Algorithms {
+namespace mata::nfa::algorithms {
 
 /**
  * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
@@ -53,7 +53,7 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  minimization.
  * @return Complemented automaton.
  */
-Nfa complement_classical(const Nfa& aut, const Mata::Util::OrdVector<Symbol>& symbols,
+Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols,
                          bool minimize_during_determinization = false);
 
 /**
@@ -130,6 +130,6 @@ Nfa intersection_eps(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, cons
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-} // Namespace Mata::Nfa::Algorithms.
+} // Namespace mata::nfa::algorithms.
 
 #endif // MATA_NFA_INTERNALS_HH_

@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
@@ -23,17 +23,17 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    Mata::Parser::Parsed parsed;
+    mata::parser::Parsed parsed;
     Nfa aut;
     try {
-        parsed = Mata::Parser::parse_mf(fs, true);
+        parsed = mata::parser::parse_mf(fs, true);
         fs.close();
 
-        std::vector<Mata::IntermediateAut> inter_auts = Mata::IntermediateAut::parse_from_mf(parsed);
+        std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
         for (const auto& ia : inter_auts) {
-            Mata::Mintermization mintermization;
+            mata::Mintermization mintermization;
             std::cout << ia << '\n';
-            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == Mata::IntermediateAut::AlphabetType::BITVECTOR) {
+            if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
                 const auto& aut = mintermization.mintermize(ia);
                 assert(ia.transitions.size() <= aut.transitions.size());
                 std::cout << aut << '\n';

@@ -17,7 +17,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 
-using namespace Mata::Nfa;
+using namespace mata::nfa;
 
 namespace {
 
@@ -79,18 +79,16 @@ void create_product_state_and_trans(
 
 } // Anonymous namespace.
 
-namespace Mata {
-namespace Nfa {
-
+namespace mata::nfa {
 
 Nfa intersection(const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon,
                  std::unordered_map<std::pair<State,State>, State> *prod_map) {
 
     const std::set<Symbol> epsilons({EPSILON});
-    return Algorithms::intersection_eps(lhs, rhs, preserve_epsilon, epsilons, prod_map);
+    return algorithms::intersection_eps(lhs, rhs, preserve_epsilon, epsilons, prod_map);
 }
 
-Nfa Mata::Nfa::Algorithms::intersection_eps(
+Nfa mata::nfa::algorithms::intersection_eps(
         const Nfa& lhs, const Nfa& rhs, bool preserve_epsilon, const std::set<Symbol>& epsilons,
         std::unordered_map<std::pair<State, State>, State> *prod_map) {
     Nfa product{}; // Product of the intersection.
@@ -121,9 +119,9 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
         pairs_to_process.pop_back();
         // Compute classic product for current state pair.
 
-        Mata::Util::SynchronizedUniversalIterator<Mata::Util::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
-        Mata::Util::push_back(sync_iterator,lhs.delta[pair_to_process.first]);
-        Mata::Util::push_back(sync_iterator,rhs.delta[pair_to_process.second]);
+        mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
+        mata::utils::push_back(sync_iterator, lhs.delta[pair_to_process.first]);
+        mata::utils::push_back(sync_iterator, rhs.delta[pair_to_process.second]);
 
         while (sync_iterator.advance()) {
             std::vector<StatePost::const_iterator> moves = sync_iterator.get_current();
@@ -192,5 +190,4 @@ Nfa Mata::Nfa::Algorithms::intersection_eps(
     return product;
 } // intersection().
 
-} // namespace Nfa.
-} // namespace Mata.
+} // namespace mata::nfa.
