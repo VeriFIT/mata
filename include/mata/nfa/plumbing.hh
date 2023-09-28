@@ -76,12 +76,8 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
 /**
  * @brief Compute intersection of two NFAs.
  *
- * Supports epsilon symbols when @p preserve_epsilon is set to true.
- * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
- *  contain ε-transitions. The product preserves the ε-transitions
- *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
- *  an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
- *  a product state `(s, a) -ε-> (p, b)` is created.
+ * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
+ * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
  *
  * Automata must share alphabets.
  */
