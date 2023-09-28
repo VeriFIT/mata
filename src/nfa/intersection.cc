@@ -221,7 +221,7 @@ Nfa mata::nfa::algorithms::product(
         // (handling of normal symbols is ok though)
         auto lhs_first_epsilon_it = lhs_state_post.first_epsilon_it(first_epsilon);
         if (lhs_first_epsilon_it != lhs_state_post.end()) {
-            for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); lhs_symbol_post++) {
+            for (auto lhs_symbol_post = lhs_first_epsilon_it; lhs_symbol_post < lhs_state_post.end(); ++lhs_symbol_post) {
                 SymbolPost prod_symbol_post{lhs_symbol_post->symbol };
                 for (const State lhs_target: lhs_symbol_post->targets) {
                     create_product_state_and_symbol_post(lhs_target, rhs_source, prod_symbol_post);
