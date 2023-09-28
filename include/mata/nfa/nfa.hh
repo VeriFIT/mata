@@ -175,7 +175,7 @@ public:
      *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states() const;
+    BoolVector get_useful_states(bool stop_at_first_useful_state = false) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
