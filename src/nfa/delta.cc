@@ -382,8 +382,7 @@ StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) cons
     while (it != begin()) {
         --it;
         if (it->symbol < first_epsilon) { //is it a normal symbol already?
-            ++it; // go step back, to the smallest epsilon or end(), and return it
-            return it;
+            return it + 1; // Return one step back: the smallest epsilon or end().
         }
     }
 
