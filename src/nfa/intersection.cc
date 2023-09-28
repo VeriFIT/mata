@@ -234,7 +234,7 @@ Nfa mata::nfa::algorithms::product(
         const StatePost& rhs_state_post{rhs.delta[rhs_source] };
         auto rhs_first_epsilon_it = rhs_state_post.first_epsilon_it(first_epsilon);
         if (rhs_first_epsilon_it != rhs_state_post.end()) {
-            for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end(); rhs_symbol_post++) {
+            for (auto rhs_symbol_post = rhs_first_epsilon_it; rhs_symbol_post < rhs_state_post.end(); ++rhs_symbol_post) {
                 SymbolPost prod_symbol_post{rhs_symbol_post->symbol };
                 for (const State rhs_target: rhs_symbol_post->targets) {
                     create_product_state_and_symbol_post(lhs_source, rhs_target, prod_symbol_post);
