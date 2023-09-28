@@ -18,7 +18,6 @@
 #include <algorithm>
 #include <list>
 #include <optional>
-#include <unordered_set>
 #include <iterator>
 
 // MATA headers
@@ -329,7 +328,11 @@ BoolVector Nfa::get_useful_states(bool stop_at_first_useful_state) const {
                 // propagate usefulness to the closed SCC
                 for(const State& st : scc) useful[st] = true;
                 // propagate usefulness to predecessors in @p tarjan_stack
-                for(const State& st : tarjan_stack) useful[st] = true;
+                for (auto st = tarjan_stack.rbegin(); st != tarjan_stack.rend(); ++st) {
+                    if (useful[*st])
+                        break;
+                    useful[*st] = true;
+                }
             }
         }
         // all successors have been processed, we can remove act_state from the program stack
