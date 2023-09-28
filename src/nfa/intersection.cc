@@ -40,6 +40,9 @@ Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, Pro
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
     };
 
+    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
+        return Nfa{};
+
     return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
 }
 
