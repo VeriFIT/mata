@@ -29,23 +29,31 @@ int main(int argc, char *argv[]) {
     Nfa lhs = automata[0];
     Nfa rhs = automata[1];
 
+
     // Setting precision of the times to fixed points and 4 decimal places
 
-
     TIME_BEGIN(intersection);
-    Nfa intersect_aut = intersection(lhs, rhs);
+    Nfa intersect_aut = intersection(rhs, rhs);
     TIME_END(intersection);
-    std::cout<<"states: "<<intersect_aut.num_of_states()<<std::endl;
-    TIME_BEGIN(is_lang_empty);
-    intersect_aut.is_lang_empty();
-    TIME_END(is_lang_empty);
+    TIME_BEGIN(uni);
+    Nfa uni_aut = uni(intersect_aut,intersect_aut);
+    TIME_BEGIN(is_lang_empty1);
+    uni_aut.is_lang_empty();
+    TIME_END(is_lang_empty1);
+    TIME_BEGIN(is_lang_empty2);
+    uni_aut.is_lang_empty();
+    TIME_END(is_lang_empty2);
+    TIME_BEGIN(get_useful_states1);
+    uni_aut.get_useful_states();
+    TIME_END(get_useful_states1);
+    TIME_BEGIN(get_useful_states2);
+    uni_aut.get_useful_states();
+    TIME_END(get_useful_states2);
     //intersect_aut.final.clear();
     TIME_BEGIN(trim);
-    intersect_aut.trim();
+    uni_aut.trim();
     TIME_END(trim);
-    std::cout<<"lhs states: "<<lhs.num_of_states()<<std::endl;
-    std::cout<<"lhs states: "<<rhs.num_of_states()<<std::endl;
-    std::cout<<"prod states: "<<intersect_aut.num_of_states()<<std::endl;
+    std::cout<<"trimmed states: "<<intersect_aut.num_of_states()<<std::endl;
 
     return EXIT_SUCCESS;
 }

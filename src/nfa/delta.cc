@@ -375,14 +375,14 @@ bool Delta::operator==(const Delta& other) const {
     return other_transitions_it == other_transitions_end;
 }
 
-//Returns an iterator to the smallest epsilon, or end() if there is no epsilon
-//Searches from the end of the vector of SymbolPosts, since epsilons are at the end and they are typically few, mostly 1.
+///Returns an iterator to the smallest epsilon, or end() if there is no epsilon
+///Searches from the end of the vector of SymbolPosts, since epsilons are at the end and they are typically few, mostly 1.
 StatePost::const_iterator StatePost::first_epsilon_it(Symbol first_epsilon) const {
     auto it = end();
     while (it != begin()) {
         --it;
         if (it->symbol < first_epsilon) { //is it a normal symbol already?
-            return it + 1; // Return one step back: the smallest epsilon or end().
+            return it + 1; // Return the previous position, the smallest epsilon or end().
         }
     }
 
