@@ -149,10 +149,8 @@ namespace {
     // of useful states. It contains Tarjan's metadata and the state of the
     // iteration through the successors.
     struct TarjanNodeData {
-        StatePost::const_iterator post_it{};
-        StatePost::const_iterator post_end{};
-        StateSet::const_iterator targets_it{};
-        StateSet::const_iterator targets_end{};
+        StatePost::Moves::const_iterator current_move{};
+        StatePost::Moves::const_iterator end_move{};
         // index of a node (corresponds to the time of discovery)
         unsigned long index{ 0 };
         // index of a lower node in the same SCC
@@ -165,45 +163,8 @@ namespace {
         TarjanNodeData() = default;
 
         TarjanNodeData(State q, const Delta & delta, unsigned long index)
-            : post_it(delta[q].cbegin()), post_end(delta[q].cend()), index(index), lowlink(index), initilized(true), on_stack(true) {
-            if (post_it != post_end) {
-                targets_it = post_it->cbegin();
-                targets_end = post_it->cend();
-            }
+            : current_move(delta[q].moves().begin()), end_move(delta[q].moves().end()), index(index), lowlink(index), initilized(true), on_stack(true) {
         };
-
-        // TODO: this sucks. In fact, if you want to check that you have the last sucessor, you need to
-        // first align the iterators.
-        // TODO: this is super-ugly. If we introduce Post::transitions iterator, this could be much easier.
-        // Align iterators in a way that the current state is stored in *(this->targets_it).
-        void align_succ() {
-            while (this->post_it != this->post_end && this->targets_it == this->targets_end) {
-                if (this->targets_it == this->targets_end) {
-                    ++this->post_it;
-                    if (this->post_it != this->post_end) {
-                        this->targets_it = this->post_it->cbegin();
-                        this->targets_end = this->post_it->cend();
-                    }
-                }
-            }
-        }
-
-        State get_curr_succ() {
-            align_succ();
-            return *(this->targets_it);
-        }
-
-        void move_to_next_succ() {
-            if(this->post_it == this->post_end) {
-                return;
-            }
-            ++this->targets_it;
-        }
-
-        bool is_end_succ() {
-            align_succ();
-            return this->post_it == this->post_end;
-        }
     };
 };
 
@@ -278,10 +239,10 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
                 if (stop_at_first_useful_state) { return useful; }
             }
         } else { // return from the recursive call
-            State act_succ = act_state_data.get_curr_succ();
+            State act_succ = (*act_state_data.current_move).target;
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
-            act_state_data.move_to_next_succ();
+            act_state_data.current_move++;
         }
 
         // iterate through outgoing edges
@@ -289,8 +250,8 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
         // rec_call simulates call of the strongconnect. Since c++ cannot do continue over
         // multiple loops, we use rec_call to jump to the main loop
         bool rec_call = false;
-        while(!act_state_data.is_end_succ()) {
-            next_state = act_state_data.get_curr_succ();
+        while(act_state_data.current_move != act_state_data.end_move) {
+            next_state = (*act_state_data.current_move).target;
             // if successor is useful, act_state is useful as well
             if(useful[next_state]) {
                 useful[act_state] = true;
@@ -302,7 +263,7 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
             } else if(node_info[next_state].on_stack) {
                 act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[next_state].index);
             }
-            act_state_data.move_to_next_succ();
+            act_state_data.current_move++;
         }
         if(rec_call) continue;
 
