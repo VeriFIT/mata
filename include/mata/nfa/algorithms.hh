@@ -91,7 +91,7 @@ bool is_universal_naive(const Nfa& aut, const Alphabet& alphabet, Run* cex);
 
 /**
  * Universality checking based on subset construction with antichain.
- * @param[in] aut Automaton which universality is checke
+ * @param[in] aut Automaton which universality is checked
  * @param[in] alphabet Alphabet of the automaton
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the automaton is universal, otherwise false.
