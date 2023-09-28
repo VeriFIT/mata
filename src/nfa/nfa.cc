@@ -242,7 +242,7 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
             State act_succ = (*act_state_data.current_move).target;
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
-            act_state_data.current_move++;
+            ++act_state_data.current_move;
         }
 
         // iterate through outgoing edges
