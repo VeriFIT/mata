@@ -18,9 +18,7 @@
 #include <algorithm>
 #include <list>
 #include <optional>
-#include <unordered_set>
 #include <iterator>
-#include <ranges>
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
@@ -330,10 +328,10 @@ BoolVector Nfa::get_useful_states(bool stop_at_first_useful_state) const {
                 // propagate usefulness to the closed SCC
                 for(const State& st : scc) useful[st] = true;
                 // propagate usefulness to predecessors in @p tarjan_stack
-                for(const State& st :std::views::reverse(tarjan_stack)) {
-                    if (useful[st])
+                for (auto st = tarjan_stack.rbegin(); st != tarjan_stack.rend(); ++st) {
+                    if (useful[*st])
                         break;
-                    useful[st] = true;
+                    useful[*st] = true;
                 }
             }
         }
