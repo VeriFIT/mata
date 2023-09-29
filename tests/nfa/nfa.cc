@@ -2124,7 +2124,7 @@ TEST_CASE("mata::nfa::union_norename()") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = uni(lhs, rhs);
+        Nfa result = union_nondet(lhs, rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }

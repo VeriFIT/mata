@@ -34,18 +34,6 @@ using InvertedProductStorage = std::vector<State>;
 
 namespace mata::nfa {
 
-Nfa intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, ProductMap *prod_map) {
-
-    auto both_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
-        return Nfa{};
-
-    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
-}
-
 //TODO: move this method to nfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
 Nfa mata::nfa::algorithms::product(
         const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,

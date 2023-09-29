@@ -600,7 +600,36 @@ Nfa mata::nfa::minimize(
     return algo(aut);
 }
 
-Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
+Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+
+    auto both_final = [&](const State lhs_state,const State rhs_state) {
+        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+    };
+
+    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
+        return Nfa{};
+
+    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
+}
+
+Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
+    auto one_final = [&](const State lhs_state,const State rhs_state) {
+        return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
+    };
+
+    if ( lhs.final.empty() || lhs.initial.empty() ) {
+        Nfa result = rhs;
+        return result;
+    }
+    if ( rhs.final.empty() || rhs.initial.empty() ) {
+        Nfa result = lhs;
+        return result;
+    }
+
+    return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
+}
+
+Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) {
     Nfa union_nfa{ rhs };
 
     StateRenaming lhs_state_renaming;
