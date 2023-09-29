@@ -640,17 +640,22 @@ Nfa& Nfa::uni(const Nfa& aut) {
         return st + n;
     };
 
+    // copy the information about aut to save the case when this is the same object as aut.
+    size_t aut_states = aut.num_of_states();
+    SparseSet<mata::nfa::State> aut_final_copy = aut.final;
+    SparseSet<mata::nfa::State> aut_initial_copy = aut.initial;
+
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
 
     // set accepting states
-    this->final.reserve(n+aut.num_of_states());
-    for(const State& aut_fin : aut.final) {
+    this->final.reserve(n+aut_states);
+    for(const State& aut_fin : aut_final_copy) {
         this->final.insert(upd_fnc(aut_fin));
     }
     // set unitial states
-    this->initial.reserve(n+aut.num_of_states());
-    for(const State& aut_ini : aut.initial) {
+    this->initial.reserve(n+aut_states);
+    for(const State& aut_ini : aut_initial_copy) {
         this->initial.insert(upd_fnc(aut_ini));
     }
     
