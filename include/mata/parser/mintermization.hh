@@ -32,8 +32,6 @@ namespace mata {
 
         MintermizationDomain(Cudd mng, BDD val) : bdd_mng(mng), val(val) {};
 
-        MintermizationDomain(const MintermizationDomain& alg) = default;
-
         friend MintermizationDomain operator&&(const MintermizationDomain& lhs, const MintermizationDomain &rhs) {
             return {lhs.bdd_mng, lhs.val * rhs.val};
         }
@@ -146,7 +144,7 @@ public:
     void minterms_to_aut_nfa(mata::IntermediateAut& res, const mata::IntermediateAut& aut,
                              const std::unordered_set<MintermizationDomain>& minterms);
 
-    Mintermization() : symbol_to_var{}, trans_to_var(), domain_base() {
+    Mintermization() : domain_base(), symbol_to_var{}, trans_to_var() {
     }
 }; // class Mintermization.
 } // namespace mata
