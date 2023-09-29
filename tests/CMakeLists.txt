@@ -11,7 +11,7 @@ add_executable(tests
 		nfa/nfa.cc
 		nfa/builder.cc
 		nfa/nfa-concatenation.cc
-        nfa/nfa-product.cc
+		nfa/nfa-product.cc
 		nfa/nfa-profiling.cc
 		nfa/nfa-plumbing.cc
 		strings/nfa-noodlification.cc
