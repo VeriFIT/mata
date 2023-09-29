@@ -200,6 +200,11 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
+     * @brief In-place union
+     */
+    Nfa& uni(const Nfa &aut);
+
+    /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.

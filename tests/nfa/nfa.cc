@@ -2130,6 +2130,37 @@ TEST_CASE("mata::nfa::union_norename()") {
     }
 }
 
+TEST_CASE("mata::nfa::union_inplace") {
+    Run one{{1},{}};
+    Run zero{{0}, {}};
+
+    Nfa lhs(2);
+    lhs.initial.insert(0);
+    lhs.delta.add(0, 0, 1);
+    lhs.final.insert(1);
+    REQUIRE(!lhs.is_in_lang(one));
+    REQUIRE(lhs.is_in_lang(zero));
+
+    Nfa rhs(2);
+    rhs.initial.insert(0);
+    rhs.delta.add(0, 1, 1);
+    rhs.final.insert(1);
+    REQUIRE(rhs.is_in_lang(one));
+    REQUIRE(!rhs.is_in_lang(zero));
+
+    SECTION("failing minimal scenario") {
+        Nfa result = lhs.uni(rhs);
+        REQUIRE(result.is_in_lang(one));
+        REQUIRE(result.is_in_lang(zero));
+    }
+
+    SECTION("same automata") {
+        size_t lhs_states = lhs.num_of_states();
+        Nfa result = lhs.uni(lhs);
+        REQUIRE(result.num_of_states() == lhs_states * 2);
+    }
+}
+
 TEST_CASE("mata::nfa::remove_final()")
 {
     Nfa aut('q' + 1);
