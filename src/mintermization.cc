@@ -122,8 +122,8 @@ MintermizationDomain mata::Mintermization::graph_to_vars_nfa(const FormulaGraph 
         if (symbol_to_var.count(node.name)) {
             return symbol_to_var.at(node.name);
         } else {
-            MintermizationDomain res = (node.name == "true") ? domain_base.getTrue() :
-                      (node.name == "false" ? domain_base.getFalse() :
+            MintermizationDomain res = (node.name == "\\true") ? domain_base.getTrue() :
+                      (node.name == "\\false" ? domain_base.getFalse() :
                       domain_base.getVar());
             symbol_to_var.insert(std::make_pair(node.name, res));
             return res;
