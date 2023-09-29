@@ -516,6 +516,16 @@ bool mata::nfa::Nfa::is_prfx_in_lang(const Run& run) const {
 }
 
 bool mata::nfa::Nfa::is_lang_empty(Run* cex) const {
+    //TOOD: hot fix for performance reasons for TACAS.
+    // Perhaps make the get_useful_states return a witness on demand somehow.
+    if (!cex) {
+        BoolVector useful_states = get_useful_states(true);
+        for (State is_state_useful: useful_states)
+            if (is_state_useful)
+                return false;
+        return true;
+    }
+
     std::list<State> worklist(initial.begin(), initial.end());
     std::unordered_set<State> processed(initial.begin(), initial.end());
 
@@ -591,37 +601,36 @@ Nfa mata::nfa::minimize(
 }
 
 Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
-    Nfa union_nfa{ rhs };
+    Nfa union_nfa{ lhs };
+    return union_nfa.uni(rhs);
+}
 
-    StateRenaming lhs_state_renaming;
-    const size_t size = lhs.num_of_states();
-    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
-        lhs_state_renaming[lhs_state] = union_nfa.add_state();
+Nfa& Nfa::uni(const Nfa& aut) {
+    size_t n = this->num_of_states();
+    auto upd_fnc = [&](State st) {
+        return st + n;
+    };
+
+    // copy the information about aut to save the case when this is the same object as aut.
+    size_t aut_states = aut.num_of_states();
+    SparseSet<mata::nfa::State> aut_final_copy = aut.final;
+    SparseSet<mata::nfa::State> aut_initial_copy = aut.initial;
+
+    this->delta.allocate(n);
+    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+
+    // set accepting states
+    this->final.reserve(n+aut_states);
+    for(const State& aut_fin : aut_final_copy) {
+        this->final.insert(upd_fnc(aut_fin));
     }
-
-    for (State lhs_initial_state : lhs.initial) {
-        union_nfa.initial.insert(lhs_state_renaming[lhs_initial_state]);
+    // set unitial states
+    this->initial.reserve(n+aut_states);
+    for(const State& aut_ini : aut_initial_copy) {
+        this->initial.insert(upd_fnc(aut_ini));
     }
-
-    for (State lhs_final_state : lhs.final) {
-        union_nfa.final.insert(lhs_state_renaming[lhs_final_state]);
-    }
-
-    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
-        State union_state = lhs_state_renaming[lhs_state];
-        for (const SymbolPost &lhs_symbol_post : lhs.delta[lhs_state]) {
-
-            SymbolPost union_symbol_post{ lhs_symbol_post.symbol, StateSet{} };
-
-            for (State target_state : lhs_symbol_post.targets) {
-                union_symbol_post.insert(lhs_state_renaming[target_state]);
-            }
-
-            union_nfa.delta.mutable_state_post(union_state).insert(union_symbol_post);
-        }
-    }
-
-    return union_nfa;
+    
+    return *this;
 }
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {

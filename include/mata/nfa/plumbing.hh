@@ -76,19 +76,22 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
 /**
  * @brief Compute intersection of two NFAs.
  *
- * Supports epsilon symbols when @p preserve_epsilon is set to true.
- * When computing intersection preserving epsilon transitions, create product of two NFAs, where both automata can
- *  contain ε-transitions. The product preserves the ε-transitions
- *  of both automata. This means that for each ε-transition of the form `s -ε-> p` and each product state `(s, a)`,
- *  an ε-transition `(s, a) -ε-> (p, a)` is created. Furthermore, for each ε-transition `s -ε-> p` and `a -ε-> b`,
- *  a product state `(s, a) -ε-> (p, b)` is created.
+ * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
+ * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
  *
  * Automata must share alphabets.
+ *
+ * @param[out] res The resulting intersection NFA.
+ * @param[in] lhs Input NFA.
+ * @param[in] rhs Input NFA.
+ * @param[in] first_epsilon smallest epsilon.
+ * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs,
-                  bool preserve_epsilon = false,
+inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
-    *res = intersection(lhs, rhs, preserve_epsilon, prod_map);
+    //TODO: first_epsilon should also be a parameter, optional parameter?
+    *res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
 
 /**

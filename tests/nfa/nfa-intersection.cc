@@ -75,7 +75,7 @@ TEST_CASE("mata::nfa::intersection()")
 
     SECTION("Intersection of empty automata")
     {
-        res = intersection(a, b, false, &prod_map);
+        res = intersection(a, b, EPSILON, &prod_map);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -108,7 +108,7 @@ TEST_CASE("mata::nfa::intersection()")
         REQUIRE(!a.final.empty());
         REQUIRE(!b.final.empty());
 
-        res = intersection(a, b, false, &prod_map);
+        res = intersection(a, b, EPSILON, &prod_map);
 
         REQUIRE(!res.initial.empty());
         REQUIRE(!res.final.empty());
@@ -127,7 +127,7 @@ TEST_CASE("mata::nfa::intersection()")
         FILL_WITH_AUT_A(a);
         FILL_WITH_AUT_B(b);
 
-        res = intersection(a, b, false, &prod_map);
+        res = intersection(a, b, EPSILON, &prod_map);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -178,7 +178,7 @@ TEST_CASE("mata::nfa::intersection()")
         FILL_WITH_AUT_B(b);
         b.final = {12};
 
-        res = intersection(a, b, false, &prod_map);
+        res = intersection(a, b, EPSILON, &prod_map);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -215,7 +215,7 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
     b.delta.add(6, 'a', 9);
     b.delta.add(6, 'b', 7);
 
-    Nfa result{intersection(a, b, true, &prod_map) };
+    Nfa result{intersection(a, b, EPSILON, &prod_map) };
 
     // Check states.
     CHECK(result.is_state(prod_map[{0, 0}]));
@@ -243,7 +243,7 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
     CHECK(result.final.size() == 4);
 
     // Check transitions.
-    CHECK(result.delta.num_of_transitions() == 15);
+    CHECK(result.delta.num_of_transitions() == 14);
 
     CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
     CHECK(result.delta.state_post(prod_map[{ 0, 0 }]).num_of_moves() == 1);
@@ -266,8 +266,7 @@ TEST_CASE("mata::nfa::intersection() with preserving epsilon transitions")
 
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
     CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
-    CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 3);
+    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 2);
 
     CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
     CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
@@ -315,7 +314,7 @@ TEST_CASE("mata::nfa::intersection() for profiling", "[.profiling],[intersection
     b.delta.add(6, 'b', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nfa result{intersection(a, b, true) };
+        Nfa result{intersection(a, b) };
     }
 }
 

@@ -730,6 +730,24 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
         CHECK(!result.is_lang_empty());
     }
 
+    SECTION("the same automata") {
+        Nfa lhs{};
+        
+        lhs.add_state();
+        lhs.initial.insert(0);
+        lhs.final.insert(0);
+        lhs.delta.add(0, 58, 0);
+        lhs.delta.add(0, 65, 0);
+        lhs.delta.add(0, 102, 0);
+        lhs.delta.add(0, 112, 0);
+        lhs.delta.add(0, 115, 0);
+        lhs.delta.add(0, 116, 0);
+
+        size_t lhs_size = lhs.num_of_states();
+        Nfa result = lhs.concatenate(lhs);
+        CHECK(result.num_of_states() == lhs_size * 2);
+    }
+
 }
 
 TEST_CASE("Concat_inplace performance", "[.profiling]") {
