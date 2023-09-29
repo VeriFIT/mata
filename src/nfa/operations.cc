@@ -943,37 +943,67 @@ Nfa mata::nfa::minimize(
     return algo(aut);
 }
 
-Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
-    Nfa union_nfa{ lhs };
-    return union_nfa.uni(rhs);
-}
+Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
 
-Nfa& Nfa::uni(const Nfa& aut) {
-    size_t n = this->num_of_states();
-    auto upd_fnc = [&](State st) {
-        return st + n;
+    auto both_final = [&](const State lhs_state,const State rhs_state) {
+        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
     };
 
-    // copy the information about aut to save the case when this is the same object as aut.
-    size_t aut_states = aut.num_of_states();
-    SparseSet<mata::nfa::State> aut_final_copy = aut.final;
-    SparseSet<mata::nfa::State> aut_initial_copy = aut.initial;
+    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
+        return Nfa{};
 
-    this->delta.allocate(n);
-    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
+}
 
-    // set accepting states
-    this->final.reserve(n+aut_states);
-    for(const State& aut_fin : aut_final_copy) {
-        this->final.insert(upd_fnc(aut_fin));
+Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
+    auto one_final = [&](const State lhs_state,const State rhs_state) {
+        return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
+    };
+
+    if ( lhs.final.empty() || lhs.initial.empty() ) {
+        Nfa result = rhs;
+        return result;
     }
-    // set unitial states
-    this->initial.reserve(n+aut_states);
-    for(const State& aut_ini : aut_initial_copy) {
-        this->initial.insert(upd_fnc(aut_ini));
+    if ( rhs.final.empty() || rhs.initial.empty() ) {
+        Nfa result = lhs;
+        return result;
     }
 
-    return *this;
+    return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
+}
+
+Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) {
+    Nfa union_nfa{ rhs };
+
+    StateRenaming lhs_state_renaming;
+    const size_t size = lhs.num_of_states();
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        lhs_state_renaming[lhs_state] = union_nfa.add_state();
+    }
+
+    for (State lhs_initial_state : lhs.initial) {
+        union_nfa.initial.insert(lhs_state_renaming[lhs_initial_state]);
+    }
+
+    for (State lhs_final_state : lhs.final) {
+        union_nfa.final.insert(lhs_state_renaming[lhs_final_state]);
+    }
+
+    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
+        State union_state = lhs_state_renaming[lhs_state];
+        for (const SymbolPost &lhs_symbol_post : lhs.delta[lhs_state]) {
+
+            SymbolPost union_symbol_post{ lhs_symbol_post.symbol, StateSet{} };
+
+            for (State target_state : lhs_symbol_post.targets) {
+                union_symbol_post.insert(lhs_state_renaming[target_state]);
+            }
+
+            union_nfa.delta.mutable_state_post(union_state).insert(union_symbol_post);
+        }
+    }
+
+    return union_nfa;
 }
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
