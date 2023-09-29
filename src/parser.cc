@@ -199,14 +199,14 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 
 std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
     std::vector<std::pair<std::string, bool>> result;
-    for (const auto& token : tokens) {
+    for (auto& token: tokens) {
         if (token.second) { // is quoted?
             result.push_back(std::move(token));
             continue;
         }
 
-        const std::string_view token_string = token.first;
-        size_t last_operator = 0;
+        const std::string_view token_string{ token.first };
+        size_t last_operator{ 0 };
         for (size_t i = 0, token_string_size{ token_string.size() }; i < token_string_size; ++i) {
             if (is_logical_operator(token_string[i])) {
                 const std::string_view token_candidate = token_string.substr(last_operator, i - last_operator);
