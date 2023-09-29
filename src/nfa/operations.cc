@@ -601,37 +601,8 @@ Nfa mata::nfa::minimize(
 }
 
 Nfa mata::nfa::uni(const Nfa &lhs, const Nfa &rhs) {
-    Nfa union_nfa{ rhs };
-
-    StateRenaming lhs_state_renaming;
-    const size_t size = lhs.num_of_states();
-    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
-        lhs_state_renaming[lhs_state] = union_nfa.add_state();
-    }
-
-    for (State lhs_initial_state : lhs.initial) {
-        union_nfa.initial.insert(lhs_state_renaming[lhs_initial_state]);
-    }
-
-    for (State lhs_final_state : lhs.final) {
-        union_nfa.final.insert(lhs_state_renaming[lhs_final_state]);
-    }
-
-    for (State lhs_state = 0; lhs_state < size; ++lhs_state) {
-        State union_state = lhs_state_renaming[lhs_state];
-        for (const SymbolPost &lhs_symbol_post : lhs.delta[lhs_state]) {
-
-            SymbolPost union_symbol_post{ lhs_symbol_post.symbol, StateSet{} };
-
-            for (State target_state : lhs_symbol_post.targets) {
-                union_symbol_post.insert(lhs_state_renaming[target_state]);
-            }
-
-            union_nfa.delta.mutable_state_post(union_state).insert(union_symbol_post);
-        }
-    }
-
-    return union_nfa;
+    Nfa union_nfa{ lhs };
+    return union_nfa.uni(rhs);
 }
 
 Nfa& Nfa::uni(const Nfa& aut) {
