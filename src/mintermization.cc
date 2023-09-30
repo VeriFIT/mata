@@ -19,8 +19,6 @@
 
 #include <vector>
 
-using MintermizationDomain = struct mata::MintermizationDomain;
-
 namespace {
     const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node)
     {

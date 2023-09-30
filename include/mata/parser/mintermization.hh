@@ -18,17 +18,7 @@
 #define MATA_MINTERM_HH
 
 #include "inter-aut.hh"
-#include "mintermization-domain.hh"
-
-// custom specialization of std::hash can be injected in namespace std
-namespace std {
-    template<>
-    struct hash<struct mata::MintermizationDomain> {
-        size_t operator()(const struct mata::MintermizationDomain &algebra) const noexcept {
-            return hash<BDD>{}(algebra.val);
-        }
-    };
-}
+#include "bdd-domain.hh"
 
 namespace mata {
 

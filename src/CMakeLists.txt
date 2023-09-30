@@ -7,7 +7,7 @@ add_library(libmata STATIC
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
 	mintermization.cc
-	mintermization-domain.cc
+	bdd-domain.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
@@ -23,6 +23,8 @@ add_library(libmata STATIC
 	nfa/operations.cc
 	nfa/builder.cc
 )
+
+SET(CMAKE_BUILD_TYPE Debug)
 
 # libmata needs at least c++20
 target_compile_features(libmata PUBLIC cxx_std_20)

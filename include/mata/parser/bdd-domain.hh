@@ -1,5 +1,5 @@
 /*
- * mintermization-domain.hh -- Mintermization domain for BDD.
+ * bdd-domain.hh -- Mintermization domain for BDD.
  *
  * This file is a part of libmata.
  *
@@ -21,29 +21,29 @@
 #include "mata/cudd/cuddObj.hh"
 
 namespace mata {
-    struct MintermizationDomain {
+    struct BDDDomain {
         Cudd bdd_mng; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
         BDD val;
 
-        MintermizationDomain() : bdd_mng(0), val(BDD()) {}
+        BDDDomain() : bdd_mng(0), val(BDD()) {}
 
-        MintermizationDomain(Cudd mng) : bdd_mng(mng), val(BDD()) {}
+        BDDDomain(Cudd mng) : bdd_mng(mng), val(BDD()) {}
 
-        MintermizationDomain(Cudd mng, BDD val) : bdd_mng(mng), val(val) {};
+        BDDDomain(Cudd mng, BDD val) : bdd_mng(mng), val(val) {};
 
-        friend MintermizationDomain operator&&(const MintermizationDomain& lhs, const MintermizationDomain &rhs) {
+        friend BDDDomain operator&&(const BDDDomain& lhs, const BDDDomain &rhs) {
             return {lhs.bdd_mng, lhs.val * rhs.val};
         }
 
-        friend MintermizationDomain operator||(const MintermizationDomain& lhs, const MintermizationDomain &rhs) {
+        friend BDDDomain operator||(const BDDDomain& lhs, const BDDDomain &rhs) {
             return {lhs.bdd_mng, lhs.val + rhs.val};
         }
 
-        friend MintermizationDomain operator!(const MintermizationDomain &lhs) {
+        friend BDDDomain operator!(const BDDDomain &lhs) {
             return {lhs.bdd_mng, !lhs.val};
         }
 
-        bool operator==(const MintermizationDomain &rhs) const {
+        bool operator==(const BDDDomain &rhs) const {
             return this->val == rhs.val;
         }
 
@@ -51,10 +51,19 @@ namespace mata {
             return val.IsZero();
         }
 
-        MintermizationDomain getTrue() const;
-        MintermizationDomain getFalse() const;
-        MintermizationDomain getVar() const;
+        BDDDomain getTrue() const;
+        BDDDomain getFalse() const;
+        BDDDomain getVar() const;
     };
 }
 
-#endif //LIBMATA_MINTERMIZATION_DOMAIN_HH
+namespace std {
+    template<>
+    struct hash<struct mata::BDDDomain> {
+        size_t operator()(const struct mata::BDDDomain &algebra) const noexcept {
+            return hash<BDD>{}(algebra.val);
+        }
+    };
+}
+
+#endif //LIBMATA_BDD_DOMAIN_HH

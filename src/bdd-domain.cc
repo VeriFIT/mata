@@ -1,5 +1,5 @@
 /*
- * mintermization-domain.cc -- Mintermization domain for BDD.
+ * bdd-domain.cc -- Mintermization domain for BDD.
  *
  * This file is a part of libmata.
  *
@@ -14,16 +14,16 @@
  * GNU General Public License for more details.
  */
 
-#include "mata/parser/mintermization-domain.hh"
+#include "mata/parser/bdd-domain.hh"
 
-struct mata::MintermizationDomain mata::MintermizationDomain::getTrue() const {
-    return MintermizationDomain(bdd_mng, bdd_mng.bddOne());
+struct mata::BDDDomain mata::BDDDomain::getTrue() const {
+    return BDDDomain(bdd_mng, bdd_mng.bddOne());
 }
 
-struct mata::MintermizationDomain mata::MintermizationDomain::getFalse() const {
-    return MintermizationDomain(bdd_mng, bdd_mng.bddZero());
+struct mata::BDDDomain mata::BDDDomain::getFalse() const {
+    return BDDDomain(bdd_mng, bdd_mng.bddZero());
 }
 
-struct mata::MintermizationDomain mata::MintermizationDomain::getVar() const {
-    return MintermizationDomain(bdd_mng, bdd_mng.bddVar());
+struct mata::BDDDomain mata::BDDDomain::getVar() const {
+    return BDDDomain(bdd_mng, bdd_mng.bddVar());
 }

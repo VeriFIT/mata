@@ -19,14 +19,14 @@
 
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
-#include "mata/parser/mintermization-domain.hh"
+#include "mata/parser/bdd-domain.hh"
 
 using namespace mata::parser;
 
 TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
 {
     Parsed parsed;
-    mata::Mintermization<mata::MintermizationDomain> mintermization{};
+    mata::Mintermization<mata::BDDDomain> mintermization{};
 
     SECTION("Empty trans")
     {
@@ -43,7 +43,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].first.is_operand());
         REQUIRE(aut.transitions[0].second.children[0].node.is_operand());
-        const mata::MintermizationDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const mata::BDDDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 2);
     }
 
@@ -62,7 +62,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const mata::MintermizationDomain alg  = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const mata::BDDDomain alg  = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 3);
     }
 
@@ -81,7 +81,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        const mata::MintermizationDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
+        const mata::BDDDomain alg = mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]);
         REQUIRE(alg.val.nodeCount() == 4);
         int inputs[] = {0,0,0,0};
         REQUIRE(alg.val.Eval(inputs).IsOne());
@@ -93,7 +93,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
 TEST_CASE("mata::Mintermization::compute_minterms")
 {
     Parsed parsed;
-    mata::Mintermization<mata::MintermizationDomain> mintermization{};
+    mata::Mintermization<mata::BDDDomain> mintermization{};
 
     SECTION("Minterm from trans no elimination")
     {
@@ -111,7 +111,7 @@ TEST_CASE("mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<mata::MintermizationDomain> vars;
+        std::unordered_set<mata::BDDDomain> vars;
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
         auto res = mintermization.compute_minterms(vars);
@@ -134,7 +134,7 @@ TEST_CASE("mata::Mintermization::compute_minterms")
         const auto& aut= auts[0];
         REQUIRE(aut.transitions[0].second.children[0].node.is_operator());
         REQUIRE(aut.transitions[0].second.children[1].node.is_operand());
-        std::unordered_set<struct mata::MintermizationDomain> vars;
+        std::unordered_set<struct mata::BDDDomain> vars;
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[0].second.children[0]));
         vars.insert(mintermization.graph_to_vars_nfa(aut.transitions[1].second.children[0]));
         auto res = mintermization.compute_minterms(vars);
@@ -144,7 +144,7 @@ TEST_CASE("mata::Mintermization::compute_minterms")
 
 TEST_CASE("mata::Mintermization::mintermization") {
     Parsed parsed;
-    mata::Mintermization<mata::MintermizationDomain> mintermization{};
+    mata::Mintermization<mata::BDDDomain> mintermization{};
 
     SECTION("Mintermization small") {
         std::string file =
@@ -202,7 +202,7 @@ TEST_CASE("mata::Mintermization::mintermization") {
 
     SECTION("Mintermization NFA multiple") {
         Parsed parsed;
-        mata::Mintermization<mata::MintermizationDomain> mintermization{};
+        mata::Mintermization<mata::BDDDomain> mintermization{};
 
         std::string file =
                 "@NFA-bits\n"
