@@ -7,6 +7,7 @@ add_library(libmata STATIC
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
 	mintermization.cc
+	mintermization-domain.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc

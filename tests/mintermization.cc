@@ -19,13 +19,14 @@
 
 #include "mata/parser/inter-aut.hh"
 #include "mata/parser/mintermization.hh"
+#include "mata/parser/mintermization-domain.hh"
 
 using namespace mata::parser;
 
 TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
 {
     Parsed parsed;
-    mata::Mintermization mintermization{};
+    mata::Mintermization<mata::MintermizationDomain> mintermization{};
 
     SECTION("Empty trans")
     {
@@ -92,7 +93,7 @@ TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
 TEST_CASE("mata::Mintermization::compute_minterms")
 {
     Parsed parsed;
-    mata::Mintermization mintermization{};
+    mata::Mintermization<mata::MintermizationDomain> mintermization{};
 
     SECTION("Minterm from trans no elimination")
     {
@@ -143,7 +144,7 @@ TEST_CASE("mata::Mintermization::compute_minterms")
 
 TEST_CASE("mata::Mintermization::mintermization") {
     Parsed parsed;
-    mata::Mintermization mintermization{};
+    mata::Mintermization<mata::MintermizationDomain> mintermization{};
 
     SECTION("Mintermization small") {
         std::string file =
@@ -201,7 +202,7 @@ TEST_CASE("mata::Mintermization::mintermization") {
 
     SECTION("Mintermization NFA multiple") {
         Parsed parsed;
-        mata::Mintermization mintermization{};
+        mata::Mintermization<mata::MintermizationDomain> mintermization{};
 
         std::string file =
                 "@NFA-bits\n"
