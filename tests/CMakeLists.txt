@@ -6,7 +6,7 @@ add_executable(tests
 		alphabet.cc
 		parser.cc
 		re2parser.cc
-		mintermization.cc
+		# mintermization.cc
 		nfa/delta.cc
 		nfa/nfa.cc
 		nfa/builder.cc
