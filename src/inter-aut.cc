@@ -92,11 +92,11 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         return std::find(vec.begin(), vec.end(), item) != vec.end();
     }
 
-    bool no_operators(const std::vector<mata::FormulaNode>& nodes) {
+    bool no_operators(const std::vector<mata::FormulaNode*>& nodes) {
         // Refactor using all_of() when Clang adds support for it.
         // return std::ranges::all_of(nodes, [](const mata::FormulaNode& node){ return !node.is_operator();});
         for (const auto& node: nodes) {
-            if (node.is_operator()) {
+            if (node->is_operator()) {
                 return false;
             }
         }
@@ -105,83 +105,78 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
 
     std::string serialize_graph(const mata::FormulaGraph& graph)
     {
-        if (graph.node.is_operand())
-            return graph.node.raw;
+        if (graph.node->is_operand())
+            return graph.node->raw;
 
-        if (graph.children.size() == 1) { // unary operator
-            const auto& child = graph.children.front();
-            std::string child_name = child.node.is_operand() ? child.node.raw :
-                    "(" + serialize_graph(mata::FormulaGraph{ std::move(child.node) }) + ")";
-            return graph.node.raw + child_name;
+        if (graph.right == nullptr) { // unary operator
+            const auto& child = *graph.left;
+            std::string child_name = child.node->is_operand() ? child.node->raw :
+                    "(" + serialize_graph(mata::FormulaGraph(child.node)) + ")";
+            return graph.node->raw + child_name;
         }
 
-        assert(graph.node.is_operator() && graph.children.size() == 2);
-        const auto& left_child = graph.children.front();
-        std::string lhs = (left_child.node.is_operand()) ? left_child.node.raw :
+        assert(graph.node->is_operator() && graph.both_children_defined());
+        const auto& left_child = *graph.left;
+        std::string lhs = (left_child.node->is_operand()) ? left_child.node->raw :
                 serialize_graph(left_child);
-        if (left_child.children.size() == 2)
+        if (left_child.both_children_defined())
             lhs = "(" + lhs + ")";
-        const auto& right_child = graph.children[1];
-        std::string rhs = (right_child.node.is_operand()) ? right_child.node.raw :
+        const auto& right_child = *graph.right;
+        std::string rhs = (right_child.node->is_operand()) ? right_child.node->raw :
                 serialize_graph(right_child);
-        if (right_child.children.size() == 2)
+        if (right_child.both_children_defined())
             rhs = "(" + rhs + ")";
 
-        return lhs + " " + graph.node.raw + " " + rhs;
+        return lhs + " " + graph.node->raw + " " + rhs;
     }
 
-    mata::FormulaNode create_node(const mata::IntermediateAut &mata, const std::string& token) {
+    mata::FormulaNode* create_node(mata::IntermediateAut &mata, const std::string& token) {
         if (is_logical_operator(token[0])) {
             switch (token[0]) {
                 case '&':
-                    return { mata::FormulaNode::Type::OPERATOR, token, token,
-                    mata::FormulaNode::OperatorType::AND };
+                    return mata.raw_to_nodes.at("&");
                 case '|':
-                    return { mata::FormulaNode::Type::OPERATOR, token, token,
-                    mata::FormulaNode::OperatorType::OR };
+                    return mata.raw_to_nodes.at("|");
                 case '!':
-                    return { mata::FormulaNode::Type::OPERATOR, token, token,
-                    mata::FormulaNode::OperatorType::NEG };
+                    return mata.raw_to_nodes.at("!");
                 default:
                     assert(false);
             }
         } else if (token == "(") {
-            return { mata::FormulaNode::Type::LEFT_PARENTHESIS, token};
+            return mata.raw_to_nodes.at("(");
         } else if (token == ")") {
-            return { mata::FormulaNode::Type::RIGHT_PARENTHESIS, token};
+            return mata.raw_to_nodes.at(")");
         } else if (token == "\\true") {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::TRUE};
+            return mata.raw_to_nodes.at("\\true");
         } else if (token == "\\false") {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::FALSE};
+            return mata.raw_to_nodes.at("\\false");
         } else if (is_naming_enum(mata.state_naming) && contains(mata.states_names, token)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::STATE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::STATE});
         } else if (is_naming_enum(mata.node_naming) && contains(mata.nodes_names, token)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::NODE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::NODE});
         } else if (is_naming_enum(mata.symbol_naming) && contains(mata.symbols_names, token)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::SYMBOL};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::SYMBOL});
         } else if (is_naming_marker(mata.state_naming) && token[0] == 'q') {
-            return { mata::FormulaNode::Type::OPERAND, token, token.substr(1),
-                                      mata::FormulaNode::OperandType::STATE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token.substr(1),
+                                      mata::FormulaNode::OperandType::STATE});
         } else if (is_naming_marker(mata.node_naming) && token[0] == 'n') {
-            return { mata::FormulaNode::Type::OPERAND, token, token.substr(1),
-                                      mata::FormulaNode::OperandType::NODE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token.substr(1),
+                                      mata::FormulaNode::OperandType::NODE});
         } else if (is_naming_marker(mata.symbol_naming) && token[0] == 'a') {
-            return { mata::FormulaNode::Type::OPERAND, token, token.substr(1),
-                                      mata::FormulaNode::OperandType::SYMBOL};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token.substr(1),
+                                      mata::FormulaNode::OperandType::SYMBOL});
         } else if (is_naming_auto(mata.state_naming)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::STATE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::STATE});
         } else if (is_naming_auto(mata.node_naming)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::NODE};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::NODE});
         } else if (is_naming_auto(mata.symbol_naming)) {
-            return { mata::FormulaNode::Type::OPERAND, token, token,
-                                      mata::FormulaNode::OperandType::SYMBOL};
+            return mata.enpool_node({ mata::FormulaNode::Type::OPERAND, token, token,
+                                      mata::FormulaNode::OperandType::SYMBOL});
         }
 
         throw std::runtime_error("Unknown token " + token);
@@ -206,23 +201,23 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      * @param tokens Series of tokens representing transition formula parsed from the input text
      * @return A postfix notation for input
      */
-    std::vector<mata::FormulaNode> infix_to_postfix(const mata::IntermediateAut &aut,
+    std::vector<mata::FormulaNode*> infix_to_postfix(mata::IntermediateAut &aut,
                                                     const std::vector<std::string>& tokens) {
-        std::vector<mata::FormulaNode> opstack;
-        std::vector<mata::FormulaNode> output;
+        std::vector<mata::FormulaNode*> opstack;
+        std::vector<mata::FormulaNode*> output;
 
         for (const std::string& token: tokens) {
-            mata::FormulaNode node = create_node(aut, token);
-            switch (node.type) {
+            mata::FormulaNode* node = create_node(aut, token);
+            switch (node->type) {
                 case mata::FormulaNode::Type::OPERAND:
-                    output.emplace_back(std::move(node));
+                    output.emplace_back(node);
                     break;
                 case mata::FormulaNode::Type::LEFT_PARENTHESIS:
-                    opstack.emplace_back(std::move(node));
+                    opstack.emplace_back(node);
                     break;
                 case mata::FormulaNode::Type::RIGHT_PARENTHESIS:
-                    while (!opstack.back().is_leftpar()) {
-                        output.emplace_back(std::move(opstack.back()));
+                    while (!opstack.back()->is_leftpar()) {
+                        output.emplace_back(opstack.back());
                         opstack.pop_back();
                     }
                     opstack.pop_back();
@@ -230,12 +225,12 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
                 case mata::FormulaNode::Type::OPERATOR:
                     for (int j = static_cast<int>(opstack.size())-1; j >= 0; --j) {
                         auto formula_node_opstack_it{ opstack.begin() + j };
-                        assert(!formula_node_opstack_it->is_operand());
-                        if (formula_node_opstack_it->is_leftpar()) {
+                        assert(!(*formula_node_opstack_it)->is_operand());
+                        if ((*formula_node_opstack_it)->is_leftpar()) {
                             break;
                         }
-                        if (lower_precedence(node.operator_type, formula_node_opstack_it->operator_type)) {
-                            output.emplace_back(std::move(*formula_node_opstack_it));
+                        if (lower_precedence(node->operator_type, (*formula_node_opstack_it)->operator_type)) {
+                            output.emplace_back(*formula_node_opstack_it);
                             opstack.erase(formula_node_opstack_it);
                         }
                     }
@@ -246,15 +241,15 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         }
 
         while (!opstack.empty()) {
-            output.push_back(std::move(opstack.back()));
+            output.push_back(opstack.back());
             opstack.pop_back();
         }
 
         #ifndef NDEBUG
         for (const auto& node : output) {
-            assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
-            assert(node.is_leftpar() || node.name != "(");
-            assert(node.is_rightpar() || node.name != ")");
+            assert(node->is_operator() || (node->name != "!" && node->name != "&" && node->name != "|"));
+            assert(node->is_leftpar() || node->name != "(");
+            assert(node->is_rightpar() || node->name != ")");
         }
         #endif // #ifndef NDEBUG.
 
@@ -266,33 +261,35 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      * @param postfix A postfix representation of transition formula
      * @return A parsed graph
      */
-    mata::FormulaGraph postfix_to_graph(std::vector<mata::FormulaNode> postfix) {
-            std::vector<mata::FormulaGraph> opstack{};
-            opstack.reserve(4);
-            for (mata::FormulaNode& node: postfix) {
-                switch (node.type) {
+    mata::FormulaGraph* postfix_to_graph(mata::IntermediateAut& ia, std::vector<mata::FormulaNode*> postfix) {
+            std::vector<mata::FormulaGraph*> opstack{};
+            for (mata::FormulaNode* node: postfix) {
+                switch (node->type) {
                 case mata::FormulaNode::Type::OPERAND:
-                    opstack.emplace_back(std::move(node));
+                    opstack.emplace_back(ia.create_graph(node));
                     break;
                 case mata::FormulaNode::Type::OPERATOR: {
-                    switch (node.operator_type) {
+                    switch (node->operator_type) {
                         case mata::FormulaNode::OperatorType::NEG: { // 1 child: graph will be a NEG node.
                             assert(!opstack.empty());
-                            mata::FormulaGraph child{ std::move(opstack.back()) };
+                            mata::FormulaGraph* child = opstack.back();
                             opstack.pop_back();
-                            mata::FormulaGraph& gr{ opstack.emplace_back(std::move(node)) };
-                            gr.children.emplace_back(std::move(child));
+                            mata::FormulaGraph *gr = ia.create_graph(node);
+                            opstack.emplace_back(gr);
+                            gr->left = child;
+                            gr->right = nullptr;
                             break;
                         }
                         default: { // 2 children: Graph will be either an AND node, or an OR node.
                             assert(opstack.size() > 1);
-                            mata::FormulaGraph second_child{ std::move(opstack.back()) };
+                            mata::FormulaGraph* second_child = opstack.back();
                             opstack.pop_back();
-                            mata::FormulaGraph first_child{ std::move(opstack.back()) };
+                            mata::FormulaGraph* first_child = opstack.back();
                             opstack.pop_back();
-                            mata::FormulaGraph& gr{ opstack.emplace_back(std::move(node)) };
-                            gr.children.emplace_back(std::move(first_child));
-                            gr.children.emplace_back(std::move(second_child));
+                            mata::FormulaGraph *gr = ia.create_graph(node);
+                            opstack.emplace_back(gr);
+                            gr->left = first_child;
+                            gr->right = second_child;
                             break;
                         }
                     }
@@ -304,7 +301,7 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
         }
 
         assert(opstack.size() == 1);
-        return std::move(*opstack.begin());
+        return *opstack.begin();
 }
 
     /**
@@ -314,28 +311,29 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      * @param postfix Postfix to which operators are eventually added
      * @return A postfix with eventually added operators
      */
-    std::vector<mata::FormulaNode> add_disjunction_implicitly(std::vector<mata::FormulaNode> postfix) {
+    std::vector<mata::FormulaNode*> add_disjunction_implicitly(mata::IntermediateAut &aut,
+                                                               std::vector<mata::FormulaNode*>& postfix) {
         const size_t postfix_size{ postfix.size() };
         if (postfix_size == 1) // no need to add operators
             return postfix;
 
-        for (const auto& op : postfix) {
-            if (op.is_operator()) // operators provided by user, return the original postfix
+        for (const auto op : postfix) {
+            if (op->is_operator()) // operators provided by user, return the original postfix
                 return postfix;
         }
 
-        std::vector<mata::FormulaNode> res;
+        std::vector<mata::FormulaNode*> res;
         if (postfix_size >= 2) {
-            res.push_back(std::move(postfix[0]));
-            res.push_back(std::move(postfix[1]));
-            res.emplace_back(
-                    mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR);
+            res.push_back(postfix[0]);
+            res.push_back(postfix[1]);
+            auto node = mata::FormulaNode{mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR};
+            res.emplace_back(aut.enpool_node(mata::FormulaNode(node)));
         }
 
         for (size_t i{ 2 }; i < postfix_size; ++i) {
-            res.push_back(std::move(postfix[i]));
-            res.emplace_back(
-                    mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR);
+            res.push_back(postfix[i]);
+            auto n = mata::FormulaNode{mata::FormulaNode::Type::OPERATOR, "|", "|", mata::FormulaNode::OperatorType::OR};
+            res.emplace_back(aut.enpool_node(n));
         }
 
         return res;
@@ -386,16 +384,16 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (no_operators(postfix)) {
                     aut.initial_enumerated = true;
-                    postfix = add_disjunction_implicitly(std::move(postfix));
+                    postfix = add_disjunction_implicitly(aut, postfix);
                 }
-                aut.initial_formula = postfix_to_graph(std::move(postfix));
+                aut.initial_formula = postfix_to_graph(aut, std::move(postfix));
             } else if (key.starts_with("Final")) {
                 auto postfix = infix_to_postfix(aut, keypair.second);
                 if (no_operators(postfix)) {
-                    postfix = add_disjunction_implicitly(std::move(postfix));
+                    postfix = add_disjunction_implicitly(aut, postfix);
                     aut.final_enumerated = true;
                 }
-                aut.final_formula = postfix_to_graph(std::move(postfix));;
+                aut.final_formula = postfix_to_graph(aut, postfix);
             }
         }
 
@@ -411,6 +409,7 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
     }
 } // Anonymous namespace.
 
+/*
 size_t mata::IntermediateAut::get_number_of_disjuncts() const
 {
     size_t res = 0;
@@ -418,12 +417,12 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const
     for (const auto& trans : this->transitions) {
         size_t trans_disjuncts = 0;
         std::vector<const FormulaGraph *> stack;
-        stack.push_back(&trans.second);
+        stack.push_back(trans.second);
 
         while (!stack.empty()) {
             const FormulaGraph *gr = stack.back();
             stack.pop_back();
-            if (gr->node.is_operator() && gr->node.operator_type == FormulaNode::OperatorType::OR)
+            if (gr->node->is_operator() && gr->node->operator_type == FormulaNode::OperatorType::OR)
                 trans_disjuncts++;
             for (const auto &ch: gr->children)
                 stack.push_back(&ch);
@@ -433,6 +432,7 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const
 
     return res;
 }
+ */
 
 /**
  * Parses a transition by firstly transforming transition formula to postfix form and then creating
@@ -443,10 +443,12 @@ size_t mata::IntermediateAut::get_number_of_disjuncts() const
 void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const std::vector<std::string>& tokens)
 {
     assert(tokens.size() > 1); // transition formula has at least two items
-    mata::FormulaNode lhs = create_node(aut, tokens[0]);
+    mata::FormulaNode* lhs = create_node(aut, tokens[0]);
     std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
 
-    std::vector<mata::FormulaNode> postfix;
+    aut.init_nodes();
+
+    std::vector<mata::FormulaNode*> postfix;
 
     // add implicit conjunction to NFA explicit states, i.e. p a q -> p a & q
     if (aut.automaton_type == mata::IntermediateAut::AutomatonType::NFA && tokens[tokens.size() - 2] != "&") {
@@ -454,7 +456,8 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
         // symbol and state naming and put conjunction to transition
         if (aut.alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             assert(rhs.size() == 2);
-            postfix.emplace_back(mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0], mata::FormulaNode::OperandType::SYMBOL);
+            auto node = mata::FormulaNode{mata::FormulaNode::Type::OPERAND, rhs[0], rhs[0], mata::FormulaNode::OperandType::SYMBOL};
+            postfix.emplace_back(aut.enpool_node(node));
             postfix.emplace_back(create_node(aut, rhs[1]));
         } else if (aut.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
             // This is a case where rhs state is not separated by a conjunction from the rest of the transitions.
@@ -464,19 +467,19 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
             postfix.emplace_back(create_node(aut, last_token));
         } else
             assert(false && "Unknown NFA type");
-
-        postfix.emplace_back(mata::FormulaNode::Type::OPERATOR, "&", "&", mata::FormulaNode::OperatorType::AND);
+        auto node = mata::FormulaNode{mata::FormulaNode::Type::OPERATOR, "&", "&", mata::FormulaNode::OperatorType::AND};
+        postfix.emplace_back(aut.enpool_node(node));
     } else
         postfix = infix_to_postfix(aut, rhs);
 
     #ifndef NDEBUG
     for (const auto& node: postfix) {
-        assert(node.is_operator() || (node.name != "!" && node.name != "&" && node.name != "|"));
-        assert(node.is_leftpar() || node.name != "(");
-        assert(node.is_rightpar() || node.name != ")");
+        assert(node->is_operator() || (node->name != "!" && node->name != "&" && node->name != "|"));
+        assert(node->is_leftpar() || node->name != "(");
+        assert(node->is_rightpar() || node->name != ")");
     }
     #endif // #ifndef NDEBUG.
-    aut.transitions.emplace_back(std::move(lhs), postfix_to_graph(std::move(postfix)));
+    aut.transitions.emplace_back(std::move(lhs), postfix_to_graph(aut, std::move(postfix)));
 }
 
 std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const
@@ -490,16 +493,17 @@ std::unordered_set<std::string> mata::FormulaGraph::collect_node_names() const
         assert(g != nullptr);
         stack.pop_back();
 
-        if (g->node.type == FormulaNode::Type::UNKNOWN)
+        if (g->node->type == FormulaNode::Type::UNKNOWN)
            continue; // skip undefined nodes
 
-        if (g->node.is_operand()) {
-            res.insert(g->node.name);
+        if (g->node->is_operand()) {
+            res.insert(g->node->name);
         }
 
-        for (const auto& child : g->children) {
-            stack.push_back(&child);
-        }
+        if (g->left != nullptr)
+            stack.push_back(g->left);
+        if (g->right != nullptr)
+            stack.push_back(g->right);
     }
 
     return res;
@@ -516,10 +520,11 @@ void mata::FormulaGraph::print_tree(std::ostream& os) const
         this_level = next_level;
         next_level.clear();
         for (const auto& graph : this_level) {
-            for (const auto& child : graph->children) {
-                next_level.push_back(&child);
-            }
-            os << graph->node.raw << "    ";
+            if (graph->left != nullptr)
+                next_level.push_back(graph->left);
+            if (graph->right != nullptr)
+                next_level.push_back(graph->right);
+            os << graph->node->raw << "    ";
         }
         os << "\n";
     }
@@ -541,55 +546,55 @@ std::vector<mata::IntermediateAut> mata::IntermediateAut::parse_from_mf(const ma
 }
 
 const mata::FormulaGraph& mata::IntermediateAut::get_symbol_part_of_transition(
-        const std::pair<FormulaNode, FormulaGraph>& trans) const
+        const std::pair<FormulaNode*, FormulaGraph*>& trans) const
 {
     if (!this->is_nfa()) {
         throw std::runtime_error("We currently support symbol extraction only for NFA");
     }
-    assert(trans.first.is_operand() && trans.first.operand_type == FormulaNode::OperandType::STATE);
-    assert(trans.second.node.is_operator()); // conjunction with rhs state
-    assert(trans.second.children[1].node.is_operand()); // rhs state
-    return trans.second.children[0];
+    assert(trans.first->is_operand() && trans.first->operand_type == FormulaNode::OperandType::STATE);
+    assert(trans.second->node->is_operator()); // conjunction with rhs state
+    assert(trans.second->right->node->is_operand()); // rhs state
+    return *trans.second->left;
 }
 
-void mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& symbol, const FormulaGraph& rhs)
+void mata::IntermediateAut::add_transition(FormulaNode* lhs, FormulaNode* symbol, FormulaGraph* rhs)
 {
     FormulaNode conjunction(FormulaNode::Type::OPERATOR, "&", "&", FormulaNode::OperatorType::AND);
-    FormulaGraph graph(conjunction);
-    graph.children.emplace_back(symbol);
-    graph.children.push_back(rhs);
-    this->transitions.emplace_back(lhs, std::move(graph));
+    FormulaGraph *graph = create_graph(&conjunction);
+    graph->left = create_graph(symbol);
+    graph->right = rhs;
+    this->transitions.emplace_back(lhs, graph);
 }
 
-void mata::IntermediateAut::add_transition(const FormulaNode& lhs, const FormulaNode& rhs)
+void mata::IntermediateAut::add_transition(FormulaNode* lhs, FormulaNode* rhs)
 {
-    assert(rhs.is_operand());
-    FormulaGraph graph(rhs);
-    this->transitions.emplace_back(lhs, std::move(graph));
+    assert(rhs->is_operand());
+    FormulaGraph* graph = create_graph(rhs);
+    this->transitions.emplace_back(lhs, graph);
 }
 
 void mata::IntermediateAut::print_transitions_trees(std::ostream& os) const
 {
     for (const auto& trans : transitions) {
-        os << trans.first.raw << " -> ";
-        trans.second.print_tree(os);
+        os << trans.first->raw << " -> ";
+        trans.second->print_tree(os);
     }
 }
 
 std::unordered_set<std::string> mata::IntermediateAut::get_positive_finals() const
 {
-    if (!is_graph_conjunction_of_negations(this->final_formula))
+    if (!is_graph_conjunction_of_negations(*this->final_formula))
         throw (std::runtime_error("Final formula is not a conjunction of negations"));
 
-    std::unordered_set<std::string> all = initial_formula.collect_node_names();
+    std::unordered_set<std::string> all = initial_formula->collect_node_names();
     for (const auto& trans : this->transitions) {
-        all.insert(trans.first.name);
+        all.insert(trans.first->name);
         // get names from state part of transition
-        const auto node_names = trans.second.children[1].collect_node_names();
+        const auto node_names = trans.second->right->collect_node_names();
         all.insert(node_names.begin(), node_names.end());
     }
 
-    for (const std::string& nonfinal : final_formula.collect_node_names())
+    for (const std::string& nonfinal : final_formula->collect_node_names())
         all.erase(nonfinal);
 
     return all;
@@ -598,17 +603,17 @@ std::unordered_set<std::string> mata::IntermediateAut::get_positive_finals() con
 bool mata::IntermediateAut::is_graph_conjunction_of_negations(const mata::FormulaGraph &graph) {
     const FormulaGraph *act_graph = &graph;
 
-    while (act_graph->children.size() == 2) {
+    while (act_graph->both_children_defined()) {
         // this node is conjunction and the left son is negation, otherwise returns false
-        if (act_graph->node.is_operator() && act_graph->node.is_and() &&
-            act_graph->children[0].node.is_operator() && act_graph->children[0].node.is_neg())
-            act_graph = &act_graph->children[1];
+        if (act_graph->node->is_operator() && act_graph->node->is_and() &&
+            act_graph->left->node->is_operator() && act_graph->right->node->is_neg())
+            act_graph = act_graph->right;
         else
             return false;
     }
 
     // the last child needs to be negation
-    return (act_graph->node.is_operator() && act_graph->node.is_neg());
+    return (act_graph->node->is_operator() && act_graph->node->is_neg());
 }
 
 std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& inter_aut)
@@ -620,21 +625,21 @@ std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& int
     os << "Alphabet " << static_cast<size_t>(inter_aut.alphabet_type) << '\n';
 
     os << "Initial states: ";
-    for (const auto& state : inter_aut.initial_formula.collect_node_names()) {
+    for (const auto& state : inter_aut.initial_formula->collect_node_names()) {
         os << state << ' ';
     }
     os << '\n';
 
     os << "Final states: ";
-    for (const auto& state : inter_aut.final_formula.collect_node_names()) {
+    for (const auto& state : inter_aut.final_formula->collect_node_names()) {
         os << state << ' ';
     }
     os << '\n';
 
     os << "Transitions: \n";
     for (const auto& trans : inter_aut.transitions) {
-        os << trans.first.raw << " -> ";
-        os << serialize_graph(trans.second);
+        os << trans.first->raw << " -> ";
+        os << serialize_graph(*trans.second);
         /*
         for (const auto& rhs : trans.second.collect_node_names()) {
             os << rhs << ' ';

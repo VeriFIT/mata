@@ -6,7 +6,7 @@ add_library(libmata STATIC
 	alphabet.cc
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
-	mintermization.cc
+	# mintermization.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc

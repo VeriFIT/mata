@@ -119,7 +119,7 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         }
     };
 
-    for (const auto& str : inter_aut.initial_formula.collect_node_names())
+    for (const auto& str : inter_aut.initial_formula->collect_node_names())
     {
         State state = get_state_name(str);
         aut.initial.insert(state);
@@ -127,9 +127,9 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
     for (const auto& trans : inter_aut.transitions)
     {
-        if (trans.second.children.size() != 2)
+        if (!trans.second->both_children_defined())
         {
-            if (trans.second.children.size() == 1)
+            if (trans.second->left != nullptr)
             {
                 throw std::runtime_error("Epsilon transitions not supported");
             }
@@ -139,20 +139,20 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
             }
         }
 
-        State src_state = get_state_name(trans.first.name);
-        Symbol symbol = alphabet->translate_symb(trans.second.children[0].node.name);
-        State tgt_state = get_state_name(trans.second.children[1].node.name);
+        State src_state = get_state_name(trans.first->name);
+        Symbol symbol = alphabet->translate_symb(trans.second->left->node->name);
+        State tgt_state = get_state_name(trans.second->right->node->name);
 
         aut.delta.add(src_state, symbol, tgt_state);
     }
 
     std::unordered_set<std::string> final_formula_nodes;
-    if (!(inter_aut.final_formula.node.is_constant())) {
+    if (!(inter_aut.final_formula->node->is_constant())) {
         // we do not want to parse true/false (constant) as a state so we do not collect it
-        final_formula_nodes = inter_aut.final_formula.collect_node_names();
+        final_formula_nodes = inter_aut.final_formula->collect_node_names();
     }
     // for constant true, we will pretend that final nodes are negated with empty final_formula_nodes
-    bool final_nodes_are_negated = (inter_aut.final_formula.node.is_true() || inter_aut.are_final_states_conjunction_of_negation());
+    bool final_nodes_are_negated = (inter_aut.final_formula->node->is_true() || inter_aut.are_final_states_conjunction_of_negation());
 
     if (final_nodes_are_negated) {
         // we add all states NOT in final_formula_nodes to final states

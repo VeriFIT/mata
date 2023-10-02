@@ -702,25 +702,25 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(auts.size() == 1);
         const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "&");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
-        REQUIRE(aut.transitions.front().second.children[1].children.empty());
-        REQUIRE(aut.initial_formula.node.name == "&");
-        REQUIRE(aut.initial_formula.children.size() == 2);
-        REQUIRE(aut.initial_formula.children[0].node.name == "q");
-        REQUIRE(aut.initial_formula.children[1].node.name == "r");
-        REQUIRE(aut.final_formula.node.name == "|");
-        REQUIRE(aut.final_formula.children.size() == 2);
-        REQUIRE(aut.final_formula.children[0].node.name == "q");
-        REQUIRE(aut.final_formula.children[1].node.name == "r");
+        REQUIRE(aut.transitions.front().first->name == "q");
+        REQUIRE(aut.transitions.front().first->is_operand());
+        REQUIRE(aut.transitions.front().second->node->is_operator());
+        REQUIRE(aut.transitions.front().second->node->name == "&");
+        REQUIRE(aut.transitions.front().second->both_children_defined());
+        REQUIRE(aut.transitions.front().second->left->node->is_operand());
+        REQUIRE(aut.transitions.front().second->left->node->name == "symbol");
+        REQUIRE(aut.transitions.front().second->left->both_children_null());
+        REQUIRE(aut.transitions.front().second->right->node->is_operand());
+        REQUIRE(aut.transitions.front().second->right->node->name == "r");
+        REQUIRE(aut.transitions.front().second->right->both_children_null());
+        REQUIRE(aut.initial_formula->node->name == "&");
+        REQUIRE(aut.initial_formula->both_children_defined());
+        REQUIRE(aut.initial_formula->left->node->name == "q");
+        REQUIRE(aut.initial_formula->right->node->name == "r");
+        REQUIRE(aut.final_formula->node->name == "|");
+        REQUIRE(aut.final_formula->both_children_defined());
+        REQUIRE(aut.final_formula->left->node->name == "q");
+        REQUIRE(aut.final_formula->right->node->name == "r");
     }
 
     SECTION("NFA without &")
@@ -736,17 +736,17 @@ TEST_CASE("parsing automata to intermediate representation")
         REQUIRE(auts.size() == 1);
         const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 1);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "&");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "r");
-        REQUIRE(aut.transitions.front().second.children[1].children.empty());
+        REQUIRE(aut.transitions.front().first->name == "q");
+        REQUIRE(aut.transitions.front().first->is_operand());
+        REQUIRE(aut.transitions.front().second->node->is_operator());
+        REQUIRE(aut.transitions.front().second->node->name == "&");
+        REQUIRE(aut.transitions.front().second->both_children_defined());
+        REQUIRE(aut.transitions.front().second->left->node->is_operand());
+        REQUIRE(aut.transitions.front().second->left->node->name == "symbol");
+        REQUIRE(aut.transitions.front().second->left->both_children_null());
+        REQUIRE(aut.transitions.front().second->right->node->is_operand());
+        REQUIRE(aut.transitions.front().second->right->node->name == "r");
+        REQUIRE(aut.transitions.front().second->right->both_children_null());
     }
 
     SECTION("NFA explicit enumeration of initials and finals")
@@ -847,9 +847,9 @@ q1 \false q2
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         const mata::IntermediateAut inter_aut = auts[0];
 
-        CHECK(inter_aut.final_formula.node.is_true());
-		CHECK(inter_aut.transitions.at(0).second.children.at(0).node.is_true());
-		CHECK(inter_aut.transitions.at(1).second.children.at(0).node.is_false());
+        CHECK(inter_aut.final_formula->node->is_true());
+		CHECK(inter_aut.transitions.at(0).second->left->node->is_true());
+		CHECK(inter_aut.transitions.at(1).second->left->node->is_false());
     }
 
     SECTION("AFA explicit")
@@ -866,37 +866,37 @@ q1 \false q2
         REQUIRE(auts.size() == 1);
         const mata::IntermediateAut& aut = auts.back();
         REQUIRE(aut.transitions.size() == 2);
-        REQUIRE(aut.transitions.front().first.name == "q");
-        REQUIRE(aut.transitions.front().first.is_operand());
-        REQUIRE(aut.transitions.front().second.node.is_operator());
-        REQUIRE(aut.transitions.front().second.node.name == "|");
-        REQUIRE(aut.transitions.front().second.children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children.front().node.name == "symbol");
-        REQUIRE(aut.transitions.front().second.children.front().children.empty());
-        REQUIRE(aut.transitions.front().second.children[1].node.is_operator());
-        REQUIRE(aut.transitions.front().second.children[1].node.name == "&");
-        REQUIRE(aut.transitions.front().second.children[1].children.size() == 2);
-        REQUIRE(aut.transitions.front().second.children[1].children.front().node.is_operand());
-        REQUIRE(aut.transitions.front().second.children[1].children.front().node.name == "other_symbol");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].node.is_operator());
-        REQUIRE(aut.transitions.front().second.children[1].children[1].node.name == "|");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().node.name == "|");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children[1].node.name == "s");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children.front().node.name == "(r,s)");
-        REQUIRE(aut.transitions.front().second.children[1].children[1].children.front().children[1].node.name == "r");
+        REQUIRE(aut.transitions.front().first->name == "q");
+        REQUIRE(aut.transitions.front().first->is_operand());
+        REQUIRE(aut.transitions.front().second->node->is_operator());
+        REQUIRE(aut.transitions.front().second->node->name == "|");
+        REQUIRE(aut.transitions.front().second->both_children_defined());
+        REQUIRE(aut.transitions.front().second->left->node->is_operand());
+        REQUIRE(aut.transitions.front().second->left->node->name == "symbol");
+        REQUIRE(aut.transitions.front().second->left->both_children_null());
+        REQUIRE(aut.transitions.front().second->right->node->is_operator());
+        REQUIRE(aut.transitions.front().second->right->node->name == "&");
+        REQUIRE(aut.transitions.front().second->right->both_children_defined());
+        REQUIRE(aut.transitions.front().second->right->left->node->is_operand());
+        REQUIRE(aut.transitions.front().second->right->left->node->name == "other_symbol");
+        REQUIRE(aut.transitions.front().second->right->right->node->is_operator());
+        REQUIRE(aut.transitions.front().second->right->right->node->name == "|");
+        REQUIRE(aut.transitions.front().second->right->right->left->node->name == "|");
+        REQUIRE(aut.transitions.front().second->right->right->right->node->name == "s");
+        REQUIRE(aut.transitions.front().second->right->right->left->left->node->name == "(r,s)");
+        REQUIRE(aut.transitions.front().second->right->right->left->right->node->name == "r");
 
-        REQUIRE(aut.transitions[1].first.name == "r");
-        REQUIRE(aut.transitions[1].first.is_operand());
-        REQUIRE(aut.transitions[1].second.node.is_operator());
-        REQUIRE(aut.transitions[1].second.node.name == "&");
-        REQUIRE(aut.transitions[1].second.children.size() == 2);
-        REQUIRE(aut.transitions[1].second.children.front().node.is_operator());
-        REQUIRE(aut.transitions[1].second.children.front().node.name == "!");
-        REQUIRE(aut.transitions[1].second.children.front().children.front().node.name == "b");
-        REQUIRE(aut.transitions[1].second.children[1].node.is_operator());
-        REQUIRE(aut.transitions[1].second.children[1].node.name == "&");
-        REQUIRE(aut.transitions[1].second.children[1].children.size() == 2);
+        REQUIRE(aut.transitions[1].first->name == "r");
+        REQUIRE(aut.transitions[1].first->is_operand());
+        REQUIRE(aut.transitions[1].second->node->is_operator());
+        REQUIRE(aut.transitions[1].second->node->name == "&");
+        REQUIRE(aut.transitions[1].second->both_children_defined());
+        REQUIRE(aut.transitions[1].second->left->node->is_operator());
+        REQUIRE(aut.transitions[1].second->left->node->name == "!");
+        REQUIRE(aut.transitions[1].second->left->left->node->name == "b");
+        REQUIRE(aut.transitions[1].second->right->node->is_operator());
+        REQUIRE(aut.transitions[1].second->right->node->name == "&");
+        REQUIRE(aut.transitions[1].second->right->both_children_defined());
     }
 
     SECTION("AFA explicit two automatic naming")
@@ -930,8 +930,8 @@ q1 \false q2
         parsed = parse_mf(file);
         std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const mata::IntermediateAut aut = auts[0];
-        REQUIRE(aut.transitions.front().first.name == "1");
-        REQUIRE(aut.transitions.front().first.raw == "q1");
+        REQUIRE(aut.transitions.front().first->name == "1");
+        REQUIRE(aut.transitions.front().first->raw == "q1");
 
     }
 
@@ -946,8 +946,8 @@ q1 \false q2
         parsed = parse_mf(file);
         std::vector<mata::IntermediateAut> auts = mata::IntermediateAut::parse_from_mf(parsed);
         const mata::IntermediateAut aut = auts[0];
-        REQUIRE(aut.transitions.front().first.name == "1");
-        REQUIRE(aut.transitions.front().first.raw == "q1");
+        REQUIRE(aut.transitions.front().first->name == "1");
+        REQUIRE(aut.transitions.front().first->raw == "q1");
     }
 
     SECTION("AFA explicit non existing symbol error")

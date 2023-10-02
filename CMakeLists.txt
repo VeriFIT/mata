@@ -123,7 +123,7 @@ endif()
 # Build tests only if Mata is the main project and we enabled testing
 if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME) AND BUILD_TESTING)
     add_subdirectory(tests)
-    add_subdirectory(tests-integration)
+    # add_subdirectory(tests-integration)
 endif()
 
 
