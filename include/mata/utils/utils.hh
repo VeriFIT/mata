@@ -68,13 +68,13 @@ class BoolVector : public std::vector<uint8_t> {
 public:
     BoolVector(size_t size, bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
     BoolVector(const BoolVector&) = default;
-    BoolVector(BoolVector&&) = default;
+    BoolVector(BoolVector&&) noexcept = default;
     BoolVector() = default;
     BoolVector(std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
     explicit BoolVector(const std::vector<uint8_t>& uint8_ts): std::vector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;
-    BoolVector& operator=(BoolVector&&) = default;
+    BoolVector& operator=(BoolVector&&) noexcept = default;
 
     /// Count the number of set elements.
     size_t count() const {
