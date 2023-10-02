@@ -249,8 +249,8 @@ namespace {
 BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
     BoolVector useful(this->num_of_states(),false);
     std::vector<TarjanNodeData> node_info(this->num_of_states());
-    std::deque<State> program_stack;
-    std::deque<State> tarjan_stack;
+    std::vector<State> program_stack;
+    std::vector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
     for(const State& q0 : initial) {
@@ -324,13 +324,13 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
                 scc.push_back(st);
             } while(st != act_state);
             if(final_scc) {
-                // propagate usefulness to the closed SCC
-                for(const State& st : scc) useful[st] = true;
-                // propagate usefulness to predecessors in @p tarjan_stack
-                for (auto st = tarjan_stack.rbegin(); st != tarjan_stack.rend(); ++st) {
-                    if (useful[*st])
-                        break;
-                    useful[*st] = true;
+                // Propagate usefulness to the closed SCC.
+                for(const State& st: scc) { useful[st] = true; }
+                // Propagate usefulness to predecessors in @p tarjan_stack.
+                for (auto state_it{ tarjan_stack.rbegin() }, state_it_end{ tarjan_stack.rend() };
+                     state_it != state_it_end; ++state_it) {
+                    if (useful[*state_it]) { break; }
+                    useful[*state_it] = true;
                 }
             }
         }
