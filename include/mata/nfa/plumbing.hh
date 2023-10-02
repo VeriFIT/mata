@@ -90,7 +90,6 @@ inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAut
  */
 inline void intersection(Nfa* res, const Nfa& lhs, const Nfa& rhs, Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
-    //TODO: first_epsilon should also be a parameter, optional parameter?
     *res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
 
