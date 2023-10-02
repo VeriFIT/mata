@@ -488,48 +488,12 @@ StatePost::Moves StatePost::moves(
 }
 
 StatePost::Moves StatePost::moves_epsilons(const Symbol first_epsilon) const {
-    const StatePost::const_iterator symbol_post_begin{ cbegin() };
-    const StatePost::const_iterator symbol_post_end{ cend() };
-    if (empty()) {
-        return { *this, symbol_post_end, symbol_post_end };
-    }
-    if (symbol_post_begin->symbol >= first_epsilon) {
-        return { *this, symbol_post_begin, symbol_post_end };
-    }
-
-    //TODO: some comments, my brain hurts. Can we use first_epsilon_it above (or rewrite its code as below)
-    StatePost::const_iterator previous_symbol_post_it{ std::prev(symbol_post_end) };
-    StatePost::const_iterator symbol_post_it{ previous_symbol_post_it };
-    while (previous_symbol_post_it != symbol_post_begin && first_epsilon < previous_symbol_post_it->symbol) {
-        symbol_post_it = previous_symbol_post_it;
-        --previous_symbol_post_it;
-    }
-    if (first_epsilon <= previous_symbol_post_it->symbol) {
-        return { *this, previous_symbol_post_it, symbol_post_end };
-    }
-    if (first_epsilon <= symbol_post_it->symbol) {
-        return { *this, symbol_post_it, symbol_post_end };
-    }
-    return { *this, symbol_post_end, symbol_post_end };
+    return { *this, first_epsilon_it(first_epsilon), cend() };
 }
 
 StatePost::Moves StatePost::moves_symbols(const Symbol last_symbol) const {
-    const StatePost::const_iterator symbol_post_end{ cend() };
-    const StatePost::const_iterator symbol_post_begin{ cbegin() };
-    if (empty() || symbol_post_begin->symbol > last_symbol) {
-        return { *this, symbol_post_end, symbol_post_end };
-    }
-
-    StatePost::const_iterator end_symbol_post_it { symbol_post_end };
-    StatePost::const_iterator previous_end_symbol_post_it{ std::prev(symbol_post_end) };
-    while (previous_end_symbol_post_it != symbol_post_begin && last_symbol < previous_end_symbol_post_it->symbol) {
-        end_symbol_post_it = previous_end_symbol_post_it;
-        --previous_end_symbol_post_it;
-    }
-    // Either previous_end_symbol_post_it is == symbol_post_begin, at which case we should iterate only over the first
-    //  symbol post (that is, end_symbol_post_it == symbol_post_begin + 1); or, previous_end_symbol_post_it jumped over
-    //  last_symbol and end_symbol_post_it is the first symbol post (or end()) after last symbol.
-    return { *this, symbol_post_begin, end_symbol_post_it };
+    if (last_symbol == EPSILON) { throw std::runtime_error("Using default epsilon as a last symbol to iterate over."); }
+    return { *this, cbegin(), first_epsilon_it(last_symbol + 1) };
 }
 
 StatePost::Moves::const_iterator StatePost::Moves::begin() const {
