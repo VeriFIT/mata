@@ -384,7 +384,6 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
         concatenated_rhs = concatenate_eps(concatenated_rhs, **next_rhs_aut_it, EPSILON-1, true); // we use EPSILON-1
     }
 
-    const std::set<Symbol> epsilons({EPSILON, EPSILON-1});
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
 
@@ -402,7 +401,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
             product_pres_eps_trans = revert(product_pres_eps_trans);
         }
     }
-    return noodlify_mult_eps(product_pres_eps_trans, epsilons, include_empty);
+    return noodlify_mult_eps(product_pres_eps_trans, { EPSILON, EPSILON-1 }, include_empty);
 }
 
 seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsilonsCounterMap& eps_cnt) {
