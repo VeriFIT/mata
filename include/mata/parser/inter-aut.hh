@@ -124,13 +124,18 @@ public:
  * and q1 and s2 being children nodes of the root.
  */
 class FormulaGraph {
+private:
+    /// Maximal number of @c FormulaNode children in any @c FormulaGraph node (for AND, OR nodes). Only one (NOT node)
+    ///  or zero (@c FormulaNode node) children may be used. Used as an optimalization by preallocating @c children at
+    ///  node initialization.
+    static constexpr size_t MAX_NUM_OF_CHILDREN{ 2 };
 public:
     FormulaNode node{};
     std::vector<FormulaGraph> children{};
 
     FormulaGraph() = default;
-    explicit FormulaGraph(const FormulaNode& n) : node(n), children() { children.reserve(2); }
-    explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() { children.reserve(2); }
+    explicit FormulaGraph(const FormulaNode& n) : node(n), children() { children.reserve(MAX_NUM_OF_CHILDREN); }
+    explicit FormulaGraph(FormulaNode&& n) : node(std::move(n)), children() { children.reserve(MAX_NUM_OF_CHILDREN); }
     FormulaGraph(const FormulaGraph& g) : node(g.node), children(g.children) {}
     FormulaGraph(FormulaGraph&& g) noexcept : node(std::move(g.node)), children(std::move(g.children)) {}
 
