@@ -162,8 +162,12 @@ namespace {
 
         TarjanNodeData() = default;
 
-        TarjanNodeData(State q, const Delta & delta, unsigned long index)
-            : current_move(delta[q].moves().begin()), end_move(delta[q].moves().end()), index(index), lowlink(index), initilized(true), on_stack(true) {};
+        TarjanNodeData(State q, const Delta& delta, unsigned long index)
+            : index(index), lowlink(index), initilized(true), on_stack(true) {
+            const StatePost::Moves moves{ delta[q].moves() };
+            current_move = moves.begin();
+            end_move = moves.end();
+        };
     };
 };
 
@@ -474,4 +478,3 @@ bool Nfa::is_identical(const Nfa& aut) const {
     }
     return delta == aut.delta;
 }
-
