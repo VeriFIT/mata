@@ -218,6 +218,7 @@ public:
     const_iterator(const_iterator&&) = default;
 
     const Move& operator*() const { return move_; }
+    const Move* operator->() const { return &move_; }
 
     // Prefix increment
     const_iterator& operator++();
@@ -545,6 +546,7 @@ public:
     const_iterator(const_iterator&&) = default;
 
     const Transition& operator*() const { return transition_; }
+    const Transition* operator->() const { return &transition_; }
 
     // Prefix increment
     const_iterator& operator++();
