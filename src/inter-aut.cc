@@ -210,6 +210,8 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
                                                     const std::vector<std::string>& tokens) {
         std::vector<mata::FormulaNode> opstack;
         std::vector<mata::FormulaNode> output;
+        output.reserve(tokens.size());
+        opstack.reserve(32);
 
         for (const std::string& token: tokens) {
             mata::FormulaNode node = create_node(aut, token);
