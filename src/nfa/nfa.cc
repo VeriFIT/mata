@@ -242,7 +242,7 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
                 if (stop_at_first_useful_state) { return useful; }
             }
         } else { // return from the recursive call
-            State act_succ = (*act_state_data.current_move).target;
+            State act_succ = act_state_data.current_move->target;
             act_state_data.lowlink = std::min(act_state_data.lowlink, node_info[act_succ].lowlink);
             // act_succ is the state that cased the recursive call. Move to another successor.
             ++act_state_data.current_move;
@@ -253,8 +253,8 @@ BoolVector Nfa::get_useful_states(const bool stop_at_first_useful_state) const {
         // rec_call simulates call of the strongconnect. Since c++ cannot do continue over
         // multiple loops, we use rec_call to jump to the main loop
         bool rec_call = false;
-        for(;act_state_data.current_move != act_state_data.end_move;++act_state_data.current_move) {
-            next_state = (*act_state_data.current_move).target;
+        for(; act_state_data.current_move != act_state_data.end_move; ++act_state_data.current_move) {
+            next_state = act_state_data.current_move->target;
             // if successor is useful, act_state is useful as well
             if(useful[next_state]) {
                 useful[act_state] = true;
