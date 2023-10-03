@@ -173,9 +173,12 @@ public:
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
+     * @param state_at_first_useful_state Whether only the first found useful state is set to true. Useful when
+     *  checking whether the set of useful states is empty.
+     *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states(bool stop_at_first_useful_state = false) const;
+    BoolVector get_useful_states(const bool stop_at_first_useful_state = false) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
