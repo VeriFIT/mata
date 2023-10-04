@@ -244,9 +244,27 @@ public:
             return {};
         }
         StateSet bigger_succ = {};
+
+        static utils::SynchronizedExistentialIterator<StateSet::const_iterator> I;
+        I.reset();
+        size_t all_targets_length = 0;
         for (const auto m: this->get_current()) {
-            bigger_succ.insert(m->targets);
+            mata::utils::push_back(I,m->targets);
+            all_targets_length+=m->targets.size();
         }
+        bigger_succ.reserve(all_targets_length);
+        while (I.advance()) {
+            bigger_succ.push_back(*(I.get_current()[0]));
+        }
+
+        //This was monstrously horribly disgustingly skinkingly slow. Keep this comment so that next generations can remember.
+        // (it was uniting the target vectors one by one)
+        //for (const auto m: this->get_current()) {
+        //    if (!std::includes(bigger_succ.begin(),bigger_succ.end(),m->targets.begin(),m->targets.end())) {
+        //        bigger_succ.insert(m->targets);
+        //    }
+        //}
+
         return bigger_succ;
     }
 
@@ -289,7 +307,7 @@ public:
     inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
     Delta(): state_posts_{} {}
-    Delta(const Delta& other): state_posts_{ other.state_posts_ } {}
+    Delta(const Delta& other) = default;
     explicit Delta(size_t n): state_posts_{ n } {}
 
     Delta& operator=(const Delta& other) = default;

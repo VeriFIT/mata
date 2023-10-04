@@ -39,14 +39,21 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    params["algorithm"] = "naive";
-    TIME_BEGIN(automata_inclusion_naive);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_naive);
+    //params["algorithm"] = "naive";
+    //TIME_BEGIN(automata_inclusion_naive);
+    //mata::nfa::is_included(lhs, rhs, &alphabet, params);
+    //TIME_END(automata_inclusion_naive);
 
+    std::cout<<"symbols: "<<lhs.delta.get_used_symbols().size()<<' '<<rhs.delta.get_used_symbols().size()<<std::endl;
+    std::cout<<"transitions: "<<lhs.delta.num_of_transitions()<<' '<<rhs.delta.num_of_transitions()<<std::endl;
+    std::cout<<"states: "<<lhs.num_of_states()<<' '<<rhs.num_of_states()<<std::endl;
+    std::cout<<"states trimmed: "<<lhs.trim().num_of_states()<<' '<<rhs.trim().num_of_states()<<std::endl;
+    std::cout<<"states reduced: "<<reduce(lhs).num_of_states()<<' '<<reduce(rhs).trim().num_of_states()<<std::endl;
+    std::cout<<lhs.is_deterministic()<<std::endl;
+    std::cout<<rhs.is_deterministic()<<std::endl;
     params["algorithm"] = "antichains";
     TIME_BEGIN(automata_inclusion_antichain);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
+    mata::nfa::is_included(reduce(lhs), reduce(rhs), &alphabet, params);
     TIME_END(automata_inclusion_antichain);
 
     return EXIT_SUCCESS;
