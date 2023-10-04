@@ -676,3 +676,40 @@ Symbol Delta::get_max_symbol() const {
     }
     return max;
 }
+
+StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
+    if(!is_synchronized()) { return {}; }
+
+    static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
+    sync_iterator.reset();
+    size_t all_targets_size{ 0 };
+    for (const auto symbol_post_it: this->get_current()) {
+        sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
+        all_targets_size += symbol_post_it->targets.size();
+    }
+    StateSet unified_targets{};
+    unified_targets.reserve(all_targets_size);
+    while (sync_iterator.advance()) { unified_targets.push_back(*(sync_iterator.get_current()[0])); }
+
+    //This was monstrously horribly disgustingly skinkingly slow. Keep this comment so that next generations can remember.
+    // (it was uniting the target vectors one by one)
+    //for (const auto m: this->get_current()) {
+    //    if (!std::includes(unified_targets.begin(),unified_targets.end(),m->targets.begin(),m->targets.end())) {
+    //        unified_targets.insert(m->targets);
+    //    }
+    //}
+
+    return unified_targets;
+}
+
+bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const SymbolPost& sync) {
+    do {
+        if (this->is_synchronized()) {
+            auto current_min = this->get_current_minimum();
+            if (*current_min >= sync) {
+                break;
+            }
+        }
+    } while (this->advance());
+    return this->is_synchronized() && *this->get_current_minimum() == sync;
+}
