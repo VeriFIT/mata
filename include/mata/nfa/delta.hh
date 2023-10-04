@@ -240,32 +240,28 @@ public:
      * @brief Get union of all targets.
      */
     StateSet unify_targets() const {
-        if(!this->is_synchronized()) {
-            return {};
-        }
-        StateSet bigger_succ = {};
+        if(!is_synchronized()) { return {}; }
 
-        static utils::SynchronizedExistentialIterator<StateSet::const_iterator> I;
-        I.reset();
-        size_t all_targets_length = 0;
-        for (const auto m: this->get_current()) {
-            mata::utils::push_back(I,m->targets);
-            all_targets_length+=m->targets.size();
+        static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
+        sync_iterator.reset();
+        size_t all_targets_size{ 0 };
+        for (const auto symbol_post_it: this->get_current()) {
+            sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
+            all_targets_size += symbol_post_it->targets.size();
         }
-        bigger_succ.reserve(all_targets_length);
-        while (I.advance()) {
-            bigger_succ.push_back(*(I.get_current()[0]));
-        }
+        StateSet unified_targets{};
+        unified_targets.reserve(all_targets_size);
+        while (sync_iterator.advance()) { unified_targets.push_back(*(sync_iterator.get_current()[0])); }
 
         //This was monstrously horribly disgustingly skinkingly slow. Keep this comment so that next generations can remember.
         // (it was uniting the target vectors one by one)
         //for (const auto m: this->get_current()) {
-        //    if (!std::includes(bigger_succ.begin(),bigger_succ.end(),m->targets.begin(),m->targets.end())) {
-        //        bigger_succ.insert(m->targets);
+        //    if (!std::includes(unified_targets.begin(),unified_targets.end(),m->targets.begin(),m->targets.end())) {
+        //        unified_targets.insert(m->targets);
         //    }
         //}
 
-        return bigger_succ;
+        return unified_targets;
     }
 
     /**
