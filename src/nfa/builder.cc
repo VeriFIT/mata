@@ -119,10 +119,12 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
         }
     };
 
-    for (const auto& str : inter_aut.initial_formula->collect_node_names())
+    if (inter_aut.initial_formula != nullptr)
     {
-        State state = get_state_name(str);
-        aut.initial.insert(state);
+        for (const auto &str: inter_aut.initial_formula->collect_node_names()) {
+            State state = get_state_name(str);
+            aut.initial.insert(state);
+        }
     }
 
     for (const auto& trans : inter_aut.transitions)
@@ -147,6 +149,9 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
     }
 
     std::unordered_set<std::string> final_formula_nodes;
+    if (inter_aut.final_formula == nullptr)
+        return aut;
+
     if (!(inter_aut.final_formula->node->is_constant())) {
         // we do not want to parse true/false (constant) as a state so we do not collect it
         final_formula_nodes = inter_aut.final_formula->collect_node_names();

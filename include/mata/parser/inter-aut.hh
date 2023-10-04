@@ -188,8 +188,8 @@ namespace std {
     struct hash<mata::FormulaGraph> {
         size_t operator()(const mata::FormulaGraph &graph) const noexcept {
             return (std::hash<mata::FormulaNode*>{}(graph.node) + 0x9e3779b9) ^
-                (std::hash<mata::FormulaNode*>()(graph.left->node) + 0x9e3779b9) ^
-                (std::hash<mata::FormulaNode*>()(graph.right->node) + 0x9e3779b9);
+                ((graph.left == nullptr ? 0 : std::hash<mata::FormulaNode*>()(graph.left->node)) + 0x9e3779b9) ^
+                ((graph.right == nullptr ? 0 : std::hash<mata::FormulaNode*>()(graph.right->node)) + 0x9e3779b9);
         }
     };
 }
@@ -321,7 +321,7 @@ public:
     void print_transitions_trees(std::ostream&) const;
 
     FormulaGraph* create_graph(FormulaNode* n) {
-        auto i = (graphs.insert(FormulaGraph{n})).first;
+        auto i = graphs.insert(FormulaGraph{n}).first;
         return const_cast<FormulaGraph*>(&*i);
     }
 

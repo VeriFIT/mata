@@ -350,6 +350,7 @@ bool has_atmost_one_auto_naming(const mata::IntermediateAut& aut) {
      */
     mata::IntermediateAut mf_to_aut(const mata::parser::ParsedSection& section) {
         mata::IntermediateAut aut;
+        aut.init_nodes();
 
         if (section.type.find("NFA") != std::string::npos) {
             aut.automaton_type = mata::IntermediateAut::AutomatonType::NFA;
@@ -447,8 +448,6 @@ void mata::IntermediateAut::parse_transition(mata::IntermediateAut &aut, const s
     assert(tokens.size() > 1); // transition formula has at least two items
     mata::FormulaNode* lhs = create_node(aut, tokens[0]);
     std::vector<std::string> rhs(tokens.begin()+1, tokens.end());
-
-    aut.init_nodes();
 
     std::vector<mata::FormulaNode*> postfix;
 
@@ -608,7 +607,7 @@ bool mata::IntermediateAut::is_graph_conjunction_of_negations(const mata::Formul
     while (act_graph->both_children_defined()) {
         // this node is conjunction and the left son is negation, otherwise returns false
         if (act_graph->node->is_operator() && act_graph->node->is_and() &&
-            act_graph->left->node->is_operator() && act_graph->right->node->is_neg())
+            act_graph->left->node->is_operator() && act_graph->left->node->is_neg())
             act_graph = act_graph->right;
         else
             return false;
