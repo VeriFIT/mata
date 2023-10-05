@@ -3,6 +3,7 @@
  */
 // TODO: Add file header.
 
+#include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/delta.hh"
@@ -683,9 +684,11 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
     static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
     sync_iterator.reset();
     size_t all_targets_size{ 0 };
-    for (const auto symbol_post_it: this->get_current()) {
+    std::vector<StatePost::const_iterator> current_symbol_post_its{ this->get_current() };
+    sync_iterator.reserve(current_symbol_post_its.size());
+    for (const auto symbol_post_it: current_symbol_post_its) {
         sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
-        all_targets_size += symbol_post_it->targets.size();
+        all_targets_size += symbol_post_it->num_of_targets();
     }
     StateSet unified_targets{};
     unified_targets.reserve(all_targets_size);
@@ -704,12 +707,10 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
 
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const SymbolPost& sync) {
     do {
-        if (this->is_synchronized()) {
-            auto current_min = this->get_current_minimum();
-            if (*current_min >= sync) {
-                break;
-            }
+        if (is_synchronized()) {
+            auto current_min_symbol_post_it = get_current_minimum();
+            if (*current_min_symbol_post_it >= sync) { break; }
         }
-    } while (this->advance());
-    return this->is_synchronized() && *this->get_current_minimum() == sync;
+    } while (advance());
+    return is_synchronized() && *get_current_minimum() == sync;
 }
