@@ -41,7 +41,7 @@ private: // data types
         OptionalBdd operator!() const;
     };
 
-    using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
+    using DisjunctStatesPair = std::pair<FormulaGraph *, FormulaGraph *>;
 
 private: // private data members
     Cudd bdd_mng{}; // Manager of BDDs from lib cubdd, it allocates and manages BDDs.
@@ -68,7 +68,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    BDD graph_to_bdd_nfa(const FormulaGraph& graph);
+    BDD graph_to_bdd_nfa(const FormulaGraph* graph);
 
     /**
      * Transforms a graph representing formula at transition to bdd.
@@ -77,7 +77,7 @@ public:
      * @param graph Graph to be transformed
      * @return Resulting BDD
      */
-    OptionalBdd graph_to_bdd_afa(const FormulaGraph& graph);
+    OptionalBdd graph_to_bdd_afa(const FormulaGraph* graph);
 
     /**
      * Method mintermizes given automaton which has bitvector alphabet.
