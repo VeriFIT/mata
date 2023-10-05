@@ -693,15 +693,6 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
     StateSet unified_targets{};
     unified_targets.reserve(all_targets_size);
     while (sync_iterator.advance()) { unified_targets.push_back(*(sync_iterator.get_current()[0])); }
-
-    //This was monstrously horribly disgustingly skinkingly slow. Keep this comment so that next generations can remember.
-    // (it was uniting the target vectors one by one)
-    //for (const auto m: this->get_current()) {
-    //    if (!std::includes(unified_targets.begin(),unified_targets.end(),m->targets.begin(),m->targets.end())) {
-    //        unified_targets.insert(m->targets);
-    //    }
-    //}
-
     return unified_targets;
 }
 
