@@ -60,8 +60,8 @@ bindings/python/.coverage
 bindings/python/dist
 bindings/python/libmata.egg-info
 bindings/python/libmata.cpp
-bindings/python/test.dot
-bindings/python/test.dot.pdf
+bindings/python/**/*.dot
+bindings/python/**/*.pdf
 bindings/python/MANIFEST
 
 # Performance and profiling tests
