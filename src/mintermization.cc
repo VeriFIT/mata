@@ -20,7 +20,7 @@
 namespace {
     const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node)
     {
-        if (node->node.is_state())
+        if (node->node->is_state())
             return node;
 
         std::vector<const mata::FormulaGraph *> worklist{ node};
@@ -28,25 +28,26 @@ namespace {
             const auto act_node = worklist.back();
             assert(act_node != nullptr);
             worklist.pop_back();
-            if (act_node->children.size() != 2)
+            if (!act_node->both_children_defined())
                 continue;
 
-            if (act_node->children.front().node.is_and() && act_node->children[1].node.is_state())
+            if (act_node->left->node->is_and() && act_node->right->node->is_state())
                 return act_node; // ... & a1 & q1 ... & qn
-            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_and())
+            else if (act_node->left->node->is_state() && act_node->right->node->is_and())
                 return act_node; // ... & a1 & q1 ... & qn
-            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state())
+            else if (act_node->left->node->is_state() && act_node->right->node->is_state())
                 return act_node; // ... & a1 & q1 & q2
-            else if (act_node->children.front().node.is_state() && act_node->children[1].node.is_state())
+            else if (act_node->left->node->is_state() && act_node->right->node->is_state())
                 return act_node; // ... & a1 & q1 & q2
-            else if (act_node->node.is_operator() && act_node->children[1].node.is_state())
-                return &act_node->children[1]; // a1 & q1
-            else if (act_node->children.front().node.is_state() && act_node->node.is_operator())
-                return &act_node->children.front(); // a1 & q1
+            else if (act_node->node->is_operator() && act_node->right->node->is_state())
+                return act_node->right; // a1 & q1
+            else if (act_node->left->node->is_state() && act_node->node->is_operator())
+                return act_node->left; // a1 & q1
             else {
-                for (const mata::FormulaGraph& child : act_node->children) {
-                    worklist.push_back(&child);
-                }
+                if (act_node->left != nullptr)
+                    worklist.push_back(act_node->left);
+                if (act_node->right != nullptr)
+                    worklist.push_back(act_node->right);
             }
         }
 
@@ -61,9 +62,9 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
     for (const auto& trans : aut.transitions) {
         // Foreach transition create a BDD
         const auto& symbol_part = aut.get_symbol_part_of_transition(trans);
-        assert((symbol_part.node.is_operator() || symbol_part.children.empty()) &&
+        assert((symbol_part.node->is_operator() || symbol_part.both_children_null()) &&
             "Symbol part must be either formula or single symbol");
-        const BDD bdd = graph_to_bdd_nfa(symbol_part);
+        const BDD bdd = graph_to_bdd_nfa(&symbol_part);
         if (bdd.IsZero())
             continue;
         bdds.insert(bdd);
@@ -74,40 +75,37 @@ void mata::Mintermization::trans_to_bdd_nfa(const IntermediateAut &aut)
 void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
 {
     assert(aut.is_afa());
-
+/*
     for (const auto& trans : aut.transitions) {
-        lhs_to_disjuncts_and_states[&trans.first] = std::vector<DisjunctStatesPair>();
-        if (trans.second.node.is_state()) { // node from state to state
-            lhs_to_disjuncts_and_states[&trans.first].emplace_back(&trans.second, &trans.second);
+        lhs_to_disjuncts_and_states[trans.first] = std::vector<DisjunctStatesPair>();
+        if (trans.second->node->is_state()) { // node from state to state
+            lhs_to_disjuncts_and_states[trans.first].emplace_back(trans.second, trans.second);
         }
         // split transition to disjuncts
-        const FormulaGraph *act_graph = &trans.second;
+        const FormulaGraph *act_graph = trans.second;
 
-        if (!trans.second.node.is_state() && act_graph->node.is_operator() && act_graph->node.operator_type != FormulaNode::OperatorType::OR) // there are no disjuncts
-            lhs_to_disjuncts_and_states[&trans.first].emplace_back(act_graph, detect_state_part(
+        if (!trans.second->node->is_state() && act_graph->node->is_operator() && act_graph->node->operator_type != FormulaNode::OperatorType::OR) // there are no disjuncts
+            lhs_to_disjuncts_and_states[trans.first].emplace_back(act_graph, detect_state_part(
                     act_graph));
-        else if (!trans.second.node.is_state()) {
-            while (act_graph->node.is_operator() && act_graph->node.operator_type == FormulaNode::OperatorType::OR) {
+        else if (!trans.second->node->is_state()) {
+            while (act_graph->node->is_operator() && act_graph->node->operator_type == FormulaNode::OperatorType::OR) {
                 // map lhs to disjunct and its state formula. The content of disjunct is right son of actual graph
                 // since the left one is a rest of formula
-                lhs_to_disjuncts_and_states[&trans.first].emplace_back(&act_graph->children[1],
-                                                                                       detect_state_part(
-                                                                                           &act_graph->children[1]));
-                act_graph = &(act_graph->children.front());
+                lhs_to_disjuncts_and_states[trans.first].emplace_back(act_graph->right, detect_state_part(
+                                                                                           act_graph->right));
+                act_graph = act_graph->left;
             }
 
             // take care of last disjunct
-            lhs_to_disjuncts_and_states[&trans.first].emplace_back(act_graph,
-                                                                                   detect_state_part(
-                                                                                           act_graph));
+            lhs_to_disjuncts_and_states[trans.first].emplace_back(act_graph,detect_state_part(act_graph));
         }
 
         // Foreach disjunct create a BDD
-        for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
+        for (const DisjunctStatesPair& ds_pair : lhs_to_disjuncts_and_states[trans.first]) {
             // create bdd for the whole disjunct
             const auto bdd = (ds_pair.first == ds_pair.second) ? // disjunct contains only states
                     OptionalBdd(bdd_mng.bddOne()) : // transition from state to states -> add true as symbol
-                    graph_to_bdd_afa(*ds_pair.first);
+                    graph_to_bdd_afa(ds_pair.first);
             assert(bdd.type == OptionalBdd::TYPE::BDD_E);
             if (bdd.val.IsZero())
                 continue;
@@ -115,6 +113,7 @@ void mata::Mintermization::trans_to_bdd_afa(const IntermediateAut &aut)
             bdds.insert(bdd.val);
         }
     }
+    */
 }
 
 std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unordered_set<BDD>& source_bdds)
@@ -143,35 +142,34 @@ std::unordered_set<BDD> mata::Mintermization::compute_minterms(const std::unorde
     return stack;
 }
 
-mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const FormulaGraph &graph)
+mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const FormulaGraph *graph)
 {
-    const FormulaNode& node = graph.node;
+    const FormulaNode* node = graph->node;
 
-    if (node.is_operand()) {
-        if (node.is_state())
+    if (node->is_operand()) {
+        if (node->is_state())
             return OptionalBdd(OptionalBdd::TYPE::NOTHING_E);
-        if (symbol_to_bddvar.count(node.name)) {
-            return OptionalBdd(symbol_to_bddvar.at(node.name));
+        if (symbol_to_bddvar.count(node->name)) {
+            return OptionalBdd(symbol_to_bddvar.at(node->name));
         } else {
-            BDD res = (node.is_true()) ? bdd_mng.bddOne() :
-                    (node.is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
-            symbol_to_bddvar[node.name] = res;
+            BDD res = (node->is_true()) ? bdd_mng.bddOne() :
+                    (node->is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
+            symbol_to_bddvar[node->name] = res;
             return OptionalBdd(res);
         }
-    } else if (node.is_operator()) {
-        if (node.operator_type == FormulaNode::OperatorType::AND) {
-            assert(graph.children.size() == 2);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
-            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
+    } else if (node->is_operator()) {
+        if (node->operator_type == FormulaNode::OperatorType::AND) {
+            const OptionalBdd op1 = graph_to_bdd_afa(graph->left);
+            const OptionalBdd op2 = graph_to_bdd_afa(graph->right);
             return op1 * op2;
-        } else if (node.operator_type == FormulaNode::OperatorType::OR) {
-            assert(graph.children.size() == 2);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
-            const OptionalBdd op2 = graph_to_bdd_afa(graph.children[1]);
+        } else if (node->operator_type == FormulaNode::OperatorType::OR) {
+            assert(graph->both_children_defined());
+            const OptionalBdd op1 = graph_to_bdd_afa(graph->left);
+            const OptionalBdd op2 = graph_to_bdd_afa(graph->right);
             return op1 + op2;
-        } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
-            assert(graph.children.size() == 1);
-            const OptionalBdd op1 = graph_to_bdd_afa(graph.children[0]);
+        } else if (node->operator_type == FormulaNode::OperatorType::NEG) {
+            assert(graph->left != nullptr && graph->right == nullptr);
+            const OptionalBdd op1 = graph_to_bdd_afa(graph->left);
             return !op1;
         } else
             assert(false && "Unknown type of operation. It should conjunction, disjunction, or negation.");
@@ -181,33 +179,33 @@ mata::Mintermization::OptionalBdd mata::Mintermization::graph_to_bdd_afa(const F
     return {};
 }
 
-BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph &graph)
+BDD mata::Mintermization::graph_to_bdd_nfa(const FormulaGraph *graph)
 {
-    const FormulaNode& node = graph.node;
+    const FormulaNode* node = graph->node;
 
-    if (node.is_operand()) {
-        if (symbol_to_bddvar.count(node.name)) {
-            return symbol_to_bddvar.at(node.name);
+    if (node->is_operand()) {
+        if (symbol_to_bddvar.count(node->name)) {
+            return symbol_to_bddvar.at(node->name);
         } else {
-            BDD res = (node.is_true()) ? bdd_mng.bddOne() :
-                      (node.is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
-            symbol_to_bddvar[node.name] = res;
+            BDD res = (node->is_true()) ? bdd_mng.bddOne() :
+                      (node->is_false() ? bdd_mng.bddZero() : bdd_mng.bddVar());
+            symbol_to_bddvar[node->name] = res;
             return res;
         }
-    } else if (node.is_operator()) {
-        if (node.operator_type == FormulaNode::OperatorType::AND) {
-            assert(graph.children.size() == 2);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
+    } else if (node->is_operator()) {
+        if (node->operator_type == FormulaNode::OperatorType::AND) {
+            assert(graph->both_children_defined());
+            const BDD op1 = graph_to_bdd_nfa(graph->left);
+            const BDD op2 = graph_to_bdd_nfa(graph->right);
             return op1 * op2;
-        } else if (node.operator_type == FormulaNode::OperatorType::OR) {
-            assert(graph.children.size() == 2);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
-            const BDD op2 = graph_to_bdd_nfa(graph.children[1]);
+        } else if (node->operator_type == FormulaNode::OperatorType::OR) {
+            assert(graph->both_children_defined());
+            const BDD op1 = graph_to_bdd_nfa(graph->left);
+            const BDD op2 = graph_to_bdd_nfa(graph->right);
             return op1 + op2;
-        } else if (node.operator_type == FormulaNode::OperatorType::NEG) {
-            assert(graph.children.size() == 1);
-            const BDD op1 = graph_to_bdd_nfa(graph.children[0]);
+        } else if (node->operator_type == FormulaNode::OperatorType::NEG) {
+            assert(graph->left != nullptr && graph->right == nullptr);
+            const BDD op1 = graph_to_bdd_nfa(graph->left);
             return !op1;
         } else
             assert(false);
@@ -222,20 +220,21 @@ void mata::Mintermization::minterms_to_aut_nfa(mata::IntermediateAut& res, const
 {
     for (const auto& trans : aut.transitions) {
             // for each t=(q1,s,q2)
-        const auto &symbol_part = trans.second.children[0];
+        const auto &symbol_part = trans.second->left;
 
         size_t symbol = 0;
-        if(trans_to_bddvar.count(&symbol_part) == 0)
+        if(trans_to_bddvar.count(symbol_part) == 0)
             continue; // Transition had zero bdd so it was not added to map
-        const BDD &bdd = trans_to_bddvar[&symbol_part];
+        const BDD &bdd = trans_to_bddvar[symbol_part];
 
         for (const auto &minterm: minterms) {
             // for each minterm x:
             if (!((bdd * minterm).IsZero())) {
                 // if for symbol s of t is BDD_s < x
                 // add q1,x,q2 to transitions
-                IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
-                                                        trans.second.children[1].node.raw});
+                std::string str_symbol = std::to_string(symbol);
+                IntermediateAut::parse_transition(res, {trans.first->raw, str_symbol,
+                                                        trans.second->right->node->raw});
             }
             symbol++;
         }
@@ -246,7 +245,7 @@ void mata::Mintermization::minterms_to_aut_afa(mata::IntermediateAut& res, const
                                                const std::unordered_set<BDD>& minterms)
 {
     for (const auto& trans : aut.transitions) {
-        for (const auto& ds_pair : lhs_to_disjuncts_and_states[&trans.first]) {
+        for (const auto& ds_pair : lhs_to_disjuncts_and_states[trans.first]) {
             // for each t=(q1,s,q2)
             const auto disjunct = ds_pair.first;
 
@@ -261,10 +260,11 @@ void mata::Mintermization::minterms_to_aut_afa(mata::IntermediateAut& res, const
                     // if for symbol s of t is BDD_s < x
                     // add q1,x,q2 to transitions
                     const auto str_symbol = std::to_string(symbol);
-                    FormulaNode node_symbol(FormulaNode::Type::OPERAND, str_symbol, str_symbol,
-                                            mata::FormulaNode::OperandType::SYMBOL);
+                    FormulaNode n = FormulaNode(FormulaNode::Type::OPERAND, str_symbol, str_symbol,
+                    mata::FormulaNode::OperandType::SYMBOL);
+                    FormulaNode* node_symbol = res.enpool_node(n);
                     if (ds_pair.second != nullptr)
-                        res.add_transition(trans.first, node_symbol, *ds_pair.second);
+                        res.add_transition(trans.first, node_symbol, ds_pair.second);
                     else // transition without state on the right handed side
                         res.add_transition(trans.first, node_symbol);
                 }
@@ -296,13 +296,17 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
         IntermediateAut mintermized_aut = *aut;
         mintermized_aut.alphabet_type = IntermediateAut::AlphabetType::EXPLICIT;
         mintermized_aut.transitions.clear();
+        mintermized_aut.graphs.clear();
+        mintermized_aut.nodes.clear();
+        mintermized_aut.raw_to_nodes.clear();
+        mintermized_aut.init_nodes();
 
         if (aut->is_nfa())
             minterms_to_aut_nfa(mintermized_aut, *aut, minterms);
         else if (aut->is_afa())
             minterms_to_aut_afa(mintermized_aut, *aut, minterms);
 
-        res.push_back(mintermized_aut);
+        res.push_back(std::move(mintermized_aut));
     }
 
     return res;
