@@ -731,7 +731,7 @@ Nfa mata::nfa::determinize(
         while (synchronized_iterator.advance()) {
 
             // extract post from the sychronized_iterator iterator
-            std::vector<Iterator> moves = synchronized_iterator.get_current();
+            const std::vector<Iterator>& moves = synchronized_iterator.get_current();
             Symbol currentSymbol = (*moves.begin())->symbol;
             StateSet T = synchronized_iterator.unify_targets();
 

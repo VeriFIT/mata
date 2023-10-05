@@ -89,8 +89,13 @@ public:
         }
     };
 
+    void reserve(const size_t size) {
+        this->positions.reserve(size);
+        this->ends.reserve(size);
+    }
+
     virtual bool advance() = 0;
-    virtual std::vector<Iterator> get_current() const = 0;
+    virtual const std::vector<Iterator>& get_current() const = 0;
 
     virtual ~SynchronizedIterator() = default;
 }; // class SynchronizedIterator.
@@ -162,7 +167,7 @@ public:
     }
 
     /// Returns the vector of current positions.
-    std::vector<Iterator> get_current() const {
+    const std::vector<Iterator>& get_current() const {
         return this->positions;
     };
 
@@ -176,7 +181,7 @@ public:
 
 template<typename Iterator>
 class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
-protected:
+public:
     Iterator get_current_minimum() {
         if (currently_synchronized.empty()) {
             throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minimum. Don't do "
@@ -185,7 +190,6 @@ protected:
         return currently_synchronized[0];
     }
 
-public:
     std::vector<Iterator> currently_synchronized{}; // Positions that are currently synchronized.
     Iterator next_minimum{}; // The value we should synchronise on after the first next call of advance().
 
@@ -198,7 +202,7 @@ public:
      * Since next_minimum becomes the current minimum,
      * new next_minimum must be updated too.
      */
-    bool advance() {
+    bool advance() override {
         // The next_minimum becomes the current current_minimum.
         auto current_minimum = this->next_minimum;
 
@@ -211,11 +215,12 @@ public:
             if (position_i_it == end_i_it) {
                 // If there is nothing left at the position, it is removed, that is,
                 // swapped with a position from the end of the vector,
-                // and shorten the vector.
+                // and the vector is shortened.
                 // The same is done with ends.
                 while (position_i_it == end_i_it && i < positions_size) {
                     position_i_it = this->positions[positions_size - 1];
                     end_i_it = this->ends[positions_size - 1];
+                    // This must be here, because in the next call, position_size is set again with positions.size().
                     this->positions.pop_back();
                     this->ends.pop_back();
                     --positions_size;
@@ -238,7 +243,7 @@ public:
                 this->next_minimum = position_i_it;
             }
 
-            ++i;
+            ++i; // This cannot be in the for statement line, because of the continue in the if body above.
         }
         return !currently_synchronized.empty();
     }; // advance().
@@ -249,14 +254,9 @@ public:
      * Beware, thy will be ordered differently from how there were input into the iterator.
      * This is due to swapping of the emptied positions with positions at the end.
      */
-    std::vector<Iterator> get_current() const { return this->currently_synchronized; };
+    const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; };
 
-    void reserve(const size_t size) {
-        this->positions.reserve(size);
-        this->ends.reserve(size);
-    }
-    void push_back(const Iterator &begin, const Iterator &end) {
-
+    void push_back(const Iterator &begin, const Iterator &end) override {
         // Empty vector would not have any effect (unlike in the case of the universal iterator).
         if (begin == end) return;
 
