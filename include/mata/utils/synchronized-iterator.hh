@@ -215,11 +215,12 @@ public:
             if (position_i_it == end_i_it) {
                 // If there is nothing left at the position, it is removed, that is,
                 // swapped with a position from the end of the vector,
-                // and shorten the vector.
+                // and the vector is shortened.
                 // The same is done with ends.
                 while (position_i_it == end_i_it && i < positions_size) {
                     position_i_it = this->positions[positions_size - 1];
                     end_i_it = this->ends[positions_size - 1];
+                    // This must be here, because in the next call, position_size is set again with positions.size().
                     this->positions.pop_back();
                     this->ends.pop_back();
                     --positions_size;
@@ -242,7 +243,7 @@ public:
                 this->next_minimum = position_i_it;
             }
 
-            ++i;
+            ++i; // This cannot be in the for statement line, because of the continue in the if body above.
         }
         return !currently_synchronized.empty();
     }; // advance().
