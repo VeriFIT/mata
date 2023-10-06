@@ -199,6 +199,7 @@ std::vector<std::pair<std::string, bool>> tokenize_line(const std::string& line)
 
 std::vector<std::pair<std::string, bool>> split_tokens(std::vector<std::pair<std::string, bool>> tokens) {
     std::vector<std::pair<std::string, bool>> result;
+    result.reserve(tokens.size() * 2);
     for (auto& token: tokens) {
         if (token.second) { // is quoted?
             result.push_back(std::move(token));
