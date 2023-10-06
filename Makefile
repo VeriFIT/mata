@@ -5,47 +5,60 @@ TEST_FLAGS=-j 50 --output-on-failure
 .PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
 
 all:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
+	mkdir -p $(BUILD_DIR)
+	$(MAKE) -C $(BUILD_DIR) $(MAKE_FLAGS) || echo "Type either \"make debug\" or \"make release\"!"
 
 # Builds everything (library, unit tests, integration tests, examples) in debug mode
 debug:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Debug
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds everything (library, unit tests, integration tests, examples) in debug mode with warnings turned into errors
 debug-werror:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Debug
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds only library in debug mode
 debug-lib:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_BUILD_TYPE=Debug
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds everything (library, unit tests, integration tests, examples) in release mode
 release:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds everything (library, unit tests, integration tests, examples) in debreleaseug mode with warnings turned into errors
 release-werror:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DWERROR:BOOL=ON -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds only library in release mode
 release-lib:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Release -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DMATA_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DCMAKE_BUILD_TYPE=Release
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
+
+# Builds everything (library, unit tests, integration tests, examples) in release mode with debug information.
+release-debuginfo:
+	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=RelWithDebInfo
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 # Builds everything in debug mode with coverage compiler flags
 coverage:
-	mkdir -p $(BUILD_DIR) && cd $(BUILD_DIR) && cmake -DCMAKE_BUILD_TYPE=Debug -DMATA_ENABLE_COVERAGE:BOOL=ON .. && $(MAKE) $(MAKE_FLAGS)
+	cmake -B $(BUILD_DIR) -S . -DCMAKE_BUILD_TYPE=Debug -DMATA_ENABLE_COVERAGE:BOOL=ON
+	cmake --build $(BUILD_DIR) --parallel $(MAKE_FLAGS)
 
 doc:
-	cd $(BUILD_DIR) && $(MAKE) $(MAKE_FLAGS) doc
+	$(MAKE) -C $(BUILD_DIR) $(MAKE_FLAGS) doc
 
 # Runs tests
 test:
-	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
+	ctest $(TEST_FLAGS) --test-dir "$(BUILD_DIR)"
 
 # Runs tests and generates coverage report from the results (mata must be built with coverage flags)
 test-coverage:
 	find . -name "**.gcda" -delete
-	cd $(BUILD_DIR) && ctest $(TEST_FLAGS)
+	ctest $(TEST_FLAGS) --test-dir="$(BUILD_DIR)"
 	gcovr -p -e "3rdparty/*" -j 6 --exclude-unreachable-branches --exclude-throw-branches $(BUILD_DIR)/src $(BUILD_DIR)/tests
 
 test-performance:
@@ -58,10 +71,10 @@ check:
 	cd $(BUILD_DIR) && cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON .. && cppcheck --project=compile_commands.json --quiet --error-exitcode=1
 
 install:
-	cd $(BUILD_DIR) && $(MAKE) install
+	$(MAKE) -C $(BUILD_DIR) install
 
 uninstall:
-	cd $(BUILD_DIR) && $(MAKE) uninstall
+	$(MAKE) -C $(BUILD_DIR) uninstall
 
 clean:
 	cd $(BUILD_DIR) && rm -rf *
