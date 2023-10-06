@@ -244,7 +244,7 @@ public:
             return {};
         }
         StateSet bigger_succ = {};
-        for (const auto m: this->get_current()) {
+        for (const auto& m: this->get_current()) {
             bigger_succ.insert(m->targets);
         }
         return bigger_succ;

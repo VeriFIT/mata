@@ -90,7 +90,7 @@ public:
     };
 
     virtual bool advance() = 0;
-    virtual std::vector<Iterator> get_current() const = 0;
+    virtual const std::vector<Iterator>& get_current() const = 0;
 
     virtual ~SynchronizedIterator() = default;
 }; // class SynchronizedIterator.
@@ -162,7 +162,7 @@ public:
     }
 
     /// Returns the vector of current positions.
-    std::vector<Iterator> get_current() const {
+    const std::vector<Iterator>& get_current() const {
         return this->positions;
     };
 
@@ -176,7 +176,7 @@ public:
 
 template<typename Iterator>
 class SynchronizedExistentialIterator : public SynchronizedIterator<Iterator> {
-protected:
+public:
     Iterator get_current_minimum() {
         if (currently_synchronized.empty()) {
             throw std::runtime_error("Trying to get minimum from sync. ex. iterator which has no minimum. Don't do "
@@ -185,7 +185,6 @@ protected:
         return currently_synchronized[0];
     }
 
-public:
     std::vector<Iterator> currently_synchronized{}; // Positions that are currently synchronized.
     Iterator next_minimum{}; // The value we should synchronise on after the first next call of advance().
 
@@ -247,7 +246,7 @@ public:
      * Beware, thy will be ordered differently from how there were input into the iterator.
      * This is due to swapping of the emptied positions with positions at the end.
      */
-    std::vector<Iterator> get_current() const { return this->currently_synchronized; };
+    const std::vector<Iterator>& get_current() const { return this->currently_synchronized; };
 
     void push_back (const Iterator &begin, const Iterator &end) {
 
