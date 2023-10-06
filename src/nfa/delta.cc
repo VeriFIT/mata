@@ -681,18 +681,24 @@ Symbol Delta::get_max_symbol() const {
 StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
     if(!is_synchronized()) { return {}; }
 
-    static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
-    sync_iterator.reset();
-    size_t all_targets_size{ 0 };
-    const std::vector<StatePost::const_iterator>& current_symbol_post_its{ this->get_current() };
-    sync_iterator.reserve(current_symbol_post_its.size());
-    for (const auto symbol_post_it: current_symbol_post_its) {
-        sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
-        all_targets_size += symbol_post_it->num_of_targets();
-    }
     StateSet unified_targets{};
-    unified_targets.reserve(all_targets_size);
-    while (sync_iterator.advance()) { unified_targets.push_back(*sync_iterator.get_current_minimum()); }
+
+    // static utils::SynchronizedExistentialIterator<StateSet::const_iterator> sync_iterator;
+    // sync_iterator.reset();
+    // size_t all_targets_size{ 0 };
+    // const std::vector<StatePost::const_iterator>& current_symbol_post_its{ this->get_current() };
+    // sync_iterator.reserve(current_symbol_post_its.size());
+    // for (const auto symbol_post_it: current_symbol_post_its) {
+    //     sync_iterator.push_back(symbol_post_it->cbegin(), symbol_post_it->cend());
+    //     all_targets_size += symbol_post_it->num_of_targets();
+    // }
+    // unified_targets.reserve(all_targets_size);
+    // while (sync_iterator.advance()) { unified_targets.push_back(*sync_iterator.get_current_minimum()); }
+
+    for (const auto& symbol_post_it: get_current()) {
+        unified_targets.insert(symbol_post_it->targets);
+    }
+
     return unified_targets;
 }
 
