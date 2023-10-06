@@ -239,35 +239,15 @@ public:
     /**
      * @brief Get union of all targets.
      */
-    StateSet unify_targets() const {
-        if(!this->is_synchronized()) {
-            return {};
-        }
-        StateSet bigger_succ = {};
-        for (const auto& m: this->get_current()) {
-            bigger_succ.insert(m->targets);
-        }
-        return bigger_succ;
-    }
+    StateSet unify_targets() const;
 
     /**
      * @brief Synchronize with the given SymbolPost @p sync. Alignes the synchronized iterator
      * to the same symbol as @p sync.
      * @return True iff the synchronized iterator points to the same symbol as @p sync.
      */
-    bool synchronize_with(const SymbolPost& sync) {
-        do {
-            if (this->is_synchronized()) {
-                auto current_min = this->get_current_minimum();
-                if (*current_min >= sync) {
-                    break;
-                }
-            }
-        } while (this->advance());
-        return this->is_synchronized() && *this->get_current_minimum() == sync;
-    }
-
-};
+    bool synchronize_with(const SymbolPost& sync);
+}; // class SynchronizedExistentialSymbolPostIterator.
 
 /**
  * @brief Delta is a data structure for representing transition relation.
@@ -289,7 +269,7 @@ public:
     inline static const StatePost empty_state_post; // When posts[q] is not allocated, then delta[q] returns this.
 
     Delta(): state_posts_{} {}
-    Delta(const Delta& other): state_posts_{ other.state_posts_ } {}
+    Delta(const Delta& other) = default;
     explicit Delta(size_t n): state_posts_{ n } {}
 
     Delta& operator=(const Delta& other) = default;

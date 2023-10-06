@@ -193,7 +193,7 @@ Nfa mata::nfa::algorithms::product(
         mata::utils::push_back(sync_iterator, rhs.delta[rhs_source]);
 
         while (sync_iterator.advance()) {
-            const std::vector<StatePost::const_iterator>& same_symbol_posts = sync_iterator.get_current();
+            const std::vector<StatePost::const_iterator>& same_symbol_posts{ sync_iterator.get_current() };
             assert(same_symbol_posts.size() == 2); // One move per state in the pair.
 
             // Compute product for state transitions with same symbols.
@@ -202,7 +202,7 @@ Nfa mata::nfa::algorithms::product(
             //  and states to which second one goes.
             Symbol symbol = same_symbol_posts[0]->symbol;
             if (symbol < first_epsilon) {
-                SymbolPost product_symbol_post{symbol};
+                SymbolPost product_symbol_post{ symbol };
                 for (const State lhs_target: same_symbol_posts[0]->targets) {
                     for (const State rhs_target: same_symbol_posts[1]->targets) {
                         create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
