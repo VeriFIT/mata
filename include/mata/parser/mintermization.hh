@@ -244,7 +244,7 @@ public:
                     IntermediateAut::parse_transition(res, {trans.first.raw, std::to_string(symbol),
                                                             trans.second.children[1].node.raw});
                 }
-                symbol++;
+                ++symbol;
             }
         }
     }
