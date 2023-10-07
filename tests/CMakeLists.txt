@@ -6,7 +6,7 @@ add_executable(tests
 		alphabet.cc
 		parser.cc
 		re2parser.cc
-		# mintermization.cc
+		mintermization.cc
 		nfa/delta.cc
 		nfa/nfa.cc
 		nfa/builder.cc
@@ -18,6 +18,7 @@ add_executable(tests
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
 )
+
 
 target_link_libraries(tests PRIVATE libmata Catch2::Catch2)
 

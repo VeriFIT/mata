@@ -251,9 +251,9 @@ public:
     std::vector<std::string> symbols_names{};
     std::vector<std::string> nodes_names{};
 
-    std::unordered_set<FormulaNode> nodes{};
-    std::unordered_set<FormulaGraph> graphs{};
-    std::unordered_map<std::string, FormulaNode*> raw_to_nodes{};
+    static std::unordered_set<FormulaNode> nodes;
+    static std::unordered_set<FormulaGraph> graphs;
+    static std::unordered_map<std::string, FormulaNode*> raw_to_nodes;
 
     FormulaGraph* initial_formula{};
     FormulaGraph* final_formula{};
@@ -348,6 +348,12 @@ public:
                                                                     "\\true", mata::FormulaNode::OperandType::TRUE});
         raw_to_nodes["\\false"] = enpool_node(FormulaNode{ FormulaNode::Type::OPERAND, "\\false",
                                                                     "\\false", mata::FormulaNode::OperandType::FALSE});
+    }
+
+    static void clear_static() {
+        graphs.clear();
+        nodes.clear();
+        raw_to_nodes.clear();
     }
 }; // class IntermediateAut.
 

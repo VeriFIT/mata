@@ -296,17 +296,17 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
         IntermediateAut mintermized_aut = *aut;
         mintermized_aut.alphabet_type = IntermediateAut::AlphabetType::EXPLICIT;
         mintermized_aut.transitions.clear();
-        mintermized_aut.graphs.clear();
-        mintermized_aut.nodes.clear();
-        mintermized_aut.raw_to_nodes.clear();
-        mintermized_aut.init_nodes();
+        // mintermized_aut.graphs.clear();
+        // mintermized_aut.nodes.clear();
+        // mintermized_aut.raw_to_nodes.clear();
+        // mintermized_aut.init_nodes();
 
         if (aut->is_nfa())
             minterms_to_aut_nfa(mintermized_aut, *aut, minterms);
         else if (aut->is_afa())
             minterms_to_aut_afa(mintermized_aut, *aut, minterms);
 
-        res.push_back(std::move(mintermized_aut));
+        res.push_back(mintermized_aut);
     }
 
     return res;

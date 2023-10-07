@@ -774,6 +774,7 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
                 "q3 a6 q6\n"
                 "q5 a7 q7\n";
 
+        mata::IntermediateAut::clear_static();
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
