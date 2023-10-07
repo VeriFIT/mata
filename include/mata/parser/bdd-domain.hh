@@ -51,9 +51,9 @@ namespace mata {
             return val.IsZero();
         }
 
-        BDDDomain getTrue() const;
-        BDDDomain getFalse() const;
-        BDDDomain getVar() const;
+        BDDDomain get_true() const;
+        BDDDomain get_false() const;
+        BDDDomain get_var() const;
     };
 }
 

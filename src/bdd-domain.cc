@@ -16,14 +16,14 @@
 
 #include "mata/parser/bdd-domain.hh"
 
-struct mata::BDDDomain mata::BDDDomain::getTrue() const {
+struct mata::BDDDomain mata::BDDDomain::get_true() const {
     return BDDDomain(bdd_mng, bdd_mng.bddOne());
 }
 
-struct mata::BDDDomain mata::BDDDomain::getFalse() const {
+struct mata::BDDDomain mata::BDDDomain::get_false() const {
     return BDDDomain(bdd_mng, bdd_mng.bddZero());
 }
 
-struct mata::BDDDomain mata::BDDDomain::getVar() const {
+struct mata::BDDDomain mata::BDDDomain::get_var() const {
     return BDDDomain(bdd_mng, bdd_mng.bddVar());
 }

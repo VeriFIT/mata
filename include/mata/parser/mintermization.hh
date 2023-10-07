@@ -93,16 +93,16 @@ private: // private data members
 
 public:
     /**
-     * Takes a set of BDDs and build a minterm tree over it.
-     * The leaves of BDDs, which are minterms of input set, are returned
-     * @param source_bdds BDDs for which minterms are computed
+     * Takes a set of domain values and build a minterm tree over it.
+     * The leaves of domain values, which are minterms of input set, are returned
+     * @param domain_values domain values for which minterms are computed
      * @return Computed minterms
      */
     std::unordered_set<MintermizationDomain> compute_minterms(
-            const std::unordered_set<MintermizationDomain>& source_bdds)
+            const std::unordered_set<MintermizationDomain>& domain_values)
     {
-        std::unordered_set<MintermizationDomain> stack{ domain_base.getTrue() };
-        for (const MintermizationDomain& b: source_bdds) {
+        std::unordered_set<MintermizationDomain> stack{ domain_base.get_true() };
+        for (const MintermizationDomain& b: domain_values) {
             std::unordered_set<MintermizationDomain> next;
             /**
              * TODO: Possible optimization - we can remember which transition belongs to the currently processed vars
@@ -137,9 +137,9 @@ public:
             if (symbol_to_var.count(node.name)) {
                 return symbol_to_var.at(node.name);
             } else {
-                MintermizationDomain res = (node.is_true()) ? domain_base.getTrue() :
-                                           (node.is_false() ? domain_base.getFalse() :
-                                            domain_base.getVar());
+                MintermizationDomain res = (node.is_true()) ? domain_base.get_true() :
+                                           (node.is_false() ? domain_base.get_false() :
+                                            domain_base.get_var());
                 symbol_to_var.insert(std::make_pair(node.name, res));
                 return res;
             }
@@ -173,7 +173,7 @@ public:
      * @return Mintermized automaton
      */
     mata::IntermediateAut mintermize(const mata::IntermediateAut& aut) {
-        return mintermize(std::vector<const mata::IntermediateAut *>{&aut})[0];
+        return mintermize(std::vector<const mata::IntermediateAut *>{&aut}).front();
     }
 
     /**
