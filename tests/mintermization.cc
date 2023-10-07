@@ -23,7 +23,7 @@
 
 using namespace mata::parser;
 
-TEST_CASE("Mata::Mintermization::trans_to_vars_nfa")
+TEST_CASE("mata::Mintermization::trans_to_vars_nfa")
 {
     Parsed parsed;
     mata::Mintermization<mata::BDDDomain> mintermization{};
