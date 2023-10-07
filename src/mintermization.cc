@@ -17,8 +17,6 @@
 
 #include "mata/parser/mintermization.hh"
 
-#include <vector>
-
 namespace {
     const mata::FormulaGraph* detect_state_part(const mata::FormulaGraph* node)
     {
