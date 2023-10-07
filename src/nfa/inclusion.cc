@@ -53,7 +53,7 @@ bool mata::nfa::algorithms::is_included_antichains(
     (void)alphabet;
 
     using ProdStateType = std::pair<State, StateSet>;
-    using ProdStatesType = std::deque<ProdStateType>;
+    using ProdStatesType = std::vector<ProdStateType>;
     // ProcessedType is indexed by states of the smaller nfa
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
     using ProcessedType = std::vector<ProdStatesType>;
