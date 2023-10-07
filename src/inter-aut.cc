@@ -652,7 +652,3 @@ std::ostream& std::operator<<(std::ostream& os, const mata::IntermediateAut& int
 
     return os;
 }
-
-std::unordered_set<mata::FormulaGraph> mata::IntermediateAut::graphs{};
-std::unordered_set<mata::FormulaNode> mata::IntermediateAut::nodes{};
-std::unordered_map<std::string, mata::FormulaNode*> mata::IntermediateAut::raw_to_nodes{};

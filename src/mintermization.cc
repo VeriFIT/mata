@@ -275,7 +275,7 @@ void mata::Mintermization::minterms_to_aut_afa(mata::IntermediateAut& res, const
 }
 
 mata::IntermediateAut mata::Mintermization::mintermize(const mata::IntermediateAut& aut) {
-    return mintermize(std::vector<const mata::IntermediateAut *> { &aut})[0];
+    return std::move(mintermize(std::vector<const mata::IntermediateAut *> { &aut})[0]);
 }
 
 std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::vector<const mata::IntermediateAut *> &auts)
@@ -301,12 +301,12 @@ std::vector<mata::IntermediateAut> mata::Mintermization::mintermize(const std::v
         // mintermized_aut.raw_to_nodes.clear();
         // mintermized_aut.init_nodes();
 
-        if (aut->is_nfa())
-            minterms_to_aut_nfa(mintermized_aut, *aut, minterms);
-        else if (aut->is_afa())
-            minterms_to_aut_afa(mintermized_aut, *aut, minterms);
-
         res.push_back(mintermized_aut);
+
+        if (aut->is_nfa())
+            minterms_to_aut_nfa(res.back(), *aut, minterms);
+        else if (aut->is_afa())
+            minterms_to_aut_afa(res.back(), *aut, minterms);
     }
 
     return res;
