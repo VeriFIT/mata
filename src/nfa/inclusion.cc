@@ -185,7 +185,6 @@ bool mata::nfa::algorithms::is_included_antichains(
                         }
                     }
 
-                    // TODO: set pushing strategy
                     insert_to_pairs(*ds,succ);
                 }
 
