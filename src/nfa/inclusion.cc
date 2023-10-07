@@ -53,10 +53,10 @@ bool mata::nfa::algorithms::is_included_antichains(
     (void)alphabet;
 
     using ProdStateType = std::pair<State, StateSet>;
-    using WorklistType = std::deque<ProdStateType>;
+    using ProdStatesType = std::vector<ProdStateType>;
     // ProcessedType is indexed by states of the smaller nfa
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
-    using ProcessedType = std::vector<std::deque<ProdStateType>>;
+    using ProcessedType = std::vector<ProdStatesType>;
 
     auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
         if (lhs.first != rhs.first) {
@@ -65,18 +65,27 @@ bool mata::nfa::algorithms::is_included_antichains(
 
         const StateSet& lhs_bigger = lhs.second;
         const StateSet& rhs_bigger = rhs.second;
-        if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
-            return false;
-        }
 
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
         return lhs_bigger.IsSubsetOf(rhs_bigger);
     };
 
+
     // initialize
-    WorklistType worklist = { };
-    ProcessedType processed(smaller.num_of_states()); // allocate to the number of states of the smaller nfa
+    ProdStatesType worklist = { };//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
+    // so those with smaller popped for processing first.
+    ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
+    // The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test inclusion in sets that have less elements.
+
+    //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
+    auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return a.second.size() < b.second.size(); };
+
+    //Inserting the pairs (q,S) into a sequence of pairs in order defined by the size of the sets S.
+    auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
+        auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
+        pairs.insert(it,pair);
+    };
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state
@@ -92,8 +101,8 @@ bool mata::nfa::algorithms::is_included_antichains(
         }
 
         const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
-        worklist.push_back(st);
-        processed[state].push_back(st);
+        insert_to_pairs(worklist,st);
+        insert_to_pairs(processed[state],st);
 
         if (cex != nullptr)
             paths.insert({ st, {st, 0}});
@@ -149,29 +158,34 @@ bool mata::nfa::algorithms::is_included_antichains(
 
                 bool is_subsumed = false;
                 for (const auto& anti_state : processed[smaller_succ])
-                { // trying to find a smaller state in processed
+                { // trying to find in processed a smaller state that the newly created succ
+                    if (smaller_set(succ,anti_state)) {
+                        break;
+                    }
                     if (subsumes(anti_state, succ)) {
                         is_subsumed = true;
                         break;
                     }
                 }
 
-                if (is_subsumed) { continue; }
+                if (is_subsumed) {
+                    continue;
+                }
 
-                for (std::deque<ProdStateType>* ds : {&processed[smaller_succ], &worklist}) {
-                    for (size_t it = 0; it < ds->size(); ++it) {
-                        if (subsumes(succ, ds->at(it))) {
-                            //Removal though replacement by the last element and removal pob_back.
-                            //Because calling erase would invalidate iterator it (in deque).
-                            ds->at(it) = ds->back(); //does it coppy stuff?
-                            ds->pop_back();
-                        } else {
-                            ++it;
+                for (ProdStatesType* ds : {&processed[smaller_succ], &worklist}) {
+                    //Pruning of processed and the worklist.
+                    //Since they are ordered by the size of the sets, we can iterate from back,
+                    //and as soon as we get to sets larger than succ, we can stop (larger sets cannot be subsets).
+                    for (long it = static_cast<long>(ds->size()-1);it>=0;--it) {
+                        if (smaller_set((*ds)[static_cast<size_t>(it)],succ))
+                            break;
+                        if (subsumes(succ, (*ds)[static_cast<size_t>(it)])) {
+                            //Using index it instead of an iterator since erase could invalidate it (?)
+                            ds->erase(ds->begin() + it);
                         }
                     }
 
-                    // TODO: set pushing strategy
-                    ds->push_back(succ);
+                    insert_to_pairs(*ds,succ);
                 }
 
                 if(cex != nullptr) {
@@ -181,7 +195,6 @@ bool mata::nfa::algorithms::is_included_antichains(
             }
         }
     }
-
     return true;
 } // }}}
 
