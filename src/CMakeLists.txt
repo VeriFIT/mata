@@ -1,12 +1,13 @@
 # create config.cc file that contains definitions of global variables (such as version, verbosity, etc.)
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.cc.in" "${CMAKE_CURRENT_BINARY_DIR}/config.cc" @ONLY)
 
+
 add_library(libmata STATIC
 # add_library(libmata SHARED
 	alphabet.cc
 	"${CMAKE_CURRENT_BINARY_DIR}/config.cc"
 	inter-aut.cc
-	# mintermization.cc
+	mintermization.cc
 	parser.cc
 	re2parser.cc
 	nfa/nfa.cc
