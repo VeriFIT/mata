@@ -52,10 +52,6 @@ bool mata::nfa::algorithms::is_included_antichains(
     //TODO: what does this do?
     (void)alphabet;
 
-    long new_subsumed = 0;
-    long old_subsumed = 0;
-    long generated = 0;
-
     using ProdStateType = std::pair<State, StateSet>;
     using ProdStatesType = std::deque<ProdStateType>;
     // ProcessedType is indexed by states of the smaller nfa
@@ -173,7 +169,6 @@ bool mata::nfa::algorithms::is_included_antichains(
                 }
 
                 if (is_subsumed) {
-                    new_subsumed++;
                     continue;
                 }
 
@@ -185,14 +180,12 @@ bool mata::nfa::algorithms::is_included_antichains(
                         if (smaller_set((*ds)[it],succ))
                             break;
                         if (subsumes(succ, (*ds)[it])) {
-                            old_subsumed++;
                             //Using index it instead of an iterator since erase could invalidate it (?)
                             ds->erase(ds->begin() + it);
                         }
                     }
 
                     // TODO: set pushing strategy
-                    generated++;
                     insert_to_pairs(*ds,succ);
                 }
 
@@ -203,10 +196,6 @@ bool mata::nfa::algorithms::is_included_antichains(
             }
         }
     }
-    std::cout<<"new_subsumed: "<<new_subsumed<<std::endl;
-    std::cout<<"old_subsumed: "<<old_subsumed<<std::endl;
-    std::cout<<"generated: "<<generated<<std::endl;
-    //std::cout<<"posts: "<<posts<<std::endl;
     return true;
 } // }}}
 
