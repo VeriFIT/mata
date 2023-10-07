@@ -176,10 +176,10 @@ bool mata::nfa::algorithms::is_included_antichains(
                     //Pruning of processed and the worklist.
                     //Since they are ordered by the size of the sets, we can iterate from back,
                     //and as soon as we get to sets larger than succ, we can stop (larger sets cannot be subsets).
-                    for (long it = ds->size()-1;it>=0;--it) {
-                        if (smaller_set((*ds)[it],succ))
+                    for (long it = static_cast<long>(ds->size()-1);it>=0;--it) {
+                        if (smaller_set((*ds)[static_cast<size_t>(it)],succ))
                             break;
-                        if (subsumes(succ, (*ds)[it])) {
+                        if (subsumes(succ, (*ds)[static_cast<size_t>(it)])) {
                             //Using index it instead of an iterator since erase could invalidate it (?)
                             ds->erase(ds->begin() + it);
                         }
