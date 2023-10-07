@@ -26,7 +26,7 @@ template <class MintermizationDomain>
 class Mintermization {
 private: // data types
     struct OptionalValue {
-        enum class TYPE {NOTHING_E, VALUE_E};
+        enum class Type {NOTHING_E, VALUE_E};
 
         TYPE type;
         MintermizationDomain val;
