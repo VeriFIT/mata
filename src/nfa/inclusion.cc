@@ -44,17 +44,21 @@ bool mata::nfa::algorithms::is_included_naive(
 /// language inclusion check using Antichains
 // TODO, what about to construct the separator from this?
 bool mata::nfa::algorithms::is_included_antichains(
-    const Nfa&             smaller,
-    const Nfa&             bigger,
+    const Nfa&             smaller_nfa,
+    const Nfa&             bigger_nfa,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
     Run*                   cex)
 { // {{{
     //TODO: what does this do?
     (void)alphabet;
 
+    long new_subsumed = 0;
+    long old_subsumed = 0;
+    long generated = 0;
+
     using ProdStateType = std::pair<State, StateSet>;
     using WorklistType = std::deque<ProdStateType>;
-    // ProcessedType is indexed by states of the smaller nfa
+    // ProcessedType is indexed by states of the smaller_nfa nfa
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
     using ProcessedType = std::vector<std::deque<ProdStateType>>;
 
@@ -65,7 +69,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 
         const StateSet& lhs_bigger = lhs.second;
         const StateSet& rhs_bigger = rhs.second;
-        if (lhs_bigger.size() > rhs_bigger.size()) { // bigger set cannot be subset
+        if (lhs_bigger.size() > rhs_bigger.size()) { // bigger_nfa set cannot be subset
             return false;
         }
 
@@ -74,25 +78,34 @@ bool mata::nfa::algorithms::is_included_antichains(
         return lhs_bigger.IsSubsetOf(rhs_bigger);
     };
 
+
     // initialize
     WorklistType worklist = { };
-    ProcessedType processed(smaller.num_of_states()); // allocate to the number of states of the smaller nfa
+    ProcessedType processed(smaller_nfa.num_of_states()); // allocate to the number of states of the smaller_nfa nfa
+
+    auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return a.second.size() < b.second.size(); };
+
+    auto insert_to_pairs = [&](std::deque<ProdStateType> & pairs,const ProdStateType & pair) {
+        auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
+        pairs.insert(it,pair);
+    };
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
     // 'paths[s] == s' means that 's' is an initial state
     std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
 
     // check initial states first // TODO: this would be done in the main loop as the first thing anyway?
-    for (const auto& state : smaller.initial) {
-        if (smaller.final[state] &&
-            are_disjoint(bigger.initial, bigger.final))
+    for (const auto& state : smaller_nfa.initial) {
+        if (smaller_nfa.final[state] &&
+            are_disjoint(bigger_nfa.initial, bigger_nfa.final))
         {
             if (cex != nullptr) { cex->word.clear(); }
             return false;
         }
 
-        const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
-        worklist.push_back(st);
+        const ProdStateType st = std::make_pair(state, StateSet(bigger_nfa.initial));
+        //worklist.push_back(st);
+        insert_to_pairs(worklist,st);
         processed[state].push_back(st);
 
         if (cex != nullptr)
@@ -113,11 +126,11 @@ bool mata::nfa::algorithms::is_included_antichains(
 
         sync_iterator.reset();
         for (State q: bigger_set) {
-            mata::utils::push_back(sync_iterator, bigger.delta[q]);
+            mata::utils::push_back(sync_iterator, bigger_nfa.delta[q]);
         }
 
         // process transitions leaving smaller_state
-        for (const auto& smaller_move : smaller.delta[smaller_state]) {
+        for (const auto& smaller_move : smaller_nfa.delta[smaller_state]) {
             const Symbol& smaller_symbol = smaller_move.symbol;
 
             StateSet bigger_succ = {};
@@ -128,8 +141,8 @@ bool mata::nfa::algorithms::is_included_antichains(
             for (const State& smaller_succ : smaller_move.targets) {
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
-                if (smaller.final[smaller_succ] &&
-                    !bigger.final.intersects_with(bigger_succ))
+                if (smaller_nfa.final[smaller_succ] &&
+                    !bigger_nfa.final.intersects_with(bigger_succ))
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();
@@ -149,29 +162,45 @@ bool mata::nfa::algorithms::is_included_antichains(
 
                 bool is_subsumed = false;
                 for (const auto& anti_state : processed[smaller_succ])
-                { // trying to find a smaller state in processed
+                { // trying to find a smaller_nfa state in processed
                     if (subsumes(anti_state, succ)) {
                         is_subsumed = true;
                         break;
                     }
                 }
 
-                if (is_subsumed) { continue; }
+                if (is_subsumed) {
+                    new_subsumed++;
+                    continue;
+                }
 
                 for (std::deque<ProdStateType>* ds : {&processed[smaller_succ], &worklist}) {
-                    for (size_t it = 0; it < ds->size(); ++it) {
-                        if (subsumes(succ, ds->at(it))) {
+                    //for (size_t it = 0; it < ds->size(); ++it) {
+                    //    if (subsumes(succ, ds->at(it))) {
+                    //        old_subsumed++;
+                    //        //Removal though replacement by the last element and removal pob_back.
+                    //        //Because calling erase would invalidate iterator it (in deque).
+                    //        ds->at(it) = ds->back(); //does it coppy stuff?
+                    //        ds->pop_back();
+                    //    } //else {
+                    //    //++it;
+                    //    //}
+                    //}
+                    for (auto it = 0;it<ds->size();++it) {
+                        if (subsumes(succ, (*ds)[it])) {
+                            old_subsumed++;
                             //Removal though replacement by the last element and removal pob_back.
                             //Because calling erase would invalidate iterator it (in deque).
-                            ds->at(it) = ds->back(); //does it coppy stuff?
-                            ds->pop_back();
-                        } else {
-                            ++it;
+                            //(*ds)[it] = ds->back(); //does it coppy stuff?
+                            //ds->pop_back();
+                            ds->erase(ds->begin() + it);
                         }
                     }
 
                     // TODO: set pushing strategy
-                    ds->push_back(succ);
+                    generated++;
+                    //ds->push_back(succ);
+                    insert_to_pairs(*ds,succ);
                 }
 
                 if(cex != nullptr) {
@@ -181,7 +210,10 @@ bool mata::nfa::algorithms::is_included_antichains(
             }
         }
     }
-
+    std::cout<<"new_subsumed: "<<new_subsumed<<std::endl;
+    std::cout<<"old_subsumed: "<<old_subsumed<<std::endl;
+    std::cout<<"generated: "<<generated<<std::endl;
+    //std::cout<<"posts: "<<posts<<std::endl;
     return true;
 } // }}}
 
