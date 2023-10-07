@@ -22,48 +22,17 @@
 
 namespace mata {
 
+/**
+ * Class implements algorithms for mintermization of NFA. The mintermization works in the following way.
+ * It computes for each transition corresponding value in mintermization domain, than it computes minterms
+ * from the of these values and finally use this miterms to create the mintermized NFA.
+ * @tparam MintermizationDomain Domain of mintermization values. It should provide the following operations: a) logical
+ * conjuction (&&), disjunction (||), and negation (!); b) return the constants represnting TRUE or FALSE, c) create a
+ * new symbolic variable in the domain (eg., the BDD domain returns BDD (which is later used to represent symbol of NFA).
+ */
 template <class MintermizationDomain>
 class Mintermization {
 private: // data types
-    struct OptionalValue {
-        enum class Type {NOTHING_E, VALUE_E};
-
-        TYPE type;
-        MintermizationDomain val;
-
-        OptionalValue() : type(TYPE::NOTHING_E) {}
-        explicit OptionalValue(const MintermizationDomain& algebra) : type(TYPE::VALUE_E), val(algebra) {}
-        OptionalValue(TYPE t, const MintermizationDomain& algebra) : type(t), val(algebra) {}
-
-        OptionalValue operator*(const OptionalValue& b) const {
-            if (this->type == TYPE::NOTHING_E) {
-                return b;
-            } else if (b.type == TYPE::NOTHING_E) {
-                return *this;
-            } else {
-                return OptionalValue{TYPE::VALUE_E, this->val && b.val };
-            }
-        }
-
-        OptionalValue operator+(const OptionalValue& b) const {
-            if (this->type == TYPE::NOTHING_E) {
-                return b;
-            } else if (b.type == TYPE::NOTHING_E) {
-                return *this;
-            } else {
-                return OptionalValue{TYPE::VALUE_E, this->val || b.val };
-            }
-        }
-
-        OptionalValue operator!() const {
-            if (this->type == TYPE::NOTHING_E) {
-                return OptionalValue();
-            } else {
-                return OptionalValue{TYPE::VALUE_E, !this->val };
-            }
-        }
-    };
-
     using DisjunctStatesPair = std::pair<const FormulaGraph *, const FormulaGraph *>;
 
 private: // private data members
