@@ -19,8 +19,6 @@ add_executable(tests
 		strings/nfa-string-solving.cc
 )
 
-SET(CMAKE_BUILD_TYPE Debug)
-
 target_link_libraries(tests PRIVATE libmata Catch2::Catch2)
 
 # Add common compile warnings.

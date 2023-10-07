@@ -24,8 +24,6 @@ add_library(libmata STATIC
 	nfa/builder.cc
 )
 
-SET(CMAKE_BUILD_TYPE Debug)
-
 # libmata needs at least c++20
 target_compile_features(libmata PUBLIC cxx_std_20)
 
