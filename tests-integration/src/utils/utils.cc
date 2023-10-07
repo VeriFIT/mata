@@ -99,7 +99,7 @@ int load_intermediate_automaton(
         }
 
         std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
-        out_inter_auts.push_back(inter_auts[0]);
+        out_inter_auts.push_back(std::move(inter_auts[0]));
     } catch (const std::exception& ex) {
         fs.close();
         std::cerr << "error: " << ex.what() << "\n";
