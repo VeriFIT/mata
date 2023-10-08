@@ -39,10 +39,10 @@ int main(int argc, char *argv[]) {
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    params["algorithm"] = "naive";
-    TIME_BEGIN(automata_inclusion_naive);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
-    TIME_END(automata_inclusion_naive);
+    //params["algorithm"] = "naive";
+    //TIME_BEGIN(automata_inclusion_naive);
+    //mata::nfa::is_included(lhs, rhs, &alphabet, params);
+    //TIME_END(automata_inclusion_naive);
 
     params["algorithm"] = "antichains";
     TIME_BEGIN(automata_inclusion_antichain);

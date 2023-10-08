@@ -192,6 +192,8 @@ public:
      */
     Nfa& trim(StateRenaming* state_renaming = nullptr);
 
+    std::vector<State> distances_from_initial() const;
+
     /**
      * Remove epsilon transitions from the automaton.
      */

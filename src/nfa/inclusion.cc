@@ -78,13 +78,48 @@ bool mata::nfa::algorithms::is_included_antichains(
     ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
     // The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test inclusion in sets that have less elements.
 
+
+
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
     auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return a.second.size() < b.second.size(); };
 
-    //Inserting the pairs (q,S) into a sequence of pairs in order defined by the size of the sets S.
+    std::vector<State> distances_smaller = fragile_revert(smaller).distances_from_initial();
+    std::vector<State> distances_bigger = fragile_revert(bigger).distances_from_initial();
+
+    auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
+        return distances_smaller[a.first] < distances_smaller[b.first];
+    };
+
+    auto closer_smaller = [&](const ProdStateType & a, const ProdStateType & b) {
+        if (distances_smaller[a.first] != distances_smaller[b.first])
+            return distances_smaller[a.first] < distances_smaller[b.first];
+        else
+            return a.second.size() < b.second.size();
+    };
+
+    auto smaller_closer = [&](const ProdStateType & a, const ProdStateType & b) {
+        if (a.second.size() != b.second.size())
+            return a.second.size() < b.second.size();
+        else
+            return distances_smaller[a.first] < distances_smaller[b.first];
+    };
+
     auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
         auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
+        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
+        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
+        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
         pairs.insert(it,pair);
+        //pairs.push_back(pair);
+    };
+
+    auto min_dst = [&](const StateSet& set) {
+        if (set.empty()) return Limits::max_state;
+        return distances_bigger[*std::min_element(set.begin(), set.end(), [&](const State a,const State b){return distances_bigger[a] < distances_bigger[b];})];
+    };
+
+    auto lengths_incompatible = [&](const ProdStateType& pair) {
+        return distances_smaller[pair.first] < min_dst(pair.second);
     };
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
@@ -137,8 +172,8 @@ bool mata::nfa::algorithms::is_included_antichains(
             for (const State& smaller_succ : smaller_move.targets) {
                 const ProdStateType succ = {smaller_succ, bigger_succ};
 
-                if (smaller.final[smaller_succ] &&
-                    !bigger.final.intersects_with(bigger_succ))
+                if (lengths_incompatible(succ) || (smaller.final[smaller_succ] &&
+                    !bigger.final.intersects_with(bigger_succ)))
                 {
                     if (cex  != nullptr) {
                         cex->word.clear();
