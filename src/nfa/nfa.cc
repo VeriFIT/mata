@@ -105,6 +105,32 @@ StateSet Nfa::get_terminating_states() const
     return revert(*this).get_reachable_states();
 }
 
+std::vector<State> Nfa::distances_from_initial() const {
+    std::vector<State> distances(num_of_states()+1, Limits::max_state);
+    BoolVector visited(num_of_states()+1, false);
+    std::deque<State> que;
+
+    for (State qi: initial) {
+        visited[qi] = true;
+        distances[qi] = 0;
+        que.push_back(qi);
+    }
+
+    while (!que.empty()) {
+        State src = que.front();
+        que.pop_front();
+        for (Move move : delta[src].moves()) {
+            if (!visited[move.target]) {
+                visited[move.target] = true;
+                distances[move.target] = distances[src] +1;
+                que.push_back(move.target);
+            }
+        }
+    }
+
+    return distances;
+}
+
 Nfa& Nfa::trim(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
