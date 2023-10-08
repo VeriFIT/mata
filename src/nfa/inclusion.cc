@@ -105,12 +105,12 @@ bool mata::nfa::algorithms::is_included_antichains(
     };
 
     auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
-        auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
-        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
-        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
-        //auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
+        auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
         pairs.insert(it,pair);
-        //pairs.push_back(pair);
+        // pairs.push_back(pair);
     };
 
     auto min_dst = [&](const StateSet& set) {
