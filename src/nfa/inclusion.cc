@@ -53,7 +53,7 @@ bool mata::nfa::algorithms::is_included_antichains(
     (void)alphabet;
 
     using ProdStateType = std::pair<State, StateSet>;
-    using ProdStatesType = std::vector<ProdStateType>;
+    using ProdStatesType = std::deque<ProdStateType>;
     // ProcessedType is indexed by states of the smaller nfa
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
     using ProcessedType = std::vector<ProdStatesType>;
@@ -83,8 +83,8 @@ bool mata::nfa::algorithms::is_included_antichains(
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
     auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return a.second.size() < b.second.size(); };
 
-    std::vector<State> distances_smaller = fragile_revert(smaller).distances_from_initial();
-    std::vector<State> distances_bigger = fragile_revert(bigger).distances_from_initial();
+    std::vector<State> distances_smaller = revert(smaller).distances_from_initial();
+    std::vector<State> distances_bigger = revert(bigger).distances_from_initial();
 
     auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
         return distances_smaller[a.first] < distances_smaller[b.first];
