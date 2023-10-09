@@ -221,7 +221,6 @@ bool mata::nfa::algorithms::is_included_antichains(
                     //         ds->erase(ds->begin() + it);
                     //     }
                     // }
-
                     insert_to_pairs(*ds, succ);
                 }
 

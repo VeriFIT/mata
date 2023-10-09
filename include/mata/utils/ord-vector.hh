@@ -83,9 +83,11 @@ bool is_sorted(const std::vector<Key>& vec) {
  */
 template<class Key> class OrdVector {
 private:  // Private data types
-    using VectorType = std::vector<Key>;
 
 public:   // Public data types
+    using VectorType = std::vector<Key>;
+    using value_type = Key;
+    using size_type = size_t;
     using iterator = typename VectorType::iterator ;
     using const_iterator = typename VectorType::const_iterator;
     using const_reference = typename VectorType::const_reference;
@@ -272,6 +274,9 @@ public:
         else
             return it;
     }
+
+    virtual const Key& front() const { return vec_[0]; }
+    virtual Key& front() { return vec_[0]; }
 
     /**
      * Check whether @p key exists in the ordered vector.

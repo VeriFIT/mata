@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <list>
 #include <iterator>
+#include <queue>
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -695,10 +696,33 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
     // unified_targets.reserve(all_targets_size);
     // while (sync_iterator.advance()) { unified_targets.push_back(*sync_iterator.get_current_minimum()); }
 
-    for (const auto& symbol_post_it: get_current()) {
-        unified_targets.insert(symbol_post_it->targets);
+    using QueueItem = std::pair<typename StateSet::const_iterator, typename StateSet::const_iterator>;
+    auto compare = [](const auto& a, const auto& b) { return *(a.first) > *(b.first); };
+    std::priority_queue<QueueItem, std::vector<QueueItem>, decltype(compare) > heap(compare);
+
+    // size_t max{ 0 };
+    auto& current{ get_current() };
+    for (const auto& r: current) {
+        // max = std::max(max, r->targets.size());
+        heap.emplace(r->cbegin(), r->cend());
+    }
+    unified_targets.reserve(32);
+
+    while (!heap.empty()) {
+        auto item = heap.top();
+        heap.pop();
+        if (unified_targets.empty() || unified_targets.back() != *(item.first)) {
+            unified_targets.push_back(*(item.first));
+        }
+
+        if (++item.first != item.second) {
+            heap.emplace(item);
+        }
     }
 
+    // for (const auto& symbol_post_it: get_current()) {
+    //     unified_targets.insert(symbol_post_it->targets);
+    // }
     return unified_targets;
 }
 
