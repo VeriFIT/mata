@@ -242,6 +242,7 @@ The code of this project is licensed under GNU GPLv3 license.
   - Tomáš Fiedor ([tfiedor](https://github.com/tfiedor)): python binding maintainer;
   - David Chocholatý ([Adda0](https://github.com/Adda0)) library and binding developer;
   - Juraj Síč ([jurajsic](https://github.com/jurajsic)): library developer;
+  - Vojtěch Havlena([vhavlena](https://github.com/vhavlena)): library developer;
   - Tomáš Vojnar ([vojnar](https://github.com/vojnar)): the spiritual leader;
 
 # Acknowledgements
