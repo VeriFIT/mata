@@ -49,8 +49,9 @@ bool mata::nfa::algorithms::is_included_antichains(
     const Alphabet* const  alphabet, //TODO: this parameter is not used
     Run*                   cex)
 { // {{{
-    //TODO: what does this do?
     (void)alphabet;
+
+    // TODO: Decide what is the best optimization for inclusion.
 
     using ProdStateType = std::tuple<State, StateSet, size_t>;
     using ProdStatesType = std::vector<ProdStateType>;
@@ -73,14 +74,14 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 
     // initialize
-    ProdStatesType worklist = { };//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
+    ProdStatesType worklist{};//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
     // worklist.reserve(32);
     // so those with smaller popped for processing first.
     ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
     // The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test inclusion in sets that have less elements.
 
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
-    auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() < std::get<1>(b).size(); };
+    // auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() < std::get<1>(b).size(); };
 
     std::vector<State> distances_smaller = revert(smaller).distances_from_initial();
     std::vector<State> distances_bigger = revert(bigger).distances_from_initial();
