@@ -46,8 +46,15 @@ TEST_CASE("mata::utils::OrdVector::erase()") {
     CHECK_THROWS(set.erase(0));
 }
 
-TEST_CASE("mata::utils::OrdVector::intersection(}")
-{
+TEST_CASE("mata::utils::OrdVector::front())") {
+    OrdVector<int> vector{ 0, 1, 2, 3 };
+    CHECK(vector.front() == 0);
+    vector.erase(0);
+    const OrdVector<int> vector_const{ vector };
+    CHECK(vector_const.front() == 1);
+}
+
+TEST_CASE("mata::utils::OrdVector::intersection()") {
     using OrdVectorT = OrdVector<int>;
     OrdVectorT set1{};
     OrdVectorT set2{};
