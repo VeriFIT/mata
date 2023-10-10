@@ -49,22 +49,23 @@ bool mata::nfa::algorithms::is_included_antichains(
     const Alphabet* const  alphabet, //TODO: this parameter is not used
     Run*                   cex)
 { // {{{
-    //TODO: what does this do?
     (void)alphabet;
 
-    using ProdStateType = std::pair<State, StateSet>;
-    using ProdStatesType = std::deque<ProdStateType>;
+    // TODO: Decide what is the best optimization for inclusion.
+
+    using ProdStateType = std::tuple<State, StateSet, size_t>;
+    using ProdStatesType = std::vector<ProdStateType>;
     // ProcessedType is indexed by states of the smaller nfa
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
     using ProcessedType = std::vector<ProdStatesType>;
 
     auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs) {
-        if (lhs.first != rhs.first) {
+        if (std::get<0>(lhs) != std::get<0>(rhs)) {
             return false;
         }
 
-        const StateSet& lhs_bigger = lhs.second;
-        const StateSet& rhs_bigger = rhs.second;
+        const StateSet& lhs_bigger = std::get<1>(lhs);
+        const StateSet& rhs_bigger = std::get<1>(rhs);
 
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
@@ -73,45 +74,35 @@ bool mata::nfa::algorithms::is_included_antichains(
 
 
     // initialize
-    ProdStatesType worklist = { };//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
+    ProdStatesType worklist{};//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
+    // worklist.reserve(32);
     // so those with smaller popped for processing first.
     ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nfa.
     // The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test inclusion in sets that have less elements.
 
-
-
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
-    auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return a.second.size() < b.second.size(); };
+    // auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() < std::get<1>(b).size(); };
 
     std::vector<State> distances_smaller = revert(smaller).distances_from_initial();
     std::vector<State> distances_bigger = revert(bigger).distances_from_initial();
 
-    auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
-        return distances_smaller[a.first] < distances_smaller[b.first];
-    };
+    // auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
+    //     return distances_smaller[a.first] < distances_smaller[b.first];
+    // };
 
-    auto closer_smaller = [&](const ProdStateType & a, const ProdStateType & b) {
-        if (distances_smaller[a.first] != distances_smaller[b.first])
-            return distances_smaller[a.first] < distances_smaller[b.first];
-        else
-            return a.second.size() < b.second.size();
-    };
+    // auto closer_smaller = [&](const ProdStateType & a, const ProdStateType & b) {
+    //     if (distances_smaller[a.first] != distances_smaller[b.first])
+    //         return distances_smaller[a.first] < distances_smaller[b.first];
+    //     else
+    //         return a.second.size() < b.second.size();
+    // };
 
-    auto smaller_closer = [&](const ProdStateType & a, const ProdStateType & b) {
-        if (a.second.size() != b.second.size())
-            return a.second.size() < b.second.size();
-        else
-            return distances_smaller[a.first] < distances_smaller[b.first];
-    };
-
-    auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
-        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
-        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
-        auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
-        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
-        pairs.insert(it,pair);
-        // pairs.push_back(pair);
-    };
+    // auto smaller_closer = [&](const ProdStateType & a, const ProdStateType & b) {
+    //     if (a.second.size() != b.second.size())
+    //         return a.second.size() < b.second.size();
+    //     else
+    //         return distances_smaller[a.first] < distances_smaller[b.first];
+    // };
 
     auto min_dst = [&](const StateSet& set) {
         if (set.empty()) return Limits::max_state;
@@ -119,7 +110,17 @@ bool mata::nfa::algorithms::is_included_antichains(
     };
 
     auto lengths_incompatible = [&](const ProdStateType& pair) {
-        return distances_smaller[pair.first] < min_dst(pair.second);
+        return distances_smaller[std::get<0>(pair)] < std::get<2>(pair);
+    };
+
+    auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_set);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_dist);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, smaller_closer);
+        // auto it = std::lower_bound(pairs.begin(), pairs.end(), pair, closer_smaller);
+        // pairs.insert(it,pair);
+        pairs.push_back(pair);
+        // std::sort(pairs.begin(), pairs.end(), smaller_closer);
     };
 
     // 'paths[s] == t' denotes that state 's' was accessed from state 't',
@@ -135,8 +136,9 @@ bool mata::nfa::algorithms::is_included_antichains(
             return false;
         }
 
-        const ProdStateType st = std::make_pair(state, StateSet(bigger.initial));
-        insert_to_pairs(worklist,st);
+        StateSet bigger_state_set{ bigger.initial };
+        const ProdStateType st = std::tuple(state, bigger_state_set, min_dst(bigger_state_set));
+        insert_to_pairs(worklist, st);
         insert_to_pairs(processed[state],st);
 
         if (cex != nullptr)
@@ -152,8 +154,8 @@ bool mata::nfa::algorithms::is_included_antichains(
         ProdStateType prod_state = *worklist.rbegin();
         worklist.pop_back();
 
-        const State& smaller_state = prod_state.first;
-        const StateSet& bigger_set = prod_state.second;
+        const State& smaller_state = std::get<0>(prod_state);
+        const StateSet& bigger_set = std::get<1>(prod_state);
 
         sync_iterator.reset();
         for (State q: bigger_set) {
@@ -170,12 +172,12 @@ bool mata::nfa::algorithms::is_included_antichains(
             }
 
             for (const State& smaller_succ : smaller_move.targets) {
-                const ProdStateType succ = {smaller_succ, bigger_succ};
+                const ProdStateType succ = {smaller_succ, bigger_succ, min_dst(bigger_succ)};
 
                 if (lengths_incompatible(succ) || (smaller.final[smaller_succ] &&
                     !bigger.final.intersects_with(bigger_succ)))
                 {
-                    if (cex  != nullptr) {
+                    if (cex != nullptr) {
                         cex->word.clear();
                         cex->word.push_back(smaller_symbol);
                         ProdStateType trav = prod_state;
@@ -193,10 +195,10 @@ bool mata::nfa::algorithms::is_included_antichains(
 
                 bool is_subsumed = false;
                 for (const auto& anti_state : processed[smaller_succ])
-                { // trying to find in processed a smaller state that the newly created succ
-                    if (smaller_set(succ,anti_state)) {
-                        break;
-                    }
+                { // trying to find in processed a smaller state than the newly created succ
+                    // if (smaller_set(succ,anti_state)) {
+                    //     break;
+                    // }
                     if (subsumes(anti_state, succ)) {
                         is_subsumed = true;
                         break;
@@ -207,20 +209,20 @@ bool mata::nfa::algorithms::is_included_antichains(
                     continue;
                 }
 
-                for (ProdStatesType* ds : {&processed[smaller_succ], &worklist}) {
+                for (ProdStatesType* ds: {&processed[smaller_succ], &worklist}) {
                     //Pruning of processed and the worklist.
                     //Since they are ordered by the size of the sets, we can iterate from back,
                     //and as soon as we get to sets larger than succ, we can stop (larger sets cannot be subsets).
-                    for (long it = static_cast<long>(ds->size()-1);it>=0;--it) {
-                        if (smaller_set((*ds)[static_cast<size_t>(it)],succ))
-                            break;
-                        if (subsumes(succ, (*ds)[static_cast<size_t>(it)])) {
-                            //Using index it instead of an iterator since erase could invalidate it (?)
-                            ds->erase(ds->begin() + it);
-                        }
-                    }
-
-                    insert_to_pairs(*ds,succ);
+                    std::erase_if(*ds, [&](const auto& d){ return subsumes(succ, d); });
+                    // for (long it = static_cast<long>(ds->size()-1);it>=0;--it) {
+                    //     // if (smaller_set((*ds)[static_cast<size_t>(it)],succ))
+                    //         // break;
+                    //     if (subsumes(succ, (*ds)[static_cast<size_t>(it)])) {
+                    //         //Using index it instead of an iterator since erase could invalidate it (?)
+                    //         ds->erase(ds->begin() + it);
+                    //     }
+                    // }
+                    insert_to_pairs(*ds, succ);
                 }
 
                 if(cex != nullptr) {
