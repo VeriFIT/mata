@@ -533,6 +533,22 @@ cdef class Nfa:
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
 
+    def concatenate(self, Nfa other) -> Nfa:
+        """Concatenate 'self' with 'other' in-place.
+
+        :return: Self
+        """
+        self.thisptr.get().concatenate(dereference(other.thisptr.get()))
+        return self
+
+    def union(self, Nfa other) -> Nfa:
+        """Make union of 'self' with 'other' in-place.
+
+        :return: Self
+        """
+        self.thisptr.get().uni(dereference(other.thisptr.get()))
+        return self
+
     def is_lang_empty(self, Run run = None):
         """Check if language of automaton is empty.
 

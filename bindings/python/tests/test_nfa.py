@@ -340,6 +340,10 @@ def test_concatenate():
     assert len(shortest_words) == 1
     assert [ord('b'), ord('a')] in shortest_words
 
+    lhs_in_place = lhs.deepcopy()
+    result_in_place = lhs_in_place.concatenate(rhs)
+    assert mata_nfa.equivalence_check(result, result_in_place)
+
     result = mata_nfa.concatenate(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
@@ -348,6 +352,11 @@ def test_concatenate():
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
 
+    lhs_in_place = lhs.deepcopy()
+    result_in_place = lhs_in_place.concatenate(rhs)
+    result.remove_epsilon_inplace()
+    assert mata_nfa.equivalence_check(result, result_in_place)
+
     result, _, rhs_map = mata_nfa.concatenate_with_result_state_maps(lhs, rhs, True)
     assert result.has_initial_state(0)
     assert result.has_final_state(3)
@@ -355,6 +364,11 @@ def test_concatenate():
     assert result.has_transition(0, ord('b'), 1)
     assert result.has_transition(1, mata_nfa.epsilon(), 2)
     assert result.has_transition(2, ord('a'), 3)
+
+    lhs_in_place = lhs.deepcopy()
+    result_in_place = lhs_in_place.concatenate(rhs)
+    result.remove_epsilon_inplace()
+    assert mata_nfa.equivalence_check(result, result_in_place)
 
 
 def test_completeness(
@@ -422,6 +436,10 @@ def test_union(
 
     assert mata_nfa.is_included(fa_one_divisible_by_two, uni)
     assert mata_nfa.is_included(fa_one_divisible_by_four, uni)
+
+    fa_one_divisible_by_two_in_lace = fa_one_divisible_by_two.deepcopy()
+    uni_in_place = fa_one_divisible_by_two_in_lace.union(fa_one_divisible_by_four)
+    assert mata_nfa.equivalence_check(uni, uni_in_place)
 
 
 def test_intersection(
