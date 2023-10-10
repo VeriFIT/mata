@@ -204,6 +204,13 @@ cdef class Nfa:
         )
         self.label = label
 
+    def deepcopy(self):
+        """Deepcopy Nfa using C++ copy constructor."""
+        new = Nfa()
+        cdef CNfa* orig = self.thisptr.get()
+        new.thisptr = make_shared[CNfa](mata_nfa.CNfa(dereference(orig)))
+        return new
+
     @property
     def label(self):
         return self.label
