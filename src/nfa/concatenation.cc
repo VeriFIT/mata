@@ -1,16 +1,4 @@
 /* nfa-concatenation.cc -- Concatenation of NFAs
- *
- * This file is a part of libmata.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 // MATA headers
@@ -36,7 +24,7 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
     utils::SparseSet<mata::nfa::State> aut_final = aut.final;
     size_t aut_n = aut.num_of_states();
-    
+
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
 

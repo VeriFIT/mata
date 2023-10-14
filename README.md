@@ -12,7 +12,7 @@ Mata is an open source automata library that offers interface for different kind
 
 # Building from sources
 
-To build the the library run the following:
+To build the library, run the following:
 
 ```
 git clone https://github.com/VeriFIT/mata
@@ -205,9 +205,9 @@ When creating a new issue, please, try to include everything necessary for us to
 ## Note to main contributors
 
 By default, each merge automatically increases the `minor` version of the library
-(i.e., `0.0.0 -> 0.1.0` ). This can be overruled using either tag `#patch` (increasing 
-patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.e., 
-`0.0.0 -> 1.0.0`). This tag is specified in the merge message. 
+(i.e., `0.0.0 -> 0.1.0` ). This can be overruled using either tag `#patch` (increasing
+patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.e.,
+`0.0.0 -> 1.0.0`). This tag is specified in the merge message.
 
 Generally, it is recommended to use `#major` for changes that introduces backward-incompatible
 changes for people that used previous versions, and `#patch` for minor changes, such as bug-fixes,
@@ -232,18 +232,13 @@ formal methods, verification and many more:
 
 # Licensing
 
-The code of this project is licensed under GNU GPLv3 license.
+The code of Mata is licensed under MIT licence. See [LICENSE](LICENSE).
+
+The folder [`3rdparty/`](3rdparty) contains 3rd party applications licensed under their own licences, included with the code.
 
 # Contacts
 
-  - **Lukáš Holík** ([kilohsakul](https://github.com/kilohsakul)): the supreme leader, the emperor of theory;
-  - **Ondřej Lengál** ([ondrik](https://github.com/ondrik)): prototype developer and the world's talest hobbit;
-  - Martin Hruška ([martinhruska](https://github.com/martinhruska)): library maintainer;
-  - Tomáš Fiedor ([tfiedor](https://github.com/tfiedor)): python binding maintainer;
-  - David Chocholatý ([Adda0](https://github.com/Adda0)) library and binding developer;
-  - Juraj Síč ([jurajsic](https://github.com/jurajsic)): library developer;
-  - Vojtěch Havlena([vhavlena](https://github.com/vhavlena)): library developer;
-  - Tomáš Vojnar ([vojnar](https://github.com/vojnar)): the spiritual leader;
+See [AUTHORS.md](AUTHORS.md)
 
 # Acknowledgements
 

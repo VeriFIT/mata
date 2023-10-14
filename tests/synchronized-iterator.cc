@@ -1,7 +1,3 @@
-//
-// Created by Lukáš Holík on 29.10.2022.
-//
-
 #include <catch2/catch.hpp>
 
 #include "mata/utils/utils.hh"

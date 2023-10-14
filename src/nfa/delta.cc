@@ -1,5 +1,4 @@
 /* delta.cc -- Operations on Delta.
- *
  */
 // TODO: Add file header.
 

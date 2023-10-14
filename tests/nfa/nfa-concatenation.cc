@@ -1,18 +1,4 @@
 /* tests-nfa-concatenation.cc -- Tests for concatenation of NFAs
- *
- * Copyright (c) 2022 David Chocholatý <chocholaty.david@protonmail.com>
- *
- * This file is a part of libmata.
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
  */
 
 
@@ -715,7 +701,7 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
     SECTION("Delta smaller than states") {
         Nfa lhs{};
         Nfa rhs{};
-        
+
         lhs.delta.add(0, 65, 5);
         lhs.initial.insert(0);
         lhs.initial.insert(7);
@@ -732,7 +718,7 @@ TEST_CASE("mata::nfa::concatenate() inplace") {
 
     SECTION("the same automata") {
         Nfa lhs{};
-        
+
         lhs.add_state();
         lhs.initial.insert(0);
         lhs.final.insert(0);

@@ -1,5 +1,3 @@
-//
-// Created by Lukáš Holík on 10.06.2023.
 // Based on
 /**
 	SparseSet.h
