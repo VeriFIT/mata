@@ -1,8 +1,4 @@
  /* config.cc -- definition of global symbols used in library
- *
- * Copyright (c) TODO
- *
- * This file is a part of libmata.
  */
 
 #include "mata/utils/utils.hh"
