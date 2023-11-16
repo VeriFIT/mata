@@ -139,6 +139,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         CNfa() except +
         CNfa(unsigned long) except +
         CNfa(unsigned long, StateSet, StateSet, CAlphabet*)
+        CNfa(const CNfa&)
 
         # Public Functions
         void make_initial(State)
@@ -159,6 +160,8 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         State add_state(State)
         void print_to_DOT(ostream)
         CNfa& trim(StateRenaming*)
+        CNfa& concatenate(CNfa&)
+        CNfa& uni(CNfa&)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()

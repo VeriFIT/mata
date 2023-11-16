@@ -204,6 +204,13 @@ cdef class Nfa:
         )
         self.label = label
 
+    def deepcopy(self):
+        """Deepcopy Nfa using C++ copy constructor."""
+        new = Nfa()
+        cdef CNfa* orig = self.thisptr.get()
+        new.thisptr = make_shared[CNfa](mata_nfa.CNfa(dereference(orig)))
+        return new
+
     @property
     def label(self):
         return self.label
@@ -525,6 +532,22 @@ cdef class Nfa:
         cdef StateRenaming state_map
         self.thisptr.get().trim(&state_map)
         return self, {k: v for k, v in state_map}
+
+    def concatenate(self, Nfa other) -> Nfa:
+        """Concatenate 'self' with 'other' in-place.
+
+        :return: Self
+        """
+        self.thisptr.get().concatenate(dereference(other.thisptr.get()))
+        return self
+
+    def union(self, Nfa other) -> Nfa:
+        """Make union of 'self' with 'other' in-place.
+
+        :return: Self
+        """
+        self.thisptr.get().uni(dereference(other.thisptr.get()))
+        return self
 
     def is_lang_empty(self, Run run = None):
         """Check if language of automaton is empty.
