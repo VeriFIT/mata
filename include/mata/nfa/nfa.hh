@@ -170,9 +170,13 @@ public:
      * 
      */
     struct SCCCrawlExe {
+        // event handler for the first-time state discovery
         virtual bool state_discover(State) { return false; };
+        // event handler for SCC discovery (together with the whole Tarjan stack)
         virtual bool scc_discover(const std::vector<State>&, const std::vector<State>&) { return false; };
+        // event handler for state in SCC discovery
         virtual void scc_state_discover(State) {};
+        // event handler for visiting of the state successors
         virtual void succ_state_discover(State, State) {};
 
         virtual ~SCCCrawlExe() = default;
