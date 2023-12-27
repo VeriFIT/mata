@@ -368,20 +368,31 @@ bool Nfa::is_lang_empty_scc() const {
 bool Nfa::is_acyclic() const {
     struct SCCCrawlAcyclic : SCCCrawlExe {
         bool acyclic {true};
+        const Nfa* nfa;
+
+        SCCCrawlAcyclic(const Nfa *aut) : acyclic(true), nfa(aut) { }
 
         inline bool scc_discover(const std::vector<State>& scc, const std::vector<State>& tarjan_stack) {
             (void)tarjan_stack;
             if(scc.size() > 1) {
                 this->acyclic = false;
                 return true;
+            } else { // check for self-loops
+                State st = scc[0];
+                for(const auto& sp : this->nfa->delta[st]) {
+                    if(sp.targets.find(st) != sp.targets.end()) {
+                        this->acyclic = false;
+                        return true;
+                    }
+                }
             }
             return false;
         }
     };
 
-    SCCCrawlAcyclic crawl;
+    SCCCrawlAcyclic crawl(this);
     scc_crawl(crawl);
-    return !crawl.acyclic;
+    return crawl.acyclic;
 }
 
 std::string Nfa::print_to_DOT() const {
