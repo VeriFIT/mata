@@ -218,7 +218,7 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::scc_crawl(SCCCrawlExe& crawl) const {
+void Nfa::scc_crawl(const SCCCrawlExe& crawl) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
@@ -245,7 +245,7 @@ void Nfa::scc_crawl(SCCCrawlExe& crawl) const {
             act_state_data = TarjanNodeData(act_state, this->delta, index_cnt++);
             tarjan_stack.push_back(act_state);
 
-            if(crawl.state_discover(act_state)) {
+            if(crawl.state_discover && crawl.state_discover(act_state)) {
                 return;
             }
         } else { // return from the recursive call
@@ -262,7 +262,9 @@ void Nfa::scc_crawl(SCCCrawlExe& crawl) const {
         bool rec_call = false;
         for(; act_state_data.current_move != act_state_data.end_move; ++act_state_data.current_move) {
             next_state = act_state_data.current_move->target;
-            crawl.succ_state_discover(act_state, next_state);
+            if(crawl.succ_state_discover) {
+                crawl.succ_state_discover(act_state, next_state);
+            }
             if(!node_info[next_state].initilized) { // recursive call
                 program_stack.push_back(next_state);
                 rec_call = true;
@@ -284,10 +286,12 @@ void Nfa::scc_crawl(SCCCrawlExe& crawl) const {
                 tarjan_stack.pop_back();
                 node_info[st].on_stack = false;
 
-                crawl.scc_state_discover(st);
+                if(crawl.scc_state_discover) {
+                    crawl.scc_state_discover(st);
+                }
                 scc.push_back(st);
             } while(st != act_state);
-            if(crawl.scc_discover(scc, tarjan_stack)) {
+            if(crawl.scc_discover && crawl.scc_discover(scc, tarjan_stack)) {
                 return;
             }
         }
@@ -297,102 +301,84 @@ void Nfa::scc_crawl(SCCCrawlExe& crawl) const {
 }
 
 BoolVector Nfa::get_useful_states() const {
-    struct SCCCrawlUseful : SCCCrawlExe {
-        bool final_scc;
-        BoolVector useful;
-        const Nfa* nfa;
-        
-        SCCCrawlUseful(const Nfa *aut) : final_scc(false), useful(aut->num_of_states(),false), nfa(aut) { }
+    BoolVector useful(this->num_of_states(), false);
+    bool final_scc = false;
 
-        inline bool state_discover(State state) {
-            if(this->nfa->final.contains(state)) {
-                this->useful[state] = true;
-            }
-            return false;
+    SCCCrawlExe crawl {};
+    crawl.state_discover = [&](State state) -> bool {
+        if(this->final.contains(state)) {
+            useful[state] = true;
         }
-
-        inline bool scc_discover(const std::vector<State>& scc, const std::vector<State>& tarjan_stack) {
-            if(this->final_scc) {
-                // Propagate usefulness to the closed SCC.
-                for(const State& st: scc) { this->useful[st] = true; }
-                // Propagate usefulness to predecessors in @p tarjan_stack.
-                for (auto state_it{ tarjan_stack.rbegin() }, state_it_end{ tarjan_stack.rend() };
-                     state_it != state_it_end; ++state_it) {
-                    if (this->useful[*state_it]) { break; }
-                    this->useful[*state_it] = true;
-                }
-            }
-            this->final_scc = false;
-            return false;
-        }
-
-        inline void scc_state_discover(State state) {
-            if(this->useful[state]) {
-                this->final_scc = true;
+        return false;
+    };
+    crawl.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
+        if(final_scc) {
+            // Propagate usefulness to the closed SCC.
+            for(const State& st: scc) { useful[st] = true; }
+            // Propagate usefulness to predecessors in @p tarjan_stack.
+            for (auto state_it{ tarjan_stack.rbegin() }, state_it_end{ tarjan_stack.rend() };
+                    state_it != state_it_end; ++state_it) {
+                if (useful[*state_it]) { break; }
+                useful[*state_it] = true;
             }
         }
-
-        inline void succ_state_discover(State act_state, State next_state) {
-            if(this->useful[next_state]) {
-                this->useful[act_state] = true;
-            }
+        final_scc = false;
+        return false;
+    };
+    crawl.scc_state_discover = [&](State state) {
+        if(useful[state]) {
+            final_scc = true;
+        }
+    };
+    crawl.succ_state_discover = [&](State act_state, State next_state) {
+        if(useful[next_state]) {
+            useful[act_state] = true;
         }
     };
 
-    SCCCrawlUseful crawl(this);
     scc_crawl(crawl);
-    return crawl.useful;
+    return useful;
 }
 
 bool Nfa::is_lang_empty_scc() const {
-    struct SCCCrawlEmpty : SCCCrawlExe {
-        bool accepting_state {false};
-        const Nfa* nfa;
-        
-        SCCCrawlEmpty(const Nfa *aut) :  nfa(aut) { }
+    bool accepting_state = false;
 
-        inline bool state_discover(State state) {
-            if(this->nfa->final.contains(state)) {
-                this->accepting_state = true;
-                return true;
-            }
-            return false;
+    SCCCrawlExe crawl {};
+    crawl.state_discover = [&](State state) -> bool {
+        if(this->final.contains(state)) {
+            accepting_state = true;
+            return true;
         }
+        return false;
     };
 
-    SCCCrawlEmpty crawl(this);
     scc_crawl(crawl);
-    return !crawl.accepting_state;
+    return !accepting_state;
 }
 
 bool Nfa::is_acyclic() const {
-    struct SCCCrawlAcyclic : SCCCrawlExe {
-        bool acyclic {true};
-        const Nfa* nfa;
+    bool acyclic = true;
 
-        SCCCrawlAcyclic(const Nfa *aut) : acyclic(true), nfa(aut) { }
-
-        inline bool scc_discover(const std::vector<State>& scc, const std::vector<State>& tarjan_stack) {
-            (void)tarjan_stack;
-            if(scc.size() > 1) {
-                this->acyclic = false;
+    SCCCrawlExe crawl {};
+    crawl.scc_discover = [&](const std::vector<State>& scc, const std::vector<State>& tarjan_stack) -> bool {
+        (void)tarjan_stack;
+        if(scc.size() > 1) {
+            acyclic = false;
                 return true;
             } else { // check for self-loops
                 State st = scc[0];
-                for(const auto& sp : this->nfa->delta[st]) {
+                for(const auto& sp : this->delta[st]) {
                     if(sp.targets.find(st) != sp.targets.end()) {
-                        this->acyclic = false;
+                        acyclic = false;
                         return true;
                     }
                 }
             }
             return false;
-        }
     };
 
-    SCCCrawlAcyclic crawl(this);
     scc_crawl(crawl);
-    return crawl.acyclic;
+    return acyclic;
 }
 
 std::string Nfa::print_to_DOT() const {

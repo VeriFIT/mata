@@ -171,15 +171,13 @@ public:
      */
     struct SCCCrawlExe {
         // event handler for the first-time state discovery
-        virtual bool state_discover(State) { return false; };
+        std::function<bool(State)> state_discover;
         // event handler for SCC discovery (together with the whole Tarjan stack)
-        virtual bool scc_discover(const std::vector<State>&, const std::vector<State>&) { return false; };
+        std::function<bool(const std::vector<State>&, const std::vector<State>&)> scc_discover;
         // event handler for state in SCC discovery
-        virtual void scc_state_discover(State) {};
+        std::function<void(State)> scc_state_discover;
         // event handler for visiting of the state successors
-        virtual void succ_state_discover(State, State) {};
-
-        virtual ~SCCCrawlExe() = default;
+        std::function<void(State,State)> succ_state_discover;
     };
 
     /**
@@ -187,7 +185,7 @@ public:
      * 
      * @param crawl Instance of the crawling class.
      */
-    void scc_crawl(SCCCrawlExe& crawl) const;
+    void scc_crawl(const SCCCrawlExe& crawl) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
