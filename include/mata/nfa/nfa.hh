@@ -161,12 +161,29 @@ public:
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
-     * @param state_at_first_useful_state Whether only the first found useful state is set to true. Useful when
-     *  checking whether the set of useful states is empty.
-     *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states(const bool stop_at_first_useful_state = false) const;
+    BoolVector get_useful_states() const;
+
+    /**
+     * @brief Structure for utilizing Tarjan's SCC discover.
+     * 
+     */
+    struct SCCCrawlExe {
+        virtual bool state_discover(State) { return false; };
+        virtual bool scc_discover(const std::vector<State>&, const std::vector<State>&) { return false; };
+        virtual void scc_state_discover(State) {};
+        virtual void succ_state_discover(State, State) {};
+
+        virtual ~SCCCrawlExe() = default;
+    };
+
+    /**
+     * @brief Tarjan-based SCC crawler.
+     * 
+     * @param crawl Instance of the crawling class.
+     */
+    void scc_crawl(SCCCrawlExe& crawl) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -261,6 +278,13 @@ public:
      * @return True if the language is empty, false otherwise.
      */
     bool is_lang_empty(Run* cex = nullptr) const;
+
+    /**
+     * @brief Check if the language is empty using SCC crawling.
+     * 
+     * @return Language empty <-> True
+     */
+    bool is_lang_empty_scc() const;
 
     /**
      * @brief Test whether an automaton is deterministic.
