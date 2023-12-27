@@ -365,6 +365,25 @@ bool Nfa::is_lang_empty_scc() const {
     return !crawl.accepting_state;
 }
 
+bool Nfa::is_acyclic() const {
+    struct SCCCrawlAcyclic : SCCCrawlExe {
+        bool acyclic {true};
+
+        inline bool scc_discover(const std::vector<State>& scc, const std::vector<State>& tarjan_stack) {
+            (void)tarjan_stack;
+            if(scc.size() > 1) {
+                this->acyclic = false;
+                return true;
+            }
+            return false;
+        }
+    };
+
+    SCCCrawlAcyclic crawl;
+    scc_crawl(crawl);
+    return !crawl.acyclic;
+}
+
 std::string Nfa::print_to_DOT() const {
     std::stringstream output;
     print_to_DOT(output);

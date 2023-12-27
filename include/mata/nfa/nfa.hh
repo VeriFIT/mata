@@ -303,6 +303,13 @@ public:
     bool is_complete(Alphabet const* alphabet = nullptr) const;
 
     /**
+     * @brief Is the automaton graph acyclic? Used for checking language finiteness.
+     * 
+     * @return true <-> Automaton graph is acyclic.
+     */
+    bool is_acyclic() const;
+
+    /**
      * Fill @p alphabet with symbols from @p nfa.
      * @param[in] nfa NFA with symbols to fill @p alphabet with.
      * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
