@@ -166,10 +166,10 @@ public:
     BoolVector get_useful_states() const;
 
     /**
-     * @brief Structure for utilizing Tarjan's SCC discover.
-     * 
+     * @brief Structure for storing callback functions (event handlers) utilizing 
+     * Tarjan's SCC discover algorithm.
      */
-    struct SCCCrawlExe {
+    struct TarjanDiscoverCallback {
         // event handler for the first-time state discovery
         std::function<bool(State)> state_discover;
         // event handler for SCC discovery (together with the whole Tarjan stack)
@@ -181,11 +181,11 @@ public:
     };
 
     /**
-     * @brief Tarjan-based SCC crawler.
+     * @brief Tarjan's SCC discover algorihm.
      * 
-     * @param crawl Instance of the crawling class.
+     * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
      */
-    void scc_crawl(const SCCCrawlExe& crawl) const;
+    void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -282,7 +282,7 @@ public:
     bool is_lang_empty(Run* cex = nullptr) const;
 
     /**
-     * @brief Check if the language is empty using SCC crawling.
+     * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
      * 
      * @return Language empty <-> True
      */
