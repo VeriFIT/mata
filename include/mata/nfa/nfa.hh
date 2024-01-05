@@ -624,6 +624,15 @@ Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
+/**
+ * @brief Get the set of all words in language of @p aut whose length is <= @p max_length
+ * 
+ * If you have an automaton aut with finite alphabet (can be checked using @ref is_acyclic),
+ * you can get all words by calling
+ *      get_words(aut, aut.num_of_states())
+ */
+std::set<Word> get_words(const Nfa& aut, unsigned max_length);
+
 } // namespace mata::nfa.
 
 namespace std {
