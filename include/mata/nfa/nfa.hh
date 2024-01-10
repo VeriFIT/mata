@@ -275,7 +275,8 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * Check whether the language of NFA is empty.
+     * Check whether the language of NFA is empty. 
+     * Currently calls is_lang_empty_scc if cex is null 
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
