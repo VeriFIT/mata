@@ -20,7 +20,13 @@ cd mata
 make release
 ```
 
-In order, to verify the functionality of the library, you can run the test suite:
+In order to install the library, you can run 
+
+```
+sudo make install
+```
+
+In order to verify the functionality of the library, you can run the test suite:
 
 ```
 make test
@@ -113,7 +119,7 @@ First import the library in your code. If the library is properly installed, you
 the standard include.
 
 ```cpp
-#include <mata/nfa.hh>
+#include <mata/nfa/nfa.hh>
 ```
 
 We recommend to use the `mata::nfa` namespace for easier usage:
@@ -139,8 +145,8 @@ You can set the initial and final states directly using the initializers.
 Further, you can add transitions in form of tripple `(state_from, symbol, targets)`:
 
 ```cpp
-    aut.add_trans(0, 0, 2);
-    aut.add_trans(1, 1, 3);
+    aut.delta.add(0, 0, 2);
+    aut.delta.add(1, 1, 3);
 ```
 
 You can verify the state of your automaton by generating the automaton in `.dot` format.
@@ -155,7 +161,7 @@ You can verify the state of your automaton by generating the automaton in `.dot`
 Finally, compile the code using the following Makefile:
 
 ```makefile
-CFLAGS=-std=c++14 -pedantic-errors -Wextra -Wall -Wfloat-equal -Wctor-dtor-privacy -Weffc++ -Woverloaded-virtual -fdiagnostics-show-option -g
+CFLAGS=-std=c++20 -pedantic-errors -Wextra -Wall -Wfloat-equal -Wctor-dtor-privacy -Weffc++ -Woverloaded-virtual -fdiagnostics-show-option -g
 
 INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include
 LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib
