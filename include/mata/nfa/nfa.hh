@@ -161,12 +161,31 @@ public:
      * @brief Get the useful states using a modified Tarjan's algorithm. A state
      * is useful if it is reachable from an initial state and can reach a final state.
      *
-     * @param state_at_first_useful_state Whether only the first found useful state is set to true. Useful when
-     *  checking whether the set of useful states is empty.
-     *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states(const bool stop_at_first_useful_state = false) const;
+    BoolVector get_useful_states() const;
+
+    /**
+     * @brief Structure for storing callback functions (event handlers) utilizing 
+     * Tarjan's SCC discover algorithm.
+     */
+    struct TarjanDiscoverCallback {
+        // event handler for the first-time state discovery
+        std::function<bool(State)> state_discover;
+        // event handler for SCC discovery (together with the whole Tarjan stack)
+        std::function<bool(const std::vector<State>&, const std::vector<State>&)> scc_discover;
+        // event handler for state in SCC discovery
+        std::function<void(State)> scc_state_discover;
+        // event handler for visiting of the state successors
+        std::function<void(State,State)> succ_state_discover;
+    };
+
+    /**
+     * @brief Tarjan's SCC discover algorihm.
+     * 
+     * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
+     */
+    void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -256,11 +275,19 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * Check whether the language of NFA is empty.
+     * Check whether the language of NFA is empty. 
+     * Currently calls is_lang_empty_scc if cex is null 
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
     bool is_lang_empty(Run* cex = nullptr) const;
+
+    /**
+     * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
+     * 
+     * @return Language empty <-> True
+     */
+    bool is_lang_empty_scc() const;
 
     /**
      * @brief Test whether an automaton is deterministic.
@@ -277,6 +304,13 @@ public:
      * An automaton is complete if every reachable state has at least one outgoing transition over every symbol.
      */
     bool is_complete(Alphabet const* alphabet = nullptr) const;
+
+    /**
+     * @brief Is the automaton graph acyclic? Used for checking language finiteness.
+     * 
+     * @return true <-> Automaton graph is acyclic.
+     */
+    bool is_acyclic() const;
 
     /**
      * Fill @p alphabet with symbols from @p nfa.

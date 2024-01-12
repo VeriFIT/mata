@@ -263,6 +263,64 @@ TEST_CASE("mata::nfa::is_lang_empty()")
     }
 } // }}}
 
+TEST_CASE("mata::nfa::is_acyclic")
+{ // {{{
+    Nfa aut(14);
+
+    SECTION("An empty automaton is acyclic")
+    {
+        REQUIRE(aut.is_acyclic());
+    }
+
+    SECTION("An automaton with a state that is both initial and final is acyclic")
+    {
+        aut.initial = {1, 2};
+        aut.final = {2, 3};
+        REQUIRE(aut.is_acyclic());
+    }
+
+    SECTION("More complicated automaton")
+    {
+        aut.initial = {1, 2};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 4);
+        aut.delta.add(3, 'b', 4);
+        aut.delta.add(3, 'c', 7);
+        aut.delta.add(7, 'a', 8);
+
+        SECTION("without final states")
+        {
+            REQUIRE(aut.is_lang_empty());
+        }
+    }
+
+    SECTION("Cyclic automaton")
+    {
+        aut.initial = {1, 2};
+        aut.final = {8, 9};
+        aut.delta.add(1, 'c', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'c', 3);
+        aut.delta.add(3, 'e', 5);
+        aut.delta.add(4, 'c', 8);
+        REQUIRE(!aut.is_acyclic());
+    }
+
+    SECTION("Automaton with self-loops")
+    {
+        Nfa aut(2);
+        aut.initial = {0};
+        aut.final = {1};
+        aut.delta.add(0, 'c', 1);
+        aut.delta.add(1, 'a', 1);
+        REQUIRE(!aut.is_acyclic());
+    }
+} // }}}
+
 TEST_CASE("mata::nfa::get_word_for_path()")
 { // {{{
     Nfa aut(5);
