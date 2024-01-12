@@ -39,10 +39,21 @@ Run the following to install the dependencies for Ubuntu:
 sudo apt-get install -y build-essential lcov gcovr xdg-utils
 ```
 
-# Building the Python binding from sources
+# Python binding
 
 Mata offers binding of its efficient library to Python. You can install the binding as an Python
-package on your system as follows. First, install the necessary requirements for Python and your
+package on your system as follows. 
+
+### Install from PyPI
+
+To install a latest version from the PyPI repository, run 
+```
+pip3 install libmata
+```
+
+### Building from sources
+
+To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (`venv`) to install and use the library.
 
 ```
