@@ -163,10 +163,10 @@ example: example.cc
 The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.
 
-You can start using the binding by importing the `mata` package.
+You can start using the binding by importing the `libmata` package.
 
 ```python
-import mata
+import libmata.nfa.nfa as mata_nfa
 ```
 
 In your own scripts, we recommend to use the standard guard for running the scripts, as follows.
@@ -178,12 +178,12 @@ if __name__ == "__main__":
 The usage of the binding copies (to certain levels) the usage of the C++ library.
 
 ```python
-    aut = mata.Nfa(4)
+    aut = mata_nfa.Nfa(4)
 
-    aut.initial = {0, 1}
-    aut.final = {2, 3}
-    aut.add_trans_raw(0, 0, 2)
-    aut.add_trans_raw(1, 1, 3)
+    aut.initial_states = {0, 1}
+    aut.final_states = {2, 3}
+    aut.add_transition(0, 0, 2)
+    aut.add_transition(1, 1, 3)
 
     print(aut.to_dot_str())
 ```
