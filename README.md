@@ -10,7 +10,7 @@ Mata is an open source automata library that offers interface for different kind
   1. An efficient library implemented in C/C++
   2. A flexible wrapper implemented in Python that uses the efficient library
 
-# Requirements and Dependencies
+# Requirements and dependencies
 
 For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required. 
 From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies). 
@@ -20,7 +20,7 @@ The Mata library further depends on the following libraries, included in the `3r
 - `re2` for regular expression parsing and the corresponding automata construction, and
 - `simlib` for a simulation computation.
 
-# Building from sources
+# Building and installing from sources
 
 To build the library, run the following:
 
