@@ -168,24 +168,22 @@ You can verify the state of your automaton by generating the automaton in `.dot`
 }
 ```
 
-Finally, compile the code using the following Makefile:
+We recommend `cmake` for building projects using Mata. Provided the Mata is installed in the system directories,
+the `CMakeLists.txt` file for the example may look like:
 
-```makefile
-CFLAGS=-std=c++20 -pedantic-errors -Wextra -Wall -Wfloat-equal -Wctor-dtor-privacy -Weffc++ -Woverloaded-virtual -fdiagnostics-show-option -g
+```cmake
+cmake_minimum_required (VERSION 3.15.0)
+project (mata-example)
+set (CMAKE_CXX_STANDARD 20)
 
-INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include
-LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib
-LIBS=-lmata -lsimlib -lre2
+find_library(LIBMATA mata REQUIRED)
 
-.PHONY: all clean
-
-all: $(patsubst %.cc,%,$(wildcard *.cc)) ../build/src/libmata.a
-
-example: example.cc
-	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< $(LIBS) -o $@
+add_executable(mata-example
+    mata-example.cc)
+target_link_libraries(mata-example PUBLIC ${LIBMATA})
 ```
 
-## Using the binding
+## Using the Python binding
 
 The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.
