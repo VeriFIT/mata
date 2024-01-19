@@ -46,15 +46,30 @@
 <li><p>A flexible wrapper implemented in Python that uses the efficient library</p></li>
 </ol>
 </section>
-<section id="building-from-sources">
-<h2>Building from sources<a class="headerlink" href="#building-from-sources" title="Link to this heading">¶</a></h2>
+<section id="requirements-and-dependencies">
+<h2>Requirements and dependencies<a class="headerlink" href="#requirements-and-dependencies" title="Link to this heading">¶</a></h2>
+<p>For a successful installation of Mata, <code class="docutils literal notranslate"><span class="pre">cmake</span></code> of version <code class="docutils literal notranslate"><span class="pre">3.15.0</span></code> (or higher) and a C++ compiler with a support of C++-20 standard is required.
+From optional requirements, <code class="docutils literal notranslate"><span class="pre">doxygen</span></code> is required for a generation of the documentation and <code class="docutils literal notranslate"><span class="pre">catch2</span></code> is required for the unit testing (Mata can still be compiled without these optional dependencies).</p>
+<p>The Mata library further depends on the following libraries, included in the <code class="docutils literal notranslate"><span class="pre">3rdparty</span></code> directory:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">cudd</span></code> for BDD manipulation,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">re2</span></code> for regular expression parsing and the corresponding automata construction, and</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">simlib</span></code> for a simulation computation.</p></li>
+</ul>
+</section>
+<section id="building-and-installing-from-sources">
+<h2>Building and installing from sources<a class="headerlink" href="#building-and-installing-from-sources" title="Link to this heading">¶</a></h2>
 <p>To build the library, run the following:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">VeriFIT</span><span class="o">/</span><span class="n">mata</span>
 <span class="n">cd</span> <span class="n">mata</span>
 <span class="n">make</span> <span class="n">release</span>
 </pre></div>
 </div>
-<p>In order, to verify the functionality of the library, you can run the test suite:</p>
+<p>In order to install the library, you can run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">make</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>In order to verify the functionality of the library, you can run the test suite:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="n">test</span>
 </pre></div>
 </div>
@@ -68,10 +83,20 @@ Run the following to install the dependencies for MacOS:</p>
 </pre></div>
 </div>
 </section>
-<section id="building-the-python-binding-from-sources">
-<h2>Building the Python binding from sources<a class="headerlink" href="#building-the-python-binding-from-sources" title="Link to this heading">¶</a></h2>
+<section id="python-binding">
+<h2>Python binding<a class="headerlink" href="#python-binding" title="Link to this heading">¶</a></h2>
 <p>Mata offers binding of its efficient library to Python. You can install the binding as an Python
-package on your system as follows. First, install the necessary requirements for Python and your
+package on your system as follows.</p>
+<section id="install-from-pypi">
+<h3>Install from PyPI<a class="headerlink" href="#install-from-pypi" title="Link to this heading">¶</a></h3>
+<p>To install a latest version from the PyPI repository, run</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip3</span> <span class="n">install</span> <span class="n">libmata</span>
+</pre></div>
+</div>
+</section>
+<section id="building-from-sources">
+<h3>Building from sources<a class="headerlink" href="#building-from-sources" title="Link to this heading">¶</a></h3>
+<p>To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (<code class="docutils literal notranslate"><span class="pre">venv</span></code>) to install and use the library.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">python</span> <span class="o">-</span><span class="n">m</span> <span class="n">pip</span> <span class="n">install</span> <span class="o">--</span><span class="n">upgrade</span> <span class="n">pip</span>
 <span class="n">make</span> <span class="o">-</span><span class="n">C</span> <span class="n">bindings</span><span class="o">/</span><span class="n">python</span> <span class="n">init</span>
@@ -88,6 +113,7 @@ system. We recommend using the virtual environemnt (<code class="docutils litera
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">make</span> <span class="o">-</span><span class="n">C</span> <span class="n">bindings</span><span class="o">/</span><span class="n">python</span> <span class="n">test</span>
 </pre></div>
 </div>
+</section>
 </section>
 <section id="getting-started">
 <h2>Getting started<a class="headerlink" href="#getting-started" title="Link to this heading">¶</a></h2>
@@ -122,7 +148,7 @@ on several other 3rd party libraries (e.g., <code class="docutils literal notran
 the repository.</p>
 <p>First import the library in your code. If the library is properly installed, you can use
 the standard include.</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mata/nfa.hh&gt;</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;mata/nfa/nfa.hh&gt;</span>
 </pre></div>
 </div>
 <p>We recommend to use the <code class="docutils literal notranslate"><span class="pre">mata::nfa</span></code> namespace for easier usage:</p>
@@ -140,8 +166,8 @@ the standard include.</p>
 </pre></div>
 </div>
 <p>Further, you can add transitions in form of tripple <code class="docutils literal notranslate"><span class="pre">(state_from,</span> <span class="pre">symbol,</span> <span class="pre">targets)</span></code>:</p>
-<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">aut</span><span class="p">.</span><span class="n">add_trans</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
-<span class="w">    </span><span class="n">aut</span><span class="p">.</span><span class="n">add_trans</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="n">aut</span><span class="p">.</span><span class="n">delta</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">);</span>
+<span class="w">    </span><span class="n">aut</span><span class="p">.</span><span class="n">delta</span><span class="p">.</span><span class="n">add</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w"> </span><span class="mi">3</span><span class="p">);</span>
 </pre></div>
 </div>
 <p>You can verify the state of your automaton by generating the automaton in <code class="docutils literal notranslate"><span class="pre">.dot</span></code> format.</p>
@@ -151,28 +177,26 @@ the standard include.</p>
 <span class="p">}</span>
 </pre></div>
 </div>
-<p>Finally, compile the code using the following Makefile:</p>
-<div class="highlight-makefile notranslate"><div class="highlight"><pre><span></span><span class="nv">CFLAGS</span><span class="o">=</span>-std<span class="o">=</span>c++14<span class="w"> </span>-pedantic-errors<span class="w"> </span>-Wextra<span class="w"> </span>-Wall<span class="w"> </span>-Wfloat-equal<span class="w"> </span>-Wctor-dtor-privacy<span class="w"> </span>-Weffc++<span class="w"> </span>-Woverloaded-virtual<span class="w"> </span>-fdiagnostics-show-option<span class="w"> </span>-g
+<p>We recommend <code class="docutils literal notranslate"><span class="pre">cmake</span></code> for building projects using Mata. Provided the Mata is installed in the system directories,
+the <code class="docutils literal notranslate"><span class="pre">CMakeLists.txt</span></code> file for the example may look like:</p>
+<div class="highlight-cmake notranslate"><div class="highlight"><pre><span></span><span class="nb">cmake_minimum_required</span><span class="w"> </span><span class="p">(</span><span class="s">VERSION</span><span class="w"> </span><span class="s">3.15.0</span><span class="p">)</span>
+<span class="nb">project</span><span class="w"> </span><span class="p">(</span><span class="s">mata-example</span><span class="p">)</span>
+<span class="nb">set</span><span class="w"> </span><span class="p">(</span><span class="s">CMAKE_CXX_STANDARD</span><span class="w"> </span><span class="s">20</span><span class="p">)</span>
 
-<span class="nv">INCLUDE</span><span class="o">=</span>-I../include<span class="w"> </span>-I../3rdparty/simlib/include<span class="w"> </span>-I../3rdparty/re2/include
-<span class="nv">LIBS_ADD</span><span class="o">=</span>-L../build/src<span class="w"> </span>-L../build/3rdparty/re2<span class="w"> </span>-L../build/3rdparty/simlib
-<span class="nv">LIBS</span><span class="o">=</span>-lmata<span class="w"> </span>-lsimlib<span class="w"> </span>-lre2
+<span class="nb">find_library</span><span class="p">(</span><span class="s">LIBMATA</span><span class="w"> </span><span class="s">mata</span><span class="w"> </span><span class="s">REQUIRED</span><span class="p">)</span>
 
-<span class="nf">.PHONY</span><span class="o">:</span><span class="w"> </span><span class="n">all</span> <span class="n">clean</span>
-
-<span class="nf">all</span><span class="o">:</span><span class="w"> </span><span class="k">$(</span><span class="nv">patsubst</span> %<span class="nv">.cc</span>,%,<span class="k">$(</span><span class="nv">wildcard</span> *<span class="nv">.cc</span><span class="k">))</span> ../<span class="n">build</span>/<span class="n">src</span>/<span class="n">libmata</span>.<span class="n">a</span>
-
-<span class="nf">example</span><span class="o">:</span><span class="w"> </span><span class="n">example</span>.<span class="n">cc</span>
-<span class="w">        </span>g++<span class="w"> </span><span class="k">$(</span>CFLAGS<span class="k">)</span><span class="w"> </span><span class="k">$(</span>INCLUDE<span class="k">)</span><span class="w"> </span><span class="k">$(</span>LIBS_ADD<span class="k">)</span><span class="w"> </span>$&lt;<span class="w"> </span><span class="k">$(</span>LIBS<span class="k">)</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">$@</span>
+<span class="nb">add_executable</span><span class="p">(</span><span class="s">mata-example</span>
+<span class="w">    </span><span class="s">mata-example.cc</span><span class="p">)</span>
+<span class="nb">target_link_libraries</span><span class="p">(</span><span class="s">mata-example</span><span class="w"> </span><span class="s">PUBLIC</span><span class="w"> </span><span class="o">${</span><span class="nv">LIBMATA</span><span class="o">}</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
-<section id="using-the-binding">
-<h3>Using the binding<a class="headerlink" href="#using-the-binding" title="Link to this heading">¶</a></h3>
+<section id="using-the-python-binding">
+<h3>Using the Python binding<a class="headerlink" href="#using-the-python-binding" title="Link to this heading">¶</a></h3>
 <p>The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.</p>
-<p>You can start using the binding by importing the <code class="docutils literal notranslate"><span class="pre">mata</span></code> package.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">mata</span>
+<p>You can start using the binding by importing the <code class="docutils literal notranslate"><span class="pre">libmata</span></code> package.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">libmata.nfa.nfa</span> <span class="k">as</span> <span class="nn">mata_nfa</span>
 </pre></div>
 </div>
 <p>In your own scripts, we recommend to use the standard guard for running the scripts, as follows.</p>
@@ -180,12 +204,12 @@ either use the binding in your own scripts or in the python interpreter.</p>
 </pre></div>
 </div>
 <p>The usage of the binding copies (to certain levels) the usage of the C++ library.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="n">aut</span> <span class="o">=</span> <span class="n">mata</span><span class="o">.</span><span class="n">Nfa</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span>    <span class="n">aut</span> <span class="o">=</span> <span class="n">mata_nfa</span><span class="o">.</span><span class="n">Nfa</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 
-    <span class="n">aut</span><span class="o">.</span><span class="n">initial</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
-    <span class="n">aut</span><span class="o">.</span><span class="n">final</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
-    <span class="n">aut</span><span class="o">.</span><span class="n">add_trans_raw</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-    <span class="n">aut</span><span class="o">.</span><span class="n">add_trans_raw</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="n">aut</span><span class="o">.</span><span class="n">initial_states</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">}</span>
+    <span class="n">aut</span><span class="o">.</span><span class="n">final_states</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">}</span>
+    <span class="n">aut</span><span class="o">.</span><span class="n">add_transition</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">aut</span><span class="o">.</span><span class="n">add_transition</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">aut</span><span class="o">.</span><span class="n">to_dot_str</span><span class="p">())</span>
 </pre></div>
@@ -279,8 +303,9 @@ that may be made of the information it contains.</p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#mata-the-automata-library">Mata: The Automata Library</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#building-from-sources">Building from sources</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#building-the-python-binding-from-sources">Building the Python binding from sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#requirements-and-dependencies">Requirements and dependencies</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#building-and-installing-from-sources">Building and installing from sources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#python-binding">Python binding</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#getting-started">Getting started</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#contributing">Contributing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#links">Links</a></li>
