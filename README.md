@@ -10,7 +10,17 @@ Mata is an open source automata library that offers interface for different kind
   1. An efficient library implemented in C/C++
   2. A flexible wrapper implemented in Python that uses the efficient library
 
-# Building from sources
+# Requirements and dependencies
+
+For a successful installation of Mata, `cmake` of version `3.15.0` (or higher) and a C++ compiler with a support of C++-20 standard is required. 
+From optional requirements, `doxygen` is required for a generation of the documentation and `catch2` is required for the unit testing (Mata can still be compiled without these optional dependencies). 
+
+The Mata library further depends on the following libraries, included in the `3rdparty` directory:
+- `cudd` for BDD manipulation,
+- `re2` for regular expression parsing and the corresponding automata construction, and
+- `simlib` for a simulation computation.
+
+# Building and installing from sources
 
 To build the library, run the following:
 
@@ -20,7 +30,13 @@ cd mata
 make release
 ```
 
-In order, to verify the functionality of the library, you can run the test suite:
+In order to install the library, you can run 
+
+```
+sudo make install
+```
+
+In order to verify the functionality of the library, you can run the test suite:
 
 ```
 make test
@@ -39,10 +55,21 @@ Run the following to install the dependencies for Ubuntu:
 sudo apt-get install -y build-essential lcov gcovr xdg-utils
 ```
 
-# Building the Python binding from sources
+# Python binding
 
 Mata offers binding of its efficient library to Python. You can install the binding as an Python
-package on your system as follows. First, install the necessary requirements for Python and your
+package on your system as follows. 
+
+### Install from PyPI
+
+To install a latest version from the PyPI repository, run 
+```
+pip3 install libmata
+```
+
+### Building from sources
+
+To build from sources first, install the necessary requirements for Python and your
 system. We recommend using the virtual environemnt (`venv`) to install and use the library.
 
 ```
@@ -102,7 +129,7 @@ First import the library in your code. If the library is properly installed, you
 the standard include.
 
 ```cpp
-#include <mata/nfa.hh>
+#include <mata/nfa/nfa.hh>
 ```
 
 We recommend to use the `mata::nfa` namespace for easier usage:
@@ -128,8 +155,8 @@ You can set the initial and final states directly using the initializers.
 Further, you can add transitions in form of tripple `(state_from, symbol, targets)`:
 
 ```cpp
-    aut.add_trans(0, 0, 2);
-    aut.add_trans(1, 1, 3);
+    aut.delta.add(0, 0, 2);
+    aut.delta.add(1, 1, 3);
 ```
 
 You can verify the state of your automaton by generating the automaton in `.dot` format.
@@ -141,32 +168,30 @@ You can verify the state of your automaton by generating the automaton in `.dot`
 }
 ```
 
-Finally, compile the code using the following Makefile:
+We recommend `cmake` for building projects using Mata. Provided the Mata is installed in the system directories,
+the `CMakeLists.txt` file for the example may look like:
 
-```makefile
-CFLAGS=-std=c++14 -pedantic-errors -Wextra -Wall -Wfloat-equal -Wctor-dtor-privacy -Weffc++ -Woverloaded-virtual -fdiagnostics-show-option -g
+```cmake
+cmake_minimum_required (VERSION 3.15.0)
+project (mata-example)
+set (CMAKE_CXX_STANDARD 20)
 
-INCLUDE=-I../include -I../3rdparty/simlib/include -I../3rdparty/re2/include
-LIBS_ADD=-L../build/src -L../build/3rdparty/re2 -L../build/3rdparty/simlib
-LIBS=-lmata -lsimlib -lre2
+find_library(LIBMATA mata REQUIRED)
 
-.PHONY: all clean
-
-all: $(patsubst %.cc,%,$(wildcard *.cc)) ../build/src/libmata.a
-
-example: example.cc
-	g++ $(CFLAGS) $(INCLUDE) $(LIBS_ADD) $< $(LIBS) -o $@
+add_executable(mata-example
+    mata-example.cc)
+target_link_libraries(mata-example PUBLIC ${LIBMATA})
 ```
 
-## Using the binding
+## Using the Python binding
 
 The python binding is installed (by default) to your local python package repository. You can
 either use the binding in your own scripts or in the python interpreter.
 
-You can start using the binding by importing the `mata` package.
+You can start using the binding by importing the `libmata` package.
 
 ```python
-import mata
+import libmata.nfa.nfa as mata_nfa
 ```
 
 In your own scripts, we recommend to use the standard guard for running the scripts, as follows.
@@ -178,12 +203,12 @@ if __name__ == "__main__":
 The usage of the binding copies (to certain levels) the usage of the C++ library.
 
 ```python
-    aut = mata.Nfa(4)
+    aut = mata_nfa.Nfa(4)
 
-    aut.initial = {0, 1}
-    aut.final = {2, 3}
-    aut.add_trans_raw(0, 0, 2)
-    aut.add_trans_raw(1, 1, 3)
+    aut.initial_states = {0, 1}
+    aut.final_states = {2, 3}
+    aut.add_transition(0, 0, 2)
+    aut.add_transition(1, 1, 3)
 
     print(aut.to_dot_str())
 ```
