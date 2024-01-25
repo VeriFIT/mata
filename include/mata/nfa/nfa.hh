@@ -336,6 +336,15 @@ public:
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
     /**
+     * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
+     * 
+     * If you have an automaton with finite language (can be checked using @ref is_acyclic),
+     * you can get all words by calling
+     *      get_words(aut.num_of_states())
+     */
+    std::set<Word> get_words(unsigned max_length);
+
+    /**
      * @brief Make NFA complete in place.
      *
      * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
@@ -623,15 +632,6 @@ Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
-
-/**
- * @brief Get the set of all words in language of @p aut whose length is <= @p max_length
- * 
- * If you have an automaton aut with finite language (can be checked using @ref is_acyclic),
- * you can get all words by calling
- *      get_words(aut, aut.num_of_states())
- */
-std::set<Word> get_words(const Nfa& aut, unsigned max_length);
 
 } // namespace mata::nfa.
 

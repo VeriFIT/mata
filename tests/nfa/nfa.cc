@@ -2908,52 +2908,52 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
     }
 }
 
-TEST_CASE("mata::nfa::get_words") {
+TEST_CASE("mata::nfa::Nfa::get_words") {
     SECTION("empty") {
         Nfa aut;
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>());
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>());
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>());
+        CHECK(aut.get_words(0) == std::set<mata::Word>());
+        CHECK(aut.get_words(1) == std::set<mata::Word>());
+        CHECK(aut.get_words(5) == std::set<mata::Word>());
     }
 
     SECTION("empty word") {
         Nfa aut(1, {0}, {0});
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{{}});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{{}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{}});
     }
 
     SECTION("noodle - one final") {
         Nfa aut(3, {0}, {2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{});
-        CHECK(mata::nfa::get_words(aut,2) == std::set<mata::Word>{{0, 1}});
-        CHECK(mata::nfa::get_words(aut,3) == std::set<mata::Word>{{0, 1}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{0, 1}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{});
+        CHECK(aut.get_words(2) == std::set<mata::Word>{{0, 1}});
+        CHECK(aut.get_words(3) == std::set<mata::Word>{{0, 1}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{0, 1}});
     }
 
     SECTION("noodle - two finals") {
         Nfa aut(3, {0}, {1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{{0}});
-        CHECK(mata::nfa::get_words(aut,2) == std::set<mata::Word>{{0}, {0, 1}});
-        CHECK(mata::nfa::get_words(aut,3) == std::set<mata::Word>{{0}, {0, 1}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{0}, {0, 1}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{{0}});
+        CHECK(aut.get_words(2) == std::set<mata::Word>{{0}, {0, 1}});
+        CHECK(aut.get_words(3) == std::set<mata::Word>{{0}, {0, 1}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{0}, {0, 1}});
     }
 
     SECTION("noodle - three finals") {
         Nfa aut(3, {0}, {0,1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{{}});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{{}, {0}});
-        CHECK(mata::nfa::get_words(aut,2) == std::set<mata::Word>{{}, {0}, {0, 1}});
-        CHECK(mata::nfa::get_words(aut,3) == std::set<mata::Word>{{}, {0}, {0, 1}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{}, {0}, {0, 1}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}});
+        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {0, 1}});
+        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {0, 1}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {0, 1}});
     }
 
     SECTION("more complex") {
@@ -2964,23 +2964,23 @@ TEST_CASE("mata::nfa::get_words") {
         aut.delta.add(3, 3, 2);
         aut.delta.add(1, 4, 2);
         aut.delta.add(2, 5, 5);
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{{}});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{{}, {0}});
-        CHECK(mata::nfa::get_words(aut,2) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}});
-        CHECK(mata::nfa::get_words(aut,3) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
-        CHECK(mata::nfa::get_words(aut,4) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}});
+        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}});
+        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
+        CHECK(aut.get_words(4) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {0, 1}, {2,5}, {4,5}, {0,3,5}});
     }
 
     SECTION("cycle") {
         Nfa aut(6, {0,1}, {0,1});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 0);
-        CHECK(mata::nfa::get_words(aut,0) == std::set<mata::Word>{{}});
-        CHECK(mata::nfa::get_words(aut,1) == std::set<mata::Word>{{}, {0}, {1}});
-        CHECK(mata::nfa::get_words(aut,2) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}});
-        CHECK(mata::nfa::get_words(aut,3) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}});
-        CHECK(mata::nfa::get_words(aut,4) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}});
-        CHECK(mata::nfa::get_words(aut,5) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}, {0,1,0,1,0}, {1,0,1,0,1}});
+        CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
+        CHECK(aut.get_words(1) == std::set<mata::Word>{{}, {0}, {1}});
+        CHECK(aut.get_words(2) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}});
+        CHECK(aut.get_words(3) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}});
+        CHECK(aut.get_words(4) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}});
+        CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}, {0,1,0,1,0}, {1,0,1,0,1}});
     }
 }
