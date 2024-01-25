@@ -800,10 +800,13 @@ std::set<mata::Word> mata::nfa::get_words(const Nfa& aut, unsigned max_length) {
             result.insert(mata::Word());
         }
     }
+    
+    // will be used during the loop
+    std::vector<std::pair<State, mata::Word>> new_worklist;
 
     unsigned cur_length = 0;
     while (!worklist.empty() && cur_length < max_length) {
-        std::vector<std::pair<State, mata::Word>> new_worklist;
+        new_worklist.clear();
         for (const auto& state_and_word : worklist) {
             State s_from = state_and_word.first;
             const mata::Word& word = state_and_word.second;
@@ -818,7 +821,7 @@ std::set<mata::Word> mata::nfa::get_words(const Nfa& aut, unsigned max_length) {
                 }
             }
         }
-        worklist = new_worklist;
+        worklist.swap(new_worklist);
         ++cur_length;
     }
 
