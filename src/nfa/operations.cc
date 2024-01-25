@@ -787,3 +787,43 @@ mata::OnTheFlyAlphabet mata::nfa::create_alphabet(const std::vector<Nfa*>& nfas)
 Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
     return { .word = alphabet->translate_word(input) };
 }
+
+std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
+    std::set<mata::Word> result;
+
+    // contains a pair: a state s and the word with which we got to the state s
+    std::vector<std::pair<State, mata::Word>> worklist;
+    // initializing worklist
+    for (State init_state : initial) {
+        worklist.push_back({init_state, {}});
+        if (final.contains(init_state)) {
+            result.insert(mata::Word());
+        }
+    }
+    
+    // will be used during the loop
+    std::vector<std::pair<State, mata::Word>> new_worklist;
+
+    unsigned cur_length = 0;
+    while (!worklist.empty() && cur_length < max_length) {
+        new_worklist.clear();
+        for (const auto& state_and_word : worklist) {
+            State s_from = state_and_word.first;
+            const mata::Word& word = state_and_word.second;
+            for (const SymbolPost& sp : delta[s_from]) {
+                mata::Word new_word = word;
+                new_word.push_back(sp.symbol);
+                for (State s_to : sp.targets) {
+                    new_worklist.push_back({s_to, new_word});
+                    if (final.contains(s_to)) {
+                        result.insert(new_word);
+                    }
+                }
+            }
+        }
+        worklist.swap(new_worklist);
+        ++cur_length;
+    }
+
+    return result;
+}
