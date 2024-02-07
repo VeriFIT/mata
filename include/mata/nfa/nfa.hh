@@ -166,7 +166,7 @@ public:
     BoolVector get_useful_states() const;
 
     /**
-     * @brief Structure for storing callback functions (event handlers) utilizing 
+     * @brief Structure for storing callback functions (event handlers) utilizing
      * Tarjan's SCC discover algorithm.
      */
     struct TarjanDiscoverCallback {
@@ -182,7 +182,7 @@ public:
 
     /**
      * @brief Tarjan's SCC discover algorihm.
-     * 
+     *
      * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
      */
     void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
@@ -275,8 +275,8 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
-     * Check whether the language of NFA is empty. 
-     * Currently calls is_lang_empty_scc if cex is null 
+     * Check whether the language of NFA is empty.
+     * Currently calls is_lang_empty_scc if cex is null
      * @param[out] cex Counter-example path for a case the language is not empty.
      * @return True if the language is empty, false otherwise.
      */
@@ -284,7 +284,7 @@ public:
 
     /**
      * @brief Check if the language is empty using Tarjan's SCC discover algorithm.
-     * 
+     *
      * @return Language empty <-> True
      */
     bool is_lang_empty_scc() const;
@@ -307,7 +307,7 @@ public:
 
     /**
      * @brief Is the automaton graph acyclic? Used for checking language finiteness.
-     * 
+     *
      * @return true <-> Automaton graph is acyclic.
      */
     bool is_acyclic() const;
@@ -337,7 +337,7 @@ public:
 
     /**
      * @brief Get the set of all words in the language of the automaton whose length is <= @p max_length
-     * 
+     *
      * If you have an automaton with finite language (can be checked using @ref is_acyclic),
      * you can get all words by calling
      *      get_words(aut.num_of_states())
