@@ -7,13 +7,20 @@ add_executable(tests
 		parser.cc
 		re2parser.cc
 		mintermization.cc
-		nfa/delta.cc
-		nfa/nfa.cc
-		nfa/builder.cc
-		nfa/nfa-concatenation.cc
-		nfa/nfa-intersection.cc
-		nfa/nfa-profiling.cc
-		nfa/nfa-plumbing.cc
+		# nfa/delta.cc
+		# nfa/nfa.cc
+		# nfa/builder.cc
+		# nfa/nfa-concatenation.cc
+		# nfa/nfa-intersection.cc
+		# nfa/nfa-profiling.cc
+		# nfa/nfa-plumbing.cc
+		lvlfa/delta.cc
+		lvlfa/lvlfa.cc
+		lvlfa/builder.cc
+		lvlfa/lvlfa-concatenation.cc
+		lvlfa/lvlfa-intersection.cc
+		lvlfa/lvlfa-profiling.cc
+		lvlfa/lvlfa-plumbing.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
