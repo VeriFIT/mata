@@ -576,7 +576,7 @@ TEST_CASE("mata::lvlfa::concatenate() over epsilon symbol") {
     }
 }
 
-TEST_CASE("(a|b)*") {
+TEST_CASE("Lvlfa (a|b)*") {
     Lvlfa aut1;
     mata::parser::create_nfa(&aut1, "a*");
     Lvlfa aut2;
@@ -587,7 +587,7 @@ TEST_CASE("(a|b)*") {
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
 
-TEST_CASE("Bug with epsilon transitions") {
+TEST_CASE("Bug with epsilon transitions in Lvlfa") {
     Lvlfa lvlfa1{};
     lvlfa1.initial.insert(0);
     lvlfa1.final.insert(3);
@@ -736,7 +736,7 @@ TEST_CASE("mata::lvlfa::concatenate() inplace") {
 
 }
 
-TEST_CASE("Concat_inplace performance", "[.profiling]") {
+TEST_CASE("Concat_inplace performance of LVLFA", "[.profiling]") {
     Lvlfa base;
     base.initial.insert(0);
     base.final.insert(4);

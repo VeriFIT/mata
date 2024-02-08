@@ -3,6 +3,8 @@
 #include "mata/lvlfa/builder.hh"
 #include "mata/parser/mintermization.hh"
 
+#include "mata/nfa/builder.hh"
+
 #include <fstream>
 
 using namespace mata::lvlfa;
@@ -13,7 +15,8 @@ Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphab
     Lvlfa aut;
     assert(nullptr != alphabet);
 
-    if (parsec.type != TYPE_NFA) {
+    // HACK - it should be only "parsec.type != TYPE_NFA" without the conjunction
+    if (parsec.type != TYPE_NFA && parsec.type != TYPE_NFA + "-explicit") {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
                                  TYPE_NFA + "\"");
     }
@@ -62,11 +65,9 @@ Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphab
         }
     }
 
-    aut.levels.clear();
     it = parsec.dict.find("Levels");
     if (parsec.dict.end() != it)
     {
-        aut.levels.resize(it->second.size(), 0);
         for (const auto &str : it->second)
         {
             std::stringstream ss(str);
@@ -95,20 +96,20 @@ Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphab
         }
     }
 
-    it = parsec.dict.find("MaxLevel");
+    it = parsec.dict.find("LevelsCnt");
     if (parsec.dict.end() != it) {
         if (it->second.size() == 0) {
-            throw std::runtime_error("MaxLevel has to be specified.");
+            throw std::runtime_error("LevelsCnt has to be specified.");
         }
         if (it->second.size() > 1) {
-            throw std::runtime_error("Only one MexLevel can be specified.");
+            throw std::runtime_error("Only one LevelsCnt can be specified.");
         }
         try {
             long level = std::stol(it->second[0]);
             if (level < 0) {
                 throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
             }
-            aut.max_level = static_cast<Level>(level);
+            aut.levels_cnt = static_cast<Level>(level);
         } catch (const std::invalid_argument &ex) {
             throw std::runtime_error("Bad format of levels: unsupported level " + it->second[0]);
         } catch (const std::out_of_range &ex) {
@@ -149,7 +150,6 @@ Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphab
 } // construct().
 
 Lvlfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
-    // throw std::runtime_error("Constructor via IntermediateAut is not implemented for LVLFA.");
     Lvlfa aut;
     assert(nullptr != alphabet);
 
@@ -238,38 +238,25 @@ void builder::construct(
 }
 
 Lvlfa builder::create_single_word_lvlfa(const std::vector<Symbol>& word) {
-    const size_t word_size{ word.size() };
-    Lvlfa lvlfa{ word_size + 1, { 0 }, { word_size } };
-
-    for (State state{ 0 }; state < word_size; ++state) {
-        lvlfa.delta.add(state, word[state], state + 1);
-    }
-    return lvlfa;
+    return Lvlfa(mata::nfa::builder::create_single_word_nfa(word));
 }
 
 Lvlfa builder::create_single_word_lvlfa(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
-    if (!alphabet) {
-        alphabet = new OnTheFlyAlphabet{ word };
-    }
-    const size_t word_size{ word.size() };
-    Lvlfa lvlfa{ word_size + 1, { 0 }, { word_size }, std::vector<Level>(word_size + 1, 0), 0, alphabet };
-
-    for (State state{ 0 }; state < word_size; ++state) {
-        lvlfa.delta.add(state, alphabet->translate_symb(word[state]), state + 1);
-    }
-    return lvlfa;
+    return Lvlfa(mata::nfa::builder::create_single_word_nfa(word, alphabet));
 }
 
 Lvlfa builder::create_empty_string_lvlfa() {
-    return Lvlfa{ 1, StateSet{ 0 }, StateSet{ 0 } };
+    return Lvlfa(mata::nfa::builder::create_empty_string_nfa());
+}
+
+Lvlfa builder::create_sigma_star_lvlfa() {
+    Lvlfa lvlfa{ 1, { 0 }, { 0 }, { 0 }, 1 };
+    lvlfa.delta.add(0, DONT_CARE, 0);
+    return lvlfa;
 }
 
 Lvlfa builder::create_sigma_star_lvlfa(mata::Alphabet* alphabet) {
-    Lvlfa lvlfa{ 1, StateSet{ 0 }, StateSet{ 0 }, { 0 }, 0, alphabet };
-    for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
-        lvlfa.delta.add(0, symbol, 0);
-    }
-    return lvlfa;
+    return Lvlfa(mata::nfa::builder::create_sigma_star_nfa(alphabet));
 }
 
 Lvlfa builder::parse_from_mata(std::istream& lvlfa_stream) {
@@ -284,8 +271,8 @@ Lvlfa builder::parse_from_mata(std::istream& lvlfa_stream) {
         throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'LVLFA'\n");
     }
     IntAlphabet alphabet;
-    return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
-    // return construct(parsed, &alphabet);
+    // return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
+    return construct(parsed[0], &alphabet);
 }
 
 Lvlfa builder::parse_from_mata(const std::filesystem::path& lvlfa_file) {
