@@ -2743,7 +2743,7 @@ TEST_CASE("mata::lvlfa::Lvlfa::delta()") {
     Delta delta(6);
 }
 
-TEST_CASE("A segmentation fault in the make_complement") {
+TEST_CASE("A segmentation fault in the lvlfa::make_complement") {
     Lvlfa r(1);
     OnTheFlyAlphabet alph{};
     alph["a"];

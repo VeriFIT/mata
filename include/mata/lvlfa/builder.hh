@@ -6,6 +6,8 @@
 #include "lvlfa.hh"
 #include <bits/stdc++.h>
 
+#include "mata/nfa/builder.hh"
+
 #include <filesystem>
 
 
@@ -37,6 +39,11 @@ Lvlfa create_single_word_lvlfa(const std::vector<std::string>& word, Alphabet* a
  * Create automaton accepting only epsilon string.
  */
 Lvlfa create_empty_string_lvlfa();
+
+/**
+ * Create automaton accepting sigma star over the passed alphabet using DONT_CARE symbol.
+ */
+Lvlfa create_sigma_star_lvlfa();
 
 /**
  * Create automaton accepting sigma star over the passed alphabet.

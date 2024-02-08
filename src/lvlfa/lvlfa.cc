@@ -23,11 +23,6 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 const std::string mata::lvlfa::TYPE_NFA = "LVLFA";
 
 
-// const State Limits::min_state;
-// const State Limits::max_state;
-// const Symbol Limits::min_symbol;
-// const Symbol Limits::max_symbol;
-
 Lvlfa& Lvlfa::trim(StateRenaming* state_renaming) {
 
 
@@ -147,14 +142,27 @@ void Lvlfa::print_to_mata(std::ostream &output) const {
         output << std::endl;
     }
 
-    // if (!levels.empty()) {
-    //     output << "%Levels";
-    //     for (State s{ 0 }; s < num_of_states(); s++) {
-    //         output << " " << "q" << s << ":" << levels[s];
-    //     }
-    //     output << std::endl;
-    //     output << "MaxLevel " << max_level << std::endl;
-    // }
+    if (!levels.empty()) {
+        BoolVector live_states(num_of_states(), false);
+        for (const State &s : initial) {
+            live_states[s] = true;
+        }
+        for (const State &s : final) {
+            live_states[s] = true;
+        }
+        for (const Transition &trans: delta.transitions()) {
+            live_states[trans.source] = true;
+            live_states[trans.target] = true;
+        }
+        output << "%Levels";
+        for (State s{ 0 }; s < num_of_states(); s++) {
+            if (live_states[s]) {
+                output << " " << "q" << s << ":" << levels[s];
+            }
+        }
+        output << std::endl;
+        output << "%LevelsCnt " << levels_cnt << std::endl;
+    }
 
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
@@ -162,14 +170,7 @@ void Lvlfa::print_to_mata(std::ostream &output) const {
 }
 
 Lvlfa Lvlfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    Lvlfa digraph{num_of_states(), StateSet(initial), StateSet(final), std::vector<Level>(num_of_states(), 0), 0 };
-    // Add directed transitions for digraph.
-    for (const Transition& transition: delta.transitions()) {
-        // Directly try to add the transition. Finding out whether the transition is already in the digraph
-        //  only iterates through transition relation again.
-        digraph.delta.add(transition.source, abstract_symbol, transition.target);
-    }
-    return digraph;
+    return Lvlfa(mata::nfa::Nfa::get_one_letter_aut(abstract_symbol));
 }
 
 void Lvlfa::get_one_letter_aut(Lvlfa& result) const {
@@ -182,7 +183,7 @@ Lvlfa& Lvlfa::operator=(Lvlfa&& other) noexcept {
         initial = std::move(other.initial);
         final = std::move(other.final);
         levels = std::move(other.levels);
-        max_level = other.max_level;
+        levels_cnt = other.levels_cnt;
         alphabet = other.alphabet;
         attributes = std::move(other.attributes);
         other.alphabet = nullptr;
@@ -206,5 +207,5 @@ void Lvlfa::clear() {
 }
 
 bool Lvlfa::is_identical(const Lvlfa& aut) const {
-    return max_level == aut.max_level && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
+    return levels_cnt == aut.levels_cnt && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
 }

@@ -304,7 +304,7 @@ TEST_CASE("mata::lvlfa::intersection() for profiling", "[.profiling],[intersecti
     }
 }
 
-TEST_CASE("Move semantics", "[.profiling][std::move]") {
+TEST_CASE("Move semantics of LVLFA", "[.profiling][std::move]") {
     Lvlfa b{10};
     b.initial.insert(0);
     b.final.insert({2, 4, 8, 7});
