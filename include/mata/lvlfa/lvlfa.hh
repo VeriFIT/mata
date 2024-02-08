@@ -55,7 +55,7 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     std::vector<Level> levels{};
-    Level max_level = 0;
+    Level levels_cnt = 0;
     /// Key value store for additional attributes for the LVLFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
     /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
@@ -66,8 +66,8 @@ public:
 
 public:
     explicit Lvlfa(Delta delta = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, Level max_level = 0, Alphabet* alphabet = nullptr)
-        : mata::nfa::Nfa(delta, initial_states, final_states, alphabet), levels(std::move(levels)), max_level(max_level) {}
+                 utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, Level levels_cnt = 1, Alphabet* alphabet = nullptr)
+        : mata::nfa::Nfa(delta, initial_states, final_states, alphabet), levels(std::move(levels)), levels_cnt(levels_cnt) {}
 
     /**
      * @brief Construct a new explicit LVLFA with num_of_states states and optionally set initial and final states.
@@ -75,12 +75,12 @@ public:
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Lvlfa(const unsigned long num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, std::vector<Level> levels = {}, Level max_level = 0, Alphabet* alphabet = nullptr)
-        : mata::nfa::Nfa(num_of_states, initial_states, final_states, alphabet), levels(levels), max_level(max_level) {}
+                 StateSet final_states = {}, std::vector<Level> levels = {}, Level levels_cnt = 1, Alphabet* alphabet = nullptr)
+        : mata::nfa::Nfa(num_of_states, initial_states, final_states, alphabet), levels(levels), levels_cnt(levels_cnt) {}
 
-    // Lvlfa(const mata::nfa::Nfa& other)
-    //     : delta(std::move(other.delta)), initial(std::move(other.initial)), final(std::move(other.final)),
-    //      levels(std::move(std::vector<Level>(other.num_of_states(), 0))), max_level(0), alphabet(other.alphabet) {}
+    explicit Lvlfa(const mata::nfa::Nfa& other)
+        : mata::nfa::Nfa(other.delta, other.initial, other.final, other.alphabet),
+          levels(std::move(std::vector<Level>(other.num_of_states(), 0))), levels_cnt(1) {}
 
     /**
      * @brief Construct a new explicit LVLFA from other LVLFA.
@@ -88,7 +88,7 @@ public:
     Lvlfa(const Lvlfa& other) = default;
 
     Lvlfa(Lvlfa&& other) noexcept
-        : levels { std::move(other.levels) }, max_level{ other.max_level } {
+        : levels { std::move(other.levels) }, levels_cnt{ other.levels_cnt } {
             delta = std::move(other.delta);
             initial = std::move(other.initial);
             final = std::move(other.final);
@@ -191,13 +191,6 @@ public:
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     void print_to_mata(std::ostream &output) const;
-
-    /**
-     * Fill @p alphabet with symbols from @p lvlfa.
-     * @param[in] lvlfa LVLFA with symbols to fill @p alphabet with.
-     * @param[out] alphabet Alphabet to be filled with symbols from @p lvlfa.
-     */
-    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
 
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,

@@ -159,7 +159,7 @@ Lvlfa mata::lvlfa::remove_epsilon(const Lvlfa& aut, Symbol epsilon) {
     }
 
     // Construct the automaton without epsilon transitions.
-    Lvlfa result{ Delta{}, aut.initial, aut.final, aut.levels, aut.max_level, aut.alphabet };
+    Lvlfa result{ Delta{}, aut.initial, aut.final, aut.levels, aut.levels_cnt, aut.alphabet };
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
@@ -598,17 +598,8 @@ std::ostream& std::operator<<(std::ostream& os, const Lvlfa& lvlfa) {
     return os;
 }
 
-void mata::lvlfa::Lvlfa::fill_alphabet(OnTheFlyAlphabet& alphabet) const {
-    for (const StatePost& state_post: this->delta) {
-        for (const SymbolPost& symbol_post: state_post) {
-            alphabet.update_next_symbol_value(symbol_post.symbol);
-            alphabet.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
-        }
-    }
-}
-
 Run mata::lvlfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
-    return { .word = alphabet->translate_word(input) };
+    return mata::nfa::encode_word(alphabet, input);
 }
 
 std::set<mata::Word> mata::lvlfa::Lvlfa::get_words(unsigned max_length) {
