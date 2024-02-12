@@ -164,6 +164,12 @@ public:
      */
     void get_one_letter_aut(Lvlfa& result) const;
 
+    void make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE });
+
+    Lvlfa get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
+
+    void get_one_level_aut(Lvlfa& result, const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
+
     /**
      * @brief Prints the automaton in DOT format
      *
