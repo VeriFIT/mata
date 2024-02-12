@@ -177,16 +177,83 @@ void Lvlfa::get_one_letter_aut(Lvlfa& result) const {
     result = get_one_letter_aut();
 }
 
+void Lvlfa::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) {
+    bool dcare_for_dcare = dcare_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
+    std::vector<Transition> transitions_to_del;
+    std::vector<Transition> transitions_to_add;
+
+    auto add_inner_transitions = [&](State src, Symbol symbol, State trg) {
+        if (symbol == DONT_CARE && !dcare_for_dcare) {
+            for (const Symbol replace_symbol : dcare_replacements) {
+                transitions_to_add.push_back({ src, replace_symbol, trg });
+            }
+        } else {
+            transitions_to_add.push_back({ src, symbol, trg });
+        }
+    };
+
+    Level src_lvl, trg_lvl, diff_lvl;
+    for (const auto &transition : delta.transitions()) {
+        src_lvl = levels[transition.source];
+        trg_lvl = levels[transition.target];
+        diff_lvl = (trg_lvl == 0) ? (levels_cnt - src_lvl) : trg_lvl - src_lvl;
+
+        if (diff_lvl == 1 && transition.symbol == DONT_CARE && !dcare_for_dcare) {
+            transitions_to_del.push_back(transition);
+            for (const Symbol replace_symbol : dcare_replacements) {
+                transitions_to_add.push_back({ transition.source, replace_symbol, transition.target });
+            }
+        } else if (diff_lvl > 1) {
+            transitions_to_del.push_back(transition);
+            State inner_src = transition.source;
+            Level inner_src_lvl = src_lvl;
+
+            // The first iteration connecting original source state with inner state.
+            State inner_trg = add_state();
+            Level inner_trg_lvl = src_lvl + 1;
+            levels[inner_trg] = inner_trg_lvl;
+            add_inner_transitions(inner_src, transition.symbol, inner_trg);
+            inner_src = inner_trg;
+            inner_src_lvl++;
+            inner_trg_lvl++;
+
+            // Iterations 1 to n-1 connecting inner states.
+            Level pre_trg_lvl = (trg_lvl == 0) ? (levels_cnt - 1) : (trg_lvl - 1);
+            for (; inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
+                inner_trg = add_state();
+                levels[inner_trg] = inner_trg_lvl;
+                add_inner_transitions(inner_src, DONT_CARE, inner_trg);
+                inner_src = inner_trg;
+            }
+
+            // The last iteration connecting last inner state with the original target state.
+            add_inner_transitions(inner_src, DONT_CARE, transition.target);
+        }
+    }
+
+    for (const Transition &transition : transitions_to_add) {
+        delta.add(transition);
+    }
+    for (const Transition &transition : transitions_to_del) {
+        delta.remove(transition);
+    }
+}
+
+Lvlfa Lvlfa::get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) const {
+    Lvlfa result{ *this };
+    result.make_one_level_aut(dcare_replacements);
+    return result;
+}
+
+void Lvlfa::get_one_level_aut(Lvlfa& result, const utils::OrdVector<Symbol> &dcare_replacements) const {
+    result = get_one_level_aut(dcare_replacements);
+}
+
 Lvlfa& Lvlfa::operator=(Lvlfa&& other) noexcept {
     if (this != &other) {
-        delta = std::move(other.delta);
-        initial = std::move(other.initial);
-        final = std::move(other.final);
+        mata::nfa::Nfa::operator=(other);
         levels = std::move(other.levels);
         levels_cnt = other.levels_cnt;
-        alphabet = other.alphabet;
-        attributes = std::move(other.attributes);
-        other.alphabet = nullptr;
     }
     return *this;
 }
