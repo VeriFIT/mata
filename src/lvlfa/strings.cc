@@ -46,3 +46,12 @@ Lvlfa mata::lvlfa::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     return nft;
 }
 
+Lvlfa mata::lvlfa::create_identity_with_single_replace(
+    mata::Alphabet *alphabet, const Symbol from_symbol, const Symbol to_symbol) {
+    Lvlfa nft{ create_identity(alphabet) };
+    if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
+    auto symbol_post_to_state_with_replace{ nft.delta.mutable_state_post(0).find(from_symbol) };
+    const State from_replace_state{ symbol_post_to_state_with_replace->targets.front() };
+    nft.delta.mutable_state_post(from_replace_state).front().symbol = to_symbol;
+    return nft;
+}
