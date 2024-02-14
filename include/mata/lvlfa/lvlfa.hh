@@ -49,11 +49,7 @@ namespace mata::lvlfa {
  */
 struct Lvlfa : public mata::nfa::Nfa {
 public:
-    /**
-     * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
-     *
-     * The set of states of this automaton are the numbers from 0 to the number of states minus one.
-     */
+    /// @brief For state q, levels[q] gives the state a level.
     std::vector<Level> levels{};
     Level levels_cnt = 0;
     /// Key value store for additional attributes for the LVLFA. Keys are attribute names as strings and the value types
