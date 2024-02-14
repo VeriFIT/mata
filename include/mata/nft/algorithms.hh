@@ -1,17 +1,17 @@
-/* algorithms.hh -- Wrapping up algorithms for Lvlfa manipulation which would be otherwise in anonymous namespaces.
+/* algorithms.hh -- Wrapping up algorithms for Nft manipulation which would be otherwise in anonymous namespaces.
  */
 
-#ifndef MATA_LVLFA_INTERNALS_HH_
-#define MATA_LVLFA_INTERNALS_HH_
+#ifndef MATA_NFT_INTERNALS_HH_
+#define MATA_NFT_INTERNALS_HH_
 
-#include "lvlfa.hh"
+#include "nft.hh"
 #include "mata/simlib/util/binary_relation.hh"
 
 /**
- * Concrete LVLFA implementations of algorithms, such as complement, inclusion, or universality checking.
+ * Concrete NFT implementations of algorithms, such as complement, inclusion, or universality checking.
  *
- * This is a separation of the implementation from the interface defined in mata::lvlfa.
- * Note, that in mata::lvlfa interface, there are particular dispatch functions calling
+ * This is a separation of the implementation from the interface defined in mata::nft.
+ * Note, that in mata::nft interface, there are particular dispatch functions calling
  * these function according to parameters provided by a user.
  * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
  * to check for universality based on antichain-based algorithm.
@@ -23,14 +23,14 @@
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace mata::lvlfa::algorithms {
+namespace mata::nft::algorithms {
 
 /**
  * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
  * @param[in] aut Automaton to be minimized.
  * @return Minimized automaton.
  */
-Lvlfa minimize_brzozowski(const Lvlfa& aut);
+Nft minimize_brzozowski(const Nft& aut);
 
 /**
  * Complement implemented by determization, adding sink state and making automaton complete. Then it adds final states
@@ -41,7 +41,7 @@ Lvlfa minimize_brzozowski(const Lvlfa& aut);
  *  minimization.
  * @return Complemented automaton.
  */
-Lvlfa complement_classical(const Lvlfa& aut, const mata::utils::OrdVector<Symbol>& symbols,
+Nft complement_classical(const Nft& aut, const mata::utils::OrdVector<Symbol>& symbols,
                          bool minimize_during_determinization = false);
 
 /**
@@ -55,7 +55,7 @@ Lvlfa complement_classical(const Lvlfa& aut, const mata::utils::OrdVector<Symbol
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_naive(const Lvlfa& smaller, const Lvlfa& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+bool is_included_naive(const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
 
 /**
  * Inclusion implemented by antichain algorithms.
@@ -66,7 +66,7 @@ bool is_included_naive(const Lvlfa& smaller, const Lvlfa& bigger, const Alphabet
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_antichains(const Lvlfa& smaller, const Lvlfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+bool is_included_antichains(const Nft& smaller, const Nft& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -75,7 +75,7 @@ bool is_included_antichains(const Lvlfa& smaller, const Lvlfa& bigger, const Alp
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the complemented automaton has non empty language, i.e., the original one is not universal
  */
-bool is_universal_naive(const Lvlfa& aut, const Alphabet& alphabet, Run* cex);
+bool is_universal_naive(const Nft& aut, const Alphabet& alphabet, Run* cex);
 
 /**
  * Universality checking based on subset construction with antichain.
@@ -84,29 +84,29 @@ bool is_universal_naive(const Lvlfa& aut, const Alphabet& alphabet, Run* cex);
  * @param[out] cex Counterexample word which eventually breaks the universality
  * @return True if the automaton is universal, otherwise false.
  */
-bool is_universal_antichains(const Lvlfa& aut, const Alphabet& alphabet, Run* cex);
+bool is_universal_antichains(const Nft& aut, const Alphabet& alphabet, Run* cex);
 
 Simlib::Util::BinaryRelation compute_relation(
-        const Lvlfa& aut,
+        const Nft& aut,
         const ParameterMap&  params = {{ "relation", "simulation"}, { "direction", "forward"}});
 
 /**
- * @brief Compute product of two LVLFAs, final condition is to be specified, with a possibility of using multiple epsilons.
+ * @brief Compute product of two NFTs, final condition is to be specified, with a possibility of using multiple epsilons.
  *
- * @param[in] lhs First LVLFA to compute intersection for.
- * @param[in] rhs Second LVLFA to compute intersection for.
+ * @param[in] lhs First NFT to compute intersection for.
+ * @param[in] rhs Second NFT to compute intersection for.
  * @param[in] first_epsilons The smallest epsilon.
  * @param[in] final_condition The predicate that tells whether a pair of states is final (conjunction for intersection).
  * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
  *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
  *   because this one is too slow.
- * @return LVLFA as a product of LVLFAs @p lhs and @p rhs with ε-transitions preserved.
+ * @return NFT as a product of NFTs @p lhs and @p rhs with ε-transitions preserved.
  */
-Lvlfa product(const Lvlfa& lhs, const Lvlfa& rhs, const std::function<bool(State,State)> && final_condition,
+Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
             const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
 
 /**
- * @brief Concatenate two LVLFAs.
+ * @brief Concatenate two NFTs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
@@ -117,9 +117,9 @@ Lvlfa product(const Lvlfa& lhs, const Lvlfa& rhs, const std::function<bool(State
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
  * @return Concatenated automaton.
  */
-Lvlfa concatenate_eps(const Lvlfa& lhs, const Lvlfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
+Nft concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-} // Namespace mata::lvlfa::algorithms.
+} // Namespace mata::nft::algorithms.
 
-#endif // MATA_LVLFA_INTERNALS_HH_
+#endif // MATA_NFT_INTERNALS_HH_

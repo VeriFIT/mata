@@ -1,7 +1,7 @@
 // TODO: Insert file header.
 
-#ifndef MATA_LVLFA_TYPES_HH
-#define MATA_LVLFA_TYPES_HH
+#ifndef MATA_NFT_TYPES_HH
+#define MATA_NFT_TYPES_HH
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
@@ -11,9 +11,9 @@
 #include <limits>
 
 
-namespace mata::lvlfa {
+namespace mata::nft {
 
-extern const std::string TYPE_NFA;
+extern const std::string TYPE_NFT;
 
 using Level = unsigned;
 using State = mata::nfa::State;
@@ -38,7 +38,7 @@ using ParameterMap = mata::nfa::ParameterMap;
 
 using Limits = mata::nfa::Limits;
 
-struct Lvlfa; ///< A non-deterministic finite automaton.
+struct Nft; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = mata::nfa::EPSILON;

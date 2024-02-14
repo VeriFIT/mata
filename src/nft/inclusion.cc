@@ -1,37 +1,37 @@
-/* lvlfa-incl.cc -- LVLFA language inclusion
+/* nft-incl.cc -- NFT language inclusion
  */
 
 // MATA headers
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using namespace mata::utils;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool mata::lvlfa::algorithms::is_included_naive(
-        const Lvlfa &smaller,
-        const Lvlfa &bigger,
+bool mata::nft::algorithms::is_included_naive(
+        const Nft &smaller,
+        const Nft &bigger,
         const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
         Run *cex) { // {{{
-    Lvlfa bigger_cmpl;
+    Nft bigger_cmpl;
     if (alphabet == nullptr) {
         bigger_cmpl = complement(bigger, create_alphabet(smaller, bigger));
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
-    Lvlfa lvlfa_isect = intersection(smaller, bigger_cmpl);
+    Nft nft_isect = intersection(smaller, bigger_cmpl);
 
-    return lvlfa_isect.is_lang_empty(cex);
+    return nft_isect.is_lang_empty(cex);
 } // is_included_naive }}}
 
 
 /// language inclusion check using Antichains
 // TODO, what about to construct the separator from this?
-bool mata::lvlfa::algorithms::is_included_antichains(
-    const Lvlfa&             smaller,
-    const Lvlfa&             bigger,
+bool mata::nft::algorithms::is_included_antichains(
+    const Nft&             smaller,
+    const Nft&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
     Run*                   cex)
 { // {{{
@@ -41,7 +41,7 @@ bool mata::lvlfa::algorithms::is_included_antichains(
 
     using ProdStateType = std::tuple<State, StateSet, size_t>;
     using ProdStatesType = std::vector<ProdStateType>;
-    // ProcessedType is indexed by states of the smaller lvlfa
+    // ProcessedType is indexed by states of the smaller nft
     // tailored for pure antichain approach ... the simulation-based antichain will not work (without changes).
     using ProcessedType = std::vector<ProdStatesType>;
 
@@ -63,7 +63,7 @@ bool mata::lvlfa::algorithms::is_included_antichains(
     ProdStatesType worklist{};//Pairs (q,S) to be processed. It sometimes gives a huge speed-up when they are kept sorted by the size of S,
     // worklist.reserve(32);
     // so those with smaller popped for processing first.
-    ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller lvlfa.
+    ProcessedType processed(smaller.num_of_states()); // Allocate to the number of states of the smaller nft.
     // The pairs of each state are also kept sorted. It allows slightly faster antichain pruning - no need to test inclusion in sets that have less elements.
 
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
@@ -224,7 +224,7 @@ bool mata::lvlfa::algorithms::is_included_antichains(
 namespace {
     using AlgoType = decltype(algorithms::is_included_naive)*;
 
-    bool compute_equivalence(const Lvlfa &lhs, const Lvlfa &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
+    bool compute_equivalence(const Nft &lhs, const Nft &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
         //alphabet should not be needed as input parameter
         if (algo(lhs, rhs, alphabet, nullptr)) {
             if (algo(rhs, lhs, alphabet, nullptr)) {
@@ -259,9 +259,9 @@ namespace {
 }
 
 // The dispatching method that calls the correct one based on parameters
-bool mata::lvlfa::is_included(
-        const Lvlfa &smaller,
-        const Lvlfa &bigger,
+bool mata::nft::is_included(
+        const Nft &smaller,
+        const Nft &bigger,
         Run *cex,
         const Alphabet *const alphabet,
         const ParameterMap &params) { // {{{
@@ -269,7 +269,7 @@ bool mata::lvlfa::is_included(
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool mata::lvlfa::are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
+bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
@@ -284,6 +284,6 @@ bool mata::lvlfa::are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const Alpha
     return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
-bool mata::lvlfa::are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const ParameterMap& params) {
+bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const ParameterMap& params) {
     return are_equivalent(lhs, rhs, nullptr, params);
 }

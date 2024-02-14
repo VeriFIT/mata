@@ -1,14 +1,14 @@
-/* lvlfa-intersection.cc -- Intersection of LVLFAs
+/* nft-intersection.cc -- Intersection of NFTs
  */
 
 // MATA headers
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 #include <cassert>
 #include <functional>
 
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 
 namespace {
 
@@ -20,26 +20,26 @@ using InvertedProductStorage = std::vector<State>;
 
 } // Anonymous namespace.
 
-namespace mata::lvlfa {
+namespace mata::nft {
 
-Lvlfa intersection(const Lvlfa& lhs, const Lvlfa& rhs, const Symbol first_epsilon, ProductMap *prod_map) {
+Nft intersection(const Nft& lhs, const Nft& rhs, const Symbol first_epsilon, ProductMap *prod_map) {
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
     };
 
     if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
-        return Lvlfa{};
+        return Nft{};
 
     return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
 }
 
-//TODO: move this method to lvlfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
-Lvlfa mata::lvlfa::algorithms::product(
-        const Lvlfa& lhs, const Lvlfa& rhs, const std::function<bool(State,State)>&& final_condition,
+//TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
+Nft mata::nft::algorithms::product(
+        const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition,
         const Symbol first_epsilon, ProductMap *product_map) {
 
-    Lvlfa product{}; // The product automaton.
+    Nft product{}; // The product automaton.
 
     // Set of product states to process.
     std::deque<State> worklist{};
@@ -130,8 +130,8 @@ Lvlfa mata::lvlfa::algorithms::product(
 
 /**
  * Create product state if it does not exist in storage yet and fill in its symbol_post from lhs and rhs targets.
- * @param[in] lhs_target Target state in LVLFA @c lhs.
- * @param[in] rhs_target Target state in LVLFA @c rhs.
+ * @param[in] lhs_target Target state in NFT @c lhs.
+ * @param[in] rhs_target Target state in NFT @c rhs.
  * @param[out] product_symbol_post New SymbolPost of the product state.
  */
     auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
@@ -237,4 +237,4 @@ Lvlfa mata::lvlfa::algorithms::product(
     return product;
 } // intersection().
 
-} // namespace mata::lvlfa.
+} // namespace mata::nft.

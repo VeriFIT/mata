@@ -1,18 +1,18 @@
 /* nfa-strings.hh -- Operations on NFAs for string solving.
  */
 
-#include "mata/lvlfa/strings.hh"
-#include "mata/lvlfa/lvlfa.hh"
+#include "mata/nft/strings.hh"
+#include "mata/nft/nft.hh"
 
-//using mata::lvlfa::Lvlfa;
-using mata::lvlfa::Level;
+//using mata::nft::Nft;
+using mata::nft::Level;
 using mata::Symbol;
-using mata::lvlfa::State;
+using mata::nft::State;
 using mata::nfa::StatePost;
 using mata::nfa::SymbolPost;
-using namespace mata::lvlfa;
+using namespace mata::nft;
 
-Lvlfa mata::lvlfa::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
+Nft mata::nft::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     if (level_cnt == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
     const size_t additional_states_per_symbol_num{ level_cnt - 1 };
@@ -25,7 +25,7 @@ Lvlfa mata::lvlfa::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
         const Level new_level{ level + 1 };
         level = new_level < level_cnt ? new_level : 1;
     }
-    Lvlfa nft{ num_of_states, { 0 }, { 0 }, std::move(levels), level_cnt, alphabet };
+    Nft nft{ num_of_states, { 0 }, { 0 }, std::move(levels), level_cnt, alphabet };
     State state{ 0 };
     State new_state;
 
@@ -46,9 +46,9 @@ Lvlfa mata::lvlfa::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     return nft;
 }
 
-Lvlfa mata::lvlfa::create_identity_with_single_replace(
+Nft mata::nft::create_identity_with_single_replace(
     mata::Alphabet *alphabet, const Symbol from_symbol, const Symbol to_symbol) {
-    Lvlfa nft{ create_identity(alphabet) };
+    Nft nft{ create_identity(alphabet) };
     if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
     auto symbol_post_to_state_with_replace{ nft.delta.mutable_state_post(0).find(from_symbol) };
     const State from_replace_state{ symbol_post_to_state_with_replace->targets.front() };

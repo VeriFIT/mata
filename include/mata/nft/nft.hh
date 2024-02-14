@@ -1,8 +1,8 @@
-/* lvlfa.hh -- Nondeterministic finite automaton (over finite words).
+/* nft.hh -- Nondeterministic finite automaton (over finite words).
  */
 
-#ifndef MATA_LVLFA_HH_
-#define MATA_LVLFA_HH_
+#ifndef MATA_NFT_HH_
+#define MATA_NFT_HH_
 
 // Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
 //  fragile_revert).
@@ -39,20 +39,20 @@
  *   2. Algorithms (operations, checks, tests),
  *   3. Constructions.
  *
- * Other algorithms are included in mata::lvlfa::Plumbing (simplified API for, e.g., binding)
- * and mata::lvlfa::algorithms (concrete implementations of algorithms, such as for complement).
+ * Other algorithms are included in mata::nft::Plumbing (simplified API for, e.g., binding)
+ * and mata::nft::algorithms (concrete implementations of algorithms, such as for complement).
  */
-namespace mata::lvlfa {
+namespace mata::nft {
 
 /**
- * A struct representing an LVLFA.
+ * A struct representing an NFT.
  */
-struct Lvlfa : public mata::nfa::Nfa {
+struct Nft : public mata::nfa::Nfa {
 public:
     /// @brief For state q, levels[q] gives the state a level.
     std::vector<Level> levels{};
     Level levels_cnt = 0;
-    /// Key value store for additional attributes for the LVLFA. Keys are attribute names as strings and the value types
+    /// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
     ///  are up to the user.
     /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
     ///  respective names, or "transition_dict" for transition dictionary adding a human-readable meaning to each
@@ -61,32 +61,32 @@ public:
     //  dictionary in the attributes.
 
 public:
-    explicit Lvlfa(Delta delta = {}, utils::SparseSet<State> initial_states = {},
+    explicit Nft(Delta delta = {}, utils::SparseSet<State> initial_states = {},
                  utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1,
                  Alphabet* alphabet = nullptr)
         : mata::nfa::Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet),
         levels(std::move(levels)), levels_cnt(levels_cnt) {}
 
     /**
-     * @brief Construct a new explicit LVLFA with num_of_states states and optionally set initial and final states.
+     * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Lvlfa(const unsigned long num_of_states, StateSet initial_states = {},
+    explicit Nft(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1, Alphabet*
                  alphabet = nullptr)
         : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet), levels(std::move(levels)), levels_cnt(levels_cnt) {}
 
-    explicit Lvlfa(const mata::nfa::Nfa& other)
+    explicit Nft(const mata::nfa::Nfa& other)
         : mata::nfa::Nfa(other.delta, other.initial, other.final, other.alphabet),
           levels(std::vector<Level>(other.num_of_states(), 0)), levels_cnt(1) {}
 
     /**
-     * @brief Construct a new explicit LVLFA from other LVLFA.
+     * @brief Construct a new explicit NFT from other NFT.
      */
-    Lvlfa(const Lvlfa& other) = default;
+    Nft(const Nft& other) = default;
 
-    Lvlfa(Lvlfa&& other) noexcept
+    Nft(Nft&& other) noexcept
         : levels { std::move(other.levels) }, levels_cnt{ other.levels_cnt } {
             delta = std::move(other.delta);
             initial = std::move(other.initial);
@@ -96,8 +96,8 @@ public:
             other.alphabet = nullptr;
     }
 
-    Lvlfa& operator=(const Lvlfa& other) = default;
-    Lvlfa& operator=(Lvlfa&& other) noexcept;
+    Nft& operator=(const Nft& other) = default;
+    Nft& operator=(Nft&& other) noexcept;
 
     /**
      * Add a new (fresh) state to the automaton.
@@ -112,9 +112,9 @@ public:
     State add_state(State state);
 
     /**
-     * @brief Clear the underlying LVLFA to a blank LVLFA.
+     * @brief Clear the underlying NFT to a blank NFT.
      *
-     * The whole LVLFA is cleared, each member is set to its zero value.
+     * The whole NFT is cleared, each member is set to its zero value.
      */
     void clear();
 
@@ -125,7 +125,7 @@ public:
      *  essentially only useful for testing purposes.
      * @return True if automata are exactly identical, false otherwise.
      */
-    bool is_identical(const Lvlfa& aut) const;
+    bool is_identical(const Nft& aut) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -137,37 +137,37 @@ public:
      * @param[out] state_renaming Mapping of trimmed states to new states.
      * @return @c this after trimming.
      */
-    Lvlfa& trim(StateRenaming* state_renaming = nullptr);
+    Nft& trim(StateRenaming* state_renaming = nullptr);
 
     /**
      * @brief In-place concatenation.
      */
-    Lvlfa& concatenate(const Lvlfa& aut);
+    Nft& concatenate(const Nft& aut);
 
     /**
      * @brief In-place union
      */
-    Lvlfa& uni(const Lvlfa &aut);
+    Nft& uni(const Nft &aut);
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      * @param[in] abstract_symbol Abstract symbol to use for transitions in digraph.
      * @return An automaton representing a directed graph.
      */
-    Lvlfa get_one_letter_aut(Symbol abstract_symbol = 'x') const;
+    Nft get_one_letter_aut(Symbol abstract_symbol = 'x') const;
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
      *
      * @param[out] result An automaton representing a directed graph.
      */
-    void get_one_letter_aut(Lvlfa& result) const;
+    void get_one_letter_aut(Nft& result) const;
 
     void make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE });
 
-    Lvlfa get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
+    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
 
-    void get_one_level_aut(Lvlfa& result, const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
+    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE }) const;
 
     /**
      * @brief Prints the automaton in DOT format
@@ -222,7 +222,7 @@ public:
      */
     std::set<Word> get_words(unsigned max_length);
 
-}; // struct Lvlfa.
+}; // struct Nft.
 
 // Allow variadic number of arguments of the same type.
 //
@@ -235,27 +235,27 @@ template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::val
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
 
-Lvlfa uni(const Lvlfa &lhs, const Lvlfa &rhs);
+Nft uni(const Nft &lhs, const Nft &rhs);
 
 /**
- * @brief Compute intersection of two LVLFAs.
+ * @brief Compute intersection of two NFTs.
  *
  * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
  * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
  *
  * Automata must share alphabets. //TODO: this is not implemented yet.
  *
- * @param[in] lhs First LVLFA to compute intersection for.
- * @param[in] rhs Second LVLFA to compute intersection for.
+ * @param[in] lhs First NFT to compute intersection for.
+ * @param[in] rhs Second NFT to compute intersection for.
  * @param[in] first_epsilon smallest epsilon. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
- * @return LVLFA as a product of LVLFAs @p lhs and @p rhs with ε-transitions preserved.
+ * @return NFT as a product of NFTs @p lhs and @p rhs with ε-transitions preserved.
  */
-Lvlfa intersection(const Lvlfa& lhs, const Lvlfa& rhs,
+Nft intersection(const Nft& lhs, const Nft& rhs,
                  const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
 /**
- * @brief Concatenate two LVLFAs.
+ * @brief Concatenate two NFTs.
  *
  * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
@@ -266,7 +266,7 @@ Lvlfa intersection(const Lvlfa& lhs, const Lvlfa& rhs,
  * @return Concatenated automaton.
  */
 // TODO: check how fast is using just concatenate over epsilon and then call remove_epsilon().
-Lvlfa concatenate(const Lvlfa& lhs, const Lvlfa& rhs, bool use_epsilon = false,
+Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                 StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
@@ -279,7 +279,7 @@ Lvlfa concatenate(const Lvlfa& lhs, const Lvlfa& rhs, bool use_epsilon = false,
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Lvlfa complement(const Lvlfa& aut, const Alphabet& alphabet,
+Nft complement(const Nft& aut, const Alphabet& alphabet,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
@@ -297,7 +297,7 @@ Lvlfa complement(const Lvlfa& aut, const Alphabet& alphabet,
  * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
  * @return Complemented automaton.
  */
-Lvlfa complement(const Lvlfa& aut, const utils::OrdVector<Symbol>& symbols,
+Nft complement(const Nft& aut, const utils::OrdVector<Symbol>& symbols,
                const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
 
 /**
@@ -308,7 +308,7 @@ Lvlfa complement(const Lvlfa& aut, const utils::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Lvlfa minimize(const Lvlfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
+Nft minimize(const Nft &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
 
 /**
  * @brief Determinize automaton.
@@ -317,7 +317,7 @@ Lvlfa minimize(const Lvlfa &aut, const ParameterMap& params = {{ "algorithm", "b
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
  * @return Determinized automaton.
  */
-Lvlfa determinize(const Lvlfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nft determinize(const Nft& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
  * @brief Reduce the size of the automaton.
@@ -328,55 +328,55 @@ Lvlfa determinize(const Lvlfa& aut, std::unordered_map<StateSet, State> *subset_
  * - "algorithm": "simulation".
  * @return Reduced automaton.
  */
-Lvlfa reduce(const Lvlfa &aut, StateRenaming *state_renaming = nullptr,
+Nft reduce(const Nft &aut, StateRenaming *state_renaming = nullptr,
            const ParameterMap& params = {{ "algorithm", "simulation" } });
 
 /**
- * @brief Checks inclusion of languages of two LVLFAs: @p smaller and @p bigger (smaller <= bigger).
+ * @brief Checks inclusion of languages of two NFTs: @p smaller and @p bigger (smaller <= bigger).
  *
  * @param[in] smaller First automaton to concatenate.
  * @param[in] bigger Second automaton to concatenate.
  * @param[out] cex Counterexample for the inclusion.
- * @param[in] alphabet Alphabet of both LVLFAs to compute with.
+ * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_included(const Lvlfa& smaller, const Lvlfa& bigger, Run* cex, const Alphabet* alphabet = nullptr,
+bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet* alphabet = nullptr,
                  const ParameterMap& params = {{ "algorithm", "antichains" }});
 
 /**
- * @brief Checks inclusion of languages of two LVLFAs: @p smaller and @p bigger (smaller <= bigger).
+ * @brief Checks inclusion of languages of two NFTs: @p smaller and @p bigger (smaller <= bigger).
  *
  * @param[in] smaller First automaton to concatenate.
  * @param[in] bigger Second automaton to concatenate.
- * @param[in] alphabet Alphabet of both LVLFAs to compute with.
+ * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(const Lvlfa& smaller, const Lvlfa& bigger, const Alphabet* const alphabet = nullptr,
+inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr,
                         const ParameterMap& params = {{ "algorithm", "antichains" }}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
 /**
- * @brief Perform equivalence check of two LVLFAs: @p lhs and @p rhs.
+ * @brief Perform equivalence check of two NFTs: @p lhs and @p rhs.
  *
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
- * @param[in] alphabet Alphabet of both LVLFAs to compute with.
+ * @param[in] alphabet Alphabet of both NFTs to compute with.
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const Alphabet* alphabet,
+bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet,
                     const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 /**
- * @brief Perform equivalence check of two LVLFAs: @p lhs and @p rhs.
+ * @brief Perform equivalence check of two NFTs: @p lhs and @p rhs.
  *
- * The current implementation of @c Lvlfa does not accept input alphabet. For this reason, an alphabet
+ * The current implementation of @c Nft does not accept input alphabet. For this reason, an alphabet
  * has to be created from all transitions each time an operation on alphabet is called. When calling this function,
  * the alphabet has to be computed first.
  *
@@ -390,30 +390,30 @@ bool are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const Alphabet* alphabet
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Lvlfa& lhs, const Lvlfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
+bool are_equivalent(const Nft& lhs, const Nft& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
-Lvlfa revert(const Lvlfa& aut);
+Nft revert(const Nft& aut);
 
-// This revert algorithm is fragile, uses low level accesses to Lvlfa and static data structures,
+// This revert algorithm is fragile, uses low level accesses to Nft and static data structures,
 // and it is potentially dangerous when there are used symbols with large numbers (allocates an array indexed by symbols)
 // It is faster asymptotically and for somewhat dense automata,
 // the same or a little bit slower than simple_revert otherwise.
 // Not affected by pre-reserving vectors.
-Lvlfa fragile_revert(const Lvlfa& aut);
+Nft fragile_revert(const Nft& aut);
 
 // Reverting the automaton by a simple algorithm, which does a lot of random access addition to Post and Move.
 //  Much affected by pre-reserving vectors.
-Lvlfa simple_revert(const Lvlfa& aut);
+Nft simple_revert(const Nft& aut);
 
 // Reverting the automaton by a modification of the simple algorithm.
 // It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all, except on
 //  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
-Lvlfa somewhat_simple_revert(const Lvlfa& aut);
+Nft somewhat_simple_revert(const Nft& aut);
 
 // Removing epsilon transitions
-Lvlfa remove_epsilon(const Lvlfa& aut, Symbol epsilon = EPSILON);
+Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
@@ -423,10 +423,10 @@ Lvlfa remove_epsilon(const Lvlfa& aut, Symbol epsilon = EPSILON);
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
-} // namespace mata::lvlfa.
+} // namespace mata::nft.
 
 namespace std {
-std::ostream& operator<<(std::ostream& os, const mata::lvlfa::Lvlfa& lvlfa);
+std::ostream& operator<<(std::ostream& os, const mata::nft::Nft& nft);
 } // namespace std.
 
-#endif /* MATA_LVLFA_HH_ */
+#endif /* MATA_NFT_HH_ */

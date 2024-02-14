@@ -1,16 +1,16 @@
-/* lvlfa-complement.cc -- LVLFA complement
+/* nft-complement.cc -- NFT complement
  */
 
 // MATA headers
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using namespace mata::utils;
 
-Lvlfa mata::lvlfa::algorithms::complement_classical(const Lvlfa& aut, const OrdVector<Symbol>& symbols,
+Nft mata::nft::algorithms::complement_classical(const Nft& aut, const OrdVector<Symbol>& symbols,
                                                 bool minimize_during_determinization) {
-    Lvlfa result;
+    Nft result;
     State sink_state;
     if (minimize_during_determinization) {
         result = minimize_brzozowski(aut); // brzozowski minimization makes it deterministic
@@ -39,12 +39,12 @@ Lvlfa mata::lvlfa::algorithms::complement_classical(const Lvlfa& aut, const OrdV
     return result;
 }
 
-Lvlfa mata::lvlfa::complement(const Lvlfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return mata::lvlfa::complement(aut, alphabet.get_alphabet_symbols(), params);
+Nft mata::nft::complement(const Nft& aut, const Alphabet& alphabet, const ParameterMap& params) {
+    return mata::nft::complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Lvlfa mata::lvlfa::complement(const Lvlfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
-    Lvlfa result;
+Nft mata::nft::complement(const Nft& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
+    Nft result;
     // Setting the requested algorithm.
     decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {

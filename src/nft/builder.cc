@@ -1,24 +1,24 @@
 // TODO: Insert header file.
 
-#include "mata/lvlfa/builder.hh"
+#include "mata/nft/builder.hh"
 #include "mata/parser/mintermization.hh"
 
-#include "mata/nfa/builder.hh"
+#include "mata/nft/builder.hh"
 
 #include <fstream>
 
-using namespace mata::lvlfa;
-using mata::lvlfa::Lvlfa;
+using namespace mata::nft;
+using mata::nft::Nft;
 using mata::Symbol;
 
-Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
-    Lvlfa aut;
+Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
+    Nft aut;
     assert(nullptr != alphabet);
 
     // HACK - it should be only "parsec.type != TYPE_NFA" without the conjunction
-    if (parsec.type != TYPE_NFA && parsec.type != TYPE_NFA + "-explicit") {
+    if (parsec.type != TYPE_NFT && parsec.type != TYPE_NFT + "-explicit") {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 TYPE_NFA + "\"");
+                                 TYPE_NFT + "\"");
     }
 
     bool remove_state_map = false;
@@ -149,13 +149,13 @@ Lvlfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphab
     return aut;
 } // construct().
 
-Lvlfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
-    Lvlfa aut;
+Nft builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
+    Nft aut;
     assert(nullptr != alphabet);
 
-    if (!inter_aut.is_lvlfa()) {
+    if (!inter_aut.is_nft()) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 TYPE_NFA + "\"");
+                                 TYPE_NFT + "\"");
     }
 
     NameStateMap tmp_state_map;
@@ -229,69 +229,69 @@ Lvlfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet*
 } // construct().
 
 void builder::construct(
-        mata::lvlfa::Lvlfa *result,
+        mata::nft::Nft *result,
         const mata::IntermediateAut &inter_aut,
         mata::Alphabet *alphabet,
-        mata::lvlfa::builder::NameStateMap *state_map
+        mata::nft::builder::NameStateMap *state_map
 ) {
     *result = construct(inter_aut, alphabet, state_map);
 }
 
-Lvlfa builder::create_single_word_lvlfa(const std::vector<Symbol>& word) {
-    return Lvlfa(mata::nfa::builder::create_single_word_nfa(word));
+Nft builder::create_single_word_nft(const std::vector<Symbol>& word) {
+    return Nft(mata::nfa::builder::create_single_word_nfa(word));
 }
 
-Lvlfa builder::create_single_word_lvlfa(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
-    return Lvlfa(mata::nfa::builder::create_single_word_nfa(word, alphabet));
+Nft builder::create_single_word_nft(const std::vector<std::string>& word, mata::Alphabet *alphabet) {
+    return Nft(mata::nfa::builder::create_single_word_nfa(word, alphabet));
 }
 
-Lvlfa builder::create_empty_string_lvlfa() {
-    return Lvlfa(mata::nfa::builder::create_empty_string_nfa());
+Nft builder::create_empty_string_nft() {
+    return Nft(mata::nfa::builder::create_empty_string_nfa());
 }
 
-Lvlfa builder::create_sigma_star_lvlfa() {
-    Lvlfa lvlfa{ 1, { 0 }, { 0 }, { 0 }, 1 };
-    lvlfa.delta.add(0, DONT_CARE, 0);
-    return lvlfa;
+Nft builder::create_sigma_star_nft() {
+    Nft nft{ 1, { 0 }, { 0 }, { 0 }, 1 };
+    nft.delta.add(0, DONT_CARE, 0);
+    return nft;
 }
 
-Lvlfa builder::create_sigma_star_lvlfa(mata::Alphabet* alphabet) {
-    return Lvlfa(mata::nfa::builder::create_sigma_star_nfa(alphabet));
+Nft builder::create_sigma_star_nft(mata::Alphabet* alphabet) {
+    return Nft(mata::nfa::builder::create_sigma_star_nfa(alphabet));
 }
 
-Lvlfa builder::parse_from_mata(std::istream& lvlfa_stream) {
-    const std::string lvlfa_str = "LVLFA";
-    parser::Parsed parsed{ parser::parse_mf(lvlfa_stream) };
+Nft builder::parse_from_mata(std::istream& nft_stream) {
+    const std::string nft_str = "NFT";
+    parser::Parsed parsed{ parser::parse_mf(nft_stream) };
     if (parsed.size() != 1) {
         throw std::runtime_error("The number of sections in the input file is '" + std::to_string(parsed.size())
             + "'. Required is '1'.\n");
     }
     const std::string automaton_type{ parsed[0].type };
-    if (automaton_type.compare(0, lvlfa_str.length(), lvlfa_str) != 0) {
-        throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'LVLFA'\n");
+    if (automaton_type.compare(0, nft_str.length(), nft_str) != 0) {
+        throw std::runtime_error("The type of input automaton is '" + automaton_type + "'. Required is 'NFT'\n");
     }
     IntAlphabet alphabet;
     // return construct(IntermediateAut::parse_from_mf(parsed)[0], &alphabet);
     return construct(parsed[0], &alphabet);
 }
 
-Lvlfa builder::parse_from_mata(const std::filesystem::path& lvlfa_file) {
-    std::ifstream file_stream{ lvlfa_file };
+Nft builder::parse_from_mata(const std::filesystem::path& nft_file) {
+    std::ifstream file_stream{ nft_file };
     if (!file_stream) {
-        throw std::runtime_error("Could not open file \'" + lvlfa_file.string() + "'\n");
+        throw std::runtime_error("Could not open file \'" + nft_file.string() + "'\n");
     }
 
-    Lvlfa lvlfa;
+    Nft nft;
     try {
-        lvlfa = parse_from_mata(file_stream);
+        nft = parse_from_mata(file_stream);
     } catch (const std::exception& ex) {
         file_stream.close();
         throw;
     }
-    return lvlfa;
+    return nft;
 }
 
-Lvlfa builder::parse_from_mata(const std::string& lvlfa_in_mata) {
-    std::istringstream lvlfa_stream(lvlfa_in_mata);
-    return parse_from_mata(lvlfa_stream);
+Nft builder::parse_from_mata(const std::string& nft_in_mata) {
+    std::istringstream nft_stream(nft_in_mata);
+    return parse_from_mata(nft_stream);
 }

@@ -1,9 +1,9 @@
 // TODO: Insert file header.
 
-#ifndef LIBMATA_LVLFA_BUILDER_HH
-#define LIBMATA_LVLFA_BUILDER_HH
+#ifndef LIBMATA_NFT_BUILDER_HH
+#define LIBMATA_NFT_BUILDER_HH
 
-#include "lvlfa.hh"
+#include "nft.hh"
 #include <bits/stdc++.h>
 
 #include "mata/nfa/builder.hh"
@@ -14,16 +14,16 @@
 /**
  * Namespace providing options to build NFAs.
  */
-namespace mata::lvlfa::builder {
+namespace mata::nft::builder {
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 
 using NameStateMap = std::unordered_map<std::string, State>;
 
 /**
  * Create an automaton accepting only a single @p word.
  */
-Lvlfa create_single_word_lvlfa(const std::vector<Symbol>& word);
+Nft create_single_word_nft(const std::vector<Symbol>& word);
 
 /**
  * Create an automaton accepting only a single @p word.
@@ -33,17 +33,17 @@ Lvlfa create_single_word_lvlfa(const std::vector<Symbol>& word);
  *  translations for all of the word symbols. If left empty, a new alphabet with only the symbols of the word will be
  *  created.
  */
-Lvlfa create_single_word_lvlfa(const std::vector<std::string>& word, Alphabet* alphabet = nullptr);
+Nft create_single_word_nft(const std::vector<std::string>& word, Alphabet* alphabet = nullptr);
 
 /**
  * Create automaton accepting only epsilon string.
  */
-Lvlfa create_empty_string_lvlfa();
+Nft create_empty_string_nft();
 
 /**
  * Create automaton accepting sigma star over the passed alphabet using DONT_CARE symbol.
  */
-Lvlfa create_sigma_star_lvlfa();
+Nft create_sigma_star_nft();
 
 /**
  * Create automaton accepting sigma star over the passed alphabet.
@@ -51,21 +51,21 @@ Lvlfa create_sigma_star_lvlfa();
  * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
  *  alphabet is used, creating an automaton accepting only the empty string.
  */
-Lvlfa create_sigma_star_lvlfa(Alphabet* alphabet = new OnTheFlyAlphabet{});
+Nft create_sigma_star_nft(Alphabet* alphabet = new OnTheFlyAlphabet{});
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted
-Lvlfa construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Nft construct(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 
 /** Loads an automaton from Parsed object */
-Lvlfa construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
+Nft construct(const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr);
 /** Loads an automaton from Parsed object; version for python binding */
 void construct(
-    Lvlfa* result, const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
+    Nft* result, const mata::IntermediateAut& inter_aut, Alphabet* alphabet, NameStateMap* state_map = nullptr
 );
 
 template<class ParsedObject>
-Lvlfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+Nft construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
               NameStateMap* state_map = nullptr) {
     OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) {
@@ -77,28 +77,28 @@ Lvlfa construct(const ParsedObject& parsed, Alphabet* alphabet = nullptr,
 /**
  * Parse NFA from the mata format in an input stream.
  *
- * @param lvlfa_stream Input stream containing NFA in mata format.
+ * @param nft_stream Input stream containing NFA in mata format.
  * @throws std::runtime_error Parsing of NFA fails.
  */
-Lvlfa parse_from_mata(std::istream& lvlfa_stream);
+Nft parse_from_mata(std::istream& nft_stream);
 
 /**
  * Parse NFA from the mata format in a string.
  *
- * @param lvlfa_stream String containing NFA in mata format.
+ * @param nft_stream String containing NFA in mata format.
  * @throws std::runtime_error Parsing of NFA fails.
  */
-Lvlfa parse_from_mata(const std::string& lvlfa_in_mata);
+Nft parse_from_mata(const std::string& nft_in_mata);
 
 /**
  * Parse NFA from the mata format in a file.
  *
- * @param lvlfa_stream Path to the file containing NFA in mata format.
- * @throws std::runtime_error @p lvlfa_file does not exist.
+ * @param nft_stream Path to the file containing NFA in mata format.
+ * @throws std::runtime_error @p nft_file does not exist.
  * @throws std::runtime_error Parsing of NFA fails.
  */
-Lvlfa parse_from_mata(const std::filesystem::path& lvlfa_file);
+Nft parse_from_mata(const std::filesystem::path& nft_file);
 
-} // namespace mata::lvlfa::builder.
+} // namespace mata::nft::builder.
 
-#endif //LIBMATA_LVLFA_BUILDER_HH
+#endif //LIBMATA_NFT_BUILDER_HH
