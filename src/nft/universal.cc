@@ -1,12 +1,12 @@
-/* lvlfa-universal.cc -- LVLFA universality
+/* nft-universal.cc -- NFT universality
  */
 
 // MATA headers
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using namespace mata::utils;
 
 //TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
@@ -14,20 +14,20 @@ using namespace mata::utils;
 
 
 /// naive universality check (complementation + emptiness)
-bool mata::lvlfa::algorithms::is_universal_naive(
-	const Lvlfa&         aut,
+bool mata::nft::algorithms::is_universal_naive(
+	const Nft&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
 { // {{{
-	Lvlfa cmpl = complement(aut, alphabet);
+	Nft cmpl = complement(aut, alphabet);
 
 	return cmpl.is_lang_empty(cex);
 } // is_universal_naive }}}
 
 
 /// universality check using Antichains
-bool mata::lvlfa::algorithms::is_universal_antichains(
-	const Lvlfa&         aut,
+bool mata::nft::algorithms::is_universal_antichains(
+	const Nft&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
 { // {{{
@@ -131,7 +131,7 @@ bool mata::lvlfa::algorithms::is_universal_antichains(
 } // }}}
 
 // The dispatching method that calls the correct one based on parameters.
-bool mata::lvlfa::Lvlfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
+bool mata::nft::Nft::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
@@ -151,6 +151,6 @@ bool mata::lvlfa::Lvlfa::is_universal(const Alphabet& alphabet, Run* cex, const 
 	return algo(*this, alphabet, cex);
 } // is_universal()
 
-bool mata::lvlfa::Lvlfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+bool mata::nft::Nft::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
     return this->is_universal(alphabet, nullptr, params);
 }

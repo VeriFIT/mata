@@ -1,4 +1,4 @@
-/* tests-lvlfa-plumbing.cc -- Tests plumbing versions of functions
+/* tests-nft-plumbing.cc -- Tests plumbing versions of functions
  */
 
 
@@ -6,8 +6,8 @@
 
 #include <catch2/catch.hpp>
 
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/plumbing.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/plumbing.hh"
 
 using Symbol = mata::Symbol;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
@@ -54,67 +54,67 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 // }}}
 
-TEST_CASE("Mata::lvlfa::Plumbing") {
-    mata::lvlfa::Lvlfa lhs{};
-    mata::lvlfa::Lvlfa rhs{};
-    mata::lvlfa::Lvlfa result{};
+TEST_CASE("Mata::nft::Plumbing") {
+    mata::nft::Nft lhs{};
+    mata::nft::Nft rhs{};
+    mata::nft::Nft result{};
     OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b", "c" } };
 
-    SECTION("Mata::lvlfa::Plumbing::concatenate") {
+    SECTION("Mata::nft::Plumbing::concatenate") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::lvlfa::plumbing::concatenate(&result, lhs, rhs);
+        mata::nft::plumbing::concatenate(&result, lhs, rhs);
         CHECK(result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::intersection") {
+    SECTION("Mata::nft::Plumbing::intersection") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::lvlfa::plumbing::intersection(&result, lhs, rhs);
+        mata::nft::plumbing::intersection(&result, lhs, rhs);
         CHECK(result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::union") {
+    SECTION("Mata::nft::Plumbing::union") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::lvlfa::plumbing::uni(&result, lhs, rhs);
+        mata::nft::plumbing::uni(&result, lhs, rhs);
         CHECK(!result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::remove_epsilon") {
+    SECTION("Mata::nft::Plumbing::remove_epsilon") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::remove_epsilon(&result, lhs);
+        mata::nft::plumbing::remove_epsilon(&result, lhs);
         CHECK(!result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::revert") {
+    SECTION("Mata::nft::Plumbing::revert") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::revert(&result, lhs);
+        mata::nft::plumbing::revert(&result, lhs);
         CHECK(!result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::reduce") {
+    SECTION("Mata::nft::Plumbing::reduce") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::reduce(&result, lhs);
+        mata::nft::plumbing::reduce(&result, lhs);
         CHECK(!result.is_lang_empty());
         CHECK(result.num_of_states() <= lhs.num_of_states());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::determinize") {
+    SECTION("Mata::nft::Plumbing::determinize") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::determinize(&result, lhs);
+        mata::nft::plumbing::determinize(&result, lhs);
         CHECK(!result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::minimize") {
+    SECTION("Mata::nft::Plumbing::minimize") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::minimize(&result, lhs);
+        mata::nft::plumbing::minimize(&result, lhs);
         CHECK(!result.is_lang_empty());
     }
 
-    SECTION("Mata::lvlfa::Plumbing::complement") {
+    SECTION("Mata::nft::Plumbing::complement") {
         FILL_WITH_AUT_A(lhs);
-        mata::lvlfa::plumbing::complement(&result, lhs, alph);
+        mata::nft::plumbing::complement(&result, lhs, alph);
         CHECK(!result.is_lang_empty());
     }
 }

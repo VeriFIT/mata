@@ -7,19 +7,19 @@
 #include "utils.hh"
 
 #include "mata/utils/sparse-set.hh"
-#include "mata/lvlfa/delta.hh"
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/strings.hh"
-#include "mata/lvlfa/builder.hh"
-#include "mata/lvlfa/plumbing.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/delta.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/strings.hh"
+#include "mata/nft/builder.hh"
+#include "mata/nft/plumbing.hh"
+#include "mata/nft/algorithms.hh"
 #include "mata/parser/re2parser.hh"
 
 using namespace mata;
-using namespace mata::lvlfa::algorithms;
-using namespace mata::lvlfa;
+using namespace mata::nft::algorithms;
+using namespace mata::nft;
 using namespace mata::strings;
-using namespace mata::lvlfa::plumbing;
+using namespace mata::nft::plumbing;
 using namespace mata::utils;
 using namespace mata::parser;
 using Symbol = mata::Symbol;
@@ -27,8 +27,8 @@ using Word = mata::Word;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
-TEST_CASE("mata::lvlfa::Lvlfa()") {
-    Lvlfa nft{};
+TEST_CASE("mata::nft::Nft()") {
+    Nft nft{};
     nft.levels.resize(3);
     nft.levels_cnt = 5;
     CHECK(nft.levels_cnt == 5);
@@ -40,42 +40,42 @@ TEST_CASE("mata::lvlfa::Lvlfa()") {
     CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
 }
 
-TEST_CASE("mata::lvlfa::size()") {
-    Lvlfa lvlfa{};
-    CHECK(lvlfa.num_of_states() == 0);
+TEST_CASE("mata::nft::size()") {
+    Nft nft{};
+    CHECK(nft.num_of_states() == 0);
 
-    lvlfa.add_state(3);
-    CHECK(lvlfa.num_of_states() == 4);
+    nft.add_state(3);
+    CHECK(nft.num_of_states() == 4);
 
-    lvlfa.clear();
-    lvlfa.add_state();
-    CHECK(lvlfa.num_of_states() == 1);
+    nft.clear();
+    nft.add_state();
+    CHECK(nft.num_of_states() == 1);
 
-    lvlfa.clear();
-    FILL_WITH_AUT_A(lvlfa);
-    CHECK(lvlfa.num_of_states() == 11);
+    nft.clear();
+    FILL_WITH_AUT_A(nft);
+    CHECK(nft.num_of_states() == 11);
 
-    lvlfa.clear();
-    FILL_WITH_AUT_B(lvlfa);
-    CHECK(lvlfa.num_of_states() == 15);
+    nft.clear();
+    FILL_WITH_AUT_B(nft);
+    CHECK(nft.num_of_states() == 15);
 
-    lvlfa = Lvlfa{ 0, {}, {} };
-    CHECK(lvlfa.num_of_states() == 0);
+    nft = Nft{ 0, {}, {} };
+    CHECK(nft.num_of_states() == 0);
 }
 
-TEST_CASE("mata::lvlfa::Trans::operator<<") {
+TEST_CASE("mata::nft::Trans::operator<<") {
     Transition trans(1, 2, 3);
     REQUIRE(std::to_string(trans) == "(1, 2, 3)");
 }
 
-TEST_CASE("mata::lvlfa::create_alphabet()") {
-    Lvlfa a{1};
+TEST_CASE("mata::nft::create_alphabet()") {
+    Nft a{1};
     a.delta.add(0, 'a', 0);
 
-    Lvlfa b{1};
+    Nft b{1};
     b.delta.add(0, 'b', 0);
     b.delta.add(0, 'a', 0);
-    Lvlfa c{1};
+    Nft c{1};
     b.delta.add(0, 'c', 0);
 
     auto alphabet{ create_alphabet(a, b, c) };
@@ -87,9 +87,9 @@ TEST_CASE("mata::lvlfa::create_alphabet()") {
     // create_alphabet(a, b, 4); // Will not compile: '4' is not of the required type.
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::delta.add()/delta.contains()")
+TEST_CASE("mata::nft::Nft::delta.add()/delta.contains()")
 { // {{{
-    Lvlfa a(3);
+    Nft a(3);
 
     SECTION("Empty automata have now transitions")
     {
@@ -159,9 +159,9 @@ TEST_CASE("mata::lvlfa::Lvlfa::delta.add()/delta.contains()")
 
 } // }}}
 
-TEST_CASE("mata::lvlfa::Delta.transform/append")
+TEST_CASE("mata::nft::Delta.transform/append")
 { // {{{
-    Lvlfa a(3);
+    Nft a(3);
     a.delta.add(1, 'a', 1);
     a.delta.add(2, 'b', {2,1,0});
 
@@ -181,9 +181,9 @@ TEST_CASE("mata::lvlfa::Delta.transform/append")
 
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_lang_empty()")
+TEST_CASE("mata::nft::is_lang_empty()")
 { // {{{
-    Lvlfa aut(14);
+    Nft aut(14);
     Run cex;
 
     SECTION("An empty automaton has an empty language")
@@ -276,9 +276,9 @@ TEST_CASE("mata::lvlfa::is_lang_empty()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_acyclic")
+TEST_CASE("mata::nft::is_acyclic")
 { // {{{
-    Lvlfa aut(14);
+    Nft aut(14);
 
     SECTION("An empty automaton is acyclic")
     {
@@ -325,7 +325,7 @@ TEST_CASE("mata::lvlfa::is_acyclic")
 
     SECTION("Automaton with self-loops")
     {
-        Lvlfa aut(2);
+        Nft aut(2);
         aut.initial = {0};
         aut.final = {1};
         aut.delta.add(0, 'c', 1);
@@ -334,9 +334,9 @@ TEST_CASE("mata::lvlfa::is_acyclic")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::get_word_for_path()")
+TEST_CASE("mata::nft::get_word_for_path()")
 { // {{{
-    Lvlfa aut(5);
+    Nft aut(5);
     Run path;
     Word word;
 
@@ -412,9 +412,9 @@ TEST_CASE("mata::lvlfa::get_word_for_path()")
 }
 
 
-TEST_CASE("mata::lvlfa::is_lang_empty_cex()")
+TEST_CASE("mata::nft::is_lang_empty_cex()")
 {
-    Lvlfa aut(10);
+    Nft aut(10);
     Run cex;
 
     SECTION("Counterexample of an automaton with non-empty language")
@@ -439,10 +439,10 @@ TEST_CASE("mata::lvlfa::is_lang_empty_cex()")
 }
 
 
-TEST_CASE("mata::lvlfa::determinize()")
+TEST_CASE("mata::nft::determinize()")
 {
-    Lvlfa aut(3);
-    Lvlfa result;
+    Nft aut(3);
+    Nft result;
     std::unordered_map<StateSet, State> subset_map;
 
     SECTION("empty automaton")
@@ -479,7 +479,7 @@ TEST_CASE("mata::lvlfa::determinize()")
 
     SECTION("This broke Delta when delta[q] could cause re-allocation of post")
     {
-        Lvlfa x{};
+        Nft x{};
         x.initial.insert(0);
         x.final.insert(4);
         x.delta.add(0, 1, 3);
@@ -498,9 +498,9 @@ TEST_CASE("mata::lvlfa::determinize()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::minimize() for profiling", "[.profiling],[minimize]") {
-    Lvlfa aut(4);
-    Lvlfa result;
+TEST_CASE("mata::nft::minimize() for profiling", "[.profiling],[minimize]") {
+    Nft aut(4);
+    Nft result;
     std::unordered_map<StateSet, State> subset_map;
 
     aut.initial.insert(0);
@@ -538,15 +538,15 @@ TEST_CASE("mata::lvlfa::minimize() for profiling", "[.profiling],[minimize]") {
     minimize(&result, aut);
 }
 
-TEST_CASE("mata::lvlfa::construct() correct calls")
+TEST_CASE("mata::nft::construct() correct calls")
 { // {{{
-    Lvlfa aut(10);
+    Nft aut(10);
     mata::parser::ParsedSection parsec;
     OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
 
         aut = builder::construct(parsec);
 
@@ -555,7 +555,7 @@ TEST_CASE("mata::lvlfa::construct() correct calls")
 
     SECTION("construct a simple non-empty automaton accepting the empty word")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q1"}});
 
@@ -566,7 +566,7 @@ TEST_CASE("mata::lvlfa::construct() correct calls")
 
     SECTION("construct an automaton with more than one initial/final states")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.dict.insert({"Initial", {"q1", "q2"}});
         parsec.dict.insert({"Final", {"q1", "q2", "q3"}});
 
@@ -578,7 +578,7 @@ TEST_CASE("mata::lvlfa::construct() correct calls")
 
     SECTION("construct a simple non-empty automaton accepting only the word 'a'")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.dict.insert({"Initial", {"q1"}});
         parsec.dict.insert({"Final", {"q2"}});
         parsec.body = { {"q1", "a", "q2"} };
@@ -596,7 +596,7 @@ TEST_CASE("mata::lvlfa::construct() correct calls")
 
     SECTION("construct a more complicated non-empty automaton")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.dict.insert({"Initial", {"q1", "q3"}});
         parsec.dict.insert({"Final", {"q5"}});
         parsec.body.push_back({"q1", "a", "q3"});
@@ -629,9 +629,9 @@ TEST_CASE("mata::lvlfa::construct() correct calls")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::construct() invalid calls")
+TEST_CASE("mata::nft::construct() invalid calls")
 { // {{{
-    Lvlfa aut;
+    Nft aut;
     mata::parser::ParsedSection parsec;
 
     SECTION("construct() call with invalid ParsedSection object")
@@ -644,7 +644,7 @@ TEST_CASE("mata::lvlfa::construct() invalid calls")
 
     SECTION("construct() call with an epsilon transition")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.body = { {"q1", "q2"} };
 
         CHECK_THROWS_WITH(builder::construct(parsec),
@@ -653,7 +653,7 @@ TEST_CASE("mata::lvlfa::construct() invalid calls")
 
     SECTION("construct() call with a nonsense transition")
     {
-        parsec.type = lvlfa::TYPE_NFA;
+        parsec.type = nft::TYPE_NFT;
         parsec.body = { {"q1", "a", "q2", "q3"} };
 
         CHECK_THROWS_WITH(plumbing::construct(&aut, parsec),
@@ -661,15 +661,15 @@ TEST_CASE("mata::lvlfa::construct() invalid calls")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
+TEST_CASE("mata::nft::construct() from IntermediateAut correct calls")
 { // {{{
-    Lvlfa aut;
+    Nft aut;
     mata::IntermediateAut inter_aut;
     OnTheFlyAlphabet alphabet;
 
     SECTION("construct an empty automaton")
     {
-        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::LVLFA;
+        inter_aut.automaton_type = mata::IntermediateAut::AutomatonType::NFT;
         REQUIRE(aut.is_lang_empty());
         aut = builder::construct(inter_aut);
         REQUIRE(aut.is_lang_empty());
@@ -678,7 +678,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct a simple non-empty automaton accepting the empty word from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q r\n"
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
@@ -694,7 +694,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct an automaton with more than one initial/final states from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q 3\n"
                 "%Alphabet-auto\n"
                 "%Initial p | q\n"
@@ -711,7 +711,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q r\n"
                 "%Alphabet-auto\n"
                 "%Initial p q\n"
@@ -728,7 +728,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct an automaton with implicit operator completion one initial/final states from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q r m n\n"
                 "%Alphabet-auto\n"
                 "%Initial p q r\n"
@@ -745,7 +745,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct a simple non-empty automaton accepting only the word 'a' from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q 3\n"
                 "%Alphabet-auto\n"
                 "%Initial q1\n"
@@ -768,7 +768,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct a more complicated non-empty automaton from intermediate automaton")
     {
         std::string file =
-                "@LVLFA-explicit\n"
+                "@NFT-explicit\n"
                 "%States-enum p q 3\n"
                 "%Alphabet-auto\n"
                 "%Initial q1 | q3\n"
@@ -807,7 +807,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct - final states from negation")
     {
         std::string file =
-                "@LVLFA-bits\n"
+                "@NFT-bits\n"
                 "%Alphabet-auto\n"
                 "%Initial q0 q8\n"
                 "%Final !q0 & !q1 & !q4 & !q5 & !q6\n"
@@ -833,7 +833,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct - final states given as true")
     {
         std::string file =
-                "@LVLFA-bits\n"
+                "@NFT-bits\n"
                 "%Alphabet-auto\n"
                 "%Initial q0 q8\n"
                 "%Final \\true\n"
@@ -848,7 +848,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        lvlfa::builder::NameStateMap state_map;
+        nft::builder::NameStateMap state_map;
         plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.size() == 9);
         CHECK(aut.final[state_map.at("0")]);
@@ -865,7 +865,7 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
     SECTION("construct - final states given as false")
     {
         std::string file =
-                "@LVLFA-bits\n"
+                "@NFT-bits\n"
                 "%Alphabet-auto\n"
                 "%Initial q0 q8\n"
                 "%Final \\false\n"
@@ -880,15 +880,15 @@ TEST_CASE("mata::lvlfa::construct() from IntermediateAut correct calls")
         const auto auts = mata::IntermediateAut::parse_from_mf(parse_mf(file));
         inter_aut = auts[0];
 
-        lvlfa::builder::NameStateMap state_map;
+        nft::builder::NameStateMap state_map;
         plumbing::construct(&aut, inter_aut, &alphabet, &state_map);
         CHECK(aut.final.empty());
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::make_complete()")
+TEST_CASE("mata::nft::make_complete()")
 { // {{{
-    Lvlfa aut(11);
+    Nft aut(11);
 
     SECTION("empty automaton, empty alphabet")
     {
@@ -986,10 +986,10 @@ TEST_CASE("mata::lvlfa::make_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::complement()")
+TEST_CASE("mata::nft::complement()")
 { // {{{
-    Lvlfa aut(3);
-    Lvlfa cmpl;
+    Nft aut(3);
+    Nft cmpl;
 
     SECTION("empty automaton, empty alphabet")
     {
@@ -997,8 +997,8 @@ TEST_CASE("mata::lvlfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
-        Lvlfa empty_string_lvlfa{ lvlfa::builder::create_sigma_star_lvlfa(&alph) };
-        CHECK(are_equivalent(cmpl, empty_string_lvlfa));
+        Nft empty_string_nft{ nft::builder::create_sigma_star_nft(&alph) };
+        CHECK(are_equivalent(cmpl, empty_string_nft));
     }
 
     SECTION("empty automaton")
@@ -1014,8 +1014,8 @@ TEST_CASE("mata::lvlfa::complement()")
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Lvlfa sigma_star_lvlfa{ lvlfa::builder::create_sigma_star_lvlfa(&alph) };
-        CHECK(are_equivalent(cmpl, sigma_star_lvlfa));
+        Nft sigma_star_nft{ nft::builder::create_sigma_star_nft(&alph) };
+        CHECK(are_equivalent(cmpl, sigma_star_nft));
     }
 
     SECTION("empty automaton accepting epsilon, empty alphabet")
@@ -1081,8 +1081,8 @@ TEST_CASE("mata::lvlfa::complement()")
 
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
-        Lvlfa empty_string_lvlfa{ lvlfa::builder::create_sigma_star_lvlfa(&alph) };
-        CHECK(are_equivalent(empty_string_lvlfa, cmpl));
+        Nft empty_string_nft{ nft::builder::create_sigma_star_nft(&alph) };
+        CHECK(are_equivalent(empty_string_nft, cmpl));
     }
 
     SECTION("empty automaton, minimization")
@@ -1098,8 +1098,8 @@ TEST_CASE("mata::lvlfa::complement()")
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["a"]}, {}}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"], alph["b"], alph["b"], alph["a"] }, {}}));
 
-        Lvlfa sigma_star_lvlfa{ lvlfa::builder::create_sigma_star_lvlfa(&alph) };
-        CHECK(are_equivalent(sigma_star_lvlfa, cmpl));
+        Nft sigma_star_nft{ nft::builder::create_sigma_star_nft(&alph) };
+        CHECK(are_equivalent(sigma_star_nft, cmpl));
     }
 
     SECTION("minimization vs no minimization")
@@ -1117,7 +1117,7 @@ TEST_CASE("mata::lvlfa::complement()")
         cmpl = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "false"}});
 
-        Lvlfa cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
+        Nft cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
                                     {"minimize", "true"}});
 
         CHECK(are_equivalent(cmpl, cmpl_min, &alph));
@@ -1127,9 +1127,9 @@ TEST_CASE("mata::lvlfa::complement()")
 
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_universal()")
+TEST_CASE("mata::nft::is_universal()")
 { // {{{
-    Lvlfa aut(6);
+    Nft aut(6);
     Run cex;
     ParameterMap params;
 
@@ -1343,10 +1343,10 @@ TEST_CASE("mata::lvlfa::is_universal()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_included()")
+TEST_CASE("mata::nft::is_included()")
 { // {{{
-    Lvlfa smaller(10);
-    Lvlfa bigger(16);
+    Nft smaller(10);
+    Nft bigger(16);
     Run cex;
     ParameterMap params;
 
@@ -1542,10 +1542,10 @@ TEST_CASE("mata::lvlfa::is_included()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::are_equivalent")
+TEST_CASE("mata::nft::are_equivalent")
 {
-    Lvlfa smaller(10);
-    Lvlfa bigger(16);
+    Nft smaller(10);
+    Nft bigger(16);
     Word cex;
     ParameterMap params;
 
@@ -1642,9 +1642,9 @@ TEST_CASE("mata::lvlfa::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        Lvlfa aut;
+        Nft aut;
         mata::parser::create_nfa(&aut, "a*");
-        Lvlfa aut2;
+        Nft aut2;
         mata::parser::create_nfa(&aut2, "(a|b)*");
         CHECK(!are_equivalent(aut, aut2));
     }
@@ -1708,13 +1708,13 @@ TEST_CASE("mata::lvlfa::are_equivalent")
     }
 }
 
-TEST_CASE("mata::lvlfa::revert()")
+TEST_CASE("mata::nft::revert()")
 { // {{{
-    Lvlfa aut(9);
+    Nft aut(9);
 
     SECTION("empty automaton")
     {
-        Lvlfa result = revert(aut);
+        Nft result = revert(aut);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -1729,7 +1729,7 @@ TEST_CASE("mata::lvlfa::revert()")
         aut.final.insert(2);
         aut.final.insert(5);
 
-        Lvlfa result = revert(aut);
+        Nft result = revert(aut);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[2]);
@@ -1744,7 +1744,7 @@ TEST_CASE("mata::lvlfa::revert()")
         aut.final.insert(2);
         aut.delta.add(1, 'a', 2);
 
-        Lvlfa result = revert(aut);
+        Nft result = revert(aut);
 
         REQUIRE(result.initial[2]);
         REQUIRE(result.final[1]);
@@ -1767,7 +1767,7 @@ TEST_CASE("mata::lvlfa::revert()")
         aut.delta.add(7, 'a', 8);
         aut.final = {3};
 
-        Lvlfa result = revert(aut);
+        Nft result = revert(aut);
         //REQUIRE(result.final == StateSet({1, 2}));
         REQUIRE(StateSet(result.final) == StateSet({1, 2}));
         REQUIRE(result.delta.contains(2, 'a', 1));
@@ -1784,9 +1784,9 @@ TEST_CASE("mata::lvlfa::revert()")
     }
 
     SECTION("Automaton A") {
-        Lvlfa lvlfa{ 11 };
-        FILL_WITH_AUT_A(lvlfa);
-        Lvlfa res = revert(lvlfa);
+        Nft nft{ 11 };
+        FILL_WITH_AUT_A(nft);
+        Nft res = revert(nft);
         CHECK(res.initial[5]);
         CHECK(res.final[1]);
         CHECK(res.final[3]);
@@ -1809,9 +1809,9 @@ TEST_CASE("mata::lvlfa::revert()")
     }
 
     SECTION("Automaton B") {
-        Lvlfa lvlfa{ 15 };
-        FILL_WITH_AUT_B(lvlfa);
-        Lvlfa res = revert(lvlfa);
+        Nft nft{ 15 };
+        FILL_WITH_AUT_B(nft);
+        Nft res = revert(nft);
         CHECK(res.initial[2]);
         CHECK(res.initial[12]);
         CHECK(res.final[4]);
@@ -1832,9 +1832,9 @@ TEST_CASE("mata::lvlfa::revert()")
 } // }}}
 
 
-TEST_CASE("mata::lvlfa::Lvlfa::is_deterministic()")
+TEST_CASE("mata::nft::Nft::is_deterministic()")
 { // {{{
-    Lvlfa aut('s'+1);
+    Nft aut('s'+1);
 
     SECTION("(almost) empty automaton") {
         // no initial states
@@ -1886,9 +1886,9 @@ TEST_CASE("mata::lvlfa::Lvlfa::is_deterministic()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_complete()")
+TEST_CASE("mata::nft::is_complete()")
 { // {{{
-    Lvlfa aut('q'+1);
+    Nft aut('q'+1);
 
     SECTION("empty automaton")
     {
@@ -1949,9 +1949,9 @@ TEST_CASE("mata::lvlfa::is_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::is_prfx_in_lang()")
+TEST_CASE("mata::nft::is_prfx_in_lang()")
 { // {{{
-    Lvlfa aut('q'+1);
+    Nft aut('q'+1);
 
     SECTION("empty automaton")
     {
@@ -2007,9 +2007,9 @@ TEST_CASE("mata::lvlfa::is_prfx_in_lang()")
     }
 } // }}}
 
-TEST_CASE("mata::lvlfa::fw-direct-simulation()")
+TEST_CASE("mata::nft::fw-direct-simulation()")
 { // {{{
-    Lvlfa aut;
+    Nft aut;
 
     SECTION("empty automaton")
     {
@@ -2049,7 +2049,7 @@ TEST_CASE("mata::lvlfa::fw-direct-simulation()")
 
     }
 
-    Lvlfa aut_big(9);
+    Nft aut_big(9);
 
     SECTION("bigger automaton")
     {
@@ -2086,14 +2086,14 @@ TEST_CASE("mata::lvlfa::fw-direct-simulation()")
     }
 } // }}
 
-TEST_CASE("mata::lvlfa::reduce_size_by_simulation()")
+TEST_CASE("mata::nft::reduce_size_by_simulation()")
 {
-    Lvlfa aut;
+    Nft aut;
     StateRenaming state_renaming;
 
     SECTION("empty automaton")
     {
-        Lvlfa result = reduce(aut, &state_renaming);
+        Nft result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial.empty());
@@ -2106,7 +2106,7 @@ TEST_CASE("mata::lvlfa::reduce_size_by_simulation()")
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Lvlfa result = reduce(aut, &state_renaming);
+        Nft result = reduce(aut, &state_renaming);
 
         REQUIRE(result.delta.empty());
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2138,7 +2138,7 @@ TEST_CASE("mata::lvlfa::reduce_size_by_simulation()")
         aut.final = {3, 9};
 
 
-        Lvlfa result = reduce(aut, &state_renaming);
+        Nft result = reduce(aut, &state_renaming);
 
         REQUIRE(result.num_of_states() == 6);
         REQUIRE(result.initial[state_renaming[1]]);
@@ -2171,23 +2171,23 @@ TEST_CASE("mata::lvlfa::reduce_size_by_simulation()")
     {
         aut.delta.add(0, 'a', 1);
         aut.initial = { 0 };
-        Lvlfa result = reduce(aut.trim(), &state_renaming);
+        Nft result = reduce(aut.trim(), &state_renaming);
         CHECK(are_equivalent(result, aut));
     }
 }
 
-TEST_CASE("mata::lvlfa::union_norename()") {
+TEST_CASE("mata::nft::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};
 
-    Lvlfa lhs(2);
+    Nft lhs(2);
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.final.insert(1);
     REQUIRE(!lhs.is_in_lang(one));
     REQUIRE(lhs.is_in_lang(zero));
 
-    Lvlfa rhs(2);
+    Nft rhs(2);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.final.insert(1);
@@ -2195,24 +2195,24 @@ TEST_CASE("mata::lvlfa::union_norename()") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Lvlfa result = uni(lhs, rhs);
+        Nft result = uni(lhs, rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 }
 
-TEST_CASE("mata::lvlfa::union_inplace") {
+TEST_CASE("mata::nft::union_inplace") {
     Run one{{1},{}};
     Run zero{{0}, {}};
 
-    Lvlfa lhs(2);
+    Nft lhs(2);
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, 1);
     lhs.final.insert(1);
     REQUIRE(!lhs.is_in_lang(one));
     REQUIRE(lhs.is_in_lang(zero));
 
-    Lvlfa rhs(2);
+    Nft rhs(2);
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, 1);
     rhs.final.insert(1);
@@ -2220,21 +2220,21 @@ TEST_CASE("mata::lvlfa::union_inplace") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Lvlfa result = lhs.uni(rhs);
+        Nft result = lhs.uni(rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 
     SECTION("same automata") {
         size_t lhs_states = lhs.num_of_states();
-        Lvlfa result = lhs.uni(lhs);
+        Nft result = lhs.uni(lhs);
         REQUIRE(result.num_of_states() == lhs_states * 2);
     }
 }
 
-TEST_CASE("mata::lvlfa::remove_final()")
+TEST_CASE("mata::nft::remove_final()")
 {
-    Lvlfa aut('q' + 1);
+    Nft aut('q' + 1);
 
     SECTION("Automaton B")
     {
@@ -2247,9 +2247,9 @@ TEST_CASE("mata::lvlfa::remove_final()")
     }
 }
 
-TEST_CASE("mata::lvlfa::delta.remove()")
+TEST_CASE("mata::nft::delta.remove()")
 {
-    Lvlfa aut('q' + 1);
+    Nft aut('q' + 1);
 
     SECTION("Automaton B")
     {
@@ -2300,8 +2300,8 @@ TEST_CASE("mata::lvlfa::delta.remove()")
     }
 }
 
-TEST_CASE("mata::lvlfa::get_trans_as_sequence(}") {
-    Lvlfa aut('q' + 1);
+TEST_CASE("mata::nft::get_trans_as_sequence(}") {
+    Nft aut('q' + 1);
     std::vector<Transition> expected{};
 
     aut.delta.add(1, 2, 3);
@@ -2316,9 +2316,9 @@ TEST_CASE("mata::lvlfa::get_trans_as_sequence(}") {
     REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
 }
 
-TEST_CASE("mata::lvlfa::remove_epsilon()")
+TEST_CASE("mata::nft::remove_epsilon()")
 {
-    Lvlfa aut{20};
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     aut.remove_epsilon('c');
     REQUIRE(aut.delta.contains(10, 'a', 7));
@@ -2334,29 +2334,29 @@ TEST_CASE("mata::lvlfa::remove_epsilon()")
     REQUIRE(aut.delta.contains(5, 'a', 9));
 }
 
-TEST_CASE("Profile mata::lvlfa::remove_epsilon()", "[.profiling]")
+TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]")
 {
     for (size_t n{}; n < 100000; ++n) {
-        Lvlfa aut{20};
+        Nft aut{20};
         FILL_WITH_AUT_A(aut);
         aut.remove_epsilon('c');
     }
 }
 
-TEST_CASE("mata::lvlfa::get_num_of_trans()")
+TEST_CASE("mata::nft::get_num_of_trans()")
 {
-    Lvlfa aut{20};
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     REQUIRE(aut.delta.num_of_transitions() == 15);
 }
 
-TEST_CASE("mata::lvlfa::get_one_letter_aut()")
+TEST_CASE("mata::nft::get_one_letter_aut()")
 {
-    Lvlfa aut(11);
+    Nft aut(11);
     Symbol abstract_symbol{'x'};
     FILL_WITH_AUT_A(aut);
 
-    Lvlfa digraph{aut.get_one_letter_aut() };
+    Nft digraph{aut.get_one_letter_aut() };
 
     REQUIRE(digraph.num_of_states() == aut.num_of_states());
     REQUIRE(digraph.delta.num_of_transitions() == 12);
@@ -2367,8 +2367,8 @@ TEST_CASE("mata::lvlfa::get_one_letter_aut()")
     REQUIRE(!digraph.delta.contains(10, 'c', 7));
 }
 
-TEST_CASE("mata::lvlfa::get_reachable_states()") {
-    Lvlfa aut{20};
+TEST_CASE("mata::nft::get_reachable_states()") {
+    Nft aut{20};
 
     SECTION("Automaton A") {
         FILL_WITH_AUT_A(aut);
@@ -2434,22 +2434,22 @@ TEST_CASE("mata::lvlfa::get_reachable_states()") {
     }
 }
 
-TEST_CASE("mata::lvlfa::trim() for profiling", "[.profiling],[trim]")
+TEST_CASE("mata::nft::trim() for profiling", "[.profiling],[trim]")
 {
-    Lvlfa aut{20};
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Lvlfa new_aut{ aut };
+        Nft new_aut{ aut };
         new_aut.trim();
     }
 }
 
 //TODO: make this a test for the new version
-TEST_CASE("mata::lvlfa::get_useful_states() for profiling", "[.profiling],[useful_states]")
+TEST_CASE("mata::nft::get_useful_states() for profiling", "[.profiling],[useful_states]")
 {
-    Lvlfa aut{20};
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.remove(1, 'a', 10);
 
@@ -2458,22 +2458,22 @@ TEST_CASE("mata::lvlfa::get_useful_states() for profiling", "[.profiling],[usefu
     }
 }
 
-TEST_CASE("mata::lvlfa::trim() trivial") {
-    Lvlfa aut{1};
+TEST_CASE("mata::nft::trim() trivial") {
+    Nft aut{1};
     aut.initial.insert(0);
     aut.final.insert(0);
     aut.trim();
 }
 
-TEST_CASE("mata::lvlfa::trim()")
+TEST_CASE("mata::nft::trim()")
 {
-    Lvlfa orig_aut{20};
+    Nft orig_aut{20};
     FILL_WITH_AUT_A(orig_aut);
     orig_aut.delta.remove(1, 'a', 10);
 
 
     SECTION("Without state map") {
-        Lvlfa aut{orig_aut};
+        Nft aut{orig_aut};
         aut.trim();
         CHECK(aut.initial.size() == orig_aut.initial.size());
         CHECK(aut.final.size() == orig_aut.final.size());
@@ -2490,7 +2490,7 @@ TEST_CASE("mata::lvlfa::trim()")
     }
 
     SECTION("With state map") {
-        Lvlfa aut{orig_aut};
+        Nft aut{orig_aut};
         StateRenaming state_map{};
         aut.trim(&state_map);
         CHECK(aut.initial.size() == orig_aut.initial.size());
@@ -2514,9 +2514,9 @@ TEST_CASE("mata::lvlfa::trim()")
     }
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::delta.empty()")
+TEST_CASE("mata::nft::Nft::delta.empty()")
 {
-    Lvlfa aut{};
+    Nft aut{};
 
     SECTION("Empty automaton")
     {
@@ -2564,9 +2564,9 @@ TEST_CASE("mata::lvlfa::Lvlfa::delta.empty()")
     }
 }
 
-TEST_CASE("mata::lvlfa::delta.operator[]")
+TEST_CASE("mata::nft::delta.operator[]")
 {
-    Lvlfa aut{20};
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     REQUIRE(aut.delta.num_of_transitions() == 15);
     aut.delta[25];
@@ -2580,126 +2580,126 @@ TEST_CASE("mata::lvlfa::delta.operator[]")
     REQUIRE(aut.num_of_states() == 51);
     REQUIRE(aut.delta[50].empty());
 
-    Lvlfa aut1 = aut;
+    Nft aut1 = aut;
     aut1.delta.mutable_state_post(60);
     REQUIRE(aut1.num_of_states() == 61);
     REQUIRE(aut1.delta[60].empty());
 
-    const Lvlfa aut2 = aut;
+    const Nft aut2 = aut;
     aut2.delta[60];
     REQUIRE(aut2.num_of_states() == 51);
     REQUIRE(aut2.delta[60].empty());
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::unify_(initial/final)()") {
-    Lvlfa lvlfa{10};
+TEST_CASE("mata::nft::Nft::unify_(initial/final)()") {
+    Nft nft{10};
 
     SECTION("No initial") {
-        lvlfa.unify_initial();
-        CHECK(lvlfa.num_of_states() == 10);
-        CHECK(lvlfa.initial.empty());
+        nft.unify_initial();
+        CHECK(nft.num_of_states() == 10);
+        CHECK(nft.initial.empty());
     }
 
     SECTION("initial==final unify final") {
-        lvlfa.initial.insert(0);
-        lvlfa.final.insert(0);
-        lvlfa.final.insert(1);
-        lvlfa.unify_final();
-        REQUIRE(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.final.size() == 1);
-        CHECK(lvlfa.final[10]);
-        CHECK(lvlfa.initial[10]);
+        nft.initial.insert(0);
+        nft.final.insert(0);
+        nft.final.insert(1);
+        nft.unify_final();
+        REQUIRE(nft.num_of_states() == 11);
+        CHECK(nft.final.size() == 1);
+        CHECK(nft.final[10]);
+        CHECK(nft.initial[10]);
     }
 
     SECTION("initial==final unify initial") {
-        lvlfa.initial.insert(0);
-        lvlfa.initial.insert(1);
-        lvlfa.final.insert(0);
-        lvlfa.unify_initial();
-        REQUIRE(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.initial.size() == 1);
-        CHECK(lvlfa.initial[10]);
-        CHECK(lvlfa.final[10]);
+        nft.initial.insert(0);
+        nft.initial.insert(1);
+        nft.final.insert(0);
+        nft.unify_initial();
+        REQUIRE(nft.num_of_states() == 11);
+        CHECK(nft.initial.size() == 1);
+        CHECK(nft.initial[10]);
+        CHECK(nft.final[10]);
     }
 
     SECTION("Single initial") {
-        lvlfa.initial.insert(0);
-        lvlfa.unify_initial();
-        CHECK(lvlfa.num_of_states() == 10);
-        CHECK(lvlfa.initial.size() == 1);
-        CHECK(lvlfa.initial[0]);
+        nft.initial.insert(0);
+        nft.unify_initial();
+        CHECK(nft.num_of_states() == 10);
+        CHECK(nft.initial.size() == 1);
+        CHECK(nft.initial[0]);
     }
 
     SECTION("Multiple initial") {
-        lvlfa.initial.insert(0);
-        lvlfa.initial.insert(1);
-        lvlfa.unify_initial();
-        CHECK(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.initial.size() == 1);
-        CHECK(lvlfa.initial[10]);
+        nft.initial.insert(0);
+        nft.initial.insert(1);
+        nft.unify_initial();
+        CHECK(nft.num_of_states() == 11);
+        CHECK(nft.initial.size() == 1);
+        CHECK(nft.initial[10]);
     }
 
     SECTION("With transitions") {
-        lvlfa.initial.insert(0);
-        lvlfa.initial.insert(1);
-        lvlfa.delta.add(0, 'a', 3);
-        lvlfa.delta.add(1, 'b', 0);
-        lvlfa.delta.add(1, 'c', 1);
-        lvlfa.unify_initial();
-        CHECK(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.initial.size() == 1);
-        CHECK(lvlfa.initial[10]);
-        CHECK(lvlfa.delta.contains(10, 'a', 3));
-        CHECK(lvlfa.delta.contains(10, 'b', 0));
-        CHECK(lvlfa.delta.contains(10, 'c', 1));
-        CHECK(lvlfa.delta.contains(0, 'a', 3));
-        CHECK(lvlfa.delta.contains(1, 'b', 0));
-        CHECK(lvlfa.delta.contains(1, 'c', 1));
+        nft.initial.insert(0);
+        nft.initial.insert(1);
+        nft.delta.add(0, 'a', 3);
+        nft.delta.add(1, 'b', 0);
+        nft.delta.add(1, 'c', 1);
+        nft.unify_initial();
+        CHECK(nft.num_of_states() == 11);
+        CHECK(nft.initial.size() == 1);
+        CHECK(nft.initial[10]);
+        CHECK(nft.delta.contains(10, 'a', 3));
+        CHECK(nft.delta.contains(10, 'b', 0));
+        CHECK(nft.delta.contains(10, 'c', 1));
+        CHECK(nft.delta.contains(0, 'a', 3));
+        CHECK(nft.delta.contains(1, 'b', 0));
+        CHECK(nft.delta.contains(1, 'c', 1));
     }
 
     SECTION("No final") {
-        lvlfa.unify_final();
-        CHECK(lvlfa.num_of_states() == 10);
-        CHECK(lvlfa.final.empty());
+        nft.unify_final();
+        CHECK(nft.num_of_states() == 10);
+        CHECK(nft.final.empty());
     }
 
     SECTION("Single final") {
-        lvlfa.final.insert(0);
-        lvlfa.unify_final();
-        CHECK(lvlfa.num_of_states() == 10);
-        CHECK(lvlfa.final.size() == 1);
-        CHECK(lvlfa.final[0]);
+        nft.final.insert(0);
+        nft.unify_final();
+        CHECK(nft.num_of_states() == 10);
+        CHECK(nft.final.size() == 1);
+        CHECK(nft.final[0]);
     }
 
     SECTION("Multiple final") {
-        lvlfa.final.insert(0);
-        lvlfa.final.insert(1);
-        lvlfa.unify_final();
-        CHECK(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.final.size() == 1);
-        CHECK(lvlfa.final[10]);
+        nft.final.insert(0);
+        nft.final.insert(1);
+        nft.unify_final();
+        CHECK(nft.num_of_states() == 11);
+        CHECK(nft.final.size() == 1);
+        CHECK(nft.final[10]);
     }
 
     SECTION("With transitions") {
-        lvlfa.final.insert(0);
-        lvlfa.final.insert(1);
-        lvlfa.delta.add(3, 'a', 0);
-        lvlfa.delta.add(4, 'b', 1);
-        lvlfa.delta.add(1, 'c', 1);
-        lvlfa.unify_final();
-        CHECK(lvlfa.num_of_states() == 11);
-        CHECK(lvlfa.final.size() == 1);
-        CHECK(lvlfa.final[10]);
-        CHECK(lvlfa.delta.contains(3, 'a', 10));
-        CHECK(lvlfa.delta.contains(4, 'b', 10));
-        CHECK(lvlfa.delta.contains(1, 'c', 10));
-        CHECK(lvlfa.delta.contains(3, 'a', 0));
-        CHECK(lvlfa.delta.contains(4, 'b', 1));
-        CHECK(lvlfa.delta.contains(1, 'c', 1));
+        nft.final.insert(0);
+        nft.final.insert(1);
+        nft.delta.add(3, 'a', 0);
+        nft.delta.add(4, 'b', 1);
+        nft.delta.add(1, 'c', 1);
+        nft.unify_final();
+        CHECK(nft.num_of_states() == 11);
+        CHECK(nft.final.size() == 1);
+        CHECK(nft.final[10]);
+        CHECK(nft.delta.contains(3, 'a', 10));
+        CHECK(nft.delta.contains(4, 'b', 10));
+        CHECK(nft.delta.contains(1, 'c', 10));
+        CHECK(nft.delta.contains(3, 'a', 0));
+        CHECK(nft.delta.contains(4, 'b', 1));
+        CHECK(nft.delta.contains(1, 'c', 1));
     }
 
-    SECTION("Bug: LVLFA with empty string unifying initial/final repeatedly") {
-        Lvlfa aut;
+    SECTION("Bug: NFT with empty string unifying initial/final repeatedly") {
+        Nft aut;
         mata::parser::create_nfa(&aut, "a*b*");
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
@@ -2709,8 +2709,8 @@ TEST_CASE("mata::lvlfa::Lvlfa::unify_(initial/final)()") {
     }
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::get_delta.epsilon_symbol_posts()") {
-    Lvlfa aut{20};
+TEST_CASE("mata::nft::Nft::get_delta.epsilon_symbol_posts()") {
+    Nft aut{20};
     FILL_WITH_AUT_A(aut);
     aut.delta.add(0, EPSILON, 3);
     aut.delta.add(3, EPSILON, 3);
@@ -2752,12 +2752,12 @@ TEST_CASE("mata::lvlfa::Lvlfa::get_delta.epsilon_symbol_posts()") {
     CHECK(aut.delta.epsilon_symbol_posts(state_post) == state_post.end());
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::delta()") {
+TEST_CASE("mata::nft::Nft::delta()") {
     Delta delta(6);
 }
 
-TEST_CASE("A segmentation fault in the lvlfa::make_complement") {
-    Lvlfa r(1);
+TEST_CASE("A segmentation fault in the nft::make_complement") {
+    Nft r(1);
     OnTheFlyAlphabet alph{};
     alph["a"];
     alph["b"];
@@ -2769,26 +2769,26 @@ TEST_CASE("A segmentation fault in the lvlfa::make_complement") {
     REQUIRE(r.is_complete(&alph));
 }
 
-TEST_CASE("mata::lvlfa:: create simple automata") {
-    Lvlfa lvlfa{ builder::create_empty_string_lvlfa() };
-    CHECK(lvlfa.is_in_lang(Word{}));
-    CHECK(get_word_lengths(lvlfa) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
+TEST_CASE("mata::nft:: create simple automata") {
+    Nft nft{ builder::create_empty_string_nft() };
+    CHECK(nft.is_in_lang(Word{}));
+    CHECK(get_word_lengths(nft) == std::set<std::pair<int, int>>{ std::make_pair(0, 0) });
 
     OnTheFlyAlphabet alphabet{ { "a", 0 }, { "b", 1 }, { "c", 2 } };
-    lvlfa = builder::create_sigma_star_lvlfa(&alphabet);
-    CHECK(lvlfa.is_in_lang({ {}, {} }));
-    CHECK(lvlfa.is_in_lang({  0 , {} }));
-    CHECK(lvlfa.is_in_lang({  1 , {} }));
-    CHECK(lvlfa.is_in_lang({  2 , {} }));
-    CHECK(lvlfa.is_in_lang({ { 0, 1 }, {} }));
-    CHECK(lvlfa.is_in_lang({ { 1, 0 }, {} }));
-    CHECK(lvlfa.is_in_lang({ { 2, 2, 2 }, {} }));
-    CHECK(lvlfa.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
-    CHECK(!lvlfa.is_in_lang({  3 , {} }));
+    nft = builder::create_sigma_star_nft(&alphabet);
+    CHECK(nft.is_in_lang({ {}, {} }));
+    CHECK(nft.is_in_lang({  0 , {} }));
+    CHECK(nft.is_in_lang({  1 , {} }));
+    CHECK(nft.is_in_lang({  2 , {} }));
+    CHECK(nft.is_in_lang({ { 0, 1 }, {} }));
+    CHECK(nft.is_in_lang({ { 1, 0 }, {} }));
+    CHECK(nft.is_in_lang({ { 2, 2, 2 }, {} }));
+    CHECK(nft.is_in_lang({ { 0, 1, 2, 2, 0, 1, 2, 1, 0, 0, 2, 1 }, {} }));
+    CHECK(!nft.is_in_lang({  3 , {} }));
 }
 
-TEST_CASE("mata::lvlfa:: print_to_mata") {
-    Lvlfa aut_big;
+TEST_CASE("mata::nft::print_to_mata()") {
+    Nft aut_big;
     aut_big.initial = {1, 2};
     aut_big.delta.add(1, 'a', 2);
     aut_big.delta.add(1, 'a', 3);
@@ -2807,13 +2807,13 @@ TEST_CASE("mata::lvlfa:: print_to_mata") {
     std::string aut_big_mata = aut_big.print_to_mata();
     // for parsing output of print_to_mata() we need to use IntAlphabet to get the same alphabet
     IntAlphabet int_alph;
-    Lvlfa aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
+    Nft aut_big_from_mata = builder::construct(mata::IntermediateAut::parse_from_mf(parse_mf(aut_big_mata))[0], &int_alph);
 
     CHECK(are_equivalent(aut_big, aut_big_from_mata));
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::trim() bug") {
-	Lvlfa aut(5, {0}, {4});
+TEST_CASE("mata::nft::Nft::trim() bug") {
+	Nft aut(5, {0}, {4});
 	aut.delta.add(0, 122, 1);
 	aut.delta.add(1, 98, 1);
 	aut.delta.add(1, 122, 1);
@@ -2823,13 +2823,13 @@ TEST_CASE("mata::lvlfa::Lvlfa::trim() bug") {
 	aut.delta.add(1, 97, 4);
 	aut.delta.add(3, 97, 4);
 
-	Lvlfa aut_copy {aut};
+	Nft aut_copy {aut};
 	CHECK(are_equivalent(aut_copy.trim(), aut));
 }
 
-TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
-	SECTION("Lvlfa 1") {
-		Lvlfa aut(5, {0}, {4});
+TEST_CASE("mata::nft::get_useful_states_tarjan") {
+	SECTION("Nft 1") {
+		Nft aut(5, {0}, {4});
 		aut.delta.add(0, 122, 1);
 		aut.delta.add(1, 98, 1);
 		aut.delta.add(1, 122, 1);
@@ -2844,26 +2844,26 @@ TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
 		CHECK(bv == ref);
 	}
 
-	SECTION("Empty LVLFA") {
-		Lvlfa aut;
+	SECTION("Empty NFT") {
+		Nft aut;
 		mata::BoolVector bv = aut.get_useful_states();
 		CHECK(bv == mata::BoolVector({}));
 	}
 
-	SECTION("Single-state LVLFA") {
-		Lvlfa aut(1, {0}, {});
+	SECTION("Single-state NFT") {
+		Nft aut(1, {0}, {});
 		mata::BoolVector bv = aut.get_useful_states();
 		CHECK(bv == mata::BoolVector({ 0}));
 	}
 
-	SECTION("Single-state LVLFA acc") {
-		Lvlfa aut(1, {0}, {0});
+	SECTION("Single-state NFT acc") {
+		Nft aut(1, {0}, {0});
 		mata::BoolVector bv = aut.get_useful_states();
 		CHECK(bv == mata::BoolVector({ 1}));
 	}
 
-	SECTION("Lvlfa 2") {
-		Lvlfa aut(5, {0, 1}, {2});
+	SECTION("Nft 2") {
+		Nft aut(5, {0, 1}, {2});
 		aut.delta.add(0, 122, 2);
 		aut.delta.add(2, 98, 3);
 		aut.delta.add(1, 98, 4);
@@ -2874,8 +2874,8 @@ TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
 		CHECK(bv == ref);
 	}
 
-	SECTION("Lvlfa 3") {
-		Lvlfa aut(2, {0, 1}, {0, 1});
+	SECTION("Nft 3") {
+		Nft aut(2, {0, 1}, {0, 1});
 		aut.delta.add(0, 122, 0);
 		aut.delta.add(1, 98, 1);
 
@@ -2884,8 +2884,8 @@ TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
 		CHECK(bv == ref);
 	}
 
-	SECTION("Lvlfa no final") {
-		Lvlfa aut(5, {0}, {});
+	SECTION("Nft no final") {
+		Nft aut(5, {0}, {});
 		aut.delta.add(0, 122, 1);
 		aut.delta.add(1, 98, 1);
 		aut.delta.add(1, 122, 1);
@@ -2901,7 +2901,7 @@ TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
 	}
 
     SECTION("from regex (a+b*a*)") {
-        Lvlfa aut;
+        Nft aut;
         mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
 
         mata::BoolVector bv = aut.get_useful_states();
@@ -2914,30 +2914,30 @@ TEST_CASE("mata::lvlfa::get_useful_states_tarjan") {
     }
 
     SECTION("more initials") {
-        Lvlfa aut(4, {0, 1, 2}, {0, 3});
+        Nft aut(4, {0, 1, 2}, {0, 3});
         aut.delta.add(1, 48, 0);
         aut.delta.add(2, 53, 3);
         CHECK(aut.get_useful_states() == mata::BoolVector{ 1, 1, 1, 1});
     }
 }
 
-TEST_CASE("mata::lvlfa::Lvlfa::get_words") {
+TEST_CASE("mata::nft::Nft::get_words") {
     SECTION("empty") {
-        Lvlfa aut;
+        Nft aut;
         CHECK(aut.get_words(0) == std::set<mata::Word>());
         CHECK(aut.get_words(1) == std::set<mata::Word>());
         CHECK(aut.get_words(5) == std::set<mata::Word>());
     }
 
     SECTION("empty word") {
-        Lvlfa aut(1, {0}, {0});
+        Nft aut(1, {0}, {0});
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
         CHECK(aut.get_words(1) == std::set<mata::Word>{{}});
         CHECK(aut.get_words(5) == std::set<mata::Word>{{}});
     }
 
     SECTION("noodle - one final") {
-        Lvlfa aut(3, {0}, {2});
+        Nft aut(3, {0}, {2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{});
@@ -2948,7 +2948,7 @@ TEST_CASE("mata::lvlfa::Lvlfa::get_words") {
     }
 
     SECTION("noodle - two finals") {
-        Lvlfa aut(3, {0}, {1,2});
+        Nft aut(3, {0}, {1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{});
@@ -2959,7 +2959,7 @@ TEST_CASE("mata::lvlfa::Lvlfa::get_words") {
     }
 
     SECTION("noodle - three finals") {
-        Lvlfa aut(3, {0}, {0,1,2});
+        Nft aut(3, {0}, {0,1,2});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 2);
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});
@@ -2970,7 +2970,7 @@ TEST_CASE("mata::lvlfa::Lvlfa::get_words") {
     }
 
     SECTION("more complex") {
-        Lvlfa aut(6, {0,1}, {1,3,4,5});
+        Nft aut(6, {0,1}, {1,3,4,5});
         aut.delta.add(0, 0, 3);
         aut.delta.add(3, 1, 4);
         aut.delta.add(0, 2, 2);
@@ -2986,7 +2986,7 @@ TEST_CASE("mata::lvlfa::Lvlfa::get_words") {
     }
 
     SECTION("cycle") {
-        Lvlfa aut(6, {0,1}, {0,1});
+        Nft aut(6, {0,1}, {0,1});
         aut.delta.add(0, 0, 1);
         aut.delta.add(1, 1, 0);
         CHECK(aut.get_words(0) == std::set<mata::Word>{{}});

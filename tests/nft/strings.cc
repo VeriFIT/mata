@@ -6,11 +6,11 @@
 
 #include <catch2/catch.hpp>
 
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/builder.hh"
-#include "mata/lvlfa/strings.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/builder.hh"
+#include "mata/nft/strings.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using Symbol = mata::Symbol;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
@@ -18,8 +18,8 @@ using mata::EnumAlphabet;
 
 using Word = std::vector<Symbol>;
 
-TEST_CASE("lvlfa::create_identity()") {
-    Lvlfa nft{};
+TEST_CASE("nft::create_identity()") {
+    Nft nft{};
     nft.initial = { 0 };
     nft.final = { 0 };
     SECTION("small identity nft") {
@@ -48,7 +48,7 @@ TEST_CASE("lvlfa::create_identity()") {
         nft.levels[6] = 2;
         nft.levels[7] = 1;
         nft.levels[8] = 2;
-        Lvlfa nft_identity{ create_identity(&alphabet, 3) };
+        Nft nft_identity{ create_identity(&alphabet, 3) };
         CHECK(nft_identity.is_identical(nft));
     }
 
@@ -58,7 +58,7 @@ TEST_CASE("lvlfa::create_identity()") {
         nft.levels_cnt = 3;
         nft.levels.resize(1);
         nft.levels[0] = 0;
-        Lvlfa nft_identity{ create_identity(&alphabet, 3) };
+        Nft nft_identity{ create_identity(&alphabet, 3) };
         CHECK(nft_identity.is_identical(nft));
     }
 
@@ -71,7 +71,7 @@ TEST_CASE("lvlfa::create_identity()") {
         nft.levels[1] = 1;
         nft.delta.add(0, 0, 1);
         nft.delta.add(1, 0, 0);
-        Lvlfa nft_identity{ create_identity(&alphabet, 2) };
+        Nft nft_identity{ create_identity(&alphabet, 2) };
         CHECK(nft_identity.is_identical(nft));
         nft_identity = create_identity(&alphabet);
         CHECK(nft_identity.is_identical(nft));
@@ -87,13 +87,13 @@ TEST_CASE("lvlfa::create_identity()") {
         nft.levels_cnt = 1;
         nft.levels.resize(1);
         nft.levels[0] = 0;
-        Lvlfa nft_identity{ create_identity(&alphabet, 1) };
+        Nft nft_identity{ create_identity(&alphabet, 1) };
         CHECK(nft_identity.is_identical(nft));
     }
 }
 
-TEST_CASE("lvlfa::create_identity_with_single_replace()") {
-    Lvlfa nft{};
+TEST_CASE("nft::create_identity_with_single_replace()") {
+    Nft nft{};
     nft.initial = { 0 };
     nft.final = { 0 };
     SECTION("small identity nft") {
@@ -114,7 +114,7 @@ TEST_CASE("lvlfa::create_identity_with_single_replace()") {
         nft.levels[2] = 1;
         nft.levels[3] = 1;
         nft.levels[4] = 1;
-        Lvlfa nft_identity_with_replace{ create_identity_with_single_replace(&alphabet, 1, 3) };
+        Nft nft_identity_with_replace{ create_identity_with_single_replace(&alphabet, 1, 3) };
         CHECK(nft_identity_with_replace.is_identical(nft));
     }
 
@@ -132,7 +132,7 @@ TEST_CASE("lvlfa::create_identity_with_single_replace()") {
         nft.levels[1] = 1;
         nft.delta.add(0, 0, 1);
         nft.delta.add(1, 1, 0);
-        Lvlfa nft_identity{ create_identity_with_single_replace(&alphabet, 0, 1) };
+        Nft nft_identity{ create_identity_with_single_replace(&alphabet, 0, 1) };
         CHECK(nft_identity.is_identical(nft));
     }
 }

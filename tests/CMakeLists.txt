@@ -14,14 +14,14 @@ add_executable(tests
 		nfa/nfa-intersection.cc
 		nfa/nfa-profiling.cc
 		nfa/nfa-plumbing.cc
-		lvlfa/delta.cc
-		lvlfa/lvlfa.cc
-		lvlfa/builder.cc
-		lvlfa/lvlfa-concatenation.cc
-		lvlfa/lvlfa-intersection.cc
-		lvlfa/lvlfa-profiling.cc
-		lvlfa/lvlfa-plumbing.cc
-		lvlfa/strings.cc
+		nft/delta.cc
+		nft/nft.cc
+		nft/builder.cc
+		nft/nft-concatenation.cc
+		nft/nft-intersection.cc
+		nft/nft-profiling.cc
+		nft/nft-plumbing.cc
+		nft/strings.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc

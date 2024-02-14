@@ -1,4 +1,4 @@
-/* lvlfa.cc -- operations for LVLFA
+/* nft.cc -- operations for NFT
  */
 
 #include <algorithm>
@@ -7,23 +7,23 @@
 #include <iterator>
 
 // MATA headers
-#include "mata/lvlfa/delta.hh"
+#include "mata/nft/delta.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
-#include "mata/lvlfa/builder.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
+#include "mata/nft/builder.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;
 
 using namespace mata::utils;
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
-    Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Lvlfa& aut) {
+    Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nft& aut) {
         Symbol maxSymbol{ aut.delta.get_max_symbol() };
         const size_t state_num{ aut.num_of_states() };
         Simlib::ExplicitLTS LTSforSimulation(state_num);
@@ -41,8 +41,8 @@ namespace {
         return LTSforSimulation.compute_simulation();
     }
 
-    Lvlfa reduce_size_by_simulation(const Lvlfa& aut, StateRenaming &state_renaming) {
-        Lvlfa result;
+    Nft reduce_size_by_simulation(const Nft& aut, StateRenaming &state_renaming) {
+        Nft result;
         const auto sim_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
@@ -115,7 +115,7 @@ namespace {
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
-Lvlfa mata::lvlfa::remove_epsilon(const Lvlfa& aut, Symbol epsilon) {
+Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
     std::unordered_map<State, StateSet> eps_closure;
 
@@ -159,7 +159,7 @@ Lvlfa mata::lvlfa::remove_epsilon(const Lvlfa& aut, Symbol epsilon) {
     }
 
     // Construct the automaton without epsilon transitions.
-    Lvlfa result{ Delta{}, aut.initial, aut.final, aut.levels, aut.levels_cnt, aut.alphabet };
+    Nft result{ Delta{}, aut.initial, aut.final, aut.levels, aut.levels_cnt, aut.alphabet };
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
@@ -176,10 +176,10 @@ Lvlfa mata::lvlfa::remove_epsilon(const Lvlfa& aut, Symbol epsilon) {
     return result;
 }
 
-Lvlfa mata::lvlfa::fragile_revert(const Lvlfa& aut) {
+Nft mata::nft::fragile_revert(const Nft& aut) {
     const size_t num_of_states{ aut.num_of_states() };
 
-    Lvlfa result(num_of_states);
+    Nft result(num_of_states);
 
     result.initial = aut.final;
     result.final = aut.initial;
@@ -298,8 +298,8 @@ Lvlfa mata::lvlfa::fragile_revert(const Lvlfa& aut) {
     return result;
 }
 
-Lvlfa mata::lvlfa::simple_revert(const Lvlfa& aut) {
-    Lvlfa result;
+Nft mata::nft::simple_revert(const Nft& aut) {
+    Nft result;
     result.clear();
 
     const size_t num_of_states{ aut.num_of_states() };
@@ -320,10 +320,10 @@ Lvlfa mata::lvlfa::simple_revert(const Lvlfa& aut) {
 }
 
 //not so great, can be removed
-Lvlfa mata::lvlfa::somewhat_simple_revert(const Lvlfa& aut) {
+Nft mata::nft::somewhat_simple_revert(const Nft& aut) {
     const size_t num_of_states{ aut.num_of_states() };
 
-    Lvlfa result(num_of_states);
+    Nft result(num_of_states);
 
     result.initial = aut.final;
     result.final = aut.initial;
@@ -355,13 +355,13 @@ Lvlfa mata::lvlfa::somewhat_simple_revert(const Lvlfa& aut) {
     return result;
 }
 
-Lvlfa mata::lvlfa::revert(const Lvlfa& aut) {
+Nft mata::nft::revert(const Nft& aut) {
     return simple_revert(aut);
     //return fragile_revert(aut);
     //return somewhat_simple_revert(aut);
 }
 
-std::pair<Run, bool> mata::lvlfa::Lvlfa::get_word_for_path(const Run& run) const {
+std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     if (run.path.empty()) { return {{}, true}; }
 
     Run word;
@@ -388,7 +388,7 @@ std::pair<Run, bool> mata::lvlfa::Lvlfa::get_word_for_path(const Run& run) const
 }
 
 //TODO: this is not efficient
-bool mata::lvlfa::Lvlfa::is_in_lang(const Run& run) const {
+bool mata::nft::Nft::is_in_lang(const Run& run) const {
     StateSet current_post(this->initial);
     for (const Symbol sym : run.word) {
         current_post = this->post(current_post, sym);
@@ -399,7 +399,7 @@ bool mata::lvlfa::Lvlfa::is_in_lang(const Run& run) const {
 
 /// Checks whether the prefix of a string is in the language of an automaton
 // TODO: slow and it should share code with is_in_lang
-bool mata::lvlfa::Lvlfa::is_prfx_in_lang(const Run& run) const {
+bool mata::nft::Nft::is_prfx_in_lang(const Run& run) const {
     StateSet current_post{ this->initial };
     for (const Symbol sym : run.word) {
         if (this->final.intersects_with(current_post)) { return true; }
@@ -409,16 +409,16 @@ bool mata::lvlfa::Lvlfa::is_prfx_in_lang(const Run& run) const {
     return this->final.intersects_with(current_post);
 }
 
-Lvlfa mata::lvlfa::algorithms::minimize_brzozowski(const Lvlfa& aut) {
+Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     return determinize(revert(determinize(revert(aut))));
 }
 
-Lvlfa mata::lvlfa::minimize(
-                const Lvlfa& aut,
+Nft mata::nft::minimize(
+                const Nft& aut,
                 const ParameterMap& params)
 {
-    Lvlfa result;
+    Nft result;
     // setting the default algorithm
     decltype(algorithms::minimize_brzozowski)* algo = algorithms::minimize_brzozowski;
     if (!haskey(params, "algorithm")) {
@@ -437,12 +437,12 @@ Lvlfa mata::lvlfa::minimize(
     return algo(aut);
 }
 
-Lvlfa mata::lvlfa::uni(const Lvlfa &lhs, const Lvlfa &rhs) {
-    Lvlfa union_lvlfa{ lhs };
-    return union_lvlfa.uni(rhs);
+Nft mata::nft::uni(const Nft &lhs, const Nft &rhs) {
+    Nft union_nft{ lhs };
+    return union_nft.uni(rhs);
 }
 
-Lvlfa& Lvlfa::uni(const Lvlfa& aut) {
+Nft& Nft::uni(const Nft& aut) {
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
@@ -450,8 +450,8 @@ Lvlfa& Lvlfa::uni(const Lvlfa& aut) {
 
     // copy the information about aut to save the case when this is the same object as aut.
     size_t aut_states = aut.num_of_states();
-    SparseSet<mata::lvlfa::State> aut_final_copy = aut.final;
-    SparseSet<mata::lvlfa::State> aut_initial_copy = aut.initial;
+    SparseSet<mata::nft::State> aut_final_copy = aut.final;
+    SparseSet<mata::nft::State> aut_initial_copy = aut.initial;
 
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
@@ -470,7 +470,7 @@ Lvlfa& Lvlfa::uni(const Lvlfa& aut) {
     return *this;
 }
 
-Simlib::Util::BinaryRelation mata::lvlfa::algorithms::compute_relation(const Lvlfa& aut, const ParameterMap& params) {
+Simlib::Util::BinaryRelation mata::nft::algorithms::compute_relation(const Nft& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"relation\" key in the \"params\" argument; "
@@ -493,14 +493,14 @@ Simlib::Util::BinaryRelation mata::lvlfa::algorithms::compute_relation(const Lvl
     }
 }
 
-Lvlfa mata::lvlfa::reduce(const Lvlfa &aut, StateRenaming *state_renaming, const ParameterMap& params) {
+Nft mata::nft::reduce(const Nft &aut, StateRenaming *state_renaming, const ParameterMap& params) {
     if (!haskey(params, "algorithm")) {
         throw std::runtime_error(std::to_string(__func__) +
                                  " requires setting the \"algorithm\" key in the \"params\" argument; "
                                  "received: " + std::to_string(params));
     }
 
-    Lvlfa result;
+    Nft result;
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
@@ -517,11 +517,11 @@ Lvlfa mata::lvlfa::reduce(const Lvlfa &aut, StateRenaming *state_renaming, const
     return result;
 }
 
-Lvlfa mata::lvlfa::determinize(
-        const Lvlfa&  aut,
+Nft mata::nft::determinize(
+        const Nft&  aut,
         std::unordered_map<StateSet, State> *subset_map) {
 
-    Lvlfa result;
+    Nft result;
     //assuming all sets targets are non-empty
     std::vector<std::pair<State, StateSet>> worklist;
     bool deallocate_subset_map = false;
@@ -593,16 +593,16 @@ Lvlfa mata::lvlfa::determinize(
     return result;
 }
 
-std::ostream& std::operator<<(std::ostream& os, const Lvlfa& lvlfa) {
-    lvlfa.print_to_mata(os);
+std::ostream& std::operator<<(std::ostream& os, const Nft& nft) {
+    nft.print_to_mata(os);
     return os;
 }
 
-Run mata::lvlfa::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
+Run mata::nft::encode_word(const Alphabet* alphabet, const std::vector<std::string>& input) {
     return mata::nfa::encode_word(alphabet, input);
 }
 
-std::set<mata::Word> mata::lvlfa::Lvlfa::get_words(unsigned max_length) {
+std::set<mata::Word> mata::nft::Nft::get_words(unsigned max_length) {
     std::set<mata::Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s

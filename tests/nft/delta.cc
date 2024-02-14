@@ -3,17 +3,17 @@
 #include "utils.hh"
 
 #include "mata/alphabet.hh"
-#include "mata/lvlfa/types.hh"
-#include "mata/lvlfa/delta.hh"
-#include "mata/lvlfa/lvlfa.hh"
+#include "mata/nft/types.hh"
+#include "mata/nft/delta.hh"
+#include "mata/nft/nft.hh"
 
 #include <catch2/catch.hpp>
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 
 using Symbol = mata::Symbol;
 
-TEST_CASE("mata::lvlfa::SymbolPost") {
+TEST_CASE("mata::nft::SymbolPost") {
     CHECK(SymbolPost{ 0, StateSet{} } == SymbolPost{ 0, StateSet{ 0, 1 } });
     CHECK(SymbolPost{ 1, StateSet{} } != SymbolPost{ 0, StateSet{} });
     CHECK(SymbolPost{ 0, StateSet{ 1 } } < SymbolPost{ 1, StateSet{} });
@@ -24,8 +24,8 @@ TEST_CASE("mata::lvlfa::SymbolPost") {
     CHECK(SymbolPost{ 1, StateSet{ 0 } } >= SymbolPost{ 0, StateSet{ 1 } });
 }
 
-TEST_CASE("mata::lvlfa::Delta::state_post()") {
-    Lvlfa aut{};
+TEST_CASE("mata::nft::Delta::state_post()") {
+    Nft aut{};
 
     SECTION("Add new states within the limit") {
         aut.add_state(19);
@@ -77,69 +77,69 @@ TEST_CASE("mata::lvlfa::Delta::state_post()") {
     }
 }
 
-TEST_CASE("mata::lvlfa::Delta::contains()") {
-    Lvlfa lvlfa;
-    CHECK(!lvlfa.delta.contains(0, 1, 0));
-    CHECK(!lvlfa.delta.contains(Transition{ 0, 1, 0 }));
-    lvlfa.delta.add(0, 1, 0);
-    CHECK(lvlfa.delta.contains(0, 1, 0));
-    CHECK(lvlfa.delta.contains(Transition{ 0, 1, 0 }));
+TEST_CASE("mata::nft::Delta::contains()") {
+    Nft nft;
+    CHECK(!nft.delta.contains(0, 1, 0));
+    CHECK(!nft.delta.contains(Transition{ 0, 1, 0 }));
+    nft.delta.add(0, 1, 0);
+    CHECK(nft.delta.contains(0, 1, 0));
+    CHECK(nft.delta.contains(Transition{ 0, 1, 0 }));
 }
 
-TEST_CASE("mata::lvlfa::Delta::remove()") {
-    Lvlfa lvlfa;
+TEST_CASE("mata::nft::Delta::remove()") {
+    Nft nft;
 
     SECTION("Simple remove") {
-        lvlfa.delta.add(0, 1, 0);
-        CHECK_NOTHROW(lvlfa.delta.remove(3, 5, 6));
-        CHECK_NOTHROW(lvlfa.delta.remove(0, 1, 0));
-        CHECK(lvlfa.delta.empty());
-        lvlfa.delta.add(10, 1, 0);
-        CHECK_THROWS_AS(lvlfa.delta.remove(3, 5, 6), std::invalid_argument);
+        nft.delta.add(0, 1, 0);
+        CHECK_NOTHROW(nft.delta.remove(3, 5, 6));
+        CHECK_NOTHROW(nft.delta.remove(0, 1, 0));
+        CHECK(nft.delta.empty());
+        nft.delta.add(10, 1, 0);
+        CHECK_THROWS_AS(nft.delta.remove(3, 5, 6), std::invalid_argument);
     }
 }
 
-TEST_CASE("mata::lvlfa::Delta::mutable_post()") {
-    Lvlfa lvlfa;
+TEST_CASE("mata::nft::Delta::mutable_post()") {
+    Nft nft;
 
     SECTION("Default initialized") {
-        CHECK(lvlfa.delta.num_of_states() == 0);
-        CHECK(!lvlfa.delta.uses_state(0));
-        CHECK(lvlfa.delta.mutable_state_post(0).empty());
-        CHECK(lvlfa.delta.num_of_states() == 1);
-        CHECK(lvlfa.delta.uses_state(0));
+        CHECK(nft.delta.num_of_states() == 0);
+        CHECK(!nft.delta.uses_state(0));
+        CHECK(nft.delta.mutable_state_post(0).empty());
+        CHECK(nft.delta.num_of_states() == 1);
+        CHECK(nft.delta.uses_state(0));
 
-        CHECK(lvlfa.delta.mutable_state_post(9).empty());
-        CHECK(lvlfa.delta.num_of_states() == 10);
-        CHECK(lvlfa.delta.uses_state(1));
-        CHECK(lvlfa.delta.uses_state(2));
-        CHECK(lvlfa.delta.uses_state(9));
-        CHECK(!lvlfa.delta.uses_state(10));
+        CHECK(nft.delta.mutable_state_post(9).empty());
+        CHECK(nft.delta.num_of_states() == 10);
+        CHECK(nft.delta.uses_state(1));
+        CHECK(nft.delta.uses_state(2));
+        CHECK(nft.delta.uses_state(9));
+        CHECK(!nft.delta.uses_state(10));
 
-        CHECK(lvlfa.delta.mutable_state_post(9).empty());
-        CHECK(lvlfa.delta.num_of_states() == 10);
-        CHECK(lvlfa.delta.uses_state(9));
-        CHECK(!lvlfa.delta.uses_state(10));
+        CHECK(nft.delta.mutable_state_post(9).empty());
+        CHECK(nft.delta.num_of_states() == 10);
+        CHECK(nft.delta.uses_state(9));
+        CHECK(!nft.delta.uses_state(10));
     }
 }
 
-TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
-    Lvlfa lvlfa;
+TEST_CASE("mata::nft::StatePost iteration over moves") {
+    Nft nft;
     std::vector<Move> iterated_moves{};
     std::vector<Move> expected_moves{};
     StatePost state_post{};
 
-    SECTION("Simple LVLFA") {
-        lvlfa.initial.insert(0);
-        lvlfa.final.insert(3);
-        lvlfa.delta.add(0, 1, 1);
-        lvlfa.delta.add(0, 2, 1);
-        lvlfa.delta.add(0, 5, 1);
-        lvlfa.delta.add(1, 3, 2);
-        lvlfa.delta.add(2, 0, 1);
-        lvlfa.delta.add(2, 0, 3);
+    SECTION("Simple NFT") {
+        nft.initial.insert(0);
+        nft.final.insert(3);
+        nft.delta.add(0, 1, 1);
+        nft.delta.add(0, 2, 1);
+        nft.delta.add(0, 5, 1);
+        nft.delta.add(1, 3, 2);
+        nft.delta.add(2, 0, 1);
+        nft.delta.add(2, 0, 3);
 
-        state_post = lvlfa.delta.state_post(0);
+        state_post = nft.delta.state_post(0);
         expected_moves = std::vector<Move>{ { 1, 1 }, { 2, 1 }, { 5, 1 } };
         StatePost::Moves moves{ state_post.moves() };
         iterated_moves.clear();
@@ -158,7 +158,7 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         StatePost::Moves epsilon_moves{ state_post.moves_epsilons() };
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-        state_post = lvlfa.delta.state_post(1);
+        state_post = nft.delta.state_post(1);
         moves = state_post.moves();
         StatePost::Moves moves_custom;
         moves_custom = moves;
@@ -181,7 +181,7 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-        state_post = lvlfa.delta.state_post(2);
+        state_post = nft.delta.state_post(2);
         moves = state_post.moves();
         iterated_moves.clear();
         for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
@@ -197,7 +197,7 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-        state_post = lvlfa.delta.state_post(3);
+        state_post = nft.delta.state_post(3);
         moves = state_post.moves();
         iterated_moves.clear();
         for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
@@ -213,7 +213,7 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-        state_post = lvlfa.delta.state_post(4);
+        state_post = nft.delta.state_post(4);
         moves = state_post.moves();
         iterated_moves.clear();
         for (auto move_it{ moves.begin() }; move_it != moves.end(); ++move_it) {
@@ -228,36 +228,36 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
 
-        lvlfa.delta.add(0, EPSILON, 2);
-        state_post = lvlfa.delta.state_post(0);
+        nft.delta.add(0, EPSILON, 2);
+        state_post = nft.delta.state_post(0);
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 2 } });
-        lvlfa.delta.add(1, EPSILON, 3);
-        state_post = lvlfa.delta.state_post(1);
+        nft.delta.add(1, EPSILON, 3);
+        state_post = nft.delta.state_post(1);
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 3 } });
-        lvlfa.delta.add(4, EPSILON, 4);
-        state_post = lvlfa.delta.state_post(4);
+        nft.delta.add(4, EPSILON, 4);
+        state_post = nft.delta.state_post(4);
         epsilon_moves = state_post.moves_epsilons();
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 4 } });
 
-        state_post = lvlfa.delta.state_post(0);
+        state_post = nft.delta.state_post(0);
         epsilon_moves = state_post.moves_epsilons(3);
         iterated_moves.clear();
         for (const Move& move: epsilon_moves) { iterated_moves.push_back(move); }
         CHECK(iterated_moves == std::vector<Move>{ { 5, 1 }, { EPSILON, 2 }});
-        state_post = lvlfa.delta.state_post(1);
+        state_post = nft.delta.state_post(1);
         epsilon_moves = state_post.moves_epsilons(3);
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { 3, 2 }, { EPSILON, 3 } });
 
-        state_post = lvlfa.delta.state_post(2);
+        state_post = nft.delta.state_post(2);
         epsilon_moves = state_post.moves_epsilons(3);
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() }.empty());
-        state_post = lvlfa.delta.state_post(4);
+        state_post = nft.delta.state_post(4);
         epsilon_moves = state_post.moves_epsilons(3);
         CHECK(std::vector<Move>{ epsilon_moves.begin(), epsilon_moves.end() } == std::vector<Move>{ { EPSILON, 4 } });
 
-        state_post = lvlfa.delta.state_post(0);
+        state_post = nft.delta.state_post(0);
         StatePost::Moves symbol_moves = state_post.moves_symbols(3);
         iterated_moves.clear();
         for (const Move& move: symbol_moves) { iterated_moves.push_back(move); }
@@ -267,54 +267,54 @@ TEST_CASE("mata::lvlfa::StatePost iteration over moves") {
         for (const Move& move: symbol_moves) { iterated_moves.push_back(move); }
         CHECK(iterated_moves.empty());
 
-        state_post = lvlfa.delta.state_post(1);
+        state_post = nft.delta.state_post(1);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 3, 2 } });
-        state_post = lvlfa.delta.state_post(2);
+        state_post = nft.delta.state_post(2);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() } == std::vector<Move>{ { 0, 1 }, { 0 , 3 } });
-        state_post = lvlfa.delta.state_post(4);
+        state_post = nft.delta.state_post(4);
         symbol_moves = state_post.moves_symbols(3);
         CHECK(std::vector<Move>{ symbol_moves.begin(), symbol_moves.end() }.empty());
 
         // Create custom moves iterator.
-        state_post = lvlfa.delta[0];
+        state_post = nft.delta[0];
         moves = { state_post, state_post.cbegin(), state_post.cbegin() + 2 };
         iterated_moves = { moves.begin(), moves.end() };
         CHECK(iterated_moves == std::vector<Move>{ { 1, 1 }, { 2, 1 } });
 
-        state_post = lvlfa.delta[20];
+        state_post = nft.delta[20];
         moves = { state_post, state_post.cbegin(), state_post.cend() };
         iterated_moves = { moves.begin(), moves.end() };
         CHECK(iterated_moves.empty());
     }
 }
 
-TEST_CASE("mata::lvlfa::Delta iteration over transitions") {
-    Lvlfa lvlfa;
+TEST_CASE("mata::nft::Delta iteration over transitions") {
+    Nft nft;
     std::vector<Transition> iterated_transitions{};
     std::vector<Transition> expected_transitions{};
 
     SECTION("empty automaton") {
-        Delta::Transitions transitions{ lvlfa.delta.transitions() };
+        Delta::Transitions transitions{ nft.delta.transitions() };
         CHECK(transitions.begin() == transitions.end());
-        Delta::Transitions::const_iterator transition_it{ lvlfa.delta };
+        Delta::Transitions::const_iterator transition_it{ nft.delta };
         CHECK(transition_it == transitions.end());
-        transition_it = { lvlfa.delta, 0 };
+        transition_it = { nft.delta, 0 };
         CHECK(transition_it == transitions.end());
     }
 
-    SECTION("Simple LVLFA") {
-        lvlfa.initial.insert(0);
-        lvlfa.final.insert(3);
-        lvlfa.delta.add(0, 1, 1);
-        lvlfa.delta.add(0, 2, 1);
-        lvlfa.delta.add(0, 5, 1);
-        lvlfa.delta.add(1, 3, 2);
-        lvlfa.delta.add(2, 0, 1);
-        lvlfa.delta.add(2, 0, 3);
+    SECTION("Simple NFT") {
+        nft.initial.insert(0);
+        nft.final.insert(3);
+        nft.delta.add(0, 1, 1);
+        nft.delta.add(0, 2, 1);
+        nft.delta.add(0, 5, 1);
+        nft.delta.add(1, 3, 2);
+        nft.delta.add(2, 0, 1);
+        nft.delta.add(2, 0, 3);
 
-        Delta::Transitions transitions{ lvlfa.delta.transitions() };
+        Delta::Transitions transitions{ nft.delta.transitions() };
         iterated_transitions.clear();
         for (auto transitions_it{ transitions.begin() };
              transitions_it != transitions.end(); ++transitions_it) {
@@ -329,10 +329,10 @@ TEST_CASE("mata::lvlfa::Delta iteration over transitions") {
         CHECK(iterated_transitions == expected_transitions);
 
         iterated_transitions.clear();
-        for (const Transition& transition: lvlfa.delta.transitions()) { iterated_transitions.push_back(transition); }
+        for (const Transition& transition: nft.delta.transitions()) { iterated_transitions.push_back(transition); }
         CHECK(iterated_transitions == expected_transitions);
 
-        Delta::Transitions::const_iterator transitions_it{ lvlfa.delta.transitions().begin() };
+        Delta::Transitions::const_iterator transitions_it{ nft.delta.transitions().begin() };
         CHECK(*transitions_it == Transition{ 0, 1, 1 });
         transitions_it++;
         CHECK(*transitions_it == Transition{ 0, 2, 1 });
@@ -340,9 +340,9 @@ TEST_CASE("mata::lvlfa::Delta iteration over transitions") {
         transitions_it++;
         CHECK(*transitions_it == Transition{ 1, 3, 2 });
 
-        Delta::Transitions::const_iterator transitions_from_1_to_end_it{ lvlfa.delta, 1 };
+        Delta::Transitions::const_iterator transitions_from_1_to_end_it{ nft.delta, 1 };
         iterated_transitions.clear();
-        while (transitions_from_1_to_end_it != lvlfa.delta.transitions().end()) {
+        while (transitions_from_1_to_end_it != nft.delta.transitions().end()) {
             iterated_transitions.push_back(*transitions_from_1_to_end_it);
             transitions_from_1_to_end_it++;
         }
@@ -352,11 +352,11 @@ TEST_CASE("mata::lvlfa::Delta iteration over transitions") {
 
     SECTION("Sparse automaton") {
         const size_t state_num = 'r'+1;
-        lvlfa.delta.reserve(state_num);
+        nft.delta.reserve(state_num);
 
-        lvlfa.delta.add('q', 'a', 'r');
-        lvlfa.delta.add('q', 'b', 'r');
-        const Delta::Transitions transitions{ lvlfa.delta.transitions() };
+        nft.delta.add('q', 'a', 'r');
+        nft.delta.add('q', 'b', 'r');
+        const Delta::Transitions transitions{ nft.delta.transitions() };
         Delta::Transitions::const_iterator it{ transitions.begin() };
         Delta::Transitions::const_iterator jt{ transitions.begin() };
         CHECK(it == jt);
@@ -379,43 +379,43 @@ TEST_CASE("mata::lvlfa::Delta iteration over transitions") {
     }
 }
 
-TEST_CASE("mata::lvlfa::Delta::operator=()") {
-    Lvlfa lvlfa{};
-    lvlfa.initial.insert(0);
-    lvlfa.final.insert(1);
-    lvlfa.delta.add(0, 'a', 1);
+TEST_CASE("mata::nft::Delta::operator=()") {
+    Nft nft{};
+    nft.initial.insert(0);
+    nft.final.insert(1);
+    nft.delta.add(0, 'a', 1);
 
-    Lvlfa copied_lvlfa{ lvlfa };
-    lvlfa.delta.add(1, 'b', 0);
-    CHECK(lvlfa.delta.num_of_transitions() == 2);
-    CHECK(copied_lvlfa.delta.num_of_transitions() == 1);
+    Nft copied_nft{ nft };
+    nft.delta.add(1, 'b', 0);
+    CHECK(nft.delta.num_of_transitions() == 2);
+    CHECK(copied_nft.delta.num_of_transitions() == 1);
 }
 
-TEST_CASE("mata::lvlfa::StatePost::Moves") {
-    Lvlfa lvlfa{};
-    lvlfa.initial.insert(0);
-    lvlfa.final.insert(5);
-    lvlfa.delta.add(0, 'a', 1);
-    lvlfa.delta.add(1, 'b', 2);
-    lvlfa.delta.add(1, 'c', 2);
-    lvlfa.delta.add(1, 'd', 2);
-    lvlfa.delta.add(2, 'e', 3);
-    lvlfa.delta.add(3, 'e', 4);
-    lvlfa.delta.add(4, 'f', 5);
+TEST_CASE("mata::nft::StatePost::Moves") {
+    Nft nft{};
+    nft.initial.insert(0);
+    nft.final.insert(5);
+    nft.delta.add(0, 'a', 1);
+    nft.delta.add(1, 'b', 2);
+    nft.delta.add(1, 'c', 2);
+    nft.delta.add(1, 'd', 2);
+    nft.delta.add(2, 'e', 3);
+    nft.delta.add(3, 'e', 4);
+    nft.delta.add(4, 'f', 5);
     // TODO: rewrite in a check of moves.
-    StatePost::Moves moves_from_source{ lvlfa.delta[0].moves() };
+    StatePost::Moves moves_from_source{ nft.delta[0].moves() };
 
     CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } == std::vector<Move>{ { 'a', 1 }});
-    moves_from_source = lvlfa.delta[1].moves();
+    moves_from_source = nft.delta[1].moves();
     CHECK(std::vector<Move>{ moves_from_source.begin(), moves_from_source.end() } ==
         std::vector<Move>{ { 'b', 2 }, { 'c', 2 }, { 'd', 2 } });
     StatePost::Moves::const_iterator move_incremented_it{ moves_from_source.begin() };
     move_incremented_it++;
     CHECK(*move_incremented_it == Move{ 'c', 2 });
-    CHECK(*StatePost::Moves::const_iterator{ lvlfa.delta.state_post(1) } == Move{ 'b', 2 });
+    CHECK(*StatePost::Moves::const_iterator{ nft.delta.state_post(1) } == Move{ 'b', 2 });
     CHECK(move_incremented_it != moves_from_source.begin());
     CHECK(move_incremented_it == ++moves_from_source.begin());
-    StatePost::Moves moves_from_source_copy_constructed{ lvlfa.delta[12].moves() };
+    StatePost::Moves moves_from_source_copy_constructed{ nft.delta[12].moves() };
     CHECK(
         std::vector<Move>{ moves_from_source_copy_constructed.begin(), moves_from_source_copy_constructed.end() }
             .empty()
@@ -423,7 +423,7 @@ TEST_CASE("mata::lvlfa::StatePost::Moves") {
 
 }
 
-TEST_CASE("mata::lvlfa::Delta::operator==()") {
+TEST_CASE("mata::nft::Delta::operator==()") {
     Delta delta{};
     Delta delta2{};
     CHECK(delta == delta2);
@@ -444,7 +444,7 @@ TEST_CASE("mata::lvlfa::Delta::operator==()") {
     CHECK(delta == delta2);
 }
 
-TEST_CASE("mata::lvlfa::Delta::add_symbols_to()") {
+TEST_CASE("mata::nft::Delta::add_symbols_to()") {
     mata::OnTheFlyAlphabet empty_alphabet{};
     mata::OnTheFlyAlphabet alphabet{};
     Delta delta{};
