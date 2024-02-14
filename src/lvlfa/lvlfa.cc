@@ -25,7 +25,6 @@ const std::string mata::lvlfa::TYPE_NFA = "LVLFA";
 
 Lvlfa& Lvlfa::trim(StateRenaming* state_renaming) {
 
-
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
     useful_states.clear();
