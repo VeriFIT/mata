@@ -21,6 +21,7 @@ add_executable(tests
 		lvlfa/lvlfa-intersection.cc
 		lvlfa/lvlfa-profiling.cc
 		lvlfa/lvlfa-plumbing.cc
+		lvlfa/strings.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
