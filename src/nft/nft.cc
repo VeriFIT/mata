@@ -1,4 +1,4 @@
-/* lvlfa.cc -- operations for NFA
+/* nft.cc -- operations for NFA
  */
 
 #include <algorithm>
@@ -8,22 +8,22 @@
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using namespace mata::utils;
-using namespace mata::lvlfa;
+using namespace mata::nft;
 using mata::Symbol;
 using mata::Word;
 using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-const std::string mata::lvlfa::TYPE_NFA = "LVLFA";
+const std::string mata::nft::TYPE_NFT = "NFT";
 
 
-Lvlfa& Lvlfa::trim(StateRenaming* state_renaming) {
+Nft& Nft::trim(StateRenaming* state_renaming) {
 
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
@@ -76,13 +76,13 @@ Lvlfa& Lvlfa::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-std::string Lvlfa::print_to_DOT() const {
+std::string Nft::print_to_DOT() const {
     std::stringstream output;
     print_to_DOT(output);
     return output.str();
 }
 
-void Lvlfa::print_to_DOT(std::ostream &output) const {
+void Nft::print_to_DOT(std::ostream &output) const {
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
@@ -113,14 +113,14 @@ void Lvlfa::print_to_DOT(std::ostream &output) const {
     output << "}" << std::endl;
 }
 
-std::string Lvlfa::print_to_mata() const {
+std::string Nft::print_to_mata() const {
     std::stringstream output;
     print_to_mata(output);
     return output.str();
 }
 
-void Lvlfa::print_to_mata(std::ostream &output) const {
-    output << "@LVLFA-explicit" << std::endl
+void Nft::print_to_mata(std::ostream &output) const {
+    output << "@NFT-explicit" << std::endl
            << "%Alphabet-auto" << std::endl;
            // TODO should be this, but we cannot parse %Alphabet-numbers yet
            //<< "%Alphabet-numbers" << std::endl;
@@ -168,15 +168,15 @@ void Lvlfa::print_to_mata(std::ostream &output) const {
     }
 }
 
-Lvlfa Lvlfa::get_one_letter_aut(Symbol abstract_symbol) const {
-    return Lvlfa(mata::nfa::Nfa::get_one_letter_aut(abstract_symbol));
+Nft Nft::get_one_letter_aut(Symbol abstract_symbol) const {
+    return Nft(mata::nfa::Nfa::get_one_letter_aut(abstract_symbol));
 }
 
-void Lvlfa::get_one_letter_aut(Lvlfa& result) const {
+void Nft::get_one_letter_aut(Nft& result) const {
     result = get_one_letter_aut();
 }
 
-void Lvlfa::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) {
+void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) {
     bool dcare_for_dcare = dcare_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
     std::vector<Transition> transitions_to_del;
     std::vector<Transition> transitions_to_add;
@@ -238,17 +238,17 @@ void Lvlfa::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacement
     }
 }
 
-Lvlfa Lvlfa::get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) const {
-    Lvlfa result{ *this };
+Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) const {
+    Nft result{ *this };
     result.make_one_level_aut(dcare_replacements);
     return result;
 }
 
-void Lvlfa::get_one_level_aut(Lvlfa& result, const utils::OrdVector<Symbol> &dcare_replacements) const {
+void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dcare_replacements) const {
     result = get_one_level_aut(dcare_replacements);
 }
 
-Lvlfa& Lvlfa::operator=(Lvlfa&& other) noexcept {
+Nft& Nft::operator=(Nft&& other) noexcept {
     if (this != &other) {
         mata::nfa::Nfa::operator=(other);
         levels = std::move(other.levels);
@@ -257,21 +257,21 @@ Lvlfa& Lvlfa::operator=(Lvlfa&& other) noexcept {
     return *this;
 }
 
-State Lvlfa::add_state() {
+State Nft::add_state() {
     levels.push_back(0);
     return mata::nfa::Nfa::add_state();
 }
 
-State Lvlfa::add_state(State state) {
+State Nft::add_state(State state) {
     levels.push_back(0);
     return mata::nfa::Nfa::add_state(state);
 }
 
-void Lvlfa::clear() {
+void Nft::clear() {
     mata::nfa::Nfa::clear();
     levels.clear();
 }
 
-bool Lvlfa::is_identical(const Lvlfa& aut) const {
+bool Nft::is_identical(const Nft& aut) const {
     return levels_cnt == aut.levels_cnt && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
 }

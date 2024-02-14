@@ -1,18 +1,18 @@
 // TODO: Insert file header.
 
-#ifndef MATA_LVLFA_DELTA_HH
-#define MATA_LVLFA_DELTA_HH
+#ifndef MATA_NFT_DELTA_HH
+#define MATA_NFT_DELTA_HH
 
 #include "mata/utils/sparse-set.hh"
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/alphabet.hh"
-#include "mata/lvlfa/types.hh"
+#include "mata/nft/types.hh"
 
 #include "mata/nfa/delta.hh"
 
 #include <iterator>
 
-namespace mata::lvlfa {
+namespace mata::nft {
 
 /// A single transition in Delta represented as a triple(source, symbol, target).
 using Transition = mata::nfa::Transition;
@@ -60,6 +60,6 @@ using SynchronizedExistentialSymbolPostIterator = mata::nfa::SynchronizedExisten
  */
 using Delta = mata::nfa::Delta;
 
-} // namespace mata::lvlfa.
+} // namespace mata::nft.
 
 #endif //MATA_DELTA_HH

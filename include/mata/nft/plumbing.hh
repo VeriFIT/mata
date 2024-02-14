@@ -1,23 +1,23 @@
 /* nfa-plumbings.hh -- Wrapping up different supporting functions.
  */
 
-#ifndef MATA_LVLFA_PLUMBING_HH_
-#define MATA_LVLFA_PLUMBING_HH_
+#ifndef MATA_NFT_PLUMBING_HH_
+#define MATA_NFT_PLUMBING_HH_
 
 
-#include "lvlfa.hh"
+#include "nft.hh"
 #include "builder.hh"
 
 
-using namespace mata::lvlfa::builder;
+using namespace mata::nft::builder;
 
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
  *
  * In particular, this mostly includes operations and checks, that do not return Automaton,
- * but instead take resulting automaton as pointer (e.g. `void f(Lvlfa* result, const Lvlfa& lhs, const Lvlfa& rhs)`).
+ * but instead take resulting automaton as pointer (e.g. `void f(Nft* result, const Nft& lhs, const Nft& rhs)`).
  */
-namespace mata::lvlfa::plumbing {
+namespace mata::nft::plumbing {
 
 
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
@@ -31,38 +31,38 @@ inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
 }
 
 inline void complement(
-        Lvlfa*               result,
-        const Lvlfa&         aut,
+        Nft*               result,
+        const Nft&         aut,
         const Alphabet&    alphabet,
         const ParameterMap&  params = {{ "algorithm", "classical"},
                                        { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Lvlfa* res, const Lvlfa &aut) { *res = minimize(aut); }
+inline void minimize(Nft* res, const Nft &aut) { *res = minimize(aut); }
 
-inline void determinize(Lvlfa* result, const Lvlfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
+inline void determinize(Nft* result, const Nft& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);
 }
 
-inline void reduce(Lvlfa* result, const Lvlfa &aut, StateRenaming *state_renaming = nullptr,
+inline void reduce(Nft* result, const Nft &aut, StateRenaming *state_renaming = nullptr,
                    const ParameterMap& params = {{ "algorithm", "simulation"}}) {
     *result = reduce(aut, state_renaming, params);
 }
 
-inline void revert(Lvlfa* result, const Lvlfa& aut) { *result = revert(aut); }
+inline void revert(Nft* result, const Nft& aut) { *result = revert(aut); }
 
-inline void remove_epsilon(Lvlfa* result, const Lvlfa& aut, Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
+inline void remove_epsilon(Nft* result, const Nft& aut, Symbol epsilon = EPSILON) { *result = remove_epsilon(aut, epsilon); }
 
 /** Loads an automaton from Parsed object */
 template <class ParsedObject>
-void construct(Lvlfa* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
+void construct(Nft* result, const ParsedObject& parsed, Alphabet* alphabet = nullptr,
                NameStateMap* state_map = nullptr) {
     OnTheFlyAlphabet tmp_alphabet{};
     if (!alphabet) { alphabet = &tmp_alphabet; }
     *result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void uni(Lvlfa *unionAutomaton, const Lvlfa &lhs, const Lvlfa &rhs) { *unionAutomaton = uni(lhs, rhs); }
+inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAutomaton = uni(lhs, rhs); }
 
 /**
  * @brief Compute intersection of two NFAs.
@@ -79,7 +79,7 @@ inline void uni(Lvlfa *unionAutomaton, const Lvlfa &lhs, const Lvlfa &rhs) { *un
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
  */
-inline void intersection(Lvlfa* res, const Lvlfa& lhs, const Lvlfa& rhs, Symbol first_epsilon = EPSILON,
+inline void intersection(Nft* res, const Nft& lhs, const Nft& rhs, Symbol first_epsilon = EPSILON,
                   std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
     *res = intersection(lhs, rhs, first_epsilon, prod_map);
 }
@@ -89,7 +89,7 @@ inline void intersection(Lvlfa* res, const Lvlfa& lhs, const Lvlfa& rhs, Symbol 
  * @param[out] lhs_result_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_result_state_renaming Map mapping rhs states to result states.
  */
-inline void concatenate(Lvlfa* res, const Lvlfa& lhs, const Lvlfa& rhs, bool use_epsilon = false,
+inline void concatenate(Nft* res, const Nft& lhs, const Nft& rhs, bool use_epsilon = false,
                  StateRenaming* lhs_result_state_renaming = nullptr, StateRenaming* rhs_result_state_renaming = nullptr) {
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }

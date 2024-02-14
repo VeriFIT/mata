@@ -1,28 +1,28 @@
-/* lvlfa-concatenation.cc -- Concatenation of LVLFAs
+/* nft-concatenation.cc -- Concatenation of NFTs
  */
 
 // MATA headers
-#include "mata/lvlfa/lvlfa.hh"
-#include "mata/lvlfa/algorithms.hh"
+#include "mata/nft/nft.hh"
+#include "mata/nft/algorithms.hh"
 
-using namespace mata::lvlfa;
+using namespace mata::nft;
 
-namespace mata::lvlfa {
+namespace mata::nft {
 
-Lvlfa concatenate(const Lvlfa& lhs, const Lvlfa& rhs, bool use_epsilon,
+Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon,
                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     return algorithms::concatenate_eps(lhs, rhs, EPSILON, use_epsilon, lhs_state_renaming, rhs_state_renaming);
 }
 
-Lvlfa& Lvlfa::concatenate(const Lvlfa& aut) {
+Nft& Nft::concatenate(const Nft& aut) {
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
     };
 
     // copy the information about aut to save the case when this is the same object as aut.
-    utils::SparseSet<mata::lvlfa::State> aut_initial = aut.initial;
-    utils::SparseSet<mata::lvlfa::State> aut_final = aut.final;
+    utils::SparseSet<mata::nft::State> aut_initial = aut.initial;
+    utils::SparseSet<mata::nft::State> aut_final = aut.final;
     size_t aut_n = aut.num_of_states();
 
     this->delta.allocate(n);
@@ -57,24 +57,24 @@ Lvlfa& Lvlfa::concatenate(const Lvlfa& aut) {
     return *this;
 }
 
-Lvlfa algorithms::concatenate_eps(const Lvlfa& lhs, const Lvlfa& rhs, const Symbol& epsilon, bool use_epsilon,
+Nft algorithms::concatenate_eps(const Nft& lhs, const Nft& rhs, const Symbol& epsilon, bool use_epsilon,
                                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
     // Compute concatenation of given automata.
     // Concatenation will proceed in the order of the passed automata: Result is 'lhs . rhs'.
 
     if (lhs.num_of_states() == 0 || rhs.num_of_states() == 0 || lhs.initial.empty() || lhs.final.empty() ||
         rhs.initial.empty() || rhs.final.empty()) {
-        return Lvlfa{};
+        return Nft{};
     }
 
     const unsigned long lhs_states_num{lhs.num_of_states() };
     const unsigned long rhs_states_num{rhs.num_of_states() };
-    Lvlfa result{}; // Concatenated automaton.
+    Nft result{}; // Concatenated automaton.
     StateRenaming _lhs_states_renaming{}; // Map mapping rhs states to result states.
     StateRenaming _rhs_states_renaming{}; // Map mapping rhs states to result states.
 
     const size_t result_num_of_states{lhs_states_num + rhs_states_num};
-    if (result_num_of_states == 0) { return Lvlfa{}; }
+    if (result_num_of_states == 0) { return Nft{}; }
 
     // Map lhs states to result states.
     _lhs_states_renaming.reserve(lhs_states_num);
@@ -90,7 +90,7 @@ Lvlfa algorithms::concatenate_eps(const Lvlfa& lhs, const Lvlfa& rhs, const Symb
         ++result_state_index;
     }
 
-    result = Lvlfa();
+    result = Nft();
     result.delta = lhs.delta;
     result.initial = lhs.initial;
     result.add_state(result_num_of_states-1);
@@ -131,4 +131,4 @@ Lvlfa algorithms::concatenate_eps(const Lvlfa& lhs, const Lvlfa& rhs, const Symb
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
     return result;
 } // concatenate_eps().
-} // Namespace mata::lvlfa.
+} // Namespace mata::nft.
