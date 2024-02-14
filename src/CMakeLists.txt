@@ -30,6 +30,7 @@ add_library(libmata STATIC
 	lvlfa/concatenation.cc
 	lvlfa/operations.cc
 	lvlfa/builder.cc
+	lvlfa/strings.cc
 )
 
 # libmata needs at least c++20

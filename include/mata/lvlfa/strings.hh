@@ -5,5 +5,14 @@
 #define MATA_LVLFA_STRING_SOLVING_HH_
 
 #include "mata/nfa/strings.hh"
+#include "lvlfa.hh"
 
-#endif // MATA_NFA_STRING_SOLVING_HH_.
+namespace mata::lvlfa {
+/**
+ * Create identity transducer over the @p alphabet with @p level_cnt levels.
+ */
+Lvlfa create_identity(mata::Alphabet* alphabet, Level level_cnt = 2);
+
+} // Namespace mata::lvlfa.
+
+#endif // MATA_LVLFA_STRING_SOLVING_HH_.
