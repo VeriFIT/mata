@@ -27,6 +27,19 @@ using Word = mata::Word;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
+TEST_CASE("mata::lvlfa::Lvlfa()") {
+    Lvlfa nft{};
+    nft.levels.resize(3);
+    nft.levels_cnt = 5;
+    CHECK(nft.levels_cnt == 5);
+    CHECK(nft.levels.size() == 3);
+    nft.levels[0] = 0;
+    nft.levels[1] = 3;
+    nft.levels[2] = 1;
+    CHECK(nft.levels[2] == 1);
+    CHECK(nft.levels == std::vector<Level>{ 0, 3, 1 });
+}
+
 TEST_CASE("mata::lvlfa::size()") {
     Lvlfa lvlfa{};
     CHECK(lvlfa.num_of_states() == 0);
