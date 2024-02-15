@@ -10,11 +10,52 @@
 #include "mata/nft/builder.hh"
 
 using namespace mata::nft;
+using mata::nfa::Nfa;
 using Symbol = mata::Symbol;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
+
+TEST_CASE("nft::create_from_nfa()") {
+    Nft nft{};
+    Nft expected{};
+    Nfa nfa{};
+
+    SECTION("small nfa to 2 level NFT") {
+        constexpr Level LEVEL_CNT{ 2 };
+        nfa.initial = { 0 };
+        nfa.final = { 3 };
+        nfa.delta.add(0, 1, 2);
+        nfa.delta.add(1, EPSILON, 3);
+        nfa.delta.add(3, 2, 3);
+        nfa.delta.add(2, 3, 1);
+        nfa.delta.add(2, 3, 0);
+        nft = builder::create_from_nfa(nfa, LEVEL_CNT);
+        expected = mata::nft::builder::parse_from_mata(
+            std::string("@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q4\n%Levels q0:0 q1:1 q2:0 q3:0 q4:0 q5:1 q6:1\n%LevelsCnt 2\nq0 1 q1\nq1 1 q2\nq2 3 q5\nq3 4294967295 q4\nq4 2 q6\nq5 3 q0\nq5 3 q3\nq6 2 q4\n")
+        );
+        expected.levels_cnt = LEVEL_CNT;
+        CHECK(mata::nft::are_equivalent(nft, expected));
+    }
+
+    SECTION("small nfa to 3 level NFT") {
+        constexpr Level LEVEL_CNT{ 3 };
+        nfa.initial = { 0 };
+        nfa.final = { 3 };
+        nfa.delta.add(0, 1, 2);
+        nfa.delta.add(1, EPSILON, 3);
+        nfa.delta.add(3, 2, 3);
+        nfa.delta.add(2, 3, 1);
+        nfa.delta.add(2, 3, 0);
+        nft = builder::create_from_nfa(nfa, LEVEL_CNT);
+        expected = mata::nft::builder::parse_from_mata(
+            std::string("@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q5\n%Levels q0:0 q1:1 q2:2 q3:0 q4:0 q5:0 q6:1 q7:2 q8:1 q9:2\n%LevelsCnt 3\nq0 1 q1\nq1 1 q2\nq2 1 q3\nq3 3 q6\nq4 4294967295 q5\nq5 2 q8\nq6 3 q7\nq7 3 q0\nq7 3 q4\nq8 2 q9\nq9 2 q5\n")
+        );
+        expected.levels_cnt = LEVEL_CNT;
+        CHECK(mata::nft::are_equivalent(nft, expected));
+    }
+}
 
 TEST_CASE("nft::parse_from_mata()") {
     Delta delta;

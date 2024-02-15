@@ -1,8 +1,7 @@
 // TODO: Insert header file.
 
-#include "mata/nft/builder.hh"
+#include "mata/utils/sparse-set.hh"
 #include "mata/parser/mintermization.hh"
-
 #include "mata/nft/builder.hh"
 
 #include <fstream>
@@ -294,4 +293,54 @@ Nft builder::parse_from_mata(const std::filesystem::path& nft_file) {
 Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     std::istringstream nft_stream(nft_in_mata);
     return parse_from_mata(nft_stream);
+}
+
+Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const std::set<Symbol>& epsilons) {
+    const Level num_of_additional_states_per_nfa_trans{ level_cnt - 1 };
+    Nft nft{};
+    size_t nfa_num_of_states{ nfa.num_of_states() };
+    nft.levels_cnt = level_cnt;
+    nft.levels.resize(nfa_num_of_states + nfa.delta.num_of_transitions() * num_of_additional_states_per_nfa_trans);
+    std::unordered_map<State, State> state_mapping{};
+    state_mapping.reserve(nfa_num_of_states);
+    State nft_state{ 0 };
+    State curr_nft_state{ 0 };
+    for (State source{ 0 }; source < nfa.num_of_states(); ++source) {
+        const auto nft_state_it{ state_mapping.find(source) };
+        if (nft_state_it == state_mapping.end()) {
+            curr_nft_state = nft_state;
+            state_mapping[source] = curr_nft_state;
+            ++nft_state;
+        } else {
+            curr_nft_state = nft_state_it->second;
+        }
+        for (const SymbolPost& symbol_post: nfa.delta[source]) {
+            Level level{ 0 };
+            if (!epsilons.contains(symbol_post.symbol)) {
+                for (; level < num_of_additional_states_per_nfa_trans; ++level) {
+                    nft.levels[curr_nft_state] = level;
+                    nft.delta.add(curr_nft_state, symbol_post.symbol, nft_state);
+                    curr_nft_state = nft_state;
+                    ++nft_state;
+                }
+            }
+            for (State nft_target; State nfa_target: symbol_post.targets) {
+                auto nft_target_it{ state_mapping.find(nfa_target) };
+                if (nft_target_it == state_mapping.end()) {
+                    nft_target = nft_state;
+                    state_mapping[nfa_target] = nft_target;
+                    ++nft_state;
+                } else {
+                    nft_target = nft_target_it->second;
+                }
+                nft.levels[curr_nft_state] = level;
+                nft.delta.add(curr_nft_state, symbol_post.symbol, nft_target);
+            }
+        }
+    }
+    nft.initial.reserve(nfa.initial.size());
+    std::ranges::for_each(nfa.initial, [&](const State nfa_state){ nft.initial.insert(state_mapping[nfa_state]); });
+    nft.final.reserve(nfa.final.size());
+    std::ranges::for_each(nfa.final, [&](const State nfa_state){ nft.final.insert(state_mapping[nfa_state]); });
+    return nft;
 }

@@ -99,6 +99,15 @@ Nft parse_from_mata(const std::string& nft_in_mata);
  */
 Nft parse_from_mata(const std::filesystem::path& nft_file);
 
+/**
+ * Create NFT from NFA.
+ * @param nfa_state NFA to create NFT from.
+ * @param level_cnt Number of levels of NFT.
+ * @param epsilons Which symbols handle as epsilons.
+ * @return NFT representing @p nfa_state with @p level_cnt number of levels.
+ */
+Nft create_from_nfa(const mata::nfa::Nfa& nfa_state, Level level_cnt = 2, const std::set<Symbol>& epsilons = { EPSILON });
+
 } // namespace mata::nft::builder.
 
 #endif //LIBMATA_NFT_BUILDER_HH
