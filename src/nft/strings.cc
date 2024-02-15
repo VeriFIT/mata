@@ -15,7 +15,7 @@ using mata::nfa::StatePost;
 using mata::nfa::SymbolPost;
 using namespace mata::nft;
 
-Nft mata::nft::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
+Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     if (level_cnt == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
     const size_t additional_states_per_symbol_num{ level_cnt - 1 };
@@ -49,8 +49,8 @@ Nft mata::nft::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     return nft;
 }
 
-Nft mata::nft::create_identity_with_single_replace(
-    mata::Alphabet *alphabet, const Symbol from_symbol, const Symbol to_symbol) {
+Nft mata::nft::strings::create_identity_with_single_replace(
+    mata::Alphabet* alphabet, const Symbol from_symbol, const Symbol to_symbol) {
     Nft nft{ create_identity(alphabet) };
     if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
     auto symbol_post_to_state_with_replace{ nft.delta.mutable_state_post(0).find(from_symbol) };
@@ -59,7 +59,7 @@ Nft mata::nft::create_identity_with_single_replace(
     return nft;
 }
 
-Nft mata::nft::reluctant_replace(
+Nft mata::nft::strings::reluctant_replace(
     const std::string& regex,
     const std::string& replacement,
     Symbol begin_marker,
@@ -70,7 +70,7 @@ Nft mata::nft::reluctant_replace(
     return reluctant_replace(std::move(regex_nfa), replacement);
 }
 
-Nft mata::nft::reluctant_replace(
+Nft mata::nft::strings::reluctant_replace(
     nfa::Nfa regex,
     const std::string& replacement,
     Symbol begin_marker,
@@ -82,7 +82,7 @@ Nft mata::nft::reluctant_replace(
     return Nft{};
 }
 
-nfa::Nfa mata::nft::end_marker_dfa(nfa::Nfa regex) {
+nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
     if (!regex.is_deterministic()) {
         regex = determinize(regex);
     }
@@ -103,7 +103,7 @@ nfa::Nfa mata::nft::end_marker_dfa(nfa::Nfa regex) {
     return regex;
 }
 
-nft::Nft mata::nft::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
+nft::Nft mata::nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
     assert(end_marker_dfa.is_deterministic());
 
     Nft dft_end_marker{ nft::builder::create_from_nfa(end_marker_dfa) };
@@ -112,6 +112,8 @@ nft::Nft mata::nft::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol 
         StatePost& state_post = dft_end_marker.delta.mutable_state_post(source);
         for (const Move& move: state_post.moves_epsilons()) {
             const State end_marker_state{ dft_end_marker.add_state() };
+            dft_end_marker.levels.resize(end_marker_state + 1);
+            dft_end_marker.levels[end_marker_state] = 1;
             SymbolPost& symbol_post{ *state_post.find(move.symbol) };
             symbol_post.targets.erase(move.target);
             symbol_post.targets.insert(end_marker_state);
