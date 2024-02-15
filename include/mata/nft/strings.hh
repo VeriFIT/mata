@@ -7,7 +7,7 @@
 #include "mata/nfa/strings.hh"
 #include "nft.hh"
 
-namespace mata::nft {
+namespace mata::nft::strings {
 /**
  * Create identity transducer over the @p alphabet with @p level_cnt levels.
  */
@@ -36,6 +36,6 @@ Nft reluctant_replace(
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
 nft::Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 
-} // Namespace mata::nft.
+} // Namespace mata::nft::strings.
 
 #endif // MATA_NFT_STRING_SOLVING_HH_.

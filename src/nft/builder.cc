@@ -304,17 +304,15 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
     std::unordered_map<State, State> state_mapping{};
     state_mapping.reserve(nfa_num_of_states);
     State nft_state{ 0 };
-    State curr_nft_state{ 0 };
+    State curr_nft_state;
     for (State source{ 0 }; source < nfa.num_of_states(); ++source) {
         const auto nft_state_it{ state_mapping.find(source) };
         if (nft_state_it == state_mapping.end()) {
-            curr_nft_state = nft_state;
-            state_mapping[source] = curr_nft_state;
+            state_mapping[source] = nft_state;
             ++nft_state;
-        } else {
-            curr_nft_state = nft_state_it->second;
         }
         for (const SymbolPost& symbol_post: nfa.delta[source]) {
+            curr_nft_state = state_mapping[source];
             Level level{ 0 };
             if (!epsilons.contains(symbol_post.symbol)) {
                 for (; level < num_of_additional_states_per_nfa_trans; ++level) {

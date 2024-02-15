@@ -11,13 +11,12 @@
 #include "mata/nft/strings.hh"
 #include "mata/parser/re2parser.hh"
 
+using namespace mata;
 using namespace mata::nft;
-using Symbol = mata::Symbol;
+using namespace mata::nft::strings;
 using IntAlphabet = mata::IntAlphabet;
 using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 using mata::EnumAlphabet;
-
-using Word = std::vector<Symbol>;
 
 TEST_CASE("nft::create_identity()") {
     Nft nft{};
@@ -140,11 +139,11 @@ TEST_CASE("nft::create_identity_with_single_replace()") {
 
 TEST_CASE("nft::reluctant_replacement()") {
     Nft nft{};
-    mata::nfa::Nfa regex{};
+    nfa::Nfa regex{};
     SECTION("nft::end_marker_dfa()") {
-        mata::parser::create_nfa(&regex, "cb+a+");
-        mata::nfa::Nfa nfa_end_marker{ end_marker_dfa(regex) };
-        mata::nfa::Nfa dfa_expected_end_marker{};
+        parser::create_nfa(&regex, "cb+a+");
+        nfa::Nfa dfa_end_marker{ nft::strings::end_marker_dfa(regex) };
+        nfa::Nfa dfa_expected_end_marker{};
         dfa_expected_end_marker.initial = { 0 };
         dfa_expected_end_marker.final = { 4 };
         dfa_expected_end_marker.delta.add(0, 'c', 1);
@@ -153,7 +152,28 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected_end_marker.delta.add(2, 'a', 3);
         dfa_expected_end_marker.delta.add(3, EPSILON, 4);
         dfa_expected_end_marker.delta.add(4, 'a', 3);
-        CHECK(nfa_end_marker.is_deterministic());
-        CHECK(mata::nfa::are_equivalent(nfa_end_marker, dfa_expected_end_marker));
+        CHECK(dfa_end_marker.is_deterministic());
+        CHECK(nfa::are_equivalent(dfa_end_marker, dfa_expected_end_marker));
+        constexpr Symbol END_MARKER{ EPSILON - 100 };
+        Nft dft_end_marker{ nft::strings::end_marker_dft(dfa_end_marker, END_MARKER) };
+        Nft dft_expected_end_marker{};
+        dft_expected_end_marker.levels_cnt = 2;
+        dft_expected_end_marker.levels = { 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1 };
+        dft_expected_end_marker.initial = { 0 };
+        dft_expected_end_marker.final = { 9 };
+        dft_expected_end_marker.delta.add(0, 'c', 1);
+        dft_expected_end_marker.delta.add(1, 'c', 2);
+        dft_expected_end_marker.delta.add(2, 'b', 3);
+        dft_expected_end_marker.delta.add(3, 'b', 4);
+        dft_expected_end_marker.delta.add(4, 'b', 5);
+        dft_expected_end_marker.delta.add(5, 'b', 4);
+        dft_expected_end_marker.delta.add(4, 'a', 6);
+        dft_expected_end_marker.delta.add(6, 'a', 7);
+        dft_expected_end_marker.delta.add(7, EPSILON, 8);
+        dft_expected_end_marker.delta.add(8, END_MARKER, 9);
+        dft_expected_end_marker.delta.add(9, 'a', 10);
+        dft_expected_end_marker.delta.add(10, 'a', 7);
+        CHECK(dft_end_marker.is_deterministic());
+        CHECK(nft::are_equivalent(dft_end_marker, dft_expected_end_marker));
     }
 }
