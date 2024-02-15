@@ -9,6 +9,7 @@
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/strings.hh"
+#include "mata/parser/re2parser.hh"
 
 using namespace mata::nft;
 using Symbol = mata::Symbol;
@@ -134,5 +135,25 @@ TEST_CASE("nft::create_identity_with_single_replace()") {
         nft.delta.add(1, 1, 0);
         Nft nft_identity{ create_identity_with_single_replace(&alphabet, 0, 1) };
         CHECK(nft_identity.is_identical(nft));
+    }
+}
+
+TEST_CASE("nft::reluctant_replacement()") {
+    Nft nft{};
+    mata::nfa::Nfa regex{};
+    SECTION("nft::end_marker_dfa()") {
+        mata::parser::create_nfa(&regex, "cb+a+");
+        mata::nfa::Nfa nfa_end_marker{ end_marker_dfa(regex) };
+        mata::nfa::Nfa dfa_expected_end_marker{};
+        dfa_expected_end_marker.initial = { 0 };
+        dfa_expected_end_marker.final = { 4 };
+        dfa_expected_end_marker.delta.add(0, 'c', 1);
+        dfa_expected_end_marker.delta.add(1, 'b', 2);
+        dfa_expected_end_marker.delta.add(2, 'b', 2);
+        dfa_expected_end_marker.delta.add(2, 'a', 3);
+        dfa_expected_end_marker.delta.add(3, EPSILON, 4);
+        dfa_expected_end_marker.delta.add(4, 'a', 3);
+        CHECK(nfa_end_marker.is_deterministic());
+        CHECK(mata::nfa::are_equivalent(nfa_end_marker, dfa_expected_end_marker));
     }
 }
