@@ -271,6 +271,7 @@ bool mata::nft::is_included(
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
+    if (lhs.levels_cnt != rhs.levels_cnt) { return false; }
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
