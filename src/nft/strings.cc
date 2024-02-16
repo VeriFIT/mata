@@ -1,6 +1,8 @@
 /* nfa-strings.hh -- Operations on NFAs for string solving.
  */
 
+#include <utility>
+
 #include "mata/nft/strings.hh"
 #include "mata/parser/re2parser.hh"
 #include "mata/nft/nft.hh"
@@ -14,6 +16,37 @@ using mata::nft::State;
 using mata::nfa::StatePost;
 using mata::nfa::SymbolPost;
 using namespace mata::nft;
+
+namespace {
+    /// Add transitions, optionally add @p source to @p dfa_generic_end_marker.final, and update @p labeling and @p labeling_inv functions.
+    void process_source(const nfa::Nfa& regex, const Alphabet* alphabet, nfa::Nfa& dfa_generic_end_marker,
+                        std::map<State, StateSet>& labeling,
+                        std::unordered_map<StateSet, State>& labeling_inv, State source,
+                        StateSet& source_label, std::vector<State>& worklist) {
+        const State generic_initial_state{ *dfa_generic_end_marker.initial.begin() };
+        for (const Symbol symbol: alphabet->get_alphabet_symbols()) {
+            StateSet target_label{ generic_initial_state };
+            for (const State regex_state: source_label) {
+                const StatePost& state_post{ regex.delta[regex_state] };
+                auto symbol_post_it{ state_post.find(symbol) };
+                if (symbol_post_it == state_post.end()) { continue; }
+                target_label.insert(symbol_post_it->targets);
+            }
+            auto target_it{ labeling_inv.find(target_label) };
+            State target;
+            if (target_it == labeling_inv.end()) {
+                target = dfa_generic_end_marker.add_state();
+                labeling.emplace(target, target_label);
+                labeling_inv.emplace(target_label, target);
+                worklist.push_back(target);
+            } else {
+                target = target_it->second;
+            }
+            dfa_generic_end_marker.delta.add(source, symbol, target);
+        }
+        dfa_generic_end_marker.final.insert(source);
+    }
+}
 
 Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
     if (level_cnt == 0) { throw std::runtime_error("NFT must have at least one level"); }
@@ -62,22 +95,24 @@ Nft mata::nft::strings::create_identity_with_single_replace(
 Nft mata::nft::strings::reluctant_replace(
     const std::string& regex,
     const std::string& replacement,
+    Alphabet* alphabet,
     Symbol begin_marker,
     Symbol end_marker
 ) {
     nfa::Nfa regex_nfa{};
     parser::create_nfa(&regex_nfa, regex);
-    return reluctant_replace(std::move(regex_nfa), replacement);
+    return reluctant_replace(std::move(regex_nfa), replacement, alphabet, begin_marker, end_marker);
 }
 
 Nft mata::nft::strings::reluctant_replace(
     nfa::Nfa regex,
     const std::string& replacement,
+    Alphabet* alphabet,
     Symbol begin_marker,
     Symbol end_marker
 ) {
-    regex = end_marker_dfa(std::move(regex));
-    Nft dft_end_marker{ end_marker_dft(regex, end_marker) };
+    nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
+    Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, end_marker) };
 
     return Nft{};
 }
@@ -103,7 +138,7 @@ nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
     return regex;
 }
 
-nft::Nft mata::nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
+Nft mata::nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
     assert(end_marker_dfa.is_deterministic());
 
     Nft dft_end_marker{ nft::builder::create_from_nfa(end_marker_dfa) };
@@ -121,4 +156,43 @@ nft::Nft mata::nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, cons
         }
     }
     return dft_end_marker;
+}
+
+nfa::Nfa nft::strings::generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet) {
+    nfa::Nfa nfa{};
+    parser::create_nfa(&nfa, regex);
+    return generic_end_marker_dfa(std::move(nfa), alphabet);
+}
+
+nfa::Nfa nft::strings::generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
+    if (!regex.is_deterministic()) {
+        regex = determinize(regex);
+    }
+
+    nfa::Nfa dfa_generic_end_marker{};
+    dfa_generic_end_marker.initial.insert(0);
+    std::map<State, StateSet> labeling{};
+    std::unordered_map<StateSet, State> labeling_inv{};
+    labeling.emplace(0, *regex.initial.begin());
+    labeling_inv.emplace(*regex.initial.begin(), 0);
+
+    std::vector<State> worklist{ 0 };
+    while (!worklist.empty()) {
+        State source{ worklist.back() };
+        worklist.pop_back();
+        StateSet& source_label{ labeling[source] };
+
+        if (regex.final.intersects_with(source_label)) {
+            const State end_marker_target{ dfa_generic_end_marker.add_state() };
+            dfa_generic_end_marker.delta.add(source, EPSILON, end_marker_target);
+            process_source(regex, alphabet, dfa_generic_end_marker, labeling, labeling_inv, end_marker_target,
+                           source_label, worklist);
+        } else {
+            process_source(regex, alphabet, dfa_generic_end_marker, labeling, labeling_inv, source, source_label,
+                           worklist);
+        }
+
+    }
+
+    return dfa_generic_end_marker;
 }
