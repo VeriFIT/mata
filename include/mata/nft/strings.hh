@@ -22,6 +22,7 @@ Nft create_identity_with_single_replace(mata::Alphabet* alphabet, Symbol from_sy
 Nft reluctant_replace(
     const std::string& regex,
     const std::string& replacement,
+    Alphabet* alphabet,
     // TODO: Change into constants?
     Symbol begin_marker = EPSILON - 101,
     Symbol end_marker = EPSILON - 100
@@ -29,13 +30,16 @@ Nft reluctant_replace(
 Nft reluctant_replace(
     mata::nfa::Nfa regex,
     const std::string& replacement,
+    Alphabet* alphabet,
     Symbol begin_marker = EPSILON - 101,
     Symbol end_marker = EPSILON - 100
 );
 
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
-nft::Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
+Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 
+nfa::Nfa generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet);
+nfa::Nfa generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet);
 } // Namespace mata::nft::strings.
 
 #endif // MATA_NFT_STRING_SOLVING_HH_.
