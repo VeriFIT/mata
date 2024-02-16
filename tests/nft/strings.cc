@@ -38,7 +38,7 @@ TEST_CASE("nft::create_identity()") {
         nft.delta.add(7, 3, 8);
         nft.delta.add(8, 3, 0);
         nft.levels_cnt = 3;
-        nft.levels.resize(nft.levels_cnt * ( alphabet.get_number_of_symbols() - 1));
+        nft.levels.resize(nft.levels_cnt * (alphabet.get_number_of_symbols() - 1));
         nft.levels[0] = 0;
         nft.levels[1] = 1;
         nft.levels[2] = 2;
@@ -53,7 +53,7 @@ TEST_CASE("nft::create_identity()") {
     }
 
     SECTION("identity nft no symbols") {
-        EnumAlphabet alphabet{ };
+        EnumAlphabet alphabet{};
         nft.alphabet = &alphabet;
         nft.levels_cnt = 3;
         nft.levels.resize(1);
@@ -140,6 +140,8 @@ TEST_CASE("nft::create_identity_with_single_replace()") {
 TEST_CASE("nft::reluctant_replacement()") {
     Nft nft{};
     nfa::Nfa regex{};
+    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+    constexpr Symbol END_MARKER{ EPSILON - 100 };
     SECTION("nft::end_marker_dfa()") {
         parser::create_nfa(&regex, "cb+a+");
         nfa::Nfa dfa_end_marker{ nft::strings::end_marker_dfa(regex) };
@@ -154,7 +156,6 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected_end_marker.delta.add(4, 'a', 3);
         CHECK(dfa_end_marker.is_deterministic());
         CHECK(nfa::are_equivalent(dfa_end_marker, dfa_expected_end_marker));
-        constexpr Symbol END_MARKER{ EPSILON - 100 };
         Nft dft_end_marker{ nft::strings::end_marker_dft(dfa_end_marker, END_MARKER) };
         Nft dft_expected_end_marker{};
         dft_expected_end_marker.levels_cnt = 2;
@@ -175,5 +176,147 @@ TEST_CASE("nft::reluctant_replacement()") {
         dft_expected_end_marker.delta.add(10, 'a', 7);
         CHECK(dft_end_marker.is_deterministic());
         CHECK(nft::are_equivalent(dft_end_marker, dft_expected_end_marker));
+    }
+
+    SECTION("nft::generic_end_marker_dft() regex cb+a+") {
+        nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa("cb+a+", &alphabet) };
+        nfa::Nfa dfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
+        dfa_expected.delta.add(0, 'a', 0);
+        dfa_expected.delta.add(0, 'b', 0);
+        dfa_expected.delta.add(0, 'c', 1);
+        dfa_expected.delta.add(1, 'a', 0);
+        dfa_expected.delta.add(1, 'b', 2);
+        dfa_expected.delta.add(1, 'c', 1);
+        dfa_expected.delta.add(2, 'a', 3);
+        dfa_expected.delta.add(2, 'b', 2);
+        dfa_expected.delta.add(2, 'c', 1);
+        dfa_expected.delta.add(3, EPSILON, 4);
+        dfa_expected.delta.add(4, 'a', 3);
+        dfa_expected.delta.add(4, 'b', 0);
+        dfa_expected.delta.add(4, 'c', 1);
+        CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
+
+        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
+        Nft dft_expected{};
+        dft_expected.initial.insert(0);
+        dft_expected.final = { 0, 4, 7, 14 };
+        dft_expected.levels_cnt = 2;
+        dft_expected.delta.add(0, 'a', 1);
+        dft_expected.delta.add(1, 'a', 0);
+        dft_expected.delta.add(0, 'b', 2);
+        dft_expected.delta.add(2, 'b', 0);
+        dft_expected.delta.add(0, 'c', 3);
+        dft_expected.delta.add(3, 'c', 4);
+        dft_expected.delta.add(4, 'a', 5);
+        dft_expected.delta.add(5, 'a', 0);
+        dft_expected.delta.add(4, 'b', 6);
+        dft_expected.delta.add(6, 'b', 7);
+        dft_expected.delta.add(4, 'c', 8);
+        dft_expected.delta.add(8, 'c', 4);
+        dft_expected.delta.add(7, 'a', 9);
+        dft_expected.delta.add(9, 'a', 10);
+        dft_expected.delta.add(7, 'b', 11);
+        dft_expected.delta.add(11, 'b', 7);
+        dft_expected.delta.add(7, 'c', 12);
+        dft_expected.delta.add(12, 'c', 4);
+        dft_expected.delta.add(10, EPSILON, 13);
+        dft_expected.delta.add(13, END_MARKER, 14);
+        dft_expected.delta.add(14, 'a', 15);
+        dft_expected.delta.add(15, 'a', 10);
+        dft_expected.delta.add(14, 'b', 16);
+        dft_expected.delta.add(16, 'b', 0);
+        dft_expected.delta.add(14, 'c', 17);
+        dft_expected.delta.add(17, 'c', 4);
+        dft_expected.levels.resize(18);
+        dft_expected.levels[0] = 0;
+        dft_expected.levels[1] = 1;
+        dft_expected.levels[2] = 1;
+        dft_expected.levels[3] = 1;
+        dft_expected.levels[4] = 0;
+        dft_expected.levels[5] = 1;
+        dft_expected.levels[6] = 1;
+        dft_expected.levels[7] = 0;
+        dft_expected.levels[8] = 1;
+        dft_expected.levels[9] = 1;
+        dft_expected.levels[10] = 0;
+        dft_expected.levels[11] = 1;
+        dft_expected.levels[12] = 1;
+        dft_expected.levels[13] = 1;
+        dft_expected.levels[14] = 0;
+        dft_expected.levels[15] = 1;
+        dft_expected.levels[16] = 1;
+        dft_expected.levels[17] = 1;
+        CHECK(nft::are_equivalent(dft_generic_end_marker, dft_expected));
+    }
+
+    SECTION("nft::generic_end_marker_dft() regex ab+a+") {
+        nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa("ab+a+", &alphabet) };
+        nfa::Nfa dfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
+        dfa_expected.delta.add(0, 'a', 1);
+        dfa_expected.delta.add(0, 'b', 0);
+        dfa_expected.delta.add(0, 'c', 0);
+        dfa_expected.delta.add(1, 'a', 1);
+        dfa_expected.delta.add(1, 'b', 2);
+        dfa_expected.delta.add(1, 'c', 0);
+        dfa_expected.delta.add(2, 'a', 3);
+        dfa_expected.delta.add(2, 'b', 2);
+        dfa_expected.delta.add(2, 'c', 0);
+        dfa_expected.delta.add(3, EPSILON, 4);
+        dfa_expected.delta.add(4, 'a', 3);
+        dfa_expected.delta.add(4, 'b', 2);
+        dfa_expected.delta.add(4, 'c', 0);
+        CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
+
+        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
+        Nft dft_expected{};
+        dft_expected.initial.insert(0);
+        dft_expected.final = { 0, 2, 7, 14};
+        dft_expected.levels_cnt = 2;
+        dft_expected.delta.add(0, 'a', 1);
+        dft_expected.delta.add(1, 'a', 2);
+        dft_expected.delta.add(0, 'b', 3);
+        dft_expected.delta.add(3, 'b', 0);
+        dft_expected.delta.add(0, 'c', 4);
+        dft_expected.delta.add(4, 'c', 0);
+        dft_expected.delta.add(2, 'a', 5);
+        dft_expected.delta.add(5, 'a', 2);
+        dft_expected.delta.add(2, 'b', 6);
+        dft_expected.delta.add(6, 'b', 7);
+        dft_expected.delta.add(2, 'c', 8);
+        dft_expected.delta.add(8, 'c', 0);
+        dft_expected.delta.add(7, 'a', 9);
+        dft_expected.delta.add(9, 'a', 10);
+        dft_expected.delta.add(7, 'b', 11);
+        dft_expected.delta.add(11, 'b', 7);
+        dft_expected.delta.add(7, 'c', 12);
+        dft_expected.delta.add(12, 'c', 0);
+        dft_expected.delta.add(10, EPSILON, 13);
+        dft_expected.delta.add(13, END_MARKER, 14);
+        dft_expected.delta.add(14, 'a', 15);
+        dft_expected.delta.add(15, 'a', 10);
+        dft_expected.delta.add(14, 'b', 16);
+        dft_expected.delta.add(16, 'b', 7);
+        dft_expected.delta.add(14, 'c', 17);
+        dft_expected.delta.add(17, 'c', 0);
+        dft_expected.levels.resize(18);
+        dft_expected.levels[0] = 0;
+        dft_expected.levels[1] = 1;
+        dft_expected.levels[2] = 0;
+        dft_expected.levels[3] = 1;
+        dft_expected.levels[4] = 1;
+        dft_expected.levels[5] = 1;
+        dft_expected.levels[6] = 1;
+        dft_expected.levels[7] = 0;
+        dft_expected.levels[8] = 1;
+        dft_expected.levels[9] = 1;
+        dft_expected.levels[10] = 0;
+        dft_expected.levels[11] = 1;
+        dft_expected.levels[12] = 1;
+        dft_expected.levels[13] = 1;
+        dft_expected.levels[14] = 0;
+        dft_expected.levels[15] = 1;
+        dft_expected.levels[16] = 1;
+        dft_expected.levels[17] = 1;
+        CHECK(nft::are_equivalent(dft_generic_end_marker, dft_expected));
     }
 }
