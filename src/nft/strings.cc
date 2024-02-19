@@ -92,7 +92,7 @@ Nft mata::nft::strings::create_identity_with_single_replace(
     return nft;
 }
 
-Nft mata::nft::strings::reluctant_replace(
+Nft mata::nft::strings::replace_reluctant(
     const std::string& regex,
     const std::string& replacement,
     Alphabet* alphabet,
@@ -101,18 +101,18 @@ Nft mata::nft::strings::reluctant_replace(
 ) {
     nfa::Nfa regex_nfa{};
     parser::create_nfa(&regex_nfa, regex);
-    return reluctant_replace(std::move(regex_nfa), replacement, alphabet, begin_marker, end_marker);
+    return replace_reluctant(std::move(regex_nfa), replacement, alphabet, begin_marker, end_marker);
 }
 
-Nft mata::nft::strings::reluctant_replace(
+Nft mata::nft::strings::replace_reluctant(
     nfa::Nfa regex,
     const std::string& replacement,
     Alphabet* alphabet,
     Symbol begin_marker,
     Symbol end_marker
 ) {
-    nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
-    Nft dft_generic_end_marker{ marker_dft(dfa_generic_end_marker, end_marker) };
+    nfa::Nfa dfa_generic_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
+    Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_marker, end_marker) };
 
     return Nft{};
 }
@@ -195,4 +195,9 @@ nfa::Nfa nft::strings::generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet
     }
 
     return dfa_generic_end_marker;
+}
+
+
+Nft nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker) {
+    return marker_dft(end_marker_dfa, end_marker);
 }
