@@ -112,7 +112,7 @@ Nft mata::nft::strings::reluctant_replace(
     Symbol end_marker
 ) {
     nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
-    Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, end_marker) };
+    Nft dft_generic_end_marker{ marker_dft(dfa_generic_end_marker, end_marker) };
 
     return Nft{};
 }
@@ -138,24 +138,24 @@ nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
     return regex;
 }
 
-Nft mata::nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
-    assert(end_marker_dfa.is_deterministic());
+Nft mata::nft::strings::marker_dft(const nfa::Nfa& marker_dfa, const Symbol marker) {
+    assert(marker_dfa.is_deterministic());
 
-    Nft dft_end_marker{ nft::builder::create_from_nfa(end_marker_dfa) };
-    const size_t dft_end_marker_num_of_states{ dft_end_marker.num_of_states() };
-    for (State source{ 0 }; source < dft_end_marker_num_of_states; ++source) {
-        StatePost& state_post = dft_end_marker.delta.mutable_state_post(source);
+    Nft dft_marker{ nft::builder::create_from_nfa(marker_dfa) };
+    const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
+    for (State source{ 0 }; source < dft_marker_num_of_states; ++source) {
+        StatePost& state_post = dft_marker.delta.mutable_state_post(source);
         for (const Move& move: state_post.moves_epsilons()) {
-            const State end_marker_state{ dft_end_marker.add_state() };
-            dft_end_marker.levels.resize(end_marker_state + 1);
-            dft_end_marker.levels[end_marker_state] = 1;
+            const State marker_state{ dft_marker.add_state() };
+            dft_marker.levels.resize(marker_state + 1);
+            dft_marker.levels[marker_state] = 1;
             SymbolPost& symbol_post{ *state_post.find(move.symbol) };
             symbol_post.targets.erase(move.target);
-            symbol_post.targets.insert(end_marker_state);
-            dft_end_marker.delta.add(end_marker_state, end_marker, move.target);
+            symbol_post.targets.insert(marker_state);
+            dft_marker.delta.add(marker_state, marker, move.target);
         }
     }
-    return dft_end_marker;
+    return dft_marker;
 }
 
 nfa::Nfa nft::strings::generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet) {

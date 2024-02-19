@@ -36,7 +36,7 @@ Nft reluctant_replace(
 );
 
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
-Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
+Nft marker_dft(const nfa::Nfa& marker_dfa, Symbol marker);
 
 nfa::Nfa generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet);
 nfa::Nfa generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet);
