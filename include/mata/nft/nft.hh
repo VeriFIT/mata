@@ -62,24 +62,22 @@ public:
 
 public:
     explicit Nft(Delta delta = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1,
+                 utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 0,
                  Alphabet* alphabet = nullptr)
-        : mata::nfa::Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet),
-        levels(std::move(levels)), levels_cnt(levels_cnt) {}
-
+        : mata::nfa::Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet), levels(levels), levels_cnt(levels_cnt) {}
     /**
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Nft(const unsigned long num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1, Alphabet*
+                 StateSet final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 0, Alphabet*
                  alphabet = nullptr)
-        : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet), levels(std::move(levels)), levels_cnt(levels_cnt) {}
+        : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet), levels(levels), levels_cnt(levels_cnt) {}
 
     explicit Nft(const mata::nfa::Nfa& other)
         : mata::nfa::Nfa(other.delta, other.initial, other.final, other.alphabet),
-          levels(std::vector<Level>(other.num_of_states(), 0)), levels_cnt(1) {}
+          levels(std::vector<Level>()), levels_cnt(0) {}
 
     /**
      * @brief Construct a new explicit NFT from other NFT.
