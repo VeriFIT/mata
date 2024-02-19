@@ -64,7 +64,7 @@ TEST_CASE("nft::parse_from_mata()") {
         delta.add(0, 0, 0);
         delta.add(0, 1, 1);
         delta.add(1, 2, 0);
-        Nft nft{ delta, { 0 }, { 1 }, { 0 }, 1};
+        Nft nft{ delta, { 0 }, { 1 }, { 0, 0 }, 1};
 
         SECTION("from string") {
             Nft parsed{ mata::nft::builder::parse_from_mata(nft.print_to_mata()) };

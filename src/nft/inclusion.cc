@@ -271,18 +271,24 @@ bool mata::nft::is_included(
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
-    if (lhs.levels_cnt != rhs.levels_cnt) { return false; }
-    //TODO: add comment on what this is doing, what is __func__ ...
-    AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
 
-    if (params.at("algorithm") == "naive") {
-        if (alphabet == nullptr) {
-            const auto computed_alphabet{create_alphabet(lhs, rhs) };
-            return compute_equivalence(lhs, rhs, &computed_alphabet, algo);
+    if (lhs.levels_cnt != rhs.levels_cnt) { return false; }
+    if (lhs.levels_cnt == 0) { return nfa::are_equivalent(lhs, rhs, alphabet, params); }
+
+    OrdVector<mata::Symbol> symbols;
+    if (alphabet == nullptr) {
+        symbols = create_alphabet(lhs, rhs).get_alphabet_symbols();
+        if (symbols.contains(DONT_CARE) && symbols.size() > 1) {
+            symbols.erase(DONT_CARE);
         }
+    } else {
+        symbols = alphabet->get_alphabet_symbols();
     }
 
-    return compute_equivalence(lhs, rhs, alphabet, algo);
+    return nfa::are_equivalent(lhs.get_one_level_aut(symbols),
+                               rhs.get_one_level_aut(symbols),
+                               alphabet,
+                               params);
 }
 
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const ParameterMap& params) {

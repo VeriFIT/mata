@@ -2997,3 +2997,131 @@ TEST_CASE("mata::nft::Nft::get_words") {
         CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}, {0,1,0,1,0}, {1,0,1,0,1}});
     }
 }
+
+TEST_CASE("mata::nft::Nft::get_one_level_aut") {
+    #define REPLACE_DONT_CARE(delta, src, trg)\
+                delta.add(src, 0, trg);\
+                delta.add(src, 1, trg);\
+
+    #define SPLIT_TRANSITION(delta, src, symbol, inter, trg)\
+                ((symbol == DONT_CARE) ? (delta.add(src, 0, inter), delta.add(src, 1, inter)) : (delta.add(src, symbol, inter)));\
+                REPLACE_DONT_CARE(delta, inter, trg);\
+
+    SECTION("level_cnt == 1") {
+        Nft aut(5, {0}, {3, 4}, {0, 0, 0, 0, 0}, 1);
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(0, 1, 2);
+        aut.delta.add(1, 0, 1);
+        aut.delta.add(1, DONT_CARE, 3);
+        aut.delta.add(2, DONT_CARE, 2);
+        aut.delta.add(2, DONT_CARE, 4);
+        aut.delta.add(3, 0, 1);
+        aut.delta.add(3, DONT_CARE, 3);
+        aut.delta.add(4, 1, 2);
+        aut.delta.add(4, DONT_CARE, 4);
+
+        Nft expected(5, {0}, {3, 4}, {0, 0, 0, 0, 0}, 1);
+        expected.delta.add(0, 0, 1);
+        expected.delta.add(0, 1, 2);
+        expected.delta.add(1, 0, 1);
+        REPLACE_DONT_CARE(expected.delta, 1, 3);
+        REPLACE_DONT_CARE(expected.delta, 2, 2);
+        REPLACE_DONT_CARE(expected.delta, 2, 4);
+        expected.delta.add(3, 0, 1);
+        REPLACE_DONT_CARE(expected.delta, 3, 3);
+        expected.delta.add(4, 1, 2);
+        REPLACE_DONT_CARE(expected.delta, 4, 4);
+
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut({0, 1}), expected));
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut().get_one_level_aut({0, 1}), expected));
+        CHECK(nft::are_equivalent(aut, expected));
+    }
+
+    SECTION("level_cnt == 2") {
+        Nft aut(7, {0}, {5, 6}, {0, 1, 1, 0, 0, 0, 0}, 2);
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(0, 1, 2);
+        aut.delta.add(1, DONT_CARE, 3);
+        aut.delta.add(2, DONT_CARE, 4);
+        aut.delta.add(3, 0, 3);
+        aut.delta.add(3, 0, 5);
+        aut.delta.add(4, DONT_CARE, 4);
+        aut.delta.add(4, DONT_CARE, 6);
+        aut.delta.add(5, DONT_CARE, 5);
+        aut.delta.add(5, 0, 3);
+        aut.delta.add(6, DONT_CARE, 6);
+        aut.delta.add(6, 1, 4);
+
+        Nft expected(15, {0}, {5, 6}, {0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1}, 2);
+        expected.delta.add(0, 0, 1);
+        expected.delta.add(0, 1, 2);
+        REPLACE_DONT_CARE(expected.delta, 1, 3);
+        REPLACE_DONT_CARE(expected.delta, 2, 4);
+        SPLIT_TRANSITION(expected.delta, 3, 0, 7, 3);
+        SPLIT_TRANSITION(expected.delta, 3, 0, 8, 5);
+        SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 10, 4);
+        SPLIT_TRANSITION(expected.delta, 4, DONT_CARE, 12, 6);
+        SPLIT_TRANSITION(expected.delta, 5, DONT_CARE, 13, 5);
+        SPLIT_TRANSITION(expected.delta, 5, 0, 9, 3);
+        SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 14, 6);
+        SPLIT_TRANSITION(expected.delta, 6, 1, 11, 4);
+
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut({0, 1}), expected));
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut().get_one_level_aut({0, 1}), expected));
+        CHECK(nft::are_equivalent(aut, expected));
+
+    }
+
+    SECTION("level_cnt == 4") {
+        Nft aut(17, {0}, {15, 16}, {0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0}, 4);
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(0, 1, 2);
+        aut.delta.add(1, 0, 3);
+        aut.delta.add(2, DONT_CARE, 4);
+        aut.delta.add(3, 0, 5);
+        aut.delta.add(4, DONT_CARE, 6);
+        aut.delta.add(5, 0, 5);
+        aut.delta.add(5, 0, 7);
+        aut.delta.add(6, DONT_CARE, 6);
+        aut.delta.add(6, DONT_CARE, 8);
+        aut.delta.add(7, 0, 9);
+        aut.delta.add(8, DONT_CARE, 10);
+        aut.delta.add(9, 0, 11);
+        aut.delta.add(10, DONT_CARE, 12);
+        aut.delta.add(11, 0, 13);
+        aut.delta.add(12, DONT_CARE, 14);
+        aut.delta.add(13, 0, 15);
+        aut.delta.add(14, DONT_CARE, 16);
+
+        Nft expected(31, {0}, {15, 16}, {0, 1, 1, 3, 3, 0, 0, 2, 2, 0, 0, 1, 1, 2, 2, 0, 0, 2, 2, 2, 1, 1, 3, 3, 1, 2, 1, 3, 3, 3, 3}, 4);
+        expected.delta.add(0, 0, 1);
+        expected.delta.add(0, 1, 2);
+        SPLIT_TRANSITION(expected.delta, 1, 0, 17, 3);
+        SPLIT_TRANSITION(expected.delta, 2, DONT_CARE, 18, 4);
+        expected.delta.add(3, 0, 5);
+        REPLACE_DONT_CARE(expected.delta, 4, 6);
+        expected.delta.add(5, 0, 20);
+        REPLACE_DONT_CARE(expected.delta, 20, 19);
+        REPLACE_DONT_CARE(expected.delta, 19, 29);
+        REPLACE_DONT_CARE(expected.delta, 29, 5);
+        SPLIT_TRANSITION(expected.delta, 5, 0, 21, 7);
+        REPLACE_DONT_CARE(expected.delta, 6, 24);
+        REPLACE_DONT_CARE(expected.delta, 24, 25);
+        REPLACE_DONT_CARE(expected.delta, 25, 30);
+        REPLACE_DONT_CARE(expected.delta, 30, 6);
+        SPLIT_TRANSITION(expected.delta, 6, DONT_CARE, 26, 8);
+        SPLIT_TRANSITION(expected.delta, 7, 0, 22, 9);
+        SPLIT_TRANSITION(expected.delta, 8, DONT_CARE, 27, 10);
+        expected.delta.add(9, 0, 11);
+        REPLACE_DONT_CARE(expected.delta, 10, 12);
+        expected.delta.add(11, 0, 13);
+        REPLACE_DONT_CARE(expected.delta, 12, 14);
+        SPLIT_TRANSITION(expected.delta, 13, 0, 23, 15);
+        SPLIT_TRANSITION(expected.delta, 14, DONT_CARE, 28, 16);
+
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut({0, 1}), expected));
+        CHECK(nfa::are_equivalent(aut.get_one_level_aut().get_one_level_aut({0, 1}), expected));
+        CHECK(nft::are_equivalent(aut, expected));
+    }
+
+}
