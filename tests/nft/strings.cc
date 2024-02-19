@@ -156,7 +156,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected_end_marker.delta.add(4, 'a', 3);
         CHECK(dfa_end_marker.is_deterministic());
         CHECK(nfa::are_equivalent(dfa_end_marker, dfa_expected_end_marker));
-        Nft dft_end_marker{ nft::strings::end_marker_dft(dfa_end_marker, END_MARKER) };
+        Nft dft_end_marker{ nft::strings::marker_dft(dfa_end_marker, END_MARKER) };
         Nft dft_expected_end_marker{};
         dft_expected_end_marker.levels_cnt = 2;
         dft_expected_end_marker.levels = { 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1 };
@@ -196,7 +196,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected.delta.add(4, 'c', 1);
         CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
 
-        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
+        Nft dft_generic_end_marker{ marker_dft(dfa_generic_end_marker, END_MARKER) };
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 4, 7, 14 };
@@ -267,7 +267,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected.delta.add(4, 'c', 0);
         CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
 
-        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
+        Nft dft_generic_end_marker{ marker_dft(dfa_generic_end_marker, END_MARKER) };
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 2, 7, 14};
