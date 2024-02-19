@@ -113,6 +113,7 @@ Nft mata::nft::strings::replace_reluctant(
 ) {
     nfa::Nfa dfa_generic_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
     Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_marker, end_marker) };
+    Nft dft_begin_marker{ begin_marker_dft(dfa_generic_marker, begin_marker) };
 
     return Nft{};
 }
@@ -139,7 +140,7 @@ nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
 }
 
 Nft mata::nft::strings::marker_dft(const nfa::Nfa& marker_dfa, const Symbol marker) {
-    assert(marker_dfa.is_deterministic());
+//    assert(marker_dfa.is_deterministic());
 
     Nft dft_marker{ nft::builder::create_from_nfa(marker_dfa) };
     const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
@@ -197,6 +198,31 @@ nfa::Nfa nft::strings::generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet
     return dfa_generic_end_marker;
 }
 
+nfa::Nfa nft::strings::begin_marker_dfa(const std::string& regex, Alphabet* alphabet) {
+    nfa::Nfa nfa{};
+    parser::create_nfa(&nfa, regex);
+    return begin_marker_dfa(std::move(nfa), alphabet);
+}
+
+nfa::Nfa nft::strings::begin_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
+    nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
+    dfa_generic_end_marker = revert(dfa_generic_end_marker);
+    std::swap(dfa_generic_end_marker.initial, dfa_generic_end_marker.final);
+    return dfa_generic_end_marker;
+}
+
+Nft nft::strings::begin_marker_dft(const nfa::Nfa& begin_marker_dfa, Symbol begin_marker) {
+    Nft begin_marker_dft{ marker_dft(begin_marker_dfa, begin_marker) };
+    const State new_initial{ begin_marker_dft.add_state() };
+    for (const State orig_final: begin_marker_dft.final) {
+        begin_marker_dft.delta.add(new_initial, EPSILON, orig_final);
+    }
+    begin_marker_dft.final = begin_marker_dft.initial;
+    begin_marker_dft.initial = { new_initial };
+    begin_marker_dft.levels.resize(new_initial + 1);
+    begin_marker_dft.levels[new_initial] = 0;
+    return begin_marker_dft;
+}
 
 Nft nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker) {
     return marker_dft(end_marker_dfa, end_marker);

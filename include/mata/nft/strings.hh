@@ -41,6 +41,10 @@ Nft marker_dft(const nfa::Nfa& marker_dfa, Symbol marker);
 nfa::Nfa generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet);
 nfa::Nfa generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet);
 
+nfa::Nfa begin_marker_dfa(const std::string& regex, Alphabet* alphabet);
+nfa::Nfa begin_marker_dfa(nfa::Nfa regex, Alphabet* alphabet);
+
+Nft begin_marker_dft(const nfa::Nfa& begin_marker_dfa, Symbol begin_marker);
 Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 } // Namespace mata::nft::strings.
 
