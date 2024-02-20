@@ -37,7 +37,6 @@ bool mata::nft::algorithms::is_included_antichains(
     Run*                   cex)
 { // {{{
     if (smaller.levels_cnt != bigger.levels_cnt) { return false; }
-    if (smaller.levels_cnt == 0) { return nfa::algorithms::is_included_antichains(smaller, bigger, alphabet, cex); }
 
     OrdVector<mata::Symbol> symbols;
     if (alphabet == nullptr) {
@@ -57,17 +56,6 @@ bool mata::nft::algorithms::is_included_antichains(
 
 namespace {
     using AlgoType = decltype(algorithms::is_included_naive)*;
-
-    bool compute_equivalence(const Nft &lhs, const Nft &rhs, const mata::Alphabet *const alphabet, const AlgoType &algo) {
-        //alphabet should not be needed as input parameter
-        if (algo(lhs, rhs, alphabet, nullptr)) {
-            if (algo(rhs, lhs, alphabet, nullptr)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     AlgoType set_algorithm(const std::string &function_name, const ParameterMap &params) {
         if (!haskey(params, "algorithm")) {
@@ -106,7 +94,6 @@ bool mata::nft::is_included(
 bool mata::nft::are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     if (lhs.levels_cnt != rhs.levels_cnt) { return false; }
-    if (lhs.levels_cnt == 0) { return nfa::are_equivalent(lhs, rhs, alphabet, params); }
 
     OrdVector<mata::Symbol> symbols;
     if (alphabet == nullptr) {

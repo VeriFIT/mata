@@ -3008,7 +3008,7 @@ TEST_CASE("mata::nft::Nft::get_one_level_aut") {
                 REPLACE_DONT_CARE(delta, inter, trg);\
 
     SECTION("level_cnt == 1") {
-        Nft aut(5, {0}, {3, 4}, {0, 0, 0, 0, 0}, 1);
+        Nft aut(5, {0}, {3, 4});
         aut.delta.add(0, 0, 1);
         aut.delta.add(0, 1, 2);
         aut.delta.add(1, 0, 1);
@@ -3020,7 +3020,7 @@ TEST_CASE("mata::nft::Nft::get_one_level_aut") {
         aut.delta.add(4, 1, 2);
         aut.delta.add(4, DONT_CARE, 4);
 
-        Nft expected(5, {0}, {3, 4}, {0, 0, 0, 0, 0}, 1);
+        Nft expected(5, {0}, {3, 4});
         expected.delta.add(0, 0, 1);
         expected.delta.add(0, 1, 2);
         expected.delta.add(1, 0, 1);

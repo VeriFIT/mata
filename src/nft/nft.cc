@@ -240,6 +240,13 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
 
 Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) const {
     Nft result{ *this };
+
+    // TODO(nft): Create a class for LEVELS with overloaded getter and setter.
+    // HACK. Works only for automata without levels.
+    if (result.levels.size() != result.num_of_states()) {
+        return result;
+    }
+
     result.make_one_level_aut(dcare_replacements);
     return result;
 }
@@ -263,7 +270,12 @@ State Nft::add_state() {
 }
 
 State Nft::add_state(State state) {
-    levels.push_back(0);
+    const size_t levels_size = levels.size();
+    if (state >= levels_size) {
+        levels.resize(state + 1);
+        const size_t begin_idx = (levels_size == 0) ? 0 : levels_size - 1;
+        std::fill(levels.begin() + static_cast<long int>(begin_idx), levels.end(), 0);
+    }
     return mata::nfa::Nfa::add_state(state);
 }
 
