@@ -51,7 +51,7 @@ struct Nft : public mata::nfa::Nfa {
 public:
     /// @brief For state q, levels[q] gives the state a level.
     std::vector<Level> levels{};
-    Level levels_cnt = 0;
+    Level levels_cnt = 1;
     /// Key value store for additional attributes for the NFT. Keys are attribute names as strings and the value types
     ///  are up to the user.
     /// For example, we can set up attributes such as "state_dict" for state dictionary attribute mapping states to their
@@ -65,8 +65,7 @@ public:
                  utils::SparseSet<State> final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1,
                  Alphabet* alphabet = nullptr)
         : mata::nfa::Nfa(std::move(delta), std::move(initial_states), std::move(final_states), alphabet),
-        levels(std::move(levels)), levels_cnt(levels_cnt) {}
-
+          levels(levels.size() ? std::move(levels) : std::vector<Level>(delta.num_of_states(), 0)), levels_cnt(levels_cnt) {}
     /**
      * @brief Construct a new explicit NFT with num_of_states states and optionally set initial and final states.
      *
@@ -75,7 +74,8 @@ public:
     explicit Nft(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, std::vector<Level> levels = {}, const Level levels_cnt = 1, Alphabet*
                  alphabet = nullptr)
-        : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet), levels(std::move(levels)), levels_cnt(levels_cnt) {}
+        : mata::nfa::Nfa(num_of_states, std::move(initial_states), std::move(final_states), alphabet),
+        levels(levels.size() ? std::move(levels) : std::vector<Level>(num_of_states, 0)), levels_cnt(levels_cnt) {}
 
     explicit Nft(const mata::nfa::Nfa& other)
         : mata::nfa::Nfa(other.delta, other.initial, other.final, other.alphabet),
