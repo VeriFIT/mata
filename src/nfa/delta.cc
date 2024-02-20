@@ -641,7 +641,11 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            reserve_on_insert(symbols,symbol_post.symbol);
+            const size_t capacity{ symbol_post.symbol + 1 };
+            reserve_on_insert(symbols, capacity);
+            if (symbols.size() < capacity) {
+                symbols.resize(capacity);
+            }
             symbols[symbol_post.symbol] = true;
         }
     }
