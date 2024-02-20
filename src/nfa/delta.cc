@@ -532,7 +532,7 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
 
     //WITH VECTOR (4.434 s)
-    //return get_used_symbols_vec();
+    return get_used_symbols_vec();
 
     //WITH SET (26.5 s)
     //auto from_set = get_used_symbols_set();
@@ -547,12 +547,12 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //WITH BOOL VECTOR (error !!!!!!!):
     //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
-    //WITH BOOL VECTOR (1.9s):
-    std::vector<bool> bv{ get_used_symbols_bv() };
-    utils::OrdVector<Symbol> ov{};
-    const size_t bv_size{ bv.size() };
-    for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
-    return ov;
+    //WITH BOOL VECTOR (1.9s): (The fastest, it seems.)
+    // std::vector<bool> bv{ get_used_symbols_bv() };
+    // utils::OrdVector<Symbol> ov{};
+    // const size_t bv_size{ bv.size() };
+    // for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
+    // return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
     //std::vector<bool> bv = get_used_symbols_bv();
