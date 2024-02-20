@@ -56,3 +56,10 @@ def test_int_alphabet():
     alphabet = alph.IntAlphabet()
     assert alphabet.translate_symbol('4') == 4
     assert alphabet.reverse_translate_symbol(4) == '4'
+
+
+def test_alphabet_get_symbol_map():
+    alpha = alph.OnTheFlyAlphabet.from_symbol_map({'a': 0})
+    symbol_map = alpha.get_symbol_map()
+    assert len(symbol_map) > 0
+    assert symbol_map['a'] == 0
