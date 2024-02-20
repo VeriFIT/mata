@@ -79,7 +79,7 @@ public:
 
     explicit Nft(const mata::nfa::Nfa& other)
         : mata::nfa::Nfa(other.delta, other.initial, other.final, other.alphabet),
-          levels(std::vector<Level>(other.delta.num_of_states(), 0)), levels_cnt(1) {}
+          levels(std::vector<Level>(other.num_of_states(), 0)), levels_cnt(1) {}
 
     /**
      * @brief Construct a new explicit NFT from other NFT.
