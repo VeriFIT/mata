@@ -524,7 +524,7 @@ void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 
 OrdVector<Symbol> Delta::get_used_symbols() const {
     //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
-    // for instance figure out why NumberPredicate and OrdVedctor are slow,
+    // for instance figure out why NumberPredicate and OrdVector are slow,
     // try also with _STATIC_DATA_STRUCTURES_, it changes things.
 
     //below are different variant, with different data structures for accumulating symbols,
@@ -577,7 +577,7 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
     static std::vector<Symbol> symbols{};
     symbols.clear();
 #else
-    std::vector<Symbol>  symbols{};
+    std::vector<Symbol> symbols{};
 #endif
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost & symbol_post: state_post) {
@@ -585,7 +585,7 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
             symbols.push_back(symbol_post.symbol);
         }
     }
-    utils::OrdVector<Symbol>  sorted_symbols(symbols);
+    utils::OrdVector<Symbol> sorted_symbols(symbols);
     return sorted_symbols;
 }
 
@@ -613,10 +613,10 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static utils::SparseSet<Symbol>  symbols(64,false);
+    static utils::SparseSet<Symbol> symbols(64,false);
     symbols.clear();
 #else
-    utils::SparseSet<Symbol>  symbols(64);
+    utils::SparseSet<Symbol> symbols(64);
 #endif
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
@@ -633,10 +633,10 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 std::vector<bool> Delta::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static std::vector<bool>  symbols(64,false);
+    static std::vector<bool> symbols(64, false);
     symbols.clear();
 #else
-    std::vector<bool> symbols(64,false);
+    std::vector<bool> symbols(64, false);
 #endif
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
