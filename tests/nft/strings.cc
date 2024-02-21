@@ -5,10 +5,12 @@
 
 #include <catch2/catch.hpp>
 
+#include "mata/nfa/builder.hh"
+#include "mata/parser/re2parser.hh"
+#include "mata/parser/parser.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/strings.hh"
-#include "mata/parser/re2parser.hh"
 
 using namespace mata;
 using namespace mata::nft;
@@ -441,5 +443,39 @@ TEST_CASE("nft::reluctant_replacement()") {
         nft_expected.levels[10] = 1;
         nft_expected.levels[11] = 1;
         CHECK(nft::are_equivalent(nft_begin_marker, nft_expected));
+    }
+}
+
+TEST_CASE("mata::nft::strings::reluctant_nfa_with_marker()") {
+    Nft nft{};
+    nfa::Nfa regex{};
+    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+    constexpr Symbol MARKER{ EPSILON - 100 };
+
+    SECTION("regex cb+a+") {
+        nfa::Nfa nfa{ [&]() {
+            nfa::Nfa nfa{};
+            mata::parser::create_nfa(&nfa, "cb+a+");
+            return reluctant_nfa_with_marker(nfa, MARKER, &alphabet);
+        }() };
+        nfa::Nfa expected{ nfa::builder::parse_from_mata(std::string(
+            "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q3\nq0 99 q1\nq0 4294967195 q0\nq1 98 q2\nq1 4294967195 q1\nq2 97 q3\nq2 98 q2\nq2 4294967195 q2\n")) };
+        CHECK(nfa::are_equivalent(nfa, expected));
+    }
+}
+
+TEST_CASE("mata::nft::strings::reluctant_leftmost_nft()") {
+    Nft nft{};
+    nfa::Nfa regex{};
+    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+    constexpr Symbol MARKER{ EPSILON - 100 };
+
+    SECTION("'cb+a+' replaced with 'ddd'") {
+        Nft nft_reluctant_replace{
+            reluctant_leftmost_nft("cb+a+", &alphabet, MARKER, Word{ 'd', 'd', 'd' }, ReplaceMode::All)
+        };
+        nft::Nft expected{ nft::builder::parse_from_mata(std::string(
+            "@NFT-explicit\n%Alphabet-auto\n%Initial q13\n%Final q13\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:0 q6:1 q7:1 q8:0 q9:1 q10:1 q11:0 q12:1 q13:0 q14:1 q15:1 q16:1 q17:1 q18:1 q19:0 q20:1 q21:0 q22:1 q23:0 q24:1 q25:0\n%LevelsCnt 2\nq0 99 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 98 q4\nq2 4294967195 q6\nq3 4294967295 q0\nq4 4294967295 q5\nq5 97 q7\nq5 98 q9\nq5 4294967195 q10\nq6 4294967295 q2\nq7 4294967295 q8\nq8 4294967295 q18\nq9 4294967295 q5\nq10 4294967295 q5\nq11 4294967195 q12\nq12 4294967295 q11\nq13 97 q14\nq13 98 q15\nq13 99 q16\nq13 4294967195 q17\nq14 97 q13\nq15 98 q13\nq16 99 q13\nq17 4294967295 q0\nq18 100 q19\nq19 4294967295 q20\nq20 100 q21\nq21 4294967295 q22\nq22 100 q23\nq23 4294967295 q24\nq24 4294967295 q25\nq25 4294967295 q13\n")) };
+        CHECK(nft::are_equivalent(nft_reluctant_replace, expected));
     }
 }
