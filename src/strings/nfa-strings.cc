@@ -210,3 +210,10 @@ bool mata::strings::is_lang_eps(const Nfa& aut) {
     }
     return true;
 }
+
+Nfa mata::strings::reluctant_nfa(Nfa nfa) {
+    for (const State final: nfa.final) {
+        nfa.delta.mutable_state_post(final).clear();
+    }
+    return nfa;
+}
