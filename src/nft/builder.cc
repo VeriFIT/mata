@@ -1,5 +1,6 @@
 // TODO: Insert header file.
 
+#include "mata/utils/utils.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/parser/mintermization.hh"
 #include "mata/nft/builder.hh"
@@ -295,7 +296,7 @@ Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     return parse_from_mata(nft_stream);
 }
 
-Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const std::set<Symbol>& epsilons) {
+Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, std::optional<Symbol> next_level_symbol, const std::set<Symbol>& epsilons) {
     const Level num_of_additional_states_per_nfa_trans{ level_cnt - 1 };
     Nft nft{};
     size_t nfa_num_of_states{ nfa.num_of_states() };
@@ -305,6 +306,7 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
     state_mapping.reserve(nfa_num_of_states);
     State nft_state{ 0 };
     State curr_nft_state;
+
     for (State source{ 0 }; source < nfa.num_of_states(); ++source) {
         const auto nft_state_it{ state_mapping.find(source) };
         if (nft_state_it == state_mapping.end()) {
@@ -317,7 +319,13 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
             if (!epsilons.contains(symbol_post.symbol)) {
                 for (; level < num_of_additional_states_per_nfa_trans; ++level) {
                     nft.levels[curr_nft_state] = level;
-                    nft.delta.add(curr_nft_state, symbol_post.symbol, nft_state);
+                    if (level != 0) {
+                        nft.delta.add(curr_nft_state,
+                                      next_level_symbol.has_value() ? next_level_symbol.value() : symbol_post.symbol,
+                                      nft_state);
+                    } else {
+                        nft.delta.add(curr_nft_state, symbol_post.symbol, nft_state);
+                    }
                     curr_nft_state = nft_state;
                     ++nft_state;
                 }
@@ -332,7 +340,9 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
                     nft_target = nft_target_it->second;
                 }
                 nft.levels[curr_nft_state] = level;
-                nft.delta.add(curr_nft_state, symbol_post.symbol, nft_target);
+                nft.delta.add(curr_nft_state,
+                              next_level_symbol.has_value() ? next_level_symbol.value() : symbol_post.symbol,
+                              nft_target);
             }
         }
     }
