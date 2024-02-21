@@ -6,6 +6,7 @@
 #include "mata/nfa/builder.hh"
 #include "nft.hh"
 
+#include <optional>
 #include <filesystem>
 
 /**
@@ -103,7 +104,7 @@ Nft parse_from_mata(const std::filesystem::path& nft_file);
  * @param epsilons Which symbols handle as epsilons.
  * @return NFT representing @p nfa_state with @p level_cnt number of levels.
  */
-Nft create_from_nfa(const mata::nfa::Nfa& nfa_state, Level level_cnt = 2, const std::set<Symbol>& epsilons = { EPSILON });
+Nft create_from_nfa(const mata::nfa::Nfa& nfa_state, Level level_cnt = 2, std::optional<Symbol> next_level_symbol = {}, const std::set<Symbol>& epsilons = { EPSILON });
 
 } // namespace mata::nft::builder.
 
