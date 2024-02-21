@@ -116,6 +116,7 @@ public:
     using super::front;
     using super::back;
     using super::filter;
+    using super::clear;
 
     void erase(const SymbolPost& s) {super::erase(s);}
     void erase(const_iterator first, const_iterator last) {super::erase(first,last);}
