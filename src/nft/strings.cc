@@ -226,3 +226,31 @@ Nft nft::strings::begin_marker_nft(const nfa::Nfa& begin_marker_dfa, Symbol begi
 Nft nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker) {
     return marker_nft(end_marker_dfa, end_marker);
 }
+
+nfa::Nfa nft::strings::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol marker, Alphabet* alphabet) {
+    // Convert to reluctant NFA.
+    nfa = mata::strings::reluctant_nfa(nfa);
+
+    // Add marker self-loops to accept begin markers inside the shortest match.
+    for (State state{ 0 }; state < nfa.num_of_states(); ++state) {
+        nfa.delta.add(state, marker, state);
+    }
+
+    // Intersect with NFA to avoid removing the next begin marker which might be used for the next replace.
+    // TODO(nft): Could be optimised.
+    nfa::Nfa nfa_avoid_removing_next_begin_marker{ 2, { 0 }, { 0 } };
+    StatePost& initial{ nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(0) };
+    const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
+    for (const Symbol symbol: alphabet_symbols) {
+        initial.push_back({ symbol, 0 });
+    }
+    StatePost& marker_state{ nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(1) };
+    nfa_avoid_removing_next_begin_marker.delta.add(0, marker, 1);
+    for (const Symbol symbol: alphabet_symbols) {
+        marker_state.push_back({ symbol, 0 });
+    }
+    nfa_avoid_removing_next_begin_marker.delta.add(1, marker, 1);
+    // TODO(nft): Leaves a non-terminating begin_marker transitions in a form of a lasso from final states.
+    //  These lassos should be removed to further optimize NFT creation.
+    return mata::strings::reluctant_nfa(reduce(intersection(nfa, nfa_avoid_removing_next_begin_marker)));
+}
