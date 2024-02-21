@@ -19,20 +19,25 @@ Nft create_identity(mata::Alphabet* alphabet, Level level_cnt = 2);
  */
 Nft create_identity_with_single_replace(mata::Alphabet* alphabet, Symbol from_symbol, Symbol to_symbol);
 
+enum class ReplaceMode {
+    Single,
+    All,
+};
+
 Nft replace_reluctant(
     const std::string& regex,
-    const std::string& replacement,
+    const Word& replacement,
     Alphabet* alphabet,
-    // TODO: Change into constants?
-    Symbol begin_marker = EPSILON - 101,
-    Symbol end_marker = EPSILON - 100
+    // TODO(nft): Change into constants?
+    ReplaceMode replace_mode,
+    Symbol begin_marker = EPSILON - 100
 );
 Nft replace_reluctant(
     nfa::Nfa regex,
-    const std::string& replacement,
+    const Word& replacement,
     Alphabet* alphabet,
-    Symbol begin_marker = EPSILON - 101,
-    Symbol end_marker = EPSILON - 100
+    ReplaceMode replace_mode,
+    Symbol begin_marker = EPSILON - 100
 );
 
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
@@ -47,6 +52,9 @@ nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet);
 Nft begin_marker_nft(const nfa::Nfa& begin_marker_dfa, Symbol begin_marker);
 Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
 nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet* alphabet);
+
+Nft reluctant_leftmost_nft(const std::string& regex, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
+Nft reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
 } // Namespace mata::nft::strings.
 
 #endif // MATA_NFT_STRING_SOLVING_HH_.
