@@ -3,13 +3,10 @@
 #ifndef LIBMATA_NFT_BUILDER_HH
 #define LIBMATA_NFT_BUILDER_HH
 
-#include "nft.hh"
-#include <bits/stdc++.h>
-
 #include "mata/nfa/builder.hh"
+#include "nft.hh"
 
 #include <filesystem>
-
 
 /**
  * Namespace providing options to build NFAs.
