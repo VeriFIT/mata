@@ -265,18 +265,31 @@ Nft& Nft::operator=(Nft&& other) noexcept {
 }
 
 State Nft::add_state() {
-    levels.push_back(0);
+    const size_t required_capacity{ num_of_states() + 1 };
+    if (levels.size() < required_capacity) {
+        levels.resize(required_capacity, DEFAULT_LEVEL);
+    }
     return mata::nfa::Nfa::add_state();
 }
 
-State Nft::add_state(State state) {
-    const size_t levels_size = levels.size();
-    if (state >= levels_size) {
-        levels.resize(state + 1);
-        const size_t begin_idx = (levels_size == 0) ? 0 : levels_size - 1;
-        std::fill(levels.begin() + static_cast<long int>(begin_idx), levels.end(), 0);
+State Nft::add_state(const State state) {
+    const size_t required_capacity{ state + 1 };
+    if (levels.size() < required_capacity) {
+        levels.resize(required_capacity, DEFAULT_LEVEL);
     }
     return mata::nfa::Nfa::add_state(state);
+}
+
+State Nft::add_state_with_level(const Level level) {
+    const State state{ add_state() };
+    levels[state] = level;
+    return state;
+}
+
+State Nft::add_state_with_level(const State state, const Level level) {
+    add_state(state);
+    levels[state] = level;
+    return state;
 }
 
 void Nft::clear() {
