@@ -265,7 +265,10 @@ Nft& Nft::operator=(Nft&& other) noexcept {
 }
 
 State Nft::add_state() {
-    levels.push_back(0);
+    const size_t required_capacity{ num_of_states() + 1 };
+    if (levels.size() < required_capacity) {
+        levels.resize(required_capacity, DEFAULT_LEVEL);
+    }
     return mata::nfa::Nfa::add_state();
 }
 
