@@ -8,7 +8,8 @@
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
 
-//using mata::nft::Nft;
+using mata::nft::Nft;
+using mata::nfa::Nfa;
 using namespace mata;
 using mata::nft::Level;
 using mata::Symbol;
@@ -111,10 +112,7 @@ Nft mata::nft::strings::replace_reluctant(
     Symbol begin_marker,
     Symbol end_marker
 ) {
-    nfa::Nfa dfa_generic_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
-    Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_marker, end_marker) };
-    Nft dft_begin_marker{ begin_marker_nft(dfa_generic_marker, begin_marker) };
-
+    Nft dft_begin_marker{ begin_marker_nft(generic_marker_dfa(regex, alphabet), begin_marker) };
     return Nft{};
 }
 
@@ -158,13 +156,13 @@ Nft mata::nft::strings::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
     return dft_marker;
 }
 
-nfa::Nfa nft::strings::generic_end_marker_dfa(const std::string& regex, Alphabet* alphabet) {
+nfa::Nfa nft::strings::generic_marker_dfa(const std::string& regex, Alphabet* alphabet) {
     nfa::Nfa nfa{};
     parser::create_nfa(&nfa, regex);
-    return generic_end_marker_dfa(std::move(nfa), alphabet);
+    return generic_marker_dfa(std::move(nfa), alphabet);
 }
 
-nfa::Nfa nft::strings::generic_end_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
+nfa::Nfa nft::strings::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
     if (!regex.is_deterministic()) {
         regex = determinize(regex);
     }
@@ -204,7 +202,7 @@ nfa::Nfa nft::strings::begin_marker_nfa(const std::string& regex, Alphabet* alph
 }
 
 nfa::Nfa nft::strings::begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet) {
-    nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa(std::move(regex), alphabet) };
+    nfa::Nfa dfa_generic_end_marker{ generic_marker_dfa(std::move(regex), alphabet) };
     dfa_generic_end_marker = revert(dfa_generic_end_marker);
     std::swap(dfa_generic_end_marker.initial, dfa_generic_end_marker.final);
     return dfa_generic_end_marker;
