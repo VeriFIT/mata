@@ -106,10 +106,22 @@ public:
     State add_state();
 
     /**
-     * Add state @p state to @c delta if @p state is not in @c delta yet.
+     * Add state @p state to @c this if @p state is not in @c this yet.
      * @return The requested @p state.
      */
     State add_state(State state);
+
+    /**
+     * Add a new (fresh) state to the automaton with level @p level.
+     * @return The newly created state.
+     */
+    State add_state_with_level(Level level);
+
+    /**
+     * Add state @p state to @c this with level @p level if @p state is not in @c this yet.
+     * @return The requested @p state.
+     */
+    State add_state_with_level(State state, Level level);
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.
