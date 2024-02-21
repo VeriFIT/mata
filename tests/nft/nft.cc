@@ -3125,3 +3125,22 @@ TEST_CASE("mata::nft::Nft::get_one_level_aut") {
     }
 
 }
+
+TEST_CASE("mata::nft::Nft::add_state()") {
+    Nft nft{};
+    State state{ nft.add_state() };
+    CHECK(state == 0);
+    CHECK(nft.levels[state] == 0);
+    state = nft.add_state(4);
+    CHECK(state == 4);
+    CHECK(nft.levels[state] == 0);
+    CHECK(nft.num_of_states() == 5);
+    state = nft.add_state_with_level(3);
+    CHECK(state == 5);
+    CHECK(nft.levels[state] == 3);
+    CHECK(nft.num_of_states() == 6);
+    state = nft.add_state_with_level(12, 1);
+    CHECK(state == 12);
+    CHECK(nft.levels[state] == 1);
+    CHECK(nft.num_of_states() == 13);
+}
