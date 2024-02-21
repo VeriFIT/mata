@@ -290,7 +290,7 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
     // Move to replace mode when begin marker is encountered.
     initial_state_post.insert({ begin_marker, curr_state });
     nft_reluctant_leftmost.delta.mutable_state_post(curr_state).push_back(
-        SymbolPost{ EPSILON, StateSet{ nft_reluctant_leftmost.initial }}
+        SymbolPost{ EPSILON, StateSet{ nft_reluctant_leftmost.initial } }
     );
     nft_reluctant_leftmost.levels[curr_state] = 1;
     ++curr_state;
