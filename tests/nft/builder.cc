@@ -55,6 +55,40 @@ TEST_CASE("nft::create_from_nfa()") {
         expected.levels_cnt = LEVEL_CNT;
         CHECK(mata::nft::are_equivalent(nft, expected));
     }
+
+    SECTION("regex cb+a+") {
+        constexpr Level LEVEL_CNT{ 2 };
+        nfa.initial = { 0 };
+        nfa.final = { 3 };
+        nfa.delta.add(0, 'c', 1);
+        nfa.delta.add(1, 'b', 1);
+        nfa.delta.add(1, 'b', 2);
+        nfa.delta.add(2, 'a', 2);
+        nfa.delta.add(2, 'a', 3);
+        nft = builder::create_from_nfa(nfa, LEVEL_CNT);
+        expected = mata::nft::builder::parse_from_mata(
+            std::string("@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q6\n%Levels q0:0 q1:1 q2:0 q3:1 q4:0 q5:1 q6:0\n%LevelsCnt 2\nq0 99 q1\nq1 99 q2\nq2 98 q3\nq3 98 q2\nq3 98 q4\nq4 97 q5\nq5 97 q4\nq5 97 q6\n")
+        );
+        expected.levels_cnt = LEVEL_CNT;
+        CHECK(mata::nft::are_equivalent(nft, expected));
+    }
+
+    SECTION("regex cb+a+ with epsilon on added levels") {
+        constexpr Level LEVEL_CNT{ 2 };
+        nfa.initial = { 0 };
+        nfa.final = { 3 };
+        nfa.delta.add(0, 'c', 1);
+        nfa.delta.add(1, 'b', 1);
+        nfa.delta.add(1, 'b', 2);
+        nfa.delta.add(2, 'a', 2);
+        nfa.delta.add(2, 'a', 3);
+        nft = builder::create_from_nfa(nfa, LEVEL_CNT, { EPSILON }, { EPSILON });
+        expected = mata::nft::builder::parse_from_mata(
+            std::string("@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q6\n%Levels q0:0 q1:1 q2:0 q3:1 q4:0 q5:1 q6:0\n%LevelsCnt 2\nq0 99 q1\nq1 4294967295 q2\nq2 98 q3\nq3 4294967295 q2\nq3 4294967295 q4\nq4 97 q5\nq5 4294967295 q4\nq5 4294967295 q6\n")
+        );
+        expected.levels_cnt = LEVEL_CNT;
+        CHECK(mata::nft::are_equivalent(nft, expected));
+    }
 }
 
 TEST_CASE("nft::parse_from_mata()") {
