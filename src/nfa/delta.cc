@@ -548,6 +548,8 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
     //WITH BOOL VECTOR (1.9s): (The fastest, it seems.)
+    // However, it will try to allocate a vector indexed by the symbols. If there are epsilons in the automaton,
+    //  for example, the bool vector implementation will implode.
     // std::vector<bool> bv{ get_used_symbols_bv() };
     // utils::OrdVector<Symbol> ov{};
     // const size_t bv_size{ bv.size() };
@@ -649,7 +651,6 @@ std::vector<bool> Delta::get_used_symbols_bv() const {
             symbols[symbol_post.symbol] = true;
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
     return symbols;
 }
 
