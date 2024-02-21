@@ -1,6 +1,5 @@
 // TODO: some header
 
-#include <unordered_set>
 #include <vector>
 #include <fstream>
 
@@ -179,7 +178,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     }
 
     SECTION("nft::generic_end_marker_dft() regex cb+a+") {
-        nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa("cb+a+", &alphabet) };
+        nfa::Nfa dfa_generic_end_marker{ generic_marker_dfa("cb+a+", &alphabet) };
         nfa::Nfa dfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
         dfa_expected.delta.add(0, 'a', 0);
         dfa_expected.delta.add(0, 'b', 0);
@@ -250,7 +249,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     }
 
     SECTION("nft::generic_end_marker_dft() regex ab+a+") {
-        nfa::Nfa dfa_generic_end_marker{ generic_end_marker_dfa("ab+a+", &alphabet) };
+        nfa::Nfa dfa_generic_end_marker{ generic_marker_dfa("ab+a+", &alphabet) };
         nfa::Nfa dfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
         dfa_expected.delta.add(0, 'a', 1);
         dfa_expected.delta.add(0, 'b', 0);
@@ -270,7 +269,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, MARKER) };
         Nft dft_expected{};
         dft_expected.initial.insert(0);
-        dft_expected.final = { 0, 2, 7, 14};
+        dft_expected.final = { 0, 2, 7, 14 };
         dft_expected.levels_cnt = 2;
         dft_expected.delta.add(0, 'a', 1);
         dft_expected.delta.add(1, 'a', 2);
