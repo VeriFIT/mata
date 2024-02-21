@@ -44,6 +44,9 @@ struct Nft; ///< A non-deterministic finite automaton.
 constexpr Symbol EPSILON = mata::nfa::EPSILON;
 constexpr Symbol DONT_CARE = EPSILON - 1;
 
+constexpr Level DEFAULT_LEVEL{ 0 };
+constexpr Level DEFAULT_LEVEL_CNT{ 1 };
+
 } // namespace mata::nfa.
 
 #endif //MATA_TYPES_HH
