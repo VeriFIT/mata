@@ -46,6 +46,7 @@ nfa::Nfa begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet);
 
 Nft begin_marker_nft(const nfa::Nfa& begin_marker_dfa, Symbol begin_marker);
 Nft end_marker_dft(const nfa::Nfa& end_marker_dfa, Symbol end_marker);
+nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet* alphabet);
 } // Namespace mata::nft::strings.
 
 #endif // MATA_NFT_STRING_SOLVING_HH_.
