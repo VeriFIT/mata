@@ -903,3 +903,89 @@ std::set<mata::Word> mata::nft::Nft::get_words(unsigned max_length) {
 
     return result;
 }
+
+bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
+    if (track_words.size() != num_of_levels) {
+        throw std::runtime_error("Invalid number of tracks. Expected " + std::to_string(num_of_levels) + ".");
+    }
+    std::vector<Word::const_iterator> track_words_begins(num_of_levels);
+    for (size_t track{ 0 }; track < num_of_levels; ++track) {
+        track_words_begins[track] = track_words[track].begin();
+    }
+
+    const std::vector<Word::const_iterator> track_words_ends{
+        [&](){
+            std::vector<Word::const_iterator> track_words_ends(num_of_levels);
+            for (size_t track{ 0 }; track < num_of_levels; ++track) {
+                track_words_ends[track] = track_words[track].end();
+            }
+            return track_words_ends;
+        }()
+    };
+
+    auto are_all_track_words_read = [&](const std::vector<Word::const_iterator>& word_begins){
+       for (size_t i{ 0 }; Word::const_iterator word_it: word_begins) {
+           if (word_it != track_words_ends[i]) { return false; }
+           ++i;
+       }
+       return true;
+    };
+
+    if (are_all_track_words_read(track_words_begins)) {
+        return final.intersects_with(initial);
+    }
+
+    using StateWordBeginsPair = std::pair<State, std::vector<Word::const_iterator>>;
+    std::deque<StateWordBeginsPair> worklist{};
+    for (const State state: initial) {
+        worklist.emplace_back(state, track_words_begins);
+    }
+    Level level;
+    while (!worklist.empty()) {
+        const auto [state, words_its]{ worklist.front() };
+        worklist.pop_front();
+        level = levels[state];
+        const StatePost& state_post{ delta[state] };
+        const auto state_post_end{ state_post.end() };
+        const Word::const_iterator word_symbol_it{ words_its[level] };
+        if (word_symbol_it != track_words_ends[level]) {
+                auto symbol_post_it{ state_post.find(*word_symbol_it) };
+                if (symbol_post_it != state_post_end) {
+                    for (State target: symbol_post_it->targets) {
+                        std::vector<Word::const_iterator> next_words_its{ words_its };
+                        ++next_words_its[level];
+                        if (are_all_track_words_read(next_words_its) && final.contains(target)) { return true; }
+                        worklist.emplace_back(target, next_words_its);
+                    }
+                }
+
+            symbol_post_it = state_post.find(DONT_CARE);
+            if (symbol_post_it != state_post_end) {
+                for (const State target: symbol_post_it->targets) {
+                    bool continue_to_next_target{ false };
+                    std::vector<Word::const_iterator> next_words_its{ words_its };
+                    Level level_in_transition{ level };
+                    do {
+                        if (next_words_its[level_in_transition] == track_words_ends[level_in_transition]) {
+                            continue_to_next_target = true;
+                        }
+                        ++next_words_its[level_in_transition];
+                        level_in_transition = (level_in_transition + 1) % static_cast<Level>(num_of_levels);
+                    } while(level_in_transition % num_of_levels != levels[target] && !continue_to_next_target);
+                    if (continue_to_next_target) { continue; }
+                    if (are_all_track_words_read(next_words_its) && final.contains(target)) { return true; }
+                    worklist.emplace_back(target, next_words_its);
+                }
+            }
+        }
+
+        auto symbol_post_it{ state_post.find(EPSILON) };
+        if (symbol_post_it != state_post_end) {
+            for (State target: symbol_post_it->targets) {
+                if (are_all_track_words_read(words_its) && final.contains(target)) { return true; }
+                worklist.emplace_back(target, words_its);
+            }
+        }
+    }
+    return false;
+}
