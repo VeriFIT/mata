@@ -5,7 +5,6 @@
 #include <list>
 #include <unordered_set>
 #include <iterator>
-#include <algorithm>
 
 // MATA headers
 #include "mata/nft/delta.hh"
