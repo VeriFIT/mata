@@ -21,7 +21,7 @@ def from_regex(regex, encoding='utf-8'):
     parser.create_nfa((<mata_nfa.Nfa>result).thisptr.get(), regex.encode(encoding))
     return result
 
-def from_mata(src, alph.Alphabet alphabet):
+def from_mata(src: str | list[str], alph.Alphabet alphabet):
     """Loads automata from either single file or list or other stream of files.
     
     All automata passed in sources are mintermized together. If you wish to load 
