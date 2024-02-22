@@ -468,6 +468,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
 
     for (const State state: states) {
         const StatePost& post{ delta[state] };
+        // TODO: This does not handle epsilons.
         const auto move_it{ post.find(symbol) };
         if (move_it != post.end()) {
             res.insert(move_it->targets);
