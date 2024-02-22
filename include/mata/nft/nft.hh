@@ -320,6 +320,14 @@ public:
     /// Checks whether the prefix of a string is in the language of an automaton
     bool is_prfx_in_lang(const Run& word) const;
 
+    /**
+     * @brief Checks whether track words are in the language of the transducer.
+     *
+     * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
+     *  relation accepted by the transducer with 'n' levels (tracks).
+     */
+    bool is_tuple_in_lang(const std::vector<Word>& track_words);
+
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
     /**
