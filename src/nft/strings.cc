@@ -320,6 +320,7 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
         };
         case ReplaceMode::Single: {
             const State final{ curr_state };
+            nft_reluctant_leftmost.final.insert(final);
             ++curr_state;
             for (const Symbol symbol: alphabet_symbols) {
                 nft_reluctant_leftmost.delta.add(final, symbol, curr_state);
@@ -329,7 +330,7 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
             }
 
             nft_reluctant_leftmost.delta.add(final, begin_marker, curr_state);
-            nft_reluctant_leftmost.delta.add(curr_state, begin_marker, final);
+            nft_reluctant_leftmost.delta.add(curr_state, EPSILON, final);
             nft_reluctant_leftmost.levels[curr_state] = 1;
             ++curr_state;
             break;
@@ -345,6 +346,3 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
 
     return nft_reluctant_leftmost;
 }
-
-
-
