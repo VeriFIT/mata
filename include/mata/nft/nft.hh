@@ -428,31 +428,56 @@ Nft somewhat_simple_revert(const Nft& aut);
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
 /**
- * @brief Projects out specified levels in the given automaton.
+ * @brief Projects out specified levels @p levels_to_project in the given transducer @p nft.
  *
- * The vector levels_to_project must be a non-empty ordered vector
- * containing only values that are greater than or equal to 0 and smaller than levels_cnt.
- *
- * @param aut The automaton for projection.
- * @param levels_to_project A non-empty ordered vector of levels to be projected out from the automaton.
+ * @param nft The transducer for projection.
+ * @param levels_to_project A non-empty ordered vector of levels to be projected out from the transducer. It must
+ *  contain only values that are greater than or equal to 0 and smaller than @c levels_cnt.
  * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
- * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of DONT_CAREs.
- * @return A new automaton after the projection.
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @p DONT_CARE symbols.
+ * @return A new projected transducer.
  */
-Nft project_out(const Nft& aut, const utils::OrdVector<Level>& levels_to_project, const bool repeat_jump_symbol = true);
+Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, bool repeat_jump_symbol = true);
 
 /**
- * @brief Projects out specified level in the given automaton.
+ * @brief Projects out specified level @p level_to_project in the given transducer @p nft.
  *
- * The level level_to_project has to be greater or equal than 0 and smaller than levels_cnt.
- *
- * @param aut The automaton for projection.
- * @param level_to_project A level that is going to be projected out from the automaton.
+ * @param nft The transducer for projection.
+ * @param level_to_project A level that is going to be projected out from the transducer. It has to be greater than or
+ *  equal to 0 and smaller than @c levels_cnt.
  * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
- * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of DONT_CAREs.
- * @return A new automaton after the projection.
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE symbols.
+ * @return A new projected transducer.
  */
-Nft project_out(const Nft& aut, const Level level_to_project, const bool repeat_jump_symbol = true);
+Nft project_out(const Nft& nft, Level level_to_project, bool repeat_jump_symbol = true);
+
+/**
+ * @brief Projects to specified levels @p levels_to_project in the given transducer @p nft.
+ *
+ * @param nft The transducer for projection.
+ * @param levels_to_project A non-empty ordered vector of levels the transducer is going to be projected to.
+ *  It must contain only values greater than or equal to 0 and smaller than @c levels_cnt.
+ * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE symbols.
+ * @return A new projected transducer.
+ */
+Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, bool repeat_jump_symbol = true);
+
+/**
+ * @brief Projects to a specified level @p level_to_project in the given transducer @p nft.
+ *
+ * @param nft The transducer for projection.
+ * @param level_to_project A level the transducer is going to be projected to. It has to be greater than or equal to 0
+ *  and smaller than @c levels_cnt.
+ * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE symbols.
+ * @return A new projectedtransducer.
+ */
+Nft project_to(const Nft& nft, Level level_to_project, bool repeat_jump_symbol = true);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
