@@ -176,7 +176,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     return result;
 }
 
-Nft mata::nft::project_levels(const Nft& aut, const utils::OrdVector<Level>& levels_to_proj) {
+Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels_to_proj) {
     assert(!levels_to_proj.empty());
     assert(*std::max_element(levels_to_proj.begin(), levels_to_proj.end()) < aut.levels_cnt);
 
@@ -321,8 +321,8 @@ Nft mata::nft::project_levels(const Nft& aut, const utils::OrdVector<Level>& lev
     return result;
 }
 
-Nft mata::nft::project_levels(const Nft& aut, const Level level_to_project) {
-    return project_levels(aut, utils::OrdVector{ level_to_project });
+Nft mata::nft::project_out(const Nft& aut, const Level level_to_project) {
+    return project_out(aut, utils::OrdVector{ level_to_project });
 }
 
 Nft mata::nft::fragile_revert(const Nft& aut) {
