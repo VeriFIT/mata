@@ -321,7 +321,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         CHECK(nft::are_equivalent(dft_generic_end_marker, dft_expected));
     }
 
-    SECTION("nft::begin_marker_nft() regex cb+a+") {
+    SECTION("nft::begin_marker_nft() regex a+b+c") {
         nfa::Nfa nfa_begin_marker{ begin_marker_nfa("cb+a+", &alphabet) };
         nfa::Nfa nfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
         nfa_expected.delta.add(0, 'a', 0);
@@ -381,6 +381,12 @@ TEST_CASE("nft::reluctant_replacement()") {
         nft_expected.levels[10] = 1;
         nft_expected.levels[11] = 1;
         CHECK(nft::are_equivalent(nft_begin_marker, nft_expected));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'c' }, Word{ MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'b', 'c', 'c', 'c' }, Word{ MARKER, 'a', 'b', 'b', 'c', 'c', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'c' }, Word{ MARKER, 'a', MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'b', 'c' }, Word{ 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'a', 'b', 'c' }, Word{ 'a', 'a', 'b', 'b', 'b', MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'c', 'a', 'b', 'c' }, Word{ MARKER, 'a', MARKER, 'a', 'b', 'b', 'b', 'c', MARKER, 'a', 'b', 'c' } }));
     }
 
     SECTION("nft::begin_marker_nft() regex ab+a+") {
