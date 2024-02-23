@@ -435,9 +435,11 @@ Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
  *
  * @param aut The automaton for projection.
  * @param levels_to_project A non-empty ordered vector of levels to be projected out from the automaton.
- * * @return A new automaton after the projection.
+ * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of DONT_CAREs.
+ * @return A new automaton after the projection.
  */
-Nft project_levels(const Nft& aut, const utils::OrdVector<Level>& levels_to_project);
+Nft project_out(const Nft& aut, const utils::OrdVector<Level>& levels_to_project, const bool repeat_jump_symbol = true);
 
 /**
  * @brief Projects out specified level in the given automaton.
@@ -446,9 +448,11 @@ Nft project_levels(const Nft& aut, const utils::OrdVector<Level>& levels_to_proj
  *
  * @param aut The automaton for projection.
  * @param level_to_project A level that is going to be projected out from the automaton.
+ * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of DONT_CAREs.
  * @return A new automaton after the projection.
  */
-Nft project_levels(const Nft& aut, const Level level_to_project);
+Nft project_out(const Nft& aut, const Level level_to_project, const bool repeat_jump_symbol = true);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
