@@ -322,7 +322,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     }
 
     SECTION("nft::begin_marker_nft() regex a+b+c") {
-        nfa::Nfa nfa_begin_marker{ begin_marker_nfa("cb+a+", &alphabet) };
+        nfa::Nfa nfa_begin_marker{ begin_marker_nfa("a+b+c", &alphabet) };
         nfa::Nfa nfa_expected{ nfa::Delta{}, { 0 }, { 0, 1, 2, 4 }};
         nfa_expected.delta.add(0, 'a', 0);
         nfa_expected.delta.add(0, 'b', 0);
@@ -396,58 +396,21 @@ TEST_CASE("nft::reluctant_replacement()") {
         nfa_expected.delta.add(0, 'b', 0);
         nfa_expected.delta.add(0, 'c', 0);
         nfa_expected.delta.add(1, 'a', 1);
+        nfa_expected.delta.add(1, 'a', 4);
         nfa_expected.delta.add(2, 'b', 1);
         nfa_expected.delta.add(0, 'c', 1);
         nfa_expected.delta.add(3, 'a', 2);
         nfa_expected.delta.add(2, 'b', 2);
         nfa_expected.delta.add(0, 'c', 2);
         nfa_expected.delta.add(4, EPSILON, 3);
-        nfa_expected.delta.add(3, 'a', 4);
         nfa_expected.delta.add(2, 'b', 4);
         nfa_expected.delta.add(0, 'c', 4);
         CHECK(nfa::are_equivalent(nfa_begin_marker, nfa_expected));
 
         Nft nft_begin_marker{ begin_marker_nft(nfa_begin_marker, MARKER) };
-        Nft nft_expected{};
-        nft_expected.initial.insert(0);
-        nft_expected.final.insert(1);
-        nft_expected.num_of_levels = 2;
-        nft_expected.delta.add(0, EPSILON, 1);
-        nft_expected.delta.add(0, EPSILON, 2);
-        nft_expected.delta.add(0, EPSILON, 3);
-        nft_expected.delta.add(0, EPSILON, 5);
-        nft_expected.delta.add(1, 'b', 6);
-        nft_expected.delta.add(6, 'b', 1);
-        nft_expected.delta.add(1, 'c', 7);
-        nft_expected.delta.add(7, 'c', 1);
-        nft_expected.delta.add(7, 'c', 2);
-        nft_expected.delta.add(7, 'c', 3);
-        nft_expected.delta.add(7, 'c', 5);
-        nft_expected.delta.add(2, 'a', 8);
-        nft_expected.delta.add(8, 'a', 2);
-        nft_expected.delta.add(8, 'a', 1);
-        nft_expected.delta.add(3, 'b', 9);
-        nft_expected.delta.add(9, 'b', 3);
-        nft_expected.delta.add(9, 'b', 2);
-        nft_expected.delta.add(9, 'b', 5);
-        nft_expected.delta.add(4, 'a', 10);
-        nft_expected.delta.add(10, 'a', 5);
-        nft_expected.delta.add(10, 'a', 3);
-        nft_expected.delta.add(5, EPSILON, 11);
-        nft_expected.delta.add(11, MARKER, 4);
-        nft_expected.levels.resize(12);
-        nft_expected.levels[0] = 0;
-        nft_expected.levels[1] = 0;
-        nft_expected.levels[2] = 0;
-        nft_expected.levels[3] = 0;
-        nft_expected.levels[4] = 0;
-        nft_expected.levels[5] = 0;
-        nft_expected.levels[6] = 1;
-        nft_expected.levels[7] = 1;
-        nft_expected.levels[8] = 1;
-        nft_expected.levels[9] = 1;
-        nft_expected.levels[10] = 1;
-        nft_expected.levels[11] = 1;
+        Nft nft_expected{ nft::builder::parse_from_mata(std::string(
+            "@NFT-explicit\n%Alphabet-auto\n%Initial q11\n%Final q0\n%Levels q0:0 q1:1 q2:1 q3:0 q4:0 q5:0 q6:1 q7:1 q8:0 q9:1 q10:1 q11:0\n%LevelsCnt 2\nq0 98 q1\nq0 99 q2\nq1 98 q0\nq2 99 q0\nq2 99 q3\nq2 99 q4\nq2 99 q5\nq3 97 q6\nq4 98 q7\nq5 4294967295 q10\nq6 97 q0\nq6 97 q3\nq6 97 q5\nq7 98 q3\nq7 98 q4\nq7 98 q5\nq8 97 q9\nq9 97 q4\nq10 4294967195 q8\nq11 4294967295 q0\nq11 4294967295 q3\nq11 4294967295 q4\nq11 4294967295 q5\n"
+        )) };
         CHECK(nft::are_equivalent(nft_begin_marker, nft_expected));
     }
 }
