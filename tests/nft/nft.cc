@@ -3144,3 +3144,192 @@ TEST_CASE("mata::nft::Nft::add_state()") {
     CHECK(nft.levels[state] == 1);
     CHECK(nft.num_of_states() == 13);
 }
+
+
+TEST_CASE("mata::nft::project_levels()") {
+
+    SECTION("LINEAR") {
+        Delta delta;
+        delta.add(0, 0, 1);
+        delta.add(1, 1, 2);
+        delta.add(2, 2, 3);
+
+        Nft atm(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+
+        SECTION("project 0") {
+            Nft proj0 = project_levels(atm, { 0 });
+            Nft proj0_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj0_expected.delta.add(0, 1, 1);
+            proj0_expected.delta.add(1, 2, 2);
+            CHECK(are_equivalent(proj0, proj0_expected));
+
+        }
+
+        SECTION("project 1") {
+            Nft proj1 = project_levels(atm, { 1 });
+            Nft proj1_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj1_expected.delta.add(0, 0, 1);
+            proj1_expected.delta.add(1, 2, 2);
+            CHECK(are_equivalent(proj1, proj1_expected));
+        }
+
+        SECTION("project 2") {
+            Nft proj2 = project_levels(atm, { 2 });
+            Nft proj2_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj2_expected.delta.add(0, 0, 1);
+            proj2_expected.delta.add(1, 1, 2);
+            CHECK(are_equivalent(proj2, proj2_expected));
+
+        }
+    }
+
+    SECTION("LOOP") {
+        Delta delta;
+        delta.add(0, 0, 1);
+        delta.add(1, 1, 2);
+        delta.add(2, 2, 3);
+        delta.add(0, 3, 0);
+        delta.add(3, 4, 3);
+
+        Nft atm_loop(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+
+        SECTION("project 0") {
+            Nft proj0_loop = project_levels(atm_loop, { 0 });
+            Nft proj0_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj0_loop_expected.delta.add(0, DONT_CARE, 0);
+            proj0_loop_expected.delta.add(0, 1, 1);
+            proj0_loop_expected.delta.add(1, 2, 2);
+            proj0_loop_expected.delta.add(2, DONT_CARE, 2);
+            CHECK(are_equivalent(proj0_loop, proj0_loop_expected));
+        }
+
+        SECTION("project 1") {
+            Nft proj1_loop = project_levels(atm_loop, { 1 });
+            Nft proj1_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj1_loop_expected.delta.add(0, 3, 0);
+            proj1_loop_expected.delta.add(0, 0, 1);
+            proj1_loop_expected.delta.add(1, 2, 2);
+            proj1_loop_expected.delta.add(2, 4, 2);
+            CHECK(are_equivalent(proj1_loop, proj1_loop_expected));
+        }
+
+        SECTION("project 2") {
+            Nft proj2_loop = project_levels(atm_loop, { 2 });
+            Nft proj2_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj2_loop_expected.delta.add(0, 3, 0);
+            proj2_loop_expected.delta.add(0, 0, 1);
+            proj2_loop_expected.delta.add(1, 1, 2);
+            proj2_loop_expected.delta.add(2, 4, 2);
+            CHECK(are_equivalent(proj2_loop, proj2_loop_expected));
+        }
+
+        SECTION("project 0, 1, 2") {
+            Nft atm_empty(delta, { 0 }, {}, { 0, 1, 2, 0 }, 3);
+            Nft proj012_empty = project_levels(atm_empty, { 0, 1, 2 });
+            CHECK(are_equivalent(proj012_empty, Nft(1, {}, {}, {}, 0)));
+        }
+    }
+
+    SECTION("COMPLEX") {
+        Delta delta;
+        delta.add(0, 0, 1);
+        delta.add(1, 1, 2);
+        delta.add(2, 2, 3);
+        delta.add(0, 3, 3);
+        delta.add(3, 4, 2);
+
+        Nft atm_complex(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+
+        SECTION("project 0") {
+            Nft proj0_complex = project_levels(atm_complex, { 0 });
+            Nft proj0_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj0_complex_expected.delta.add(0, 1, 1);
+            proj0_complex_expected.delta.add(0, DONT_CARE, 2);
+            proj0_complex_expected.delta.add(1, 2, 2);
+            proj0_complex_expected.delta.add(2, DONT_CARE, 1);
+            CHECK(are_equivalent(proj0_complex, proj0_complex_expected));
+        }
+
+        SECTION("project 1") {
+            Nft proj1_complex = project_levels(atm_complex, { 1 });
+            Nft proj1_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj1_complex_expected.delta.add(0, 0, 1);
+            proj1_complex_expected.delta.add(0, 3, 2);
+            proj1_complex_expected.delta.add(1, 2, 2);
+            proj1_complex_expected.delta.add(2, 4, 1);
+            CHECK(are_equivalent(proj1_complex, proj1_complex_expected));
+        }
+
+        SECTION("project 2") {
+            Nft proj2_complex = project_levels(atm_complex, { 2 });
+            Nft proj2_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
+            proj2_complex_expected.delta.add(0, 0, 1);
+            proj2_complex_expected.delta.add(0, 3, 2);
+            proj2_complex_expected.delta.add(1, 1, 2);
+            proj2_complex_expected.delta.add(2, 4, 2);
+            CHECK(are_equivalent(proj2_complex, proj2_complex_expected));
+        }
+
+        SECTION("project 0, 1") {
+            Nft proj01_complex = project_levels(atm_complex, { 0, 1 });
+            Nft proj01_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            proj01_complex_expected.delta.add(0, 2, 1);
+            proj01_complex_expected.delta.add(0, DONT_CARE, 1);
+            proj01_complex_expected.delta.add(1, 2, 1);
+            CHECK(are_equivalent(proj01_complex, proj01_complex_expected));
+        }
+
+        SECTION("project 0, 2") {
+            Nft proj02_complex = project_levels(atm_complex, { 0, 2 });
+            Nft proj02_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            proj02_complex_expected.delta.add(0, 1, 1);
+            proj02_complex_expected.delta.add(0, DONT_CARE, 1);
+            proj02_complex_expected.delta.add(1, DONT_CARE, 1);
+            CHECK(are_equivalent(proj02_complex, proj02_complex_expected));
+        }
+
+        SECTION("project 1, 2") {
+            Nft proj12_complex = project_levels(atm_complex, { 1, 2 });
+            Nft proj12_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            proj12_complex_expected.delta.add(0, 0, 1);
+            proj12_complex_expected.delta.add(0, 3, 1);
+            proj12_complex_expected.delta.add(1, 4, 1);
+            CHECK(are_equivalent(proj12_complex, proj12_complex_expected));
+        }
+
+        SECTION("project 0, 1, 2") {
+            Nft proj012_complex = project_levels(atm_complex, { 0, 1, 2 });
+            Nft proj012_complex_expected(1, { 0 }, { 0 }, {}, 0);
+            CHECK(are_equivalent(proj012_complex, proj012_complex_expected));
+        }
+    }
+
+    SECTION("HARD") {
+        Nft atm_hard(Delta{}, { 0 , 2 }, { 7 }, { 0, 1, 0, 2, 3, 4, 5, 0 }, 6);
+        atm_hard.delta.add(0, 1, 1);
+        atm_hard.delta.add(2, 2, 1);
+        atm_hard.delta.add(2, 3, 2);
+        atm_hard.delta.add(1, 0, 3);
+        atm_hard.delta.add(1, 10, 4);
+        atm_hard.delta.add(3, 4, 4);
+        atm_hard.delta.add(4, 5, 5);
+        atm_hard.delta.add(5, 6, 6);
+        atm_hard.delta.add(6, 7, 0);
+        atm_hard.delta.add(6, 8, 7);
+        atm_hard.delta.add(7, 9, 2);
+
+        Nft proj_hard = project_levels(atm_hard, { 0, 3, 4, 5 });
+
+        Nft proj_hard_expected(4, { 0, 1 }, { 3 }, { 0, 0, 1, 0 }, 2);
+        proj_hard_expected.delta.add(0, 0, 2);
+        proj_hard_expected.delta.add(0, 10, 3);
+        proj_hard_expected.delta.add(1, 0, 2);
+        proj_hard_expected.delta.add(1, 10, 3);
+        proj_hard_expected.delta.add(1, DONT_CARE, 1);
+        proj_hard_expected.delta.add(2, 4, 3);
+        proj_hard_expected.delta.add(3, 10, 3);
+        proj_hard_expected.delta.add(3, 0, 2);
+        proj_hard_expected.delta.add(3, DONT_CARE, 1);
+        CHECK(are_equivalent(proj_hard, proj_hard_expected));
+    }
+}
