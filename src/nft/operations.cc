@@ -329,6 +329,19 @@ Nft mata::nft::project_out(const Nft& aut, const Level level_to_project, const b
     return project_out(aut, utils::OrdVector{ level_to_project }, repeat_jump_symbol);
 }
 
+Nft mata::nft::project_to(const Nft& nft, const OrdVector<Level>& levels_to_project_to, const bool repeat_jump_symbol) {
+    OrdVector<Level> all_levels{ OrdVector<Level>::with_reserved(nft.levels_cnt) };
+    for (Level level{ 0 }; level < nft.levels_cnt; ++level) { all_levels.push_back(level); }
+    OrdVector<Level> levels_to_project{ OrdVector<Level>::with_reserved(nft.levels_cnt) };
+    std::set_difference(all_levels.begin(), all_levels.end(), levels_to_project_to.begin(),
+                        levels_to_project_to.end(), std::back_inserter(levels_to_project) );
+    return project_out(nft, levels_to_project, repeat_jump_symbol);
+}
+
+Nft mata::nft::project_to(const Nft& nft, Level level_to_project_to, const bool repeat_jump_symbol) {
+    return project_to(nft, OrdVector<Level>{ level_to_project_to }, repeat_jump_symbol);
+}
+
 Nft mata::nft::fragile_revert(const Nft& aut) {
     const size_t num_of_states{ aut.num_of_states() };
 

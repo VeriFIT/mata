@@ -3157,7 +3157,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         Nft atm(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0 = project_out(atm, 0, false);
+            Nft proj0 = project_out(atm, OrdVector<Level>{ 0 }, false);
             Nft proj0_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_expected.delta.add(0, 1, 1);
             proj0_expected.delta.add(1, 2, 2);
@@ -3238,10 +3238,10 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         delta.add(0, 3, 3);
         delta.add(3, 4, 2);
 
-        Nft atm_complex(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
+        Nft nft_complex(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0_complex = project_out(atm_complex, 0, false);
+            Nft proj0_complex = project_out(nft_complex, 0, false);
             Nft proj0_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_complex_expected.delta.add(0, 1, 1);
             proj0_complex_expected.delta.add(0, DONT_CARE, 2);
@@ -3251,7 +3251,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1") {
-            Nft proj1_complex = project_out(atm_complex, 1, false);
+            Nft proj1_complex = project_out(nft_complex, 1, false);
             Nft proj1_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_complex_expected.delta.add(0, 0, 1);
             proj1_complex_expected.delta.add(0, 3, 2);
@@ -3261,17 +3261,26 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 2") {
-            Nft proj2_complex = project_out(atm_complex, 2, false);
+            Nft proj2_complex = project_out(nft_complex, OrdVector<Level>{ 2 }, false);
             Nft proj2_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_complex_expected.delta.add(0, 0, 1);
             proj2_complex_expected.delta.add(0, 3, 2);
             proj2_complex_expected.delta.add(1, 1, 2);
             proj2_complex_expected.delta.add(2, 4, 2);
             CHECK(are_equivalent(proj2_complex, proj2_complex_expected));
+
+            proj2_complex = project_to(nft_complex, OrdVector<Level>{ 2 });
+            proj2_complex_expected = Nft(2, { 0 }, { 1 }, { 0, 0 }, 1);
+            proj2_complex_expected.delta.add(0, 2, 1);
+            proj2_complex_expected.delta.add(0, 3, 1);
+            proj2_complex_expected.delta.add(1, 2, 1);
+            CHECK(are_equivalent(proj2_complex, proj2_complex_expected));
+            proj2_complex_expected.delta.add(0, 0, 1);
+            CHECK(!are_equivalent(proj2_complex, proj2_complex_expected));
         }
 
         SECTION("project 0, 1") {
-            Nft proj01_complex = project_out(atm_complex, { 0, 1 }, false);
+            Nft proj01_complex = project_out(nft_complex, { 0, 1 }, false);
             Nft proj01_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj01_complex_expected.delta.add(0, 2, 1);
             proj01_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3280,7 +3289,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 0, 2") {
-            Nft proj02_complex = project_out(atm_complex, { 0, 2 }, false);
+            Nft proj02_complex = project_out(nft_complex, { 0, 2 }, false);
             Nft proj02_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj02_complex_expected.delta.add(0, 1, 1);
             proj02_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3289,7 +3298,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1, 2") {
-            Nft proj12_complex = project_out(atm_complex, { 1, 2 }, false);
+            Nft proj12_complex = project_out(nft_complex, { 1, 2 }, false);
             Nft proj12_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj12_complex_expected.delta.add(0, 0, 1);
             proj12_complex_expected.delta.add(0, 3, 1);
@@ -3298,7 +3307,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 0, 1, 2") {
-            Nft proj012_complex = project_out(atm_complex, { 0, 1, 2 }, false);
+            Nft proj012_complex = project_out(nft_complex, { 0, 1, 2 }, false);
             Nft proj012_complex_expected(1, { 0 }, { 0 }, {}, 0);
             CHECK(are_equivalent(proj012_complex, proj012_complex_expected));
         }
@@ -3519,5 +3528,132 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = true)") {
         proj_hard_expected.delta.add(3, 0, 2);
         proj_hard_expected.delta.add(3, 9, 1);
         CHECK(are_equivalent(proj_hard, proj_hard_expected));
+    }
+}
+
+TEST_CASE("mata::nft::project_to()") {
+    Nft nft;
+    Nft projection;
+    Nft expected;
+
+    SECTION("linear") {
+        nft = Nft{ {}, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3 };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        projection = project_to(nft, 2);
+        expected = Nft{ 2, { 0 }, { 1 }, { 0, 0 }, 1 };
+        expected.delta.add(0, 2, 1);
+        CHECK(nft::are_equivalent(projection, expected));
+    }
+
+    SECTION("linear longer") {
+        nft = Nft{ {}, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3 };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 4);
+        nft.delta.add(4, 4, 5);
+        nft.delta.add(5, 5, 6);
+        projection = project_to(nft, 2);
+        expected = Nft{ {}, { 0 }, { 2 }, { 0, 0, 0 }, 1 };
+        expected.delta.add(0, 2, 1);
+        expected.delta.add(1, 5, 2);
+        CHECK(nft::are_equivalent(projection, expected));
+    }
+
+    SECTION("linear longer symbol long jump") {
+        nft = Nft{ {}, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0 }, 3 };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 4);
+        nft.delta.add(4, 4, 5);
+        nft.delta.add(5, 5, 6);
+        nft.delta.add(0, 'j', 6);
+        projection = project_to(nft, 2);
+        expected = Nft{ {}, { 0 }, { 2 }, { 0, 0, 0 }, 1 };
+        expected.delta.add(0, 2, 1);
+        expected.delta.add(1, 5, 2);
+        expected.delta.add(0, 'j', 2);
+        CHECK(nft::are_equivalent(projection, expected));
+        expected.delta.add(0, 'b', 2);
+        CHECK(!nft::are_equivalent(projection, expected));
+    }
+
+    SECTION("cycle longer") {
+        nft = Nft{ {}, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 }, 3 };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 4);
+        nft.delta.add(4, 4, 5);
+        nft.delta.add(5, 5, 6);
+        nft.delta.add(3, 6, 7);
+        nft.delta.add(7, 7, 8);
+        nft.delta.add(8, 8, 0);
+        nft.delta.add(6, 9, 9);
+        nft.delta.add(9, 9, 10);
+        nft.delta.add(10, 10, 0);
+        projection = project_to(nft, 2);
+        expected = Nft{ {}, { 0 }, { 2 }, { 0, 0, 0 }, 1 };
+        expected.delta.add(0, 2, 1);
+        expected.delta.add(1, 8, 0);
+        expected.delta.add(1, 5, 2);
+        expected.delta.add(2, 10, 0);
+        CHECK(nft::are_equivalent(projection, expected));
+    }
+
+    SECTION("cycle longer project to { 0, 2 }") {
+        nft = Nft{ {}, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 }, 3 };
+        nft.delta.add(0, 0, 1);
+        nft.delta.add(1, 1, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 4);
+        nft.delta.add(4, 4, 5);
+        nft.delta.add(5, 5, 6);
+        nft.delta.add(3, 6, 7);
+        nft.delta.add(7, 7, 8);
+        nft.delta.add(8, 8, 0);
+        nft.delta.add(6, 9, 9);
+        nft.delta.add(9, 9, 10);
+        nft.delta.add(10, 10, 0);
+        projection = project_to(nft, { 0, 2 });
+        expected = Nft{ {}, { 0 }, { 6 }, { 0, 1, 0, 1, 0, 1, 0 }, 2 };
+        expected.delta.add(0, 0, 1);
+        expected.delta.add(1, 2, 3);
+        expected.delta.add(3, 6, 4);
+        expected.delta.add(3, 3, 5);
+        expected.delta.add(4, 8, 0);
+        expected.delta.add(5, 5, 6);
+        expected.delta.add(6, 9, 7);
+        expected.delta.add(7, 10, 0);
+        CHECK(nft::are_equivalent(projection, expected));
+    }
+
+    SECTION("cycle longer project to { 0, 2 } with epsilon and dont care symbols") {
+        nft = Nft{ {}, { 0 }, { 6 }, { 0, 1, 2, 0, 1, 2, 0, 1, 2, 1, 2 }, 3 };
+        nft.delta.add(0, EPSILON, 2);
+        nft.delta.add(2, 2, 3);
+        nft.delta.add(3, 3, 4);
+        nft.delta.add(4, 4, 5);
+        nft.delta.add(5, 5, 6);
+        nft.delta.add(3, EPSILON, 7);
+        nft.delta.add(7, 7, 8);
+        nft.delta.add(8, DONT_CARE, 0);
+        nft.delta.add(6, 9, 9);
+        nft.delta.add(9, 10, 10);
+        nft.delta.add(10, 11, 0);
+        projection = project_to(nft, { 0, 2 });
+        expected = Nft{ {}, { 0 }, { 6 }, { 0, 1, 0, 0, 1, 1, 0, 1 }, 2 };
+        expected.delta.add(0, EPSILON, 1);
+        expected.delta.add(1, 2, 3);
+        expected.delta.add(3, EPSILON, 4);
+        expected.delta.add(3, 3, 5);
+        expected.delta.add(4, DONT_CARE, 0);
+        expected.delta.add(5, 5, 6);
+        expected.delta.add(6, 9, 7);
+        expected.delta.add(7, 11, 0);
+        CHECK(nft::are_equivalent(projection, expected));
     }
 }
