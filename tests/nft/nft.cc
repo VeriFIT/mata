@@ -3146,7 +3146,7 @@ TEST_CASE("mata::nft::Nft::add_state()") {
 }
 
 
-TEST_CASE("mata::nft::project_levels()") {
+TEST_CASE("mata::nft::project_out()") {
 
     SECTION("LINEAR") {
         Delta delta;
@@ -3157,7 +3157,7 @@ TEST_CASE("mata::nft::project_levels()") {
         Nft atm(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0 = project_levels(atm, { 0 });
+            Nft proj0 = project_out(atm, 0);
             Nft proj0_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_expected.delta.add(0, 1, 1);
             proj0_expected.delta.add(1, 2, 2);
@@ -3166,7 +3166,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 1") {
-            Nft proj1 = project_levels(atm, { 1 });
+            Nft proj1 = project_out(atm, 1);
             Nft proj1_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_expected.delta.add(0, 0, 1);
             proj1_expected.delta.add(1, 2, 2);
@@ -3174,7 +3174,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 2") {
-            Nft proj2 = project_levels(atm, { 2 });
+            Nft proj2 = project_out(atm, 2);
             Nft proj2_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_expected.delta.add(0, 0, 1);
             proj2_expected.delta.add(1, 1, 2);
@@ -3194,7 +3194,7 @@ TEST_CASE("mata::nft::project_levels()") {
         Nft atm_loop(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0_loop = project_levels(atm_loop, { 0 });
+            Nft proj0_loop = project_out(atm_loop, 0);
             Nft proj0_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_loop_expected.delta.add(0, DONT_CARE, 0);
             proj0_loop_expected.delta.add(0, 1, 1);
@@ -3204,7 +3204,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 1") {
-            Nft proj1_loop = project_levels(atm_loop, { 1 });
+            Nft proj1_loop = project_out(atm_loop, 1);
             Nft proj1_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_loop_expected.delta.add(0, 3, 0);
             proj1_loop_expected.delta.add(0, 0, 1);
@@ -3214,7 +3214,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 2") {
-            Nft proj2_loop = project_levels(atm_loop, { 2 });
+            Nft proj2_loop = project_out(atm_loop, 2);
             Nft proj2_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_loop_expected.delta.add(0, 3, 0);
             proj2_loop_expected.delta.add(0, 0, 1);
@@ -3225,7 +3225,7 @@ TEST_CASE("mata::nft::project_levels()") {
 
         SECTION("project 0, 1, 2") {
             Nft atm_empty(delta, { 0 }, {}, { 0, 1, 2, 0 }, 3);
-            Nft proj012_empty = project_levels(atm_empty, { 0, 1, 2 });
+            Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 });
             CHECK(are_equivalent(proj012_empty, Nft(1, {}, {}, {}, 0)));
         }
     }
@@ -3241,7 +3241,7 @@ TEST_CASE("mata::nft::project_levels()") {
         Nft atm_complex(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0_complex = project_levels(atm_complex, { 0 });
+            Nft proj0_complex = project_out(atm_complex, 0);
             Nft proj0_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_complex_expected.delta.add(0, 1, 1);
             proj0_complex_expected.delta.add(0, DONT_CARE, 2);
@@ -3251,7 +3251,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 1") {
-            Nft proj1_complex = project_levels(atm_complex, { 1 });
+            Nft proj1_complex = project_out(atm_complex, 1);
             Nft proj1_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_complex_expected.delta.add(0, 0, 1);
             proj1_complex_expected.delta.add(0, 3, 2);
@@ -3261,7 +3261,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 2") {
-            Nft proj2_complex = project_levels(atm_complex, { 2 });
+            Nft proj2_complex = project_out(atm_complex, 2);
             Nft proj2_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_complex_expected.delta.add(0, 0, 1);
             proj2_complex_expected.delta.add(0, 3, 2);
@@ -3271,7 +3271,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 0, 1") {
-            Nft proj01_complex = project_levels(atm_complex, { 0, 1 });
+            Nft proj01_complex = project_out(atm_complex, { 0, 1 });
             Nft proj01_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj01_complex_expected.delta.add(0, 2, 1);
             proj01_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3280,7 +3280,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 0, 2") {
-            Nft proj02_complex = project_levels(atm_complex, { 0, 2 });
+            Nft proj02_complex = project_out(atm_complex, { 0, 2 });
             Nft proj02_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj02_complex_expected.delta.add(0, 1, 1);
             proj02_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3289,7 +3289,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 1, 2") {
-            Nft proj12_complex = project_levels(atm_complex, { 1, 2 });
+            Nft proj12_complex = project_out(atm_complex, { 1, 2 });
             Nft proj12_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj12_complex_expected.delta.add(0, 0, 1);
             proj12_complex_expected.delta.add(0, 3, 1);
@@ -3298,7 +3298,7 @@ TEST_CASE("mata::nft::project_levels()") {
         }
 
         SECTION("project 0, 1, 2") {
-            Nft proj012_complex = project_levels(atm_complex, { 0, 1, 2 });
+            Nft proj012_complex = project_out(atm_complex, { 0, 1, 2 });
             Nft proj012_complex_expected(1, { 0 }, { 0 }, {}, 0);
             CHECK(are_equivalent(proj012_complex, proj012_complex_expected));
         }
@@ -3318,7 +3318,7 @@ TEST_CASE("mata::nft::project_levels()") {
         atm_hard.delta.add(6, 8, 7);
         atm_hard.delta.add(7, 9, 2);
 
-        Nft proj_hard = project_levels(atm_hard, { 0, 3, 4, 5 });
+        Nft proj_hard = project_out(atm_hard, { 0, 3, 4, 5 });
 
         Nft proj_hard_expected(4, { 0, 1 }, { 3 }, { 0, 0, 1, 0 }, 2);
         proj_hard_expected.delta.add(0, 0, 2);
