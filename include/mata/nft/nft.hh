@@ -427,6 +427,29 @@ Nft somewhat_simple_revert(const Nft& aut);
 // Removing epsilon transitions
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
+/**
+ * @brief Projects out specified levels in the given automaton.
+ *
+ * The vector levels_to_project must be a non-empty ordered vector
+ * containing only values that are greater than or equal to 0 and smaller than levels_cnt.
+ *
+ * @param aut The automaton for projection.
+ * @param levels_to_project A non-empty ordered vector of levels to be projected out from the automaton.
+ * * @return A new automaton after the projection.
+ */
+Nft project_levels(const Nft& aut, const utils::OrdVector<Level>& levels_to_project);
+
+/**
+ * @brief Projects out specified level in the given automaton.
+ *
+ * The level level_to_project has to be greater or equal than 0 and smaller than levels_cnt.
+ *
+ * @param aut The automaton for projection.
+ * @param level_to_project A level that is going to be projected out from the automaton.
+ * @return A new automaton after the projection.
+ */
+Nft project_levels(const Nft& aut, const Level level_to_project);
+
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
  */
