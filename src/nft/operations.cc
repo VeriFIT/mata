@@ -176,7 +176,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     return result;
 }
 
-Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels_to_proj) {
+Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels_to_proj, const bool repeat_jump_symbol) {
     assert(!levels_to_proj.empty());
     assert(*std::max_element(levels_to_proj.begin(), levels_to_proj.end()) < aut.levels_cnt);
 
@@ -186,9 +186,9 @@ Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels
     };
 
     // Checks if each level between given states is being projected out.
-    auto is_projected_along_path = [&](State a, State b) {
-        Level stop_lvl = (aut.levels[b] == 0) ? aut.levels_cnt : aut.levels[b];
-        for (Level lvl{ aut.levels[a] }; lvl < stop_lvl; lvl++) {
+    auto is_projected_along_path = [&](State src, State tgt) {
+        Level stop_lvl = (aut.levels[tgt] == 0) ? aut.levels_cnt : aut.levels[tgt];
+        for (Level lvl{ aut.levels[src] }; lvl < stop_lvl; lvl++) {
             if (levels_to_proj.find(lvl) == levels_to_proj.end()) {
                 return false;
             }
@@ -294,9 +294,13 @@ Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels
                     if (is_projected_out(cls_state) && get_trans_len(cls_state, tgt_state) == 1 && !is_loop_on_target) continue;
 
                     if (is_projected_out(cls_state)) {
-                        // If there are remaining levels (testing only DONT_CARE) between cls_state and tgt_state
+                        // If there are remaining levels between cls_state and tgt_state
                         // on a transition with a length greater than 1, then these levels must be preserved.
-                        result.delta.add(src_state, DONT_CARE, tgt_state);
+                        if (repeat_jump_symbol) {
+                            result.delta.add(src_state, move.symbol, tgt_state);
+                        } else {
+                            result.delta.add(src_state, DONT_CARE, tgt_state);
+                        }
                     } else if (is_loop_on_target) {
                         // Instead of creating a transition to tgt_state and
                         // then a self-loop, establish the self-loop directly on src_state.
@@ -321,8 +325,8 @@ Nft mata::nft::project_out(const Nft& aut, const utils::OrdVector<Level>& levels
     return result;
 }
 
-Nft mata::nft::project_out(const Nft& aut, const Level level_to_project) {
-    return project_out(aut, utils::OrdVector{ level_to_project });
+Nft mata::nft::project_out(const Nft& aut, const Level level_to_project, const bool repeat_jump_symbol) {
+    return project_out(aut, utils::OrdVector{ level_to_project }, repeat_jump_symbol);
 }
 
 Nft mata::nft::fragile_revert(const Nft& aut) {
