@@ -112,7 +112,8 @@ Nft mata::nft::strings::replace_reluctant(
     ReplaceMode replace_mode,
     Symbol begin_marker
 ) {
-    Nft dft_begin_marker{ begin_marker_nft(generic_marker_dfa(regex, alphabet), begin_marker) };
+    // TODO(nft): Add optional bool parameter to revert whether to swap initial and final states.
+    Nft dft_begin_marker{ begin_marker_nft(begin_marker_nfa(regex, alphabet), begin_marker) };
     Nft nft_reluctant_replace{
         reluctant_leftmost_nft(std::move(regex), alphabet, begin_marker, replacement, replace_mode) };
 //    return dft_begin_marker.compose(nft_reluctant_replace);
@@ -211,8 +212,8 @@ nfa::Nfa nft::strings::begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet) {
     return dfa_generic_end_marker;
 }
 
-Nft nft::strings::begin_marker_nft(const nfa::Nfa& begin_marker_dfa, Symbol begin_marker) {
-    Nft begin_marker_dft{ marker_nft(begin_marker_dfa, begin_marker) };
+Nft nft::strings::begin_marker_nft(const nfa::Nfa& marker_dfa, Symbol begin_marker) {
+    Nft begin_marker_dft{ marker_nft(marker_dfa, begin_marker) };
     const State new_initial{ begin_marker_dft.add_state() };
     for (const State orig_final: begin_marker_dft.final) {
         begin_marker_dft.delta.add(new_initial, EPSILON, orig_final);
