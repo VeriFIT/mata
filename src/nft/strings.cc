@@ -206,23 +206,24 @@ nfa::Nfa nft::strings::begin_marker_nfa(const std::string& regex, Alphabet* alph
 }
 
 nfa::Nfa nft::strings::begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet) {
+    regex = revert(regex);
     nfa::Nfa dfa_generic_end_marker{ generic_marker_dfa(std::move(regex), alphabet) };
     dfa_generic_end_marker = revert(dfa_generic_end_marker);
     std::swap(dfa_generic_end_marker.initial, dfa_generic_end_marker.final);
     return dfa_generic_end_marker;
 }
 
-Nft nft::strings::begin_marker_nft(const nfa::Nfa& marker_dfa, Symbol begin_marker) {
-    Nft begin_marker_dft{ marker_nft(marker_dfa, begin_marker) };
-    const State new_initial{ begin_marker_dft.add_state() };
-    for (const State orig_final: begin_marker_dft.final) {
-        begin_marker_dft.delta.add(new_initial, EPSILON, orig_final);
+Nft nft::strings::begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker) {
+    Nft begin_marker_nft{ marker_nft(marker_nfa, begin_marker) };
+    const State new_initial{ begin_marker_nft.add_state() };
+    for (const State orig_final: begin_marker_nft.final) {
+        begin_marker_nft.delta.add(new_initial, EPSILON, orig_final);
     }
-    begin_marker_dft.final = begin_marker_dft.initial;
-    begin_marker_dft.initial = { new_initial };
-    begin_marker_dft.levels.resize(new_initial + 1);
-    begin_marker_dft.levels[new_initial] = 0;
-    return begin_marker_dft;
+    begin_marker_nft.final = begin_marker_nft.initial;
+    begin_marker_nft.initial = { new_initial };
+    begin_marker_nft.levels.resize(new_initial + 1);
+    begin_marker_nft.levels[new_initial] = 0;
+    return begin_marker_nft;
 }
 
 Nft nft::strings::end_marker_dft(const nfa::Nfa& end_marker_dfa, const Symbol end_marker) {
