@@ -8,6 +8,15 @@
 #include "nft.hh"
 
 namespace mata::nft::strings {
+
+/**
+ * How many occurrences of the regex to replace, in order from left to right?
+ */
+enum class ReplaceMode {
+    Single, ///< Replace only the first occurrence of the regex.
+    All, ///< Replace all occurrences of the regex.
+};
+
 /**
  * Create identity transducer over the @p alphabet with @p level_cnt levels.
  */
@@ -17,12 +26,16 @@ Nft create_identity(mata::Alphabet* alphabet, Level level_cnt = 2);
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
  *  symbol @p from_symbol replaced with @to_symbol.
  */
-Nft create_identity_with_single_replace(mata::Alphabet* alphabet, Symbol from_symbol, Symbol to_symbol);
+Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol from_symbol, Symbol replacement,
+                                               ReplaceMode replace_mode = ReplaceMode::All);
 
-enum class ReplaceMode {
-    Single,
-    All,
-};
+/**
+ * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
+ *  symbol @p from_symbol replaced with word @p replacement.
+ */
+Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol from_symbol, const Word& replacement,
+                                               ReplaceMode replace_mode = ReplaceMode::All);
+
 
 Nft replace_reluctant(
     const std::string& regex,
