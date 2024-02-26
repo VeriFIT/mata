@@ -475,9 +475,43 @@ Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project,
  * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
- * @return A new projectedtransducer.
+ * @return A new projected transducer.
  */
 Nft project_to(const Nft& nft, Level level_to_project, bool repeat_jump_symbol = true);
+
+/**
+ * @brief Inserts new levels, as specified by the mask @p new_levels_mask, into the given transducer @p nft.
+ *
+ * @c levels_cnt must be greater than 0.
+ * The vector @c new_levels_mask must be nonempty, its length must be greater than @c levels_cnt,
+ * and it must contain exactly @c levels_cnt occurrences of false.
+ *
+ * @param nft The original transducer.
+ * @param new_levels_mask A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates
+ *  that one level is inserted before level 0 and two levels are inserted before level 1.
+ * @param default_symbol The default symbol to be used for transitions at the inserted levels.
+ * @param repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE symbols.
+ */
+Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol = DONT_CARE, bool repeat_jump_symbol = true);
+
+/**
+ * @brief Inserts a new level @p new_level into the given transducer @p nft.
+ *
+ * @c levels_cnt must be greater than 0.
+ *
+ * @param nft The original transducer.
+ * @param new_level Specifies the new level to be inserted into the transducer.
+ *  If @p new_level is 0, then it is inserted before the 0-th level.
+ *  If @p new_level is less than @c levels_cnt, then it is inserted before the level @c new_level-1.
+ *  If @p new_level is greater than or equal to @c levels_cnt, then all levels from @c levels_cnt through @p new_level are appended after the last level.
+ * @param default_symbol The default symbol to be used for transitions at the inserted levels.
+ * @param repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @c DONT_CARE symbols.
+ */
+Nft insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol = DONT_CARE, bool repeat_jump_symbol = true);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

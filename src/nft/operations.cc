@@ -342,6 +342,97 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const bool rep
     return project_to(nft, OrdVector<Level>{ level_to_project }, repeat_jump_symbol);
 }
 
+Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol, bool repeat_jump_symbol) {
+    assert(0 < nft.levels_cnt);
+    assert(nft.levels_cnt < new_levels_mask.size());
+    assert(std::count(new_levels_mask.begin(), new_levels_mask.end(), false) == nft.levels_cnt);
+
+    // Construct a vector of size equal to levels_cnt. Each index k in this vector represents a new level for the original level k.
+    // Note: The 0th index always remains zero.
+    // Here are a couple of examples to illustrate this:
+    // Example 1:
+    //   Input (levels)      : 0 1 2
+    //   Mask                : 0 0 1 1 0 1
+    //   Output (new levels) : 0 1 4
+    // Example 2:
+    //   Input (levels)      : 0 1 2
+    //   Mask                : 1 1 0 1 1 0 0
+    //   Output (new levels) : 0 3 6
+    std::vector<Level> updated_levels(nft.levels_cnt, 0);
+    Level old_lvl = 0;
+    Level new_lvl = 0;
+    auto mask_it = std::find(new_levels_mask.begin(), new_levels_mask.end(), false);
+    if (new_levels_mask[0]) {
+        old_lvl = 1;
+        new_lvl = static_cast<Level>(std::distance(new_levels_mask.begin(), mask_it) + 1);
+        ++mask_it;
+    }
+    for (; mask_it != new_levels_mask.end(); ++mask_it, ++new_lvl) {
+        if (!*mask_it) {
+            updated_levels[old_lvl++] = new_lvl;
+        }
+    }
+    // Repare state levels
+    std::vector<Level> new_state_levels(nft.levels.size());
+    for (State s{ 0 }; s < nft.levels.size(); s++) {
+        new_state_levels[s] = updated_levels[nft.levels[s]];
+    }
+
+    // Construct an empty automaton with updated levels.
+    Nft result(Delta{}, nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
+
+    // Function to create a transition between source and target states.
+    // The transition symbol is determined based on the parameters:
+    // it could be a specific symb, DONT_CARE, or a default symbol.
+    auto create_transition = [&](State src, Symbol symb, State tgt, bool is_inserted_level, bool is_old_level_processed) {
+        if (is_inserted_level) { // Transition over the inserted level
+            result.delta.add(src, default_symbol, tgt);
+        } else { // Transition over existing (old) level
+            if (repeat_jump_symbol || !is_old_level_processed) {
+                result.delta.add(src, symb, tgt);
+            } else {
+                result.delta.add(src, DONT_CARE, tgt);
+            }
+        }
+    };
+
+    //Construct delta with inserted levels and auxiliary states.
+    for (const auto &trans : nft.delta.transitions()) {
+        State src = trans.source;
+        Level src_lvl = result.levels[trans.source];
+        State inner;
+        const size_t start_idx = result.levels[trans.source];
+        const size_t stop_idx = (result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1);
+        // Construct the first n-1 parts of the original transition.
+        bool is_old_level_processed = false;
+        for (size_t idx{ start_idx }; idx < stop_idx; idx++) {
+            inner = result.add_state_with_level(src_lvl + 1);
+            create_transition(src, trans.symbol, inner, new_levels_mask[idx], is_old_level_processed);
+            if (!new_levels_mask[idx]) {
+                is_old_level_processed = true;
+            }
+            src = inner;
+            src_lvl++;
+        }
+        // Construct the n-th part of the transition.
+        create_transition(src, trans.symbol, trans.target, new_levels_mask[stop_idx], is_old_level_processed);
+    }
+
+    return result;
+}
+
+Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol, bool repeat_jump_symbol) {
+    // TODO(nft): Optimize the insertion of just one level by using move.
+    BoolVector new_levels_mask(nft.levels_cnt + 1, false);
+    if (new_level < new_levels_mask.size()) {
+        new_levels_mask[new_level] = true;
+    } else {
+        new_levels_mask[nft.levels_cnt] = true;
+        new_levels_mask.resize(new_level + 1, true);
+    }
+    return insert_levels(nft, new_levels_mask, default_symbol, repeat_jump_symbol);
+}
+
 Nft mata::nft::fragile_revert(const Nft& aut) {
     const size_t num_of_states{ aut.num_of_states() };
 
