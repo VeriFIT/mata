@@ -252,19 +252,16 @@ Nft uni(const Nft &lhs, const Nft &rhs);
 /**
  * @brief Compute intersection of two NFTs.
  *
- * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
- * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
+ * Both automata can contain ε-transitions. Epsilons will be handled a normal symbols.
  *
  * Automata must share alphabets. //TODO: this is not implemented yet.
  *
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
- * @param[in] first_epsilon smallest epsilon. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
- * @return NFT as a product of NFTs @p lhs and @p rhs with ε-transitions preserved.
+ * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
-Nft intersection(const Nft& lhs, const Nft& rhs,
-                 const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
+Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
 
 /**
  * @brief Concatenate two NFTs.
