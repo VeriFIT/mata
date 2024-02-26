@@ -788,7 +788,7 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
     return { .word = alphabet->translate_word(input) };
 }
 
-std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
+std::set<mata::Word> mata::nfa::Nfa::get_words(size_t max_length) const {
     std::set<mata::Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s
