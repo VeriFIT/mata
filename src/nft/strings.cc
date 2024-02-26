@@ -19,6 +19,15 @@ using mata::nfa::SymbolPost;
 using namespace mata::nft;
 
 namespace {
+    bool is_subvector(const Word& subvector, const Word& vector) {
+        assert(subvector.size() <= vector.size());
+        for (size_t i{ 0 }; const Symbol symbol: subvector) {
+            if (symbol != vector[i]) { return false; }
+            ++i;
+        }
+        return true;
+    }
+
     /// Add transitions, optionally add @p source to @p dfa_generic_end_marker.final, and update @p labeling and @p labeling_inv functions.
     void process_source(const nfa::Nfa& regex, const Alphabet* alphabet, nfa::Nfa& dfa_generic_end_marker,
                         std::map<State, StateSet>& labeling,
@@ -132,12 +141,17 @@ Nft nft::strings::create_identity_with_single_symbol_replace(Alphabet* alphabet,
     return nft;
 }
 
+Nft nft::strings::replace_reluctant(const Word& literal, const Word& replacement, Alphabet* alphabet,
+                                    strings::ReplaceMode replace_mode, Symbol begin_marker) {
+    return Nft();
+}
+
 Nft mata::nft::strings::replace_reluctant(
     const std::string& regex,
     const Word& replacement,
     Alphabet* alphabet,
-    ReplaceMode replace_mode,
-    Symbol begin_marker
+    const ReplaceMode replace_mode,
+    const Symbol begin_marker
 ) {
     nfa::Nfa regex_nfa{};
     parser::create_nfa(&regex_nfa, regex);
@@ -148,8 +162,8 @@ Nft mata::nft::strings::replace_reluctant(
     nfa::Nfa regex,
     const Word& replacement,
     Alphabet* alphabet,
-    ReplaceMode replace_mode,
-    Symbol begin_marker
+    const ReplaceMode replace_mode,
+    const Symbol begin_marker
 ) {
     // TODO(nft): Add optional bool parameter to revert whether to swap initial and final states.
     Nft dft_begin_marker{ begin_marker_nft(begin_marker_nfa(regex, alphabet), begin_marker) };
@@ -387,3 +401,135 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
 
     return nft_reluctant_leftmost;
 }
+
+Nft nft::strings::replace_reluctant_finite(Nfa regex, const Word& replacement, Alphabet* alphabet,
+                                           const ReplaceMode replace_mode, const Symbol end_marker) {
+    assert(regex.is_acyclic());
+    regex = mata::strings::reluctant_nfa(std::move(regex));
+    const std::set<Word> regex_words{ regex.get_words(regex.num_of_states()) };
+
+    return Nft();
+}
+
+Nft nft::strings::replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
+                                            strings::ReplaceMode replace_mode, Symbol end_marker) {
+    Nft nft_end_marker{ [&]() {
+        Nft nft_end_marker{ create_identity(alphabet) };
+        State middle{ nft_end_marker.add_state_with_level(1) };
+        State end_marker_state{ nft_end_marker.add_state_with_level(0) };
+        nft_end_marker.delta.add(*nft_end_marker.initial.begin(), EPSILON, middle);
+        nft_end_marker.delta.add(middle, end_marker, end_marker_state);
+        nft_end_marker.final.clear();
+        nft_end_marker.final.insert(end_marker_state);
+        return nft_end_marker;
+    }() };
+
+    Nft nft_literal_replace{ replace_literal_nft(literal, replacement, alphabet, end_marker, replace_mode) };
+
+//    return nft_end_marker.compose(nft_replace_reluctant_literal);
+    return Nft{};
+}
+
+Nft nft::strings::replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet* alphabet,
+                                      const Symbol end_marker,
+                                      ReplaceMode replace_mode) {
+    std::vector<std::pair<State, Word>> state_word_pairs{};
+    Nft nft{};
+    nft.levels_cnt = 2;
+    State init_state{ nft.add_state_with_level(0) };
+    nft.initial.insert(init_state);
+    state_word_pairs.emplace_back(init_state, Word{});
+    const auto literal_begin{ literal.begin() };
+    const auto literal_end{ literal.end() };
+    for (auto literal_it{ literal_begin }; literal_it < literal_end; ++literal_it) {
+        state_word_pairs.emplace_back(nft.add_state_with_level(0), Word{ literal_begin, literal_it + 1 });
+    }
+    const State initial{ state_word_pairs[0].first };
+    const size_t literal_size{ literal.size() };
+    Symbol literal_symbol;
+    const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
+    for (size_t i{ 0 }; i < literal_size; ++i) {
+        literal_symbol = literal[i];
+        const auto& [word_state, subword] = state_word_pairs[i];
+        for (Symbol symbol: alphabet_symbols) {
+            State target_state{ 0 };
+            if (symbol == literal_symbol) { // Handle transition to next subword init_state.
+                State middle{ nft.add_state_with_level(1) };
+                nft.delta.add(word_state, literal_symbol, middle);
+                nft.delta.add(middle, EPSILON, state_word_pairs[i + 1].first);
+            } else { // Add back transitions.
+                Word subword_next_symbol = subword;
+                subword_next_symbol.push_back(symbol);
+                const auto subword_next_symbol_begin{ subword_next_symbol.begin() };
+                const auto subword_next_symbol_end{ subword_next_symbol.end() };
+                auto subword_next_symbol_it{ subword_next_symbol_begin };
+                while (subword_next_symbol_it != subword_next_symbol_end) {
+                    const Word subsubword{ subword_next_symbol_it, subword_next_symbol_end };
+                    if (is_subvector(subsubword, literal)) {
+                        // it...end is a valid literal subvector. Transition should therefore lead to the corresponding
+                        //  subvector init_state.
+                        target_state = subsubword.size();
+                        break;
+                    }
+                    ++subword_next_symbol_it;
+                }
+
+                // Output all buffered symbols up until the new buffered content (subsubword).
+                auto subword_next_symbol_it_from_begin = subword_next_symbol.begin();
+                State state_lvl0{ word_state };
+                for (;
+                    subword_next_symbol_it_from_begin < subword_next_symbol_it; ++subword_next_symbol_it_from_begin) {
+                    State state_lvl1 = nft.add_state_with_level(1);
+                    nft.delta.add(state_lvl0, symbol, state_lvl1);
+                    symbol = EPSILON;
+                    if (subword_next_symbol_it_from_begin + 1 == subword_next_symbol_it) {
+                        nft.delta.add(state_lvl1, *subword_next_symbol_it_from_begin,
+                                      target_state);
+                    } else {
+                        state_lvl0 = nft.add_state_with_level(0);
+                        nft.delta.add(state_lvl1, *subword_next_symbol_it_from_begin, state_lvl0);
+                    }
+                }
+            }
+        }
+    }
+    State final{ nft.add_state_with_level(0) };
+    nft.final.insert(final);
+    auto replacement_end{ replacement.end() };
+    State state_lvl0{ state_word_pairs.back().first };
+    for (auto replacement_it{ replacement.begin() }; replacement_it < replacement_end; ++replacement_it) {
+        State state_lvl1{ nft.add_state_with_level(1) };
+        nft.delta.add(state_lvl0, EPSILON, state_lvl1);
+        if (replacement_it + 1 == replacement_end) {
+            switch (replace_mode) {
+                case ReplaceMode::All: {
+                    nft.delta.add(state_lvl1, *replacement_it, initial);
+                    break;
+                }
+                case ReplaceMode::Single: {
+                    state_lvl0 = nft.add_state_with_level(0);
+                    nft.delta.add(state_lvl1, *replacement_it, state_lvl0);
+                    for (const Symbol symbol: alphabet_symbols) {
+                        state_lvl1 = nft.add_state_with_level(1);
+                        nft.delta.add(state_lvl0, symbol, state_lvl1);
+                        nft.delta.add(state_lvl1, symbol, state_lvl0);
+                    }
+                    state_lvl1 = nft.add_state_with_level(1);
+                    nft.delta.add(state_lvl0, end_marker, state_lvl1);
+                    nft.delta.add(state_lvl1, EPSILON, final);
+                    break;
+                }
+                default: {
+                    throw std::runtime_error("Unhandled replace mode.");
+                }
+            }
+        } else {
+            state_lvl0 = nft.add_state_with_level(0);
+            nft.delta.add(state_lvl1, *replacement_it, state_lvl0);
+        }
+    }
+    add_end_marker_transitions_from_literal_states(end_marker, state_word_pairs, nft, final);
+    return nft;
+}
+
+
