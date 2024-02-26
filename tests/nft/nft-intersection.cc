@@ -61,7 +61,7 @@ TEST_CASE("mata::nft::intersection()")
 
     SECTION("Intersection of empty automata")
     {
-        res = intersection(a, b, EPSILON, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -94,7 +94,7 @@ TEST_CASE("mata::nft::intersection()")
         REQUIRE(!a.final.empty());
         REQUIRE(!b.final.empty());
 
-        res = intersection(a, b, EPSILON, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(!res.initial.empty());
         REQUIRE(!res.final.empty());
@@ -113,7 +113,7 @@ TEST_CASE("mata::nft::intersection()")
         FILL_WITH_AUT_A(a);
         FILL_WITH_AUT_B(b);
 
-        res = intersection(a, b, EPSILON, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -164,7 +164,7 @@ TEST_CASE("mata::nft::intersection()")
         FILL_WITH_AUT_B(b);
         b.final = {12};
 
-        res = intersection(a, b, EPSILON, &prod_map);
+        res = intersection(a, b, &prod_map);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -172,132 +172,28 @@ TEST_CASE("mata::nft::intersection()")
     }
 } // }}}
 
-TEST_CASE("mata::nft::intersection() with preserving epsilon transitions")
-{
-    std::unordered_map<std::pair<State, State>, State> prod_map;
-
-    Nft a{6};
-    a.initial.insert(0);
-    a.final.insert({1, 4, 5});
-    a.delta.add(0, EPSILON, 1);
-    a.delta.add(1, 'a', 1);
-    a.delta.add(1, 'b', 1);
-    a.delta.add(1, 'c', 2);
-    a.delta.add(2, 'b', 4);
-    a.delta.add(2, EPSILON, 3);
-    a.delta.add(3, 'a', 5);
-
-    Nft b{10};
-    b.initial.insert(0);
-    b.final.insert({2, 4, 8, 7});
-    b.delta.add(0, 'b', 1);
-    b.delta.add(0, 'a', 2);
-    b.delta.add(2, 'a', 4);
-    b.delta.add(2, EPSILON, 3);
-    b.delta.add(3, 'b', 4);
-    b.delta.add(0, 'c', 5);
-    b.delta.add(5, 'a', 8);
-    b.delta.add(5, EPSILON, 6);
-    b.delta.add(6, 'a', 9);
-    b.delta.add(6, 'b', 7);
-
-    Nft result{intersection(a, b, EPSILON, &prod_map) };
-
-    // Check states.
-    CHECK(result.is_state(prod_map[{0, 0}]));
-    CHECK(result.is_state(prod_map[{1, 0}]));
-    CHECK(result.is_state(prod_map[{1, 1}]));
-    CHECK(result.is_state(prod_map[{1, 2}]));
-    CHECK(result.is_state(prod_map[{1, 3}]));
-    CHECK(result.is_state(prod_map[{1, 4}]));
-    CHECK(result.is_state(prod_map[{2, 5}]));
-    CHECK(result.is_state(prod_map[{3, 5}]));
-    CHECK(result.is_state(prod_map[{2, 6}]));
-    CHECK(result.is_state(prod_map[{3, 6}]));
-    CHECK(result.is_state(prod_map[{4, 7}]));
-    CHECK(result.is_state(prod_map[{5, 9}]));
-    CHECK(result.is_state(prod_map[{5, 8}]));
-    CHECK(result.num_of_states() == 13);
-
-    CHECK(result.initial[prod_map[{0, 0}]]);
-    CHECK(result.initial.size() == 1);
-
-    CHECK(result.final[prod_map[{1, 2}]]);
-    CHECK(result.final[prod_map[{1, 4}]]);
-    CHECK(result.final[prod_map[{4, 7}]]);
-    CHECK(result.final[prod_map[{5, 8}]]);
-    CHECK(result.final.size() == 4);
-
-    // Check transitions.
-    CHECK(result.delta.num_of_transitions() == 14);
-
-    CHECK(result.delta.contains(prod_map[{0, 0}], EPSILON, prod_map[{1, 0}]));
-    CHECK(result.delta.state_post(prod_map[{ 0, 0 }]).num_of_moves() == 1);
-
-    CHECK(result.delta.contains(prod_map[{1, 0}], 'b', prod_map[{1, 1}]));
-    CHECK(result.delta.contains(prod_map[{1, 0}], 'a', prod_map[{1, 2}]));
-    CHECK(result.delta.contains(prod_map[{1, 0}], 'c', prod_map[{2, 5}]));
-    CHECK(result.delta.state_post(prod_map[{ 1, 0 }]).num_of_moves() == 3);
-
-    CHECK(result.delta.state_post(prod_map[{ 1, 1 }]).empty());
-
-    CHECK(result.delta.contains(prod_map[{1, 2}], EPSILON, prod_map[{1, 3}]));
-    CHECK(result.delta.contains(prod_map[{1, 2}], 'a', prod_map[{1, 4}]));
-    CHECK(result.delta.state_post(prod_map[{ 1, 2 }]).num_of_moves() == 2);
-
-    CHECK(result.delta.contains(prod_map[{1, 3}], 'b', prod_map[{1, 4}]));
-    CHECK(result.delta.state_post(prod_map[{ 1, 3 }]).num_of_moves() == 1);
-
-    CHECK(result.delta.state_post(prod_map[{ 1, 4 }]).empty());
-
-    CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{3, 5}]));
-    CHECK(result.delta.contains(prod_map[{2, 5}], EPSILON, prod_map[{2, 6}]));
-    CHECK(result.delta.state_post(prod_map[{ 2, 5 }]).num_of_moves() == 2);
-
-    CHECK(result.delta.contains(prod_map[{3, 5}], 'a', prod_map[{5, 8}]));
-    CHECK(result.delta.contains(prod_map[{3, 5}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.state_post(prod_map[{ 3, 5 }]).num_of_moves() == 2);
-
-    CHECK(result.delta.contains(prod_map[{2, 6}], 'b', prod_map[{4, 7}]));
-    CHECK(result.delta.contains(prod_map[{2, 6}], EPSILON, prod_map[{3, 6}]));
-    CHECK(result.delta.state_post(prod_map[{ 2, 6 }]).num_of_moves() == 2);
-
-    CHECK(result.delta.contains(prod_map[{3, 6}], 'a', prod_map[{5, 9}]));
-    CHECK(result.delta.state_post(prod_map[{ 3, 6 }]).num_of_moves() == 1);
-
-    CHECK(result.delta.state_post(prod_map[{ 4, 7 }]).empty());
-
-    CHECK(result.delta.state_post(prod_map[{ 5, 9 }]).empty());
-
-    CHECK(result.delta.state_post(prod_map[{ 5, 8 }]).empty());
-}
-
 TEST_CASE("mata::nft::intersection() for profiling", "[.profiling],[intersection]")
 {
-    Nft a{6};
+    Nft a{4};
     a.initial.insert(0);
-    a.final.insert({1, 4, 5});
-    a.delta.add(0, EPSILON, 1);
-    a.delta.add(1, 'a', 1);
-    a.delta.add(1, 'b', 1);
-    a.delta.add(1, 'c', 2);
-    a.delta.add(2, 'b', 4);
-    a.delta.add(2, EPSILON, 3);
-    a.delta.add(3, 'a', 5);
+    a.final.insert({ 0, 2, 3});
+    a.delta.add(0, 'a', 0);
+    a.delta.add(0, 'b', 0);
+    a.delta.add(0, 'c', 1);
+    a.delta.add(1, 'a', 3);
+    a.delta.add(1, 'b', 2);
 
-    Nft b{10};
+    Nft b{9};
     b.initial.insert(0);
     b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
-    b.delta.add(2, 'a', 4);
-    b.delta.add(2, EPSILON, 3);
-    b.delta.add(3, 'b', 4);
-    b.delta.add(0, 'c', 5);
-    b.delta.add(5, 'a', 8);
-    b.delta.add(5, EPSILON, 6);
-    b.delta.add(6, 'a', 9);
-    b.delta.add(6, 'b', 7);
+    b.delta.add(0, 'c', 3);
+    b.delta.add(2, 'a', 8);
+    b.delta.add(2, 'b', 8);
+    b.delta.add(3, 'a', 6);
+    b.delta.add(3, 'a', 4);
+    b.delta.add(3, 'a', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
         Nft result{intersection(a, b) };
@@ -310,14 +206,12 @@ TEST_CASE("Move semantics of NFT", "[.profiling][std::move]") {
     b.final.insert({2, 4, 8, 7});
     b.delta.add(0, 'b', 1);
     b.delta.add(0, 'a', 2);
-    b.delta.add(2, 'a', 4);
-    b.delta.add(2, EPSILON, 3);
-    b.delta.add(3, 'b', 4);
-    b.delta.add(0, 'c', 5);
-    b.delta.add(5, 'a', 8);
-    b.delta.add(5, EPSILON, 6);
-    b.delta.add(6, 'a', 9);
-    b.delta.add(6, 'b', 7);
+    b.delta.add(0, 'c', 3);
+    b.delta.add(2, 'a', 8);
+    b.delta.add(2, 'b', 8);
+    b.delta.add(3, 'a', 6);
+    b.delta.add(3, 'a', 4);
+    b.delta.add(3, 'a', 7);
 
     for (size_t i{ 0 }; i < 1'000'000; ++i) {
         Nft a{ std::move(b) };
