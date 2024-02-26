@@ -83,13 +83,52 @@ Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, Level level_cn
     return nft;
 }
 
-Nft mata::nft::strings::create_identity_with_single_replace(
-    mata::Alphabet* alphabet, const Symbol from_symbol, const Symbol to_symbol) {
+Nft mata::nft::strings::create_identity_with_single_symbol_replace(
+    Alphabet* alphabet, const Symbol from_symbol, const Symbol replacement, const ReplaceMode replace_mode) {
+    return create_identity_with_single_symbol_replace(alphabet, from_symbol, Word{ replacement }, replace_mode);
+}
+
+Nft nft::strings::create_identity_with_single_symbol_replace(Alphabet* alphabet, const Symbol from_symbol,
+                                                             const Word& replacement, const ReplaceMode replace_mode) {
     Nft nft{ create_identity(alphabet) };
     if (alphabet->empty()) { throw std::runtime_error("Alphabet does not contain symbol being replaced."); }
     auto symbol_post_to_state_with_replace{ nft.delta.mutable_state_post(0).find(from_symbol) };
-    const State from_replace_state{ symbol_post_to_state_with_replace->targets.front() };
-    nft.delta.mutable_state_post(from_replace_state).front().symbol = to_symbol;
+    State state_lvl1{ symbol_post_to_state_with_replace->targets.front() };
+    nft.delta.mutable_state_post(state_lvl1).clear();
+    const auto replacement_end{ replacement.end() };
+    auto replacement_it{ replacement.begin() };
+    State state_lvl0;
+    for (; replacement_it < replacement_end; ++replacement_it) {
+        if (replacement_it + 1 == replacement_end) { break; }
+        state_lvl0 = nft.add_state_with_level(0);
+        nft.delta.add(state_lvl1, *replacement_it, state_lvl0);
+        state_lvl1 = nft.add_state_with_level(1);
+        nft.delta.add(state_lvl0, EPSILON, state_lvl1);
+    }
+    switch (replace_mode) {
+        case ReplaceMode::All: {
+            nft.delta.add(state_lvl1,
+                          replacement_it == replacement_end ? EPSILON : *replacement_it,
+                          *nft.initial.begin());
+            break;
+        }
+        case ReplaceMode::Single: {
+            const State after_replace_state{ nft.add_state_with_level(0) };
+            nft.delta.add(state_lvl1,
+                          replacement_it == replacement_end ? EPSILON : *replacement_it,
+                          after_replace_state);
+            for (const Symbol symbol: alphabet->get_alphabet_symbols()) {
+                state_lvl1 = nft.add_state_with_level(1);
+                nft.delta.add(after_replace_state, symbol, state_lvl1);
+                nft.delta.add(state_lvl1, symbol, after_replace_state);
+            }
+            nft.final.insert(after_replace_state);
+            break;
+        }
+        default: {
+            throw std::runtime_error("Unhandled replace mode.");
+        }
+    }
     return nft;
 }
 
