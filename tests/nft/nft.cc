@@ -3658,7 +3658,7 @@ TEST_CASE("mata::nft::project_to()") {
     }
 }
 
-TEST_CASE("nft::insert_level() and nft::insert_levels()") {
+TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
     Delta delta;
     Nft input_nft, output_nft, expected_nft;
 
