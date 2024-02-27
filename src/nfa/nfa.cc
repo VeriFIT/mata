@@ -543,14 +543,13 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
     }
 
     // Remember the first state that comes right after src.
-    // The add_state method is not used because it allocates StatePost in delta,
+    // The add method is not used currently because it allocates StatePost in delta,
     // which would prevent the use of the append operation.
-    State first_after_src = num_of_states();
+    State first_state_after_src = num_of_states();
 
     // Append transitions inner_state --> inner_state
-    State inner_state = first_after_src;
-    for (size_t idx{ 1 }; idx < word_len - 1; idx++) {
-        inner_state++;
+    State inner_state = first_state_after_src + 1;
+    for (size_t idx{ 1 }; idx < word_len - 1; idx++, inner_state++) {
         delta.append({StatePost({SymbolPost(word[idx], {inner_state})})});
     }
 
@@ -560,7 +559,7 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
     // Insert transition src --> inner_state.
     // This must be done as the last operation, because the add method allocates StatePost
     // in delta, which would prevent the use of the append operation.
-    delta.add(src, word[0], first_after_src);
+    delta.add(src, word[0], first_state_after_src);
 
 }
 
