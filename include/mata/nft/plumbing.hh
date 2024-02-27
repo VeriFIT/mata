@@ -67,9 +67,10 @@ inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAut
 /**
  * @brief Compute intersection of two NFTs.
  *
- * Both automata can contain ε-transitions. Epsilons will be handled a normal symbols.
+ * Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.
  *
- * Automata must share alphabets. //TODO: this is not implemented yet.
+ * Transducers must share alphabets. //TODO: this is not implemented yet.
+ * Transducers must have equal values of @c levels_cnt.
  *
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
