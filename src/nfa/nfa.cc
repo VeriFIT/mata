@@ -532,6 +532,39 @@ State Nfa::add_state(State state) {
     return state;
 }
 
+void Nfa::insert_word(const State src, const Word &word, const State tgt) {
+    assert(!word.empty());
+    assert(src < num_of_states());
+    assert(tgt < num_of_states());
+
+    const size_t word_len = word.size();
+    if (word_len == 1) {
+        delta.add(src, word[0], tgt);
+        return;
+    }
+
+    // Remember the first state that comes right after src.
+    // The add_state method is not used because it allocates StatePost in delta,
+    // which would prevent the use of the append operation.
+    State first_after_src = num_of_states();
+
+    // Append transitions inner_state --> inner_state
+    State inner_state = first_after_src;
+    for (size_t idx{ 1 }; idx < word_len - 1; idx++) {
+        inner_state++;
+        delta.append({StatePost({SymbolPost(word[idx], {inner_state})})});
+    }
+
+    // Append transition inner_state --> tgt
+    delta.append({StatePost({SymbolPost(word[word_len - 1], {tgt})})});
+
+    // Insert transition src --> inner_state.
+    // This must be done as the last operation, because the add method allocates StatePost
+    // in delta, which would prevent the use of the append operation.
+    delta.add(src, word[0], first_after_src);
+
+}
+
 size_t Nfa::num_of_states() const {
     return std::max({
         static_cast<size_t>(initial.domain_size()),
