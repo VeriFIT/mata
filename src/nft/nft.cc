@@ -292,6 +292,79 @@ State Nft::add_state_with_level(const State state, const Level level) {
     return state;
 }
 
+void Nft::insert_word(const State src, const Word &word, const State tgt) {
+    const State first_new_state = num_of_states();
+    Nfa::insert_word(src, word, tgt);
+    const size_t num_of_states_after = num_of_states();
+
+    Level lvl = (levels_cnt == 1 ) ? 0 : 1 ;
+    State state{ first_new_state };
+    for (; state < num_of_states_after; state++, lvl = (lvl + 1) % levels_cnt){
+        add_state_with_level(state, lvl);
+    }
+}
+
+void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt) {
+    assert(word_part_on_level.size() == levels_cnt);
+    assert(src < num_of_states());
+    assert(tgt < num_of_states());
+
+    if (word_part_on_level.size() == 1) {
+        Nft::insert_word(src, word_part_on_level[0], tgt);
+        return;
+    }
+
+    size_t max_word_part_len = std::max_element(
+        word_part_on_level.begin(),
+        word_part_on_level.end(),
+        [](const Word& a, const Word& b) { return a.size() < b.size(); }
+    )->size();
+    assert(0 < max_word_part_len);
+    size_t word_total_len = levels_cnt * max_word_part_len;
+
+    std::vector<mata::Word::const_iterator> word_part_it_v(levels_cnt);
+    for (Level lvl{ 0 }; lvl < levels_cnt; lvl++) {
+        word_part_it_v[lvl] = word_part_on_level[lvl].begin();
+    }
+
+    // This function retrieves the next symbol from a word part at a specified level and advances the corresponding iterator.
+    // Returns EPSILON when the iterator reaches the end of the word part.
+    auto get_next_symbol = [&](Level lvl) {
+        if (word_part_it_v[lvl] == word_part_on_level[lvl].end()) {
+            return EPSILON;
+        }
+        return *(word_part_it_v[lvl]++);
+    };
+
+    // Remember the first state and symbol that come right after src.
+    // The add method is not used currently because it allocates StatePost in delta,
+    // which would prevent the use of the append operation.
+    State first_state_after_src = num_of_states();
+    Symbol first_symbol_after_src = get_next_symbol(0);
+
+    // Append transition inner_state --> inner_state
+    State prev_state = first_state_after_src;
+    State inner_state = first_state_after_src + 1;
+    Level prev_lvl = 0;
+    Level lvl = 1;
+    for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++, inner_state++, lvl = (lvl + 1) % levels_cnt) {
+        delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {inner_state})})});
+        // The level of the previous state can now be set, because the state is already in delta.
+        add_state_with_level(prev_state, prev_lvl);
+        prev_lvl = lvl;
+        prev_state = inner_state;
+    }
+
+    // Append a transition that goes from the last inner state to the tgt and set its level.
+    delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {tgt})})});
+    add_state_with_level(prev_state, prev_lvl);
+
+    // Insert transition src --> inner_state.
+    // This must be done as the last operation, because the add method allocates StatePost
+    // in delta, which would prevent the use of the append operation.
+    delta.add(src, first_symbol_after_src, first_state_after_src);
+}
+
 void Nft::clear() {
     mata::nfa::Nfa::clear();
     levels.clear();

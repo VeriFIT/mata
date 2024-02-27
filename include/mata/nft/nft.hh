@@ -124,6 +124,31 @@ public:
     State add_state_with_level(State state, Level level);
 
     /**
+     * Inserts a @p word into the NFT from a source state @p src to a target state @p tgt.
+     * Creates new states along the path of the @p word.
+     *
+     * @param src The source state where the word begins. It must already be a part of the transducer.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @param tgt The target state where the word ends. It must already be a part of the transducer.
+     */
+    void insert_word(const State src, const Word &word, const State tgt);
+
+    /**
+     * Inserts a word, which is created by interleaving parts from @p word_part_on_level, into the NFT
+     * from a source state @p src to a target state @p tgt, creating new states along its path.
+     *
+     * The length of the inserted word equals @c levels_cnt * the maximum word length in the vector @p word_part_on_level.
+     * At least one Word in @p word_part_on_level must be nonempty.
+     * The vector @p word_part_on_level must have a size equal to @c levels_cnt.
+     * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
+     *
+     * @param src The source state where the word begins. This state must already exist in the transducer.
+     * @param word_part_on_level The vector of word parts, with each part corresponding to a different level.
+     * @param tgt The target state where the word ends. This state must already exist in the transducer.
+     */
+    void insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt);
+
+    /**
      * @brief Clear the underlying NFT to a blank NFT.
      *
      * The whole NFT is cleared, each member is set to its zero value.
