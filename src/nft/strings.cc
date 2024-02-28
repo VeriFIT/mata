@@ -19,10 +19,11 @@ using mata::nfa::SymbolPost;
 using namespace mata::nft;
 
 namespace {
-    bool is_subvector(const Word& subvector, const Word& vector) {
-        assert(subvector.size() <= vector.size());
-        for (size_t i{ 0 }; const Symbol symbol: subvector) {
-            if (symbol != vector[i]) { return false; }
+    template<class Sequence>
+    bool is_subsequence(const Sequence& subsequence, const Sequence& sequence) {
+        assert(subsequence.size() <= sequence.size());
+        for (size_t i{ 0 }; const Symbol symbol: subsequence) {
+            if (symbol != sequence[i]) { return false; }
             ++i;
         }
         return true;
@@ -465,7 +466,7 @@ Nft nft::strings::replace_literal_nft(const Word& literal, const Word& replaceme
                 auto subword_next_symbol_it{ subword_next_symbol_begin };
                 while (subword_next_symbol_it != subword_next_symbol_end) {
                     const Word subsubword{ subword_next_symbol_it, subword_next_symbol_end };
-                    if (is_subvector(subsubword, literal)) {
+                    if (is_subsequence(subsubword, literal)) {
                         // it...end is a valid literal subvector. Transition should therefore lead to the corresponding
                         //  subvector init_state.
                         target_state = subsubword.size();
