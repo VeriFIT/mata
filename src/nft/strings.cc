@@ -91,8 +91,7 @@ namespace {
         }
     }
 
-    void
-    add_generic_literal_transitions(const Word& literal, const std::vector<std::pair<State, Word>>& state_word_pairs,
+    void add_generic_literal_transitions(const Word& literal, const std::vector<std::pair<State, Word>>& state_word_pairs,
                                     Nft& nft, const utils::OrdVector<Symbol>& alphabet_symbols) {
         const size_t literal_size{ literal.size() };
         Symbol literal_symbol;
@@ -257,11 +256,6 @@ Nft nft::strings::create_identity_with_single_symbol_replace(Alphabet* alphabet,
     return nft;
 }
 
-Nft nft::strings::replace_reluctant(const Word& literal, const Word& replacement, Alphabet* alphabet,
-                                    strings::ReplaceMode replace_mode, Symbol begin_marker) {
-    return Nft();
-}
-
 Nft mata::nft::strings::replace_reluctant(
     const std::string& regex,
     const Word& replacement,
@@ -290,10 +284,7 @@ Nft mata::nft::strings::replace_reluctant(
 }
 
 nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
-    if (!regex.is_deterministic()) {
-        regex = determinize(regex);
-    }
-
+    if (!regex.is_deterministic()) { regex = determinize(regex); }
     State new_final;
     for (State orig_final: regex.final) {
         new_final = regex.add_state();
@@ -311,7 +302,6 @@ nfa::Nfa mata::nft::strings::end_marker_dfa(nfa::Nfa regex) {
 }
 
 Nft mata::nft::strings::marker_nft(const nfa::Nfa& marker_dfa, Symbol marker) {
-
     Nft dft_marker{ nft::builder::create_from_nfa(marker_dfa) };
     const size_t dft_marker_num_of_states{ dft_marker.num_of_states() };
     for (State source{ 0 }; source < dft_marker_num_of_states; ++source) {
@@ -336,9 +326,7 @@ nfa::Nfa nft::strings::generic_marker_dfa(const std::string& regex, Alphabet* al
 }
 
 nfa::Nfa nft::strings::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
-    if (!regex.is_deterministic()) {
-        regex = determinize(regex);
-    }
+    if (!regex.is_deterministic()) { regex = determinize(regex); }
 
     nfa::Nfa dfa_generic_end_marker{};
     dfa_generic_end_marker.initial.insert(0);
@@ -530,9 +518,7 @@ Nft nft::strings::replace_reluctant_literal(const Word& literal, const Word& rep
         nft_end_marker.final.insert(end_marker_state);
         return nft_end_marker;
     }() };
-
     Nft nft_literal_replace{ replace_literal_nft(literal, replacement, alphabet, end_marker, replace_mode) };
-
 //    return nft_end_marker.compose(nft_replace_reluctant_literal);
     return Nft{};
 }
@@ -561,4 +547,14 @@ Nft nft::strings::replace_literal_nft(const Word& literal, const Word& replaceme
     add_replacement_transitions(replacement, end_marker, replace_mode, state_word_pairs, nft, alphabet_symbols);
     add_end_marker_transitions_from_literal_states(end_marker, state_word_pairs, nft);
     return nft;
+}
+
+Nft nft::strings::replace_reluctant_single_symbol(mata::Alphabet* alphabet, Symbol from_symbol, const Word& replacement,
+                                                  ReplaceMode replace_mode) {
+    return create_identity_with_single_symbol_replace(alphabet, from_symbol, replacement, replace_mode);
+}
+
+Nft nft::strings::replace_reluctant_single_symbol(mata::Alphabet* alphabet, Symbol from_symbol, Symbol replacement,
+                                                  ReplaceMode replace_mode) {
+    return create_identity_with_single_symbol_replace(alphabet, from_symbol, replacement, replace_mode);
 }

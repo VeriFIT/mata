@@ -9,8 +9,8 @@
 
 namespace mata::nft::strings {
 
-constexpr Symbol BEGIN_MARKER{ EPSILON - 100 };
-constexpr Symbol END_MARKER{ EPSILON - 99 };
+constexpr Symbol BEGIN_MARKER{ EPSILON - 100 }; ///< Marker marking the beginning of the regex to be replaced.
+constexpr Symbol END_MARKER{ EPSILON - 99 }; ///< Marker marking the end of the regex to be replaced.
 
 /**
  * How many occurrences of the regex to replace, in order from left to right?
@@ -38,25 +38,32 @@ Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol 
  */
 Nft create_identity_with_single_symbol_replace(mata::Alphabet* alphabet, Symbol from_symbol, const Word& replacement,
                                                ReplaceMode replace_mode = ReplaceMode::All);
-
-Nft replace_reluctant(
-    const Word& literal,
-    const Word& replacement,
-    Alphabet* alphabet,
-    // TODO(nft): Change into constants?
-    ReplaceMode replace_mode,
-    Symbol begin_marker = BEGIN_MARKER
-);
-
+/**
+ * Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+ * @param regex A string containing regex to be replaced.
+ * @param replacement Literal to be replaced with.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
+ * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
+ * @return The reluctant leftmost replace NFT.
+ */
 Nft replace_reluctant(
     const std::string& regex,
     const Word& replacement,
     Alphabet* alphabet,
-    // TODO(nft): Change into constants?
     ReplaceMode replace_mode,
     Symbol begin_marker = BEGIN_MARKER
 );
 
+/**
+ * Create NFT modelling a reluctant leftmost replace of regex @p regex to @p replacement.
+ * @param regex NFA representing regex to be replaced.
+ * @param replacement Literal to be replaced with.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p regex.
+ * @param begin_marker Symbol to be used internally as a begin marker of replaced @p regex.
+ * @return The reluctant leftmost replace NFT.
+ */
 Nft replace_reluctant(
     nfa::Nfa regex,
     const Word& replacement,
@@ -65,8 +72,53 @@ Nft replace_reluctant(
     Symbol begin_marker = BEGIN_MARKER
 );
 
+/**
+ * Create NFT modelling a reluctant leftmost replace of literal @p literal to @p replacement.
+ * @param literal Literal to replace.
+ * @param replacement Literal to be replaced with.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p literal.
+ * @param end_marker Symbol to be used internally as an end marker marking the end of the replaced literal.
+ * @return The reluctant leftmost replace NFT.
+ */
 Nft replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
                               ReplaceMode replace_mode, Symbol end_marker = END_MARKER);
+
+/**
+ * Create NFT modelling a reluctant leftmost replace of literal @p literal to @p replacement.
+ * @param literal Literal to replace.
+ * @param replacement Literal to be replaced with.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p literal.
+ * @param end_marker Symbol to be used internally as an end marker marking the end of the replaced literal.
+ * @return The reluctant leftmost replace NFT.
+ */
+Nft replace_reluctant_single_symbol(const Word& literal, const Word& replacement, Alphabet* alphabet,
+                                    ReplaceMode replace_mode, Symbol end_marker = END_MARKER);
+
+/**
+ * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param from_symbol Symbol to replace.
+ * @param replacement Symbol to replace with.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
+ * @return The reluctant leftmost replace NFT.
+ */
+Nft replace_reluctant_single_symbol(mata::Alphabet* alphabet, Symbol from_symbol, Symbol replacement,
+                                    ReplaceMode replace_mode = ReplaceMode::All);
+
+/**
+ * Create NFT modelling a reluctant leftmost replace of symbol @p from_symbol to @p replacement.
+ * @param alphabet Alphabet over which to create the NFT.
+ * @param from_symbol Symbol to replace.
+ * @param replacement Literal to replace with.
+ * @param replace_mode Whether to replace all or just the single (the leftmost) occurrence of @p from_symbol.
+ * @return The reluctant leftmost replace NFT.
+ */
+Nft replace_reluctant_single_symbol(mata::Alphabet* alphabet, Symbol from_symbol, const Word& replacement,
+                                    ReplaceMode replace_mode = ReplaceMode::All);
+
+// Internal functions.
 
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
 Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
@@ -84,7 +136,7 @@ nfa::Nfa reluctant_nfa_with_marker(nfa::Nfa nfa, Symbol marker, Alphabet* alphab
 Nft reluctant_leftmost_nft(const std::string& regex, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
 Nft reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbol begin_marker, const Word& replacement, ReplaceMode replace_mode);
 
-Nft replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet* alphabet, const Symbol end_marker,
+Nft replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet* alphabet, Symbol end_marker,
                         ReplaceMode replace_mode = ReplaceMode::All);
 } // Namespace mata::nft::strings.
 
