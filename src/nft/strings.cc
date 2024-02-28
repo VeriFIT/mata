@@ -256,24 +256,24 @@ Nft nft::strings::create_identity_with_single_symbol_replace(Alphabet* alphabet,
     return nft;
 }
 
-Nft mata::nft::strings::replace_reluctant(
+Nft mata::nft::strings::replace_reluctant_regex(
     const std::string& regex,
     const Word& replacement,
     Alphabet* alphabet,
-    const ReplaceMode replace_mode,
-    const Symbol begin_marker
+    ReplaceMode replace_mode,
+    Symbol begin_marker
 ) {
     nfa::Nfa regex_nfa{};
     parser::create_nfa(&regex_nfa, regex);
-    return replace_reluctant(std::move(regex_nfa), replacement, alphabet, replace_mode, begin_marker);
+    return replace_reluctant_regex(std::move(regex_nfa), replacement, alphabet, replace_mode, begin_marker);
 }
 
-Nft mata::nft::strings::replace_reluctant(
+Nft mata::nft::strings::replace_reluctant_regex(
     nfa::Nfa regex,
     const Word& replacement,
     Alphabet* alphabet,
-    const ReplaceMode replace_mode,
-    const Symbol begin_marker
+    ReplaceMode replace_mode,
+    Symbol begin_marker
 ) {
     // TODO(nft): Add optional bool parameter to revert whether to swap initial and final states.
     Nft dft_begin_marker{ begin_marker_nft(begin_marker_nfa(regex, alphabet), begin_marker) };
