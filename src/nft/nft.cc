@@ -300,7 +300,7 @@ void Nft::insert_word(const State src, const Word &word, const State tgt) {
     const State last_inner_state = num_of_states() - 1;
 
     const Level src_lvl = levels[src];
-    Level lvl = (levels_cnt == 1 ) ? src_lvl : (src_lvl + 1) ;
+    Level lvl = (levels_cnt == 1 ) ? src_lvl : (src_lvl + 1);
     State state{ first_new_state };
     for (; state < num_of_states_after; state++, lvl = (lvl + 1) % levels_cnt){
         add_state_with_level(state, lvl);
@@ -363,19 +363,17 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
     // Append transition inner_state --> inner_state
     State prev_state = first_state_after_src;
     State inner_state = first_state_after_src + 1;
-    Level prev_lvl = 0;
-    Level lvl = 1;
+    Level lvl = (levels_cnt == 1 ) ? 0 : 1;
     for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++, inner_state++, lvl = (lvl + 1) % levels_cnt) {
         delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {inner_state})})});
         // The level of the previous state can now be set, because the state is already in delta.
-        add_state_with_level(prev_state, prev_lvl);
-        prev_lvl = lvl;
+        add_state_with_level(prev_state, lvl);
         prev_state = inner_state;
     }
 
     // Append a transition that goes from the last inner state to the tgt and set its level.
     delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {tgt})})});
-    add_state_with_level(prev_state, prev_lvl);
+    add_state_with_level(prev_state, lvl);
 
     // Insert transition src --> inner_state.
     // This must be done as the last operation, because the add method allocates StatePost

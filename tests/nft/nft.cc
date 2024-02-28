@@ -4473,7 +4473,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
         }
     }
 
-    SECTION("Creating an identity on a state with incoming and oncoming transitions.") {
+    SECTION("Creating an identity on a state with incoming and outcoming transitions.") {
         Delta delta{};
         delta.add(0, 'a', 1);
         delta.add(1, 'b', 2);
@@ -4550,6 +4550,266 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected.delta.add(5, 'c', 2);
 
             CHECK(are_equivalent(nft, expected));
+        }
+    }
+}
+
+TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
+    Nft nft, expected;
+
+    SECTION("Inserting a word between two states (both initial and final) with empty delta.") {
+
+        Delta delta{};
+
+        SECTION("levels_cnt == 1 && word_part.size() == 1") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
+            nft.insert_word_by_parts(0, { {'a'} } , 1);
+
+            expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
+            expected.delta.add(0, 'a', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 1 && word_part.size() == 2") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
+            nft.insert_word_by_parts(0, { {'a', 'b'} } , 1);
+
+            expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 0 }, 1);
+            expected.delta.add(0, 'a', 2);
+            expected.delta.add(2, 'b', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 1 && word_part.size() == 4") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1  }, { 0, 0, 0, 0, 0 }, 1);
+            nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'} }, 1);
+
+            expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 0, 0, 0 }, 1);
+            expected.delta.add(0, 'a', 2);
+            expected.delta.add(2, 'b', 3);
+            expected.delta.add(3, 'c', 4);
+            expected.delta.add(4, 'd', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+    }
+
+    SECTION("The source sate and target state are in delta.") {
+
+        Delta delta;
+        delta.add(0, 'w', 0);
+        delta.add(0, 'y', 1);
+        delta.add(1, 'x', 1);
+        delta.add(1, 'z', 0);
+        SECTION("levels_cnt == 2") {
+
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {'a'}, {'b'} } , 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'b', 1);
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} } , 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, 'd', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1, 0, 1, 0, 1 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, 'f', 5);
+                expected.delta.add(5, 'c', 6);
+                expected.delta.add(6, 'g', 7);
+                expected.delta.add(7, 'd', 8);
+                expected.delta.add(8, 'h', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+        }
+
+        SECTION("levels_cnt == 4") {
+
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'b', 3);
+                expected.delta.add(3, 'c', 4);
+                expected.delta.add(4, 'd', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, 'e', 4);
+                expected.delta.add(4, 'g', 5);
+                expected.delta.add(5, 'b', 6);
+                expected.delta.add(6, 'd', 7);
+                expected.delta.add(7, 'f', 8);
+                expected.delta.add(8, 'h', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'i', 4);
+                expected.delta.add(4, 'm', 5);
+                expected.delta.add(5, 'b', 6);
+                expected.delta.add(6, 'f', 7);
+                expected.delta.add(7, 'j', 8);
+                expected.delta.add(8, 'n', 9);
+                expected.delta.add(9, 'c', 10);
+                expected.delta.add(10, 'g', 11);
+                expected.delta.add(11, 'k', 12);
+                expected.delta.add(12, 'o', 13);
+                expected.delta.add(13, 'd', 14);
+                expected.delta.add(14, 'h', 15);
+                expected.delta.add(15, 'l', 16);
+                expected.delta.add(16, 'p', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+        }
+    }
+
+    SECTION("The lengths of word parts dont have to match.") {
+        Delta delta;
+        delta.add(0, 'w', 0);
+        delta.add(0, 'y', 1);
+        delta.add(1, 'x', 1);
+        delta.add(1, 'z', 0);
+
+        SECTION("levels_cnt == 2") {
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {}, {'b'} } , 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1 }, 2);
+                expected.delta.add(0, EPSILON, 2);
+                expected.delta.add(2, 'b', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c'} } , 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, EPSILON, 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
+                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1, 0, 1, 0, 1 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, EPSILON, 5);
+                expected.delta.add(5, 'c', 6);
+                expected.delta.add(6, EPSILON, 7);
+                expected.delta.add(7, 'd', 8);
+                expected.delta.add(8, EPSILON, 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+        }
+
+        SECTION("levels_cnt == 4") {
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {'a'}, {}, {'c'}, {} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, EPSILON, 3);
+                expected.delta.add(3, 'c', 4);
+                expected.delta.add(4, EPSILON, 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {'a'}, {'c', 'd'}, {}, {'g'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, EPSILON, 4);
+                expected.delta.add(4, 'g', 5);
+                expected.delta.add(5, EPSILON, 6);
+                expected.delta.add(6, 'd', 7);
+                expected.delta.add(7, EPSILON, 8);
+                expected.delta.add(8, EPSILON, 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
+                nft.insert_word_by_parts(0, { {}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+
+                expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
+                expected.delta.add(0, EPSILON, 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'i', 4);
+                expected.delta.add(4, 'm', 5);
+                expected.delta.add(5, EPSILON, 6);
+                expected.delta.add(6, 'f', 7);
+                expected.delta.add(7, 'j', 8);
+                expected.delta.add(8, 'n', 9);
+                expected.delta.add(9, EPSILON, 10);
+                expected.delta.add(10, EPSILON, 11);
+                expected.delta.add(11, 'k', 12);
+                expected.delta.add(12, 'o', 13);
+                expected.delta.add(13, EPSILON, 14);
+                expected.delta.add(14, EPSILON, 15);
+                expected.delta.add(15, 'l', 16);
+                expected.delta.add(16, 'p', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
         }
     }
 }
