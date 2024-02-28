@@ -543,6 +543,12 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
         return;
     }
 
+    // Ensure the size of delta matches the number of states in the transducer.
+    // This allows for further use of the append method.
+    if (delta.num_of_states() < num_of_states()) {
+        delta.allocate(num_of_states());
+    }
+
     // Remember the first state that comes right after src.
     // The add method is not used currently because it allocates StatePost in delta,
     // which would prevent the use of the append operation.
