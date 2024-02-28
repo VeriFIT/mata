@@ -234,7 +234,6 @@ TEST_CASE("nft::reluctant_replacement()") {
     Nft nft{};
     nfa::Nfa regex{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
-    constexpr Symbol MARKER{ EPSILON - 100 };
     SECTION("nft::end_marker_dfa()") {
         parser::create_nfa(&regex, "cb+a+");
         nfa::Nfa dfa_end_marker{ nft::strings::end_marker_dfa(regex) };
@@ -249,7 +248,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected_end_marker.delta.add(4, 'a', 3);
         CHECK(dfa_end_marker.is_deterministic());
         CHECK(nfa::are_equivalent(dfa_end_marker, dfa_expected_end_marker));
-        Nft dft_end_marker{ end_marker_dft(dfa_end_marker, MARKER) };
+        Nft dft_end_marker{ end_marker_dft(dfa_end_marker, END_MARKER) };
         Nft dft_expected_end_marker{};
         dft_expected_end_marker.num_of_levels = 2;
         dft_expected_end_marker.levels = { 0, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1 };
@@ -264,7 +263,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dft_expected_end_marker.delta.add(4, 'a', 6);
         dft_expected_end_marker.delta.add(6, 'a', 7);
         dft_expected_end_marker.delta.add(7, EPSILON, 8);
-        dft_expected_end_marker.delta.add(8, MARKER, 9);
+        dft_expected_end_marker.delta.add(8, END_MARKER, 9);
         dft_expected_end_marker.delta.add(9, 'a', 10);
         dft_expected_end_marker.delta.add(10, 'a', 7);
         CHECK(dft_end_marker.is_deterministic());
@@ -289,7 +288,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected.delta.add(4, 'c', 1);
         CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
 
-        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, MARKER) };
+        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 4, 7, 14 };
@@ -313,7 +312,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dft_expected.delta.add(7, 'c', 12);
         dft_expected.delta.add(12, 'c', 4);
         dft_expected.delta.add(10, EPSILON, 13);
-        dft_expected.delta.add(13, MARKER, 14);
+        dft_expected.delta.add(13, END_MARKER, 14);
         dft_expected.delta.add(14, 'a', 15);
         dft_expected.delta.add(15, 'a', 10);
         dft_expected.delta.add(14, 'b', 16);
@@ -360,7 +359,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dfa_expected.delta.add(4, 'c', 0);
         CHECK(nfa::are_equivalent(dfa_generic_end_marker, dfa_expected));
 
-        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, MARKER) };
+        Nft dft_generic_end_marker{ end_marker_dft(dfa_generic_end_marker, END_MARKER) };
         Nft dft_expected{};
         dft_expected.initial.insert(0);
         dft_expected.final = { 0, 2, 7, 14 };
@@ -384,7 +383,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         dft_expected.delta.add(7, 'c', 12);
         dft_expected.delta.add(12, 'c', 0);
         dft_expected.delta.add(10, EPSILON, 13);
-        dft_expected.delta.add(13, MARKER, 14);
+        dft_expected.delta.add(13, END_MARKER, 14);
         dft_expected.delta.add(14, 'a', 15);
         dft_expected.delta.add(15, 'a', 10);
         dft_expected.delta.add(14, 'b', 16);
@@ -431,7 +430,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         nfa_expected.delta.add(1, 'c', 4);
         CHECK(nfa::are_equivalent(nfa_begin_marker, nfa_expected));
 
-        Nft nft_begin_marker{ begin_marker_nft(nfa_begin_marker, MARKER) };
+        Nft nft_begin_marker{ begin_marker_nft(nfa_begin_marker, BEGIN_MARKER) };
         Nft nft_expected{};
         nft_expected.initial.insert(0);
         nft_expected.final.insert(1);
@@ -458,7 +457,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         nft_expected.delta.add(10, 'a', 3);
         nft_expected.delta.add(10, 'a', 5);
         nft_expected.delta.add(5, EPSILON, 11);
-        nft_expected.delta.add(11, MARKER, 4);
+        nft_expected.delta.add(11, BEGIN_MARKER, 4);
         nft_expected.levels.resize(12);
         nft_expected.levels[0] = 0;
         nft_expected.levels[1] = 0;
@@ -473,12 +472,12 @@ TEST_CASE("nft::reluctant_replacement()") {
         nft_expected.levels[10] = 1;
         nft_expected.levels[11] = 1;
         CHECK(nft::are_equivalent(nft_begin_marker, nft_expected));
-        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'c' }, Word{ MARKER, 'a', 'b', 'c' } }));
-        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'b', 'c', 'c', 'c' }, Word{ MARKER, 'a', 'b', 'b', 'c', 'c', 'c' } }));
-        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'c' }, Word{ MARKER, 'a', MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'c' }, Word{ BEGIN_MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'b', 'b', 'c', 'c', 'c' }, Word{ BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'c' }, Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'c' } }));
         CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'b', 'c' }, Word{ 'b', 'c' } }));
-        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'a', 'b', 'c' }, Word{ 'a', 'a', 'b', 'b', 'b', MARKER, 'a', 'b', 'c' } }));
-        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'c', 'a', 'b', 'c' }, Word{ MARKER, 'a', MARKER, 'a', 'b', 'b', 'b', 'c', MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'a', 'b', 'c' }, Word{ 'a', 'a', 'b', 'b', 'b', BEGIN_MARKER, 'a', 'b', 'c' } }));
+        CHECK(nft_begin_marker.is_tuple_in_lang({ Word{ 'a', 'a', 'b', 'b', 'b', 'c', 'a', 'b', 'c' }, Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'b', 'c', BEGIN_MARKER, 'a', 'b', 'c' } }));
     }
 
     SECTION("nft::begin_marker_nft() regex ab+a+") {
@@ -499,7 +498,7 @@ TEST_CASE("nft::reluctant_replacement()") {
         nfa_expected.delta.add(0, 'c', 4);
         CHECK(nfa::are_equivalent(nfa_begin_marker, nfa_expected));
 
-        Nft nft_begin_marker{ begin_marker_nft(nfa_begin_marker, MARKER) };
+        Nft nft_begin_marker{ begin_marker_nft(nfa_begin_marker, BEGIN_MARKER) };
         Nft nft_expected{ nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q11\n%Final q0\n%Levels q0:0 q1:1 q2:1 q3:0 q4:0 q5:0 q6:1 q7:1 q8:0 q9:1 q10:1 q11:0\n%LevelsCnt 2\nq0 98 q1\nq0 99 q2\nq1 98 q0\nq2 99 q0\nq2 99 q3\nq2 99 q4\nq2 99 q5\nq3 97 q6\nq4 98 q7\nq5 4294967295 q10\nq6 97 q0\nq6 97 q3\nq6 97 q5\nq7 98 q3\nq7 98 q4\nq7 98 q5\nq8 97 q9\nq9 97 q4\nq10 4294967195 q8\nq11 4294967295 q0\nq11 4294967295 q3\nq11 4294967295 q4\nq11 4294967295 q5\n"
         )) };
@@ -511,13 +510,12 @@ TEST_CASE("mata::nft::strings::reluctant_nfa_with_marker()") {
     Nft nft{};
     nfa::Nfa regex{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
-    constexpr Symbol MARKER{ EPSILON - 100 };
 
     SECTION("regex cb+a+") {
         nfa::Nfa nfa{ [&]() {
             nfa::Nfa nfa{};
             mata::parser::create_nfa(&nfa, "cb+a+");
-            return reluctant_nfa_with_marker(nfa, MARKER, &alphabet);
+            return reluctant_nfa_with_marker(nfa, BEGIN_MARKER, &alphabet);
         }() };
         nfa::Nfa expected{ nfa::builder::parse_from_mata(std::string(
             "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q3\nq0 99 q1\nq0 4294967195 q0\nq1 98 q2\nq1 4294967195 q1\nq2 97 q3\nq2 98 q2\nq2 4294967195 q2\n")) };
@@ -529,10 +527,9 @@ TEST_CASE("mata::nft::strings::reluctant_leftmost_nft()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
-    constexpr Symbol MARKER{ EPSILON - 100 };
 
     SECTION("all 'cb+a+' replaced with 'ddd'") {
-        nft = reluctant_leftmost_nft("cb+a+", &alphabet, MARKER, Word{ 'd', 'd', 'd' }, ReplaceMode::All);
+        nft = reluctant_leftmost_nft("cb+a+", &alphabet, BEGIN_MARKER, Word{ 'd', 'd', 'd' }, ReplaceMode::All);
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q13\n%Final q13\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:0 q6:1 q7:1 q8:0 q9:1 q10:1 q11:0 q12:1 q13:0 q14:1 q15:1 q16:1 q17:1 q18:1 q19:0 q20:1 q21:0 q22:1 q23:0 q24:1 q25:0\n%LevelsCnt 2\nq0 99 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 98 q4\nq2 4294967195 q6\nq3 4294967295 q0\nq4 4294967295 q5\nq5 97 q7\nq5 98 q9\nq5 4294967195 q10\nq6 4294967295 q2\nq7 4294967295 q8\nq8 4294967295 q18\nq9 4294967295 q5\nq10 4294967295 q5\nq11 4294967195 q12\nq12 4294967295 q11\nq13 97 q14\nq13 98 q15\nq13 99 q16\nq13 4294967195 q17\nq14 97 q13\nq15 98 q13\nq16 99 q13\nq17 4294967295 q0\nq18 100 q19\nq19 4294967295 q20\nq20 100 q21\nq21 4294967295 q22\nq22 100 q23\nq23 4294967295 q24\nq24 4294967295 q25\nq25 4294967295 q13\n"
         ));
@@ -540,29 +537,29 @@ TEST_CASE("mata::nft::strings::reluctant_leftmost_nft()") {
     }
 
     SECTION("single 'a+b+c' replaced with '' (empty string)") {
-        nft = reluctant_leftmost_nft("a+b+c", &alphabet, MARKER, Word{}, ReplaceMode::Single);
+        nft = reluctant_leftmost_nft("a+b+c", &alphabet, BEGIN_MARKER, Word{}, ReplaceMode::Single);
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q20 q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 q6:0 q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:0 q21:1 q22:1 q23:1 q24:1\n%LevelsCnt 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 q5\nq2 4294967195 q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 4294967195 q11\nq7 4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 4294967295 q6\nq12 4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 4294967195 q18\nq15 97 q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 4294967295 q20\nq20 97 q21\nq20 98 q22\nq20 99 q23\nq20 4294967195 q24\nq21 97 q20\nq22 98 q20\nq23 99 q20\nq24 4294967295 q20\n"
         ));
         CHECK(nft::are_equivalent(nft, expected));
-        CHECK(nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'c', 'b', 'a', 'c' } }));
-        CHECK(nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'b', MARKER, 'a', 'b', 'c', MARKER, 'a', 'b', 'c', 'b' }, Word{ 'c', 'b', 'a', 'b', 'a', 'b', 'c', 'a', 'b', 'c', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'c', 'b', 'a', 'c' } }));
+        CHECK(nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'b', BEGIN_MARKER, 'a', 'b', 'c', BEGIN_MARKER, 'a', 'b', 'c', 'b' }, Word{ 'c', 'b', 'a', 'b', 'a', 'b', 'c', 'a', 'b', 'c', 'b' } }));
     }
 
     SECTION("All 'a+b+c' replaced with 'd'") {
-        nft = reluctant_leftmost_nft("a+b+c", &alphabet, MARKER, Word{ 'd' }, ReplaceMode::All);
+        nft = reluctant_leftmost_nft("a+b+c", &alphabet, BEGIN_MARKER, Word{ 'd' }, ReplaceMode::All);
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 q6:0 q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:0 q21:1 q22:0\n%LevelsCnt 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 q5\nq2 4294967195 q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 4294967195 q11\nq7 4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 4294967295 q6\nq12 4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 4294967195 q18\nq15 97 q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 100 q20\nq20 4294967295 q21\nq21 4294967295 q22\nq22 4294967295 q14\n"
         ));
         CHECK(nft::are_equivalent(nft, expected));
-        CHECK(nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'd', 'c', 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'd', 'c', 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
-        CHECK(!nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'c', 'b', 'a', 'c' } }));
-        CHECK(nft.is_tuple_in_lang({ Word{ MARKER, 'a', MARKER, 'a', MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'b', MARKER, 'a', 'b', 'c', MARKER, 'a', 'b', 'c', 'b' }, Word{ 'd', 'c', 'b', 'a', 'b', 'd', 'd', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'd', 'c', 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'd', 'c', 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));
+        CHECK(!nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'c', 'b', 'a', 'c' } }));
+        CHECK(nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'b', BEGIN_MARKER, 'a', 'b', 'c', BEGIN_MARKER, 'a', 'b', 'c', 'b' }, Word{ 'd', 'c', 'b', 'a', 'b', 'd', 'd', 'b' } }));
     }
 }
 
@@ -570,11 +567,10 @@ TEST_CASE("mata::nft::literal_replace_nft()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
-    Symbol end_marker{ EPSILON - 99 };
 
     SECTION("'abcc' replace with 'a' replace all") {
-        nft = replace_literal_nft(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, end_marker, ReplaceMode::All);
-        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'b', 'c', 'c', 'a', end_marker },
+        nft = replace_literal_nft(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, END_MARKER, ReplaceMode::All);
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'b', 'c', 'c', 'a', END_MARKER },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'a', 'a', 'a' } }));
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q35\n%Levels q0:0 q1:0 q2:0 q3:0 q4:0 q5:1 q6:1 q7:1 q8:1 q9:1 q10:1 q11:0 q12:1 q13:1 q14:0 q15:1 q16:1 q17:0 q18:1 q19:0 q20:1 q21:1 q22:1 q23:0 q24:1 q25:0 q26:1 q27:1 q28:0 q29:1 q30:0 q31:1 q32:0 q33:1 q34:1 q35:0 q36:1 q37:1 q38:1 q39:1 q40:0 q41:1 q42:1 q43:0 q44:1 q45:0 q46:1\n%LevelsCnt 2\nq0 97 q5\nq0 98 q6\nq0 99 q7\nq0 4294967196 q37\nq1 97 q8\nq1 98 q9\nq1 99 q10\nq1 4294967196 q38\nq2 97 q13\nq2 98 q16\nq2 99 q21\nq2 4294967196 q39\nq3 97 q22\nq3 98 q27\nq3 99 q34\nq3 4294967196 q42\nq4 4294967295 q36\nq5 4294967295 q1\nq6 98 q0\nq7 99 q0\nq8 97 q1\nq9 4294967295 q2\nq10 97 q11\nq11 4294967295 q12\nq12 99 q0\nq13 97 q14\nq14 4294967295 q15\nq15 98 q1\nq16 97 q17\nq17 4294967295 q18\nq18 98 q19\nq19 4294967295 q20\nq20 98 q0\nq21 4294967295 q3\nq22 97 q23\nq23 4294967295 q24\nq24 98 q25\nq25 4294967295 q26\nq26 99 q1\nq27 97 q28\nq28 4294967295 q29\nq29 98 q30\nq30 4294967295 q31\nq31 99 q32\nq32 4294967295 q33\nq33 98 q0\nq34 4294967295 q4\nq36 97 q0\nq37 4294967295 q35\nq38 97 q35\nq39 97 q40\nq40 4294967295 q41\nq41 98 q35\nq42 97 q43\nq43 4294967295 q44\nq44 98 q45\nq45 4294967295 q46\nq46 99 q35\n"
@@ -583,8 +579,8 @@ TEST_CASE("mata::nft::literal_replace_nft()") {
     }
 
     SECTION("'abcc' replace with 'bbb' replace single") {
-        nft = replace_literal_nft(Word{ 'a', 'b', 'c', 'c' }, Word{ 'b', 'b', 'b' },  &alphabet, end_marker, ReplaceMode::Single);
-        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'b', 'c', 'c', end_marker },
+        nft = replace_literal_nft(Word{ 'a', 'b', 'c', 'c' }, Word{ 'b', 'b', 'b' },  &alphabet, END_MARKER, ReplaceMode::Single);
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'c', 'a', 'a', 'b', 'c', 'c', END_MARKER },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'b', 'b', 'b', 'a', 'a', 'b', 'c', 'c' } }));
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q45 q46\n%Levels q0:0 q1:0 q2:0 q3:0 q4:0 q5:1 q6:1 q7:1 q8:1 q9:1 q10:1 q11:0 q12:1 q13:1 q14:0 q15:1 q16:1 q17:0 q18:1 q19:0 q20:1 q21:1 q22:1 q23:0 q24:1 q25:0 q26:1 q27:1 q28:0 q29:1 q30:0 q31:1 q32:0 q33:1 q34:1 q35:1 q36:0 q37:1 q38:0 q39:1 q40:0 q41:1 q42:1 q43:1 q44:1 q45:0 q46:0 q47:1 q48:1 q49:1 q50:0 q51:1 q52:1 q53:0 q54:1 q55:0 q56:1\n%LevelsCnt 2\nq0 97 q5\nq0 98 q6\nq0 99 q7\nq0 4294967196 q47\nq1 97 q8\nq1 98 q9\nq1 99 q10\nq1 4294967196 q48\nq2 97 q13\nq2 98 q16\nq2 99 q21\nq2 4294967196 q49\nq3 97 q22\nq3 98 q27\nq3 99 q34\nq3 4294967196 q52\nq4 4294967295 q35\nq5 4294967295 q1\nq6 98 q0\nq7 99 q0\nq8 97 q1\nq9 4294967295 q2\nq10 97 q11\nq11 4294967295 q12\nq12 99 q0\nq13 97 q14\nq14 4294967295 q15\nq15 98 q1\nq16 97 q17\nq17 4294967295 q18\nq18 98 q19\nq19 4294967295 q20\nq20 98 q0\nq21 4294967295 q3\nq22 97 q23\nq23 4294967295 q24\nq24 98 q25\nq25 4294967295 q26\nq26 99 q1\nq27 97 q28\nq28 4294967295 q29\nq29 98 q30\nq30 4294967295 q31\nq31 99 q32\nq32 4294967295 q33\nq33 98 q0\nq34 4294967295 q4\nq35 98 q36\nq36 4294967295 q37\nq37 98 q38\nq38 4294967295 q39\nq39 98 q40\nq40 97 q41\nq40 98 q42\nq40 99 q43\nq40 4294967196 q44\nq41 97 q40\nq42 98 q40\nq43 99 q40\nq44 4294967295 q45\nq47 4294967295 q46\nq48 97 q46\nq49 97 q50\nq50 4294967295 q51\nq51 98 q46\nq52 97 q53\nq53 4294967295 q54\nq54 98 q55\nq55 4294967295 q56\nq56 99 q46\n"
@@ -593,9 +589,9 @@ TEST_CASE("mata::nft::literal_replace_nft()") {
     }
 
     SECTION("'aabac' replace with 'd' replace all") {
-        nft = replace_literal_nft(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{ 'd' }, &alphabet, end_marker,
+        nft = replace_literal_nft(Word{ 'a', 'a', 'b', 'a', 'c' }, Word{ 'd' }, &alphabet, END_MARKER,
                                   ReplaceMode::All);
-        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a', end_marker },
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a', END_MARKER },
                                      { 'a', 'a', 'a', 'b', 'a', 'd', 'a' } }));
         expected = nft::builder::parse_from_mata(std::string(
             "@NFT-explicit\n%Alphabet-auto\n%Initial q0\n%Final q54\n%Levels q0:0 q1:0 q2:0 q3:0 q4:0 q5:0 q6:1 q7:1 q8:1 q9:1 q10:1 q11:0 q12:1 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:0 q20:1 q21:0 q22:1 q23:1 q24:1 q25:0 q26:1 q27:0 q28:1 q29:0 q30:1 q31:1 q32:0 q33:1 q34:0 q35:1 q36:0 q37:1 q38:1 q39:0 q40:1 q41:0 q42:1 q43:1 q44:0 q45:1 q46:0 q47:1 q48:0 q49:1 q50:0 q51:1 q52:1 q53:1 q54:0 q55:1 q56:1 q57:1 q58:0 q59:1 q60:1 q61:0 q62:1 q63:0 q64:1 q65:1 q66:0 q67:1 q68:0 q69:1 q70:0 q71:1\n%LevelsCnt 2\nq0 97 q6\nq0 98 q7\nq0 99 q8\nq0 4294967196 q55\nq1 97 q9\nq1 98 q10\nq1 99 q13\nq1 4294967196 q56\nq2 97 q16\nq2 98 q17\nq2 99 q18\nq2 4294967196 q57\nq3 97 q23\nq3 98 q24\nq3 99 q31\nq3 4294967196 q60\nq4 97 q38\nq4 98 q43\nq4 99 q52\nq4 4294967196 q65\nq5 4294967295 q53\nq6 4294967295 q1\nq7 98 q0\nq8 99 q0\nq9 4294967295 q2\nq10 97 q11\nq11 4294967295 q12\nq12 98 q0\nq13 97 q14\nq14 4294967295 q15\nq15 99 q0\nq16 97 q2\nq17 4294967295 q3\nq18 97 q19\nq19 4294967295 q20\nq20 97 q21\nq21 4294967295 q22\nq22 99 q0\nq23 4294967295 q4\nq24 97 q25\nq25 4294967295 q26\nq26 97 q27\nq27 4294967295 q28\nq28 98 q29\nq29 4294967295 q30\nq30 98 q0\nq31 97 q32\nq32 4294967295 q33\nq33 97 q34\nq34 4294967295 q35\nq35 98 q36\nq36 4294967295 q37\nq37 99 q0\nq38 97 q39\nq39 4294967295 q40\nq40 97 q41\nq41 4294967295 q42\nq42 98 q2\nq43 97 q44\nq44 4294967295 q45\nq45 97 q46\nq46 4294967295 q47\nq47 98 q48\nq48 4294967295 q49\nq49 97 q50\nq50 4294967295 q51\nq51 98 q0\nq52 4294967295 q5\nq53 100 q0\nq55 4294967295 q54\nq56 97 q54\nq57 97 q58\nq58 4294967295 q59\nq59 97 q54\nq60 97 q61\nq61 4294967295 q62\nq62 97 q63\nq63 4294967295 q64\nq64 98 q54\nq65 97 q66\nq66 4294967295 q67\nq67 97 q68\nq68 4294967295 q69\nq69 98 q70\nq70 4294967295 q71\nq71 97 q54\n"
