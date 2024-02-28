@@ -149,6 +149,14 @@ public:
     void insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt);
 
     /**
+    * Inserts an identity transition into the NFT.
+    *
+    * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
+    * @param symbol The symbol used for the identity transition.
+    */
+    void insert_identity(const State state, const Symbol symbol);
+
+    /**
      * @brief Clear the underlying NFT to a blank NFT.
      *
      * The whole NFT is cleared, each member is set to its zero value.
