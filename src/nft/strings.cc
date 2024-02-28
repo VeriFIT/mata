@@ -425,8 +425,6 @@ Nft nft::strings::reluctant_leftmost_nft(const std::string& regex, Alphabet* alp
 Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbol begin_marker,
                                          const Word& replacement, ReplaceMode replace_mode) {
     nfa = reluctant_nfa_with_marker(std::move(nfa), begin_marker, alphabet);
-    std::ostringstream stream;
-    stream << EPSILON;
     Nft nft_reluctant_leftmost{
         nft::builder::create_from_nfa(nfa, 2, { EPSILON }, { EPSILON }) };
     const size_t regex_num_of_states{ nft_reluctant_leftmost.num_of_states() };
