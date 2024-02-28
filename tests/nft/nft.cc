@@ -4426,10 +4426,10 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
 TEST_CASE("mata::nft::Nft::insert_identity()") {
     Nft nft, expected;
-    SECTION("Creating an identity on two states (both initial and final) with empty delta and empty vector levels.") {
+    SECTION("Creating an identity on two states (both initial and final) with empty delta.") {
         Delta delta{};
         SECTION("levels_cnt == 1") {
-            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 1);
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
             nft.insert_identity(0, 'a');
             nft.insert_identity(1, 'b');
 
@@ -4441,7 +4441,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
         }
 
         SECTION("levels_cnt == 2") {
-            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 2);
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
             nft.insert_identity(0, 'a');
             nft.insert_identity(1, 'b');
 
@@ -4455,7 +4455,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
         }
 
         SECTION("levels_cnt == 4") {
-            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 4);
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
             nft.insert_identity(0, 'a');
             nft.insert_identity(1, 'b');
 

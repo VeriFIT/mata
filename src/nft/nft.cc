@@ -297,12 +297,16 @@ void Nft::insert_word(const State src, const Word &word, const State tgt) {
     const State first_new_state = num_of_states();
     Nfa::insert_word(src, word, tgt);
     const size_t num_of_states_after = num_of_states();
+    const State last_inner_state = num_of_states() - 1;
 
-    Level lvl = (levels_cnt == 1 ) ? 0 : 1 ;
+    const Level src_lvl = levels[src];
+    Level lvl = (levels_cnt == 1 ) ? src_lvl : (src_lvl + 1) ;
     State state{ first_new_state };
     for (; state < num_of_states_after; state++, lvl = (lvl + 1) % levels_cnt){
         add_state_with_level(state, lvl);
     }
+
+    assert(levels[tgt] == 0 || levels[last_inner_state] < levels[tgt]);
 }
 
 void Nft::insert_identity(const State state, const Symbol symbol) {
@@ -314,6 +318,8 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
     assert(word_part_on_level.size() == levels_cnt);
     assert(src < num_of_states());
     assert(tgt < num_of_states());
+    assert(levels[src] == 0);
+    assert(levels[tgt] == 0);
 
     if (levels_cnt == 1) {
         Nft::insert_word(src, word_part_on_level[0], tgt);
