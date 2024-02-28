@@ -127,6 +127,10 @@ public:
      * Inserts a @p word into the NFT from a source state @p src to a target state @p tgt.
      * Creates new states along the path of the @p word.
      *
+     * If the length of @p word is less than @c levels_cnt, then the last symbol of @p word
+     * will form a transition going directly from the last inner state to @p tgt. The level
+     * of the state @p tgt must be 0 or greater than the level of the last inner state.
+     *
      * @param src The source state where the word begins. It must already be a part of the transducer.
      * @param word The nonempty word to be inserted into the NFA.
      * @param tgt The target state where the word ends. It must already be a part of the transducer.
@@ -142,9 +146,9 @@ public:
      * The vector @p word_part_on_level must have a size equal to @c levels_cnt.
      * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
      *
-     * @param src The source state where the word begins. This state must already exist in the transducer.
+     * @param src The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
      * @param word_part_on_level The vector of word parts, with each part corresponding to a different level.
-     * @param tgt The target state where the word ends. This state must already exist in the transducer.
+     * @param tgt The target state where the word ends. This state must already exist in the transducer and must be of a level 0.
      */
     void insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt);
 
