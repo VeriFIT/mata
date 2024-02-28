@@ -518,15 +518,6 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
     return nft_reluctant_leftmost;
 }
 
-Nft nft::strings::replace_reluctant_finite(Nfa regex, const Word& replacement, Alphabet* alphabet,
-                                           const ReplaceMode replace_mode, const Symbol end_marker) {
-    assert(regex.is_acyclic());
-    regex = mata::strings::reluctant_nfa(std::move(regex));
-    const std::set<Word> regex_words{ regex.get_words(regex.num_of_states()) };
-
-    return Nft();
-}
-
 Nft nft::strings::replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
                                             strings::ReplaceMode replace_mode, Symbol end_marker) {
     Nft nft_end_marker{ [&]() {
@@ -547,8 +538,7 @@ Nft nft::strings::replace_reluctant_literal(const Word& literal, const Word& rep
 }
 
 Nft nft::strings::replace_literal_nft(const Word& literal, const Word& replacement, const Alphabet* alphabet,
-                                      const Symbol end_marker,
-                                      ReplaceMode replace_mode) {
+                                      const Symbol end_marker, ReplaceMode replace_mode) {
     Nft nft{};
     nft.levels_cnt = 2;
     State init_state{ nft.add_state_with_level(0) };
@@ -572,6 +562,3 @@ Nft nft::strings::replace_literal_nft(const Word& literal, const Word& replaceme
     add_end_marker_transitions_from_literal_states(end_marker, state_word_pairs, nft);
     return nft;
 }
-
-
-

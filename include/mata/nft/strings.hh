@@ -9,6 +9,9 @@
 
 namespace mata::nft::strings {
 
+constexpr Symbol BEGIN_MARKER{ EPSILON - 100 };
+constexpr Symbol END_MARKER{ EPSILON - 99 };
+
 /**
  * How many occurrences of the regex to replace, in order from left to right?
  */
@@ -42,7 +45,7 @@ Nft replace_reluctant(
     Alphabet* alphabet,
     // TODO(nft): Change into constants?
     ReplaceMode replace_mode,
-    Symbol begin_marker = EPSILON - 100
+    Symbol begin_marker = BEGIN_MARKER
 );
 
 Nft replace_reluctant(
@@ -51,7 +54,7 @@ Nft replace_reluctant(
     Alphabet* alphabet,
     // TODO(nft): Change into constants?
     ReplaceMode replace_mode,
-    Symbol begin_marker = EPSILON - 100
+    Symbol begin_marker = BEGIN_MARKER
 );
 
 Nft replace_reluctant(
@@ -59,14 +62,11 @@ Nft replace_reluctant(
     const Word& replacement,
     Alphabet* alphabet,
     ReplaceMode replace_mode,
-    Symbol begin_marker = EPSILON - 100
+    Symbol begin_marker = BEGIN_MARKER
 );
 
-Nft replace_reluctant_finite(nfa::Nfa regex, const Word& replacement, Alphabet* alphabet,
-                             ReplaceMode replace_mode, Symbol end_marker = EPSILON - 99);
-
 Nft replace_reluctant_literal(const Word& literal, const Word& replacement, Alphabet* alphabet,
-                              ReplaceMode replace_mode, Symbol end_marker = EPSILON - 99);
+                              ReplaceMode replace_mode, Symbol end_marker = END_MARKER);
 
 nfa::Nfa end_marker_dfa(nfa::Nfa regex);
 Nft marker_nft(const nfa::Nfa& marker_dfa, Symbol marker);
