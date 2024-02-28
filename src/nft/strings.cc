@@ -372,14 +372,12 @@ nfa::Nfa nft::strings::begin_marker_nfa(nfa::Nfa regex, Alphabet* alphabet) {
 
 Nft nft::strings::begin_marker_nft(const nfa::Nfa& marker_nfa, Symbol begin_marker) {
     Nft begin_marker_nft{ marker_nft(marker_nfa, begin_marker) };
-    const State new_initial{ begin_marker_nft.add_state() };
+    const State new_initial{ begin_marker_nft.add_state_with_level(0) };
     for (const State orig_final: begin_marker_nft.final) {
         begin_marker_nft.delta.add(new_initial, EPSILON, orig_final);
     }
     begin_marker_nft.final = begin_marker_nft.initial;
     begin_marker_nft.initial = { new_initial };
-    begin_marker_nft.levels.resize(new_initial + 1);
-    begin_marker_nft.levels[new_initial] = 0;
     return begin_marker_nft;
 }
 
@@ -432,11 +430,9 @@ Nft nft::strings::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, Symbo
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     nft_reluctant_leftmost.levels.resize(
         regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
-    State curr_state{ regex_num_of_states };
     // Create self-loop on the new initial state.
-    const State initial{ regex_num_of_states };
-    nft_reluctant_leftmost.levels[initial] = 0;
-    ++curr_state;
+    const State initial{ nft_reluctant_leftmost.add_state_with_level(0) };
+    State curr_state{ regex_num_of_states + 1 };
     StatePost& initial_state_post{ nft_reluctant_leftmost.delta.mutable_state_post(initial) };
     for (const Symbol symbol: alphabet_symbols) {
         initial_state_post.push_back({ symbol, curr_state });
