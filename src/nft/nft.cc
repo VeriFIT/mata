@@ -293,6 +293,7 @@ State Nft::add_state_with_level(const State state, const Level level) {
 }
 
 void Nft::insert_word(const State src, const Word &word, const State tgt) {
+    assert(0 < levels_cnt);
     const State first_new_state = num_of_states();
     Nfa::insert_word(src, word, tgt);
     const size_t num_of_states_after = num_of_states();
@@ -304,12 +305,17 @@ void Nft::insert_word(const State src, const Word &word, const State tgt) {
     }
 }
 
+void Nft::insert_identity(const State state, const Symbol symbol) {
+    insert_word(state, Word(levels_cnt, symbol), state);
+}
+
 void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt) {
+    assert(0 < levels_cnt);
     assert(word_part_on_level.size() == levels_cnt);
     assert(src < num_of_states());
     assert(tgt < num_of_states());
 
-    if (word_part_on_level.size() == 1) {
+    if (levels_cnt == 1) {
         Nft::insert_word(src, word_part_on_level[0], tgt);
         return;
     }
@@ -335,6 +341,12 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
         }
         return *(word_part_it_v[lvl]++);
     };
+
+    // Ensure the size of delta matches the number of states in the transducer.
+    // This allows for further use of the append method.
+    if (delta.num_of_states() < num_of_states()) {
+        delta.allocate(num_of_states());
+    }
 
     // Remember the first state and symbol that come right after src.
     // The add method is not used currently because it allocates StatePost in delta,

@@ -4423,3 +4423,133 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
         }
     }
 }
+
+TEST_CASE("mata::nft::Nft::insert_identity()") {
+    Nft nft, expected;
+    SECTION("Creating an identity on two states (both initial and final) with empty delta and empty vector levels.") {
+        Delta delta{};
+        SECTION("levels_cnt == 1") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 1);
+            nft.insert_identity(0, 'a');
+            nft.insert_identity(1, 'b');
+
+            expected = Nft(2, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
+            expected.delta.add(0, 'a', 0);
+            expected.delta.add(1, 'b', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 2") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 2);
+            nft.insert_identity(0, 'a');
+            nft.insert_identity(1, 'b');
+
+            expected = Nft(4, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 1 }, 2);
+            expected.delta.add(0, 'a', 2);
+            expected.delta.add(2, 'a', 0);
+            expected.delta.add(1, 'b', 3);
+            expected.delta.add(3, 'b', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 4") {
+            nft = Nft(delta, { 0, 1 }, { 0, 1 }, {}, 4);
+            nft.insert_identity(0, 'a');
+            nft.insert_identity(1, 'b');
+
+            expected = Nft(8, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 1, 2, 2, 3, 3 }, 4);
+            expected.delta.add(0, 'a', 2);
+            expected.delta.add(2, 'a', 4);
+            expected.delta.add(4, 'a', 6);
+            expected.delta.add(6, 'a', 0);
+            expected.delta.add(1, 'b', 3);
+            expected.delta.add(3, 'b', 5);
+            expected.delta.add(5, 'b', 7);
+            expected.delta.add(7, 'b', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+    }
+
+    SECTION("Creating an identity on a state with incoming and oncoming transitions.") {
+        Delta delta{};
+        delta.add(0, 'a', 1);
+        delta.add(1, 'b', 2);
+
+        SECTION("levels_cnt == 1") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+            nft.insert_identity(1, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+            expected.delta.add(1, 'c', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 2") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
+            nft.insert_identity(1, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
+            expected.delta.add(1, 'c', 3);
+            expected.delta.add(3, 'c', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 4") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
+            nft.insert_identity(1, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
+            expected.delta.add(1, 'c', 3);
+            expected.delta.add(3, 'c', 4);
+            expected.delta.add(4, 'c', 5);
+            expected.delta.add(5, 'c', 1);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+    }
+
+    SECTION("Creating an identity on a state with only incoming transitions.") {
+        Delta delta{};
+        delta.add(0, 'a', 1);
+        delta.add(1, 'b', 2);
+
+        SECTION("levels_cnt == 1") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+            nft.insert_identity(2, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+            expected.delta.add(2, 'c', 2);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 2") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
+            nft.insert_identity(2, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
+            expected.delta.add(2, 'c', 3);
+            expected.delta.add(3, 'c', 2);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("levels_cnt == 4") {
+            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
+            nft.insert_identity(2, 'c');
+
+            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
+            expected.delta.add(2, 'c', 3);
+            expected.delta.add(3, 'c', 4);
+            expected.delta.add(4, 'c', 5);
+            expected.delta.add(5, 'c', 2);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+    }
+}
