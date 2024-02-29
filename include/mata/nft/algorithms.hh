@@ -99,10 +99,13 @@ Simlib::Util::BinaryRelation compute_relation(
  * @param[out] prod_map Can be used to get the mapping of the pairs of the original states to product states.
  *   Mostly useless, it is only filled in and returned if !=nullptr, but the algorithm internally uses another data structures,
  *   because this one is too slow.
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
 Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr);
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr,
+            const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 /**
  * @brief Concatenate two NFTs.
