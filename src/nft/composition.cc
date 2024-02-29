@@ -4,7 +4,6 @@
 // MATA headers
 #include "mata/nft/nft.hh"
 #include <cassert>
-#include <functional>
 
 
 using namespace mata::utils;
