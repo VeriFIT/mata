@@ -542,31 +542,20 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
         return;
     }
 
-    // Ensure the size of delta matches the number of states in the transducer.
-    // This allows for further use of the append method.
-    if (delta.num_of_states() < num_of_states()) {
-        delta.allocate(num_of_states());
+    // Add transition src --> inner_state.
+    State inner_state = add_state();
+    delta.add(src, word[0], inner_state);
+
+    // Add transitions inner_state --> inner_state
+    State prev_state = inner_state;
+    for (size_t idx{ 1 }; idx < word_len - 1; idx++) {
+        inner_state = add_state();
+        delta.add(prev_state, word[idx], inner_state);
+        prev_state = inner_state;
     }
 
-    // Remember the first state that comes right after src.
-    // The add method is not used currently because it allocates StatePost in delta,
-    // which would prevent the use of the append operation.
-    State first_state_after_src = num_of_states();
-
-    // Append transitions inner_state --> inner_state
-    State inner_state = first_state_after_src + 1;
-    for (size_t idx{ 1 }; idx < word_len - 1; idx++, inner_state++) {
-        delta.append({StatePost({SymbolPost(word[idx], {inner_state})})});
-    }
-
-    // Append transition inner_state --> tgt
-    delta.append({StatePost({SymbolPost(word[word_len - 1], {tgt})})});
-
-    // Insert transition src --> inner_state.
-    // This must be done as the last operation, because the add method allocates StatePost
-    // in delta, which would prevent the use of the append operation.
-    delta.add(src, word[0], first_state_after_src);
-
+    // Add transition inner_state --> tgt
+    delta.add(prev_state, word[word_len - 1], tgt);
 }
 
 size_t Nfa::num_of_states() const {
