@@ -233,8 +233,9 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     Level lvl_sub{ 0 };
     for (Level lvl_old{ 0 }; lvl_old < seq_start_idx; lvl_old++) {
         new_levels[lvl_old] = static_cast<Level>(lvl_old - lvl_sub);
-        if (is_projected_out(lvl_old))
+        if (levels_to_project.find(lvl_old) != levels_to_project.end()) {
             lvl_sub++;
+        }
     }
 
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
@@ -344,8 +345,12 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const bool rep
 
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol, bool repeat_jump_symbol) {
     assert(0 < nft.levels_cnt);
-    assert(nft.levels_cnt < new_levels_mask.size());
+    assert(nft.levels_cnt <= new_levels_mask.size());
     assert(std::count(new_levels_mask.begin(), new_levels_mask.end(), false) == nft.levels_cnt);
+
+    if (nft.levels_cnt == new_levels_mask.size()) {
+         return Nft(nft);
+    }
 
     // Construct a vector of size equal to levels_cnt. Each index k in this vector represents a new level for the original level k.
     // Note: The 0th index always remains zero.
