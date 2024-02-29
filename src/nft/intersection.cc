@@ -4,6 +4,8 @@
 // MATA headers
 #include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
+
+#include <fstream>
 #include <cassert>
 #include <functional>
 
@@ -22,7 +24,7 @@ using InvertedProductStorage = std::vector<State>;
 
 namespace mata::nft {
 
-Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map) {
+Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const State lhs_first_aux_state, const State rhs_first_aux_state) {
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
@@ -31,11 +33,11 @@ Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map) {
     if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
         return Nft{};
 
-    return algorithms::product(lhs, rhs, both_final, prod_map);
+    return algorithms::product(lhs, rhs, both_final, prod_map, lhs_first_aux_state, rhs_first_aux_state);
 }
 
 //TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
-Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map) {
+Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const State lhs_first_aux_state, const State rhs_first_aux_state) {
 
     Nft product{}; // The product automaton.
     product.levels_cnt = lhs.levels_cnt;
@@ -107,6 +109,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
  */
     auto create_product_state_and_symbol_post = [&](const State lhs_target, const State rhs_target, SymbolPost& product_symbol_post)
     {
+        // Two auxiliary states can not create a product state.
+        if (lhs_first_aux_state <= lhs_target && rhs_first_aux_state <= rhs_target) {
+            return;
+        }
         State product_target = get_state_from_product_storage(lhs_target, rhs_target );
 
         if ( product_target == Limits::max_state )
@@ -138,26 +144,38 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         product_symbol_post.insert(product_target);
     };
 
-
     // If DONT_CARE is not present in the given dcare_state_post, no action is taken.
     // For each transition in specific_state_post and each target found in dcare_state_post using find(DONT_CARE),
     // a corresponding transition and product state are created.
-    auto process_dont_care = [&](const StatePost& dcare_state_post, const StatePost& specific_state_post, const bool dcare_on_lhs, const State product_source) {
+    auto process_dont_care = [&](const StatePost& dcare_state_post,
+                                 const StatePost& specific_state_post,
+                                 const bool dcare_on_lhs,
+                                 const State product_source)
+    {
         auto dcare_symbol_post_it = dcare_state_post.find(DONT_CARE);
-        if (dcare_symbol_post_it != dcare_state_post.end()) {
-            for (const auto &specific_symbol_post : specific_state_post) {
-                SymbolPost product_symbol_post{ specific_symbol_post.symbol };
-                for (const State dcare_target : dcare_symbol_post_it->targets) {
-                    for (const State specific_target : specific_symbol_post.targets) {
-                        if (dcare_on_lhs) {
-                            create_product_state_and_symbol_post(dcare_target, specific_target, product_symbol_post);
-                        } else {
-                            create_product_state_and_symbol_post(specific_target, dcare_target, product_symbol_post);
-                        }
+        if (dcare_symbol_post_it == dcare_state_post.end()) {
+            return;
+        }
+        for (const auto &specific_symbol_post : specific_state_post) {
+            SymbolPost product_symbol_post{ specific_symbol_post.symbol };
+            for (const State dcare_target : dcare_symbol_post_it->targets) {
+                for (const State specific_target : specific_symbol_post.targets) {
+                    if (dcare_on_lhs) {
+                        create_product_state_and_symbol_post(dcare_target, specific_target, product_symbol_post);
+                    } else {
+                        create_product_state_and_symbol_post(specific_target, dcare_target, product_symbol_post);
                     }
                 }
-                StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
+            }
+            if (product_symbol_post.empty()) {
+                continue;
+            }
+            StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
+            const auto product_state_post_find_it = product_state_post.find(product_symbol_post.symbol);
+            if (product_state_post_find_it == product_state_post.end()) {
                 product_state_post.insert(std::move(product_symbol_post));
+            } else {
+                product_state_post_find_it->targets.insert(product_symbol_post.targets);
             }
         }
     };
@@ -202,6 +220,9 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                         create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                     }
                 }
+                if (product_symbol_post.empty()) {
+                    continue;
+                }
                 StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
                 //Here we are sure that we are working with the largest symbol so far, since we iterate through
                 //the symbol posts of the lhs and rhs in order. So we can just push_back (not insert).
@@ -218,6 +239,9 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                 for (const State target : symbol_post.targets) {
                     create_product_state_and_symbol_post(target, rhs_source, product_symbol_post);
                 }
+                if (product_symbol_post.empty()) {
+                    continue;
+                }
                 StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
                 product_state_post.push_back(std::move(product_symbol_post));
             }
@@ -227,6 +251,9 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                 SymbolPost product_symbol_post{ symbol_post.symbol };
                 for (const State target : symbol_post.targets) {
                     create_product_state_and_symbol_post(lhs_source, target, product_symbol_post);
+                }
+                if (product_symbol_post.empty()) {
+                    continue;
                 }
                 StatePost &product_state_post{product.delta.mutable_state_post(product_source)};
                 product_state_post.push_back(std::move(product_symbol_post));

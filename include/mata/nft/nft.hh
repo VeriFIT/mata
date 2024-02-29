@@ -297,9 +297,43 @@ Nft uni(const Nft &lhs, const Nft &rhs);
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
  * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
-Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr);
+Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr,
+                 const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
+
+
+/**
+ * @brief Composes two NFTs.
+ *
+ * Takes two NFTs and their corresponding synchronization levels as input,
+ * and returns a new NFT that represents their composition.
+ *
+ * Vectors of synchronization levels have to be non-empty and of the the same size.
+ *
+ * @param[in] lhs First transducer to compose.
+ * @param[in] rhs Second transducer to compose.
+ * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
+ * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @return A new NFT after the composition.
+ */
+Nft compose(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels);
+
+/**
+ * @brief Composes two NFTs.
+ *
+ * Takes two NFTs and their corresponding synchronization levels as input,
+ * and returns a new NFT that represents their composition.
+ *
+ * @param[in] lhs First transducer to compose.
+ * @param[in] rhs Second transducer to compose.
+ * @param[in] lhs_sync_level The synchronization level of the @p lhs.
+ * @param[in] rhs_sync_level The synchronization level of the @p rhs.
+ * @return A new NFT after the composition.
+ */
+Nft compose(const Nft& lhs, const Nft& rhs, const Level& lhs_sync_level = 1, const Level rhs_sync_level = 0);
 
 /**
  * @brief Concatenate two NFTs.
