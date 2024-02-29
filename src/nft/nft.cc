@@ -294,6 +294,7 @@ State Nft::add_state_with_level(const State state, const Level level) {
 
 void Nft::insert_word(const State src, const Word &word, const State tgt) {
     assert(0 < levels_cnt);
+
     const State first_new_state = num_of_states();
     Nfa::insert_word(src, word, tgt);
     const size_t num_of_states_after = num_of_states();
@@ -348,37 +349,24 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
         return *(word_part_it_v[lvl]++);
     };
 
-    // Ensure the size of delta matches the number of states in the transducer.
-    // This allows for further use of the append method.
-    if (delta.num_of_states() < num_of_states()) {
-        delta.allocate(num_of_states());
-    }
+    // Add transition src --> inner_state.
+    Level inner_lvl = (levels_cnt == 1 ) ? 0 : 1;
+    State inner_state = add_state_with_level(inner_lvl);
+    delta.add(src, get_next_symbol(0), inner_state);
 
-    // Remember the first state and symbol that come right after src.
-    // The add method is not used currently because it allocates StatePost in delta,
-    // which would prevent the use of the append operation.
-    State first_state_after_src = num_of_states();
-    Symbol first_symbol_after_src = get_next_symbol(0);
-
-    // Append transition inner_state --> inner_state
-    State prev_state = first_state_after_src;
-    State inner_state = first_state_after_src + 1;
-    Level lvl = (levels_cnt == 1 ) ? 0 : 1;
-    for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++, inner_state++, lvl = (lvl + 1) % levels_cnt) {
-        delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {inner_state})})});
-        // The level of the previous state can now be set, because the state is already in delta.
-        add_state_with_level(prev_state, lvl);
+    // Add transition inner_state --> inner_state
+    State prev_state = inner_state;
+    Level prev_lvl = inner_lvl;
+    for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
+        inner_lvl = (prev_lvl + 1) % levels_cnt;
+        inner_state = add_state_with_level(inner_lvl);
+        delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
         prev_state = inner_state;
+        prev_lvl = inner_lvl;
     }
 
-    // Append a transition that goes from the last inner state to the tgt and set its level.
-    delta.append({StatePost({SymbolPost(get_next_symbol(lvl), {tgt})})});
-    add_state_with_level(prev_state, lvl);
-
-    // Insert transition src --> inner_state.
-    // This must be done as the last operation, because the add method allocates StatePost
-    // in delta, which would prevent the use of the append operation.
-    delta.add(src, first_symbol_after_src, first_state_after_src);
+    // Add transition inner_state --> tgt.
+    delta.add(prev_state, get_next_symbol(prev_lvl), tgt);
 }
 
 void Nft::clear() {
