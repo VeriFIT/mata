@@ -499,10 +499,10 @@ Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 /**
  * @brief Projects out specified levels @p levels_to_project in the given transducer @p nft.
  *
- * @param nft The transducer for projection.
- * @param levels_to_project A non-empty ordered vector of levels to be projected out from the transducer. It must
+ * @param[in] nft The transducer for projection.
+ * @param[in] levels_to_project A non-empty ordered vector of levels to be projected out from the transducer. It must
  *  contain only values that are greater than or equal to 0 and smaller than @c levels_cnt.
- * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
  * @return A new projected transducer.
@@ -512,10 +512,10 @@ Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project
 /**
  * @brief Projects out specified level @p level_to_project in the given transducer @p nft.
  *
- * @param nft The transducer for projection.
- * @param level_to_project A level that is going to be projected out from the transducer. It has to be greater than or
+ * @param[in] nft The transducer for projection.
+ * @param[in] level_to_project A level that is going to be projected out from the transducer. It has to be greater than or
  *  equal to 0 and smaller than @c levels_cnt.
- * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
@@ -525,10 +525,10 @@ Nft project_out(const Nft& nft, Level level_to_project, bool repeat_jump_symbol 
 /**
  * @brief Projects to specified levels @p levels_to_project in the given transducer @p nft.
  *
- * @param nft The transducer for projection.
- * @param levels_to_project A non-empty ordered vector of levels the transducer is going to be projected to.
+ * @param[in] nft The transducer for projection.
+ * @param[in] levels_to_project A non-empty ordered vector of levels the transducer is going to be projected to.
  *  It must contain only values greater than or equal to 0 and smaller than @c levels_cnt.
- * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
@@ -538,10 +538,10 @@ Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project,
 /**
  * @brief Projects to a specified level @p level_to_project in the given transducer @p nft.
  *
- * @param nft The transducer for projection.
- * @param level_to_project A level the transducer is going to be projected to. It has to be greater than or equal to 0
+ * @param[in] nft The transducer for projection.
+ * @param[in] level_to_project A level the transducer is going to be projected to. It has to be greater than or equal to 0
  *  and smaller than @c levels_cnt.
- * @param repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
@@ -555,11 +555,11 @@ Nft project_to(const Nft& nft, Level level_to_project, bool repeat_jump_symbol =
  * The vector @c new_levels_mask must be nonempty, its length must be greater than @c levels_cnt,
  * and it must contain exactly @c levels_cnt occurrences of false.
  *
- * @param nft The original transducer.
- * @param new_levels_mask A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates
+ * @param[in] nft The original transducer.
+ * @param[in] new_levels_mask A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates
  *  that one level is inserted before level 0 and two levels are inserted before level 1.
- * @param default_symbol The default symbol to be used for transitions at the inserted levels.
- * @param repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
+ * @param[in] repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
@@ -570,13 +570,13 @@ Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbo
  *
  * @c levels_cnt must be greater than 0.
  *
- * @param nft The original transducer.
- * @param new_level Specifies the new level to be inserted into the transducer.
+ * @param[in] nft The original transducer.
+ * @param[in] new_level Specifies the new level to be inserted into the transducer.
  *  If @p new_level is 0, then it is inserted before the 0-th level.
  *  If @p new_level is less than @c levels_cnt, then it is inserted before the level @c new_level-1.
  *  If @p new_level is greater than or equal to @c levels_cnt, then all levels from @c levels_cnt through @p new_level are appended after the last level.
- * @param default_symbol The default symbol to be used for transitions at the inserted levels.
- * @param repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
+ * @param[in] repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
