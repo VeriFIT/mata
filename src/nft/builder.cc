@@ -108,7 +108,7 @@ Nft builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
             if (level < 0) {
                 throw std::runtime_error("Bad format of levels: level " + it->second[0] + " is out of range.");
             }
-            aut.levels_cnt = static_cast<Level>(level);
+            aut.num_of_levels = static_cast<Level>(level);
         } catch (const std::invalid_argument &ex) {
             throw std::runtime_error("Bad format of levels: unsupported level " + it->second[0]);
         } catch (const std::out_of_range &ex) {
@@ -299,7 +299,7 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
     const Level num_of_additional_states_per_nfa_trans{ level_cnt - 1 };
     Nft nft{};
     size_t nfa_num_of_states{ nfa.num_of_states() };
-    nft.levels_cnt = level_cnt;
+    nft.num_of_levels = level_cnt;
     nft.levels.resize(nfa_num_of_states + nfa.delta.num_of_transitions() * num_of_additional_states_per_nfa_trans);
     std::unordered_map<State, State> state_mapping{};
     state_mapping.reserve(nfa_num_of_states);

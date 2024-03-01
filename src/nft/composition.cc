@@ -20,8 +20,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     // The loop word is constructed using the EPSILON symbol for all levels, except for the levels
     // where is_dcare_on_transition is true, in which case the DONT_CARE symbol is used.
     auto insert_self_loops = [&](Nft &nft, const BoolVector &is_dcare_on_transition) {
-        Word loop_word(nft.levels_cnt, EPSILON);
-        for (size_t i{ 0 }; i < nft.levels_cnt; i++) {
+        Word loop_word(nft.num_of_levels, EPSILON);
+        for (size_t i{ 0 }; i < nft.num_of_levels; i++) {
             if (is_dcare_on_transition[i]) {
                 loop_word[i] = DONT_CARE;
             }
@@ -44,8 +44,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     // rhs_new_levels_mask: 0 0 1 1 0
     // levels_to_project_out: 2 5
     Level min_level = std::min(*lhs_sync_levels.begin(), *rhs_sync_levels.begin());
-    size_t lhs_suffix_len = lhs.levels_cnt - 1 - *--lhs_sync_levels.end();
-    size_t rhs_suffix_len = rhs.levels_cnt - 1 - *--rhs_sync_levels.end();
+    size_t lhs_suffix_len = lhs.num_of_levels - 1 - *--lhs_sync_levels.end();
+    size_t rhs_suffix_len = rhs.num_of_levels - 1 - *--rhs_sync_levels.end();
     size_t biggest_suffix_len = std::max(lhs_suffix_len, rhs_suffix_len);
     BoolVector lhs_new_levels_mask(min_level, false);
     BoolVector rhs_new_levels_mask(min_level, false);
@@ -76,7 +76,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
         rhs_new_levels_mask.push_back(false);
         levels_to_project_out.push_back(static_cast<Level>(lhs_new_levels_mask.size() - 1));
     }
-    // Match the size of vectors and levels_cnt in lhs and rhs after the insertion of new levels.
+    // Match the size of vectors and num_of_levels in lhs and rhs after the insertion of new levels.
     lhs_new_levels_mask.insert(lhs_new_levels_mask.end(), lhs_suffix_len, false);
     rhs_new_levels_mask.insert(rhs_new_levels_mask.end(), rhs_suffix_len, false);
     lhs_new_levels_mask.insert(lhs_new_levels_mask.end(), biggest_suffix_len - lhs_suffix_len, true);

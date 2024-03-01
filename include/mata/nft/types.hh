@@ -38,14 +38,14 @@ using ParameterMap = mata::nfa::ParameterMap;
 
 using Limits = mata::nfa::Limits;
 
-struct Nft; ///< A non-deterministic finite automaton.
+class Nft; ///< A non-deterministic finite automaton.
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = mata::nfa::EPSILON;
 constexpr Symbol DONT_CARE = EPSILON - 1;
 
 constexpr Level DEFAULT_LEVEL{ 0 };
-constexpr Level DEFAULT_LEVEL_CNT{ 1 };
+constexpr Level DEFAULT_NUM_OF_LEVELS{ 1 };
 
 } // namespace mata::nfa.
 
