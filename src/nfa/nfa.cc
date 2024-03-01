@@ -543,15 +543,19 @@ State Nfa::add_state(State state) {
     return state;
 }
 
-void Nfa::insert_word(const State src, const Word &word, const State tgt) {
+State Nfa::insert_word(const State src, const Word &word, const State tgt) {
     assert(!word.empty());
     assert(src < num_of_states());
-    assert(tgt < num_of_states());
 
     const size_t word_len = word.size();
     if (word_len == 1) {
+        if (tgt == Limits::max_state) {
+            State new_tgt = add_state();
+            delta.add(src, word[0], new_tgt);
+            return new_tgt;
+        }
         delta.add(src, word[0], tgt);
-        return;
+        return tgt;
     }
 
     // Add transition src --> inner_state.
@@ -567,7 +571,13 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
     }
 
     // Add transition inner_state --> tgt
+    if (tgt == Limits::max_state) {
+        State new_tgt = add_state();
+        delta.add(prev_state, word[word_len - 1], new_tgt);
+        return new_tgt;
+    }
     delta.add(prev_state, word[word_len - 1], tgt);
+    return tgt;
 }
 
 size_t Nfa::num_of_states() const {

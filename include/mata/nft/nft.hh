@@ -152,9 +152,9 @@ public:
      *
      * @param src The source state where the word begins. It must already be a part of the transducer.
      * @param word The nonempty word to be inserted into the NFA.
-     * @param tgt The target state where the word ends. It must already be a part of the transducer.
+     * @param tgt The target state where the word ends. If set to Limits::max_state, the word ends in a new state.
      */
-    void insert_word(const State src, const Word &word, const State tgt);
+    State insert_word(const State src, const Word &word, const State tgt = Limits::max_state);
 
     /**
      * Inserts a word, which is created by interleaving parts from @p word_part_on_level, into the NFT
@@ -167,9 +167,9 @@ public:
      *
      * @param src The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
      * @param word_part_on_level The vector of word parts, with each part corresponding to a different level.
-     * @param tgt The target state where the word ends. This state must already exist in the transducer and must be of a level 0.
+     * @param tgt The target state where the word ends. If set to Limits::max_state, the word ends in a new state.
      */
-    void insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt);
+    State insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt = Limits::max_state);
 
     /**
     * Inserts an identity transition into the NFT.
