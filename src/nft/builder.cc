@@ -337,9 +337,11 @@ Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, const s
         }
     }
     nft.initial.reserve(nfa.initial.size());
-    std::ranges::for_each(nfa.initial, [&](const State nfa_state){ nft.initial.insert(state_mapping[nfa_state]); });
+    std::for_each(nfa.initial.begin(), nfa.initial.end(),
+                  [&](const State nfa_state) { nft.initial.insert(state_mapping[nfa_state]); });
     nft.final.reserve(nfa.final.size());
-    std::ranges::for_each(nfa.final, [&](const State nfa_state){ nft.final.insert(state_mapping[nfa_state]); });
+    std::for_each(nfa.final.begin(), nfa.final.end(),
+                  [&](const State nfa_state) { nft.final.insert(state_mapping[nfa_state]); });
 
     // TODO(nft): HACK. Levels do not work if the size of delta differs from the size of the vector level.
     nft.levels.resize(nft.delta.num_of_states());
