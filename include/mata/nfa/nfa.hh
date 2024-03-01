@@ -109,9 +109,9 @@ public:
      *
      * @param src The source state where the word begins. It must already be a part of the automaton.
      * @param word The nonempty word to be inserted into the NFA.
-     * @param tgt The target state where the word ends. It must already be a part of the automaton.
+     * @param tgt The target state where the word ends. If set to Limits::max_state, the word ends in a new state.
      */
-    void insert_word(const State src, const Word &word, const State tgt);
+    State insert_word(const State src, const Word &word, const State tgt = Limits::max_state);
 
     /**
      * @brief Get the current number of states in the whole automaton.
