@@ -4,6 +4,8 @@
 #include "mata/nfa/strings.hh"
 #include "mata/nfa/builder.hh"
 
+#include <optional>
+
 using namespace mata::nfa;
 using namespace mata::strings;
 
