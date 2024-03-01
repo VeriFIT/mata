@@ -240,13 +240,16 @@ public:
     /**
      * @brief Prints the automaton in DOT format
      *
+     * @param[in] ascii Whether to use ASCII characters for the output.
      * @return automaton in DOT format
      */
-    std::string print_to_DOT() const;
+    std::string print_to_DOT(const bool ascii = false) const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
+     *
+     * @param[in] ascii Whether to use ASCII characters for the output.
      */
-    void print_to_DOT(std::ostream &output) const;
+    void print_to_DOT(std::ostream &output, const bool ascii = false) const;
     /**
      * @brief Prints the automaton in mata format
      *
