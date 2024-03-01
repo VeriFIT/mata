@@ -942,25 +942,32 @@ bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
     }
     Level level;
     while (!worklist.empty()) {
-        const auto [state, words_its]{ worklist.front() };
+        const auto [state, words_its]{ std::move(worklist.front()) };
         worklist.pop_front();
         level = levels[state];
         const StatePost& state_post{ delta[state] };
         const auto state_post_end{ state_post.end() };
         const Word::const_iterator word_symbol_it{ words_its[level] };
+
+        auto symbol_post_it{ state_post.find(EPSILON) };
+        if (symbol_post_it != state_post_end) {
+            for (State target: symbol_post_it->targets) {
+                if (are_all_track_words_read(words_its) && final.contains(target)) { return true; }
+                worklist.emplace_back(target, words_its);
+            }
+        }
+
         if (word_symbol_it != track_words_ends[level]) {
-                auto symbol_post_it{ state_post.find(*word_symbol_it) };
-                if (symbol_post_it != state_post_end) {
-                    for (State target: symbol_post_it->targets) {
-                        std::vector<Word::const_iterator> next_words_its{ words_its };
-                        ++next_words_its[level];
-                        if (are_all_track_words_read(next_words_its) && final.contains(target)) { return true; }
-                        worklist.emplace_back(target, next_words_its);
-                    }
-                }
+//            auto symbol_post_it{ state_post.find(EPSILON) };
+//            if (symbol_post_it != state_post_end) {
+//                for (State target: symbol_post_it->targets) {
+//                    if (are_all_track_words_read(words_its) && final.contains(target)) { return true; }
+//                    worklist.emplace_back(target, words_its);
+//                }
+//            }
 
             symbol_post_it = state_post.find(DONT_CARE);
-            if (symbol_post_it != state_post_end) {
+            if (*word_symbol_it != EPSILON && symbol_post_it != state_post_end) {
                 for (const State target: symbol_post_it->targets) {
                     bool continue_to_next_target{ false };
                     std::vector<Word::const_iterator> next_words_its{ words_its };
@@ -977,14 +984,17 @@ bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
                     worklist.emplace_back(target, next_words_its);
                 }
             }
-        }
 
-        auto symbol_post_it{ state_post.find(EPSILON) };
-        if (symbol_post_it != state_post_end) {
-            for (State target: symbol_post_it->targets) {
-                if (are_all_track_words_read(words_its) && final.contains(target)) { return true; }
-                worklist.emplace_back(target, words_its);
+            symbol_post_it = state_post.find(*word_symbol_it);
+            if (*word_symbol_it != DONT_CARE && *word_symbol_it != EPSILON && symbol_post_it != state_post_end) {
+                for (State target: symbol_post_it->targets) {
+                    std::vector<Word::const_iterator> next_words_its{ words_its };
+                    ++next_words_its[level];
+                    if (are_all_track_words_read(next_words_its) && final.contains(target)) { return true; }
+                    worklist.emplace_back(target, next_words_its);
+                }
             }
+            // TODO(nft): Input words may contain epsilons and dont cares, theoretically. Handle that.
         }
     }
     return false;
