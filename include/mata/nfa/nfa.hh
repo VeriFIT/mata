@@ -43,9 +43,9 @@
 namespace mata::nfa {
 
 /**
- * A struct representing an NFA.
+ * A class representing an NFA.
  */
-struct Nfa {
+class Nfa {
 public:
     /**
      * @brief For state q, delta[q] keeps the list of transitions ordered by symbols.
@@ -398,7 +398,7 @@ public:
      * @return True if some new transition (and sink state) was added to the automaton.
      */
     bool make_complete(const Alphabet& alphabet) { return this->make_complete(alphabet, this->num_of_states()); }
-}; // struct Nfa.
+}; // class Nfa.
 
 // Allow variadic number of arguments of the same type.
 //

@@ -160,7 +160,7 @@ void Nft::print_to_mata(std::ostream &output) const {
             }
         }
         output << std::endl;
-        output << "%LevelsCnt " << levels_cnt << std::endl;
+        output << "%LevelsCnt " << num_of_levels << std::endl;
     }
 
     for (const Transition& trans: delta.transitions()) {
@@ -184,10 +184,10 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
     auto add_inner_transitions = [&](State src, Symbol symbol, State trg) {
         if (symbol == DONT_CARE && !dcare_for_dcare) {
             for (const Symbol replace_symbol : dcare_replacements) {
-                transitions_to_add.push_back({ src, replace_symbol, trg });
+                transitions_to_add.emplace_back( src, replace_symbol, trg );
             }
         } else {
-            transitions_to_add.push_back({ src, symbol, trg });
+            transitions_to_add.emplace_back( src, symbol, trg );
         }
     };
 
@@ -195,12 +195,12 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
     for (const auto &transition : delta.transitions()) {
         src_lvl = levels[transition.source];
         trg_lvl = levels[transition.target];
-        diff_lvl = (trg_lvl == 0) ? (levels_cnt - src_lvl) : trg_lvl - src_lvl;
+        diff_lvl = (trg_lvl == 0) ? (static_cast<Level>(num_of_levels) - src_lvl) : trg_lvl - src_lvl;
 
         if (diff_lvl == 1 && transition.symbol == DONT_CARE && !dcare_for_dcare) {
             transitions_to_del.push_back(transition);
             for (const Symbol replace_symbol : dcare_replacements) {
-                transitions_to_add.push_back({ transition.source, replace_symbol, transition.target });
+                transitions_to_add.emplace_back( transition.source, replace_symbol, transition.target );
             }
         } else if (diff_lvl > 1) {
             transitions_to_del.push_back(transition);
@@ -217,7 +217,7 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
             inner_trg_lvl++;
 
             // Iterations 1 to n-1 connecting inner states.
-            Level pre_trg_lvl = (trg_lvl == 0) ? (levels_cnt - 1) : (trg_lvl - 1);
+            Level pre_trg_lvl = (trg_lvl == 0) ? (static_cast<Level>(num_of_levels) - 1) : (trg_lvl - 1);
             for (; inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
                 inner_trg = add_state();
                 levels[inner_trg] = inner_trg_lvl;
@@ -238,91 +238,80 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
     }
 }
 
-Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) const {
+Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements) const {
     Nft result{ *this };
-
-    // TODO(nft): Create a class for LEVELS with overloaded getter and setter.
     // HACK. Works only for automata without levels.
     if (result.levels.size() != result.num_of_states()) {
         return result;
     }
-
-    result.make_one_level_aut(dcare_replacements);
+    result.make_one_level_aut(dont_care_symbol_replacements);
     return result;
 }
 
-void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dcare_replacements) const {
-    result = get_one_level_aut(dcare_replacements);
+void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements) const {
+    result = get_one_level_aut(dont_care_symbol_replacements);
 }
 
 Nft& Nft::operator=(Nft&& other) noexcept {
     if (this != &other) {
         mata::nfa::Nfa::operator=(other);
         levels = std::move(other.levels);
-        levels_cnt = other.levels_cnt;
+        num_of_levels = other.num_of_levels;
     }
     return *this;
 }
 
 State Nft::add_state() {
-    const size_t required_capacity{ num_of_states() + 1 };
-    if (levels.size() < required_capacity) {
-        levels.resize(required_capacity, DEFAULT_LEVEL);
-    }
-    return mata::nfa::Nfa::add_state();
+    const State state{ Nfa::add_state() };
+    levels.set(state);
+    return state;
 }
 
 State Nft::add_state(const State state) {
-    const size_t required_capacity{ state + 1 };
-    if (levels.size() < required_capacity) {
-        levels.resize(required_capacity, DEFAULT_LEVEL);
-    }
-    return mata::nfa::Nfa::add_state(state);
+    levels.set(state);
+    return Nfa::add_state(state);
 }
 
 State Nft::add_state_with_level(const Level level) {
-    const State state{ add_state() };
-    levels[state] = level;
+    const State state{ Nfa::add_state() };
+    levels.set(state, level);
     return state;
 }
 
 State Nft::add_state_with_level(const State state, const Level level) {
-    add_state(state);
-    levels[state] = level;
-    return state;
+    levels.set(state, level);
+    return Nfa::add_state(state);
 }
 
 void Nft::insert_word(const State src, const Word &word, const State tgt) {
-    assert(0 < levels_cnt);
+    assert(0 < num_of_levels);
 
     const State first_new_state = num_of_states();
     Nfa::insert_word(src, word, tgt);
     const size_t num_of_states_after = num_of_states();
-    const State last_inner_state = num_of_states() - 1;
-
     const Level src_lvl = levels[src];
-    Level lvl = (levels_cnt == 1 ) ? src_lvl : (src_lvl + 1);
+    Level lvl = (num_of_levels == 1 ) ? src_lvl : (src_lvl + 1);
     State state{ first_new_state };
-    for (; state < num_of_states_after; state++, lvl = (lvl + 1) % levels_cnt){
+    for (; state < num_of_states_after; state++, lvl = (lvl + 1) % static_cast<Level>(num_of_levels)){
         add_state_with_level(state, lvl);
     }
 
-    assert(levels[tgt] == 0 || levels[last_inner_state] < levels[tgt]);
+    assert(levels[tgt] == 0 || levels[num_of_states_after - 1] < levels[tgt]);
 }
 
 void Nft::insert_identity(const State state, const Symbol symbol) {
-    insert_word(state, Word(levels_cnt, symbol), state);
+    insert_word(state, Word(num_of_levels, symbol), state);
 }
 
 void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt) {
-    assert(0 < levels_cnt);
-    assert(word_part_on_level.size() == levels_cnt);
+    assert(0 < num_of_levels);
+    assert(word_part_on_level.size() == num_of_levels);
     assert(src < num_of_states());
     assert(tgt < num_of_states());
     assert(levels[src] == 0);
     assert(levels[tgt] == 0);
 
-    if (levels_cnt == 1) {
+    if (num_of_levels == 1) {
         Nft::insert_word(src, word_part_on_level[0], tgt);
         return;
     }
@@ -333,10 +322,10 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
         [](const Word& a, const Word& b) { return a.size() < b.size(); }
     )->size();
     assert(0 < max_word_part_len);
-    size_t word_total_len = levels_cnt * max_word_part_len;
+    size_t word_total_len = num_of_levels * max_word_part_len;
 
-    std::vector<mata::Word::const_iterator> word_part_it_v(levels_cnt);
-    for (Level lvl{ 0 }; lvl < levels_cnt; lvl++) {
+    std::vector<mata::Word::const_iterator> word_part_it_v(num_of_levels);
+    for (Level lvl{ 0 }; lvl < num_of_levels; lvl++) {
         word_part_it_v[lvl] = word_part_on_level[lvl].begin();
     }
 
@@ -350,7 +339,7 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
     };
 
     // Add transition src --> inner_state.
-    Level inner_lvl = (levels_cnt == 1 ) ? 0 : 1;
+    Level inner_lvl = (num_of_levels == 1 ) ? 0 : 1;
     State inner_state = add_state_with_level(inner_lvl);
     delta.add(src, get_next_symbol(0), inner_state);
 
@@ -358,7 +347,7 @@ void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_pa
     State prev_state = inner_state;
     Level prev_lvl = inner_lvl;
     for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
-        inner_lvl = (prev_lvl + 1) % levels_cnt;
+        inner_lvl = (prev_lvl + 1) % static_cast<Level>(num_of_levels);
         inner_state = add_state_with_level(inner_lvl);
         delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
         prev_state = inner_state;
@@ -375,5 +364,11 @@ void Nft::clear() {
 }
 
 bool Nft::is_identical(const Nft& aut) const {
-    return levels_cnt == aut.levels_cnt && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
+    return num_of_levels == aut.num_of_levels && levels == aut.levels && mata::nfa::Nfa::is_identical(aut);
+}
+
+Levels& Levels::set(State state, Level level) {
+    if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
+    (*this)[state] = level;
+    return *this;
 }
