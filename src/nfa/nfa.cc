@@ -379,13 +379,21 @@ bool Nfa::is_acyclic() const {
     return acyclic;
 }
 
-std::string Nfa::print_to_DOT() const {
+std::string Nfa::print_to_DOT(const bool ascii) const {
     std::stringstream output;
-    print_to_DOT(output);
+    print_to_DOT(output, ascii);
     return output.str();
 }
 
-void Nfa::print_to_DOT(std::ostream &output) const {
+void Nfa::print_to_DOT(std::ostream &output, const bool ascii) const {
+    auto to_ascii = [&](const Symbol symbol) {
+        // Translate only printable ASCII characters.
+        if (symbol < 33) {
+            return std::to_string(symbol);
+        }
+        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+    };
+
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
@@ -400,7 +408,11 @@ void Nfa::print_to_DOT(std::ostream &output) const {
             for (State target: move.targets) {
                 output << target << " ";
             }
-            output << "} [label=" << move.symbol << "];" << std::endl;
+            if (ascii) {
+                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+            } else {
+                output << "} [label=\"" << move.symbol << "\"];" << std::endl;
+            }
         }
     }
 
