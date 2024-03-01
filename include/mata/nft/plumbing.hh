@@ -70,7 +70,7 @@ inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAut
  * Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.
  *
  * Transducers must share alphabets. //TODO: this is not implemented yet.
- * Transducers must have equal values of @c levels_cnt.
+ * Transducers must have equal values of @c num_of_levels.
  *
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
