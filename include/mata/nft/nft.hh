@@ -376,8 +376,9 @@ Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<St
 /**
  * @brief Composes two NFTs.
  *
- * Takes two NFTs and their corresponding synchronization levels as input,
- * and returns a new NFT that represents their composition.
+ * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
+ *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
+ *  output of `a`.
  *
  * Vectors of synchronization levels have to be non-empty and of the the same size.
  *
@@ -392,8 +393,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_s
 /**
  * @brief Composes two NFTs.
  *
- * Takes two NFTs and their corresponding synchronization levels as input,
- * and returns a new NFT that represents their composition.
+ * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
+ *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
+ *  output of `a`.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
@@ -401,7 +403,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_s
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, const Level& lhs_sync_level = 1, const Level rhs_sync_level = 0);
+Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0);
 
 /**
  * @brief Concatenate two NFTs.
