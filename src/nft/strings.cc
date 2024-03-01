@@ -561,8 +561,7 @@ Nft ReluctantReplace::replace_literal(const Word& literal, const Word& replaceme
         return nft_end_marker;
     }() };
     Nft nft_literal_replace{ reluctant_replace.replace_literal_nft(literal, replacement, alphabet, end_marker, replace_mode) };
-//    return nft_end_marker.compose(nft_replace_reluctant_literal);
-    return Nft{};
+    return compose(nft_end_marker, nft_literal_replace);
 }
 
 Nft ReluctantReplace::replace_symbol(Symbol from_symbol, Symbol replacement, mata::Alphabet* alphabet,
