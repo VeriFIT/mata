@@ -76,13 +76,30 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-std::string Nft::print_to_DOT() const {
+std::string Nft::print_to_DOT(const bool ascii) const {
     std::stringstream output;
-    print_to_DOT(output);
+    print_to_DOT(output, ascii);
     return output.str();
 }
 
-void Nft::print_to_DOT(std::ostream &output) const {
+void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
+    auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
+        if (symbol == EPSILON) {
+            return "<eps>";
+        }
+        if (symbol == DONT_CARE) {
+            return "<dcare>";
+        }
+        return std::to_string(symbol);
+    };
+
+    auto to_ascii = [&](const Symbol symbol) {
+        // Translate only printable ASCII characters.
+        if (symbol < 33) {
+            return std::to_string(symbol);
+        }
+        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+    };
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 
@@ -97,7 +114,12 @@ void Nft::print_to_DOT(std::ostream &output) const {
             for (State target: move.targets) {
                 output << target << " ";
             }
-            output << "} [label=" << move.symbol << "];" << std::endl;
+
+            if (ascii && move.symbol < 128) {
+                output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+            } else {
+                output << "} [label=\"" << translate_special_symbols(move.symbol) << "\"];" << std::endl;
+            }
         }
     }
 
