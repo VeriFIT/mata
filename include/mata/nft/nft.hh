@@ -44,6 +44,15 @@
  */
 namespace mata::nft {
 
+class Levels: public std::vector<Level> {
+    using super = std::vector<Level>;
+public:
+    Levels& set(State state, Level level = DEFAULT_LEVEL);
+    using super::vector;
+    Levels(const std::vector<Level>& levels): super(levels) {}
+    Levels(std::vector<Level>&& levels): super(std::move(levels)) {}
+};
+
 /**
  * A struct representing an NFT.
  */
