@@ -65,23 +65,24 @@ void construct(Nft* result, const ParsedObject& parsed, Alphabet* alphabet = nul
 inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAutomaton = uni(lhs, rhs); }
 
 /**
- * @brief Compute intersection of two NFAs.
+ * @brief Compute intersection of two NFTs.
  *
- * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
- * for each each product state `(s, t)` with`s -ε-> p`, `(s, t) -ε-> (p, t)` is created, and vice versa.
+ * Both automata can contain ε-transitions. Epsilons will be handled as alphabet symbols.
  *
- * Automata must share alphabets.
+ * Transducers must share alphabets. //TODO: this is not implemented yet.
+ * Transducers must have equal values of @c levels_cnt.
  *
- * @param[out] res The resulting intersection NFA.
- * @param[in] lhs Input NFA.
- * @param[in] rhs Input NFA.
- * @param[in] first_epsilon smallest epsilon.
+ * @param[in] lhs First NFT to compute intersection for.
+ * @param[in] rhs Second NFT to compute intersection for.
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
- * @return NFA as a product of NFAs @p lhs and @p rhs with ε-transitions preserved.
+ * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product state.
+ * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
+ * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
-inline void intersection(Nft* res, const Nft& lhs, const Nft& rhs, Symbol first_epsilon = EPSILON,
-                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr) {
-    *res = intersection(lhs, rhs, first_epsilon, prod_map);
+inline void intersection(Nft* res, const Nft& lhs, const Nft& rhs,
+                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr,
+                  const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state) {
+    *res = intersection(lhs, rhs, prod_map, lhs_first_aux_state, rhs_first_aux_state);
 }
 
 /**

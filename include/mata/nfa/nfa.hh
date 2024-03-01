@@ -104,6 +104,16 @@ public:
     State add_state(State state);
 
     /**
+     * Inserts a @p word into the NFA from a source state @p src to a target state @p tgt.
+     * Creates new states along the path of the @p word.
+     *
+     * @param src The source state where the word begins. It must already be a part of the automaton.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @param tgt The target state where the word ends. It must already be a part of the automaton.
+     */
+    void insert_word(const State src, const Word &word, const State tgt);
+
+    /**
      * @brief Get the current number of states in the whole automaton.
      *
      * This includes the initial and final states as well as states in the transition relation.
