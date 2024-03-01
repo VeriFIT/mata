@@ -26,6 +26,7 @@ add_library(libmata STATIC
 	nft/inclusion.cc
 	nft/universal.cc
 	nft/complement.cc
+	nft/composition.cc
 	nft/intersection.cc
 	nft/concatenation.cc
 	nft/operations.cc
