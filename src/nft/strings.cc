@@ -53,7 +53,7 @@ Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, Level level_cn
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
     const size_t additional_states_per_symbol_num{ level_cnt - 1 };
     const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
-    std::vector<Level> levels(num_of_states);
+    Levels levels(num_of_states);
     levels[0] = 0;
     Level level{ 1 };
     for (State state{ 1 }; state < num_of_states; ++state) {

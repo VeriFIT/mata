@@ -40,7 +40,7 @@ Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const Sta
 Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const State lhs_first_aux_state, const State rhs_first_aux_state) {
 
     Nft product{}; // The product automaton.
-    product.levels_cnt = lhs.levels_cnt;
+    product.num_of_levels = lhs.num_of_levels;
 
     // Set of product states to process.
     std::deque<State> worklist{};
@@ -55,7 +55,7 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
     const bool large_product = lhs.num_of_states() * rhs.num_of_states() > MAX_PRODUCT_MATRIX_SIZE;
     assert(lhs.num_of_states() < Limits::max_state);
     assert(rhs.num_of_states() < Limits::max_state);
-    assert(lhs.levels_cnt == rhs.levels_cnt);
+    assert(lhs.num_of_levels == rhs.num_of_levels);
 
     //Two variants of storage for the mapping from pairs of lhs and rhs states to product state, for large and non-large products.
     MatrixProductStorage matrix_product_storage;

@@ -259,8 +259,8 @@ TEST_CASE("Mata::nft::compose()") {
         }
     }
 
-    SECTION("lhs.levels_cnt != rhs.levels_cnt") {
-        SECTION("lhs.levels_cnt > rhs.levels_cnt") {
+    SECTION("lhs.num_of_levels != rhs.num_of_levels") {
+        SECTION("lhs.num_of_levels > rhs.num_of_levels") {
             lhs = Nft(6, { 0 }, { 5 }, { 0, 1, 2, 3, 4, 0 }, 5);
             lhs.delta.add(0, 'a', 1);
             lhs.delta.add(1, 'b', 2);
@@ -284,7 +284,7 @@ TEST_CASE("Mata::nft::compose()") {
             CHECK(are_equivalent(result, expected));
         }
 
-        SECTION("lhs.levels_cnt < rhs.levels_cnt") {
+        SECTION("lhs.num_of_levels < rhs.num_of_levels") {
             lhs = Nft(4, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
             lhs.delta.add(0, 'b', 1);
             lhs.delta.add(1, 'd', 2);
@@ -309,7 +309,7 @@ TEST_CASE("Mata::nft::compose()") {
         }
     }
 
-    SECTION("levels_cnt == 4") {
+    SECTION("num_of_levels == 4") {
 
         SECTION("Epsilon free") {
             lhs = Nft(9, { 0 }, { 8 }, { 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
