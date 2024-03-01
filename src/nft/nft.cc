@@ -292,6 +292,83 @@ State Nft::add_state_with_level(const State state, const Level level) {
     return state;
 }
 
+void Nft::insert_word(const State src, const Word &word, const State tgt) {
+    assert(0 < levels_cnt);
+
+    const State first_new_state = num_of_states();
+    Nfa::insert_word(src, word, tgt);
+    const size_t num_of_states_after = num_of_states();
+    const State last_inner_state = num_of_states() - 1;
+
+    const Level src_lvl = levels[src];
+    Level lvl = (levels_cnt == 1 ) ? src_lvl : (src_lvl + 1);
+    State state{ first_new_state };
+    for (; state < num_of_states_after; state++, lvl = (lvl + 1) % levels_cnt){
+        add_state_with_level(state, lvl);
+    }
+
+    assert(levels[tgt] == 0 || levels[last_inner_state] < levels[tgt]);
+}
+
+void Nft::insert_identity(const State state, const Symbol symbol) {
+    insert_word(state, Word(levels_cnt, symbol), state);
+}
+
+void Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt) {
+    assert(0 < levels_cnt);
+    assert(word_part_on_level.size() == levels_cnt);
+    assert(src < num_of_states());
+    assert(tgt < num_of_states());
+    assert(levels[src] == 0);
+    assert(levels[tgt] == 0);
+
+    if (levels_cnt == 1) {
+        Nft::insert_word(src, word_part_on_level[0], tgt);
+        return;
+    }
+
+    size_t max_word_part_len = std::max_element(
+        word_part_on_level.begin(),
+        word_part_on_level.end(),
+        [](const Word& a, const Word& b) { return a.size() < b.size(); }
+    )->size();
+    assert(0 < max_word_part_len);
+    size_t word_total_len = levels_cnt * max_word_part_len;
+
+    std::vector<mata::Word::const_iterator> word_part_it_v(levels_cnt);
+    for (Level lvl{ 0 }; lvl < levels_cnt; lvl++) {
+        word_part_it_v[lvl] = word_part_on_level[lvl].begin();
+    }
+
+    // This function retrieves the next symbol from a word part at a specified level and advances the corresponding iterator.
+    // Returns EPSILON when the iterator reaches the end of the word part.
+    auto get_next_symbol = [&](Level lvl) {
+        if (word_part_it_v[lvl] == word_part_on_level[lvl].end()) {
+            return EPSILON;
+        }
+        return *(word_part_it_v[lvl]++);
+    };
+
+    // Add transition src --> inner_state.
+    Level inner_lvl = (levels_cnt == 1 ) ? 0 : 1;
+    State inner_state = add_state_with_level(inner_lvl);
+    delta.add(src, get_next_symbol(0), inner_state);
+
+    // Add transition inner_state --> inner_state
+    State prev_state = inner_state;
+    Level prev_lvl = inner_lvl;
+    for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
+        inner_lvl = (prev_lvl + 1) % levels_cnt;
+        inner_state = add_state_with_level(inner_lvl);
+        delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
+        prev_state = inner_state;
+        prev_lvl = inner_lvl;
+    }
+
+    // Add transition inner_state --> tgt.
+    delta.add(prev_state, get_next_symbol(prev_lvl), tgt);
+}
+
 void Nft::clear() {
     mata::nfa::Nfa::clear();
     levels.clear();

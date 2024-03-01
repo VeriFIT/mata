@@ -17,6 +17,7 @@ add_executable(tests
 		nft/delta.cc
 		nft/nft.cc
 		nft/builder.cc
+		nft/nft-composition.cc
 		nft/nft-concatenation.cc
 		nft/nft-intersection.cc
 		nft/nft-profiling.cc
