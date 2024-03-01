@@ -98,7 +98,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     return result;
 }
 
-Nft compose(const Nft& lhs, const Nft& rhs, const Level& lhs_sync_level, const Level rhs_sync_level) {
+Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Level rhs_sync_level) {
     return compose(lhs, rhs, OrdVector{ lhs_sync_level }, OrdVector{ rhs_sync_level });
 }
 
