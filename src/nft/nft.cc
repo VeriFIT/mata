@@ -382,6 +382,12 @@ State Nft::insert_word_by_parts(const State src, const std::vector<Word> &word_p
     return tgt;
 }
 
+void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols) {
+    for (const Symbol symbol : symbols) {
+        insert_identity(state, symbol);
+    }
+}
+
 void Nft::insert_identity(const State state, const Symbol symbol) {
     insert_word(state, Word(num_of_levels, symbol), state);
 }
