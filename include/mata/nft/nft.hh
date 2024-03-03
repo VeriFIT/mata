@@ -172,6 +172,14 @@ public:
     State insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt = Limits::max_state);
 
     /**
+    * Inserts identity transitions into the NFT.
+    *
+    * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
+    * @param symbol The vector of symbols used for the identity transition. Identity will be created for each symbol in the vector.
+    */
+    void insert_identity(const State state, const std::vector<Symbol> &symbols);
+
+    /**
     * Inserts an identity transition into the NFT.
     *
     * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
