@@ -384,7 +384,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     }
 
     // Construct an empty automaton with updated levels.
-    Nft result(Delta{}, nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
+    Nft result(Delta(nft.num_of_states()), nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
 
     // Function to create a transition between source and target states.
     // The transition symbol is determined based on the parameters:
