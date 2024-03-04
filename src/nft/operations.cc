@@ -931,9 +931,7 @@ bool Nft::is_tuple_in_lang(const std::vector<Word>& track_words) {
        return true;
     };
 
-    if (are_all_track_words_read(track_words_begins)) {
-        return final.intersects_with(initial);
-    }
+    if (are_all_track_words_read(track_words_begins) && final.intersects_with(initial)) { return true; }
 
     using StateWordBeginsPair = std::pair<State, std::vector<Word::const_iterator>>;
     std::deque<StateWordBeginsPair> worklist{};
