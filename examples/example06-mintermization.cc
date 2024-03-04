@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
 
         std::vector<mata::IntermediateAut> inter_auts = mata::IntermediateAut::parse_from_mf(parsed);
         for (const auto& ia : inter_auts) {
-            mata::Mintermization mintermization;
+            mata::Mintermization<mata::BDDDomain> mintermization;
             std::cout << ia << '\n';
             if ((ia.is_nfa() || ia.is_afa()) && ia.alphabet_type == mata::IntermediateAut::AlphabetType::BITVECTOR) {
                 const auto& aut = mintermization.mintermize(ia);

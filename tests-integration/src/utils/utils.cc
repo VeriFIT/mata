@@ -20,7 +20,7 @@ int load_automaton(
         if (!mintermize_automata or inter_auts[0].alphabet_type != mata::IntermediateAut::AlphabetType::BITVECTOR) {
             aut = mata::nfa::builder::construct(inter_auts[0], &alphabet);
         } else {
-            mata::Mintermization mintermization;
+            mata::Mintermization<mata::BDDDomain> mintermization;
             TIME_BEGIN(mintermization);
             mata::IntermediateAut mintermized = mintermization.mintermize(inter_auts[0]);
             TIME_END(mintermization);
@@ -57,7 +57,7 @@ int load_automata(
                 auts.push_back(mata::nfa::builder::construct(inter_aut, &alphabet));
             }
         } else {
-            mata::Mintermization mintermization;
+            mata::Mintermization<mata::BDDDomain> mintermization;
             TIME_BEGIN(mintermization);
             std::vector<mata::IntermediateAut> mintermized = mintermization.mintermize(inter_auts);
             TIME_END(mintermization);
