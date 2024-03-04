@@ -4265,6 +4265,21 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         expected_nft.delta.add(15, 42, 0);
         CHECK(are_equivalent(output_nft, expected_nft));
     }
+
+    SECTION("Testing inner state reusage.") {
+        delta.clear();
+        delta.add(0, 0, 1);
+        delta.add(1, 1, 3);
+        delta.add(1, 2, 3);
+        delta.add(1, 3, 2);
+        delta.add(2, 4, 3);
+
+        input_nft = Nft(delta, { 0 }, { 3 }, { 0, 1, 3, 0 }, 4);
+
+        output_nft = insert_levels(input_nft, { 0, 1, 1, 0, 0, 1, 0 });
+        CHECK(output_nft.num_of_states() == 14);
+
+    }
 }
 
 TEST_CASE("mata::nft::Nft::insert_word()") {
