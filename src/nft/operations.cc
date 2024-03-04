@@ -389,7 +389,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     // Function to create a transition between source and target states.
     // The transition symbol is determined based on the parameters:
     // it could be a specific symb, DONT_CARE, or a default symbol.
-    auto create_transition = [&](State src, Symbol symb, State tgt, bool is_inserted_level, bool is_old_level_processed) {
+    auto create_transition = [&](const State src, const Symbol symb, const State tgt, const bool is_inserted_level, const bool is_old_level_processed) {
         if (is_inserted_level) { // Transition over the inserted level
             result.delta.add(src, default_symbol, tgt);
         } else { // Transition over existing (old) level
@@ -399,6 +399,25 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
                 result.delta.add(src, DONT_CARE, tgt);
             }
         }
+    };
+
+    std::vector<std::vector<State>> state_level_matrix(nft.num_of_states(), std::vector<State>());
+    // Creates an inner state for a given source state and inner level.
+    // If the inner state already exists, then it is reused.
+    auto get_inner_state = [&](const State src, const Level inner_level, const bool is_inserted_levels, const bool is_old_level_processed) {
+        if (!is_old_level_processed && is_inserted_levels) {
+            const Level src_level = result.levels[src];
+            const size_t inner_state_idx = inner_level - src_level - 1;
+            if (inner_state_idx < state_level_matrix[src].size()) {
+                return state_level_matrix[src][inner_state_idx];
+            }
+            assert(inner_state_idx == state_level_matrix[src].size());
+            State inner_state = result.add_state_with_level(inner_level);
+            state_level_matrix[src].push_back(inner_state);
+            return inner_state;
+
+        }
+        return result.add_state_with_level(inner_level);
     };
 
     //Construct delta with inserted levels and auxiliary states.
@@ -411,7 +430,8 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         // Construct the first n-1 parts of the original transition.
         bool is_old_level_processed = false;
         for (size_t idx{ start_idx }; idx < stop_idx; idx++) {
-            inner = result.add_state_with_level(src_lvl + 1);
+            inner = get_inner_state(trans.source, src_lvl + 1, new_levels_mask[idx], is_old_level_processed);
+            // inner = result.add_state_with_level(src_lvl + 1);
             create_transition(src, trans.symbol, inner, new_levels_mask[idx], is_old_level_processed);
             if (!new_levels_mask[idx]) {
                 is_old_level_processed = true;
