@@ -92,9 +92,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     insert_self_loops(lhs_synced, lhs_new_levels_mask);
     insert_self_loops(rhs_synced, rhs_new_levels_mask);
 
-    Nft result = intersection(lhs_synced, rhs_synced, nullptr, lhs_first_aux_state, rhs_first_aux_state);
+    Nft result{ intersection(lhs_synced, rhs_synced, nullptr, lhs_first_aux_state, rhs_first_aux_state) };
     result = project_out(result, levels_to_project_out, false);
-
     return result;
 }
 
