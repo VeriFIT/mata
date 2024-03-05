@@ -24,7 +24,7 @@ using InvertedProductStorage = std::vector<State>;
 
 namespace mata::nft {
 
-Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const State lhs_first_aux_state, const State rhs_first_aux_state) {
+Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const JumpMode jump_mode, const State lhs_first_aux_state, const State rhs_first_aux_state) {
 
     auto both_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
@@ -33,11 +33,11 @@ Nft intersection(const Nft& lhs, const Nft& rhs, ProductMap *prod_map, const Sta
     if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
         return Nft{};
 
-    return algorithms::product(lhs, rhs, both_final, prod_map, lhs_first_aux_state, rhs_first_aux_state);
+    return algorithms::product(lhs, rhs, both_final, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }
 
 //TODO: move this method to nft.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
-Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const State lhs_first_aux_state, const State rhs_first_aux_state) {
+Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)>&& final_condition, ProductMap *product_map, const JumpMode jump_mode, const State lhs_first_aux_state, const State rhs_first_aux_state) {
 
     Nft product{}; // The product automaton.
     product.num_of_levels = lhs.num_of_levels;
@@ -117,23 +117,12 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
 
         if ( product_target == Limits::max_state )
         {
-            product_target = product.add_state();
-
-            // The level of the newly created product state will be the minimum level from
-            // the pair of original states. However, if only one of them is zero (in this case meaning
-            // that this state is on the last/highest level), the nonzero (theoretically smaller)
-            // level will be chosen for the product state.
-            if (lhs.levels[lhs_target] == 0) {
-                product.levels[product_target] = rhs.levels[rhs_target];
-            } else if (rhs.levels[rhs_target] == 0) {
-                product.levels[product_target] = lhs.levels[lhs_target];
-            } else {
-                product.levels[product_target] = std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]);
-            }
+            product_target = product.add_state_with_level((jump_mode == JumpMode::REPEAT_SYMBOL || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
+                                                          std::max(lhs.levels[lhs_target], rhs.levels[rhs_target]) :
+                                                          std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
 
             insert_to_product_storage(lhs_target,rhs_target, product_target);
-
             worklist.push_back(product_target);
 
             if (final_condition(lhs_target,rhs_target)) {
@@ -147,11 +136,13 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
     // If DONT_CARE is not present in the given dcare_state_post, no action is taken.
     // For each transition in specific_state_post and each target found in dcare_state_post using find(DONT_CARE),
     // a corresponding transition and product state are created.
-    auto process_dont_care = [&](const StatePost& dcare_state_post,
-                                 const StatePost& specific_state_post,
+    auto process_dont_care = [&](const State dcare_src,
+                                 const State specific_src,
                                  const bool dcare_on_lhs,
                                  const State product_source)
     {
+        const StatePost& dcare_state_post = dcare_on_lhs ? lhs.delta[dcare_src] : rhs.delta[dcare_src];
+        const StatePost& specific_state_post = dcare_on_lhs ? rhs.delta[specific_src] : lhs.delta[specific_src];
         auto dcare_symbol_post_it = dcare_state_post.find(DONT_CARE);
         if (dcare_symbol_post_it == dcare_state_post.end()) {
             return;
@@ -160,11 +151,22 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
             SymbolPost product_symbol_post{ specific_symbol_post.symbol };
             for (const State dcare_target : dcare_symbol_post_it->targets) {
                 for (const State specific_target : specific_symbol_post.targets) {
+
+                    const Level dcare_target_level = dcare_on_lhs ? lhs.levels[dcare_target] : rhs.levels[dcare_target];
+                    const Level specific_target_level = dcare_on_lhs ? rhs.levels[specific_target] : lhs.levels[specific_target];
+                    const bool targets_are_on_the_same_level = dcare_target_level == specific_target_level;
+                    const bool dcare_target_is_deeper = specific_target_level != 0 && (specific_target_level < dcare_target_level || dcare_target_level == 0);
+                    const bool specific_target_is_deeper = dcare_target_level != 0 && (dcare_target_level < specific_target_level || specific_target_level == 0);
+
+                    State lhs_target, rhs_target;
                     if (dcare_on_lhs) {
-                        create_product_state_and_symbol_post(dcare_target, specific_target, product_symbol_post);
+                        lhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
+                        rhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
                     } else {
-                        create_product_state_and_symbol_post(specific_target, dcare_target, product_symbol_post);
+                        lhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
+                        rhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
                     }
+                    create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                 }
             }
             if (product_symbol_post.empty()) {
@@ -200,7 +202,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         State lhs_source =  product_to_lhs[product_source];
         State rhs_source =  product_to_rhs[product_source];
 
-        if (lhs.levels[lhs_source] == rhs.levels[rhs_source]) {
+        const bool sources_are_on_the_same_level = lhs.levels[lhs_source] == rhs.levels[rhs_source];
+        const bool rhs_source_is_deeper = (lhs.levels[lhs_source] < rhs.levels[rhs_source] && lhs.levels[lhs_source] != 0) || (lhs.levels[lhs_source] != 0 && rhs.levels[rhs_source] == 0);
+
+        if (sources_are_on_the_same_level || jump_mode == JumpMode::REPEAT_SYMBOL) {
             // Compute classic product for current state pair.
             mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
             mata::utils::push_back(sync_iterator, lhs.delta[lhs_source]);
@@ -217,7 +222,14 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                 SymbolPost product_symbol_post{ symbol };
                 for (const State lhs_target: same_symbol_posts[0]->targets) {
                     for (const State rhs_target: same_symbol_posts[1]->targets) {
-                        create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
+                        const bool targets_are_on_the_same_level = lhs.levels[lhs_target] == rhs.levels[rhs_target];
+                        const bool lhs_target_is_deeper = rhs.levels[rhs_target] != 0 && (rhs.levels[rhs_target] < lhs.levels[lhs_target] || lhs.levels[lhs_target] == 0);
+                        const bool rhs_target_is_deeper = lhs.levels[lhs_target] != 0 && (lhs.levels[lhs_target] < rhs.levels[rhs_target] || rhs.levels[rhs_target] == 0);
+
+                        const State lhs_state = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || rhs_target_is_deeper) ? lhs_target : lhs_source;
+                        const State rhs_state = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || lhs_target_is_deeper) ? rhs_target : rhs_source;
+
+                        create_product_state_and_symbol_post(lhs_state, rhs_state, product_symbol_post);
                     }
                 }
                 if (product_symbol_post.empty()) {
@@ -229,10 +241,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                 product_state_post.push_back(std::move(product_symbol_post));
             }
 
-            process_dont_care(lhs.delta[lhs_source], rhs.delta[rhs_source], true, product_source);
-            process_dont_care(rhs.delta[rhs_source], lhs.delta[lhs_source], false, product_source);
+            process_dont_care(lhs_source, rhs_source, true, product_source);
+            process_dont_care(rhs_source, lhs_source, false, product_source);
 
-        } else if ((lhs.levels[lhs_source] < rhs.levels[rhs_source] && lhs.levels[lhs_source] != 0) || rhs.levels[rhs_source] == 0) {
+        } else if (rhs_source_is_deeper) {
             // The second state (from rhs) is deeper, so it must wait.
             for (const auto &symbol_post : lhs.delta[lhs_source]) {
                 SymbolPost product_symbol_post{ symbol_post.symbol };

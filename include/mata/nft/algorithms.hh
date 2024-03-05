@@ -101,10 +101,12 @@ Simlib::Util::BinaryRelation compute_relation(
  *   because this one is too slow.
  * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states can not form a product state.
  * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states con not form a product state.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
 Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr,
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::REPEAT_SYMBOL,
             const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 /**
