@@ -176,7 +176,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     return result;
 }
 
-Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const bool repeat_jump_symbol) {
+Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode) {
     assert(!levels_to_project.empty());
     assert(*std::max_element(levels_to_project.begin(), levels_to_project.end()) < nft.num_of_levels);
 
@@ -297,7 +297,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
                     if (is_projected_out(cls_state)) {
                         // If there are remaining levels between cls_state and tgt_state
                         // on a transition with a length greater than 1, then these levels must be preserved.
-                        if (repeat_jump_symbol) {
+                        if (jump_mode == JumpMode::REPEAT_SYMBOL) {
                             result.delta.add(src_state, move.symbol, tgt_state);
                         } else {
                             result.delta.add(src_state, DONT_CARE, tgt_state);
@@ -326,24 +326,24 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     return result;
 }
 
-Nft mata::nft::project_out(const Nft& nft, const Level level_to_project, const bool repeat_jump_symbol) {
-    return project_out(nft, utils::OrdVector{ level_to_project }, repeat_jump_symbol);
+Nft mata::nft::project_out(const Nft& nft, const Level level_to_project, const JumpMode jump_mode) {
+    return project_out(nft, utils::OrdVector{ level_to_project }, jump_mode);
 }
 
-Nft mata::nft::project_to(const Nft& nft, const OrdVector<Level>& levels_to_project, const bool repeat_jump_symbol) {
+Nft mata::nft::project_to(const Nft& nft, const OrdVector<Level>& levels_to_project, const JumpMode jump_mode) {
     OrdVector<Level> all_levels{ OrdVector<Level>::with_reserved(nft.num_of_levels) };
     for (Level level{ 0 }; level < nft.num_of_levels; ++level) { all_levels.push_back(level); }
     OrdVector<Level> levels_to_project_out{ OrdVector<Level>::with_reserved(nft.num_of_levels) };
     std::set_difference(all_levels.begin(), all_levels.end(), levels_to_project.begin(),
                         levels_to_project.end(), std::back_inserter(levels_to_project_out) );
-    return project_out(nft, levels_to_project_out, repeat_jump_symbol);
+    return project_out(nft, levels_to_project_out, jump_mode);
 }
 
-Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const bool repeat_jump_symbol) {
-    return project_to(nft, OrdVector<Level>{ level_to_project }, repeat_jump_symbol);
+Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode jump_mode) {
+    return project_to(nft, OrdVector<Level>{ level_to_project }, jump_mode);
 }
 
-Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol, bool repeat_jump_symbol) {
+Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol, const JumpMode jump_mode) {
     assert(0 < nft.num_of_levels);
     assert(nft.num_of_levels <= new_levels_mask.size());
     assert(static_cast<size_t>(std::count(new_levels_mask.begin(), new_levels_mask.end(), false)) == nft.num_of_levels);
@@ -393,7 +393,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         if (is_inserted_level) { // Transition over the inserted level
             result.delta.add(src, default_symbol, tgt);
         } else { // Transition over existing (old) level
-            if (repeat_jump_symbol || !is_old_level_processed) {
+            if (jump_mode == JumpMode::REPEAT_SYMBOL || !is_old_level_processed) {
                 result.delta.add(src, symb, tgt);
             } else {
                 result.delta.add(src, DONT_CARE, tgt);
@@ -426,7 +426,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     return result;
 }
 
-Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol, bool repeat_jump_symbol) {
+Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol, const JumpMode jump_mode) {
     // TODO(nft): Optimize the insertion of just one level by using move.
     BoolVector new_levels_mask(nft.num_of_levels + 1, false);
     if (new_level < new_levels_mask.size()) {
@@ -435,7 +435,7 @@ Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol 
         new_levels_mask[nft.num_of_levels] = true;
         new_levels_mask.resize(new_level + 1, true);
     }
-    return insert_levels(nft, new_levels_mask, default_symbol, repeat_jump_symbol);
+    return insert_levels(nft, new_levels_mask, default_symbol, jump_mode);
 }
 
 Nft mata::nft::fragile_revert(const Nft& aut) {
