@@ -22,7 +22,7 @@ bool mata::nft::algorithms::is_included_naive(
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
-    Nft nft_isect = intersection(smaller, bigger_cmpl);
+    Nft nft_isect = intersection(smaller, bigger_cmpl, nullptr, JumpMode::APPEND_DONT_CAREs);
 
     return nft_isect.is_lang_empty(cex);
 } // is_included_naive }}}
