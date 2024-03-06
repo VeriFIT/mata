@@ -156,12 +156,12 @@ namespace {
     }
 
     /// Add transitions, optionally add @p source to @p dfa_generic_end_marker.final, and update @p labeling and @p labeling_inv functions.
-    void process_source(const nfa::Nfa& regex, const Alphabet* alphabet, nfa::Nfa& dfa_generic_end_marker,
+    void process_source(const nfa::Nfa& regex, const utils::OrdVector<Symbol>& alphabet_symbols, nfa::Nfa& dfa_generic_end_marker,
                         std::map<State, StateSet>& labeling,
                         std::unordered_map<StateSet, State>& labeling_inv, State source,
                         StateSet& source_label, std::vector<State>& worklist) {
-        const State generic_initial_state{ *dfa_generic_end_marker.initial.begin() };
-        for (const Symbol symbol: alphabet->get_alphabet_symbols()) {
+        const State generic_initial_state{ *regex.initial.begin() };
+        for (const Symbol symbol: alphabet_symbols) {
             StateSet target_label{ generic_initial_state };
             for (const State regex_state: source_label) {
                 const StatePost& state_post{ regex.delta[regex_state] };
@@ -335,6 +335,7 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(const std::string& regex, Alphabet
 nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet) {
     if (!regex.is_deterministic()) { regex = determinize(regex); }
 
+    const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     nfa::Nfa dfa_generic_end_marker{};
     dfa_generic_end_marker.initial.insert(0);
     std::map<State, StateSet> labeling{};
@@ -351,10 +352,10 @@ nfa::Nfa ReluctantReplace::generic_marker_dfa(nfa::Nfa regex, Alphabet* alphabet
         if (regex.final.intersects_with(source_label)) {
             const State end_marker_target{ dfa_generic_end_marker.add_state() };
             dfa_generic_end_marker.delta.add(source, EPSILON, end_marker_target);
-            process_source(regex, alphabet, dfa_generic_end_marker, labeling, labeling_inv, end_marker_target,
+            process_source(regex, alphabet_symbols, dfa_generic_end_marker, labeling, labeling_inv, end_marker_target,
                            source_label, worklist);
         } else {
-            process_source(regex, alphabet, dfa_generic_end_marker, labeling, labeling_inv, source, source_label,
+            process_source(regex, alphabet_symbols, dfa_generic_end_marker, labeling, labeling_inv, source, source_label,
                            worklist);
         }
 
