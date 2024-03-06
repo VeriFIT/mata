@@ -269,11 +269,36 @@ public:
      */
     void get_one_letter_aut(Nft& result) const;
 
-    void make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements = { DONT_CARE });
+    /**
+     * @brief Modifies transducer to have only one level.
+     *
+     * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     */
+    void make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
-    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }) const;
+    /**
+     * @brief Creates transducer from the current one with only one level.
+     *
+     * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     */
+    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
-    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }) const;
+    /**
+     * @brief Modifies transducer to have only one level.
+     *
+     * @param[out] result A transducer with only one level.
+     * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     */
+    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Prints the automaton in DOT format
@@ -498,11 +523,14 @@ Nft reduce(const Nft &aut, StateRenaming *state_renaming = nullptr,
  * @param[in] bigger Second automaton to concatenate.
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @p DONT_CARE symbols.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet* alphabet = nullptr,
+bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet* alphabet = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
                  const ParameterMap& params = {{ "algorithm", "antichains" }});
 
 /**
@@ -511,13 +539,16 @@ bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet
  * @param[in] smaller First automaton to concatenate.
  * @param[in] bigger Second automaton to concatenate.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @p DONT_CARE symbols.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr,
+inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr,  const JumpMode jump_mode = JumpMode::RepeatSymbol,
                         const ParameterMap& params = {{ "algorithm", "antichains" }}) {
-    return is_included(smaller, bigger, nullptr, alphabet, params);
+    return is_included(smaller, bigger, nullptr, alphabet, jump_mode, params);
 }
 
 /**
@@ -526,11 +557,14 @@ inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* c
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] alphabet Alphabet of both NFTs to compute with.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @p DONT_CARE symbols.
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet,
+bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, const JumpMode jump_mode = JumpMode::RepeatSymbol,
                     const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 /**
@@ -546,11 +580,14 @@ bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet,
  *
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ *  of @p DONT_CARE symbols.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nft& lhs, const Nft& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
+bool are_equivalent(const Nft& lhs, const Nft& rhs, const JumpMode JumpMode = JumpMode::RepeatSymbol, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
