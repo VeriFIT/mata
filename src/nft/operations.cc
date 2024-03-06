@@ -297,7 +297,7 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
                     if (is_projected_out(cls_state)) {
                         // If there are remaining levels between cls_state and tgt_state
                         // on a transition with a length greater than 1, then these levels must be preserved.
-                        if (jump_mode == JumpMode::REPEAT_SYMBOL) {
+                        if (jump_mode == JumpMode::RepeatSymbol) {
                             result.delta.add(src_state, move.symbol, tgt_state);
                         } else {
                             result.delta.add(src_state, DONT_CARE, tgt_state);
@@ -393,7 +393,7 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         if (is_inserted_level) { // Transition over the inserted level
             result.delta.add(src, default_symbol, tgt);
         } else { // Transition over existing (old) level
-            if (jump_mode == JumpMode::REPEAT_SYMBOL || !is_old_level_processed) {
+            if (jump_mode == JumpMode::RepeatSymbol || !is_old_level_processed) {
                 result.delta.add(src, symb, tgt);
             } else {
                 result.delta.add(src, DONT_CARE, tgt);

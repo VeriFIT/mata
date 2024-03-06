@@ -41,8 +41,8 @@ using Limits = mata::nfa::Limits;
 class Nft; ///< A non-deterministic finite transducer.
 
 enum class JumpMode {
-    REPEAT_SYMBOL, ///< Repeat the symbol on the jump.
-    APPEND_DONT_CAREs ///< Append a sequence of DONT_CAREs to the symbol on the jump.
+    RepeatSymbol, ///< Repeat the symbol on the jump.
+    AppendDontCares ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 };
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.

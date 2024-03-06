@@ -106,7 +106,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
 Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::REPEAT_SYMBOL,
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
             const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 /**
