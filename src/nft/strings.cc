@@ -480,6 +480,7 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
             break;
         };
         case ReplaceMode::Single: {
+            nft_reluctant_leftmost.levels.resize(nft_reluctant_leftmost.levels.size() + alphabet_symbols.size() + 1);
             const State final{ curr_state };
             nft_reluctant_leftmost.final.insert(final);
             ++curr_state;

@@ -811,7 +811,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("'a+b+c' replace with 'dd' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a+b+c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -830,7 +829,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("'a' replace with 'd' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a", Word{ 'd' }, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -843,7 +841,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("drop 'a' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'b', 'b', 'c' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -856,7 +853,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("drop 'a' replace single") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a", Word{}, &alphabet, ReplaceMode::Single);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -869,7 +865,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("drop 'a+b' replace single") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::Single);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -882,7 +877,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("drop 'a+b' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a+b", Word{}, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -895,7 +889,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("replace 'a+b' with 'dd' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'd', 'd', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -908,7 +901,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("replace 'a+b' with 'dd' replace single") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a+b", Word{ 'd', 'd' }, &alphabet, ReplaceMode::Single);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'd', 'd', 'a', 'a', 'a', 'b', 'a', 'c', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ {},
@@ -921,7 +913,6 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     SECTION("replace 'a*b*c' with 'dd' replace all") {
         // Use replace symbol with symbol.
         nft = nft::strings::replace_reluctant_regex("a*b*c", Word{ 'd', 'd' }, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
                                      { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'd', 'd', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'c', 'a' },
