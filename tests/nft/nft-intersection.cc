@@ -54,14 +54,14 @@ using namespace mata::parser;
 
 // }}}
 
-TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAREs")
+TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::AppendDontCares")
 { // {{{
     Nft a, b, res;
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
     SECTION("Intersection of empty automata")
     {
-        res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -71,7 +71,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
 
     SECTION("Intersection of empty automata 2")
     {
-        res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -94,7 +94,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
         REQUIRE(!a.final.empty());
         REQUIRE(!b.final.empty());
 
-        res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
         REQUIRE(!res.initial.empty());
         REQUIRE(!res.final.empty());
@@ -113,7 +113,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
         FILL_WITH_AUT_A(a);
         FILL_WITH_AUT_B(b);
 
-        res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -164,7 +164,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
         FILL_WITH_AUT_B(b);
         b.final = {12};
 
-        res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial[prod_map[{1, 4}]]);
         REQUIRE(res.initial[prod_map[{3, 4}]]);
@@ -182,7 +182,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             b.delta.add(0, 'b', 1);
             b.delta.add(1, EPSILON, 2);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(!res.initial.empty());
             CHECK(res.final.empty());
@@ -210,7 +210,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(1, 'a', 3);
             expected.delta.add(2, 'a', 3);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -233,7 +233,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(2, 'b', 3);
             expected.delta.add(3, 'c', 4);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -248,7 +248,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
 
             expected = b;
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -266,7 +266,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             b.delta.add(3, 'a', 4);
 
             std::unordered_map<std::pair<State, State>, State> prod_map;
-            Nft res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+            Nft res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
             REQUIRE(!res.initial.empty());
             REQUIRE(res.final.empty());
@@ -317,7 +317,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
         expected.delta.add(8, 'a', 9);
         expected.delta.add(10, 'b', 11);
 
-        res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
         CHECK(are_equivalent(res, expected));
     }
@@ -347,7 +347,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(5, 'c', 8);
             expected.delta.add(6, 'c', 9);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -374,7 +374,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(3, 'c', 6);
             expected.delta.add(4, 'c', 7);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -403,7 +403,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(5, DONT_CARE, 8);
             expected.delta.add(6, DONT_CARE, 9);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -422,7 +422,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
             expected.delta.add(1, DONT_CARE, 2);
             expected.delta.add(2, DONT_CARE, 3);
 
-            res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+            res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
             CHECK(are_equivalent(res, expected));
         }
@@ -430,13 +430,13 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::APPEND_DONT_CAR
 } // }}}
 
 
-TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::REPEAT_SYMBOL") {
+TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::RepeatSymbol") {
     Nft a, b, res;
     std::unordered_map<std::pair<State, State>, State> prod_map;
 
     SECTION("Intersection of empty automata")
     {
-        res = intersection(a, b, &prod_map, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, &prod_map, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -446,7 +446,7 @@ TEST_CASE("mata::nft::intersection() with jump_mode == JumpMode::REPEAT_SYMBOL")
 
     SECTION("Intersection of empty automata 2")
     {
-        res = intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs);
+        res = intersection(a, b, nullptr, JumpMode::AppendDontCares);
 
         REQUIRE(res.initial.empty());
         REQUIRE(res.final.empty());
@@ -849,7 +849,7 @@ TEST_CASE("mata::nft::intersection() for profiling", "[.profiling],[intersection
     b.delta.add(3, 'a', 7);
 
     for (size_t i{ 0 }; i < 10000; ++i) {
-        Nft result{intersection(a, b, nullptr, JumpMode::APPEND_DONT_CAREs) };
+        Nft result{intersection(a, b, nullptr, JumpMode::AppendDontCares) };
     }
 }
 
