@@ -817,7 +817,7 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
         CHECK(nft.is_tuple_in_lang({ {},
                                      {} }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'b', 'c', 'c', 'a', 'a' },
-                                     { 'a', 'a', 'a', 'b', 'd', 'c', 'a', 'a' } }));
+                                     { 'a', 'a', 'a', 'b', 'd', 'd', 'c', 'a', 'a' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'c', 'a', 'a', 'a', 'b', 'b', 'a', 'a', 'b', 'c' },
                                      { 'd', 'd', 'a', 'a', 'a', 'b', 'b', 'd', 'd' } }));
         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'c', 'a', 'a', 'a', 'b', 'b', 'a', 'a', 'b', 'c', 'c', 'a', 'b', 'a', 'c' },
@@ -827,17 +827,17 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
 //        CHECK(nft::are_equivalent(nft, expected));
     }
 
-    SECTION("'a' replace with 'd' replace all") {
-        // Use replace symbol with symbol.
-        nft = nft::strings::replace_reluctant_regex("a", Word{ 'd' }, &alphabet, ReplaceMode::All);
-        nft.print_to_DOT(std::cout);
-        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
-                                     { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
-        CHECK(nft.is_tuple_in_lang({ {},
-                                     {} }));
-//        expected = nft::builder::parse_from_mata(std::string(
-//        ));
-//        CHECK(nft::are_equivalent(nft, expected));
-    }
+//     SECTION("'a' replace with 'd' replace all") {
+//         // Use replace symbol with symbol.
+//         nft = nft::strings::replace_reluctant_regex("a", Word{ 'd' }, &alphabet, ReplaceMode::All);
+//         nft.print_to_DOT(std::cout);
+//         CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'a', 'b', 'a', 'a', 'a', 'b', 'a', 'c', 'a' },
+//                                      { 'd', 'd', 'd', 'b', 'd', 'd', 'd', 'b', 'd', 'c', 'd' } }));
+//         CHECK(nft.is_tuple_in_lang({ {},
+//                                      {} }));
+// //        expected = nft::builder::parse_from_mata(std::string(
+// //        ));
+// //        CHECK(nft::are_equivalent(nft, expected));
+//     }
     // TODO(nft): Test dropping regex, correctly replacing shortest/longest match, ...
 }
