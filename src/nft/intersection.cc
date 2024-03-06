@@ -115,9 +115,9 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         }
         State product_target = get_state_from_product_storage(lhs_target, rhs_target );
 
-        if ( product_target == Limits::max_state )
+        if (product_target == Limits::max_state)
         {
-            product_target = product.add_state_with_level((jump_mode == JumpMode::REPEAT_SYMBOL || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
+            product_target = product.add_state_with_level((jump_mode == JumpMode::RepeatSymbol || lhs.levels[lhs_target] == 0 || rhs.levels[rhs_target] == 0) ?
                                                           std::max(lhs.levels[lhs_target], rhs.levels[rhs_target]) :
                                                           std::min(lhs.levels[lhs_target], rhs.levels[rhs_target]));
             assert(product_target < Limits::max_state);
@@ -158,13 +158,15 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                     const bool dcare_target_is_deeper = specific_target_level != 0 && (specific_target_level < dcare_target_level || dcare_target_level == 0);
                     const bool specific_target_is_deeper = dcare_target_level != 0 && (dcare_target_level < specific_target_level || specific_target_level == 0);
 
+                    // If jump_mode is AppendDONT_CAREs, we should wait in the deeper state.
+                    // If jump_mode is RepeatSymbol, we should wait in the source state that has a deeper target.
                     State lhs_target, rhs_target;
                     if (dcare_on_lhs) {
-                        lhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
-                        rhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
+                        lhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
+                        rhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
                     } else {
-                        lhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
-                        rhs_target = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
+                        lhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || dcare_target_is_deeper) ? specific_target : specific_src;
+                        rhs_target = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || specific_target_is_deeper) ? dcare_target : dcare_src;
                     }
                     create_product_state_and_symbol_post(lhs_target, rhs_target, product_symbol_post);
                 }
@@ -205,7 +207,7 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
         const bool sources_are_on_the_same_level = lhs.levels[lhs_source] == rhs.levels[rhs_source];
         const bool rhs_source_is_deeper = (lhs.levels[lhs_source] < rhs.levels[rhs_source] && lhs.levels[lhs_source] != 0) || (lhs.levels[lhs_source] != 0 && rhs.levels[rhs_source] == 0);
 
-        if (sources_are_on_the_same_level || jump_mode == JumpMode::REPEAT_SYMBOL) {
+        if (sources_are_on_the_same_level || jump_mode == JumpMode::RepeatSymbol) {
             // Compute classic product for current state pair.
             mata::utils::SynchronizedUniversalIterator<mata::utils::OrdVector<SymbolPost>::const_iterator> sync_iterator(2);
             mata::utils::push_back(sync_iterator, lhs.delta[lhs_source]);
@@ -226,8 +228,10 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                         const bool lhs_target_is_deeper = rhs.levels[rhs_target] != 0 && (rhs.levels[rhs_target] < lhs.levels[lhs_target] || lhs.levels[lhs_target] == 0);
                         const bool rhs_target_is_deeper = lhs.levels[lhs_target] != 0 && (lhs.levels[lhs_target] < rhs.levels[rhs_target] || rhs.levels[rhs_target] == 0);
 
-                        const State lhs_state = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || rhs_target_is_deeper) ? lhs_target : lhs_source;
-                        const State rhs_state = (jump_mode == JumpMode::APPEND_DONT_CAREs || targets_are_on_the_same_level || lhs_target_is_deeper) ? rhs_target : rhs_source;
+                        // If jump_mode is AppendDONT_CAREs, we should wait in the deeper state.
+                        // If jump_mode is RepeatSymbol, we should wait in the source state that has a deeper target.
+                        const State lhs_state = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || rhs_target_is_deeper) ? lhs_target : lhs_source;
+                        const State rhs_state = (jump_mode == JumpMode::AppendDontCares || targets_are_on_the_same_level || lhs_target_is_deeper) ? rhs_target : rhs_source;
 
                         create_product_state_and_symbol_post(lhs_state, rhs_state, product_symbol_post);
                     }

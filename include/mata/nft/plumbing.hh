@@ -82,7 +82,7 @@ inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAut
  * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
 inline void intersection(Nft* res, const Nft& lhs, const Nft& rhs,
-                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::REPEAT_SYMBOL,
+                  std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
                   const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state) {
     *res = intersection(lhs, rhs, prod_map, jump_mode, lhs_first_aux_state, rhs_first_aux_state);
 }
