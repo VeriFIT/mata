@@ -545,9 +545,8 @@ State Nfa::add_state(State state) {
 
 State Nfa::insert_word(const State source, const Word &word, const State target) {
     assert(!word.empty());
-    const size_t num_of_states_orig{ num_of_states() };
-    assert(source < num_of_states_orig);
-    assert(target < num_of_states_orig);
+    assert(source < num_of_states());
+    assert(target < num_of_states());
 
     const size_t word_len = word.size();
     if (word_len == 1) {
