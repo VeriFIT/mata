@@ -21,9 +21,9 @@ enum class ReplaceMode {
 };
 
 /**
- * Create identity transducer over the @p alphabet with @p level_cnt levels.
+ * Create identity transducer over the @p alphabet with @p num_of_levels levels.
  */
-Nft create_identity(mata::Alphabet* alphabet, Level level_cnt = 2);
+Nft create_identity(mata::Alphabet* alphabet, size_t num_of_levels = 2);
 
 /**
  * Create identity input/output transducer with 2 levels over the @p alphabet with @p level_cnt levels with single
