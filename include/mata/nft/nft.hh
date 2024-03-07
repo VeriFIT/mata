@@ -674,12 +674,11 @@ Nft project_to(const Nft& nft, Level level_to_project, JumpMode jump_mode = Jump
  * @param[in] nft The original transducer.
  * @param[in] new_levels_mask A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates
  *  that one level is inserted before level 0 and two levels are inserted before level 1.
- * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
  * @param[in] jump_mode Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, Symbol default_symbol = DONT_CARE, JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Inserts a new level @p new_level into the given transducer @p nft.
@@ -691,12 +690,11 @@ Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, Symbol defa
  *  If @p new_level is 0, then it is inserted before the 0-th level.
  *  If @p new_level is less than @c num_of_levels, then it is inserted before the level @c new_level-1.
  *  If @p new_level is greater than or equal to @c num_of_levels, then all levels from @c num_of_levels through @p new_level are appended after the last level.
- * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
  * @param[in] jump_mode Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_level(const Nft& nft, Level new_level, Symbol default_symbol = DONT_CARE, JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft insert_level(const Nft& nft, Level new_level, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

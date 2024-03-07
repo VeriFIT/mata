@@ -204,7 +204,7 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_re
     std::vector<Transition> transitions_to_add;
 
     auto add_inner_transitions = [&](State src, Symbol symbol, State trg) {
-        if (jump_mode == JumpMode::AppendDontCares && symbol == DONT_CARE && !dcare_for_dcare) {
+        if (symbol == DONT_CARE && !dcare_for_dcare) {
             for (const Symbol replace_symbol : dont_care_symbol_replacements) {
                 transitions_to_add.emplace_back( src, replace_symbol, trg );
             }
@@ -243,12 +243,13 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_re
             for (; inner_src_lvl < pre_trg_lvl; inner_src_lvl++, inner_trg_lvl++) {
                 inner_trg = add_state();
                 levels[inner_trg] = inner_trg_lvl;
-                add_inner_transitions(inner_src, DONT_CARE, inner_trg);
+
+                add_inner_transitions(inner_src, jump_mode == JumpMode::AppendDontCares ? DONT_CARE : transition.symbol, inner_trg);
                 inner_src = inner_trg;
             }
 
             // The last iteration connecting last inner state with the original target state.
-            add_inner_transitions(inner_src, DONT_CARE, transition.target);
+            add_inner_transitions(inner_src, jump_mode == JumpMode::AppendDontCares ? DONT_CARE : transition.symbol, transition.target);
         }
     }
 
