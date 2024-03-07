@@ -343,7 +343,7 @@ Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode
     return project_to(nft, OrdVector<Level>{ level_to_project }, jump_mode);
 }
 
-Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol, const JumpMode jump_mode) {
+Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
     assert(0 < nft.num_of_levels);
     assert(nft.num_of_levels <= new_levels_mask.size());
     assert(static_cast<size_t>(std::count(new_levels_mask.begin(), new_levels_mask.end(), false)) == nft.num_of_levels);
@@ -383,22 +383,61 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         new_state_levels[s] = updated_levels[nft.levels[s]];
     }
 
+    // Construct vector of next inner levels for usable inner states.
+    // This allows us to create only the important inner states, rather than all of them.
+    // Example:
+    //  Input (new_levels_mask):               0 1 1 0 1 0 1 1  0  1  1  1
+    //  Output (JumpMode::RepeatSymbol):       1 3 3 4 5 6 8 8  9 12 12 12
+    //  Output (JumpMode::AppendDontCares):    3 3 3 5 5 8 8 8 12 12 12 12
+    const size_t mask_size = new_levels_mask.size();
+    std::vector<Level> next_inner_levels(mask_size);
+    Level next_level = static_cast<Level>(mask_size);
+    size_t i = mask_size - 1;
+    for (auto it = new_levels_mask.rbegin(); it != new_levels_mask.rend(); ++it, --i) {
+        next_inner_levels[i] = next_level;
+        if (!*it) {
+            if (jump_mode == JumpMode::RepeatSymbol) {
+                next_inner_levels[i] = static_cast<Level>(i+1);
+            }
+            next_level = static_cast<Level>(i);
+        }
+    }
+
     // Construct an empty automaton with updated levels.
     Nft result(Delta(nft.num_of_states()), nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
 
     // Function to create a transition between source and target states.
     // The transition symbol is determined based on the parameters:
     // it could be a specific symb, DONT_CARE, or a default symbol.
-    auto create_transition = [&](State src, Symbol symb, State tgt, bool is_inserted_level, bool is_old_level_processed) {
-        if (is_inserted_level) { // Transition over the inserted level
-            result.delta.add(src, default_symbol, tgt);
-        } else { // Transition over existing (old) level
-            if (jump_mode == JumpMode::RepeatSymbol || !is_old_level_processed) {
-                result.delta.add(src, symb, tgt);
-            } else {
-                result.delta.add(src, DONT_CARE, tgt);
-            }
+    auto create_transition = [&](const State src, const Symbol symb, const State tgt, const bool is_inserted_level, const bool is_old_level_processed) {
+        if (!is_inserted_level && (jump_mode == JumpMode::RepeatSymbol || !is_old_level_processed)) {
+            result.delta.add(src, symb, tgt);
+        } else {
+            result.delta.add(src, DONT_CARE, tgt);
         }
+    };
+
+    std::vector<std::vector<State>> state_level_matrix(nft.num_of_states(), std::vector<State>());
+    // Creates an inner state for a given source state and inner level.
+    // If the inner state already exists, then it is reused.
+    auto get_inner_state = [&](const State src, const Level inner_level, const bool is_inserted_level, const bool is_old_level_processed) {
+        if (!is_old_level_processed && is_inserted_level) {
+            const size_t inner_state_idx = inner_level - result.levels[src] - 1;
+
+            if (state_level_matrix[src].size() <= inner_state_idx) {
+                state_level_matrix[src].resize((inner_state_idx + 1) * 2, Limits::max_state);
+            }
+
+            if (state_level_matrix[src][inner_state_idx] != Limits::max_state) {
+                return state_level_matrix[src][inner_state_idx];
+            }
+
+            State inner_state = result.add_state_with_level(inner_level);
+            state_level_matrix[src][inner_state_idx] = inner_state;
+            return inner_state;
+
+        }
+        return result.add_state_with_level(inner_level);
     };
 
     //Construct delta with inserted levels and auxiliary states.
@@ -406,27 +445,28 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         State src = trans.source;
         Level src_lvl = result.levels[trans.source];
         State inner;
-        const size_t start_idx = result.levels[trans.source];
-        const size_t stop_idx = (result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1);
+        const Level stop_level = static_cast<Level>((result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1));
+
         // Construct the first n-1 parts of the original transition.
         bool is_old_level_processed = false;
-        for (size_t idx{ start_idx }; idx < stop_idx; idx++) {
-            inner = result.add_state_with_level(src_lvl + 1);
-            create_transition(src, trans.symbol, inner, new_levels_mask[idx], is_old_level_processed);
-            if (!new_levels_mask[idx]) {
+        while (next_inner_levels[src_lvl] < next_inner_levels[stop_level]) {
+            inner = get_inner_state(trans.source, next_inner_levels[src_lvl], new_levels_mask[src_lvl], is_old_level_processed);
+            create_transition(src, trans.symbol, inner, new_levels_mask[src_lvl], is_old_level_processed);
+            if (!new_levels_mask[src_lvl]) {
                 is_old_level_processed = true;
             }
             src = inner;
-            src_lvl++;
+            src_lvl = result.levels[src];
+            assert(src_lvl == result.levels[inner]);
         }
         // Construct the n-th part of the transition.
-        create_transition(src, trans.symbol, trans.target, new_levels_mask[stop_idx], is_old_level_processed);
+        create_transition(src, trans.symbol, trans.target, new_levels_mask[src_lvl], is_old_level_processed);
     }
 
     return result;
 }
 
-Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol, const JumpMode jump_mode) {
+Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const JumpMode jump_mode) {
     // TODO(nft): Optimize the insertion of just one level by using move.
     BoolVector new_levels_mask(nft.num_of_levels + 1, false);
     if (new_level < new_levels_mask.size()) {
@@ -435,7 +475,7 @@ Nft mata::nft::insert_level(const Nft& nft, const Level new_level, const Symbol 
         new_levels_mask[nft.num_of_levels] = true;
         new_levels_mask.resize(new_level + 1, true);
     }
-    return insert_levels(nft, new_levels_mask, default_symbol, jump_mode);
+    return insert_levels(nft, new_levels_mask, jump_mode);
 }
 
 Nft mata::nft::fragile_revert(const Nft& aut) {
