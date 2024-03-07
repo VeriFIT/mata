@@ -383,6 +383,20 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         new_state_levels[s] = updated_levels[nft.levels[s]];
     }
 
+    // Construct vector of next inner levels for usable inner states.
+    std::vector<Level> next_inner_levels(nft.num_of_levels);
+    Level next_level = static_cast<Level>(nft.num_of_levels);
+    size_t i = nft.num_of_levels - 1;
+    for (auto it = new_levels_mask.rbegin(); it != new_levels_mask.rend(); ++it, --i) {
+        next_inner_levels[i] = next_level;
+        if (!*it) {
+            if (jump_mode == JumpMode::RepeatSymbol) {
+                next_inner_levels[i] = static_cast<Level>(i);
+            }
+            next_level = static_cast<Level>(i - 1);
+        }
+    }
+
     // Construct an empty automaton with updated levels.
     Nft result(Delta(nft.num_of_states()), nft.initial, nft.final, new_state_levels, static_cast<unsigned int>(new_levels_mask.size()), nft.alphabet);
 
@@ -404,16 +418,20 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
     std::vector<std::vector<State>> state_level_matrix(nft.num_of_states(), std::vector<State>());
     // Creates an inner state for a given source state and inner level.
     // If the inner state already exists, then it is reused.
-    auto get_inner_state = [&](const State src, const Level inner_level, const bool is_inserted_levels, const bool is_old_level_processed) {
-        if (!is_old_level_processed && is_inserted_levels) {
-            const Level src_level = result.levels[src];
-            const size_t inner_state_idx = inner_level - src_level - 1;
-            if (inner_state_idx < state_level_matrix[src].size()) {
+    auto get_inner_state = [&](const State src, const Level inner_level, const bool is_inserted_level, const bool is_old_level_processed) {
+        if (!is_old_level_processed && is_inserted_level) {
+            const size_t inner_state_idx = inner_level - result.levels[src] - 1;
+
+            if (state_level_matrix[src].size() <= inner_state_idx) {
+                state_level_matrix[src].resize(inner_state_idx * 2, Limits::max_state);
+            }
+
+            if (state_level_matrix[src][inner_state_idx] != Limits::max_state) {
                 return state_level_matrix[src][inner_state_idx];
             }
-            assert(inner_state_idx == state_level_matrix[src].size());
+
             State inner_state = result.add_state_with_level(inner_level);
-            state_level_matrix[src].push_back(inner_state);
+            state_level_matrix[src][inner_state_idx] = inner_state;
             return inner_state;
 
         }
@@ -425,22 +443,23 @@ Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, 
         State src = trans.source;
         Level src_lvl = result.levels[trans.source];
         State inner;
-        const size_t start_idx = result.levels[trans.source];
-        const size_t stop_idx = (result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1);
+        const Level stop_level = static_cast<Level>((result.levels[trans.target] == 0) ? (new_levels_mask.size() - 1) : (result.levels[trans.target] - 1));
+
         // Construct the first n-1 parts of the original transition.
         bool is_old_level_processed = false;
-        for (size_t idx{ start_idx }; idx < stop_idx; idx++) {
-            inner = get_inner_state(trans.source, src_lvl + 1, new_levels_mask[idx], is_old_level_processed);
-            // inner = result.add_state_with_level(src_lvl + 1);
-            create_transition(src, trans.symbol, inner, new_levels_mask[idx], is_old_level_processed);
-            if (!new_levels_mask[idx]) {
+        while (next_inner_levels[src_lvl] < next_inner_levels[stop_level]) {
+            inner = get_inner_state(trans.source, next_inner_levels[src_lvl], new_levels_mask[src_lvl], is_old_level_processed);
+            // inner = result.add_state_with_level(next_inner_levels[src_lvl]);
+            create_transition(src, trans.symbol, inner, new_levels_mask[src_lvl], is_old_level_processed);
+            if (!new_levels_mask[src_lvl]) {
                 is_old_level_processed = true;
             }
             src = inner;
-            src_lvl++;
+            src_lvl = result.levels[src];
+            assert(src_lvl == next_inner_levels[src_lvl]);
         }
         // Construct the n-th part of the transition.
-        create_transition(src, trans.symbol, trans.target, new_levels_mask[stop_idx], is_old_level_processed);
+        create_transition(src, trans.symbol, trans.target, new_levels_mask[stop_level], is_old_level_processed);
     }
 
     return result;
