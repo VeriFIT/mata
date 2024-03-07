@@ -104,14 +104,25 @@ public:
     State add_state(State state);
 
     /**
-     * Inserts a @p word into the NFA from a source state @p src to a target state @p tgt.
+     * Inserts a @p word into the NFA from a source state @p source to a target state @p target.
      * Creates new states along the path of the @p word.
      *
-     * @param src The source state where the word begins. It must already be a part of the automaton.
+     * @param source The source state where the word begins. It must already be a part of the automaton.
      * @param word The nonempty word to be inserted into the NFA.
-     * @param tgt The target state where the word ends. It must already be a part of the automaton.
+     * @param target The target state where the word ends.
+     * @return The state @p target where the inserted @p word ends.
      */
-    void insert_word(const State src, const Word &word, const State tgt);
+    State insert_word(State source, const Word& word, State target);
+
+    /**
+     * Inserts a @p word into the NFA from a source state @p source to a new target state.
+     * Creates new states along the path of the @p word.
+     *
+     * @param source The source state where the word begins. It must already be a part of the automaton.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @return The newly created target state where the inserted @p word ends.
+     */
+    State insert_word(State source, const Word& word);
 
     /**
      * @brief Get the current number of states in the whole automaton.
@@ -355,7 +366,7 @@ public:
      * you can get all words by calling
      *      get_words(aut.num_of_states())
      */
-    std::set<Word> get_words(unsigned max_length);
+    std::set<Word> get_words(size_t max_length) const;
 
     /**
      * @brief Make NFA complete in place.
