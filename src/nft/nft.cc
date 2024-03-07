@@ -396,6 +396,7 @@ void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols,
 }
 
 void Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
+    // TODO(nft): Evaluate the performance difference between adding a jump transition and inserting a transition for each level.
     if (jump_mode == JumpMode::RepeatSymbol) {
         delta.add(state, symbol, state);
     } else {
