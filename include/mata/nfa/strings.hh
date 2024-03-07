@@ -117,6 +117,15 @@ std::set<Symbol> get_accepted_symbols(const Nfa& nfa);
 std::set<std::pair<int, int>> get_word_lengths(const Nfa& aut);
 
 /**
+ * @brief Modify @p nfa in-place to remove outgoing transitions from final states.
+ *
+ * If @p nfa accepts empty string, returned NFA will accept only the empty string.
+ * @param nfa NFA to modify.
+ * @return The reluctant version of @p nfa.
+ */
+Nfa reluctant_nfa(Nfa nfa);
+
+/**
  * @brief Checks if the automaton @p nfa accepts only a single word \eps.
  *
  * @param nfa Input automaton
