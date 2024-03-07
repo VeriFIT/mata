@@ -65,11 +65,7 @@ namespace {
             case ReplaceMode::Single: {
                 State state_lvl0{ nft.add_state_with_level(0) };
                 nft.delta.add(state_lvl1, replacement, state_lvl0);
-                for (const Symbol symbol: alphabet_symbols) {
-                    state_lvl1 = nft.add_state_with_level(1);
-                    nft.delta.add(state_lvl0, symbol, state_lvl1);
-                    nft.delta.add(state_lvl1, symbol, state_lvl0);
-                }
+                nft.insert_identity(state_lvl0, alphabet_symbols.ToVector());
                 state_lvl1 = nft.add_state_with_level(1);
                 nft.delta.add(state_lvl0, end_marker, state_lvl1);
                 nft.delta.add(state_lvl1, EPSILON, *nft.final.begin());
@@ -185,37 +181,13 @@ namespace {
     }
 }
 
-Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, Level level_cnt) {
-    if (level_cnt == 0) { throw std::runtime_error("NFT must have at least one level"); }
+Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, const size_t num_of_levels) {
+    if (num_of_levels == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
-    const size_t additional_states_per_symbol_num{ level_cnt - 1 };
+    const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
     const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
-    Levels levels(num_of_states);
-    levels[0] = 0;
-    Level level{ 1 };
-    for (State state{ 1 }; state < num_of_states; ++state) {
-        levels[state] = level;
-        const Level new_level{ level + 1 };
-        level = new_level < level_cnt ? new_level : 1;
-    }
-    Nft nft{ num_of_states, { 0 }, { 0 }, std::move(levels), level_cnt, alphabet };
-    State state{ 0 };
-    State new_state;
-
-    for (const Symbol symbol: alphabet_symbols) {
-        level = 0;
-        new_state = 0;
-        for (; level < additional_states_per_symbol_num; ++level) {
-            new_state = state + 1;
-            if (level == 0) {
-                nft.delta.add(0, symbol, new_state);
-            } else {
-                nft.delta.add(state, symbol, new_state);
-            }
-            ++state;
-        }
-        nft.delta.add(new_state, symbol, 0);
-    }
+    Nft nft{ num_of_states, { 0 }, { 0 }, {}, num_of_levels, alphabet };
+    nft.insert_identity(0, alphabet_symbols.ToVector());
     return nft;
 }
 
@@ -253,11 +225,7 @@ Nft nft::strings::create_identity_with_single_symbol_replace(Alphabet* alphabet,
             nft.delta.add(state_lvl1,
                           replacement_it == replacement_end ? EPSILON : *replacement_it,
                           after_replace_state);
-            for (const Symbol symbol: alphabet->get_alphabet_symbols()) {
-                state_lvl1 = nft.add_state_with_level(1);
-                nft.delta.add(after_replace_state, symbol, state_lvl1);
-                nft.delta.add(state_lvl1, symbol, after_replace_state);
-            }
+            nft.insert_identity(after_replace_state, alphabet->get_alphabet_symbols().ToVector());
             nft.final.insert(after_replace_state);
             break;
         }
@@ -408,12 +376,12 @@ nfa::Nfa ReluctantReplace::reluctant_nfa_with_marker(nfa::Nfa nfa, const Symbol 
     StatePost& initial{ nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(0) };
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     for (const Symbol symbol: alphabet_symbols) {
-        initial.push_back({ symbol, 0 });
+        initial.emplace_back(symbol, 0);
     }
     StatePost& marker_state{ nfa_avoid_removing_next_begin_marker.delta.mutable_state_post(1) };
     nfa_avoid_removing_next_begin_marker.delta.add(0, marker, 1);
     for (const Symbol symbol: alphabet_symbols) {
-        marker_state.push_back({ symbol, 0 });
+        marker_state.emplace_back(symbol, 0);
     }
     nfa_avoid_removing_next_begin_marker.delta.add(1, marker, 1);
     // TODO(nft): Leaves a non-terminating begin_marker transitions in a form of a lasso from final states.
@@ -462,39 +430,23 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
     }
     nft_reluctant_leftmost.levels[curr_state] = 1;
     // Output the replacement.
-    for (const Symbol symbol: replacement) {
-        nft_reluctant_leftmost.delta.add(curr_state, symbol, curr_state + 1);
-        nft_reluctant_leftmost.delta.add(curr_state + 1, EPSILON, curr_state + 2);
-        nft_reluctant_leftmost.levels[curr_state + 1] = 0;
-        nft_reluctant_leftmost.levels[curr_state + 2] = 1;
-        curr_state += 2;
-    }
-    nft_reluctant_leftmost.delta.add(curr_state, EPSILON, curr_state + 1);
-    nft_reluctant_leftmost.levels[curr_state + 1] = 0;
-    nft_reluctant_leftmost.final.insert(curr_state + 1);
-    ++curr_state;
+    curr_state = nft_reluctant_leftmost.insert_word_by_parts(curr_state, { {}, replacement });
+    State next_state{ nft_reluctant_leftmost.add_state_with_level(0) };
+    nft_reluctant_leftmost.delta.add(curr_state, EPSILON, next_state);
+    nft_reluctant_leftmost.final.insert(next_state);
     nft_reluctant_leftmost.final.clear();
     switch (replace_mode) {
         case ReplaceMode::All: {
-            nft_reluctant_leftmost.delta.add(curr_state, EPSILON, initial);
+            nft_reluctant_leftmost.delta.add(next_state, EPSILON, initial);
             break;
         };
         case ReplaceMode::Single: {
             nft_reluctant_leftmost.levels.resize(nft_reluctant_leftmost.levels.size() + alphabet_symbols.size() + 1);
-            const State final{ curr_state };
+            const State final{ next_state };
             nft_reluctant_leftmost.final.insert(final);
-            ++curr_state;
-            for (const Symbol symbol: alphabet_symbols) {
-                nft_reluctant_leftmost.delta.add(final, symbol, curr_state);
-                nft_reluctant_leftmost.delta.add(curr_state, symbol, final);
-                nft_reluctant_leftmost.levels[curr_state] = 1;
-                ++curr_state;
-            }
+            nft_reluctant_leftmost.insert_identity(final, alphabet_symbols.ToVector());
 
-            nft_reluctant_leftmost.delta.add(final, begin_marker, curr_state);
-            nft_reluctant_leftmost.delta.add(curr_state, EPSILON, final);
-            nft_reluctant_leftmost.levels[curr_state] = 1;
-            ++curr_state;
+            nft_reluctant_leftmost.insert_word_by_parts(final, { { begin_marker}, { EPSILON } }, final);
             break;
         };
         default: {
