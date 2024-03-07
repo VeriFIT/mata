@@ -277,7 +277,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+    void make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Creates transducer from the current one with only one level.
@@ -287,7 +287,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    Nft get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Modifies transducer to have only one level.
@@ -298,7 +298,7 @@ public:
      * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
      * of @c DONT_CARE symbols.
      */
-    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, const JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    void get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements = { DONT_CARE }, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Prints the automaton in DOT format
@@ -306,13 +306,13 @@ public:
      * @param[in] ascii Whether to use ASCII characters for the output.
      * @return automaton in DOT format
      */
-    std::string print_to_DOT(const bool ascii = false) const;
+    std::string print_to_DOT(bool ascii = false) const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
      *
      * @param[in] ascii Whether to use ASCII characters for the output.
      */
-    void print_to_DOT(std::ostream &output, const bool ascii = false) const;
+    void print_to_DOT(std::ostream &output, bool ascii = false) const;
     /**
      * @brief Prints the automaton in mata format
      *
@@ -396,9 +396,9 @@ Nft uni(const Nft &lhs, const Nft &rhs);
  * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
  * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
-Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>,
-                 State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
-                 const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
+Nft intersection(const Nft& lhs, const Nft& rhs,
+                 std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
+                 State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
 
 
 /**
@@ -420,7 +420,7 @@ Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<St
  */
 Nft compose(const Nft& lhs, const Nft& rhs,
             const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
-            const JumpMode jump_mode = JumpMode::RepeatSymbol);
+            JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Composes two NFTs.
@@ -437,7 +437,7 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level = 1, const Level rhs_sync_level = 0, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Concatenate two NFTs.
@@ -530,7 +530,7 @@ Nft reduce(const Nft &aut, StateRenaming *state_renaming = nullptr,
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet* alphabet = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
+bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet* alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
                  const ParameterMap& params = {{ "algorithm", "antichains" }});
 
 /**
@@ -546,7 +546,7 @@ bool is_included(const Nft& smaller, const Nft& bigger, Run* cex, const Alphabet
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
-inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr,  const JumpMode jump_mode = JumpMode::RepeatSymbol,
+inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* const alphabet = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
                         const ParameterMap& params = {{ "algorithm", "antichains" }}) {
     return is_included(smaller, bigger, nullptr, alphabet, jump_mode, params);
 }
@@ -564,7 +564,7 @@ inline bool is_included(const Nft& smaller, const Nft& bigger, const Alphabet* c
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, const JumpMode jump_mode = JumpMode::RepeatSymbol,
+bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, JumpMode jump_mode = JumpMode::RepeatSymbol,
                     const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 /**
@@ -587,7 +587,7 @@ bool are_equivalent(const Nft& lhs, const Nft& rhs, const Alphabet* alphabet, co
  * - "algorithm": "naive", "antichains" (Default: "antichains")
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nft& lhs, const Nft& rhs, const JumpMode JumpMode = JumpMode::RepeatSymbol, const ParameterMap& params = {{ "algorithm", "antichains"}});
+bool are_equivalent(const Nft& lhs, const Nft& rhs, JumpMode JumpMode = JumpMode::RepeatSymbol, const ParameterMap& params = {{ "algorithm", "antichains"}});
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
@@ -623,7 +623,7 @@ Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
  *  of @p DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects out specified level @p level_to_project in the given transducer @p nft.
@@ -636,7 +636,7 @@ Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_out(const Nft& nft, Level level_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft project_out(const Nft& nft, Level level_to_project, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects to specified levels @p levels_to_project in the given transducer @p nft.
@@ -649,7 +649,7 @@ Nft project_out(const Nft& nft, Level level_to_project, const JumpMode jump_mode
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects to a specified level @p level_to_project in the given transducer @p nft.
@@ -662,7 +662,7 @@ Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project,
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_to(const Nft& nft, Level level_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft project_to(const Nft& nft, Level level_to_project, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Inserts new levels, as specified by the mask @p new_levels_mask, into the given transducer @p nft.
@@ -679,7 +679,7 @@ Nft project_to(const Nft& nft, Level level_to_project, const JumpMode jump_mode 
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol = DONT_CARE, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, Symbol default_symbol = DONT_CARE, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Inserts a new level @p new_level into the given transducer @p nft.
@@ -696,7 +696,7 @@ Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbo
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol = DONT_CARE, const JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft insert_level(const Nft& nft, Level new_level, Symbol default_symbol = DONT_CARE, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance
