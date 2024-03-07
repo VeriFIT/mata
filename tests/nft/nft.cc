@@ -4278,13 +4278,13 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected.delta.add(1, 'b', 3);
             expected.delta.add(3, 'b', 1);
 
-            CHECK(are_equivalent(nft, expected));
+            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
         }
 
         SECTION("num_of_levels == 4") {
             nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-            nft.insert_identity(0, 'a');
-            nft.insert_identity(1, 'b');
+            nft.insert_identity(0, 'a', JumpMode::AppendDontCares);
+            nft.insert_identity(1, 'b', JumpMode::AppendDontCares);
 
             expected = Nft(8, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 1, 2, 2, 3, 3 }, 4);
             expected.delta.add(0, 'a', 2);
@@ -4296,7 +4296,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected.delta.add(5, 'b', 7);
             expected.delta.add(7, 'b', 1);
 
-            CHECK(are_equivalent(nft, expected));
+            CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
         }
     }
 
@@ -4309,12 +4309,12 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
 
             SECTION("symbols cnt == 1") {
                 nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
-                nft.insert_identity(1, 'c');
+                nft.insert_identity(1, 'c', JumpMode::AppendDontCares);
 
                 expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
                 expected.delta.add(1, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
             }
 
             SECTION("symbols cnt == 2") {
@@ -4325,7 +4325,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
                 expected.insert_identity(1, 'c');
                 expected.insert_identity(1, 'd');
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
             }
         }
 
@@ -4339,18 +4339,18 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
                 expected.delta.add(1, 'c', 3);
                 expected.delta.add(3, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
             }
 
             SECTION("symbols cnt == 2") {
                 nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
-                nft.insert_identity(1, {'c', 'd'});
+                nft.insert_identity(1, {'c', 'd'}, JumpMode::AppendDontCares);
 
                 expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
-                expected.insert_identity(1, 'c');
-                expected.insert_identity(1, 'd');
+                expected.insert_identity(1, 'c', JumpMode::AppendDontCares);
+                expected.insert_identity(1, 'd', JumpMode::AppendDontCares);
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::AppendDontCares));
             }
         }
 
@@ -4366,20 +4366,20 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
                 expected.delta.add(4, 'c', 5);
                 expected.delta.add(5, 'c', 1);
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
             }
 
             SECTION("symbols cnt == 4") {
                 nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
                 nft.insert_identity(1, {'c', 'd', 'e', 'f'});
 
-                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
                 expected.insert_identity(1, 'c');
                 expected.insert_identity(1, 'd');
                 expected.insert_identity(1, 'e');
                 expected.insert_identity(1, 'f');
 
-                CHECK(are_equivalent(nft, expected));
+                CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
 
             }
         }
@@ -4397,7 +4397,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
             expected.delta.add(2, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected));
+            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
         }
 
         SECTION("num_of_levels == 2") {
@@ -4408,7 +4408,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected.delta.add(2, 'c', 3);
             expected.delta.add(3, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected));
+            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
         }
 
         SECTION("num_of_levels == 4") {
@@ -4421,7 +4421,7 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
             expected.delta.add(4, 'c', 5);
             expected.delta.add(5, 'c', 2);
 
-            CHECK(are_equivalent(nft, expected));
+            CHECK(are_equivalent(nft, expected, JumpMode::RepeatSymbol));
         }
     }
 }
