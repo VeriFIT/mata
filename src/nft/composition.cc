@@ -82,8 +82,8 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     lhs_new_levels_mask.insert(lhs_new_levels_mask.end(), biggest_suffix_len - lhs_suffix_len, true);
     rhs_new_levels_mask.insert(rhs_new_levels_mask.end(), biggest_suffix_len - rhs_suffix_len, true);
 
-    Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, DONT_CARE, jump_mode);
-    Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, DONT_CARE, jump_mode);
+    Nft lhs_synced = insert_levels(lhs, lhs_new_levels_mask, jump_mode);
+    Nft rhs_synced = insert_levels(rhs, rhs_new_levels_mask, jump_mode);
 
     // Two auxiliary states (states from inserted loops) can not create a product state.
     const State lhs_first_aux_state = lhs_synced.num_of_states();
@@ -102,4 +102,3 @@ Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level, const Le
 }
 
 } // mata::nft
-
