@@ -3146,7 +3146,7 @@ TEST_CASE("mata::nft::Nft::add_state()") {
 }
 
 
-TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
+TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::AppendDontCares)") {
 
     SECTION("LINEAR") {
         Delta delta;
@@ -3157,7 +3157,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         Nft atm(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0 = project_out(atm, OrdVector<Level>{ 0 }, false);
+            Nft proj0 = project_out(atm, OrdVector<Level>{ 0 }, JumpMode::AppendDontCares);
             Nft proj0_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_expected.delta.add(0, 1, 1);
             proj0_expected.delta.add(1, 2, 2);
@@ -3166,7 +3166,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1") {
-            Nft proj1 = project_out(atm, 1, false);
+            Nft proj1 = project_out(atm, 1, JumpMode::AppendDontCares);
             Nft proj1_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_expected.delta.add(0, 0, 1);
             proj1_expected.delta.add(1, 2, 2);
@@ -3174,7 +3174,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 2") {
-            Nft proj2 = project_out(atm, 2, false);
+            Nft proj2 = project_out(atm, 2, JumpMode::AppendDontCares);
             Nft proj2_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_expected.delta.add(0, 0, 1);
             proj2_expected.delta.add(1, 1, 2);
@@ -3194,7 +3194,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         Nft atm_loop(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0_loop = project_out(atm_loop, 0, false);
+            Nft proj0_loop = project_out(atm_loop, 0, JumpMode::AppendDontCares);
             Nft proj0_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_loop_expected.delta.add(0, DONT_CARE, 0);
             proj0_loop_expected.delta.add(0, 1, 1);
@@ -3204,7 +3204,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1") {
-            Nft proj1_loop = project_out(atm_loop, 1, false);
+            Nft proj1_loop = project_out(atm_loop, 1, JumpMode::AppendDontCares);
             Nft proj1_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_loop_expected.delta.add(0, 3, 0);
             proj1_loop_expected.delta.add(0, 0, 1);
@@ -3214,7 +3214,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 2") {
-            Nft proj2_loop = project_out(atm_loop, 2, false);
+            Nft proj2_loop = project_out(atm_loop, 2, JumpMode::AppendDontCares);
             Nft proj2_loop_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_loop_expected.delta.add(0, 3, 0);
             proj2_loop_expected.delta.add(0, 0, 1);
@@ -3225,7 +3225,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
 
         SECTION("project 0, 1, 2") {
             Nft atm_empty(delta, { 0 }, {}, { 0, 1, 2, 0 }, 3);
-            Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 }, false);
+            Nft proj012_empty = project_out(atm_empty, { 0, 1, 2 }, JumpMode::AppendDontCares);
             CHECK(are_equivalent(proj012_empty, Nft(1, {}, {}, {}, 0)));
         }
     }
@@ -3241,7 +3241,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         Nft nft_complex(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("project 0") {
-            Nft proj0_complex = project_out(nft_complex, 0, false);
+            Nft proj0_complex = project_out(nft_complex, 0, JumpMode::AppendDontCares);
             Nft proj0_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj0_complex_expected.delta.add(0, 1, 1);
             proj0_complex_expected.delta.add(0, DONT_CARE, 2);
@@ -3251,7 +3251,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1") {
-            Nft proj1_complex = project_out(nft_complex, 1, false);
+            Nft proj1_complex = project_out(nft_complex, 1, JumpMode::AppendDontCares);
             Nft proj1_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj1_complex_expected.delta.add(0, 0, 1);
             proj1_complex_expected.delta.add(0, 3, 2);
@@ -3261,7 +3261,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 2") {
-            Nft proj2_complex = project_out(nft_complex, OrdVector<Level>{ 2 }, false);
+            Nft proj2_complex = project_out(nft_complex, OrdVector<Level>{ 2 }, JumpMode::AppendDontCares);
             Nft proj2_complex_expected(3, { 0 }, { 2 }, { 0, 1, 0 }, 2);
             proj2_complex_expected.delta.add(0, 0, 1);
             proj2_complex_expected.delta.add(0, 3, 2);
@@ -3280,7 +3280,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 0, 1") {
-            Nft proj01_complex = project_out(nft_complex, { 0, 1 }, false);
+            Nft proj01_complex = project_out(nft_complex, { 0, 1 }, JumpMode::AppendDontCares);
             Nft proj01_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj01_complex_expected.delta.add(0, 2, 1);
             proj01_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3289,7 +3289,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 0, 2") {
-            Nft proj02_complex = project_out(nft_complex, { 0, 2 }, false);
+            Nft proj02_complex = project_out(nft_complex, { 0, 2 }, JumpMode::AppendDontCares);
             Nft proj02_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj02_complex_expected.delta.add(0, 1, 1);
             proj02_complex_expected.delta.add(0, DONT_CARE, 1);
@@ -3298,7 +3298,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 1, 2") {
-            Nft proj12_complex = project_out(nft_complex, { 1, 2 }, false);
+            Nft proj12_complex = project_out(nft_complex, { 1, 2 }, JumpMode::AppendDontCares);
             Nft proj12_complex_expected(2, { 0 }, { 1 }, { 0, 0 }, 1);
             proj12_complex_expected.delta.add(0, 0, 1);
             proj12_complex_expected.delta.add(0, 3, 1);
@@ -3307,7 +3307,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         }
 
         SECTION("project 0, 1, 2") {
-            Nft proj012_complex = project_out(nft_complex, { 0, 1, 2 }, false);
+            Nft proj012_complex = project_out(nft_complex, { 0, 1, 2 }, JumpMode::AppendDontCares);
             Nft proj012_complex_expected(1, { 0 }, { 0 }, {}, 0);
             CHECK(are_equivalent(proj012_complex, proj012_complex_expected));
         }
@@ -3327,7 +3327,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
         atm_hard.delta.add(6, 8, 7);
         atm_hard.delta.add(7, 9, 2);
 
-        Nft proj_hard = project_out(atm_hard, { 0, 3, 4, 5 }, false);
+        Nft proj_hard = project_out(atm_hard, { 0, 3, 4, 5 }, JumpMode::AppendDontCares);
 
         Nft proj_hard_expected(4, { 0, 1 }, { 3 }, { 0, 0, 1, 0 }, 2);
         proj_hard_expected.delta.add(0, 0, 2);
@@ -3343,7 +3343,7 @@ TEST_CASE("mata::nft::project_out(repeat_jump_symbol = false)") {
     }
 }
 
-TEST_CASE("mata::nft::project_out(repeat_jump_symbol = true)") {
+TEST_CASE("mata::nft::project_out(jump_mode == JumpMode::RepeatSymbol)") {
 
     SECTION("LINEAR") {
         Delta delta;
@@ -3662,7 +3662,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
     Delta delta;
     Nft input_nft, output_nft, expected_nft;
 
-    SECTION("Linear - default_symbol = DONT_CARE, repeat_jump_symbol = false") {
+    SECTION("Linear - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
         delta.add(0, 0, 1);
         delta.add(1, 1, 2);
         delta.add(2, 2, 3);
@@ -3670,7 +3670,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 0, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
             expected_nft.delta.add(0, DONT_CARE, 1);
             expected_nft.delta.add(1, 0, 2);
@@ -3680,7 +3680,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 1, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, DONT_CARE, 2);
@@ -3690,7 +3690,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 2, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -3700,7 +3700,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 3, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(5, { 0 }, { 4 }, { 0, 1, 2, 3, 0 }, 4);
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -3710,7 +3710,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 4") {
-            output_nft = insert_level(input_nft, 4, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 4, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(6, { 0 }, { 5 }, { 0, 1, 2, 3, 4, 0 }, 5);
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(1, 1, 2);
@@ -3721,7 +3721,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 100011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 }, DONT_CARE, false);
+            output_nft = insert_levels(input_nft, { 1, 0, 0, 0, 1, 1 }, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 6 }, { 0, 1, 2, 3, 4, 5, 0 }, 6);
             expected_nft.delta.add(0, DONT_CARE, 1);
             expected_nft.delta.add(1, 0, 2);
@@ -3733,7 +3733,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("Linear - default_symbol = DONT_CARE, repeat_jump_symbol = true") {
+    SECTION("Linear - default_symbol = DONT_CARE, jump_mode == JumpMode::RepeatSymbol") {
         delta.add(0, 0, 1);
         delta.add(1, 1, 2);
         delta.add(2, 2, 3);
@@ -3804,7 +3804,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("Linear - default_symbol = 42, repeat_jump_symbol = false") {
+    SECTION("Linear - default_symbol = 42, jump_mode == JumpMode::AppendDontCares") {
         delta.clear();
         delta.add(0, 0, 1);
         delta.add(1, 1, 2);
@@ -3876,7 +3876,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("loop - default_symbol = DONT_CARE, repeat_jump_symbol = false") {
+    SECTION("loop - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
         delta.clear();
         delta.add(0, 4, 0);
         delta.add(0, 0, 1);
@@ -3887,7 +3887,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 0, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 4 }, { 0, 1, 2, 3, 0, 1, 1 }, 4);
             expected_nft.delta.add(0, DONT_CARE, 5);
             expected_nft.delta.add(5, 4, 0);
@@ -3901,7 +3901,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 1, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(11, { 0 }, { 4 }, { 0, 1, 2, 3, 0, 1, 1, 2, 3, 2, 3}, 4);
             expected_nft.delta.add(0, 4, 5);
             expected_nft.delta.add(5, DONT_CARE, 7);
@@ -3919,7 +3919,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 2, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(9, { 0 }, { 4 }, { 0, 1, 2, 3, 0, 2, 3, 2, 3 }, 4);
             expected_nft.delta.add(0, 4, 7);
             expected_nft.delta.add(7, DONT_CARE, 8);
@@ -3935,7 +3935,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 3, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 4 }, { 0, 1, 2, 3, 0, 3, 3 }, 4);
             expected_nft.delta.add(0, 4, 5);
             expected_nft.delta.add(5, DONT_CARE, 0);
@@ -3949,7 +3949,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, DONT_CARE, false);
+            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(20, { 0 }, { 7 }, { 0, 1, 2, 3, 4, 5, 6, 0, 1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6 }, 7);
             expected_nft.delta.add(0, DONT_CARE, 8);
             expected_nft.delta.add(8, 4, 9);
@@ -3976,7 +3976,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("loop - default_symbol = 42, repeat_jump_symbol = true") {
+    SECTION("loop - default_symbol = 42, jump_mode == JumpMode::RepeatSymbol") {
         delta.clear();
         delta.add(0, 4, 0);
         delta.add(0, 0, 1);
@@ -4086,7 +4086,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("complex - default_symbol = DONT_CARE, repeat_jump_symbol = false") {
+    SECTION("complex - default_symbol = DONT_CARE, jump_mode == JumpMode::AppendDontCares") {
         delta.clear();
         delta.add(0, 0, 1);
         delta.add(0, 4, 2);
@@ -4098,7 +4098,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         input_nft = Nft(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
         SECTION("add level 0") {
-            output_nft = insert_level(input_nft, 0, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 0, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 3 }, { 0, 2, 3, 0, 1, 1, 1 }, 4);
             expected_nft.delta.add(0, DONT_CARE, 4);
             expected_nft.delta.add(0, DONT_CARE, 5);
@@ -4113,7 +4113,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 1") {
-            output_nft = insert_level(input_nft, 1, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 1, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(8, { 0 }, { 3 }, { 0, 1, 3, 0, 2, 2, 2, 2 }, 4);
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 6);
@@ -4129,7 +4129,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 2") {
-            output_nft = insert_level(input_nft, 2, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 2, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 3 }, {0, 1, 2, 0, 2, 3, 2 }, 4 );
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 2);
@@ -4144,7 +4144,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add level 3") {
-            output_nft = insert_level(input_nft, 3, DONT_CARE, false);
+            output_nft = insert_level(input_nft, 3, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(7, { 0 }, { 3 }, {0, 1, 2, 0, 3, 3, 3 }, 4 );
             expected_nft.delta.add(0, 0, 1);
             expected_nft.delta.add(0, 4, 2);
@@ -4159,7 +4159,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
 
         SECTION("add levels according to the mask 1010011") {
-            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, DONT_CARE, false);
+            output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, DONT_CARE, JumpMode::AppendDontCares);
             expected_nft = Nft(21, { 0 }, { 3 }, { 0, 2, 4, 0, 1, 1, 3, 3, 3, 5, 5, 6, 6, 1, 5, 6, 3, 2, 4, 2, 4 }, 7);
             expected_nft.delta.add(0, DONT_CARE, 5);
             expected_nft.delta.add(5, 0, 1);
@@ -4188,7 +4188,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         }
     }
 
-    SECTION("Complex - default_symbol = 42, repeat_jump_symbol = false") {
+    SECTION("Complex - default_symbol = 42, jump_mode == JumpMode::AppendDontCares") {
         delta.clear();
         delta.add(0, 0, 1);
         delta.add(0, 4, 2);
@@ -4199,7 +4199,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
 
         input_nft = Nft(delta, { 0 }, { 3 }, { 0, 1, 2, 0 }, 3);
 
-        output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, 42, false);
+        output_nft = insert_levels(input_nft, { 1, 0, 1, 0, 0, 1, 1 }, 42, JumpMode::AppendDontCares);
         expected_nft = Nft(21, { 0 }, { 3 }, { 0, 2, 4, 0, 1, 1, 3, 3, 3, 5, 5, 6, 6, 1, 5, 6, 3, 2, 4, 2, 4 }, 7);
         expected_nft.delta.add(0, 42, 5);
         expected_nft.delta.add(5, 0, 1);
@@ -4227,7 +4227,7 @@ TEST_CASE("mata::nft::insert_level() and mata::nft::insert_levels()") {
         CHECK(are_equivalent(output_nft, expected_nft));
     }
 
-    SECTION("Complex - default_symbol = 42, repeat_jump_symbol = true") {
+    SECTION("Complex - default_symbol = 42, jump_mode == JumpMode::RepeatSymbol") {
         delta.clear();
         delta.add(0, 0, 1);
         delta.add(0, 4, 2);
@@ -4298,7 +4298,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
     SECTION("Insert 'a'") {
         SECTION("num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
-            nft.insert_word(1, {'a'}, 3);
+            State new_tgt = nft.insert_word(1, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
             expected.delta.add(1, 'a', 3);
@@ -4308,7 +4309,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
-            nft.insert_word(1, {'a'}, 3);
+            State new_tgt = nft.insert_word(1, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
             expected.delta.add(1, 'a', 3);
@@ -4318,7 +4320,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
-            nft.insert_word(3, {'a'}, 3);
+            State new_tgt = nft.insert_word(3, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
             expected.delta.add(3, 'a', 3);
@@ -4328,10 +4331,25 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
-            nft.insert_word(3, {'a'}, 3);
+            State new_tgt = nft.insert_word(3, {'a'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
             expected.delta.add(3, 'a', 3);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("tgt is not specified") {
+            nft = Nft(delta, { 0 }, {}, { 0, 0, 0, 0, 0 }, 1);
+            State new_tgt = nft.insert_word(1, {'a'});
+            nft.final.insert(new_tgt);
+
+            expected = Nft(3, { 0 }, { 2 }, { 0, 0, 0, 0}, 1);
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
 
             CHECK(are_equivalent(nft, expected));
         }
@@ -4341,7 +4359,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
     SECTION("Insert 'ab'") {
         SECTION("num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
-            nft.insert_word(1, {'a', 'b'}, 3);
+            State new_tgt = nft.insert_word(1, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 0 }, 1);
             expected.delta.add(1, 'a', 5);
@@ -4352,7 +4371,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
-            nft.insert_word(1, {'a', 'b'}, 3);
+            State new_tgt = nft.insert_word(1, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 1 }, 3);
             expected.delta.add(1, 'a', 5);
@@ -4363,7 +4383,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 1);
-            nft.insert_word(3, {'a', 'b'}, 3);
+            State new_tgt = nft.insert_word(3, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 0 }, 1);
             expected.delta.add(3, 'a', 5);
@@ -4374,11 +4395,27 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0 }, 3);
-            nft.insert_word(3, {'a', 'b'}, 3);
+            State new_tgt = nft.insert_word(3, {'a', 'b'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 1 }, 3);
             expected.delta.add(3, 'a', 5);
             expected.delta.add(5, 'b', 3);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("tgt is not specified") {
+            nft = Nft(delta, { 0 }, {}, { 0, 0, 0, 0, 0 }, 1);
+            State new_tgt = nft.insert_word(1, {'a', 'b'});
+            nft.final.insert(new_tgt);
+
+            expected = Nft(4, { 0 }, { 3 }, { 0, 0, 0, 0, 0 }, 1);
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'b', 3);
 
             CHECK(are_equivalent(nft, expected));
         }
@@ -4387,7 +4424,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
     SECTION("Insert 'abcd'") {
         SECTION("num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0}, 1);
-            nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 0, 0, 0}, 1);
             expected.delta.add(1, 'a', 5);
@@ -4400,7 +4438,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0}, 3);
-            nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 1, 2, 0}, 3);
             expected.delta.add(1, 'a', 5);
@@ -4413,7 +4452,8 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 1") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0}, 1);
-            nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 0, 0, 0}, 1);
             expected.delta.add(3, 'a', 5);
@@ -4426,13 +4466,31 @@ TEST_CASE("mata::nft::Nft::insert_word()") {
 
         SECTION("self-loop, num_of_levels == 3") {
             nft = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0}, 3);
-            nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            State new_tgt = nft.insert_word(3, {'a', 'b', 'c', 'd'}, 3);
+            CHECK(new_tgt == 3);
 
             expected = Nft(delta, { 0 }, { 4 }, { 0, 0, 0, 0, 0, 1, 2, 0}, 3);
             expected.delta.add(3, 'a', 5);
             expected.delta.add(5, 'b', 6);
             expected.delta.add(6, 'c', 7);
             expected.delta.add(7, 'd', 3);
+
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("tgt is not specified") {
+            nft = Nft(delta, { 0 }, {}, { 0, 0, 0, 0, 0 }, 1);
+            State new_tgt = nft.insert_word(1, {'a', 'b', 'c', 'd'});
+            nft.final.insert(new_tgt);
+
+            expected = Nft(6, { 0 }, { 5 }, { 0, 0, 0, 0, 0, 0, 0 }, 1);
+            expected.delta.add(0, 0, 1);
+            expected.delta.add(0, 4, 0);
+            expected.delta.add(1, 5, 1);
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'b', 3);
+            expected.delta.add(3, 'c', 4);
+            expected.delta.add(4, 'd', 5);
 
             CHECK(are_equivalent(nft, expected));
         }
@@ -4494,37 +4552,82 @@ TEST_CASE("mata::nft::Nft::insert_identity()") {
         delta.add(1, 'b', 2);
 
         SECTION("num_of_levels == 1") {
-            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
-            nft.insert_identity(1, 'c');
 
-            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
-            expected.delta.add(1, 'c', 1);
+            SECTION("symbols cnt == 1") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+                nft.insert_identity(1, 'c');
 
-            CHECK(are_equivalent(nft, expected));
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+                expected.delta.add(1, 'c', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("symbols cnt == 2") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 1);
+                nft.insert_identity(1, {'c', 'd'});
+
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 1);
+                expected.insert_identity(1, 'c');
+                expected.insert_identity(1, 'd');
+
+                CHECK(are_equivalent(nft, expected));
+            }
         }
 
         SECTION("num_of_levels == 2") {
-            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
-            nft.insert_identity(1, 'c');
 
-            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
-            expected.delta.add(1, 'c', 3);
-            expected.delta.add(3, 'c', 1);
+            SECTION("symbols cnt == 1") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
+                nft.insert_identity(1, 'c');
 
-            CHECK(are_equivalent(nft, expected));
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
+                expected.delta.add(1, 'c', 3);
+                expected.delta.add(3, 'c', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("symbols cnt == 2") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 2);
+                nft.insert_identity(1, {'c', 'd'});
+
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1 }, 2);
+                expected.insert_identity(1, 'c');
+                expected.insert_identity(1, 'd');
+
+                CHECK(are_equivalent(nft, expected));
+            }
         }
 
         SECTION("num_of_levels == 4") {
-            nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
-            nft.insert_identity(1, 'c');
 
-            expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
-            expected.delta.add(1, 'c', 3);
-            expected.delta.add(3, 'c', 4);
-            expected.delta.add(4, 'c', 5);
-            expected.delta.add(5, 'c', 1);
+            SECTION("symbols cnt == 1") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
+                nft.insert_identity(1, 'c');
 
-            CHECK(are_equivalent(nft, expected));
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
+                expected.delta.add(1, 'c', 3);
+                expected.delta.add(3, 'c', 4);
+                expected.delta.add(4, 'c', 5);
+                expected.delta.add(5, 'c', 1);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("symbols cnt == 4") {
+                nft = Nft(delta, { 0 }, { 2 }, { 0, 0, 0 }, 4);
+                nft.insert_identity(1, {'c', 'd', 'e', 'f'});
+
+                expected = Nft(delta, { 0 }, { 2 }, { 0, 0, 0, 1, 2, 3 }, 4);
+                expected.insert_identity(1, 'c');
+                expected.insert_identity(1, 'd');
+                expected.insert_identity(1, 'e');
+                expected.insert_identity(1, 'f');
+
+                CHECK(are_equivalent(nft, expected));
+
+            }
         }
     }
 
@@ -4578,7 +4681,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("num_of_levels == 1 && word_part.size() == 1") {
             nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
-            nft.insert_word_by_parts(0, { {'a'} } , 1);
+            State new_tgt = nft.insert_word_by_parts(0, { {'a'} } , 1);
+            CHECK(new_tgt == 1);
 
             expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
             expected.delta.add(0, 'a', 1);
@@ -4588,7 +4692,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("num_of_levels == 1 && word_part.size() == 2") {
             nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 1);
-            nft.insert_word_by_parts(0, { {'a', 'b'} } , 1);
+            State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'} } , 1);
+            CHECK(new_tgt == 1);
 
             expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 0 }, 1);
             expected.delta.add(0, 'a', 2);
@@ -4599,7 +4704,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
         SECTION("num_of_levels == 1 && word_part.size() == 4") {
             nft = Nft(delta, { 0, 1 }, { 0, 1  }, { 0, 0, 0, 0, 0 }, 1);
-            nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'} }, 1);
+            State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'} }, 1);
+            CHECK(new_tgt == 1);
 
             expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 0, 0, 0 }, 1);
             expected.delta.add(0, 'a', 2);
@@ -4622,7 +4728,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 1") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {'a'}, {'b'} } , 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'} } , 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1 }, 2);
                 expected.delta.add(0, 'a', 2);
@@ -4632,7 +4739,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} } , 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} } , 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1 }, 2);
                 expected.delta.add(0, 'a', 2);
@@ -4645,7 +4753,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1, 0, 1, 0, 1 }, 2);
                 expected.delta.add(0, 'a', 2);
@@ -4665,7 +4774,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 1") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, 'a', 2);
@@ -4678,7 +4788,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, 'a', 2);
@@ -4695,7 +4806,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, 'a', 2);
@@ -4720,6 +4832,146 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         }
     }
 
+    SECTION("The target state is not specified.") {
+        Delta delta;
+        delta.add(0, 'w', 0);
+        delta.add(0, 'y', 1);
+        delta.add(1, 'x', 1);
+        delta.add(1, 'z', 0);
+
+        SECTION("num_of_levels == 2") {
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 2);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 3 }, { 0, 0, 1, 0 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'b', 3);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 2);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 5 }, { 0, 0, 1, 0, 1, 0 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, 'd', 5);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 2);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 9 }, { 0, 0, 1, 0, 1, 0, 1, 0, 1, 0 }, 2);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'b', 4);
+                expected.delta.add(4, 'f', 5);
+                expected.delta.add(5, 'c', 6);
+                expected.delta.add(6, 'g', 7);
+                expected.delta.add(7, 'd', 8);
+                expected.delta.add(8, 'h', 9);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+        }
+
+        SECTION("num_of_levels == 4") {
+            SECTION("word_part.size() == 1") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 4);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'b'}, {'c'}, {'d'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 5 }, { 0, 0, 1, 2, 3, 0 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'b', 3);
+                expected.delta.add(3, 'c', 4);
+                expected.delta.add(4, 'd', 5);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 2") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 4);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c', 'd'}, {'e', 'f'}, {'g', 'h'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 9 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'c', 3);
+                expected.delta.add(3, 'e', 4);
+                expected.delta.add(4, 'g', 5);
+                expected.delta.add(5, 'b', 6);
+                expected.delta.add(6, 'd', 7);
+                expected.delta.add(7, 'f', 8);
+                expected.delta.add(8, 'h', 9);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("word_part.size() == 4") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 4);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 17 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'i', 4);
+                expected.delta.add(4, 'm', 5);
+                expected.delta.add(5, 'b', 6);
+                expected.delta.add(6, 'f', 7);
+                expected.delta.add(7, 'j', 8);
+                expected.delta.add(8, 'n', 9);
+                expected.delta.add(9, 'c', 10);
+                expected.delta.add(10, 'g', 11);
+                expected.delta.add(11, 'k', 12);
+                expected.delta.add(12, 'o', 13);
+                expected.delta.add(13, 'd', 14);
+                expected.delta.add(14, 'h', 15);
+                expected.delta.add(15, 'l', 16);
+                expected.delta.add(16, 'p', 17);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+
+            SECTION("The lengths of word pats dont have the same length.") {
+                nft = Nft(delta, { 0, 1 }, {}, { 0, 0 }, 4);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'e', 'f', 'g', 'h'}, {'i', 'j', 'k', 'l'}, {} });
+                nft.final.insert(new_tgt);
+
+                expected = Nft(delta, { 0, 1 }, { 17 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0 }, 4);
+                expected.delta.add(0, 'a', 2);
+                expected.delta.add(2, 'e', 3);
+                expected.delta.add(3, 'i', 4);
+                expected.delta.add(4, EPSILON, 5);
+                expected.delta.add(5, 'b', 6);
+                expected.delta.add(6, 'f', 7);
+                expected.delta.add(7, 'j', 8);
+                expected.delta.add(8, EPSILON, 9);
+                expected.delta.add(9, EPSILON, 10);
+                expected.delta.add(10, 'g', 11);
+                expected.delta.add(11, 'k', 12);
+                expected.delta.add(12, EPSILON, 13);
+                expected.delta.add(13, EPSILON, 14);
+                expected.delta.add(14, 'h', 15);
+                expected.delta.add(15, 'l', 16);
+                expected.delta.add(16, EPSILON, 17);
+
+                CHECK(are_equivalent(nft, expected));
+            }
+        }
+    }
+
     SECTION("The lengths of word parts dont have to match.") {
         Delta delta;
         delta.add(0, 'w', 0);
@@ -4730,7 +4982,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("num_of_levels == 2") {
             SECTION("word_part.size() == 1") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {}, {'b'} } , 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {}, {'b'} } , 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1 }, 2);
                 expected.delta.add(0, EPSILON, 2);
@@ -4741,7 +4994,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {'a', 'b'}, {'c'} } , 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b'}, {'c'} } , 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1 }, 2);
                 expected.delta.add(0, 'a', 2);
@@ -4754,7 +5008,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 2);
-                nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a', 'b', 'c', 'd'}, {'e'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 0, 1, 0, 1, 0, 1 }, 2);
                 expected.delta.add(0, 'a', 2);
@@ -4773,7 +5028,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
         SECTION("num_of_levels == 4") {
             SECTION("word_part.size() == 1") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {'a'}, {}, {'c'}, {} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {}, {'c'}, {} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, 'a', 2);
@@ -4786,7 +5042,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 2") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {'a'}, {'c', 'd'}, {}, {'g'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {'a'}, {'c', 'd'}, {}, {'g'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, 'a', 2);
@@ -4803,7 +5060,8 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
             SECTION("word_part.size() == 4") {
                 nft = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0 }, 4);
-                nft.insert_word_by_parts(0, { {}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                State new_tgt = nft.insert_word_by_parts(0, { {}, {'e', 'f'}, {'i', 'j', 'k', 'l'}, {'m', 'n', 'o', 'p'} }, 1);
+                CHECK(new_tgt == 1);
 
                 expected = Nft(delta, { 0, 1 }, { 0, 1 }, { 0, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3 }, 4);
                 expected.delta.add(0, EPSILON, 2);

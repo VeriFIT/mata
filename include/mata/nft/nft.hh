@@ -143,33 +143,71 @@ public:
     State add_state_with_level(State state, Level level);
 
     /**
-     * Inserts a @p word into the NFT from a source state @p src to a target state @p tgt.
+     * Inserts a @p word into the NFT from a source state @p source to a target state @p target.
      * Creates new states along the path of the @p word.
      *
      * If the length of @p word is less than @c num_of_levels, then the last symbol of @p word
-     * will form a transition going directly from the last inner state to @p tgt. The level
-     * of the state @p tgt must be 0 or greater than the level of the last inner state.
+     * will form a transition going directly from the last inner state to @p target. The level
+     * of the state @p target must be 0 or greater than the level of the last inner state.
      *
-     * @param src The source state where the word begins. It must already be a part of the transducer.
+     * @param source The source state where the word begins. It must already be a part of the transducer.
      * @param word The nonempty word to be inserted into the NFA.
-     * @param tgt The target state where the word ends. It must already be a part of the transducer.
+     * @param target The target state where the word ends.
+     * @return The state @p target where the inserted @p word ends.
      */
-    void insert_word(const State src, const Word &word, const State tgt);
+    State insert_word(State source, const Word &word, State target);
 
     /**
-     * Inserts a word, which is created by interleaving parts from @p word_part_on_level, into the NFT
-     * from a source state @p src to a target state @p tgt, creating new states along its path.
+     * @brief Inserts a @p word into the NFT from a source state @p source to a newly created target state, creating
+     *  new states along the path of the @p word.
      *
-     * The length of the inserted word equals @c num_of_levels * the maximum word length in the vector @p word_part_on_level.
-     * At least one Word in @p word_part_on_level must be nonempty.
-     * The vector @p word_part_on_level must have a size equal to @c num_of_levels.
+     * If the length of @p word is less than @c num_of_levels, then the last symbol of @p word
+     *  will form a transition going directly from the last inner state to the newly created target.
+     *
+     * @param source The source state where the word begins. It must already be a part of the transducer.
+     * @param word The nonempty word to be inserted into the NFA.
+     * @return The newly created target where the inserted word ends.
+     */
+    State insert_word(State source, const Word &word);
+
+    /**
+     * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
+     *  from a source state @p source to a target state @p target, creating new states along the path of @p word.
+     *
+     * The length of the inserted word equals @c num_of_levels * the maximum word length in the vector @p word_parts_on_levels.
+     * At least one Word in @p word_parts_on_levels must be nonempty.
+     * The vector @p word_parts_on_levels must have a size equal to @c num_of_levels.
      * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
      *
-     * @param src The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
-     * @param word_part_on_level The vector of word parts, with each part corresponding to a different level.
-     * @param tgt The target state where the word ends. This state must already exist in the transducer and must be of a level 0.
+     * @param source The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
+     * @param word_parts_on_levels The vector of word parts, with each part corresponding to a different level.
+     * @param target The target state where the word ends.
+     * @return The state @p target where the inserted @p word_parts_on_levels ends.
      */
-    void insert_word_by_parts(const State src, const std::vector<Word> &word_part_on_level, const State tgt);
+    State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels, State target);
+
+    /**
+     * @brief Inserts a word, which is created by interleaving parts from @p word_parts_on_levels, into the NFT
+     *  from a source state @p source to a target state @p target, creating new states along the path of @p word.
+     *
+     * The length of the inserted word equals @c num_of_levels * the maximum word length in the vector @p word_parts_on_levels.
+     * At least one Word in @p word_parts_on_levels must be nonempty.
+     * The vector @p word_parts_on_levels must have a size equal to @c num_of_levels.
+     * Words shorter than the maximum word length are interpreted as words followed by a sequence of epsilons to match the maximum length.
+     *
+     * @param source The source state where the word begins. This state must already exist in the transducer and must be of a level 0.
+     * @param word_parts_on_levels The vector of word parts, with each part corresponding to a different level.
+     * @return The newly created target where the inserted @p word_parts_on_levels ends.
+     */
+    State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels);
+
+    /**
+    * Inserts identity transitions into the NFT.
+    *
+    * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
+    * @param symbol The vector of symbols used for the identity transition. Identity will be created for each symbol in the vector.
+    */
+    void insert_identity(State state, const std::vector<Symbol>& symbols);
 
     /**
     * Inserts an identity transition into the NFT.
@@ -282,6 +320,14 @@ public:
     /// Checks whether the prefix of a string is in the language of an automaton
     bool is_prfx_in_lang(const Run& word) const;
 
+    /**
+     * @brief Checks whether track words are in the language of the transducer.
+     *
+     * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
+     *  relation accepted by the transducer with 'n' levels (tracks).
+     */
+    bool is_tuple_in_lang(const std::vector<Word>& track_words);
+
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
     /**
@@ -291,7 +337,7 @@ public:
      * you can get all words by calling
      *      get_words(aut.num_of_states())
      */
-    std::set<Word> get_words(unsigned max_length);
+    std::set<Word> get_words(size_t max_length) const;
 
 }; // class Nft.
 
@@ -319,19 +365,23 @@ Nft uni(const Nft &lhs, const Nft &rhs);
  * @param[in] lhs First NFT to compute intersection for.
  * @param[in] rhs Second NFT to compute intersection for.
  * @param[out] prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @param[in] lhs_first_aux_state The first auxiliary state in @p lhs. Two auxiliary states does not form a product state.
  * @param[in] rhs_first_aux_state The first auxiliary state in @p rhs. Two auxiliary states does not form a product state.
  * @return NFT as a product of NFTs @p lhs and @p rhs.
  */
-Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>, State> *prod_map = nullptr,
+Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<State, State>,
+                 State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
                  const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 
 /**
  * @brief Composes two NFTs.
  *
- * Takes two NFTs and their corresponding synchronization levels as input,
- * and returns a new NFT that represents their composition.
+ * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
+ *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
+ *  output of `a`.
  *
  * Vectors of synchronization levels have to be non-empty and of the the same size.
  *
@@ -339,23 +389,30 @@ Nft intersection(const Nft& lhs, const Nft& rhs, std::unordered_map<std::pair<St
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
  * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels);
+Nft compose(const Nft& lhs, const Nft& rhs,
+            const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
+            const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Composes two NFTs.
  *
- * Takes two NFTs and their corresponding synchronization levels as input,
- * and returns a new NFT that represents their composition.
+ * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
+ *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
+ *  output of `a`.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, const Level& lhs_sync_level = 1, const Level rhs_sync_level = 0);
+Nft compose(const Nft& lhs, const Nft& rhs, const Level lhs_sync_level = 1, const Level rhs_sync_level = 0, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Concatenate two NFTs.
@@ -524,12 +581,12 @@ Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
  * @param[in] nft The transducer for projection.
  * @param[in] levels_to_project A non-empty ordered vector of levels to be projected out from the transducer. It must
  *  contain only values that are greater than or equal to 0 and smaller than @c num_of_levels.
- * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @p DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, bool repeat_jump_symbol = true);
+Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects out specified level @p level_to_project in the given transducer @p nft.
@@ -537,12 +594,12 @@ Nft project_out(const Nft& nft, const utils::OrdVector<Level>& levels_to_project
  * @param[in] nft The transducer for projection.
  * @param[in] level_to_project A level that is going to be projected out from the transducer. It has to be greater than or
  *  equal to 0 and smaller than @c num_of_levels.
- * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_out(const Nft& nft, Level level_to_project, bool repeat_jump_symbol = true);
+Nft project_out(const Nft& nft, Level level_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects to specified levels @p levels_to_project in the given transducer @p nft.
@@ -550,12 +607,12 @@ Nft project_out(const Nft& nft, Level level_to_project, bool repeat_jump_symbol 
  * @param[in] nft The transducer for projection.
  * @param[in] levels_to_project A non-empty ordered vector of levels the transducer is going to be projected to.
  *  It must contain only values greater than or equal to 0 and smaller than @c num_of_levels.
- * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, bool repeat_jump_symbol = true);
+Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Projects to a specified level @p level_to_project in the given transducer @p nft.
@@ -563,12 +620,12 @@ Nft project_to(const Nft& nft, const utils::OrdVector<Level>& levels_to_project,
  * @param[in] nft The transducer for projection.
  * @param[in] level_to_project A level the transducer is going to be projected to. It has to be greater than or equal to 0
  *  and smaller than @c num_of_levels.
- * @param[in] repeat_jump_symbol Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  * @return A new projected transducer.
  */
-Nft project_to(const Nft& nft, Level level_to_project, bool repeat_jump_symbol = true);
+Nft project_to(const Nft& nft, Level level_to_project, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Inserts new levels, as specified by the mask @p new_levels_mask, into the given transducer @p nft.
@@ -581,11 +638,11 @@ Nft project_to(const Nft& nft, Level level_to_project, bool repeat_jump_symbol =
  * @param[in] new_levels_mask A mask representing the old and new levels. The vector {1, 0, 1, 1, 0} indicates
  *  that one level is inserted before level 0 and two levels are inserted before level 1.
  * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
- * @param[in] repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol = DONT_CARE, bool repeat_jump_symbol = true);
+Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbol default_symbol = DONT_CARE, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Inserts a new level @p new_level into the given transducer @p nft.
@@ -598,11 +655,11 @@ Nft insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const Symbo
  *  If @p new_level is less than @c num_of_levels, then it is inserted before the level @c new_level-1.
  *  If @p new_level is greater than or equal to @c num_of_levels, then all levels from @c num_of_levels through @p new_level are appended after the last level.
  * @param[in] default_symbol The default symbol to be used for transitions at the inserted levels.
- * @param[in] repeat_jump_symbol Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
+ * @param[in] jump_mode Specifies whether the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
  *  of @c DONT_CARE symbols.
  */
-Nft insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol = DONT_CARE, bool repeat_jump_symbol = true);
+Nft insert_level(const Nft& nft, const Level new_level, const Symbol default_symbol = DONT_CARE, const JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /** Encodes a vector of strings (each corresponding to one symbol) into a
  *  @c Word instance

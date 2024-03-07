@@ -543,20 +543,20 @@ State Nfa::add_state(State state) {
     return state;
 }
 
-void Nfa::insert_word(const State src, const Word &word, const State tgt) {
+State Nfa::insert_word(const State source, const Word &word, const State target) {
     assert(!word.empty());
-    assert(src < num_of_states());
-    assert(tgt < num_of_states());
+    assert(source < num_of_states());
+    assert(target < num_of_states());
 
     const size_t word_len = word.size();
     if (word_len == 1) {
-        delta.add(src, word[0], tgt);
-        return;
+        delta.add(source, word[0], target);
+        return target;
     }
 
-    // Add transition src --> inner_state.
+    // Add transition source --> inner_state.
     State inner_state = add_state();
-    delta.add(src, word[0], inner_state);
+    delta.add(source, word[0], inner_state);
 
     // Add transitions inner_state --> inner_state
     State prev_state = inner_state;
@@ -566,9 +566,12 @@ void Nfa::insert_word(const State src, const Word &word, const State tgt) {
         prev_state = inner_state;
     }
 
-    // Add transition inner_state --> tgt
-    delta.add(prev_state, word[word_len - 1], tgt);
+    // Add transition inner_state --> target
+    delta.add(prev_state, word[word_len - 1], target);
+    return target;
 }
+
+State Nfa::insert_word(const State source, const Word &word) { return insert_word(source, word, add_state()); }
 
 size_t Nfa::num_of_states() const {
     return std::max({
