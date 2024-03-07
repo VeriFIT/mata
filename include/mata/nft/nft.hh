@@ -206,16 +206,22 @@ public:
     *
     * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
     * @param symbol The vector of symbols used for the identity transition. Identity will be created for each symbol in the vector.
+    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+    * of @c DONT_CARE symbols.
     */
-    void insert_identity(State state, const std::vector<Symbol>& symbols);
+    void insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
     * Inserts an identity transition into the NFT.
     *
     * @param state The state where the identity transition will be inserted. This serves as both the source and target state.
     * @param symbol The symbol used for the identity transition.
+    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+    * of @c DONT_CARE symbols.
     */
-    void insert_identity(const State state, const Symbol symbol);
+    void insert_identity(const State state, const Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.

@@ -389,14 +389,18 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
    return insert_word_by_parts(source, word_parts_on_levels, add_state());
 }
 
-void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols) {
+void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols, const JumpMode jump_mode) {
     for (const Symbol symbol : symbols) {
-        insert_identity(state, symbol);
+        insert_identity(state, symbol, jump_mode);
     }
 }
 
-void Nft::insert_identity(const State state, const Symbol symbol) {
-    insert_word(state, Word(num_of_levels, symbol), state);
+void Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
+    if (jump_mode == JumpMode::RepeatSymbol) {
+        delta.add(state, symbol, state);
+    } else {
+        insert_word(state, Word(num_of_levels, symbol), state);
+    }
 }
 
 void Nft::clear() {
