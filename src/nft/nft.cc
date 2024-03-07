@@ -198,14 +198,14 @@ void Nft::get_one_letter_aut(Nft& result) const {
     result = get_one_letter_aut();
 }
 
-void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements) {
-    bool dcare_for_dcare = dcare_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
+void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) {
+    const bool dcare_for_dcare = dont_care_symbol_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
     std::vector<Transition> transitions_to_del;
     std::vector<Transition> transitions_to_add;
 
     auto add_inner_transitions = [&](State src, Symbol symbol, State trg) {
-        if (symbol == DONT_CARE && !dcare_for_dcare) {
-            for (const Symbol replace_symbol : dcare_replacements) {
+        if (jump_mode == JumpMode::AppendDontCares && symbol == DONT_CARE && !dcare_for_dcare) {
+            for (const Symbol replace_symbol : dont_care_symbol_replacements) {
                 transitions_to_add.emplace_back( src, replace_symbol, trg );
             }
         } else {
@@ -221,7 +221,7 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
 
         if (diff_lvl == 1 && transition.symbol == DONT_CARE && !dcare_for_dcare) {
             transitions_to_del.push_back(transition);
-            for (const Symbol replace_symbol : dcare_replacements) {
+            for (const Symbol replace_symbol : dont_care_symbol_replacements) {
                 transitions_to_add.emplace_back( transition.source, replace_symbol, transition.target );
             }
         } else if (diff_lvl > 1) {
@@ -260,18 +260,18 @@ void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dcare_replacements)
     }
 }
 
-Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements) const {
+Nft Nft::get_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
     Nft result{ *this };
     // HACK. Works only for automata without levels.
     if (result.levels.size() != result.num_of_states()) {
         return result;
     }
-    result.make_one_level_aut(dont_care_symbol_replacements);
+    result.make_one_level_aut(dont_care_symbol_replacements, jump_mode);
     return result;
 }
 
-void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements) const {
-    result = get_one_level_aut(dont_care_symbol_replacements);
+void Nft::get_one_level_aut(Nft& result, const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    result = get_one_level_aut(dont_care_symbol_replacements, jump_mode);
 }
 
 Nft& Nft::operator=(Nft&& other) noexcept {

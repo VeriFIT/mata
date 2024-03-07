@@ -55,7 +55,7 @@ Nft complement_classical(const Nft& aut, const mata::utils::OrdVector<Symbol>& s
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_naive(const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr);
+bool is_included_naive(const Nft& smaller, const Nft& bigger, const Alphabet* alphabet = nullptr, Run* cex = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * Inclusion implemented by antichain algorithms.
@@ -66,7 +66,7 @@ bool is_included_naive(const Nft& smaller, const Nft& bigger, const Alphabet* al
  * @return True if smaller language is included,
  * i.e., if the final intersection of smaller complement of bigger is empty.
  */
-bool is_included_antichains(const Nft& smaller, const Nft& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+bool is_included_antichains(const Nft& smaller, const Nft& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -106,7 +106,7 @@ Simlib::Util::BinaryRelation compute_relation(
  * @return NFT as a product of NFTs @p lhs and @p rhs with ε handled as regular symbols.
  */
 Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State)> && final_condition,
-            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, const JumpMode jump_mode = JumpMode::RepeatSymbol,
+            std::unordered_map<std::pair<State,State>, State> *prod_map = nullptr, JumpMode jump_mode = JumpMode::RepeatSymbol,
             const State lhs_first_aux_state = Limits::max_state, const State rhs_first_aux_state = Limits::max_state);
 
 /**
