@@ -115,7 +115,7 @@ Nft product(const Nft& lhs, const Nft& rhs, const std::function<bool(State,State
  * Supports epsilon symbols when @p use_epsilon is set to true.
  * @param[in] lhs First automaton to concatenate.
  * @param[in] rhs Second automaton to concatenate.
- * @param[in] epsilon Epsilon to be used co concatenation (provided @p use_epsilon is true)
+ * @param[in] epsilon Epsilon to be used for concatenation (provided @p use_epsilon is true)
  * @param[in] use_epsilon Whether to concatenate over epsilon symbol.
  * @param[out] lhs_state_renaming Map mapping lhs states to result states.
  * @param[out] rhs_state_renaming Map mapping rhs states to result states.
