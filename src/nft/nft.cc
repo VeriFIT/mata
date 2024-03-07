@@ -311,13 +311,14 @@ State Nft::insert_word(const State source, const Word &word, const State target)
     const size_t num_of_states_orig{ num_of_states() };
     assert(source < num_of_states_orig);
     assert(target < num_of_states_orig);
+    assert(levels[source] == levels[target]);
 
     const State first_new_state = num_of_states_orig;
     const State word_tgt = Nfa::insert_word(source, word, target);
     const size_t num_of_states_after = num_of_states();
     const Level src_lvl = levels[source];
 
-    Level lvl = (num_of_levels == 1 ) ? src_lvl : (src_lvl + 1);
+    Level lvl = (num_of_levels == 1 ) ? src_lvl : (src_lvl + 1) % static_cast<Level>(num_of_levels);
     State state{ first_new_state };
     for (; state < num_of_states_after; state++, lvl = (lvl + 1) % static_cast<Level>(num_of_levels)){
         add_state_with_level(state, lvl);
@@ -328,31 +329,28 @@ State Nft::insert_word(const State source, const Word &word, const State target)
     return word_tgt;
 }
 
-State Nft::insert_word(const State source, const Word &word) { return insert_word(source, word, add_state()); }
+State Nft::insert_word(const State source, const Word& word) {
+    assert(source < levels.size());
+    return insert_word(source, word, add_state_with_level(levels[source]));
+}
 
 State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels, const State target) {
     assert(0 < num_of_levels);
     assert(word_parts_on_levels.size() == num_of_levels);
     assert(source < num_of_states());
     assert(target < num_of_states());
-    assert(levels[source] == 0);
-    assert(levels[target] == 0);
+    assert(source < levels.size());
+    assert(levels[source] == levels[target]);
+    const Level from_to_level{ levels[source] };
 
     if (num_of_levels == 1) {
         return Nft::insert_word(source, word_parts_on_levels[0], target);
     }
 
-    size_t max_word_part_len = std::max_element(
-        word_parts_on_levels.begin(),
-        word_parts_on_levels.end(),
-        [](const Word& a, const Word& b) { return a.size() < b.size(); }
-    )->size();
-    assert(0 < max_word_part_len);
-    size_t word_total_len = num_of_levels * max_word_part_len;
-
     std::vector<mata::Word::const_iterator> word_part_it_v(num_of_levels);
-    for (Level lvl{ 0 }; lvl < num_of_levels; lvl++) {
+    for (Level lvl{ from_to_level }, i{ 0 }; i < static_cast<Level>(num_of_levels); ++i) {
         word_part_it_v[lvl] = word_parts_on_levels[lvl].begin();
+        lvl = (lvl + 1) % static_cast<Level>(num_of_levels);
     }
 
     // This function retrieves the next symbol from a word part at a specified level and advances the corresponding iterator.
@@ -365,28 +363,36 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
     };
 
     // Add transition source --> inner_state.
-    Level inner_lvl = (num_of_levels == 1 ) ? 0 : 1;
+    Level inner_lvl = (num_of_levels == 1 ) ? 0 : (from_to_level + 1) % static_cast<Level>(num_of_levels);
     State inner_state = add_state_with_level(inner_lvl);
-    delta.add(source, get_next_symbol(0), inner_state);
+    delta.add(source, get_next_symbol(from_to_level), inner_state);
 
     // Add transition inner_state --> inner_state
     State prev_state = inner_state;
     Level prev_lvl = inner_lvl;
-    for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
-        inner_lvl = (prev_lvl + 1) % static_cast<Level>(num_of_levels);
-        inner_state = add_state_with_level(inner_lvl);
-        delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
-        prev_state = inner_state;
-        prev_lvl = inner_lvl;
+    const size_t max_word_part_len = std::max_element(
+        word_parts_on_levels.begin(),
+        word_parts_on_levels.end(),
+        [](const Word& a, const Word& b) { return a.size() < b.size(); }
+    )->size();
+    const size_t word_total_len = num_of_levels * max_word_part_len;
+    if (word_total_len != 0) {
+        for (size_t symbol_idx{ 1 }; symbol_idx < word_total_len - 1; symbol_idx++) {
+            inner_lvl = (prev_lvl + 1) % static_cast<Level>(num_of_levels);
+            inner_state = add_state_with_level(inner_lvl);
+            delta.add(prev_state, get_next_symbol(prev_lvl), inner_state);
+            prev_state = inner_state;
+            prev_lvl = inner_lvl;
+        }
     }
-
     // Add transition inner_state --> target.
     delta.add(prev_state, get_next_symbol(prev_lvl), target);
     return target;
 }
 
 State Nft::insert_word_by_parts(const State source, const std::vector<Word> &word_parts_on_levels) {
-   return insert_word_by_parts(source, word_parts_on_levels, add_state());
+   assert(source < levels.size());
+   return insert_word_by_parts(source, word_parts_on_levels, add_state_with_level(levels[source]));
 }
 
 void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols, const JumpMode jump_mode) {
