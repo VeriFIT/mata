@@ -340,6 +340,7 @@ State Nft::insert_word_by_parts(const State source, const std::vector<Word> &wor
     assert(source < num_of_states());
     assert(target < num_of_states());
     assert(source < levels.size());
+    assert(target < levels.size());
     assert(levels[source] == levels[target]);
     const Level from_to_level{ levels[source] };
 
