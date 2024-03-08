@@ -4839,4 +4839,48 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
             }
         }
     }
+
+    SECTION("begin insertion from levels != 0") {
+        SECTION("from level 1") {
+            nft = Nft{};
+            nft.num_of_levels = 3;
+            const State state_lvl1{ nft.add_state_with_level(1) };
+            const State target{ nft.insert_word_by_parts(state_lvl1, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
+            CHECK(nft.levels[target] == 1);
+            expected = Nft{};
+            expected.num_of_levels = 3;
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'd', 3);
+            expected.delta.add(3, 'f', 4);
+            expected.delta.add(4, 'b', 5);
+            expected.delta.add(5, 'e', 6);
+            expected.delta.add(6, EPSILON, 7);
+            expected.delta.add(7, 'c', 8);
+            expected.delta.add(8, EPSILON, 9);
+            expected.delta.add(9, EPSILON, 10);
+            expected.levels = { 0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1 };
+            CHECK(are_equivalent(nft, expected));
+        }
+
+        SECTION("from level 2") {
+            nft = Nft{};
+            nft.num_of_levels = 3;
+            const State state_lvl2{ nft.add_state_with_level(2) };
+            const State target{ nft.insert_word_by_parts(state_lvl2, { { 'a', 'b', 'c' }, { 'd', 'e' }, { 'f' } }) };
+            CHECK(nft.levels[target] == 2);
+            expected = Nft{};
+            expected.num_of_levels = 3;
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'd', 3);
+            expected.delta.add(3, 'f', 4);
+            expected.delta.add(4, 'b', 5);
+            expected.delta.add(5, 'e', 6);
+            expected.delta.add(6, EPSILON, 7);
+            expected.delta.add(7, 'c', 8);
+            expected.delta.add(8, EPSILON, 9);
+            expected.delta.add(9, EPSILON, 10);
+            expected.levels = { 0, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 };
+            CHECK(are_equivalent(nft, expected));
+        }
+    }
 }

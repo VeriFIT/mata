@@ -58,7 +58,7 @@ TEST_CASE("nft::create_identity()") {
         nft.levels[7] = 1;
         nft.levels[8] = 2;
         Nft nft_identity{ create_identity(&alphabet, 3) };
-        CHECK(nft_identity.is_identical(nft));
+        CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("identity nft no symbols") {
@@ -68,7 +68,7 @@ TEST_CASE("nft::create_identity()") {
         nft.levels.resize(1);
         nft.levels[0] = 0;
         Nft nft_identity{ create_identity(&alphabet, 3) };
-        CHECK(nft_identity.is_identical(nft));
+        CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("identity nft one symbol") {
@@ -81,9 +81,9 @@ TEST_CASE("nft::create_identity()") {
         nft.delta.add(0, 0, 1);
         nft.delta.add(1, 0, 0);
         Nft nft_identity{ create_identity(&alphabet, 2) };
-        CHECK(nft_identity.is_identical(nft));
+        CHECK(nft::are_equivalent(nft_identity, nft));
         nft_identity = create_identity(&alphabet);
-        CHECK(nft_identity.is_identical(nft));
+        CHECK(nft::are_equivalent(nft_identity, nft));
     }
 
     SECTION("small identity nft one level") {
@@ -97,7 +97,7 @@ TEST_CASE("nft::create_identity()") {
         nft.levels.resize(1);
         nft.levels[0] = 0;
         Nft nft_identity{ create_identity(&alphabet, 1) };
-        CHECK(nft_identity.is_identical(nft));
+        CHECK(nft::are_equivalent(nft_identity, nft));
     }
 }
 
@@ -550,7 +550,7 @@ TEST_CASE("mata::nft::strings::reluctant_leftmost_nft()") {
     SECTION("single 'a+b+c' replaced with '' (empty string)") {
         nft = reluctant_replace.reluctant_leftmost_nft("a+b+c", &alphabet, BEGIN_MARKER, Word{}, ReplaceMode::Single);
         expected = nft::builder::parse_from_mata(std::string(
-            "@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q20 q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 q6:0 q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:0 q21:1 q22:1 q23:1 q24:1\n%LevelsCnt 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 q5\nq2 4294967195 q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 4294967195 q11\nq7 4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 4294967295 q6\nq12 4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 4294967195 q18\nq15 97 q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 4294967295 q20\nq20 97 q21\nq20 98 q22\nq20 99 q23\nq20 4294967195 q24\nq21 97 q20\nq22 98 q20\nq23 99 q20\nq24 4294967295 q20\n"
+            "@NFT-explicit\n%Alphabet-auto\n%Initial q14\n%Final q22 q14\n%Levels q0:0 q1:1 q2:0 q3:1 q4:1 q5:1 q6:0 q7:1 q8:1 q9:1 q10:0 q11:1 q12:0 q13:1 q14:0 q15:1 q16:1 q17:1 q18:1 q19:1 q20:1 q21:0 q22:0 q23:1 q24:1 q25:1 q26:1\n%LevelsCnt 2\nq0 97 q1\nq0 4294967195 q3\nq1 4294967295 q2\nq2 97 q4\nq2 98 q5\nq2 4294967195 q7\nq3 4294967295 q0\nq4 4294967295 q2\nq5 4294967295 q6\nq6 98 q8\nq6 99 q9\nq6 4294967195 q11\nq7 4294967295 q2\nq8 4294967295 q6\nq9 4294967295 q10\nq10 4294967295 q19\nq11 4294967295 q6\nq12 4294967195 q13\nq13 4294967295 q12\nq14 97 q15\nq14 98 q16\nq14 99 q17\nq14 4294967195 q18\nq15 97 q14\nq16 98 q14\nq17 99 q14\nq18 4294967295 q0\nq19 4294967295 q21\nq20 4294967295 q22\nq21 4294967295 q20\nq22 97 q23\nq22 98 q24\nq22 99 q25\nq22 4294967195 q26\nq23 97 q22\nq24 98 q22\nq25 99 q22\nq26 4294967295 q22\n"
         ));
         CHECK(nft::are_equivalent(nft, expected));
         CHECK(nft.is_tuple_in_lang({ Word{ BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', BEGIN_MARKER, 'a', 'b', 'b', 'c', 'c', 'b', 'a', 'c' }, Word{ 'c', 'b', 'a', 'c' } }));

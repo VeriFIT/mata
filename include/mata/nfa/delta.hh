@@ -111,7 +111,7 @@ public:
     using super::empty, super::size;
     using super::ToVector;
     // dangerous, breaks the sortedness invariant
-    using super::push_back;
+    using super::push_back, super::emplace_back;
     // is adding non-const version as well ok?
     using super::front;
     using super::back;
