@@ -3,23 +3,25 @@
  *  and partition-relation pair.
  *
  *  This file contains definitions of partition, extendable square
- *  matrix and operations which allow us to manipulate with them.
+ *  matrix, partition-relation pair and operations which allow us
+ *  to manipulate with them.
  *
  *  Description:
  *
  *  A partition-relation pair is a tuple (P, Rel). It is an efficient
  *  representation of a preorder/quasiorder R, which is a reflexive and
  *  transitive binary relation.
- *  In this context, we consider a carrier set S which contains interval
- *  of contiguous natural numbers from 0 to |S|-1.
- *  These numbers are called states.
+ *  In this context, we consider a carrier set S which contains all
+ *  natural numbers from 0 to |S|-1. These numbers are called states.
  *  P is a partition of S which corresponds to an equivalence relation
  *  induced by the preorder R.
+ *  Rel is a partial order over P.
  *  Thus, (P, Rel) corresponds to a preorder relation R over states S.
  *  
  *  This file provides implementation of a partition P and defines the
  *  ExtendableSquareMatrix structure which can be used to represent 
- *  the binary relation Rel. It can be combined to represent the preorder R.
+ *  the binary relation Rel. 
+ *  These structures can be combined to represent the preorder R.
  *
  *  @author Tomáš Kocourek
  */
@@ -66,20 +68,20 @@ using SplitPair = struct SplitPair
  * @brief Partition of a set of states
  *
  * This data structure provides a partition of a set of states S. In this
- * context, the term 'state' refers to a natural number from the contiguous
+ * context, the term 'state' refers to any natural number from the
  * interval <0, |S|-1>.
  *
  * STATES:
  * This representation works with the vector of indices 'm_states'
- * with the constant size |S|. Each state is represented by the index
- * of that vector so we can refer to a state in constant time using
+ * with the constant size |S|. Each state is represented by an index
+ * to that vector so we can refer to a state in constant time using
  * m_states[state].
  *
  * BLOCK ITEMS:
- * The memory cell m_states[state] contains an index to the corresponding
+ * The memory cell m_states[state] contains a corresponding index to the 
  * 'm_blockItems' vector. The vector 'm_blockItems' has the constant size |S|.
  * Each BlockItem contains an index of the corresponding state which means
- * that states and block items are bijectively mapped. In addition, 
+ * that states and BlockItems are bijectively mapped. In addition, 
  * each BlockItem includes an index to the corresponding partition class 
  * (called block). The ordering of BlockItems satisfies the condition that 
  * the states of the same block should always form a contiguous subvector
@@ -89,12 +91,15 @@ using SplitPair = struct SplitPair
  * BLOCKS:
  * The blocks themselves are represented by the vector 'm_blocks' with the
  * size |P|, where P is a partition of states. Each block can be accessed by
- * its index 0 <= i < |P|. The block contains only an index of its 
+ * its index 0 <= i < |P|. The block can by accessed by its index using 
+ * m_blocks[blockIdx]. The block contains only an index of its 
  * corresponding node. The total number of blocks can be changed as soon as
  * one block is split. However, the maximal number of blocks is equal to |S|
  * (the case when each block contains only one state). When a block 'B' is
- * split, we create a new block 'C' and modify the former block 'B'. 
- * The former block is thus no more represented in the 'm_blocks' vector.
+ * split in two pieces 'B1' and 'B2', we create a brand new block 'B2' 
+ * and modify the former block 'B' such that it will correspond to its
+ * subblock 'B1'. The former block 'B' is thus not represented
+ * in the 'm_blocks' vector anymore since 'B1' takes over its identity.
  *
  * NODES:
  * Each node represents a current block or a block which has been split before.
@@ -103,67 +108,68 @@ using SplitPair = struct SplitPair
  * In context of nodes which represent former blocks, no block contains their
  * indices. The total number of nodes can be changed as soon as
  * one block is split. In such situation, two new nodes (which represent both
- * new blocks) are created and the former node remains unchanged. Thus, the
+ * new blocks) are created and the former node remains unchanged. Therefore, the
  * maximal number of nodes is equal to 2 * |P| - 1 since once a node is created,
  * it is never changed. Each node contains two indices ('first' and 'last')
  * which could be used to access BlockItems corresponding to the first and last
- * BlockItems which form a contiguous subvector of states included in such 
+ * BlockItems which form a contiguous subvector of BlockItem included in such 
  * node. When a block is split, the corresponding BlockItems are swapped 
  * in situ such that the indices 'first' and 'last' still surround the
- * corresponding node.
+ * corresponding node and both new nodes also point to the contiguous subvector
+ * of its BlockItems.
  * 
  * EXAMPLE:
- * In the example below, we represent a partition {{0, 1}, {2, 3}}.
- * Thus, we have two blocks 0 ({0, 1}) and 1 ({2, 3}). The block 0 corresponds
- * to the node 1 and the block 1 corresponds to the node 2.
+ * In the example below, we represent a partition {{0, 2}, {1, 3, 4}}.
+ * Thus, we have two blocks: 0 ({0, 2}) and 1 ({1, 3, 4}). The block 0 
+ * corresponds to the node 1 and the block 1 corresponds to the node 2.
  * The node 1 contains indices 0 (first) and 1 (last) which means that
  * the blockItems 0 and 1 surround a contiguous subvector of elements in the 
  * node 1 (or in the block 0).
- * Likewise, the node 2 contains indices 2 (first) and 3 (last) which means that
- * the blockItems 2 and 3 surround a contiguous subvector of elements in the
+ * Likewise, the node 2 contains indices 2 (first) and 4 (last) which means that
+ * the blockItems 2 and 4 surround a contiguous subvector of elements in the
  * node 2 (or in the block 1).
  * Moreover, we also represent the former block which does not exist anymore
- * by the node 0 which contains indices 0 (first) and 3 (last) which means that
- * the blockItems 0 and 3 surround a contiguous subvector of elements in the 
- * node 0. Thus, we know that there had been a block {0, 1, 2, 3} before it has
- * been split to obtain blocks {0, 1} and {2, 3}.
+ * by the node 0 which contains indices 0 (first) and 4 (last) which means that
+ * the blockItems 0 and 4 surround a contiguous subvector of elements in the 
+ * node 0. Thus, we know that there had been a block {0, 1, 2, 3, 4} before 
+ * it has been split to obtain blocks {0, 2} and {1, 3, 4}.
  * 
  *
- *             0       1       2       3
- *             ------- ------- ------- -------
- *            |   0   |   1   |   3   |   2   |   m_states
- *             ------- ------- ------- -------
- *                ↑       ↑          ↑ ↑
- *                |       |          \ /
- *                |       |           X
- *                |       |          / \
- *             0  ↓    1  ↓    2     ↓ ↓     3
- *             ------- ------- ------- -------
- *            |   0   |   1   |   3   |   2   |   m_blockItems
- *       ----→|-------|-------|-------|-------|←-------------
- *       |    |   0   |   0   |   1   |   1   |             |
- *       |     ------- ------- ------- -------              |
- *       |        |       |       |       |                 |
- *       |     0  ↓       ↓    1  ↓       ↓                 |
- *       |     -------------------------------              |
- *       |    |       1       |       2       |   m_blocks  |
- *       |     -------------------------------              |
- *       |                |       |                         |
- *       |     0       1  ↓    2  ↓                         |
- *       |     ------- ------- -------                      |
- *       -----|   0   |   0   |   2   |   m_nodes           |
- *            |-------|-------|-------|                     |
- *            |   3   |   1   |   3   |                     |
- *             ------- ------- -------                      |
- *                |                                         |
- *                -------------------------------------------
+ *             0       1       2       3       4
+ *             ------- ------- ------- ------- -------
+ *            |   0   |   2   |   1   |   4   |   3   |    m_states
+ *             ------- ------- ------- ------- -------
+ *                ↑          ↑ ↑             ↑ ↑
+ *                |          \ /             \ /
+ *                |           X               X
+ *                |          / \             / \
+ *             0  ↓    1     ↓ ↓    2   3    ↓ ↓     4
+ *             ------- ------- ------- ------- -------
+ *            |   0   |   2   |   1   |   4   |   3   |    m_blockItems
+ *       --→→→|-------|-------|-------|-------|--------←←←------------
+ *       |    |   0   |   0   |   1   |   1   |   1   |               |
+ *       |     ------- ------- ------- ------- -------                |
+ *       |        |       |       |       |       |                   |
+ *       |     0  ↓       ↓    1  ↓       ↓       ↓                   |
+ *       |     ----------------------------------------               |
+ *       |    |       1       |            2           |   m_blocks   |
+ *       |     ----------------------------------------               |
+ *       |                |       |                                   |
+ *       |     0       1  ↓    2  ↓                                   |
+ *       |     ------- ------- -------                                |
+ *       -----|   0   |   0   |   2   |   m_nodes                     |
+ *            |-------|-------|-------|                               |
+ *            |   4   |   1   |   4   |                               |
+ *             ------- ------- -------                                |
+ *                |                                                   |
+ *                ----------------------------------------------------
  * 
  *  Using this structure, we can:
  *  - find the block which contains given state in O(1)
  *  - find a representative state of the given block in O(1)
  *  - test whether two states share the same block in O(1)
- *  - test whether a vector of states A share the same block in O(|A|)
- *  - iterate through the block P in O(|P|)
+ *  - test whether all states in a vector A share the same block in O(|A|)
+ *  - iterate through the block B in O(|B|)
  *  - split the whole partition such that each block
  *    is split in two pieces or remains unchanged in O(|S|)
  *  - remember all ancestors of current blocks and access them
@@ -176,15 +182,19 @@ typedef struct Partition
         /* indices to the m_blockItems vector */
         std::vector<size_t> m_states{};
         
+        /* indices to the m_states and m_blocks vectors */
         BlockItems m_blockItems{};
+        
+        /* indices to the m_nodes vector */
         Blocks m_blocks{};
+        
+        /* tuples of indices to the m_blockItems vectors */
         Nodes m_nodes{};
             
     public:
         
         // constructors
-        Partition(size_t numOfStates,
-            StateBlocks partition = StateBlocks());
+        Partition(size_t numOfStates, StateBlocks partition = StateBlocks());
 
         // sizes of the used vectors
         inline size_t numOfStates(void) const { return m_states.size(); }
@@ -195,152 +205,41 @@ typedef struct Partition
         // blocks splitting        
         std::vector<SplitPair> splitBlocks(std::vector<State> marked);
         
-        // basic information about partition
+        // basic information about the partition
         inline bool inSameBlock(State first, State second) const;
         bool inSameBlock(std::vector<State> states) const;
         std::vector<State> statesInSameBlock(State state) const;
       
-        // accessing states, blockItems, blocks, nodes
+        // accessing blockItems, blocks, nodes through indices       
+        inline BlockItem getBlockItem(size_t blockItemIdx) const;
+        inline Block getBlock(size_t blockIdx) const;
+        inline Node getNode(size_t nodeIdx) const;
         
-        /**
-        * @brief returns a BlockItem corresponding to the given index
-        * @param blockItemIdx index of the BlockItem
-        * @return corresponding BlockItem
-        */
-        inline BlockItem getBlockItem(size_t blockItemIdx) const
-        {
-            assert(blockItemIdx < numOfBlockItems() &&
-            "Nonexisting block item index used.");    
-            return m_blockItems[blockItemIdx];
-        }
-
-        /**
-        * @brief returns a block corresponding to the given index
-        * @param blockIdx index of the block
-        * @return corresponding block
-        */
-        inline Block getBlock(size_t blockIdx) const
-        {
-            assert(blockIdx < numOfBlocks() &&
-            "Nonexisting block index used.");    
-            return m_blocks[blockIdx];
-        }
-
-        /**
-        * @brief returns a node corresponding to the given index
-        * @param nodeIdx index of the node
-        * @return corresponding node
-        */
-        inline Node getNode(size_t nodeIdx) const
-        {
-            assert(nodeIdx < numOfNodes() &&
-            "Nonexisting node index used.");    
-            return m_nodes[nodeIdx];
-        }
-
-        /**
-        * @brief returns a block index corresponding to the given state
-        * @param state given state
-        * @return corresponding block index
-        */
-        inline size_t getBlockIdxFromState(State state) const
-        {
-            assert(state < numOfStates() &&
-            "Nonexisting state name used.");            
-            return m_blockItems[m_states[state]].blockIdx;
-        }
-
-        /**
-        * @brief returns a node index corresponding to the given state
-        * @param state given state
-        * @return corresponding node index
-        */
-        inline size_t getNodeIdxFromState(State state) const
-        {
-            assert(state < numOfStates() &&
-            "Nonexisting state name used.");           
-            return m_blocks[m_blockItems[m_states[state]].blockIdx].nodeIdx;
-        }
-
-        /**
-        * @brief returns a BlockItem index corresponding to the given state
-        * @param state given state
-        * @return corresponding BlockItem index
-        */
-        inline size_t getBlockItemIdxFromState(State state) const
-        {
-            assert(state < numOfStates() &&
-            "Nonexisting state name used.");           
-            return m_states[state];
-        }
-
-        /**
-        * @brief returns a Node index corresponding to the given BlockItem index
-        * @param blockItemIdx BlockItem index
-        * @return corresponding Node index
-        */
-        inline size_t getNodeIdxFromBlockItemIdx(size_t blockItemIdx) const
-        {
-            assert(blockItemIdx < numOfBlockItems() &&
-            "Nonexisting BlockItem index used.");           
-            return m_blocks[m_blockItems[blockItemIdx].blockIdx].nodeIdx;
-        }
-
-        /**
-        * @brief returns a node index corresponding to the given block index
-        * @param blockIdx given block index
-        * @return corresponding node index
-        */
-        inline size_t getNodeIdxFromBlockIdx(size_t blockIdx) const
-        {
-            assert(blockIdx < numOfBlocks() &&
-            "Nonexisting block index used.");            
-            return m_blocks[blockIdx].nodeIdx;
-        }
-
-        /** Get a representant from the block index
-        * @brief returns a blockItem corresponding to the given block index
-        * @param blockIdx given block index
-        * @return first blockItem corresponding to the given block index
-        */
-        inline BlockItem getReprFromBlockIdx(size_t blockIdx) const
-        {
-            assert(blockIdx < numOfBlocks() &&
-            "Nonexisting block index used.");
-            return m_blockItems[m_nodes[m_blocks[blockIdx].nodeIdx].first];
-        }
-
-        /** Get a representant from the node index
-        * @brief returns a blockItem corresponding to the given node index
-        * @param nodeIdx given node index
-        * @return first blockItem corresponding to the given node index
-        */
-        inline BlockItem getReprFromNodeIdx(size_t nodeIdx) const
-        {
-            assert(nodeIdx < numOfNodes() &&
-            "Nonexisting node index used.");
-            return m_blockItems[m_nodes[nodeIdx].first];
-        }
-
-        /**
-        * @brief converts the partition to the vector of vectors of states
-        * @return vector of vectors of states
-        */        
+        // refering between blockItems, blocks, nodes using indices        
+        inline size_t getBlockIdxFromState(State state) const;
+        inline size_t getNodeIdxFromState(State state) const;
+        inline size_t getBlockItemIdxFromState(State state) const;
+        inline size_t getNodeIdxFromBlockItemIdx(size_t blockItemIdx) const;
+        inline size_t getNodeIdxFromBlockIdx(size_t blockIdx) const;
+        inline size_t getReprIdxFromBlockIdx(size_t blockIdx) const;
+        inline size_t getReprIdxFromNodeIdx(size_t nodeIdx) const;  
+        
+        // converts the partition to the vector of vectors of states
         StateBlocks partition(void);
         
-        // debug
-        
+        // debug        
         friend std::ostream& operator<<(std::ostream& os, 
                                         const Partition& p);
             
             
-} Partition;
+} Partition; // Partition
 
 /** Constructor of the partition structure. This method reserves memory space
 * for the vectors used to represent partition to ensure us that they won't
 * ever be moved in the memory when extended.
-* The partition can be initialized in linear time using initial partition
-* represented as a vector of vectors of states.
+* The partition can be initialized in linear time (in respect to the carrier
+* set of the partition) using initial partition represented as a vector of 
+* vectors of states.
 * The constructor works as follows:
 * - if there is any nonexisting state in the initial partition, the function
 *   fails
@@ -348,6 +247,8 @@ typedef struct Partition
 * - if there is an empty partition class, the function fails
 * - if there are states which are not represented in the initial partition,
 *   they will be all part of the one additional block
+* If there is no initial partition, all states will be assigned 
+* to the same block
 * @brief constructs the partition
 * @param numOfStates cardinality of the carrier set
 * @param partition optional initial partition in the form of vectors of
@@ -355,16 +256,19 @@ typedef struct Partition
 */
 Partition::Partition(size_t numOfStates, StateBlocks partition)
 {
-    // reserving memory space to avoid moving extended vector
+    // reserving memory space to avoid moving extended vectors
     m_states.reserve(numOfStates);
     m_blockItems.reserve(numOfStates);
     m_blocks.reserve(numOfStates);
     m_nodes.reserve(2 * numOfStates - 1);
 
     // this vector says whether the given state has been already seen
-    // to detect duplicates and to detect unused states
+    // in the given initial partition to detect duplicates
+    // and to detect unused states
     std::vector<char> used;
     used.insert(used.end(), numOfStates, false);
+    
+    // initialization of the m_states vector
     m_states.insert(m_states.end(), numOfStates, 0);
     
     // creating partition using given initial vector of vectors
@@ -404,20 +308,26 @@ Partition::Partition(size_t numOfStates, StateBlocks partition)
     }
     
     // we need to detect whether there is a state which has not be used
-    // to create a additional partition block
+    // to create an additional partition block
     bool allStatesUsed = true;
+    
+    // first and last unused states will surround a contiguous subvector
+    // of BlockItems
     State first = 0;
     State last = 0;
     
     // iterating through the vector of flags saying which states has been seen
     for(State state = 0; state < numOfStates; ++state)
     {
+        // if a state has been already seen and processed, 
+        // there is no need to add it to the additional block
         if(used[state])
         {
             continue;
         }
         
-        // if there is an unused state, we need to create an additional block
+        // if there is at least one unused state, we need to 
+        // create an additional block
         if(allStatesUsed)
         {
             allStatesUsed = false;
@@ -439,12 +349,134 @@ Partition::Partition(size_t numOfStates, StateBlocks partition)
     }
 }
 
+
 /**
-* @brief tests whether thw two given states correspond 
+* @brief returns a BlockItem corresponding to the given index
+* @param blockItemIdx index of the BlockItem
+* @return corresponding BlockItem
+*/
+inline BlockItem Partition::getBlockItem(size_t blockItemIdx) const
+{
+    assert(blockItemIdx < numOfBlockItems() &&
+    "Nonexisting block item index used.");    
+    return m_blockItems[blockItemIdx];
+}
+
+/**
+* @brief returns a block corresponding to the given index
+* @param blockIdx index of the block
+* @return corresponding block
+*/
+inline Block Partition::getBlock(size_t blockIdx) const
+{
+    assert(blockIdx < numOfBlocks() &&
+    "Nonexisting block index used.");    
+    return m_blocks[blockIdx];
+}
+
+/**
+* @brief returns a node corresponding to the given index
+* @param nodeIdx index of the node
+* @return corresponding node
+*/
+inline Node Partition::getNode(size_t nodeIdx) const
+{
+    assert(nodeIdx < numOfNodes() &&
+    "Nonexisting node index used.");    
+    return m_nodes[nodeIdx];
+}
+
+/**
+* @brief returns a block index corresponding to the given state
+* @param state given state
+* @return corresponding block index
+*/
+inline size_t Partition::getBlockIdxFromState(State state) const
+{
+    assert(state < numOfStates() &&
+    "Nonexisting state name used.");            
+    return m_blockItems[m_states[state]].blockIdx;
+}
+
+/**
+* @brief returns a node index corresponding to the given state
+* @param state given state
+* @return corresponding node index
+*/
+inline size_t Partition::getNodeIdxFromState(State state) const
+{
+    assert(state < numOfStates() &&
+    "Nonexisting state name used.");           
+    return m_blocks[m_blockItems[m_states[state]].blockIdx].nodeIdx;
+}
+
+/**
+* @brief returns a BlockItem index corresponding to the given state
+* @param state given state
+* @return corresponding BlockItem index
+*/
+inline size_t Partition::getBlockItemIdxFromState(State state) const
+{
+    assert(state < numOfStates() &&
+    "Nonexisting state name used.");           
+    return m_states[state];
+}
+
+/**
+* @brief returns a Node index corresponding to the given BlockItem index
+* @param blockItemIdx BlockItem index
+* @return corresponding node index
+*/
+inline size_t Partition::getNodeIdxFromBlockItemIdx(size_t blockItemIdx) const
+{
+    assert(blockItemIdx < numOfBlockItems() &&
+    "Nonexisting BlockItem index used.");           
+    return m_blocks[m_blockItems[blockItemIdx].blockIdx].nodeIdx;
+}
+
+/**
+* @brief returns a node index corresponding to the given block index
+* @param blockIdx given block index
+* @return corresponding node index
+*/
+inline size_t Partition::getNodeIdxFromBlockIdx(size_t blockIdx) const
+{
+    assert(blockIdx < numOfBlocks() &&
+    "Nonexisting block index used.");            
+    return m_blocks[blockIdx].nodeIdx;
+}
+
+/** Get a representant from the block index
+* @brief returns the first blockItem index corresponding to the given 
+* block index
+* @param blockIdx given block index
+* @return first blockItem index corresponding to the given block index
+*/
+inline size_t Partition::getReprIdxFromBlockIdx(size_t blockIdx) const
+{
+    assert(blockIdx < numOfBlocks() &&
+    "Nonexisting block index used.");
+    return m_nodes[m_blocks[blockIdx].nodeIdx].first;
+}
+
+/** Get a representant from the node index
+* @brief returns the first blockItem index corresponding to the given node index
+* @param nodeIdx given node index
+* @return first blockItem index corresponding to the given node index
+*/
+inline size_t Partition::getReprIdxFromNodeIdx(size_t nodeIdx) const
+{
+    assert(nodeIdx < numOfNodes() &&
+    "Nonexisting node index used.");
+    return m_nodes[nodeIdx].first;
+}
+
+/**
+* @brief tests whether the two given states correspond 
 * to the same partition block
 * @param first first state to be checked
 * @param second second state to be checked
-* @param true iff both given states belong to the same partition block
+* @return true iff both given states belong to the same partition block
 */
 inline bool Partition::inSameBlock(State first, State second) const
 {
@@ -512,7 +544,7 @@ StateBlocks Partition::partition(void)
 
 /** Splitting the blocks of existing partition. According to the input
 * vector of states 'marked', there will be two types of states - marked
-* and unmarked. The partition will be split as follows:
+* and unmarked ones. The partition will be split as follows:
 * - if there is a block whose all elements are marked, the block remains
 * unchanged
 * - if there is a block whose all elements are unmarked, the block remains
@@ -534,7 +566,7 @@ StateBlocks Partition::partition(void)
 * will still describe a valid contiguous interval of natural numbers <a, b>.
 *
 * There are several troubles which can possiby occur:
-* - if an unexisting state is used, the function detects it and fails
+* - if an nonexisting state is used, the function detects it and fails
 * - if there is a state which is marked multiple times, the function detects it
 * and fails
 *
@@ -547,11 +579,11 @@ StateBlocks Partition::partition(void)
 *
 * @brief splits blocks of the partition
 * @param marked marked states which influence splitting
-* @return vector of SplitPair which contain information about split blocks
+* @return vector of SplitPair which contains information about split blocks
 */
 std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
 {
-    // the vector which will be returned as a result
+    // the vector which will be returned as the result
     std::vector<SplitPair> split{};
     
     // if there is no marked state, no block could be split
@@ -595,13 +627,14 @@ std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
         size_t iterLast = getNode(nodeIdx).last;
         size_t blockSize = iterLast - iterFirst + 1;
         
-        // if all states of the given block has been marked, it
+        // if all states of the processed block have been marked, the block
         // won't be split
         if(usedBlocks[i] >= blockSize) { continue; }
         
         // choosing the strategy of swapping BlocksItems such that
         // the representant of split block keeps its position        
-        bool reprMarked = usedStates[getReprFromNodeIdx(nodeIdx).state];
+        bool reprMarked = usedStates
+                          [getBlockItem(getReprIdxFromNodeIdx(nodeIdx)).state];
 
         // We access the first and last element of the subvector of BlockItems
         // which forms processed block. We look for the first unmarked element
@@ -625,16 +658,16 @@ std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
                 --iterLast;
             }
             
-            // if the used indexes meet, we finish swapping         
+            // if the used indices meet, we finish swapping         
             if(iterFirst > iterLast)
             {
                 break;
             }
             
             // swapping BlockItems
-            BlockItem tmp = getBlockItem(iterFirst);
+            BlockItem swappedBlockItem = getBlockItem(iterFirst);
             m_blockItems[iterFirst] = getBlockItem(iterLast);
-            m_blockItems[iterLast] = tmp;
+            m_blockItems[iterLast] = swappedBlockItem;
             
             // since m_states and m_blockItems vectors should be bijectively
             // mapped, we need to update m_states after swapping two BlockItems           
@@ -664,6 +697,8 @@ std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
         // correspond to the block which has been split        
         split.push_back({.former = i, .created = newBlockIdx,
                          .oldNodeIdx = nodeIdx});
+        
+        // index of the following block which could be created
         ++newBlockIdx;
     }
     return split;
@@ -739,12 +774,12 @@ std::ostream& operator<<(std::ostream& os, const Partition& p)
  * (for example when we represent relation over partition and a block of
  * partition is split in two) or matrices of counters etc.
  * 
- * This abstract structure declares methods for accessing elements of matrix,
- * assigning to the elements of matrix and extending the matrix by one row
+ * This abstract structure declares methods for accessing elements of the 
+ * matrix, assigning to the cells of matrix and extending the matrix by one row
  * and one column (changing the size). 
  * It defines attributes for maximal capacity (which cannot be changed) and
  * current size.
- * It does not define the data structure for storing data. Each subclass
+ * It does not define the data structure for storing data. Each substructure
  * which inherits from this abstract structure should:
  * - contain the storage for data of datatype T which represents n x n matrix 
  * - implement methods set, get and extend
@@ -777,8 +812,8 @@ struct ExtendableSquareMatrix
         inline size_t size(void) const { return m_size; }
         inline size_t capacity(void) const { return m_capacity; }
         
-        // virtual functions which will be implemented in the subclasses
-        // according to the concrete implementation of the matrix
+        // virtual functions which will be implemented in the substructures
+        // according to the concrete representation of the matrix
         virtual inline void set(size_t i, size_t j, T value = T()) = 0;
         virtual inline T get(size_t i, size_t j) const = 0;
         virtual inline void extend(T placeholder = T()) = 0;
@@ -803,7 +838,7 @@ struct ExtendableSquareMatrix
  * 'capacity * capacity' data cells for the vector (in the constant time O(1))
  * without need to allocate anything.
  * When the matrix is extended, additional (size * 2) + 1 elements of the
- * vectors are allocated. We matrix is referred in some kind of "cascading" way
+ * vector are allocated. The matrix is traversed in some kind of "cascading" way
  * as follows:
  *
  * Each number in the matrix corresponds to the order of accessing that element
@@ -913,17 +948,18 @@ inline T CascadeSquareMatrix<T>::get(size_t i, size_t j) const
 /**
 * @brief extends the Cascade square matrix by a new row and column
 * @param placeholder a value which will be assigned to all the new data cells
+* (optional)
 */
 template <typename T>
 inline void CascadeSquareMatrix<T>::extend(T placeholder)
 {
     assert(this->m_size < this->m_capacity 
-          && "Matrix cannot be extened anymore");
+          && "The matrix cannot be extened anymore");
 
     // allocation of 2 * size + 1 new data cells
     data.insert(data.end(), 2 * this->m_size + 1, placeholder);
     
-    // the size inceases
+    // the size increases
     ++this->m_size;
 }
 
@@ -1019,7 +1055,7 @@ template <typename T>
 void DynamicSquareMatrix<T>::extend(T placeholder)
 {
     assert(this->m_size < this->m_capacity 
-          && "Matrix cannot be extened anymore");
+          && "The matrix cannot be extened anymore");
     
     // creating a new column      
     for(size_t i = 0; i < this->m_size; ++i)
@@ -1048,8 +1084,7 @@ struct HashedSquareMatrix : public ExtendableSquareMatrix<T>
     private:
 
         // data are stored in a hashmap
-        mutable std::unordered_map<size_t, T> data
-            {std::unordered_map<size_t, T>()}; 
+        mutable std::unordered_map<size_t, T> data{};
     
     public:
     
@@ -1159,7 +1194,7 @@ std::ostream& operator<<(std::ostream& os,
 }
 
 /** This function checks whether the given matrix is reflexive. In this
-* context, the matrix is reflexive iff none of the elements od the main
+* context, the matrix is reflexive iff none of the elements on the main
 * diagonal is the zero element of the type T
 * @brief checks whether the Extendable square matrix is reflexive
 * @param matrix input matrix to be checked

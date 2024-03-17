@@ -26,10 +26,10 @@ TEST_CASE("mata::utils::Partition") {
             CHECK(p.getBlockItem(i).blockIdx == 0);
             CHECK(p.getNodeIdxFromBlockItemIdx(i) == 0);
         }
-        CHECK(p.getReprFromBlockIdx(0).state == 0);
-        CHECK(p.getReprFromBlockIdx(0).blockIdx == 0);
-        CHECK(p.getReprFromNodeIdx(0).state == 0);
-        CHECK(p.getReprFromNodeIdx(0).blockIdx == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(0)).blockIdx == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(0)).blockIdx == 0);
         CHECK(p.getNode(0).first == 0);
         CHECK(p.getNode(0).last == 9);
         CHECK(p.getBlock(0).nodeIdx == 0);
@@ -64,14 +64,14 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.getBlockItem(3).blockIdx == 1);
         CHECK(p.getNodeIdxFromBlockItemIdx(3) == 1);
         
-        CHECK(p.getReprFromBlockIdx(0).state == 0);
-        CHECK(p.getReprFromBlockIdx(1).state == 1);
-        CHECK(p.getReprFromBlockIdx(0).blockIdx == 0);
-        CHECK(p.getReprFromBlockIdx(1).blockIdx == 1);
-        CHECK(p.getReprFromNodeIdx(0).state == 0);
-        CHECK(p.getReprFromNodeIdx(0).blockIdx == 0);
-        CHECK(p.getReprFromNodeIdx(1).state == 1);
-        CHECK(p.getReprFromNodeIdx(1).blockIdx == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(1)).state == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(0)).blockIdx == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(1)).blockIdx == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(0)).blockIdx == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(1)).state == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(1)).blockIdx == 1);
         CHECK(p.getNode(0).first == 0);
         CHECK(p.getNode(0).last == 2);
         CHECK(p.getNode(1).first == 3);
@@ -107,12 +107,12 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.getNodeIdxFromState(1) == 1);            
         CHECK(p.getBlockItem(1).blockIdx == 1);
         CHECK(p.getNodeIdxFromBlockItemIdx(1) == 1);
-        CHECK(p.getReprFromBlockIdx(0).state == 0);
-        CHECK(p.getReprFromBlockIdx(1).state == 1);
-        CHECK(p.getReprFromBlockIdx(2).state == 3);        
-        CHECK(p.getReprFromNodeIdx(0).state == 0);
-        CHECK(p.getReprFromNodeIdx(1).state == 1);
-        CHECK(p.getReprFromNodeIdx(2).state == 3);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(1)).state == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromBlockIdx(2)).state == 3);        
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(0)).state == 0);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(1)).state == 1);
+        CHECK(p.getBlockItem(p.getReprIdxFromNodeIdx(2)).state == 3);
         CHECK(p.getNode(0).first == 0);
         CHECK(p.getNode(0).last == 0);
         CHECK(p.getNode(1).first == 1);
