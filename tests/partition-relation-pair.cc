@@ -191,8 +191,8 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
 
     SECTION("CascadeSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = 
-            new CascadeSquareMatrix<unsigned long>(5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
+                                                   (Cascade, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
@@ -202,32 +202,31 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->size() == 4);
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));        
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());        
         e->set(0, 0, 1);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));                  
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
-        std::cout << (*e);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(!isTransitive(e));
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(!e->isTransitive());
         delete e;              
         }
         
     SECTION("DynamicSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = 
-            new DynamicSquareMatrix<unsigned long>(5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
+                                                   (Dynamic, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
@@ -237,32 +236,31 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->size() == 4);
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));        
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());        
         e->set(0, 0, 1);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));                  
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
-        std::cout << (*e);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(!isTransitive(e));
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(!e->isTransitive());
         delete e;              
         }
         
     SECTION("HashedSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = 
-            new HashedSquareMatrix<unsigned long>(5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
+                                                   (Hashed, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
@@ -272,25 +270,69 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->size() == 4);
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));        
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());        
         e->set(0, 0, 1);
-        CHECK(!isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));
+        CHECK(!e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(isTransitive(e));                  
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(e->isTransitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
-        std::cout << (*e);
-        CHECK(isReflexive(e));
-        CHECK(isAntisymetric(e));
-        CHECK(!isTransitive(e));
+        CHECK(e->isReflexive());
+        CHECK(e->isAntisymetric());
+        CHECK(!e->isTransitive());
         delete e;              
         }
+        
+        
+    SECTION("Copying matrices") {
+
+        ExtendableSquareMatrix<char> *m1 = create<char>(Cascade, 1000, 2);
+        ExtendableSquareMatrix<char> *m2 = create<char>(Dynamic, 5, 2);
+        ExtendableSquareMatrix<char> *m3 = create<char>(Hashed, 5, 2);
+
+        ExtendableSquareMatrix<char> *c1 = m1;
+        ExtendableSquareMatrix<char> *c2 = m2;
+        ExtendableSquareMatrix<char> *c3 = m3;
+        
+        m1->set(1, 1, true);
+        m2->set(1, 1, true);
+        m3->set(1, 1, true);
+        
+        CHECK(m1->get(1, 1) == c1->get(1, 1));
+        CHECK(m2->get(1, 1) == c2->get(1, 1));
+        CHECK(m3->get(1, 1) == c3->get(1, 1));
+
+        c1 = copy<char>(m1);
+        c2 = copy<char>(m2);
+        c3 = copy<char>(m3);
+
+        m1->set(0, 1, true);
+        m2->set(0, 1, true);
+        m3->set(0, 1, true);
+
+        CHECK(m1->get(0, 1) != c1->get(0, 1));
+        CHECK(m2->get(0, 1) != c2->get(0, 1));
+        CHECK(m3->get(0, 1) != c3->get(0, 1));
+        
+        CHECK(!c1->get(0, 1));
+        CHECK(!c2->get(0, 1));
+        CHECK(!c3->get(0, 1));
+        
+        delete m1;
+        delete m2;
+        delete m3;
+        delete c1;
+        delete c2;
+        delete c3;
+        
+        }
+        
 }

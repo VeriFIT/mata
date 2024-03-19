@@ -785,7 +785,9 @@ std::ostream& operator<<(std::ostream& os, const Partition& p)
  * - implement methods set, get and extend
  * Then, the ExtendableSquareMatrix can be used independently of the inner
  * representation of the matrix. Therefore, one can dynamically choose from
- * various of implementations depending on the situation.
+ * various of implementations depending on the situation. If any new 
+ * substructure is implemented, one should also modify 'create' and 'copy' 
+ * functions and extend 'MatrixType' enumerator.
  *
  * Note that in context of an n x n matrix, this implementation uses the word
  * 'size' to refer to the number n (number of rows or columns). The word 
@@ -794,6 +796,7 @@ std::ostream& operator<<(std::ostream& os, const Partition& p)
  *
 **/
 
+using MatrixType = enum MatrixType { None, Cascade, Dynamic, Hashed };
 
 template <typename T>
 struct ExtendableSquareMatrix
@@ -804,13 +807,18 @@ struct ExtendableSquareMatrix
         size_t m_size{0};
         
         // maximal allowed number of rows (or columns) of the square matrix        
-        size_t m_capacity{0}; 
+        size_t m_capacity{0};
+        
+        // type of the matrix which will be chosen as soon as the
+        // child structure will be created
+        MatrixType m_type{MatrixType::None};
 
     public:
 
         // getters
         inline size_t size(void) const { return m_size; }
         inline size_t capacity(void) const { return m_capacity; }
+        inline size_t type(void) const { return m_type; }
         
         // virtual functions which will be implemented in the substructures
         // according to the concrete representation of the matrix
@@ -819,8 +827,19 @@ struct ExtendableSquareMatrix
         virtual inline void extend(T placeholder = T()) = 0;
         
         virtual ~ExtendableSquareMatrix() = default;
+        
+        // matrix properties
+        bool isReflexive(void);
+        bool isAntisymetric(void);
+        bool isTransitive(void);
                 
 };
+
+/*************************************
+*
+*        CASCADE SQUARE MATRIX
+*
+**************************************/
 
 /**
  * CascadeSquareMatrix
@@ -905,6 +924,7 @@ CascadeSquareMatrix<T>::CascadeSquareMatrix
     assert(initRows <= maxRows && 
     "Initial size of the matrix cannot be bigger than the capacity");
     
+    this->m_type = MatrixType::Cascade;
     this->m_capacity = maxRows;
     data.reserve(this->m_capacity * this->m_capacity);
     
@@ -963,6 +983,12 @@ inline void CascadeSquareMatrix<T>::extend(T placeholder)
     ++this->m_size;
 }
 
+/*************************************
+*
+*        DYNAMIC SQUARE MATRIX
+*
+**************************************/
+
 /**
  * DynamicSquareMatrix
  * 
@@ -1010,6 +1036,7 @@ DynamicSquareMatrix<T>::DynamicSquareMatrix
     assert(initRows <= maxRows && 
     "Initial size of the matrix cannot be bigger than the capacity");
     
+    this->m_type = MatrixType::Dynamic;
     this->m_capacity = maxRows;
     
     // creating the initial size and filling the data cells with
@@ -1069,6 +1096,12 @@ void DynamicSquareMatrix<T>::extend(T placeholder)
     data.back().insert(data.back().end(), this->m_size, placeholder);
 }
 
+/*************************************
+*
+*        HASHED SQUARE MATRIX
+*
+**************************************/
+
 /**
  * HashedSquareMatrix
  * 
@@ -1110,6 +1143,7 @@ HashedSquareMatrix<T>::HashedSquareMatrix
     assert(initRows <= maxRows && 
     "Initial size of the matrix cannot be bigger than the capacity");
     
+    this->m_type = MatrixType::Hashed;
     this->m_capacity = maxRows;
     
     // creating the initial size and filling the data cells with
@@ -1171,6 +1205,83 @@ inline void HashedSquareMatrix<T>::extend(T placeholder)
     ++this->m_size;
 }
 
+/*************************************
+*
+*        ADDITIONAL FUNCTIONS
+*
+**************************************/
+
+/**
+* @brief factory function which creates an ExtendableSquareMatrix of given type
+* @param type type of the new matrix
+* @param capacity maximal matrix capacity
+* @param size initial matrix size
+* @return pointer to the newly created matrix
+*/
+template <typename T>
+ExtendableSquareMatrix<T> *create(MatrixType type, 
+                        size_t capacity, size_t size = 0)
+{
+    switch(type)
+    {
+        case MatrixType::Cascade:
+            return new CascadeSquareMatrix<T>(capacity, size);
+        case MatrixType::Dynamic:
+            return new DynamicSquareMatrix<T>(capacity, size);    
+        case MatrixType::Hashed:
+            return new HashedSquareMatrix<T>(capacity, size);    
+        default:
+            return nullptr;
+    }
+}
+
+/**
+* @brief creates a deep copy of the given ExtendableSquareMatrix
+* @param matrix input matrix which should be copied
+* @return pointer to the newly created matrix
+*/
+template <typename T>
+ExtendableSquareMatrix<T> *copy(ExtendableSquareMatrix<T> *matrix)
+{
+    ExtendableSquareMatrix<T> *newMatrix = nullptr;
+    size_t size = matrix->size();
+    
+    switch(matrix->type())
+    {
+        case MatrixType::Cascade:
+
+            // since a default copy of a vector does not preserve its reserved
+            // capacity, we need to explicitly create new matrix 
+            // with the former capacity
+            newMatrix = create<T>(Cascade, matrix->capacity(), matrix->size());
+            
+            // copying of the data
+            for(size_t i = 0; i < size; ++i)
+            {
+                for(size_t j = 0; j < size; ++j)
+                {
+                    newMatrix->set(i, j, matrix->get(i, j));
+                }
+            }
+            break;
+        
+        case MatrixType::Dynamic:
+            newMatrix = new DynamicSquareMatrix<T>
+                        (*dynamic_cast<DynamicSquareMatrix<T>*>(matrix));
+            break;
+        
+        case MatrixType::Hashed:
+            newMatrix = new HashedSquareMatrix<T>
+                        (*dynamic_cast<HashedSquareMatrix<T>*>(matrix));
+            break;
+        
+        default:
+            newMatrix = nullptr;
+            break;
+    }
+    return newMatrix;
+}
+
 // debugging function which allows us to print text representation of
 // the Extendable square matrix
 template <typename T>
@@ -1193,59 +1304,56 @@ std::ostream& operator<<(std::ostream& os,
     return os << result;
 }
 
-/** This function checks whether the given matrix is reflexive. In this
+/** This function checks whether the matrix is reflexive. In this
 * context, the matrix is reflexive iff none of the elements on the main
 * diagonal is the zero element of the type T
 * @brief checks whether the Extendable square matrix is reflexive
-* @param matrix input matrix to be checked
-* @return true iff the input matrix is reflexive
+* @return true iff the matrix is reflexive
 */
 template <typename T>
-bool isReflexive(ExtendableSquareMatrix<T> *matrix)
+bool ExtendableSquareMatrix<T>::isReflexive(void)
 {
-    size_t size = matrix->size();
+    size_t size = this->size();
     for(size_t i = 0; i < size; ++i)
     {
-        if(!matrix->get(i, i)) { return false; }
+        if(!get(i, i)) { return false; }
     }
     return true;
 }
 
-/** This function checks whether the given matrix is antisymetric. In this
+/** This function checks whether the matrix is antisymetric. In this
 * context, the matrix is antisymetric iff there are no indices i, j
 * where i != j and both matrix[i][j], matrix[j][i] contain nonzero elementes
 * of the type T
 * @brief checks whether the Extendable square matrix is antisymetric
-* @param matrix input matrix to be checked
-* @return true iff the input matrix is antisymetric
+* @return true iff the matrix is antisymetric
 */
 template <typename T>
-bool isAntisymetric(ExtendableSquareMatrix<T> *matrix)
+bool ExtendableSquareMatrix<T>::isAntisymetric(void)
 {
-    size_t size = matrix->size();
+    size_t size = this->size();
     for(size_t i = 0; i < size; ++i)
     {
         for(size_t j = 0; j < size; ++j)
         {
             if(i == j) { continue; }
-            if(matrix->get(i, j) && matrix->get(j, i)) { return false; }
+            if(get(i, j) && get(j, i)) { return false; }
         }
     }
     return true;
 }
 
-/** This function checks whether the given matrix is transitive. In this
+/** This function checks whether the matrix is transitive. In this
 * context, the matrix is transitive iff it holds that the input matrix
 * casted to the matrix of booleans (false for zero values of type T, otherwise 
 * true) remains the same if it is multiplied by itself.
 * @brief checks whether the Extendable square matrix is transitive
-* @param matrix input matrix to be checked
-* @return true iff the input matrix is transitive
+* @return true iff the matrix is transitive
 */
 template <typename T>
-bool isTransitive(ExtendableSquareMatrix<T> *matrix)
+bool ExtendableSquareMatrix<T>::isTransitive(void)
 {
-    size_t size = matrix->size();
+    size_t size = this->size();
     for(size_t i = 0; i < size; ++i)
     {
         for(size_t j = 0; j < size; ++j)
@@ -1253,13 +1361,13 @@ bool isTransitive(ExtendableSquareMatrix<T> *matrix)
             bool found = false;
             for(size_t k = 0; k < size; ++k)
             {
-                if(matrix->get(i, k) && matrix->get(k, j)) 
+                if(get(i, k) && get(k, j)) 
                 { 
                     found = true;
                     break; 
                 }
             }
-            if(!found == static_cast<bool>(matrix->get(i, j))) { return false; }
+            if(!found == static_cast<bool>(get(i, j))) { return false; }
         }
     }
     return true;
