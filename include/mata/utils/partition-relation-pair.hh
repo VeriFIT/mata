@@ -195,6 +195,7 @@ typedef struct Partition
         
         // constructors
         Partition(size_t numOfStates, StateBlocks partition = StateBlocks());
+        Partition(const Partition& other);
 
         // sizes of the used vectors
         inline size_t numOfStates(void) const { return m_states.size(); }
@@ -227,9 +228,12 @@ typedef struct Partition
         // converts the partition to the vector of vectors of states
         StateBlocks partition(void);
         
-        // debug        
+        // operators
+        Partition& operator=(const Partition& other);        
         friend std::ostream& operator<<(std::ostream& os, 
                                         const Partition& p);
+        
+        
             
             
 } Partition; // Partition
@@ -347,6 +351,20 @@ Partition::Partition(size_t numOfStates, StateBlocks partition)
         m_nodes.push_back({.first = m_states[first], .last = m_states[last]});
         m_blocks.push_back({.nodeIdx = numOfBlocks-1});
     }
+}
+
+/**
+* Custom copy constructor which preserves reserved memory for the
+* partition vectors. This method has to be implemented since the custom
+* assignment operator is also implemented. The preservation of the reserved
+* memory is provided by the custom assignment operator=.
+* @brief copy constructor of the Partition
+* @param other partition which will be copied
+*/
+Partition::Partition(const Partition& other)
+{
+    // using the custom assignment operator
+    *this = other;
 }
 
 
@@ -704,6 +722,44 @@ std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
     return split;
 }
 
+/**
+* Custom assignment operator which preserves reserved capacities for the
+* partition vectors
+* @brief assignment of the partition
+* @param other partition which will be copied
+* @return modified partition
+*/
+Partition& Partition::operator=(const Partition& other)
+{
+    // since the default copying of the vectors do not preserve
+    // reserved capacity, we need to reserve it manually and
+    // then insert elements of the other partition to the reserved space
+    // if we want to keep the former capacity
+    m_states.reserve(other.numOfStates());
+    m_blockItems.reserve(other.numOfStates());
+    m_blocks.reserve(other.numOfStates());
+    m_nodes.reserve(2 * other.numOfStates() - 1);
+    
+    // copying vectors without losing information about reserved capacity
+    size_t statesNum = other.numOfStates();
+    for(size_t i = 0; i < statesNum; ++i)
+    {
+        m_states.push_back(other.getBlockItemIdxFromState(i));
+        m_blockItems.push_back(other.getBlockItem(i));
+    }
+    size_t blocksNum = other.numOfBlocks();
+    for(size_t i = 0; i < blocksNum; ++i)
+    {
+        m_blocks.push_back(other.getBlock(i));
+    }
+    size_t nodesNum = other.numOfNodes();
+    for(size_t i = 0; i < nodesNum; ++i)
+    {
+        m_nodes.push_back(other.getNode(i));
+    }
+    return *this;
+}
+
 // debugging function which allows us to print text representation of
 // the partition
 std::ostream& operator<<(std::ostream& os, const Partition& p)
@@ -974,7 +1030,7 @@ template <typename T>
 inline void CascadeSquareMatrix<T>::extend(T placeholder)
 {
     assert(this->m_size < this->m_capacity 
-          && "The matrix cannot be extened anymore");
+          && "The matrix cannot be extended anymore");
 
     // allocation of 2 * size + 1 new data cells
     data.insert(data.end(), 2 * this->m_size + 1, placeholder);

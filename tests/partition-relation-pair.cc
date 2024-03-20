@@ -182,7 +182,58 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.numOfNodes() == 19);
         CHECK(p.getBlockIdxFromState(0) == 0);
         CHECK(p.getBlockIdxFromState(9) == 7);
-    }    
+    }
+    
+    SECTION("Custom copying and assigning")
+    {
+        Partition p = Partition(5, {{2, 3}});
+        p.splitBlocks({0});
+        
+        Partition q = p;
+        Partition r = Partition(p);
+        
+        CHECK(p.numOfStates() == q.numOfStates());
+        CHECK(p.numOfStates() == r.numOfStates());
+        CHECK(p.numOfBlockItems() == q.numOfBlockItems());
+        CHECK(p.numOfBlockItems() == r.numOfBlockItems());
+        CHECK(p.numOfBlocks() == q.numOfBlocks());
+        CHECK(p.numOfBlocks() == r.numOfBlocks());        
+        CHECK(p.numOfNodes() == q.numOfNodes());
+        CHECK(p.numOfNodes() == r.numOfNodes());          
+         
+        size_t statesNum = p.numOfStates();           
+        size_t blocksNum = p.numOfBlocks();
+        size_t nodesNum = p.numOfNodes();
+        
+        for(size_t i = 0; i < statesNum; ++i)
+        {
+            CHECK(p.getBlockItemIdxFromState(i) == 
+                  q.getBlockItemIdxFromState(i));
+            CHECK(p.getBlockItemIdxFromState(i) ==
+                  r.getBlockItemIdxFromState(i));
+            CHECK(p.getBlockItem(i).state == q.getBlockItem(i).state);
+            CHECK(p.getBlockItem(i).state == r.getBlockItem(i).state);           
+            CHECK(p.getBlockItem(i).blockIdx == q.getBlockItem(i).blockIdx);
+            CHECK(p.getBlockItem(i).blockIdx == r.getBlockItem(i).blockIdx);
+        }
+         
+        for(size_t i = 0; i < blocksNum; ++i)
+        {
+            CHECK(p.getBlock(i).nodeIdx == q.getBlock(i).nodeIdx);
+            CHECK(p.getBlock(i).nodeIdx == r.getBlock(i).nodeIdx);           
+        } 
+          
+        for(size_t i = 0; i < nodesNum; ++i)
+        {
+            CHECK(p.getNode(i).first == q.getNode(i).first);
+            CHECK(p.getNode(i).first == r.getNode(i).first);           
+            CHECK(p.getNode(i).last == q.getNode(i).last);
+            CHECK(p.getNode(i).last == r.getNode(i).last);
+        }
+                                     
+        q.splitBlocks({1, 2});
+        r.splitBlocks({1, 2}); 
+    }  
 
 }
 
