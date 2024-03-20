@@ -215,6 +215,9 @@ The usage of the binding copies (to certain levels) the usage of the C++ library
 
 You can either run your scripts directly using `python` or compile it using the `cython` project.
 
+# Publications
+- Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.48550/arXiv.2310.10136). arXiv preprint arXiv:2310.10136.
+
 # Contributing
 
 If you'd like to contribute to the libmata, 
