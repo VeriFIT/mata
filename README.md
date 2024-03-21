@@ -217,6 +217,7 @@ You can either run your scripts directly using `python` or compile it using the 
 
 # Publications
 - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., & Síč, J. (2023). [Mata, a Fast and Simple Finite Automata Library](https://doi.org/10.48550/arXiv.2310.10136). arXiv preprint arXiv:2310.10136.
+    - Chocholatý, D., Fiedor, T., Havlena, V., Holík, L., Hruška, M., Lengál, O., Síč, J.: [A replication package for reproducing the results of paper “Mata: A fast and simple finite automata library”](https://doi.org/10.5281/zenodo.10044515) (Oct 2023).
 
 # Contributing
 
