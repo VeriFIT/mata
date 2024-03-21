@@ -194,7 +194,8 @@ typedef struct Partition
     public:
         
         // constructors
-        Partition(size_t numOfStates, StateBlocks partition = StateBlocks());
+        Partition(size_t numOfStates, 
+                  const StateBlocks& partition = StateBlocks());
         Partition(const Partition& other);
 
         // sizes of the used vectors
@@ -204,11 +205,11 @@ typedef struct Partition
         inline size_t numOfNodes(void) const { return m_nodes.size(); }
         
         // blocks splitting        
-        std::vector<SplitPair> splitBlocks(std::vector<State> marked);
+        std::vector<SplitPair> splitBlocks(const std::vector<State>& marked);
         
         // basic information about the partition
         inline bool inSameBlock(State first, State second) const;
-        bool inSameBlock(std::vector<State> states) const;
+        bool inSameBlock(const std::vector<State>& states) const;
         std::vector<State> statesInSameBlock(State state) const;
       
         // accessing blockItems, blocks, nodes through indices       
@@ -258,7 +259,7 @@ typedef struct Partition
 * @param partition optional initial partition in the form of vectors of
 *        vectors of states
 */
-Partition::Partition(size_t numOfStates, StateBlocks partition)
+Partition::Partition(size_t numOfStates, const StateBlocks& partition)
 {
     // reserving memory space to avoid moving extended vectors
     m_states.reserve(numOfStates);
@@ -508,7 +509,7 @@ inline bool Partition::inSameBlock(State first, State second) const
 * @param states vector of states to be checked
 * @return true iff all of the given states belong to the same partition block
 */
-bool Partition::inSameBlock(std::vector<State> states) const
+bool Partition::inSameBlock(const std::vector<State>& states) const
 {
     if(states.empty()) { return true; }
     size_t blockIdx = getBlockIdxFromState(states.front());
@@ -599,7 +600,7 @@ StateBlocks Partition::partition(void)
 * @param marked marked states which influence splitting
 * @return vector of SplitPair which contains information about split blocks
 */
-std::vector<SplitPair> Partition::splitBlocks(std::vector<State> marked)
+std::vector<SplitPair> Partition::splitBlocks(const std::vector<State>& marked)
 {
     // the vector which will be returned as the result
     std::vector<SplitPair> split{};
