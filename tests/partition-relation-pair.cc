@@ -361,9 +361,9 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(m2->get(1, 1) == c2->get(1, 1));
         CHECK(m3->get(1, 1) == c3->get(1, 1));
 
-        c1 = copy<char>(m1);
-        c2 = copy<char>(m2);
-        c3 = copy<char>(m3);
+        c1 = m1->clone();
+        c2 = m2->clone();
+        c3 = m3->clone();
 
         m1->set(0, 1, true);
         m2->set(0, 1, true);

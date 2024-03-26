@@ -840,11 +840,12 @@ std::ostream& operator<<(std::ostream& os, const Partition& p)
  * which inherits from this abstract structure should:
  * - contain the storage for data of datatype T which represents n x n matrix 
  * - implement methods set, get and extend
+ * - implement a method clone which creates a deep copy of a matrix
  * Then, the ExtendableSquareMatrix can be used independently of the inner
  * representation of the matrix. Therefore, one can dynamically choose from
  * various of implementations depending on the situation. If any new 
- * substructure is implemented, one should also modify 'create' and 'copy' 
- * functions and extend 'MatrixType' enumerator.
+ * substructure is implemented, one should also modify the 'create' 
+ * function and extend 'MatrixType' enumerator.
  *
  * Note that in context of an n x n matrix, this implementation uses the word
  * 'size' to refer to the number n (number of rows or columns). The word 
@@ -872,6 +873,7 @@ struct ExtendableSquareMatrix
 
     public:
 
+
         // getters
         inline size_t size(void) const { return m_size; }
         inline size_t capacity(void) const { return m_capacity; }
@@ -882,6 +884,9 @@ struct ExtendableSquareMatrix
         virtual inline void set(size_t i, size_t j, T value = T()) = 0;
         virtual inline T get(size_t i, size_t j) const = 0;
         virtual inline void extend(T placeholder = T()) = 0;
+
+        // cloning
+        virtual ExtendableSquareMatrix<T> *clone(void) const = 0;
         
         virtual ~ExtendableSquareMatrix() = default;
         
@@ -961,11 +966,19 @@ struct CascadeSquareMatrix : public ExtendableSquareMatrix<T>
     
         // constructors
         CascadeSquareMatrix(size_t maxRows, size_t initRows = 0);
+        CascadeSquareMatrix(const CascadeSquareMatrix& other);
         
         // implemented virtual functions
         inline void set(size_t i, size_t j, T value) override;
         inline T get(size_t i, size_t j) const override;
         inline void extend(T placeholder = T()) override;
+        
+        // cloning
+        CascadeSquareMatrix *clone(void) const 
+            { return new CascadeSquareMatrix<T>(*this); }
+            
+        // operators
+        CascadeSquareMatrix<T>& operator=(const CascadeSquareMatrix<T>& other);
         
 };
 
@@ -988,6 +1001,18 @@ CascadeSquareMatrix<T>::CascadeSquareMatrix
     // creating the initial size and filling the data cells with
     // default values
     for(size_t i = 0; i < initRows; ++i) {extend();}
+}
+
+/** This method provides a way to create a copy of a given CascadeSquareMatrix
+* and preserves the reserved capacity of the vector 'data'. This goal is
+* achieved using the custom assignment operator.
+* @brief copy constructor of a CascadeSquareMatrix
+* @param other matrix which should be copied
+*/
+template <typename T>
+CascadeSquareMatrix<T>::CascadeSquareMatrix(const CascadeSquareMatrix<T>& other)
+{
+    *this = other;
 }
 
 /**
@@ -1040,6 +1065,33 @@ inline void CascadeSquareMatrix<T>::extend(T placeholder)
     ++this->m_size;
 }
 
+/** This method provides a way to assign a CascadeSquareMatrix to the variable. * The method ensure us to keep the reserved capacity of the vector 'data' since * the default vector assignment do not preserve it.
+* @brief assignment operator for the CascadeSquareMatrix structure
+* @param other matrix which should be copied assigned
+*/
+template <typename T>
+CascadeSquareMatrix<T>& CascadeSquareMatrix<T>::operator=
+                     (const CascadeSquareMatrix<T>& other)
+{
+    // initialization of the matrix
+    this->m_capacity = other.capacity();
+    this->m_size = 0;
+    this->data = std::vector<T>();
+    this->data.reserve(this->m_capacity * this->m_capacity);
+    size_t otherSize = other.size();
+    for(size_t i = 0; i < otherSize; ++i) {this->extend();}
+    
+    // copying memory cells
+    for(size_t i = 0; i < this->m_size; ++i)
+    {
+        for(size_t j = 0; j < this->m_size; ++j)
+        {
+            this->set(i, j, other.get(i, j));
+        }
+    }
+    return *this;
+}
+
 /*************************************
 *
 *        DYNAMIC SQUARE MATRIX
@@ -1079,6 +1131,9 @@ struct DynamicSquareMatrix : public ExtendableSquareMatrix<T>
         inline T get(size_t i, size_t j) const override;
         void extend(T placeholder = T()) override;
         
+        // cloning
+        DynamicSquareMatrix *clone(void) const 
+            { return new DynamicSquareMatrix(*this); }
 };
 
 /**
@@ -1185,6 +1240,10 @@ struct HashedSquareMatrix : public ExtendableSquareMatrix<T>
         inline void set(size_t i, size_t j, T value) override;
         inline T get(size_t i, size_t j) const override;
         inline void extend(T placeholder = T()) override;
+
+        // cloning
+        HashedSquareMatrix *clone(void) const 
+            { return new HashedSquareMatrix(*this); }
         
 };
 
@@ -1290,53 +1349,6 @@ ExtendableSquareMatrix<T> *create(MatrixType type,
         default:
             return nullptr;
     }
-}
-
-/**
-* @brief creates a deep copy of the given ExtendableSquareMatrix
-* @param matrix input matrix which should be copied
-* @return pointer to the newly created matrix
-*/
-template <typename T>
-ExtendableSquareMatrix<T> *copy(ExtendableSquareMatrix<T> *matrix)
-{
-    ExtendableSquareMatrix<T> *newMatrix = nullptr;
-    size_t size = matrix->size();
-    
-    switch(matrix->type())
-    {
-        case MatrixType::Cascade:
-
-            // since a default copy of a vector does not preserve its reserved
-            // capacity, we need to explicitly create new matrix 
-            // with the former capacity
-            newMatrix = create<T>(Cascade, matrix->capacity(), matrix->size());
-            
-            // copying of the data
-            for(size_t i = 0; i < size; ++i)
-            {
-                for(size_t j = 0; j < size; ++j)
-                {
-                    newMatrix->set(i, j, matrix->get(i, j));
-                }
-            }
-            break;
-        
-        case MatrixType::Dynamic:
-            newMatrix = new DynamicSquareMatrix<T>
-                        (*dynamic_cast<DynamicSquareMatrix<T>*>(matrix));
-            break;
-        
-        case MatrixType::Hashed:
-            newMatrix = new HashedSquareMatrix<T>
-                        (*dynamic_cast<HashedSquareMatrix<T>*>(matrix));
-            break;
-        
-        default:
-            newMatrix = nullptr;
-            break;
-    }
-    return newMatrix;
 }
 
 // debugging function which allows us to print text representation of
