@@ -1065,7 +1065,8 @@ inline void CascadeSquareMatrix<T>::extend(T placeholder)
     ++this->m_size;
 }
 
-/** This method provides a way to assign a CascadeSquareMatrix to the variable. * The method ensure us to keep the reserved capacity of the vector 'data' since * the default vector assignment do not preserve it.
+/** This method provides a way to assign a CascadeSquareMatrix to the variable.
+* The method ensure us to keep the reserved capacity of the vector 'data' since * the default vector assignment do not preserve it.
 * @brief assignment operator for the CascadeSquareMatrix structure
 * @param other matrix which should be copied assigned
 */
