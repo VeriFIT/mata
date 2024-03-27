@@ -17,8 +17,7 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.inSameBlock(0, 1));
         CHECK(p.inSameBlock(1, 8));
         CHECK(p.inSameBlock({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-        for(size_t i = 0; i < 10; ++i)
-        {
+        for(size_t i = 0; i < 10; ++i) {       
             CHECK(p.getBlockItemIdxFromState(i) == i);
             CHECK(p.getBlockIdxFromState(i) == 0);
             CHECK(p.getNodeIdxFromState(i) == 0);
@@ -94,8 +93,7 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(!p.inSameBlock(1, 4));
         CHECK(p.inSameBlock({3, 4, 5}));
         CHECK(!p.inSameBlock({2, 3, 4, 5}));
-        for(size_t i = 0; i <= 5; ++i)
-        {
+        for(size_t i = 0; i <= 5; ++i) {
             CHECK(p.getBlockItemIdxFromState(i) == i);
             CHECK(p.getBlockItem(i).state == i);
         }
@@ -205,8 +203,7 @@ TEST_CASE("mata::utils::Partition") {
         size_t blocksNum = p.numOfBlocks();
         size_t nodesNum = p.numOfNodes();
         
-        for(size_t i = 0; i < statesNum; ++i)
-        {
+        for(size_t i = 0; i < statesNum; ++i) {
             CHECK(p.getBlockItemIdxFromState(i) == 
                   q.getBlockItemIdxFromState(i));
             CHECK(p.getBlockItemIdxFromState(i) ==
@@ -217,14 +214,12 @@ TEST_CASE("mata::utils::Partition") {
             CHECK(p.getBlockItem(i).blockIdx == r.getBlockItem(i).blockIdx);
         }
          
-        for(size_t i = 0; i < blocksNum; ++i)
-        {
+        for(size_t i = 0; i < blocksNum; ++i) {
             CHECK(p.getBlock(i).nodeIdx == q.getBlock(i).nodeIdx);
             CHECK(p.getBlock(i).nodeIdx == r.getBlock(i).nodeIdx);           
         } 
           
-        for(size_t i = 0; i < nodesNum; ++i)
-        {
+        for(size_t i = 0; i < nodesNum; ++i) {
             CHECK(p.getNode(i).first == q.getNode(i).first);
             CHECK(p.getNode(i).first == r.getNode(i).first);           
             CHECK(p.getNode(i).last == q.getNode(i).last);
@@ -242,8 +237,8 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
 
     SECTION("CascadeSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
-                                                   (Cascade, 5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>(
+                                                       Cascade, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
@@ -276,8 +271,8 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         
     SECTION("DynamicSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
-                                                   (Dynamic, 5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>(
+                                                       Dynamic, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
@@ -310,8 +305,8 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         
     SECTION("HashedSquareMatrix") {
 
-        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>
-                                                   (Hashed, 5, 2);
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>(
+                                                       Hashed, 5, 2);
         CHECK(e->size() == 2);
         CHECK(e->capacity() == 5);
         e->extend();
