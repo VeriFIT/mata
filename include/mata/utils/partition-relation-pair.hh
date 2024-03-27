@@ -634,7 +634,7 @@ std::vector<SplitPair> Partition::split_blocks(
         
         // choosing the strategy of swapping BlocksItems such that
         // the representant of split block keeps its position        
-        bool reprMarked = used_states[get_block_item(
+        bool repr_marked = used_states[get_block_item(
                             get_repr_idx_from_node_idx(node_idx)).state];
 
         // We access the first and last element of the subvector of BlockItems
@@ -646,11 +646,11 @@ std::vector<SplitPair> Partition::split_blocks(
         // to iterate through the BlockItems meet somewhere in the middle
         while(iter_first <= iter_last) {
             // we choose the swapping strategy using XOR operation
-            while(reprMarked ^ !used_states[get_block_item(iter_first).state]) {
+            while(repr_marked ^ !used_states[get_block_item(iter_first).state]) {
                 // this visited state will be part of the former block
                 ++iter_first;
             }
-            while(reprMarked ^ used_states[get_block_item(iter_last).state]) {
+            while(repr_marked ^ used_states[get_block_item(iter_last).state]) {
                 // this visited state will be part of the new block
                 block_items_[iter_last].block_idx = new_block_idx;
                 --iter_last;
