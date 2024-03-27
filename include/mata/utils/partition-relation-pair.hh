@@ -19,9 +19,9 @@
  *  Thus, (P, Rel) corresponds to a preorder relation R over states S.
  *  
  *  This file provides implementation of a partition P and defines the
- *  ExtendableSquareMatrix structure which can be used to represent 
+ *  ExtendableSquareMatrix class which can be used to represent 
  *  the binary relation Rel. 
- *  These structures can be combined to represent the preorder R.
+ *  These classes can be combined to represent the preorder R.
  *
  *  @author Tomáš Kocourek
  */
@@ -177,7 +177,7 @@ using SplitPair = struct SplitPair {
  *                |                                                   |
  *                ----------------------------------------------------
  * 
- *  Using this structure, we can:
+ *  Using this class, we can:
  *  - find the block which contains given state in O(1)
  *  - find a representative state of the given block in O(1)
  *  - test whether two states share the same block in O(1)
@@ -188,7 +188,7 @@ using SplitPair = struct SplitPair {
  *  - remember all ancestors of current blocks and access them
  *
  */
-typedef struct Partition {
+class Partition {
     private:
         
         /* indices to the block_items_ vector */
@@ -251,9 +251,9 @@ typedef struct Partition {
         
             
             
-} Partition; // Partition
+}; // Partition
 
-/** Constructor of the partition structure. This method reserves memory space
+/** Constructor of the partition object. This method reserves memory space
 * for the vectors used to represent partition to ensure us that they won't
 * ever be moved in the memory when extended.
 * The partition can be initialized in linear time (in respect to the carrier
@@ -794,26 +794,26 @@ std::ostream& operator<<(std::ostream& os, const Partition& p) {
  * @brief interface for extendable square matrix implementations
  *
  * Square matrix "n x n" which can be extended to "(n+1) x (n+1)" matrix
- * if n is less than the maximal capacity. Such structure allows us to
+ * if n is less than the maximal capacity. Such a class allows us to
  * represent binary relations over carrier set with n elements and adjust
  * it to n+1 elements whenever a new element of the carrier set is created
  * (for example when we represent relation over partition and a block of
  * partition is split in two) or matrices of counters etc.
  * 
- * This abstract structure declares methods for accessing elements of the 
+ * This abstract class declares methods for accessing elements of the 
  * matrix, assigning to the cells of matrix and extending the matrix by one row
  * and one column (changing the size). 
  * It defines attributes for maximal capacity (which cannot be changed) and
  * current size.
- * It does not define the data structure for storing data. Each substructure
- * which inherits from this abstract structure should:
+ * It does not define the data structure for storing data. Each subclass
+ * which inherits from this abstract class should:
  * - contain the storage for data of datatype T which represents n x n matrix 
  * - implement methods set, get and extend
  * - implement a method clone which creates a deep copy of a matrix
  * Then, the ExtendableSquareMatrix can be used independently of the inner
  * representation of the matrix. Therefore, one can dynamically choose from
  * various of implementations depending on the situation. If any new 
- * substructure is implemented, one should also modify the 'create' 
+ * subclass is implemented, one should also modify the 'create' 
  * function and extend 'MatrixType' enumerator.
  *
  * Note that in context of an n x n matrix, this implementation uses the word
@@ -826,7 +826,7 @@ std::ostream& operator<<(std::ostream& os, const Partition& p) {
 using MatrixType = enum MatrixType { None, Cascade, Dynamic, Hashed };
 
 template <typename T>
-struct ExtendableSquareMatrix {
+class ExtendableSquareMatrix {
     protected:
         
         // number of rows (or columns) of the current square matrix
@@ -836,7 +836,7 @@ struct ExtendableSquareMatrix {
         size_t capacity_{0};
         
         // type of the matrix which will be chosen as soon as the
-        // child structure will be created
+        // child class will be created
         MatrixType m_type{MatrixType::None};
 
     public:
@@ -846,7 +846,7 @@ struct ExtendableSquareMatrix {
         inline size_t capacity(void) const { return capacity_; }
         inline size_t type(void) const { return m_type; }
         
-        // virtual functions which will be implemented in the substructures
+        // virtual functions which will be implemented in the subclasses
         // according to the concrete representation of the matrix
         virtual inline void set(size_t i, size_t j, T value = T()) = 0;
         virtual inline T get(size_t i, size_t j) const = 0;
@@ -862,7 +862,7 @@ struct ExtendableSquareMatrix {
         bool is_antisymetric(void);
         bool is_transitive(void);
                 
-};
+}; // ExtendableSquareMatrix
 
 /*************************************
 *
@@ -922,7 +922,7 @@ struct ExtendableSquareMatrix {
  *
 **/
 template <typename T>
-struct CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
+class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
  
         // data are stored in a single vector
@@ -946,7 +946,7 @@ struct CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         // operators
         CascadeSquareMatrix<T>& operator=(const CascadeSquareMatrix<T>& other);
         
-};
+}; // CascadeSquareMatrix
 
 /**
 * @brief creates a Cascade square matrix
@@ -1032,7 +1032,7 @@ inline void CascadeSquareMatrix<T>::extend(T placeholder) {
 /** This method provides a way to assign a CascadeSquareMatrix to the variable.
 * The method ensures us to keep the reserved capacity of the vector 'data_' 
 * since the default vector assignment does not preserve it.
-* @brief assignment operator for the CascadeSquareMatrix structure
+* @brief assignment operator for the CascadeSquareMatrix class
 * @param other matrix which should be copied assigned
 */
 template <typename T>
@@ -1078,7 +1078,7 @@ CascadeSquareMatrix<T>& CascadeSquareMatrix<T>::operator=(
  * extended, it could possibly be moved in the memory.
 **/
 template <typename T>
-struct DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
+class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
  
         // data are stored in a single vector
@@ -1097,7 +1097,8 @@ struct DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         // cloning
         DynamicSquareMatrix *clone(void) const { 
             return new DynamicSquareMatrix(*this); }
-};
+
+}; // DynamicSquareMatrix
 
 /**
 * @brief creates a Dynamic square matrix
@@ -1183,7 +1184,7 @@ void DynamicSquareMatrix<T>::extend(T placeholder) {
  * matrix. To access matrix[i][j], we use map[i * capacity + j].
 **/
 template <typename T>
-struct HashedSquareMatrix : public ExtendableSquareMatrix<T> {
+class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
 
         // data are stored in a hashmap
@@ -1203,7 +1204,7 @@ struct HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         HashedSquareMatrix *clone(void) const { 
             return new HashedSquareMatrix(*this); }
         
-};
+}; // HashedSquareMatrix
 
 /**
 * @brief creates a Hashed square matrix
