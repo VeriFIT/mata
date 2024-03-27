@@ -211,34 +211,32 @@ class Partition {
         Partition(const Partition& other);
 
         // sizes of the used vectors
-        inline size_t num_of_states(void) const { return states_.size(); }
-        inline size_t num_of_block_items(void) const {
-            return block_items_.size();}
-        inline size_t num_of_blocks(void) const { return blocks_.size(); }
-        inline size_t num_of_nodes(void) const { return nodes_.size(); }
+        size_t num_of_states(void) const { return states_.size(); }
+        size_t num_of_block_items(void) const { return block_items_.size(); }
+        size_t num_of_blocks(void) const { return blocks_.size(); }
+        size_t num_of_nodes(void) const { return nodes_.size(); }
         
         // blocks splitting        
         std::vector<SplitPair> split_blocks(const std::vector<State>& marked);
         
         // basic information about the partition
-        inline bool in_same_block(State first, State second) const;
+        bool in_same_block(State first, State second) const;
         bool in_same_block(const std::vector<State>& states) const;
         std::vector<State> states_in_same_block(State state) const;
       
         // accessing blockItems, blocks, nodes through indices       
-        inline BlockItem get_block_item(size_t block_item_idx) const;
-        inline Block get_block(size_t block_idx) const;
-        inline Node get_node(size_t node_idx) const;
+        BlockItem get_block_item(size_t block_item_idx) const;
+        Block get_block(size_t block_idx) const;
+        Node get_node(size_t node_idx) const;
         
         // refering between blockItems, blocks, nodes using indices        
-        inline size_t get_block_idx_from_state(State state) const;
-        inline size_t get_node_idx_from_state(State state) const;
-        inline size_t get_block_item_idx_from_state(State state) const;
-        inline size_t get_node_idx_from_block_item_idx(
-            size_t block_item_idx) const;
-        inline size_t get_node_idx_from_block_idx(size_t block_idx) const;
-        inline size_t get_repr_idx_from_block_idx(size_t block_idx) const;
-        inline size_t get_repr_idx_from_node_idx(size_t node_idx) const;  
+        size_t get_block_idx_from_state(State state) const;
+        size_t get_node_idx_from_state(State state) const;
+        size_t get_block_item_idx_from_state(State state) const;
+        size_t get_node_idx_from_block_item_idx(size_t block_item_idx) const;
+        size_t get_node_idx_from_block_idx(size_t block_idx) const;
+        size_t get_repr_idx_from_block_idx(size_t block_idx) const;
+        size_t get_repr_idx_from_node_idx(size_t node_idx) const;  
         
         // converts the partition to the vector of vectors of states
         StateBlocks partition(void);
@@ -380,7 +378,7 @@ Partition::Partition(const Partition& other) {
 * @param block_item_idx index of the BlockItem
 * @return corresponding BlockItem
 */
-inline BlockItem Partition::get_block_item(size_t block_item_idx) const {
+BlockItem Partition::get_block_item(size_t block_item_idx) const {
     assert(block_item_idx < num_of_block_items() &&
            "Nonexisting block item index used.");    
     return block_items_[block_item_idx];
@@ -391,7 +389,7 @@ inline BlockItem Partition::get_block_item(size_t block_item_idx) const {
 * @param block_idx index of the block
 * @return corresponding block
 */
-inline Block Partition::get_block(size_t block_idx) const {
+Block Partition::get_block(size_t block_idx) const {
     assert(block_idx < num_of_blocks() && "Nonexisting block index used.");    
     return blocks_[block_idx];
 }
@@ -401,7 +399,7 @@ inline Block Partition::get_block(size_t block_idx) const {
 * @param node_idx index of the node
 * @return corresponding node
 */
-inline Node Partition::get_node(size_t node_idx) const {
+Node Partition::get_node(size_t node_idx) const {
     assert(node_idx < num_of_nodes() && "Nonexisting node index used.");    
     return nodes_[node_idx];
 }
@@ -411,7 +409,7 @@ inline Node Partition::get_node(size_t node_idx) const {
 * @param state given state
 * @return corresponding block index
 */
-inline size_t Partition::get_block_idx_from_state(State state) const {
+size_t Partition::get_block_idx_from_state(State state) const {
     assert(state < num_of_states() && "Nonexisting state name used.");            
     return block_items_[states_[state]].block_idx;
 }
@@ -421,7 +419,7 @@ inline size_t Partition::get_block_idx_from_state(State state) const {
 * @param state given state
 * @return corresponding node index
 */
-inline size_t Partition::get_node_idx_from_state(State state) const {
+size_t Partition::get_node_idx_from_state(State state) const {
     assert(state < num_of_states() && "Nonexisting state name used.");           
     return blocks_[block_items_[states_[state]].block_idx].node_idx;
 }
@@ -431,7 +429,7 @@ inline size_t Partition::get_node_idx_from_state(State state) const {
 * @param state given state
 * @return corresponding BlockItem index
 */
-inline size_t Partition::get_block_item_idx_from_state(State state) const {
+size_t Partition::get_block_item_idx_from_state(State state) const {
     assert(state < num_of_states() && "Nonexisting state name used.");           
     return states_[state];
 }
@@ -441,7 +439,7 @@ inline size_t Partition::get_block_item_idx_from_state(State state) const {
 * @param block_item_idx BlockItem index
 * @return corresponding node index
 */
-inline size_t Partition::get_node_idx_from_block_item_idx(
+size_t Partition::get_node_idx_from_block_item_idx(
     size_t block_item_idx) const {
 
     assert(block_item_idx < num_of_block_items() &&
@@ -454,7 +452,7 @@ inline size_t Partition::get_node_idx_from_block_item_idx(
 * @param block_idx given block index
 * @return corresponding node index
 */
-inline size_t Partition::get_node_idx_from_block_idx(size_t block_idx) const {
+size_t Partition::get_node_idx_from_block_idx(size_t block_idx) const {
     assert(block_idx < num_of_blocks() && "Nonexisting block index used.");
     return blocks_[block_idx].node_idx;
 }
@@ -465,7 +463,7 @@ inline size_t Partition::get_node_idx_from_block_idx(size_t block_idx) const {
 * @param block_idx given block index
 * @return first blockItem index corresponding to the given block index
 */
-inline size_t Partition::get_repr_idx_from_block_idx(size_t block_idx) const {
+size_t Partition::get_repr_idx_from_block_idx(size_t block_idx) const {
     assert(block_idx < num_of_blocks() && "Nonexisting block index used.");
     return nodes_[blocks_[block_idx].node_idx].first;
 }
@@ -475,7 +473,7 @@ inline size_t Partition::get_repr_idx_from_block_idx(size_t block_idx) const {
 * @param node_idx given node index
 * @return first blockItem index corresponding to the given node index
 */
-inline size_t Partition::get_repr_idx_from_node_idx(size_t node_idx) const {
+size_t Partition::get_repr_idx_from_node_idx(size_t node_idx) const {
     assert(node_idx < num_of_nodes() && "Nonexisting node index used.");
     return nodes_[node_idx].first;
 }
@@ -487,7 +485,7 @@ inline size_t Partition::get_repr_idx_from_node_idx(size_t node_idx) const {
 * @param second second state to be checked
 * @return true iff both given states belong to the same partition block
 */
-inline bool Partition::in_same_block(State first, State second) const {
+bool Partition::in_same_block(State first, State second) const {
     assert(first < states_.size() && "The given state does not exist");
     assert(second < states_.size() && "The given state does not exist");
     return get_block_idx_from_state(first) == get_block_idx_from_state(second);
@@ -646,7 +644,8 @@ std::vector<SplitPair> Partition::split_blocks(
         // to iterate through the BlockItems meet somewhere in the middle
         while(iter_first <= iter_last) {
             // we choose the swapping strategy using XOR operation
-            while(repr_marked ^ !used_states[get_block_item(iter_first).state]) {
+            while(repr_marked 
+                  ^ !used_states[get_block_item(iter_first).state]) {
                 // this visited state will be part of the former block
                 ++iter_first;
             }
@@ -842,15 +841,15 @@ class ExtendableSquareMatrix {
     public:
 
         // getters
-        inline size_t size(void) const { return size_; }
-        inline size_t capacity(void) const { return capacity_; }
-        inline size_t type(void) const { return m_type; }
+        size_t size(void) const { return size_; }
+        size_t capacity(void) const { return capacity_; }
+        size_t type(void) const { return m_type; }
         
         // virtual functions which will be implemented in the subclasses
         // according to the concrete representation of the matrix
-        virtual inline void set(size_t i, size_t j, T value = T()) = 0;
-        virtual inline T get(size_t i, size_t j) const = 0;
-        virtual inline void extend(T placeholder = T()) = 0;
+        virtual void set(size_t i, size_t j, T value = T()) = 0;
+        virtual T get(size_t i, size_t j) const = 0;
+        virtual void extend(T placeholder = T()) = 0;
 
         // cloning
         virtual ExtendableSquareMatrix<T> *clone(void) const = 0;
@@ -935,9 +934,9 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         CascadeSquareMatrix(const CascadeSquareMatrix& other);
         
         // implemented virtual functions
-        inline void set(size_t i, size_t j, T value) override;
-        inline T get(size_t i, size_t j) const override;
-        inline void extend(T placeholder = T()) override;
+        void set(size_t i, size_t j, T value) override;
+        T get(size_t i, size_t j) const override;
+        void extend(T placeholder = T()) override;
         
         // cloning
         CascadeSquareMatrix *clone(void) const { 
@@ -989,7 +988,7 @@ CascadeSquareMatrix<T>::CascadeSquareMatrix(
 * @param value value to be assigned to the square matrix data cell
 */
 template <typename T>
-inline void CascadeSquareMatrix<T>::set(size_t i, size_t j, T value) {
+void CascadeSquareMatrix<T>::set(size_t i, size_t j, T value) {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
@@ -1004,7 +1003,7 @@ inline void CascadeSquareMatrix<T>::set(size_t i, size_t j, T value) {
 * @return value found in the square matrix data cell
 */
 template <typename T>
-inline T CascadeSquareMatrix<T>::get(size_t i, size_t j) const {
+T CascadeSquareMatrix<T>::get(size_t i, size_t j) const {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
 
@@ -1018,7 +1017,7 @@ inline T CascadeSquareMatrix<T>::get(size_t i, size_t j) const {
 * (optional)
 */
 template <typename T>
-inline void CascadeSquareMatrix<T>::extend(T placeholder) {
+void CascadeSquareMatrix<T>::extend(T placeholder) {
     assert(this->size_ < this->capacity_ 
            && "The matrix cannot be extended anymore");
 
@@ -1090,8 +1089,8 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         DynamicSquareMatrix(size_t max_rows, size_t init_rows = 0);
         
         // implemented virtual functions
-        inline void set(size_t i, size_t j, T value) override;
-        inline T get(size_t i, size_t j) const override;
+        void set(size_t i, size_t j, T value) override;
+        T get(size_t i, size_t j) const override;
         void extend(T placeholder = T()) override;
         
         // cloning
@@ -1127,7 +1126,7 @@ DynamicSquareMatrix<T>::DynamicSquareMatrix(
 * @param value value to be assigned to the square matrix data cell
 */
 template <typename T>
-inline T DynamicSquareMatrix<T>::get(size_t i, size_t j) const {
+T DynamicSquareMatrix<T>::get(size_t i, size_t j) const {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
@@ -1141,7 +1140,7 @@ inline T DynamicSquareMatrix<T>::get(size_t i, size_t j) const {
 * @return value found in the square matrix data cell
 */
 template <typename T>
-inline void DynamicSquareMatrix<T>::set(size_t i, size_t j, T value) {
+void DynamicSquareMatrix<T>::set(size_t i, size_t j, T value) {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
@@ -1196,9 +1195,9 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         HashedSquareMatrix(size_t max_rows, size_t init_rows = 0);
         
         // implemented virtual functions        
-        inline void set(size_t i, size_t j, T value) override;
-        inline T get(size_t i, size_t j) const override;
-        inline void extend(T placeholder = T()) override;
+        void set(size_t i, size_t j, T value) override;
+        T get(size_t i, size_t j) const override;
+        void extend(T placeholder = T()) override;
 
         // cloning
         HashedSquareMatrix *clone(void) const { 
@@ -1233,7 +1232,7 @@ HashedSquareMatrix<T>::HashedSquareMatrix(
 * @param value value to be assigned to the square matrix data cell
 */
 template <typename T>
-inline void HashedSquareMatrix<T>::set(size_t i, size_t j, T value) {
+void HashedSquareMatrix<T>::set(size_t i, size_t j, T value) {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
@@ -1248,7 +1247,7 @@ inline void HashedSquareMatrix<T>::set(size_t i, size_t j, T value) {
 * @return value found in the square matrix data cell
 */
 template <typename T>
-inline T HashedSquareMatrix<T>::get(size_t i, size_t j) const {
+T HashedSquareMatrix<T>::get(size_t i, size_t j) const {
     assert(i < this->size_ && "Nonexisting row cannot be accessed");
     assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
@@ -1261,7 +1260,7 @@ inline T HashedSquareMatrix<T>::get(size_t i, size_t j) const {
 * @param placeholder a value which will be assigned to all the new data cells
 */
 template <typename T>
-inline void HashedSquareMatrix<T>::extend(T placeholder) {
+void HashedSquareMatrix<T>::extend(T placeholder) {
     assert(this->size_ < this->capacity_ 
            && "Matrix cannot be extened anymore");
 
