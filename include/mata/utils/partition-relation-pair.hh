@@ -307,7 +307,7 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
             
             // creating a corresponding BlockItem
             states_[state] = block_items_.size();
-            block_items_.push_back({.state = state, .block_idx = block_idx});
+            block_items_.emplace_back(state, block_idx);
             
         }
         
@@ -317,8 +317,8 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
         State last = partition[block_idx].back();
 
         // creating a corresponding block and node
-        nodes_.push_back({.first = states_[first], .last = states_[last]});
-        blocks_.push_back({.node_idx = block_idx});
+        nodes_.emplace_back(states_[first], states_[last]);
+        blocks_.emplace_back(block_idx);
     }
     
     // we need to detect whether there is a state which has not be used
@@ -349,13 +349,13 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
         // creating the new BlockItem
         last = state;
         states_[state] = block_items_.size();
-        block_items_.push_back({.state = state, .block_idx = num_of_blocks-1});
+        block_items_.emplace_back(state, num_of_blocks-1);
     }
     
     // creating a new block and node if there was an unused state
     if(!all_states_used) { 
-        nodes_.push_back({.first = states_[first], .last = states_[last]});
-        blocks_.push_back({.node_idx = num_of_blocks-1});
+        nodes_.emplace_back(states_[first], states_[last]);
+        blocks_.emplace_back(num_of_blocks-1);
     }
 }
 
@@ -681,18 +681,17 @@ std::vector<SplitPair> Partition::split_blocks(
         }
         
         // creating new nodes
-        nodes_.push_back({.first = nodes_[node_idx].first, .last = iter_last});
-        nodes_.push_back({.first = iter_first, .last = nodes_[node_idx].last});
+        nodes_.emplace_back(nodes_[node_idx].first, iter_last);
+        nodes_.emplace_back(iter_first, nodes_[node_idx].last);
         
         // split blocks has to refer to the new nodes
         blocks_[i].node_idx = nodes_.size() - 2;
-        blocks_.push_back({.node_idx = nodes_.size() - 1});
+        blocks_.emplace_back(nodes_.size() - 1);
         
         // since a block has been split, we need to return information about
         // indices of components of split block and about the node which
         // correspond to the block which has been split        
-        split.push_back({.former = i, .created = new_block_idx,
-                         .old_node_idx = node_idx});
+        split.emplace_back(i, new_block_idx, node_idx);
         
         // index of the following block which could be created
         ++new_block_idx;
@@ -1162,7 +1161,7 @@ void DynamicSquareMatrix<T>::extend(T placeholder) {
     }
     
     // creating a new row
-    data_.push_back(std::vector<T>());
+    data_.emplace_back();
     ++this->size_;
     data_.back().insert(data_.back().end(), this->size_, placeholder);
 }
