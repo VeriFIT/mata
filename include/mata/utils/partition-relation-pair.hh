@@ -54,15 +54,21 @@ using StateBlocks = std::vector<StateBlock>;
 using BlockItem = struct BlockItem {
     State state;
     size_t block_idx;
+    
+    BlockItem(State s, size_t idx) : state(s), block_idx(idx) {}
 };
 
 using Block = struct Block {
     size_t node_idx;
+
+    Block(size_t idx) : node_idx(idx) {}
 };
 
 using Node = struct Node {
     size_t first;
     size_t last;
+
+    Node(size_t fst, size_t lst) : first(fst), last(lst) {}
 };
 
 using BlockItems = std::vector<BlockItem>;
@@ -73,6 +79,9 @@ using SplitPair = struct SplitPair {
     size_t former;
     size_t created;
     size_t old_node_idx;
+
+    SplitPair(size_t former, size_t created, size_t idx) : 
+        former(former), created(created), old_node_idx(idx) {}
 };
 
 /**
