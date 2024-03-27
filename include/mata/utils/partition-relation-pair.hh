@@ -53,11 +53,11 @@ using StateBlocks = std::vector<StateBlock>;
 
 using BlockItem = struct BlockItem {
     State state;
-    size_t blockIdx;
+    size_t block_idx;
 };
 
 using Block = struct Block {
-    size_t nodeIdx;
+    size_t node_idx;
 };
 
 using Node = struct Node {
@@ -72,7 +72,7 @@ using Nodes = std::vector<Node>;
 using SplitPair = struct SplitPair {
     size_t former;
     size_t created;
-    size_t oldNodeIdx;
+    size_t old_node_idx;
 };
 
 /**
@@ -85,38 +85,38 @@ using SplitPair = struct SplitPair {
  * interval <0, |S|-1>.
  *
  * STATES:
- * This representation works with the vector of indices 'm_states'
+ * This representation works with the vector of indices 'states_'
  * with the constant size |S|. Each state is represented by an index
  * to that vector so we can refer to a state in constant time using
- * m_states[state].
+ * states_[state].
  *
  * BLOCK ITEMS:
- * The memory cell m_states[state] contains a corresponding index to the 
- * 'm_blockItems' vector. The vector 'm_blockItems' has the constant size |S|.
+ * The memory cell states_[state] contains a corresponding index to the 
+ * 'block_items_' vector. The vector 'block_items_' has the constant size |S|.
  * Each BlockItem contains an index of the corresponding state which means
  * that states and BlockItems are bijectively mapped. In addition, 
  * each BlockItem includes an index to the corresponding partition class 
  * (called block). The ordering of BlockItems satisfies the condition that 
  * the states of the same block should always form a contiguous subvector
  * so one could iterate through states in each block efficiently using 
- * 'm_blockItems' vector.
+ * 'block_items_' vector.
  *
  * BLOCKS:
- * The blocks themselves are represented by the vector 'm_blocks' with the
+ * The blocks themselves are represented by the vector 'blocks_' with the
  * size |P|, where P is a partition of states. Each block can be accessed by
  * its index 0 <= i < |P|. The block can by accessed by its index using 
- * m_blocks[blockIdx]. The block contains only an index of its 
+ * blocks_[block_idx]. The block contains only an index of its 
  * corresponding node. The total number of blocks can be changed as soon as
  * one block is split. However, the maximal number of blocks is equal to |S|
  * (the case when each block contains only one state). When a block 'B' is
  * split in two pieces 'B1' and 'B2', we create a brand new block 'B2' 
  * and modify the former block 'B' such that it will correspond to its
  * subblock 'B1'. The former block 'B' is thus not represented
- * in the 'm_blocks' vector anymore since 'B1' takes over its identity.
+ * in the 'blocks_' vector anymore since 'B1' takes over its identity.
  *
  * NODES:
  * Each node represents a current block or a block which has been split before.
- * The node can by accessed by its index using m_nodes[nodeIdx]. If the given
+ * The node can by accessed by its index using nodes_[node_idx]. If the given
  * node represents an existing block, such block contains an index of that node.
  * In context of nodes which represent former blocks, no block contains their
  * indices. The total number of nodes can be changed as soon as
@@ -150,7 +150,7 @@ using SplitPair = struct SplitPair {
  *
  *             0       1       2       3       4
  *             ------- ------- ------- ------- -------
- *            |   0   |   2   |   1   |   4   |   3   |    m_states
+ *            |   0   |   2   |   1   |   4   |   3   |    states_
  *             ------- ------- ------- ------- -------
  *                ↑          ↑ ↑             ↑ ↑
  *                |          \ /             \ /
@@ -158,19 +158,19 @@ using SplitPair = struct SplitPair {
  *                |          / \             / \
  *             0  ↓    1     ↓ ↓    2   3    ↓ ↓     4
  *             ------- ------- ------- ------- -------
- *            |   0   |   2   |   1   |   4   |   3   |    m_blockItems
+ *            |   0   |   2   |   1   |   4   |   3   |    block_items_
  *       --→→→|-------|-------|-------|-------|--------←←←------------
  *       |    |   0   |   0   |   1   |   1   |   1   |               |
  *       |     ------- ------- ------- ------- -------                |
  *       |        |       |       |       |       |                   |
  *       |     0  ↓       ↓    1  ↓       ↓       ↓                   |
  *       |     ----------------------------------------               |
- *       |    |       1       |            2           |   m_blocks   |
+ *       |    |       1       |            2           |   blocks_    |
  *       |     ----------------------------------------               |
  *       |                |       |                                   |
  *       |     0       1  ↓    2  ↓                                   |
  *       |     ------- ------- -------                                |
- *       -----|   0   |   0   |   2   |   m_nodes                     |
+ *       -----|   0   |   0   |   2   |   nodes_                      |
  *            |-------|-------|-------|                               |
  *            |   4   |   1   |   4   |                               |
  *             ------- ------- -------                                |
@@ -191,52 +191,54 @@ using SplitPair = struct SplitPair {
 typedef struct Partition {
     private:
         
-        /* indices to the m_blockItems vector */
-        std::vector<size_t> m_states{};
+        /* indices to the block_items_ vector */
+        std::vector<size_t> states_{};
         
-        /* indices to the m_states and m_blocks vectors */
-        BlockItems m_blockItems{};
+        /* indices to the states_ and blocks_ vectors */
+        BlockItems block_items_{};
         
-        /* indices to the m_nodes vector */
-        Blocks m_blocks{};
+        /* indices to the nodes_ vector */
+        Blocks blocks_{};
         
-        /* tuples of indices to the m_blockItems vectors */
-        Nodes m_nodes{};
+        /* tuples of indices to the block_items_ vectors */
+        Nodes nodes_{};
             
     public:
         
         // constructors
-        Partition(size_t numOfStates, 
+        Partition(size_t num_of_states, 
                   const StateBlocks& partition = StateBlocks());
         Partition(const Partition& other);
 
         // sizes of the used vectors
-        inline size_t numOfStates(void) const { return m_states.size(); }
-        inline size_t numOfBlockItems(void) const { return m_blockItems.size();}
-        inline size_t numOfBlocks(void) const { return m_blocks.size(); }
-        inline size_t numOfNodes(void) const { return m_nodes.size(); }
+        inline size_t num_of_states(void) const { return states_.size(); }
+        inline size_t num_of_block_items(void) const {
+            return block_items_.size();}
+        inline size_t num_of_blocks(void) const { return blocks_.size(); }
+        inline size_t num_of_nodes(void) const { return nodes_.size(); }
         
         // blocks splitting        
-        std::vector<SplitPair> splitBlocks(const std::vector<State>& marked);
+        std::vector<SplitPair> split_blocks(const std::vector<State>& marked);
         
         // basic information about the partition
-        inline bool inSameBlock(State first, State second) const;
-        bool inSameBlock(const std::vector<State>& states) const;
-        std::vector<State> statesInSameBlock(State state) const;
+        inline bool in_same_block(State first, State second) const;
+        bool in_same_block(const std::vector<State>& states) const;
+        std::vector<State> states_in_same_block(State state) const;
       
         // accessing blockItems, blocks, nodes through indices       
-        inline BlockItem getBlockItem(size_t blockItemIdx) const;
-        inline Block getBlock(size_t blockIdx) const;
-        inline Node getNode(size_t nodeIdx) const;
+        inline BlockItem get_block_item(size_t block_item_idx) const;
+        inline Block get_block(size_t block_idx) const;
+        inline Node get_node(size_t node_idx) const;
         
         // refering between blockItems, blocks, nodes using indices        
-        inline size_t getBlockIdxFromState(State state) const;
-        inline size_t getNodeIdxFromState(State state) const;
-        inline size_t getBlockItemIdxFromState(State state) const;
-        inline size_t getNodeIdxFromBlockItemIdx(size_t blockItemIdx) const;
-        inline size_t getNodeIdxFromBlockIdx(size_t blockIdx) const;
-        inline size_t getReprIdxFromBlockIdx(size_t blockIdx) const;
-        inline size_t getReprIdxFromNodeIdx(size_t nodeIdx) const;  
+        inline size_t get_block_idx_from_state(State state) const;
+        inline size_t get_node_idx_from_state(State state) const;
+        inline size_t get_block_item_idx_from_state(State state) const;
+        inline size_t get_node_idx_from_block_item_idx(
+            size_t block_item_idx) const;
+        inline size_t get_node_idx_from_block_idx(size_t block_idx) const;
+        inline size_t get_repr_idx_from_block_idx(size_t block_idx) const;
+        inline size_t get_repr_idx_from_node_idx(size_t node_idx) const;  
         
         // converts the partition to the vector of vectors of states
         StateBlocks partition(void);
@@ -267,36 +269,36 @@ typedef struct Partition {
 * If there is no initial partition, all states will be assigned 
 * to the same block
 * @brief constructs the partition
-* @param numOfStates cardinality of the carrier set
+* @param num_of_states cardinality of the carrier set
 * @param partition optional initial partition in the form of vectors of
 *        vectors of states
 */
-Partition::Partition(size_t numOfStates, const StateBlocks& partition) {
+Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
     // reserving memory space to avoid moving extended vectors
-    m_states.reserve(numOfStates);
-    m_blockItems.reserve(numOfStates);
-    m_blocks.reserve(numOfStates);
-    m_nodes.reserve(2 * numOfStates - 1);
+    states_.reserve(num_of_states);
+    block_items_.reserve(num_of_states);
+    blocks_.reserve(num_of_states);
+    nodes_.reserve(2 * num_of_states - 1);
 
     // this vector says whether the given state has been already seen
     // in the given initial partition to detect duplicates
     // and to detect unused states
     std::vector<char> used;
-    used.insert(used.end(), numOfStates, false);
+    used.insert(used.end(), num_of_states, false);
     
-    // initialization of the m_states vector
-    m_states.insert(m_states.end(), numOfStates, 0);
+    // initialization of the states_ vector
+    states_.insert(states_.end(), num_of_states, 0);
     
     // creating partition using given initial vector of vectors
-    size_t numOfBlocks = partition.size();
+    size_t num_of_blocks = partition.size();
     // iterating through initial partition blocks
-    for(size_t blockIdx = 0; blockIdx < numOfBlocks; ++blockIdx) {
-        assert(!partition[blockIdx].empty() &&
+    for(size_t block_idx = 0; block_idx < num_of_blocks; ++block_idx) {
+        assert(!partition[block_idx].empty() &&
                "Partition class cannot be empty.");
         
         // iterating through one partition block
-        for(auto state : partition[blockIdx]) {
-            assert(state < numOfStates &&
+        for(auto state : partition[block_idx]) {
+            assert(state < num_of_states &&
                    "Invalid state name detected while creating" 
                    "a partition relation pair.");
             assert(!used[state] && 
@@ -306,24 +308,24 @@ Partition::Partition(size_t numOfStates, const StateBlocks& partition) {
             used[state] = true;
             
             // creating a corresponding BlockItem
-            m_states[state] = m_blockItems.size();
-            m_blockItems.push_back({.state = state, .blockIdx = blockIdx});
+            states_[state] = block_items_.size();
+            block_items_.push_back({.state = state, .block_idx = block_idx});
             
         }
         
         // first and last states of the block will be used to create
         // a corresponding node
-        State first = partition[blockIdx].front();
-        State last = partition[blockIdx].back();
+        State first = partition[block_idx].front();
+        State last = partition[block_idx].back();
 
         // creating a corresponding block and node
-        m_nodes.push_back({.first = m_states[first], .last = m_states[last]});
-        m_blocks.push_back({.nodeIdx = blockIdx});
+        nodes_.push_back({.first = states_[first], .last = states_[last]});
+        blocks_.push_back({.node_idx = block_idx});
     }
     
     // we need to detect whether there is a state which has not be used
     // to create an additional partition block
-    bool allStatesUsed = true;
+    bool all_states_used = true;
     
     // first and last unused states will surround a contiguous subvector
     // of BlockItems
@@ -331,7 +333,7 @@ Partition::Partition(size_t numOfStates, const StateBlocks& partition) {
     State last = 0;
     
     // iterating through the vector of flags saying which states has been seen
-    for(State state = 0; state < numOfStates; ++state) {
+    for(State state = 0; state < num_of_states; ++state) {
         // if a state has been already seen and processed, 
         // there is no need to add it to the additional block
         if(used[state]) {
@@ -340,22 +342,22 @@ Partition::Partition(size_t numOfStates, const StateBlocks& partition) {
         
         // if there is at least one unused state, we need to 
         // create an additional block
-        if(allStatesUsed) {
-            allStatesUsed = false;
+        if(all_states_used) {
+            all_states_used = false;
             first = state;
-            ++numOfBlocks;
+            ++num_of_blocks;
         }
         
         // creating the new BlockItem
         last = state;
-        m_states[state] = m_blockItems.size();
-        m_blockItems.push_back({.state = state, .blockIdx = numOfBlocks-1});
+        states_[state] = block_items_.size();
+        block_items_.push_back({.state = state, .block_idx = num_of_blocks-1});
     }
     
     // creating a new block and node if there was an unused state
-    if(!allStatesUsed) { 
-        m_nodes.push_back({.first = m_states[first], .last = m_states[last]});
-        m_blocks.push_back({.nodeIdx = numOfBlocks-1});
+    if(!all_states_used) { 
+        nodes_.push_back({.first = states_[first], .last = states_[last]});
+        blocks_.push_back({.node_idx = num_of_blocks-1});
     }
 }
 
@@ -375,33 +377,33 @@ Partition::Partition(const Partition& other) {
 
 /**
 * @brief returns a BlockItem corresponding to the given index
-* @param blockItemIdx index of the BlockItem
+* @param block_item_idx index of the BlockItem
 * @return corresponding BlockItem
 */
-inline BlockItem Partition::getBlockItem(size_t blockItemIdx) const {
-    assert(blockItemIdx < numOfBlockItems() &&
+inline BlockItem Partition::get_block_item(size_t block_item_idx) const {
+    assert(block_item_idx < num_of_block_items() &&
            "Nonexisting block item index used.");    
-    return m_blockItems[blockItemIdx];
+    return block_items_[block_item_idx];
 }
 
 /**
 * @brief returns a block corresponding to the given index
-* @param blockIdx index of the block
+* @param block_idx index of the block
 * @return corresponding block
 */
-inline Block Partition::getBlock(size_t blockIdx) const {
-    assert(blockIdx < numOfBlocks() && "Nonexisting block index used.");    
-    return m_blocks[blockIdx];
+inline Block Partition::get_block(size_t block_idx) const {
+    assert(block_idx < num_of_blocks() && "Nonexisting block index used.");    
+    return blocks_[block_idx];
 }
 
 /**
 * @brief returns a node corresponding to the given index
-* @param nodeIdx index of the node
+* @param node_idx index of the node
 * @return corresponding node
 */
-inline Node Partition::getNode(size_t nodeIdx) const {
-    assert(nodeIdx < numOfNodes() && "Nonexisting node index used.");    
-    return m_nodes[nodeIdx];
+inline Node Partition::get_node(size_t node_idx) const {
+    assert(node_idx < num_of_nodes() && "Nonexisting node index used.");    
+    return nodes_[node_idx];
 }
 
 /**
@@ -409,9 +411,9 @@ inline Node Partition::getNode(size_t nodeIdx) const {
 * @param state given state
 * @return corresponding block index
 */
-inline size_t Partition::getBlockIdxFromState(State state) const {
-    assert(state < numOfStates() && "Nonexisting state name used.");            
-    return m_blockItems[m_states[state]].blockIdx;
+inline size_t Partition::get_block_idx_from_state(State state) const {
+    assert(state < num_of_states() && "Nonexisting state name used.");            
+    return block_items_[states_[state]].block_idx;
 }
 
 /**
@@ -419,9 +421,9 @@ inline size_t Partition::getBlockIdxFromState(State state) const {
 * @param state given state
 * @return corresponding node index
 */
-inline size_t Partition::getNodeIdxFromState(State state) const {
-    assert(state < numOfStates() && "Nonexisting state name used.");           
-    return m_blocks[m_blockItems[m_states[state]].blockIdx].nodeIdx;
+inline size_t Partition::get_node_idx_from_state(State state) const {
+    assert(state < num_of_states() && "Nonexisting state name used.");           
+    return blocks_[block_items_[states_[state]].block_idx].node_idx;
 }
 
 /**
@@ -429,51 +431,53 @@ inline size_t Partition::getNodeIdxFromState(State state) const {
 * @param state given state
 * @return corresponding BlockItem index
 */
-inline size_t Partition::getBlockItemIdxFromState(State state) const {
-    assert(state < numOfStates() && "Nonexisting state name used.");           
-    return m_states[state];
+inline size_t Partition::get_block_item_idx_from_state(State state) const {
+    assert(state < num_of_states() && "Nonexisting state name used.");           
+    return states_[state];
 }
 
 /**
 * @brief returns a Node index corresponding to the given BlockItem index
-* @param blockItemIdx BlockItem index
+* @param block_item_idx BlockItem index
 * @return corresponding node index
 */
-inline size_t Partition::getNodeIdxFromBlockItemIdx(size_t blockItemIdx) const {
-    assert(blockItemIdx < numOfBlockItems() &&
+inline size_t Partition::get_node_idx_from_block_item_idx(
+    size_t block_item_idx) const {
+
+    assert(block_item_idx < num_of_block_items() &&
            "Nonexisting BlockItem index used.");           
-    return m_blocks[m_blockItems[blockItemIdx].blockIdx].nodeIdx;
+    return blocks_[block_items_[block_item_idx].block_idx].node_idx;
 }
 
 /**
 * @brief returns a node index corresponding to the given block index
-* @param blockIdx given block index
+* @param block_idx given block index
 * @return corresponding node index
 */
-inline size_t Partition::getNodeIdxFromBlockIdx(size_t blockIdx) const {
-    assert(blockIdx < numOfBlocks() && "Nonexisting block index used.");            
-    return m_blocks[blockIdx].nodeIdx;
+inline size_t Partition::get_node_idx_from_block_idx(size_t block_idx) const {
+    assert(block_idx < num_of_blocks() && "Nonexisting block index used.");
+    return blocks_[block_idx].node_idx;
 }
 
 /** Get a representant from the block index
 * @brief returns the first blockItem index corresponding to the given 
 * block index
-* @param blockIdx given block index
+* @param block_idx given block index
 * @return first blockItem index corresponding to the given block index
 */
-inline size_t Partition::getReprIdxFromBlockIdx(size_t blockIdx) const {
-    assert(blockIdx < numOfBlocks() && "Nonexisting block index used.");
-    return m_nodes[m_blocks[blockIdx].nodeIdx].first;
+inline size_t Partition::get_repr_idx_from_block_idx(size_t block_idx) const {
+    assert(block_idx < num_of_blocks() && "Nonexisting block index used.");
+    return nodes_[blocks_[block_idx].node_idx].first;
 }
 
 /** Get a representant from the node index
 * @brief returns the first blockItem index corresponding to the given node index
-* @param nodeIdx given node index
+* @param node_idx given node index
 * @return first blockItem index corresponding to the given node index
 */
-inline size_t Partition::getReprIdxFromNodeIdx(size_t nodeIdx) const {
-    assert(nodeIdx < numOfNodes() && "Nonexisting node index used.");
-    return m_nodes[nodeIdx].first;
+inline size_t Partition::get_repr_idx_from_node_idx(size_t node_idx) const {
+    assert(node_idx < num_of_nodes() && "Nonexisting node index used.");
+    return nodes_[node_idx].first;
 }
 
 /**
@@ -483,10 +487,10 @@ inline size_t Partition::getReprIdxFromNodeIdx(size_t nodeIdx) const {
 * @param second second state to be checked
 * @return true iff both given states belong to the same partition block
 */
-inline bool Partition::inSameBlock(State first, State second) const {
-    assert(first < m_states.size() && "The given state does not exist");
-    assert(second < m_states.size() && "The given state does not exist");
-    return getBlockIdxFromState(first) == getBlockIdxFromState(second);
+inline bool Partition::in_same_block(State first, State second) const {
+    assert(first < states_.size() && "The given state does not exist");
+    assert(second < states_.size() && "The given state does not exist");
+    return get_block_idx_from_state(first) == get_block_idx_from_state(second);
 }
 
 /**
@@ -494,12 +498,12 @@ inline bool Partition::inSameBlock(State first, State second) const {
 * @param states vector of states to be checked
 * @return true iff all of the given states belong to the same partition block
 */
-bool Partition::inSameBlock(const std::vector<State>& states) const {
+bool Partition::in_same_block(const std::vector<State>& states) const {
     if(states.empty()) { return true; }
-    size_t blockIdx = getBlockIdxFromState(states.front());
+    size_t block_idx = get_block_idx_from_state(states.front());
     for(size_t state : states) {
-        assert(state < m_states.size() && "The given state does not exist.");
-        if(getBlockIdxFromState(state) != blockIdx) { return false; }
+        assert(state < states_.size() && "The given state does not exist.");
+        if(get_block_idx_from_state(state) != block_idx) { return false; }
     }
     return true;
 }
@@ -509,18 +513,18 @@ bool Partition::inSameBlock(const std::vector<State>& states) const {
 * @param state input state
 * @return vector of all the states in the corresponding block
 */
-std::vector<State> Partition::statesInSameBlock(State state) const {
-    assert(state < numOfStates() && "The given state does not exist.");
+std::vector<State> Partition::states_in_same_block(State state) const {
+    assert(state < num_of_states() && "The given state does not exist.");
     std::vector<State> result{};
     
     // first and last states in the block stored in the vector
     // of BlockItems
-    size_t first = getNode(getNodeIdxFromState(state)).first;
-    size_t last = getNode(getNodeIdxFromState(state)).last;
+    size_t first = get_node(get_node_idx_from_state(state)).first;
+    size_t last = get_node(get_node_idx_from_state(state)).last;
     
     // iterating through BlockItems
     for(size_t i = first; i <= last; ++i) {
-        result.push_back(getBlockItem(i).state);
+        result.push_back(get_block_item(i).state);
     }
     
     return result; 
@@ -533,9 +537,9 @@ std::vector<State> Partition::statesInSameBlock(State state) const {
 */
 StateBlocks Partition::partition(void) {
     StateBlocks result{};
-    result.insert(result.end(), m_blocks.size(), std::vector<State>());
-    for(auto blockItem : m_blockItems) {
-        result[blockItem.blockIdx].push_back(blockItem.state);
+    result.insert(result.end(), blocks_.size(), std::vector<State>());
+    for(auto block_item : block_items_) {
+        result[block_item.block_idx].push_back(block_item.state);
     }
     return result;
 }
@@ -579,7 +583,7 @@ StateBlocks Partition::partition(void) {
 * @param marked marked states which influence splitting
 * @return vector of SplitPair which contains information about split blocks
 */
-std::vector<SplitPair> Partition::splitBlocks(
+std::vector<SplitPair> Partition::split_blocks(
     const std::vector<State>& marked) {
     
     // the vector which will be returned as the result
@@ -590,48 +594,48 @@ std::vector<SplitPair> Partition::splitBlocks(
     
     // this vector contains information about states which has been marked
     // and helps to detect states which has been marked multiple times
-    std::vector<char> usedStates{};
-    usedStates.insert(usedStates.end(), m_states.size(), false);
+    std::vector<char> used_states{};
+    used_states.insert(used_states.end(), states_.size(), false);
 
     // this vector contains information about blocks whose states has been
     // marked and keeps number of states of each block which has been marked
     // to ease detecting whether the whole block has been marked
-    std::vector<size_t> usedBlocks{};
-    usedBlocks.insert(usedBlocks.end(), m_blocks.size(), 0);
+    std::vector<size_t> used_blocks{};
+    used_blocks.insert(used_blocks.end(), blocks_.size(), 0);
 
-    // iterating through the marked states to fill usedStates and
-    // usedBlocks vectors
+    // iterating through the marked states to fill used_states and
+    // used_blocks vectors
     for(size_t i : marked) {
-        assert(i < m_states.size() && "The given state does not exist.");
-        assert(!usedStates[i] && "The given state was marked multiple times");
-        usedStates[i] = true;
-        ++usedBlocks[getBlockIdxFromState(i)];
+        assert(i < states_.size() && "The given state does not exist.");
+        assert(!used_states[i] && "The given state was marked multiple times");
+        used_states[i] = true;
+        ++used_blocks[get_block_idx_from_state(i)];
     }    
     
-    size_t oldBlocksSize, newBlockIdx;
-    oldBlocksSize = newBlockIdx = m_blocks.size();
+    size_t old_blocks_size, new_block_idx;
+    old_blocks_size = new_block_idx = blocks_.size();
     
     // iterating through existing blocks
-    for(size_t i = 0; i < oldBlocksSize; ++i) {
+    for(size_t i = 0; i < old_blocks_size; ++i) {
         // if no state of the given block has been marked, it
         // won't be split
-        if(!usedBlocks[i]) { continue; }
+        if(!used_blocks[i]) { continue; }
         
         // looking for the subvector of BlockItems which forms processed
         // block and computing its size
-        size_t nodeIdx = getNodeIdxFromBlockIdx(i);
-        size_t iterFirst = getNode(nodeIdx).first;
-        size_t iterLast = getNode(nodeIdx).last;
-        size_t blockSize = iterLast - iterFirst + 1;
+        size_t node_idx = get_node_idx_from_block_idx(i);
+        size_t iter_first = get_node(node_idx).first;
+        size_t iter_last = get_node(node_idx).last;
+        size_t block_size = iter_last - iter_first + 1;
         
         // if all states of the processed block have been marked, the block
         // won't be split
-        if(usedBlocks[i] >= blockSize) { continue; }
+        if(used_blocks[i] >= block_size) { continue; }
         
         // choosing the strategy of swapping BlocksItems such that
         // the representant of split block keeps its position        
-        bool reprMarked = usedStates
-                          [getBlockItem(getReprIdxFromNodeIdx(nodeIdx)).state];
+        bool reprMarked = used_states[get_block_item(
+                            get_repr_idx_from_node_idx(node_idx)).state];
 
         // We access the first and last element of the subvector of BlockItems
         // which forms processed block. We look for the first unmarked element
@@ -640,59 +644,59 @@ std::vector<SplitPair> Partition::splitBlocks(
         // element is marked or not). As soon as such elements are found, they
         // are swapped. This procedure continues until these two indices used
         // to iterate through the BlockItems meet somewhere in the middle
-        while(iterFirst <= iterLast) {
+        while(iter_first <= iter_last) {
             // we choose the swapping strategy using XOR operation
-            while(reprMarked ^ !usedStates[getBlockItem(iterFirst).state]) {
+            while(reprMarked ^ !used_states[get_block_item(iter_first).state]) {
                 // this visited state will be part of the former block
-                ++iterFirst;
+                ++iter_first;
             }
-            while(reprMarked ^ usedStates[getBlockItem(iterLast).state]) {
+            while(reprMarked ^ used_states[get_block_item(iter_last).state]) {
                 // this visited state will be part of the new block
-                m_blockItems[iterLast].blockIdx = newBlockIdx;
-                --iterLast;
+                block_items_[iter_last].block_idx = new_block_idx;
+                --iter_last;
             }
             
             // if the used indices meet, we finish swapping         
-            if(iterFirst > iterLast) {
+            if(iter_first > iter_last) {
                 break;
             }
             
             // swapping BlockItems
-            BlockItem swappedBlockItem = getBlockItem(iterFirst);
-            m_blockItems[iterFirst] = getBlockItem(iterLast);
-            m_blockItems[iterLast] = swappedBlockItem;
+            BlockItem swapped_block_item = get_block_item(iter_first);
+            block_items_[iter_first] = get_block_item(iter_last);
+            block_items_[iter_last] = swapped_block_item;
             
-            // since m_states and m_blockItems vectors should be bijectively
-            // mapped, we need to update m_states after swapping two BlockItems           
-            m_states[m_blockItems[iterFirst].state] = iterFirst;
-            m_states[m_blockItems[iterLast].state] = iterLast;    
+            // since states_ and block_items_ vectors should be bijectively
+            // mapped, we need to update states_ after swapping two BlockItems           
+            states_[block_items_[iter_first].state] = iter_first;
+            states_[block_items_[iter_last].state] = iter_last;    
             
             // after the blockItems are swapped, one of them should
             // be assigned to the new block
-            m_blockItems[iterLast].blockIdx = newBlockIdx;
+            block_items_[iter_last].block_idx = new_block_idx;
             
             // after the blockItems are swapped, we continue to the
             // next blockItems
-            ++iterFirst;
-            --iterLast;
+            ++iter_first;
+            --iter_last;
         }
         
         // creating new nodes
-        m_nodes.push_back({.first = m_nodes[nodeIdx].first, .last = iterLast});
-        m_nodes.push_back({.first = iterFirst, .last = m_nodes[nodeIdx].last});
+        nodes_.push_back({.first = nodes_[node_idx].first, .last = iter_last});
+        nodes_.push_back({.first = iter_first, .last = nodes_[node_idx].last});
         
         // split blocks has to refer to the new nodes
-        m_blocks[i].nodeIdx = m_nodes.size() - 2;
-        m_blocks.push_back({.nodeIdx = m_nodes.size() - 1});
+        blocks_[i].node_idx = nodes_.size() - 2;
+        blocks_.push_back({.node_idx = nodes_.size() - 1});
         
         // since a block has been split, we need to return information about
         // indices of components of split block and about the node which
         // correspond to the block which has been split        
-        split.push_back({.former = i, .created = newBlockIdx,
-                         .oldNodeIdx = nodeIdx});
+        split.push_back({.former = i, .created = new_block_idx,
+                         .old_node_idx = node_idx});
         
         // index of the following block which could be created
-        ++newBlockIdx;
+        ++new_block_idx;
     }
     return split;
 }
@@ -709,24 +713,24 @@ Partition& Partition::operator=(const Partition& other) {
     // reserved capacity, we need to reserve it manually and
     // then insert elements of the other partition to the reserved space
     // if we want to keep the former capacity
-    m_states.reserve(other.numOfStates());
-    m_blockItems.reserve(other.numOfStates());
-    m_blocks.reserve(other.numOfStates());
-    m_nodes.reserve(2 * other.numOfStates() - 1);
+    states_.reserve(other.num_of_states());
+    block_items_.reserve(other.num_of_states());
+    blocks_.reserve(other.num_of_states());
+    nodes_.reserve(2 * other.num_of_states() - 1);
     
     // copying vectors without losing information about reserved capacity
-    size_t statesNum = other.numOfStates();
-    for(size_t i = 0; i < statesNum; ++i) {
-        m_states.push_back(other.getBlockItemIdxFromState(i));
-        m_blockItems.push_back(other.getBlockItem(i));
+    size_t states_num = other.num_of_states();
+    for(size_t i = 0; i < states_num; ++i) {
+        states_.push_back(other.get_block_item_idx_from_state(i));
+        block_items_.push_back(other.get_block_item(i));
     }
-    size_t blocksNum = other.numOfBlocks();
-    for(size_t i = 0; i < blocksNum; ++i) {
-        m_blocks.push_back(other.getBlock(i));
+    size_t blocks_num = other.num_of_blocks();
+    for(size_t i = 0; i < blocks_num; ++i) {
+        blocks_.push_back(other.get_block(i));
     }
-    size_t nodesNum = other.numOfNodes();
-    for(size_t i = 0; i < nodesNum; ++i) {
-        m_nodes.push_back(other.getNode(i));
+    size_t nodes_num = other.num_of_nodes();
+    for(size_t i = 0; i < nodes_num; ++i) {
+        nodes_.push_back(other.get_node(i));
     }
     return *this;
 }
@@ -735,19 +739,19 @@ Partition& Partition::operator=(const Partition& other) {
 // the partition
 std::ostream& operator<<(std::ostream& os, const Partition& p) {
     std::string result = std::string();
-    result += "NUM OF STATES: " + std::to_string(p.numOfStates()) + "\n";
-    result += "NUM OF BLOCKS: " + std::to_string(p.numOfBlocks()) + "\n";
-    result += "NUM OF NODES: " + std::to_string(p.numOfNodes()) + "\n";
+    result += "NUM OF STATES: " + std::to_string(p.num_of_states()) + "\n";
+    result += "NUM OF BLOCKS: " + std::to_string(p.num_of_blocks()) + "\n";
+    result += "NUM OF NODES: " + std::to_string(p.num_of_nodes()) + "\n";
     result += "\n";
     
     result += "BLOCKS:\n";
-    size_t numOfBlocks = p.numOfBlocks();
-    for(size_t blockIdx = 0; blockIdx < numOfBlocks; ++blockIdx) {
-        result += std::to_string(blockIdx) + ": ";
-        Node node = p.m_nodes[p.getNodeIdxFromBlockIdx(blockIdx)];
-        for(size_t blockItemIdx = node.first; 
-            blockItemIdx <= node.last; ++blockItemIdx) {
-            result += std::to_string(p.m_blockItems[blockItemIdx].state) 
+    size_t num_of_blocks = p.num_of_blocks();
+    for(size_t block_idx = 0; block_idx < num_of_blocks; ++block_idx) {
+        result += std::to_string(block_idx) + ": ";
+        Node node = p.nodes_[p.get_node_idx_from_block_idx(block_idx)];
+        for(size_t block_item_idx = node.first; 
+            block_item_idx <= node.last; ++block_item_idx) {
+            result += std::to_string(p.block_items_[block_item_idx].state) 
                    + " ";
         }
         result += "\n";
@@ -755,13 +759,14 @@ std::ostream& operator<<(std::ostream& os, const Partition& p) {
     result += "\n";
     
     result += "NODES:\n";
-    size_t numOfNodes = p.numOfNodes();
-    for(size_t nodeIdx = 0; nodeIdx < numOfNodes; ++nodeIdx) {
-        result += std::to_string(nodeIdx) + ": ";
-        Node node = p.m_nodes[nodeIdx];
-        for(size_t blockItemIdx = node.first; 
-            blockItemIdx <= node.last; ++blockItemIdx) {
-            result += std::to_string(p.m_blockItems[blockItemIdx].state) + " ";
+    size_t num_of_nodes = p.num_of_nodes();
+    for(size_t node_idx = 0; node_idx < num_of_nodes; ++node_idx) {
+        result += std::to_string(node_idx) + ": ";
+        Node node = p.nodes_[node_idx];
+        for(size_t block_item_idx = node.first; 
+            block_item_idx <= node.last; ++block_item_idx) {
+            result += std::to_string(p.block_items_[block_item_idx].state) + 
+                " ";
         }
         result += "\n";
     }
@@ -825,10 +830,10 @@ struct ExtendableSquareMatrix {
     protected:
         
         // number of rows (or columns) of the current square matrix
-        size_t m_size{0};
+        size_t size_{0};
         
         // maximal allowed number of rows (or columns) of the square matrix        
-        size_t m_capacity{0};
+        size_t capacity_{0};
         
         // type of the matrix which will be chosen as soon as the
         // child structure will be created
@@ -837,8 +842,8 @@ struct ExtendableSquareMatrix {
     public:
 
         // getters
-        inline size_t size(void) const { return m_size; }
-        inline size_t capacity(void) const { return m_capacity; }
+        inline size_t size(void) const { return size_; }
+        inline size_t capacity(void) const { return capacity_; }
         inline size_t type(void) const { return m_type; }
         
         // virtual functions which will be implemented in the substructures
@@ -853,9 +858,9 @@ struct ExtendableSquareMatrix {
         virtual ~ExtendableSquareMatrix() = default;
         
         // matrix properties
-        bool isReflexive(void);
-        bool isAntisymetric(void);
-        bool isTransitive(void);
+        bool is_reflexive(void);
+        bool is_antisymetric(void);
+        bool is_transitive(void);
                 
 };
 
@@ -921,12 +926,12 @@ struct CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
  
         // data are stored in a single vector
-        std::vector<T> data{};
+        std::vector<T> data_{};
     
     public:
     
         // constructors
-        CascadeSquareMatrix(size_t maxRows, size_t initRows = 0);
+        CascadeSquareMatrix(size_t max_rows, size_t init_rows = 0);
         CascadeSquareMatrix(const CascadeSquareMatrix& other);
         
         // implemented virtual functions
@@ -945,27 +950,27 @@ struct CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
 
 /**
 * @brief creates a Cascade square matrix
-* @param maxRows capacity of the square matrix
-* @param initRows initial size of the square matrix
+* @param max_rows capacity of the square matrix
+* @param init_rows initial size of the square matrix
 */
 template <typename T>
 CascadeSquareMatrix<T>::CascadeSquareMatrix(
-    size_t maxRows, size_t initRows) {
+    size_t max_rows, size_t init_rows) {
     
-    assert(initRows <= maxRows && 
+    assert(init_rows <= max_rows && 
            "Initial size of the matrix cannot be bigger than the capacity");
     
     this->m_type = MatrixType::Cascade;
-    this->m_capacity = maxRows;
-    data.reserve(this->m_capacity * this->m_capacity);
+    this->capacity_ = max_rows;
+    data_.reserve(this->capacity_ * this->capacity_);
     
     // creating the initial size and filling the data cells with
     // default values
-    for(size_t i = 0; i < initRows; ++i) {extend();}
+    for(size_t i = 0; i < init_rows; ++i) {extend();}
 }
 
 /** This method provides a way to create a copy of a given CascadeSquareMatrix
-* and preserves the reserved capacity of the vector 'data'. This goal is
+* and preserves the reserved capacity of the vector 'data_'. This goal is
 * achieved using the custom assignment operator.
 * @brief copy constructor of a CascadeSquareMatrix
 * @param other matrix which should be copied
@@ -985,11 +990,11 @@ CascadeSquareMatrix<T>::CascadeSquareMatrix(
 */
 template <typename T>
 inline void CascadeSquareMatrix<T>::set(size_t i, size_t j, T value) {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
     // accessing the matrix in the cascading way
-    data[i >= j ? i * i + j : j * j + 2 * j - i] = value;
+    data_[i >= j ? i * i + j : j * j + 2 * j - i] = value;
 }
 
 /**
@@ -1000,11 +1005,11 @@ inline void CascadeSquareMatrix<T>::set(size_t i, size_t j, T value) {
 */
 template <typename T>
 inline T CascadeSquareMatrix<T>::get(size_t i, size_t j) const {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
 
     // accessing the matrix in the cascading way
-    return data[i >= j ? i * i + j : j * j + 2 * j - i];
+    return data_[i >= j ? i * i + j : j * j + 2 * j - i];
 }
 
 /**
@@ -1014,19 +1019,19 @@ inline T CascadeSquareMatrix<T>::get(size_t i, size_t j) const {
 */
 template <typename T>
 inline void CascadeSquareMatrix<T>::extend(T placeholder) {
-    assert(this->m_size < this->m_capacity 
+    assert(this->size_ < this->capacity_ 
            && "The matrix cannot be extended anymore");
 
     // allocation of 2 * size + 1 new data cells
-    data.insert(data.end(), 2 * this->m_size + 1, placeholder);
+    data_.insert(data_.end(), 2 * this->size_ + 1, placeholder);
     
     // the size increases
-    ++this->m_size;
+    ++this->size_;
 }
 
 /** This method provides a way to assign a CascadeSquareMatrix to the variable.
-* The method ensures us to keep the reserved capacity of the vector 'data' since 
-* the default vector assignment does not preserve it.
+* The method ensures us to keep the reserved capacity of the vector 'data_' 
+* since the default vector assignment does not preserve it.
 * @brief assignment operator for the CascadeSquareMatrix structure
 * @param other matrix which should be copied assigned
 */
@@ -1035,16 +1040,16 @@ CascadeSquareMatrix<T>& CascadeSquareMatrix<T>::operator=(
     const CascadeSquareMatrix<T>& other) {
                      
     // initialization of the matrix
-    this->m_capacity = other.capacity();
-    this->m_size = 0;
-    this->data = std::vector<T>();
-    this->data.reserve(this->m_capacity * this->m_capacity);
-    size_t otherSize = other.size();
-    for(size_t i = 0; i < otherSize; ++i) {this->extend();}
+    this->capacity_ = other.capacity();
+    this->size_ = 0;
+    this->data_ = std::vector<T>();
+    this->data_.reserve(this->capacity_ * this->capacity_);
+    size_t other_size = other.size();
+    for(size_t i = 0; i < other_size; ++i) {this->extend();}
     
     // copying memory cells
-    for(size_t i = 0; i < this->m_size; ++i) {
-        for(size_t j = 0; j < this->m_size; ++j) {
+    for(size_t i = 0; i < this->size_; ++i) {
+        for(size_t j = 0; j < this->size_; ++j) {
             this->set(i, j, other.get(i, j));
         }
     }
@@ -1077,12 +1082,12 @@ struct DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
  
         // data are stored in a single vector
-        std::vector<std::vector<T>> data{};
+        std::vector<std::vector<T>> data_{};
     
     public:
     
         // constructors
-        DynamicSquareMatrix(size_t maxRows, size_t initRows = 0);
+        DynamicSquareMatrix(size_t max_rows, size_t init_rows = 0);
         
         // implemented virtual functions
         inline void set(size_t i, size_t j, T value) override;
@@ -1096,22 +1101,22 @@ struct DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
 
 /**
 * @brief creates a Dynamic square matrix
-* @param maxRows capacity of the square matrix
-* @param initRows initial size of the square matrix
+* @param max_rows capacity of the square matrix
+* @param init_rows initial size of the square matrix
 */
 template <typename T>
 DynamicSquareMatrix<T>::DynamicSquareMatrix(
-    size_t maxRows, size_t initRows) {
+    size_t max_rows, size_t init_rows) {
     
-    assert(initRows <= maxRows && 
+    assert(init_rows <= max_rows && 
            "Initial size of the matrix cannot be bigger than the capacity");
     
     this->m_type = MatrixType::Dynamic;
-    this->m_capacity = maxRows;
+    this->capacity_ = max_rows;
     
     // creating the initial size and filling the data cells with
     // default values
-    for(size_t i = 0; i < initRows; ++i) {extend();}
+    for(size_t i = 0; i < init_rows; ++i) {extend();}
 }
 
 /**
@@ -1122,10 +1127,10 @@ DynamicSquareMatrix<T>::DynamicSquareMatrix(
 */
 template <typename T>
 inline T DynamicSquareMatrix<T>::get(size_t i, size_t j) const {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
-    return data[i][j];
+    return data_[i][j];
 }
 
 /**
@@ -1136,10 +1141,10 @@ inline T DynamicSquareMatrix<T>::get(size_t i, size_t j) const {
 */
 template <typename T>
 inline void DynamicSquareMatrix<T>::set(size_t i, size_t j, T value) {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
-    data[i][j] = value;
+    data_[i][j] = value;
 }
 
 /**
@@ -1148,18 +1153,18 @@ inline void DynamicSquareMatrix<T>::set(size_t i, size_t j, T value) {
 */
 template <typename T>
 void DynamicSquareMatrix<T>::extend(T placeholder) {
-    assert(this->m_size < this->m_capacity 
+    assert(this->size_ < this->capacity_ 
            && "The matrix cannot be extened anymore");
     
     // creating a new column      
-    for(size_t i = 0; i < this->m_size; ++i) {
-        data[i].push_back(placeholder);
+    for(size_t i = 0; i < this->size_; ++i) {
+        data_[i].push_back(placeholder);
     }
     
     // creating a new row
-    data.push_back(std::vector<T>());
-    ++this->m_size;
-    data.back().insert(data.back().end(), this->m_size, placeholder);
+    data_.push_back(std::vector<T>());
+    ++this->size_;
+    data_.back().insert(data_.back().end(), this->size_, placeholder);
 }
 
 /*************************************
@@ -1182,12 +1187,12 @@ struct HashedSquareMatrix : public ExtendableSquareMatrix<T> {
     private:
 
         // data are stored in a hashmap
-        mutable std::unordered_map<size_t, T> data{};
+        mutable std::unordered_map<size_t, T> data_{};
     
     public:
     
         // constructors
-        HashedSquareMatrix(size_t maxRows, size_t initRows = 0);
+        HashedSquareMatrix(size_t max_rows, size_t init_rows = 0);
         
         // implemented virtual functions        
         inline void set(size_t i, size_t j, T value) override;
@@ -1202,22 +1207,22 @@ struct HashedSquareMatrix : public ExtendableSquareMatrix<T> {
 
 /**
 * @brief creates a Hashed square matrix
-* @param maxRows capacity of the square matrix
-* @param initRows initial size of the square matrix
+* @param max_rows capacity of the square matrix
+* @param init_rows initial size of the square matrix
 */
 template <typename T>
 HashedSquareMatrix<T>::HashedSquareMatrix(
-    size_t maxRows, size_t initRows) {
+    size_t max_rows, size_t init_rows) {
     
-    assert(initRows <= maxRows && 
+    assert(init_rows <= max_rows && 
            "Initial size of the matrix cannot be bigger than the capacity");
     
     this->m_type = MatrixType::Hashed;
-    this->m_capacity = maxRows;
+    this->capacity_ = max_rows;
     
     // creating the initial size and filling the data cells with
     // default values
-    for(size_t i = 0; i < initRows; ++i) {extend();}
+    for(size_t i = 0; i < init_rows; ++i) {extend();}
 }
 
 /**
@@ -1228,11 +1233,11 @@ HashedSquareMatrix<T>::HashedSquareMatrix(
 */
 template <typename T>
 inline void HashedSquareMatrix<T>::set(size_t i, size_t j, T value) {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
     // accessing the hashmap using row matrix traversal
-    data[i * this->m_capacity + j] = value;
+    data_[i * this->capacity_ + j] = value;
 }
 
 /**
@@ -1243,11 +1248,11 @@ inline void HashedSquareMatrix<T>::set(size_t i, size_t j, T value) {
 */
 template <typename T>
 inline T HashedSquareMatrix<T>::get(size_t i, size_t j) const {
-    assert(i < this->m_size && "Nonexisting row cannot be accessed");
-    assert(j < this->m_size && "Nonexisting column cannot be accessed");
+    assert(i < this->size_ && "Nonexisting row cannot be accessed");
+    assert(j < this->size_ && "Nonexisting column cannot be accessed");
     
     // accessing the hashmap using row matrix traversal
-    return data[i * this->m_capacity + j];
+    return data_[i * this->capacity_ + j];
 }
 
 /**
@@ -1256,18 +1261,18 @@ inline T HashedSquareMatrix<T>::get(size_t i, size_t j) const {
 */
 template <typename T>
 inline void HashedSquareMatrix<T>::extend(T placeholder) {
-    assert(this->m_size < this->m_capacity 
+    assert(this->size_ < this->capacity_ 
            && "Matrix cannot be extened anymore");
 
     // creating a new row and column
-    for(size_t i = 0; i < this->m_size; ++i) {
-        data[this->m_size * this->m_capacity + i] = placeholder;
-        data[i * this->m_capacity + this->m_size] = placeholder;
+    for(size_t i = 0; i < this->size_; ++i) {
+        data_[this->size_ * this->capacity_ + i] = placeholder;
+        data_[i * this->capacity_ + this->size_] = placeholder;
     }
-    data[this->m_size * this->m_capacity + this->m_size] = placeholder;
+    data_[this->size_ * this->capacity_ + this->size_] = placeholder;
     
     // increasing size
-    ++this->m_size;
+    ++this->size_;
 }
 
 /*************************************
@@ -1326,7 +1331,7 @@ std::ostream& operator<<(std::ostream& os,
 * @return true iff the matrix is reflexive
 */
 template <typename T>
-bool ExtendableSquareMatrix<T>::isReflexive(void) {
+bool ExtendableSquareMatrix<T>::is_reflexive(void) {
     size_t size = this->size();
     for(size_t i = 0; i < size; ++i) {
         if(!get(i, i)) { return false; }
@@ -1342,7 +1347,7 @@ bool ExtendableSquareMatrix<T>::isReflexive(void) {
 * @return true iff the matrix is antisymetric
 */
 template <typename T>
-bool ExtendableSquareMatrix<T>::isAntisymetric(void) {
+bool ExtendableSquareMatrix<T>::is_antisymetric(void) {
     size_t size = this->size();
     for(size_t i = 0; i < size; ++i) {
         for(size_t j = 0; j < size; ++j) {
@@ -1361,7 +1366,7 @@ bool ExtendableSquareMatrix<T>::isAntisymetric(void) {
 * @return true iff the matrix is transitive
 */
 template <typename T>
-bool ExtendableSquareMatrix<T>::isTransitive(void) {
+bool ExtendableSquareMatrix<T>::is_transitive(void) {
     size_t size = this->size();
     for(size_t i = 0; i < size; ++i) {
         for(size_t j = 0; j < size; ++j) {
