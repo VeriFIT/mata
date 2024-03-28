@@ -871,6 +871,65 @@ class ExtendableSquareMatrix {
                 
 }; // ExtendableSquareMatrix
 
+/** This function checks whether the matrix is reflexive. In this
+* context, the matrix is reflexive iff none of the elements on the main
+* diagonal is the zero element of the type T
+* @brief checks whether the Extendable square matrix is reflexive
+* @return true iff the matrix is reflexive
+*/
+template <typename T>
+bool ExtendableSquareMatrix<T>::is_reflexive(void) {
+    size_t size = this->size();
+    for(size_t i = 0; i < size; ++i) {
+        if(!get(i, i)) { return false; }
+    }
+    return true;
+}
+
+/** This function checks whether the matrix is antisymetric. In this
+* context, the matrix is antisymetric iff there are no indices i, j
+* where i != j and both matrix[i][j], matrix[j][i] contain nonzero elementes
+* of the type T
+* @brief checks whether the Extendable square matrix is antisymetric
+* @return true iff the matrix is antisymetric
+*/
+template <typename T>
+bool ExtendableSquareMatrix<T>::is_antisymetric(void) {
+    size_t size = this->size();
+    for(size_t i = 0; i < size; ++i) {
+        for(size_t j = 0; j < size; ++j) {
+            if(i == j) { continue; }
+            if(get(i, j) && get(j, i)) { return false; }
+        }
+    }
+    return true;
+}
+
+/** This function checks whether the matrix is transitive. In this
+* context, the matrix is transitive iff it holds that the input matrix
+* casted to the matrix of booleans (false for zero values of type T, otherwise 
+* true) remains the same if it is multiplied by itself.
+* @brief checks whether the Extendable square matrix is transitive
+* @return true iff the matrix is transitive
+*/
+template <typename T>
+bool ExtendableSquareMatrix<T>::is_transitive(void) {
+    size_t size = this->size();
+    for(size_t i = 0; i < size; ++i) {
+        for(size_t j = 0; j < size; ++j) {
+            bool found = false;
+            for(size_t k = 0; k < size; ++k) {
+                if(get(i, k) && get(k, j)) { 
+                    found = true;
+                    break; 
+                }
+            }
+            if(!found == static_cast<bool>(get(i, j))) { return false; }
+        }
+    }
+    return true;
+}
+
 /*************************************
 *
 *        CASCADE SQUARE MATRIX
@@ -1297,7 +1356,7 @@ void HashedSquareMatrix<T>::extend(T placeholder) {
 * @return pointer to the newly created matrix
 */
 template <typename T>
-ExtendableSquareMatrix<T> *create(MatrixType type, 
+inline ExtendableSquareMatrix<T> *create(MatrixType type, 
     size_t capacity, size_t size = 0) {
     
     switch(type) {
@@ -1315,7 +1374,7 @@ ExtendableSquareMatrix<T> *create(MatrixType type,
 // debugging function which allows us to print text representation of
 // the Extendable square matrix
 template <typename T>
-std::ostream& operator<<(std::ostream& os, 
+inline std::ostream& operator<<(std::ostream& os, 
     const ExtendableSquareMatrix<T>& matrix) {
     
     size_t size = matrix.size();
@@ -1330,65 +1389,6 @@ std::ostream& operator<<(std::ostream& os,
         result += "\n";
     }
     return os << result;
-}
-
-/** This function checks whether the matrix is reflexive. In this
-* context, the matrix is reflexive iff none of the elements on the main
-* diagonal is the zero element of the type T
-* @brief checks whether the Extendable square matrix is reflexive
-* @return true iff the matrix is reflexive
-*/
-template <typename T>
-bool ExtendableSquareMatrix<T>::is_reflexive(void) {
-    size_t size = this->size();
-    for(size_t i = 0; i < size; ++i) {
-        if(!get(i, i)) { return false; }
-    }
-    return true;
-}
-
-/** This function checks whether the matrix is antisymetric. In this
-* context, the matrix is antisymetric iff there are no indices i, j
-* where i != j and both matrix[i][j], matrix[j][i] contain nonzero elementes
-* of the type T
-* @brief checks whether the Extendable square matrix is antisymetric
-* @return true iff the matrix is antisymetric
-*/
-template <typename T>
-bool ExtendableSquareMatrix<T>::is_antisymetric(void) {
-    size_t size = this->size();
-    for(size_t i = 0; i < size; ++i) {
-        for(size_t j = 0; j < size; ++j) {
-            if(i == j) { continue; }
-            if(get(i, j) && get(j, i)) { return false; }
-        }
-    }
-    return true;
-}
-
-/** This function checks whether the matrix is transitive. In this
-* context, the matrix is transitive iff it holds that the input matrix
-* casted to the matrix of booleans (false for zero values of type T, otherwise 
-* true) remains the same if it is multiplied by itself.
-* @brief checks whether the Extendable square matrix is transitive
-* @return true iff the matrix is transitive
-*/
-template <typename T>
-bool ExtendableSquareMatrix<T>::is_transitive(void) {
-    size_t size = this->size();
-    for(size_t i = 0; i < size; ++i) {
-        for(size_t j = 0; j < size; ++j) {
-            bool found = false;
-            for(size_t k = 0; k < size; ++k) {
-                if(get(i, k) && get(k, j)) { 
-                    found = true;
-                    break; 
-                }
-            }
-            if(!found == static_cast<bool>(get(i, j))) { return false; }
-        }
-    }
-    return true;
 }
 
 }
