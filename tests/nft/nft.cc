@@ -13,6 +13,7 @@
 #include "mata/nft/builder.hh"
 #include "mata/nft/plumbing.hh"
 #include "mata/nft/algorithms.hh"
+#include "mata/nfa/nfa.hh"
 #include "mata/parser/re2parser.hh"
 
 using namespace mata;
@@ -4882,5 +4883,43 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
             expected.levels = { 0, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2 };
             CHECK(are_equivalent(nft, expected));
         }
+    }
+}
+
+TEST_CASE("mata::nft::Nft::apply()") {
+    SECTION("replace reluctant regex NFT") {
+        Nfa nfa{};
+        parser::create_nfa(&nfa, "da+b+ce");
+        mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
+        Nft nft{ nft::strings::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
+        Nft nft_applied_nfa{ nft.apply(nfa, 0) };
+        Nfa result{ project_to(nft_applied_nfa, 1).to_nfa_move() };
+        result.remove_epsilon();
+        result.trim();
+        Nfa expected{};
+        expected.initial.insert(0);
+        expected.delta.add(0, 'd', 1);
+        expected.delta.add(1, 'f', 2);
+        expected.delta.add(2, 'e', 3);
+        expected.final.insert(3);
+        CHECK(nfa::are_equivalent(result, expected));
+    }
+
+    SECTION("replace reluctant literal NFT") {
+        Nfa nfa{};
+        parser::create_nfa(&nfa, "dabce");
+        mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
+        Nft nft{ nft::strings::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
+        Nft nft_applied_nfa{ nft.apply(nfa, 0) };
+        Nfa result{ project_to(nft_applied_nfa, 1).to_nfa_move() };
+        result.remove_epsilon();
+        result.trim();
+        Nfa expected{};
+        expected.initial.insert(0);
+        expected.delta.add(0, 'd', 1);
+        expected.delta.add(1, 'f', 2);
+        expected.delta.add(2, 'e', 3);
+        expected.final.insert(3);
+        CHECK(nfa::are_equivalent(result, expected));
     }
 }
