@@ -370,6 +370,21 @@ public:
      */
     std::set<Word> get_words(size_t max_length) const;
 
+    /**
+     * @brief Apply @p nfa to @c this.
+     *
+     * Identical to `Id(nfa) || this`.
+     * @param nfa NFA to apply.
+     * @param level_to_apply_on Which level to apply the @p nfa on.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     *  is interpreted as a sequence repeating the same symbol, or as a single instance of the symbol followed by a
+     *  sequence of @c DONT_CARE symbols.
+     * @return
+     */
+    Nft apply(
+        const nfa::Nfa& nfa, Level level_to_apply_on = 0,
+        JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
