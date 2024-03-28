@@ -743,11 +743,11 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
     return os;
 }
 
-void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet) const {
+void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
     for (const StatePost& state_post: this->delta) {
         for (const SymbolPost& symbol_post: state_post) {
-            alphabet.update_next_symbol_value(symbol_post.symbol);
-            alphabet.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+            alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
+            alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
         }
     }
 }

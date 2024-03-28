@@ -313,11 +313,11 @@ public:
     bool is_acyclic() const;
 
     /**
-     * Fill @p alphabet with symbols from @p nfa.
-     * @param[in] nfa NFA with symbols to fill @p alphabet with.
-     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
+     * Fill @p alphabet_to_fill with symbols from @p nfa.
+     * @param[in] nfa NFA with symbols to fill @p alphabet_to_fill with.
+     * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.
      */
-    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
+    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
 
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
