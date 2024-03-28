@@ -385,6 +385,52 @@ public:
         const nfa::Nfa& nfa, Level level_to_apply_on = 0,
         JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
+    /**
+     * @brief Copy NFT as NFA.
+     *
+     * Transitions are not updated to only have one level.
+     * @return A newly created NFA with copied members from NFT.
+     */
+    Nfa to_nfa_copy() const { return Nfa{ delta, initial, final, alphabet }; }
+
+    /**
+     * @brief Move NFT as NFA.
+     *
+     * The NFT can no longer be used.
+     * Transitions are not updated to only have one level.
+     * @return A newly created NFA with moved members from NFT.
+     */
+    Nfa to_nfa_move() { return Nfa{ std::move(delta), std::move(initial), std::move(final), alphabet }; }
+
+    /**
+     * @brief Copy NFT as NFA updating the transitions to have one level only.
+     *
+     * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return A newly created NFA with copied members from NFT with updated transitions.
+     */
+    Nfa to_nfa_update_copy(
+        const utils::OrdVector<Symbol>& dont_care_symbol_replacements = { DONT_CARE },
+        JumpMode jump_mode = JumpMode::RepeatSymbol
+    ) const;
+
+    /**
+     * @brief Move NFT as NFA updating the transitions to have one level only.
+     *
+     * The NFT can no longer be used.
+     * @param[in] dont_care_symbol_replacements Vector of symbols to replace @c DONT_CARE symbols with.
+     * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return A newly created NFA with moved members from NFT with updated transitions.
+     */
+    Nfa to_nfa_update_move(
+        const utils::OrdVector<Symbol>& dont_care_symbol_replacements = { DONT_CARE },
+        JumpMode jump_mode = JumpMode::RepeatSymbol
+    );
+
 }; // class Nft.
 
 // Allow variadic number of arguments of the same type.
