@@ -403,6 +403,7 @@ void Nft::insert_identity(const State state, const std::vector<Symbol> &symbols,
 }
 
 void Nft::insert_identity(const State state, const Symbol symbol, const JumpMode jump_mode) {
+    (void)jump_mode;
     // TODO(nft): Evaluate the performance difference between adding a jump transition and inserting a transition for each level.
     // FIXME(nft): Allow symbol jump transitions?
 //    if (jump_mode == JumpMode::RepeatSymbol) {
@@ -426,4 +427,15 @@ Levels& Levels::set(State state, Level level) {
     if (size() <= state) { resize(state + 1, DEFAULT_LEVEL); }
     (*this)[state] = level;
     return *this;
+}
+
+mata::nfa::Nfa Nft::to_nfa_update_copy(
+    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    return get_one_level_aut(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
+}
+
+mata::nfa::Nfa Nft::to_nfa_update_move(
+    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
+    make_one_level_aut(dont_care_symbol_replacements, jump_mode);
+    return to_nfa_move();
 }
