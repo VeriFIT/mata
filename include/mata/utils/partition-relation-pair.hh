@@ -234,9 +234,9 @@ class Partition {
         std::vector<State> states_in_same_block(State state) const;
       
         // accessing blockItems, blocks, nodes through indices       
-        BlockItem get_block_item(size_t block_item_idx) const;
-        Block get_block(size_t block_idx) const;
-        Node get_node(size_t node_idx) const;
+        const BlockItem& get_block_item(size_t block_item_idx) const;
+        const Block& get_block(size_t block_idx) const;
+        const Node& get_node(size_t node_idx) const;
         
         // refering between blockItems, blocks, nodes using indices        
         size_t get_block_idx_from_state(State state) const;
@@ -387,7 +387,7 @@ Partition::Partition(const Partition& other) {
 * @param block_item_idx index of the BlockItem
 * @return corresponding BlockItem
 */
-BlockItem Partition::get_block_item(size_t block_item_idx) const {
+const BlockItem& Partition::get_block_item(size_t block_item_idx) const {
     assert(block_item_idx < num_of_block_items() &&
            "Nonexisting block item index used.");    
     return block_items_[block_item_idx];
@@ -398,7 +398,7 @@ BlockItem Partition::get_block_item(size_t block_item_idx) const {
 * @param block_idx index of the block
 * @return corresponding block
 */
-Block Partition::get_block(size_t block_idx) const {
+const Block& Partition::get_block(size_t block_idx) const {
     assert(block_idx < num_of_blocks() && "Nonexisting block index used.");    
     return blocks_[block_idx];
 }
@@ -408,7 +408,7 @@ Block Partition::get_block(size_t block_idx) const {
 * @param node_idx index of the node
 * @return corresponding node
 */
-Node Partition::get_node(size_t node_idx) const {
+const Node& Partition::get_node(size_t node_idx) const {
     assert(node_idx < num_of_nodes() && "Nonexisting node index used.");    
     return nodes_[node_idx];
 }
