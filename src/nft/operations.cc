@@ -12,12 +12,15 @@
 #include "mata/nft/nft.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nft/builder.hh"
+#include "mata/nft/strings.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;
 
 using namespace mata::utils;
 using namespace mata::nft;
+using namespace mata::nfa;
+using namespace mata;
 using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
@@ -342,6 +345,12 @@ Nft mata::nft::project_to(const Nft& nft, const OrdVector<Level>& levels_to_proj
 Nft mata::nft::project_to(const Nft& nft, Level level_to_project, const JumpMode jump_mode) {
     return project_to(nft, OrdVector<Level>{ level_to_project }, jump_mode);
 }
+
+Nft Nft::apply(const nfa::Nfa& nfa, Level level_to_apply_on, JumpMode jump_mode) const {
+    Nft nft_from_nfa{ nft::builder::create_from_nfa(nfa, this->num_of_levels) };
+    return compose(nft_from_nfa, *this, static_cast<Level>(this->num_of_levels) - 1, level_to_apply_on, jump_mode);
+}
+
 
 Nft mata::nft::insert_levels(const Nft& nft, const BoolVector& new_levels_mask, const JumpMode jump_mode) {
     assert(0 < nft.num_of_levels);

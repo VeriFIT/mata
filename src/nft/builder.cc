@@ -296,11 +296,11 @@ Nft builder::parse_from_mata(const std::string& nft_in_mata) {
     return parse_from_mata(nft_stream);
 }
 
-Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, Level level_cnt, std::optional<Symbol> next_level_symbol, const std::set<Symbol>& epsilons) {
-    const Level num_of_additional_states_per_nfa_trans{ level_cnt - 1 };
+Nft builder::create_from_nfa(const mata::nfa::Nfa& nfa, const size_t num_of_levels, std::optional<Symbol> next_level_symbol, const std::set<Symbol>& epsilons) {
+    const Level num_of_additional_states_per_nfa_trans{ static_cast<Level>(num_of_levels) - 1 };
     Nft nft{};
     size_t nfa_num_of_states{ nfa.num_of_states() };
-    nft.num_of_levels = level_cnt;
+    nft.num_of_levels = num_of_levels;
     nft.levels.resize(nfa_num_of_states + nfa.delta.num_of_transitions() * num_of_additional_states_per_nfa_trans);
     std::unordered_map<State, State> state_mapping{};
     state_mapping.reserve(nfa_num_of_states);
