@@ -427,3 +427,14 @@ Levels& Levels::set(State state, Level level) {
     (*this)[state] = level;
     return *this;
 }
+
+mata::nfa::Nfa Nft::to_nfa_update_copy(
+    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) const {
+    return get_one_level_aut(dont_care_symbol_replacements, jump_mode).to_nfa_copy();
+}
+
+mata::nfa::Nfa Nft::to_nfa_update_move(
+    const utils::OrdVector<Symbol>& dont_care_symbol_replacements, const JumpMode jump_mode) {
+    make_one_level_aut(dont_care_symbol_replacements, jump_mode);
+    return to_nfa_move();
+}
