@@ -38,6 +38,39 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.states_in_same_block(0).size() == 10);
         CHECK(p.partition().size() == 1);
     }
+
+    SECTION("Create another simple partition with 1 block") {
+        Partition p = Partition(10, {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}});
+        CHECK(p.num_of_states() == 10);
+        CHECK(p.num_of_block_items() == 10);
+        CHECK(p.num_of_blocks() == 1);
+        CHECK(p.num_of_nodes() == 1);
+        CHECK(p.in_same_block({}));
+        CHECK(p.in_same_block({0})); 
+        CHECK(p.in_same_block(0, 1));
+        CHECK(p.in_same_block(1, 8));
+        CHECK(p.in_same_block({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+        for(size_t i = 0; i < 10; ++i) {       
+            CHECK(p.get_block_item_idx_from_state(i) == i);
+            CHECK(p.get_block_idx_from_state(i) == 0);
+            CHECK(p.get_node_idx_from_state(i) == 0);
+            CHECK(p.get_block_item(i).state == i);
+            CHECK(p.get_block_item(i).block_idx == 0);
+            CHECK(p.get_node_idx_from_block_item_idx(i) == 0);
+        }
+        CHECK(p.get_block_item(p.get_repr_idx_from_block_idx(0)).state == 0);
+        CHECK(p.get_block_item(
+            p.get_repr_idx_from_block_idx(0)).block_idx == 0);
+        CHECK(p.get_block_item(
+            p.get_repr_idx_from_node_idx(0)).state == 0);
+        CHECK(p.get_block_item(p.get_repr_idx_from_node_idx(0)).block_idx == 0);
+        CHECK(p.get_node(0).first == 0);
+        CHECK(p.get_node(0).last == 9);
+        CHECK(p.get_block(0).node_idx == 0);
+        
+        CHECK(p.states_in_same_block(0).size() == 10);
+        CHECK(p.partition().size() == 1);
+    }
     
     SECTION("Create a simple partition with 2 blocks") {
         Partition p{10, {{0, 5, 8}}};
@@ -423,7 +456,43 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>(
                                                        None, 5, 2);        
         CHECK(e == nullptr);
+        
+        delete e;
     
+    }
+
+    SECTION("Empty matrices") {
+
+        ExtendableSquareMatrix<unsigned long> *e1 = create<unsigned long>(
+                                                       Cascade, 5);        
+        ExtendableSquareMatrix<unsigned long> *e2 = create<unsigned long>(
+                                                       Dynamic, 5); 
+        ExtendableSquareMatrix<unsigned long> *e3 = create<unsigned long>(
+                                                       Hashed, 5);                                                        
+
+        CHECK(!e1->size());
+        CHECK(!e2->size());
+        CHECK(!e3->size());
+
+        CHECK(e1->capacity() == 5);
+        CHECK(e2->capacity() == 5);
+        CHECK(e3->capacity() == 5);
+
+        ExtendableSquareMatrix<unsigned long> *c1 = e1; 
+        ExtendableSquareMatrix<unsigned long> *c2 = e2;
+        ExtendableSquareMatrix<unsigned long> *c3 = e3;
+
+        CHECK(!c1->size());
+        CHECK(!c2->size());
+        CHECK(!c3->size());
+
+        CHECK(c1->capacity() == 5);
+        CHECK(c2->capacity() == 5);
+        CHECK(c3->capacity() == 5);
+
+        delete e1;
+        delete e2;
+        delete e3;                    
     }
         
     SECTION("Copying matrices") {
