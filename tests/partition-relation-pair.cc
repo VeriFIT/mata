@@ -462,7 +462,6 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
     }
 
     SECTION("Empty matrices") {
-
         ExtendableSquareMatrix<unsigned long> *e1 = create<unsigned long>(
                                                        Cascade, 5);        
         ExtendableSquareMatrix<unsigned long> *e2 = create<unsigned long>(
@@ -495,6 +494,39 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         delete e3;                    
     }
         
+    SECTION("Matrices with only one element") {
+        ExtendableSquareMatrix<unsigned long> *e1 = create<unsigned long>(
+                                                       Cascade, 5, 1);        
+        ExtendableSquareMatrix<unsigned long> *e2 = create<unsigned long>(
+                                                       Dynamic, 5, 1); 
+        ExtendableSquareMatrix<unsigned long> *e3 = create<unsigned long>(
+                                                       Hashed, 5, 1);                                                        
+
+        CHECK(e1->size() == 1);
+        CHECK(e2->size() == 1);
+        CHECK(e3->size() == 1);
+
+        CHECK(e1->capacity() == 5);
+        CHECK(e2->capacity() == 5);
+        CHECK(e3->capacity() == 5);
+
+        ExtendableSquareMatrix<unsigned long> *c1 = e1; 
+        ExtendableSquareMatrix<unsigned long> *c2 = e2;
+        ExtendableSquareMatrix<unsigned long> *c3 = e3;
+
+        CHECK(c1->size() == 1);
+        CHECK(c2->size() == 1);
+        CHECK(c3->size() == 1);
+
+        CHECK(c1->capacity() == 5);
+        CHECK(c2->capacity() == 5);
+        CHECK(c3->capacity() == 5);
+
+        delete e1;
+        delete e2;
+        delete e3;                    
+    }
+
     SECTION("Copying matrices") {
 
         ExtendableSquareMatrix<char> *m1 = create<char>(Cascade, 1000, 2);
