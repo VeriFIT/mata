@@ -651,7 +651,7 @@ std::vector<SplitPair> Partition::split_blocks(
         // element is marked or not). As soon as such elements are found, they
         // are swapped. This procedure continues until these two indices used
         // to iterate through the BlockItems meet somewhere in the middle
-        while(iter_first <= iter_last) {
+        do {
             // we choose the swapping strategy using XOR operation
             while(repr_marked 
                   ^ !used_states[get_block_item(iter_first).state]) {
@@ -687,7 +687,7 @@ std::vector<SplitPair> Partition::split_blocks(
             // next blockItems
             ++iter_first;
             --iter_last;
-        }
+        } while(iter_first <= iter_last);
         
         // creating new nodes
         nodes_.emplace_back(nodes_[node_idx].first, iter_last);
