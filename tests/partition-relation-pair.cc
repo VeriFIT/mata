@@ -34,6 +34,9 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.get_node(0).first == 0);
         CHECK(p.get_node(0).last == 9);
         CHECK(p.get_block(0).node_idx == 0);
+        
+        CHECK(p.states_in_same_block(0).size() == 10);
+        CHECK(p.partition().size() == 1);
     }
     
     SECTION("Create a simple partition with 2 blocks") {
@@ -81,6 +84,10 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.get_node(1).last == 9);
         CHECK(p.get_block(0).node_idx == 0);
         CHECK(p.get_block(1).node_idx == 1);
+        
+        CHECK(p.states_in_same_block(0).size() == 3);
+        CHECK(p.states_in_same_block(1).size() == 7);
+        CHECK(p.partition().size() == 2);
     }
 
 
@@ -124,6 +131,11 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.get_block(0).node_idx == 0);
         CHECK(p.get_block(1).node_idx == 1);
         CHECK(p.get_block(2).node_idx == 2);
+
+        CHECK(p.states_in_same_block(0).size() == 1);
+        CHECK(p.states_in_same_block(1).size() == 2);
+        CHECK(p.states_in_same_block(3).size() == 3);
+        CHECK(p.partition().size() == 3);
     }
     
     SECTION("Splitting blocks") {
@@ -135,6 +147,8 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.get_block_idx_from_state(0) == 0);
         CHECK(p.get_block_idx_from_state(9) == 0);
         CHECK(p.in_same_block({0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+        CHECK(p.states_in_same_block(0).size() == 10);
+        CHECK(p.partition().size() == 1);
         p.split_blocks({0, 1, 2, 3, 4});
         CHECK(p.num_of_states() == 10);
         CHECK(p.num_of_block_items() == 10);
@@ -144,6 +158,9 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.get_block_idx_from_state(9) == 1);
         CHECK(p.in_same_block({0, 1, 2, 3, 4}));
         CHECK(p.in_same_block({5, 6, 7, 8, 9}));
+        CHECK(p.states_in_same_block(0).size() == 5);
+        CHECK(p.states_in_same_block(5).size() == 5);
+        CHECK(p.partition().size() == 2);
         p.split_blocks({0, 1, 2, 5, 6, 7});
         CHECK(p.num_of_states() == 10);
         CHECK(p.num_of_block_items() == 10);
@@ -155,6 +172,11 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.in_same_block({3, 4}));
         CHECK(p.in_same_block({5, 6, 7}));
         CHECK(p.in_same_block({8, 9}));
+        CHECK(p.states_in_same_block(0).size() == 3);
+        CHECK(p.states_in_same_block(3).size() == 2);
+        CHECK(p.states_in_same_block(5).size() == 3);
+        CHECK(p.states_in_same_block(8).size() == 2);
+        CHECK(p.partition().size() == 4);
         p.split_blocks({0, 3, 5, 8});
         CHECK(p.num_of_states() == 10);
         CHECK(p.num_of_block_items() == 10);
@@ -170,6 +192,15 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.in_same_block({6, 7}));
         CHECK(p.in_same_block({8}));
         CHECK(p.in_same_block({9}));
+        CHECK(p.states_in_same_block(0).size() == 1);
+        CHECK(p.states_in_same_block(1).size() == 2);
+        CHECK(p.states_in_same_block(3).size() == 1);
+        CHECK(p.states_in_same_block(4).size() == 1);
+        CHECK(p.states_in_same_block(5).size() == 1);
+        CHECK(p.states_in_same_block(6).size() == 2);
+        CHECK(p.states_in_same_block(8).size() == 1);
+        CHECK(p.states_in_same_block(9).size() == 1);
+        CHECK(p.partition().size() == 8);
         p.split_blocks({1, 6});
         CHECK(p.num_of_states() == 10);
         CHECK(p.num_of_block_items() == 10);
@@ -177,6 +208,17 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.num_of_nodes() == 19);          
         CHECK(p.get_block_idx_from_state(0) == 0);
         CHECK(p.get_block_idx_from_state(9) == 7);
+        CHECK(p.states_in_same_block(0).size() == 1);
+        CHECK(p.states_in_same_block(1).size() == 1);
+        CHECK(p.states_in_same_block(2).size() == 1);
+        CHECK(p.states_in_same_block(3).size() == 1);
+        CHECK(p.states_in_same_block(4).size() == 1);
+        CHECK(p.states_in_same_block(5).size() == 1);
+        CHECK(p.states_in_same_block(6).size() == 1);
+        CHECK(p.states_in_same_block(7).size() == 1);
+        CHECK(p.states_in_same_block(8).size() == 1);
+        CHECK(p.states_in_same_block(9).size() == 1);
+        CHECK(p.partition().size() == 10);
         p.split_blocks({0, 2, 4, 6, 8});
         CHECK(p.num_of_states() == 10);
         CHECK(p.num_of_block_items() == 10);
@@ -184,6 +226,36 @@ TEST_CASE("mata::utils::Partition") {
         CHECK(p.num_of_nodes() == 19);
         CHECK(p.get_block_idx_from_state(0) == 0);
         CHECK(p.get_block_idx_from_state(9) == 7);
+        CHECK(p.states_in_same_block(0).size() == 1);
+        CHECK(p.states_in_same_block(1).size() == 1);
+        CHECK(p.states_in_same_block(2).size() == 1);
+        CHECK(p.states_in_same_block(3).size() == 1);
+        CHECK(p.states_in_same_block(4).size() == 1);
+        CHECK(p.states_in_same_block(5).size() == 1);
+        CHECK(p.states_in_same_block(6).size() == 1);
+        CHECK(p.states_in_same_block(7).size() == 1);
+        CHECK(p.states_in_same_block(8).size() == 1);
+        CHECK(p.states_in_same_block(9).size() == 1);
+        CHECK(p.partition().size() == 10);
+    }
+    
+    SECTION("Complicated blocks splitting with swapping") {
+        Partition p{10};
+        p.split_blocks({0, 2, 4, 6, 8});
+        CHECK(p.in_same_block(0, 2));
+        CHECK(p.in_same_block(0, 4));
+        CHECK(p.in_same_block(0, 6));
+        CHECK(p.in_same_block(0, 8));
+        CHECK(!p.in_same_block(0, 1));
+        CHECK(!p.in_same_block(0, 3));
+        CHECK(!p.in_same_block(0, 5));
+        CHECK(!p.in_same_block(0, 7));
+        CHECK(!p.in_same_block(0, 9));
+        p.split_blocks({1, 9});
+        CHECK(p.in_same_block(1, 9));
+        CHECK(!p.in_same_block(1, 3));
+        CHECK(!p.in_same_block(1, 5));
+        CHECK(!p.in_same_block(1, 7));
     }
     
     SECTION("Custom copying and assigning")
@@ -233,7 +305,10 @@ TEST_CASE("mata::utils::Partition") {
         }
                                      
         q.split_blocks({1, 2});
-        r.split_blocks({1, 2}); 
+        r.split_blocks({1, 2});
+        
+        std::cout << q;
+        std::cout << r;
     }  
 
 }
@@ -342,7 +417,14 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(!e->is_transitive());
         delete e;              
         }
-        
+
+    SECTION("Matrix of the None type") {
+
+        ExtendableSquareMatrix<unsigned long> *e = create<unsigned long>(
+                                                       None, 5, 2);        
+        CHECK(e == nullptr);
+    
+    }
         
     SECTION("Copying matrices") {
 
