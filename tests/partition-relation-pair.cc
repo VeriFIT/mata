@@ -477,9 +477,9 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e2->capacity() == 5);
         CHECK(e3->capacity() == 5);
 
-        ExtendableSquareMatrix<unsigned long> *c1 = e1; 
-        ExtendableSquareMatrix<unsigned long> *c2 = e2;
-        ExtendableSquareMatrix<unsigned long> *c3 = e3;
+        ExtendableSquareMatrix<unsigned long> *c1 = e1->clone(); 
+        ExtendableSquareMatrix<unsigned long> *c2 = e2->clone();
+        ExtendableSquareMatrix<unsigned long> *c3 = e3->clone();
 
         CHECK(!c1->size());
         CHECK(!c2->size());
@@ -491,7 +491,11 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
 
         delete e1;
         delete e2;
-        delete e3;                    
+        delete e3;
+        delete c1;
+        delete c2;
+        delete c3;
+
     }
         
     SECTION("Matrices with only one element") {
@@ -510,9 +514,9 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e2->capacity() == 5);
         CHECK(e3->capacity() == 5);
 
-        ExtendableSquareMatrix<unsigned long> *c1 = e1; 
-        ExtendableSquareMatrix<unsigned long> *c2 = e2;
-        ExtendableSquareMatrix<unsigned long> *c3 = e3;
+        ExtendableSquareMatrix<unsigned long> *c1 = e1->clone(); 
+        ExtendableSquareMatrix<unsigned long> *c2 = e2->clone();
+        ExtendableSquareMatrix<unsigned long> *c3 = e3->clone();
 
         CHECK(c1->size() == 1);
         CHECK(c2->size() == 1);
@@ -525,6 +529,10 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         delete e1;
         delete e2;
         delete e3;                    
+        delete c1;
+        delete c2;
+        delete c3;                    
+
     }
 
     SECTION("Copying matrices") {
