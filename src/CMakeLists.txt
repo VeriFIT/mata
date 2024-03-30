@@ -9,6 +9,7 @@ add_library(libmata STATIC
 	mintermization.cc
 	parser.cc
 	re2parser.cc
+	partition.cc
 	nfa/nfa.cc
 	nfa/inclusion.cc
 	nfa/universal.cc
