@@ -39,6 +39,7 @@
 #include <iostream>
 #include <vector>
 #include <unordered_map>
+#include <memory>
 #include <cassert>
 
 namespace mata::utils {
@@ -173,7 +174,8 @@ class ExtendableSquareMatrix {
         * @brief creates a deep copy of the matrix 
         * @return deep copy of the matrix
         */
-        virtual ExtendableSquareMatrix<T> *clone(void) const = 0;
+        virtual std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const 
+            = 0;
         
         virtual ~ExtendableSquareMatrix() = default;
         
@@ -393,8 +395,9 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         //  CLONING
         //
         
-        CascadeSquareMatrix *clone(void) const { 
-            return new CascadeSquareMatrix<T>(*this); }
+        std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
+            return std::make_unique<CascadeSquareMatrix<T>>(*this); 
+        }
             
         //
         //  OPERATORS
@@ -533,8 +536,9 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         //  CLONING
         //
         
-        DynamicSquareMatrix *clone(void) const { 
-            return new DynamicSquareMatrix(*this); }
+        std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
+            return std::make_unique<DynamicSquareMatrix<T>>(*this); 
+        }
 
 }; // DynamicSquareMatrix
 
@@ -638,8 +642,9 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
 
 
         // cloning
-        HashedSquareMatrix *clone(void) const { 
-            return new HashedSquareMatrix(*this); }
+        std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
+            return std::make_unique<HashedSquareMatrix<T>>(*this); 
+        }
         
 }; // HashedSquareMatrix
 
@@ -657,16 +662,16 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
 * @return pointer to the newly created matrix
 */
 template <typename T>
-inline ExtendableSquareMatrix<T> *create(MatrixType type, 
+inline std::unique_ptr<ExtendableSquareMatrix<T>> create(MatrixType type, 
     size_t capacity, size_t size = 0) {
     
     switch(type) {
         case MatrixType::Cascade:
-            return new CascadeSquareMatrix<T>(capacity, size);
+            return std::make_unique<CascadeSquareMatrix<T>>(capacity, size);
         case MatrixType::Dynamic:
-            return new DynamicSquareMatrix<T>(capacity, size);    
+            return std::make_unique<DynamicSquareMatrix<T>>(capacity, size);    
         case MatrixType::Hashed:
-            return new HashedSquareMatrix<T>(capacity, size);    
+            return std::make_unique<HashedSquareMatrix<T>>(capacity, size);    
         default:
             return nullptr;
     }
