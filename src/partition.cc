@@ -427,7 +427,7 @@ std::vector<SplitPair> Partition::split_blocks(
                 // this visited state will be part of the former block
                 ++iter_first;
             }
-            while(repr_marked ^ used_states[get_block_item(iter_last).state]) {
+            while((repr_marked ^ used_states[get_block_item(iter_last).state])) {
                 // this visited state will be part of the new block
                 block_items_[iter_last].block_idx = new_block_idx;
                 --iter_last;
