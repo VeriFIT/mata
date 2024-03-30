@@ -422,8 +422,8 @@ std::vector<SplitPair> Partition::split_blocks(
         // to iterate through the BlockItems meet somewhere in the middle
         do {
             // we choose the swapping strategy using XOR operation
-            while(repr_marked 
-                  ^ !used_states[get_block_item(iter_first).state]) {
+            while((repr_marked 
+                  ^ !used_states[get_block_item(iter_first).state])) {
                 // this visited state will be part of the former block
                 ++iter_first;
             }
