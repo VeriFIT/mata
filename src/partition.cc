@@ -118,7 +118,9 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
         
         // if there is at least one unused state, we need to 
         // create an additional block
-        if(all_states_used) {
+        // this branch will be executed only once (first time it is reached)
+        // and then it will be never executed again
+        if(all_states_used) [[unlikely]] {
             all_states_used = false;
             first = state;
             ++num_of_blocks;
@@ -275,7 +277,7 @@ bool Partition::in_same_block(State first, State second) const {
 * @return true iff all of the given states belong to the same partition block
 */
 bool Partition::in_same_block(const std::vector<State>& states) const {
-    if(states.empty()) { return true; }
+    if(states.empty()) [[unlikely]] { return true; }
     size_t block_idx = get_block_idx_from_state(states.front());
     for(size_t state : states) {
         assert(state < states_.size() && "The given state does not exist.");
@@ -366,7 +368,7 @@ std::vector<SplitPair> Partition::split_blocks(
     std::vector<SplitPair> split{};
     
     // if there is no marked state, no block could be split
-    if(marked.empty()) { return split; }
+    if(marked.empty()) [[unlikely]] { return split; }
     
     // this vector contains information about states which has been marked
     // and helps to detect states which has been marked multiple times

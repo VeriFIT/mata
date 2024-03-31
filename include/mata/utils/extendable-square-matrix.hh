@@ -208,7 +208,7 @@ class ExtendableSquareMatrix {
             size_t size = this->size();
             for(size_t i = 0; i < size; ++i) {
                 for(size_t j = 0; j < size; ++j) {
-                    if(i == j) { continue; }
+                    if(i == j) [[unlikely]] { continue; }
                     if(get(i, j) && get(j, i)) { return false; }
                 }
             }
@@ -408,7 +408,7 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         * capacity of the vector 'data_' since the default vector
         * assignment does not preserve it.
         * @brief assignment operator for the CascadeSquareMatrix class
-        * @param[in] other matrix which should be copied assigned
+        * @param[in] other matrix which should be assigned
         */
         CascadeSquareMatrix<T>& operator=(const CascadeSquareMatrix<T>& other) {
             // initialization of the matrix
