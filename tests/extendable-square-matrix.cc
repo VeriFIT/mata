@@ -207,4 +207,79 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         
         }
         
+    SECTION("Extend and copy") {
+
+        std::unique_ptr<ExtendableSquareMatrix<char>> m1 =
+            create<char>(Cascade, 5, 3);
+        std::unique_ptr<ExtendableSquareMatrix<char>> m2 =
+            create<char>(Dynamic, 5, 3);
+        std::unique_ptr<ExtendableSquareMatrix<char>> m3 =
+            create<char>(Hashed, 5, 3);
+            
+        m1->set(0, 0, true);
+        m1->set(1, 0, true);
+        m1->set(1, 1, true);
+        m1->set(1, 2, true);
+        m2->set(0, 0, true);
+        m2->set(1, 0, true);
+        m2->set(1, 1, true);
+        m2->set(1, 2, true);
+        m3->set(0, 0, true);
+        m3->set(1, 0, true);
+        m3->set(1, 1, true);
+        m3->set(1, 2, true);
+
+        CHECK(m1->size() == 3);
+        CHECK(m2->size() == 3);
+        CHECK(m3->size() == 3);
+        CHECK(m1->capacity() == 5);
+        CHECK(m2->capacity() == 5);
+        CHECK(m3->capacity() == 5);
+
+        m1->extend_and_copy(3, 3);
+        m2->extend_and_copy(3, 3);
+        m3->extend_and_copy(3, 3);
+        m1->extend_and_copy(1, 0);
+        m2->extend_and_copy(1, 0);
+        m3->extend_and_copy(1, 0);
+
+        CHECK(m1->size() == 5);
+        CHECK(m2->size() == 5);
+        CHECK(m3->size() == 5);
+        CHECK(m1->capacity() == 5);
+        CHECK(m2->capacity() == 5);
+        CHECK(m3->capacity() == 5);       
+
+        CHECK(m1->get(0, 4));
+        CHECK(m1->get(1, 4));
+        CHECK(!m1->get(2, 4));
+        CHECK(!m1->get(3, 4));
+        CHECK(m1->get(4, 0));
+        CHECK(m1->get(4, 1));
+        CHECK(m1->get(4, 2));
+        CHECK(!m1->get(4, 3));
+        CHECK(!m1->get(4, 4));
+        
+        CHECK(m2->get(0, 4));
+        CHECK(m2->get(1, 4));
+        CHECK(!m2->get(2, 4));
+        CHECK(!m2->get(3, 4));
+        CHECK(m2->get(4, 0));
+        CHECK(m2->get(4, 1));
+        CHECK(m2->get(4, 2));
+        CHECK(!m2->get(4, 3));
+        CHECK(!m2->get(4, 4));
+        
+        CHECK(m3->get(0, 4));
+        CHECK(m3->get(1, 4));
+        CHECK(!m3->get(2, 4));
+        CHECK(!m3->get(3, 4));
+        CHECK(m3->get(4, 0));
+        CHECK(m3->get(4, 1));
+        CHECK(m3->get(4, 2));
+        CHECK(!m3->get(4, 3));
+        CHECK(!m3->get(4, 4));
+        
+    }
+   
 }

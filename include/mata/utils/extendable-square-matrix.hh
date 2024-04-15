@@ -166,6 +166,27 @@ class ExtendableSquareMatrix {
         */
         virtual void extend(T placeholder = T()) = 0;
 
+        /**
+        * Changes the n x n matrix to the (n+1) x (n+1) matrix by duplicating
+        * existing row and column. The row parameter is an index of the row
+        * which should be duplicated and added as a (n+1)th row, while the
+        * col parameter is an index of the column which should be duplicated
+        * and added as an (n+1)th row. If the row parameter equals n, then
+        * it will be initialized using default values of the type T. If the
+        * col parameter equals n, the new column will be also initialized
+        * with the defauls values of the type T. Using this approach, one is
+        * able to copy only a row or column and initialize the other one with
+        * default values. Calling extend_and_copy(n, n) has the same effect as
+        * calling extend(). 
+        * The element at the position [n, n] will be always initialized using
+        * the default value of the type T. 
+        * @brief changes the n x n matrix to the (n+1) x (n+1) matrix with
+        * copying of the existing data 
+        * @param[in] placeholde value which will be assigned to the 
+        * newly allocated memory cells 
+        */        
+        virtual void extend_and_copy(size_t row, size_t col) = 0;
+        
         // 
         //  CLONING
         //
@@ -390,6 +411,70 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
             // the size increases
             ++this->size_;
         }
+
+        /**
+        * Extendes the n x n cascade matrix to the (n+1) x (n+1) matrix by 
+        * duplicating an existing row and column. The row parameter is an index
+        * of the row which should be duplicated and added as a (n+1)th row,
+        * while the col parameter is an index of the column which should be
+        * duplicated and added as an (n+1)th row. If the row parameter equals n,
+        * then it will be initialized using default values of the type T. If the
+        * col parameter equals n, the new column will be also initialized
+        * with the defauls values of the type T. Using this approach, one is
+        * able to copy only a row or column and initialize the other one with
+        * default values. Calling extend_and_copy(n, n) has the same effect as
+        * calling extend().
+        * The element at the position [n, n] will be always initialized using
+        * the default value of the type T. 
+        * @brief changes the n x n matrix to the (n+1) x (n+1) matrix with
+        * copying of the existing data 
+        * @param[in] row index of the row which should be copied
+        * @param[in] col index of the column which should be copied 
+        */ 
+       void extend_and_copy(size_t row, size_t col) {
+            assert(this->size_ < this->capacity_ 
+                   && "The matrix cannot be extended anymore");
+                   std::cout << this->size_ << " " << row << std::endl;
+            assert(row <= this->size_
+                   && "Index of the copied row cannot be bigger than the size");
+            assert(col <= this->size_
+                   && "Index of the copied col cannot be bigger than the size");
+                   
+            // if the row index corresponds to the index of the newly created
+            // row, it will be initialized using default values of the type T
+            if(row == this->size_) {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_.push_back(T());
+                }
+            // otherwise, the row with the index 'row' will be duplicated
+            // to create a new row
+            } else {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_.push_back(get(row, i));
+                }
+            }
+            
+            // element at the position [n, n] will be always initialized using
+            // the default value of the type T
+            data_.push_back(T());
+            
+            // if the column index corresponds to the index of the newly created
+            // column, it will be initialized using default values of the type T
+            if(col == this->size_) {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_.push_back(T());
+                }            
+            // otherwise, the column with the index 'col' will be duplicated
+            // to create a new column
+            } else {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_.push_back(get(this->size_ - 1 - i, col));
+                }
+            }
+            
+            // the size of the matrix increases after extending
+            ++this->size_;
+        }
         
         //
         //  CLONING
@@ -532,6 +617,66 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
             data_.back().insert(data_.back().end(), this->size_, placeholder);
         }
         
+        /**
+        * Extendes the n x n dynamic matrix to the (n+1) x (n+1) matrix by 
+        * duplicating an existing row and column. The row parameter is an index
+        * of the row which should be duplicated and added as a (n+1)th row,
+        * while the col parameter is an index of the column which should be
+        * duplicated and added as an (n+1)th row. If the row parameter equals n,
+        * then it will be initialized using default values of the type T. If the
+        * col parameter equals n, the new column will be also initialized
+        * with the defauls values of the type T. Using this approach, one is
+        * able to copy only a row or column and initialize the other one with
+        * default values. Calling extend_and_copy(n, n) has the same effect as
+        * calling extend().
+        * The element at the position [n, n] will be always initialized using
+        * the default value of the type T. 
+        * @brief changes the n x n matrix to the (n+1) x (n+1) matrix with
+        * copying of the existing data 
+        * @param[in] row index of the row which should be copied
+        * @param[in] col index of the column which should be copied
+        */         
+        void extend_and_copy(size_t row, size_t col) {
+            assert(this->size_ < this->capacity_
+                   && "The matrix cannot be extended anymore");
+            assert(row <= this->size_
+                   && "Index of the copied row cannot be bigger than the size");
+            assert(col <= this->size_
+                   && "Index of the copied col cannot be bigger than the size");
+
+            // if the row index corresponds to the index of the newly created
+            // row, it will be initialized using default values of the type T            
+            if(row == this->size_) {
+                data_.emplace_back();
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[this->size_].emplace_back(T());
+                }
+            // otherwise, the row at the index 'row' will be duplicated
+            } else {
+                data_.push_back(data_[row]);
+            }
+            
+            // if the column index corresponds to the index of the newly created
+            // column, it will be initialized using default values of the type T
+            if(col == this->size_) {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[i].emplace_back(T());
+                }
+            // otherwise, the column at the index 'col' will be duplicated
+            } else {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[i].push_back(data_[i][col]);
+                }
+            }
+            
+            // element at the position [n, n] will be always initialized using
+            // the default value of the type T
+            data_[this->size_].emplace_back(T());
+            
+            // the size of the matrix increases after extending
+            ++this->size_;
+        }
+        
         //
         //  CLONING
         //
@@ -590,7 +735,9 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
             for(size_t i = 0; i < init_rows; ++i) {extend();}
         }
         
-        // implemented virtual functions        
+        // 
+        //  IMPLEMENTED VIRTUAL METHODS
+        //       
 
         /**
         * @brief assings a value to the Hashed square matrix
@@ -640,8 +787,73 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
             ++this->size_;
         }
 
+        /**
+        * Extendes the n x n hashed matrix to the (n+1) x (n+1) matrix by 
+        * duplicating an existing row and column. The row parameter is an index
+        * of the row which should be duplicated and added as a (n+1)th row,
+        * while the col parameter is an index of the column which should be
+        * duplicated and added as an (n+1)th row. If the row parameter equals n,
+        * then it will be initialized using default values of the type T. If the
+        * col parameter equals n, the new column will be also initialized
+        * with the defauls values of the type T. Using this approach, one is
+        * able to copy only a row or column and initialize the other one with
+        * default values. Calling extend_and_copy(n, n) has the same effect as
+        * calling extend().
+        * The element at the position [n, n] will be always initialized using
+        * the default value of the type T. 
+        * @brief changes the n x n matrix to the (n+1) x (n+1) matrix with
+        * copying of the existing data 
+        * @param[in] row index of the row which should be copied
+        * @param[in] col index of the column which should be copied
+        */
+        void extend_and_copy(size_t row, size_t col) {
+            assert(this->size_ < this->capacity_
+                   && "The matrix cannot be extended anymore");
+            assert(row <= this->size_
+                   && "Index of the copied row cannot be bigger than the size");
+            assert(col <= this->size_
+                   && "Index of the copied col cannot be bigger than the size");
 
-        // cloning
+            // if the row index corresponds to the index of the newly created
+            // row, it will be initialized using default values of the type T
+            if(row == this->size_) {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[this->size_ * this->capacity_ + i] = T();
+                }
+            // otherwise, the row at the index 'row' will be duplicated
+            } else {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[this->size_ * this->capacity_ + i] = 
+                        data_[row * this->capacity_ + i];
+                }
+            }
+
+            // if the col index corresponds to the index of the newly created
+            // column, it will be initialized using default values of the type T
+            if(col == this->size_) {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[i * this->capacity_ + this->size_] = T();
+                }
+            // otherwise, the column at the index 'col' will be duplicated
+            } else {
+                for(size_t i = 0; i < this->size_; ++i) {
+                    data_[i * this->capacity_ + this->size_] =
+                        data_[i * this->capacity_ + col];
+                }
+            }
+
+            // element at the position [n, n] will be always initialized using
+            // the default value of the type T
+            data_[this->size_ * this->capacity_ + this->size_] = T();
+            
+            // the size of the matrix increases after extending
+            ++this->size_;
+        }
+
+        // 
+        //  CLONING
+        //
+        
         std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
             return std::make_unique<HashedSquareMatrix<T>>(*this); 
         }
@@ -695,7 +907,8 @@ inline std::ostream& operator<<(std::ostream& os,
     result += "MATRIX:\n";
     for(size_t i = 0; i < size; ++i) {
         for(size_t j = 0; j < size; ++j) {
-            result += std::to_string(matrix.get(i, j)) + " ";
+            result += std::to_string(
+                static_cast<unsigned long>(matrix.get(i, j))) + " ";
         }
         result += "\n";
     }
