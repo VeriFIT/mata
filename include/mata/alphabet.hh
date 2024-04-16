@@ -184,10 +184,10 @@ public:
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
-private:
-    EnumAlphabet& operator=(const EnumAlphabet& rhs);
-
 public:
+    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
+    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbols.
      *
@@ -297,10 +297,11 @@ public:
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
 
-private:
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 
 public:
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
+
     /**
      * @brief Expand alphabet by symbols from the passed @p symbol_names.
      *
