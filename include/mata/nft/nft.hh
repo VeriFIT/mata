@@ -51,6 +51,13 @@ public:
     using super::vector;
     Levels(const std::vector<Level>& levels): super(levels) {}
     Levels(std::vector<Level>&& levels): super(std::move(levels)) {}
+
+    /**
+     * @brief Append post vector to the delta.
+     *
+     * @param post_vector Vector of posts to be appended.
+     */
+    void append(const Levels& levels_vector) { for (const Level& level: levels_vector) { push_back(level); } }
 };
 
 /**

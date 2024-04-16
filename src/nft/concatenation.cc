@@ -15,6 +15,7 @@ Nft concatenate(const Nft& lhs, const Nft& rhs, bool use_epsilon,
 }
 
 Nft& Nft::concatenate(const Nft& aut) {
+    assert(num_of_levels == aut.num_of_levels);
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;
@@ -27,6 +28,7 @@ Nft& Nft::concatenate(const Nft& aut) {
 
     this->delta.allocate(n);
     this->delta.append(aut.delta.renumber_targets(upd_fnc));
+    this->levels.append(aut.levels);
 
     // set accepting states
     utils::SparseSet<State> new_fin{};
