@@ -221,26 +221,7 @@ You can either run your scripts directly using `python` or compile it using the 
 
 # Contributing
 
-If you'd like to contribute to the libmata, 
-please [fork the repository](https://github.com/VeriFIT/mata/fork), create a new 
-feature branch, and finally [create a new pull request](https://github.com/VeriFIT/mata/compare).
-
-In case you run into some unexpected behaviour, error or anything suspicious
-either contact us directly through mail or 
-[create a new issue](https://github.com/VeriFIT/mata/issues/new/choose).
-When creating a new issue, please, try to include everything necessary for us to know
-(such as the version, operation system, etc.) so we can sucessfully replicate the issue.
-
-## Note to main contributors
-
-By default, each merge automatically increases the `minor` version of the library
-(i.e., `0.0.0 -> 0.1.0` ). This can be overruled using either tag `#patch` (increasing
-patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.e.,
-`0.0.0 -> 1.0.0`). This tag is specified in the merge message.
-
-Generally, it is recommended to use `#major` for changes that introduces backward-incompatible
-changes for people that used previous versions, and `#patch` for minor changes, such as bug-fixes,
-performance fixes or refactoring.
+Please refer to our [contributing guidelines](CONTRIBUTING.md).
 
 # Links
 
