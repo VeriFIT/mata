@@ -18,6 +18,8 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <queue>
+#include <unistd.h>
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
@@ -530,12 +532,45 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzoz
 Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
 
 /**
+ * @brief A CNF transformation to the provided clause in form of disjunctions of long and-not clauses,
+ * utilized for reduction using SAT and QBF solvers, printed to output
+ * @param[in] input Vector with the clause in DNF form to transform
+ * @param[in] max_index Starting index of free variables used for new generated variables
+ * @param[in] output Output stream
+ * @return The first variable index that was not utilized
+*/
+size_t reduction_tseytin(const std::vector <int>& input, size_t max_index, std::ostream& output);
+
+/**
+ * @brief Experimental reduction using sat solver MiniSat with idea of creating minimal nondeterministic automaton,
+ * is not possible to use for normal sized automata (around 10 states max), requires the alphabet of input automaton
+ * to be a continuous sequence of numbers strating from 0
+ * @param[in] aut Automaton to reduce
+ * @param[in] params Optional pamaters to control the reduction:
+ * - "solver": "sat"/"sat_nfa" (sat for the dfa complete automaton with single initial state)
+ * @param[in] debug Flag for debug output as the reduction can take some time to get the info about the current status
+ * @return Reduced automaton
+*/
+Nfa reduce_sat(const Nfa &aut, const ParameterMap& params = {{"solver", "sat"}}, bool debug = false);
+
+/**
+ * @brief Experimental reduction using qbf solver CAQE with idea of creating minimal nondeterministic automaton,
+ * is not possible to use for normal sized automata (around 10 states max), requires the alphabet of input automaton
+ * to be a continuous sequence of numbers strating from 0
+ * @param[in] aut Automaton to reduce
+ * @param[in] debug Flag for debug output as the reduction can take some time to get the info about the current status
+ * @return Reduced automaton
+*/
+Nfa reduce_qbf(const Nfa &aut, bool debug = false);
+
+/**
  * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
  * @param[out] state_renaming Mapping of original states to reduced states.
  * @param[in] params Optional parameters to control the reduction algorithm:
- * - "algorithm": "simulation".
+ * - "algorithm": "simulation"/"solvers",
+ * - "solver": "sat"/"sat_nfa"/"qbf".
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
@@ -570,6 +605,8 @@ inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* c
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
+// static default value for empty run pair
+static std::pair<Run*, Run*> default_runs(nullptr, nullptr);
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
@@ -578,10 +615,13 @@ inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* c
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params[ Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * @param[out] default_runs Optional parameter for intersection runs to return the found word
+ *                              that differs the input automata, used for solver reduction
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
 bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
-                    const ParameterMap& params = {{ "algorithm", "antichains"}});
+                    const ParameterMap& params = {{ "algorithm", "antichains"}},
+                     std::pair<Run*, Run*>& runs = default_runs);
 
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
@@ -598,9 +638,12 @@ bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet* alphabet,
  * @param[in] rhs Second automaton to concatenate.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
  * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * * @param[out] default_runs Optional parameter for intersection runs to return the found word
+ *                              that differs the input automata, used for solver reduction
  * @return True if @p lhs and @p rhs are equivalent, false otherwise.
  */
-bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}});
+bool are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params = {{ "algorithm", "antichains"}},
+                         std::pair<Run*, Run*>& runs = default_runs);
 
 // Reverting the automaton by one of the three functions below,
 // currently simple_revert seems best (however, not tested enough).
