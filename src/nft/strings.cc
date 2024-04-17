@@ -404,8 +404,8 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
     const size_t regex_num_of_states{ nft_reluctant_leftmost.num_of_states() };
     assert(nft_reluctant_leftmost.is_deterministic());
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
-    nft_reluctant_leftmost.levels.resize(
-        regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
+    nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
+
     // Create self-loop on the new initial state.
     const State initial{ nft_reluctant_leftmost.add_state_with_level(0) };
     State curr_state{ regex_num_of_states + 1 };
