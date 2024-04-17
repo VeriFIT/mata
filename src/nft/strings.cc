@@ -408,16 +408,11 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
 
     // Create self-loop on the new initial state.
     const State initial{ nft_reluctant_leftmost.add_state_with_level(0) };
-    State curr_state{ regex_num_of_states + 1 };
-    StatePost& initial_state_post{ nft_reluctant_leftmost.delta.mutable_state_post(initial) };
-    for (const Symbol symbol: alphabet_symbols) {
-        initial_state_post.push_back({ symbol, curr_state });
-        nft_reluctant_leftmost.delta.add(curr_state, symbol, initial);
-        nft_reluctant_leftmost.levels[curr_state] = 1;
-        ++curr_state;
-    }
+    nft_reluctant_leftmost.insert_identity(initial, alphabet_symbols.ToVector());
+
     // Move to replace mode when begin marker is encountered.
-    initial_state_post.insert({ begin_marker, curr_state });
+    State curr_state{ nft_reluctant_leftmost.num_of_states() };
+    nft_reluctant_leftmost.delta.add(initial, begin_marker, curr_state);
     nft_reluctant_leftmost.delta.mutable_state_post(curr_state).push_back(
         SymbolPost{ EPSILON, StateSet{ nft_reluctant_leftmost.initial } }
     );
@@ -436,11 +431,11 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
     nft_reluctant_leftmost.final.insert(next_state);
     nft_reluctant_leftmost.final.clear();
     switch (replace_mode) {
-        case ReplaceMode::All: {
-            nft_reluctant_leftmost.delta.add(next_state, EPSILON, initial);
+        case ReplaceMode::All: { // Return to beginning to possibly repeat replacement.
+            nft_reluctant_leftmost.insert_word_by_parts(next_state, { { EPSILON }, { EPSILON } }, initial);
             break;
         };
-        case ReplaceMode::Single: {
+        case ReplaceMode::Single: { // End the replacement mode.
             nft_reluctant_leftmost.levels.resize(nft_reluctant_leftmost.levels.size() + alphabet_symbols.size() + 1);
             const State final{ next_state };
             nft_reluctant_leftmost.final.insert(final);
