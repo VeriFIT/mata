@@ -2163,6 +2163,309 @@ TEST_CASE("mata::nfa::reduce_size_by_simulation()")
     }
 }
 
+TEST_CASE("mata::nfa::reduce_size_by_residual()") {
+    Nfa aut;
+    StateRenaming state_renaming;
+    ParameterMap params_after, params_with;
+    params_after["algorithm"] = "residual";
+    params_with["algorithm"] = "residual";
+
+    SECTION("empty automaton")
+    {
+        params_after["type"] = "after";
+        params_after["direction"] = "forward";
+        params_with["type"] = "with";
+        params_with["direction"] = "forward";
+
+        Nfa result_after = reduce(aut, &state_renaming, params_after);
+        Nfa result_with = reduce(aut, &state_renaming, params_with);
+
+        REQUIRE(result_after.delta.empty());
+        REQUIRE(result_after.initial.empty());
+        REQUIRE(result_after.final.empty());
+        REQUIRE(result_after.is_identical(result_with));
+        REQUIRE(are_equivalent(aut, result_after));
+    }
+
+    SECTION("simple automaton")
+    {
+        params_after["type"] = "after";
+        params_after["direction"] = "forward";
+        params_with["type"] = "with";
+        params_with["direction"] = "forward";
+        aut.add_state(2);
+        aut.initial.insert(1);
+
+        aut.final.insert(2);
+        Nfa result_after = reduce(aut, &state_renaming, params_after);
+        Nfa result_with = reduce(aut, &state_renaming, params_with);
+
+        REQUIRE(result_after.num_of_states() == 0);
+        REQUIRE(result_after.initial.empty());
+        REQUIRE(result_after.final.empty());
+        REQUIRE(result_after.delta.empty());
+        REQUIRE(result_after.is_identical(result_with));
+        REQUIRE(are_equivalent(aut, result_after));
+
+        aut.delta.add(1, 'a', 2);
+        result_after = reduce(aut, &state_renaming, params_after);
+        result_with = reduce(aut, &state_renaming, params_with);
+
+        REQUIRE(result_after.num_of_states() == 2);
+        REQUIRE(result_after.initial[0]);
+        REQUIRE(result_after.final[1]);
+        REQUIRE(result_after.delta.contains(0, 'a', 1));
+        REQUIRE(result_after.is_identical(result_with));
+        REQUIRE(are_equivalent(aut, result_after));
+    }
+
+    SECTION("medium automaton")
+    {
+        params_after["type"] = "after";
+        params_after["direction"] = "forward";
+        params_with["type"] = "with";
+        params_with["direction"] = "forward";
+        aut.add_state(4);
+
+        aut.initial = { 1 };
+        aut.final = { 2,3 };
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(4, 'a', 2);
+        aut.delta.add(4, 'a', 3);
+        aut.delta.add(3, 'a', 2);
+        aut.delta.add(3, 'a', 3);
+        aut.delta.add(2, 'a', 1);
+
+        Nfa result_after = reduce(aut, &state_renaming, params_after);
+        Nfa result_with = reduce(aut, &state_renaming, params_with);
+
+        REQUIRE(result_after.num_of_states() == 4);
+        REQUIRE(result_after.initial[0]);
+        REQUIRE(result_after.delta.contains(0, 'a', 1));
+        REQUIRE(result_after.delta.contains(0, 'b', 2));
+        REQUIRE(result_after.delta.contains(1, 'a', 3));
+        REQUIRE(!result_after.delta.contains(1, 'b', 3));
+        REQUIRE(result_after.delta.contains(2, 'a', 3));
+        REQUIRE(!result_after.delta.contains(2, 'a', 2));
+        REQUIRE(result_after.delta.contains(3, 'a', 3));
+        REQUIRE(result_after.delta.contains(3, 'a', 0));
+        REQUIRE(!result_after.delta.contains(3, 'b', 2));
+        REQUIRE(result_after.final[1]);
+        REQUIRE(result_after.final[3]);
+        REQUIRE(result_after.is_identical(result_with));
+    }
+
+    SECTION("big automaton")
+    {
+        params_after["type"] = "after";
+        params_after["direction"] = "forward";
+        params_with["type"] = "with";
+        params_with["direction"] = "forward";
+        aut.add_state(7);
+
+        aut.initial = { 0 };
+        aut.final = { 0,1,2,4,5,6 };
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(0, 'c', 1);
+        aut.delta.add(0, 'd', 2);
+
+        aut.delta.add(1, 'a', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(1, 'c', 1);
+        aut.delta.add(1, 'd', 1);
+
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 1);
+        aut.delta.add(2, 'c', 4);
+        aut.delta.add(2, 'd', 1);
+
+        aut.delta.add(3, 'a', 1);
+        aut.delta.add(3, 'b', 1);
+        aut.delta.add(3, 'c', 1);
+        aut.delta.add(3, 'd', 1);
+
+        aut.delta.add(4, 'a', 1);
+        aut.delta.add(4, 'b', 1);
+        aut.delta.add(4, 'c', 1);
+        aut.delta.add(4, 'd', 5);
+
+        aut.delta.add(5, 'a', 3);
+        aut.delta.add(5, 'b', 1);
+        aut.delta.add(5, 'c', 1);
+        aut.delta.add(5, 'd', 6);
+
+        aut.delta.add(6, 'a', 3);
+        aut.delta.add(6, 'b', 1);
+        aut.delta.add(6, 'c', 1);
+        aut.delta.add(6, 'd', 1);
+
+        Nfa result_after = reduce(aut, &state_renaming, params_after);
+        Nfa result_with = reduce(aut, &state_renaming, params_with);
+
+        REQUIRE(result_after.num_of_states() == 5);
+        REQUIRE(result_after.initial[0]);
+        REQUIRE(result_after.delta.contains(0, 'd', 1));
+        REQUIRE(!result_after.delta.contains(0, 'd', 0));
+        REQUIRE(!result_after.delta.contains(0, 'd', 2));
+        REQUIRE(result_after.delta.contains(0, 'a', 0));
+        REQUIRE(result_after.delta.contains(0, 'a', 1));
+        REQUIRE(result_after.delta.contains(0, 'b', 0));
+        REQUIRE(result_after.delta.contains(0, 'b', 1));
+        REQUIRE(result_after.delta.contains(0, 'c', 0));
+        REQUIRE(result_after.delta.contains(0, 'c', 1));
+
+        REQUIRE(result_after.delta.contains(1, 'a', 2));
+        REQUIRE(!result_after.delta.contains(1, 'a', 3));
+        REQUIRE(result_after.delta.contains(1, 'b', 0));
+        REQUIRE(result_after.delta.contains(1, 'b', 1));
+        REQUIRE(result_after.delta.contains(1, 'c', 3));
+        REQUIRE(!result_after.delta.contains(1, 'c', 2));
+        REQUIRE(result_after.delta.contains(1, 'd', 0));
+        REQUIRE(result_after.delta.contains(1, 'd', 1));
+
+        REQUIRE(result_after.delta.contains(2, 'a', 0));
+        REQUIRE(result_after.delta.contains(2, 'a', 1));
+        REQUIRE(result_after.delta.contains(2, 'b', 0));
+        REQUIRE(result_after.delta.contains(2, 'b', 1));
+        REQUIRE(result_after.delta.contains(2, 'c', 0));
+        REQUIRE(result_after.delta.contains(2, 'c', 1));
+        REQUIRE(result_after.delta.contains(2, 'd', 0));
+        REQUIRE(result_after.delta.contains(2, 'd', 1));
+
+        REQUIRE(result_after.delta.contains(3, 'a', 0));
+        REQUIRE(result_after.delta.contains(3, 'a', 1));
+        REQUIRE(result_after.delta.contains(3, 'b', 0));
+        REQUIRE(result_after.delta.contains(3, 'b', 1));
+        REQUIRE(result_after.delta.contains(3, 'c', 0));
+        REQUIRE(result_after.delta.contains(3, 'c', 1));
+        REQUIRE(result_after.delta.contains(3, 'd', 4));
+        REQUIRE(!result_after.delta.contains(3, 'd', 2));
+        REQUIRE(!result_after.delta.contains(3, 'd', 3));
+
+        REQUIRE(result_after.delta.contains(4, 'a', 2));
+        REQUIRE(result_after.delta.contains(4, 'b', 0));
+        REQUIRE(result_after.delta.contains(4, 'b', 1));
+        REQUIRE(result_after.delta.contains(4, 'c', 0));
+        REQUIRE(result_after.delta.contains(4, 'c', 1));
+        REQUIRE(result_after.delta.contains(4, 'd', 1));
+        REQUIRE(result_after.delta.contains(4, 'd', 4));
+        REQUIRE(!result_after.delta.contains(4, 'd', 0));
+        REQUIRE(!result_after.delta.contains(4, 'd', 3));
+        REQUIRE(result_after.final[0]);
+        REQUIRE(result_after.final[1]);
+        REQUIRE(result_after.final[3]);
+        REQUIRE(result_after.final[4]);
+        REQUIRE(are_equivalent(result_after, result_with));
+        REQUIRE(are_equivalent(aut, result_after));
+    }
+
+    SECTION("backward residual big automaton")
+    {
+        params_after["type"] = "after";
+        params_after["direction"] = "backward";
+        params_with["type"] = "with";
+        params_with["direction"] = "backward";
+
+        aut.add_state(7);
+
+        aut.initial = { 0 };
+        aut.final = { 0,1,2,4,5,6 };
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(0, 'c', 1);
+        aut.delta.add(0, 'd', 2);
+
+        aut.delta.add(1, 'a', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(1, 'c', 1);
+        aut.delta.add(1, 'd', 1);
+
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'b', 1);
+        aut.delta.add(2, 'c', 4);
+        aut.delta.add(2, 'd', 1);
+
+        aut.delta.add(3, 'a', 1);
+        aut.delta.add(3, 'b', 1);
+        aut.delta.add(3, 'c', 1);
+        aut.delta.add(3, 'd', 1);
+
+        aut.delta.add(4, 'a', 1);
+        aut.delta.add(4, 'b', 1);
+        aut.delta.add(4, 'c', 1);
+        aut.delta.add(4, 'd', 5);
+
+        aut.delta.add(5, 'a', 3);
+        aut.delta.add(5, 'b', 1);
+        aut.delta.add(5, 'c', 1);
+        aut.delta.add(5, 'd', 6);
+
+        aut.delta.add(6, 'a', 3);
+        aut.delta.add(6, 'b', 1);
+        aut.delta.add(6, 'c', 1);
+        aut.delta.add(6, 'd', 1);
+
+        Nfa result_after = reduce(aut, &state_renaming, params_after);
+        Nfa result_with = reduce(aut, &state_renaming, params_with);
+
+        result_after.print_to_DOT(std::cout);
+
+        REQUIRE(result_after.num_of_states() == 6);
+        REQUIRE(result_after.initial[0]);
+        REQUIRE(result_after.initial[1]);
+        REQUIRE(result_after.initial[3]);
+        REQUIRE(result_after.initial[4]);
+
+        REQUIRE(!result_after.delta.contains(0, 'a', 0));
+        REQUIRE(!result_after.delta.contains(0, 'c', 2));
+
+        REQUIRE(result_after.delta.contains(1, 'a', 0));
+        REQUIRE(!result_after.delta.contains(1, 'd', 2));
+        REQUIRE(!result_after.delta.contains(1, 'd', 3));
+
+        REQUIRE(result_after.delta.contains(2, 'd', 1));
+        REQUIRE(!result_after.delta.contains(2, 'c', 4));
+
+        REQUIRE(result_after.delta.contains(3, 'c', 2));
+        REQUIRE(result_after.delta.contains(3, 'c', 4));
+
+        REQUIRE(result_after.delta.contains(4, 'd', 2));
+        REQUIRE(!result_after.delta.contains(4, 'd', 3));
+
+        REQUIRE(result_after.delta.contains(5, 'd', 3));
+
+        REQUIRE(result_after.final[0]);
+
+        REQUIRE(are_equivalent(result_after, result_with));
+        REQUIRE(are_equivalent(aut, result_after));
+
+    }
+
+    SECTION("error checking")
+    {
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
+                          Catch::Contains("requires setting the \"type\" key in the \"params\" argument;"));
+
+        params_after["type"] = "bad_type";
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
+                          Catch::Contains("requires setting the \"direction\" key in the \"params\" argument;"));
+
+        params_after["direction"] = "unknown_direction";
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
+                          Catch::Contains("received an unknown value of the \"direction\" key"));
+
+        params_after["direction"] = "forward";
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
+                          Catch::Contains("received an unknown value of the \"type\" key"));
+
+        params_after["type"] = "after";
+        CHECK_NOTHROW(reduce(aut, &state_renaming, params_after));
+
+    }
+}
+
 TEST_CASE("mata::nfa::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};

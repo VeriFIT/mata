@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
+#include <queue>
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
@@ -535,11 +536,14 @@ Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map 
  * @param[in] aut Automaton to reduce.
  * @param[out] state_renaming Mapping of original states to reduced states.
  * @param[in] params Optional parameters to control the reduction algorithm:
- * - "algorithm": "simulation".
+ * - "algorithm": "simulation", "residual",
+ *      and options to parametrize residual reduction, not utilized in simulation
+ * - "type": "after", "with",
+ * - "direction": "forward", "backward".
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
-           const ParameterMap& params = {{ "algorithm", "simulation" } });
+           const ParameterMap& params = {{ "algorithm", "simulation" }, { "type", "after" }, { "direction", "forward" } });
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).
