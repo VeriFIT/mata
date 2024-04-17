@@ -301,6 +301,8 @@ class Partition {
                 }
                 const Node& node(void) const { return block().node(); }
                 const BlockItem& repr(void) const { return node().repr(); }
+                const BlockItem& first(void) const { return node().first(); }
+                const BlockItem& last(void) const { return node().last(); }
         };
 
         /**
@@ -429,6 +431,12 @@ class Partition {
                 // information about the node
                 size_t size(void) const { 
                     return last().idx() - first().idx() + 1;
+                }
+                
+                bool contains_block(size_t block_idx) const {
+                    const Block& block = partition_.get_block(block_idx);
+                    return first_ <= block.first().idx() &&
+                        last_ >= block.last().idx(); 
                 }
         };
             
