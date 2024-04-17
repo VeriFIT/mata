@@ -925,4 +925,26 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
 //        ));
 //        CHECK(nft::are_equivalent(nft, expected));
     }
+
+    SECTION("bugfix: replace from Noodler") {
+        nfa::Nfa regex = nfa::builder::parse_from_mata(std::string(
+            "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q7\nq0 60 q1\nq1 83 q2\nq2 67 q3\nq3 82 q4\nq4 73 q5\nq5 80 q6\nq6 84 q7\nq7 48 q7\nq7 49 q7\nq7 50 q7\nq7 51 q7\nq7 52 q7\nq7 53 q7\nq7 54 q7\nq7 55 q7\nq7 56 q7\nq7 57 q7\nq7 60 q7\nq7 66 q7\nq7 67 q7\nq7 68 q7\nq7 69 q7\nq7 70 q7\nq7 71 q7\nq7 72 q7\nq7 73 q7\nq7 74 q7\nq7 75 q7\nq7 76 q7\nq7 78 q7\nq7 79 q7\nq7 80 q7\nq7 82 q7\nq7 83 q7\nq7 84 q7\nq7 86 q7\nq7 87 q7\nq7 92 q7\nq7 97 q7\nq7 98 q7\nq7 99 q7\nq7 100 q7\nq7 101 q7\nq7 102 q7\nq7 103 q7\nq7 104 q7\nq7 105 q7\nq7 106 q7\nq7 107 q7\nq7 108 q7\nq7 109 q7\nq7 110 q7\nq7 112 q7\nq7 114 q7\nq7 115 q7\nq7 116 q7\nq7 119 q7\nq7 120 q7\nq7 121 q7\nq7 196608 q7\n"
+        ));
+        mata::Word replacement{ 66, 76, 79, 67, 75, 69, 68 };
+        alphabet = mata::EnumAlphabet{ 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 60, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 78, 79, 80, 82, 83, 84, 86, 87, 92, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 112, 114, 115, 116, 119, 120, 121, 196608 };
+        nft = nft::strings::replace_reluctant_regex(regex, replacement, &alphabet, ReplaceMode::All);
+
+        CHECK(nft.is_tuple_in_lang({ { '<', 'S', 'C', 'R', 'I', 'P', 'T', '<', '<', '<', '<' },
+                                     { 'B', 'L', 'O', 'C', 'K', 'E', 'D', '<', '<', '<', '<' } }));
+        CHECK(nft.is_tuple_in_lang({ { '<', '<', 'S', 'C', 'R', 'I', 'P', 'T', '<', '<', '<', '<' },
+                                     { '<', 'B', 'L', 'O', 'C', 'K', 'E', 'D', '<', '<', '<', '<' } }));
+        CHECK(nft.is_tuple_in_lang({ { '<', 'S', '<', 'S', 'C', 'R', 'I', 'P', 'T', '<', '<', '<', '<' },
+                                     { '<', 'S', 'B', 'L', 'O', 'C', 'K', 'E', 'D', '<', '<', '<', '<' } }));
+        CHECK(nft.is_tuple_in_lang({ { '<', 'S', '<', 'S', 'C', 'R', 'I', 'P', 'T', 'T', 'T', '<', '<' },
+                                     { '<', 'S', 'B', 'L', 'O', 'C', 'K', 'E', 'D', 'T', 'T', '<', '<' } }));
+        CHECK(!nft.is_tuple_in_lang({ { '<', 'S', '<', 'S', 'C', 'R', 'I', 'P', 'T', 'T', 'T', '<', '<' },
+                                     { '<', 'S', 'B', 'L', 'O', 'C', 'K', 'E', 'D', 'T', '<', '<' } }));
+        CHECK(!nft.is_tuple_in_lang({ { '<', 's', '<', 's', 'c', 'r', 'i', 'p', 't', 't', 't', '<', '<' },
+                                     { '<', 's', 'B', 'L', 'O', 'C', 'K', 'E', 'D', 't', 't', '<', '<' } }));
+    }
 }

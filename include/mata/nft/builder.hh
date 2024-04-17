@@ -40,16 +40,19 @@ Nft create_empty_string_nft();
 
 /**
  * Create automaton accepting sigma star over the passed alphabet using DONT_CARE symbol.
+ *
+ * @param[in] num_of_levels Number of levels in the created NFT.
  */
-Nft create_sigma_star_nft();
+Nft create_sigma_star_nft(size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 
 /**
  * Create automaton accepting sigma star over the passed alphabet.
  *
  * @param[in] alphabet Alphabet to construct sigma star automaton with. When alphabet is left empty, the default empty
  *  alphabet is used, creating an automaton accepting only the empty string.
+ * @param[in] num_of_levels Number of levels in the created NFT.
  */
-Nft create_sigma_star_nft(Alphabet* alphabet = new OnTheFlyAlphabet{});
+Nft create_sigma_star_nft(Alphabet* alphabet = new OnTheFlyAlphabet{}, size_t num_of_levels = DEFAULT_NUM_OF_LEVELS);
 
 /** Loads an automaton from Parsed object */
 // TODO this function should the same thing as the one taking IntermediateAut or be deleted

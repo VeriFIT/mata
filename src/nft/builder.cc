@@ -249,14 +249,16 @@ Nft builder::create_empty_string_nft() {
     return Nft(mata::nfa::builder::create_empty_string_nfa());
 }
 
-Nft builder::create_sigma_star_nft() {
-    Nft nft{ 1, { 0 }, { 0 }, { 0 }, 1 };
+Nft builder::create_sigma_star_nft(const size_t num_of_levels) {
+    Nft nft{ 1, { 0 }, { 0 }, { 0 }, num_of_levels };
     nft.delta.add(0, DONT_CARE, 0);
     return nft;
 }
 
-Nft builder::create_sigma_star_nft(mata::Alphabet* alphabet) {
-    return Nft(mata::nfa::builder::create_sigma_star_nfa(alphabet));
+Nft builder::create_sigma_star_nft(mata::Alphabet* alphabet, const size_t num_of_levels) {
+    Nft nft{1, { 0 }, { 0 }, { 0 }, num_of_levels};
+    nft.insert_identity(0, alphabet->get_alphabet_symbols().ToVector());
+    return nft;
 }
 
 Nft builder::parse_from_mata(std::istream& nft_stream) {
