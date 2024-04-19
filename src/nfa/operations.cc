@@ -228,8 +228,10 @@ namespace {
         covering_states.push_back(mata::utils::OrdVector<State>());
         covering_indexes.push_back(mata::utils::OrdVector<State>());
 
-        if (aut.delta.empty())
+        if (aut.delta.empty()){
+            delete subset_map;
             return result;
+        }
 
         using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
         SynchronizedExistentialSymbolPostIterator synchronized_iterator;
