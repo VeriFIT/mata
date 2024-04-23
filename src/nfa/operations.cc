@@ -198,7 +198,7 @@ namespace {
                     continue;           // skip increasing map pointer
                 }
             }
-            it++;
+            ++it;
         }
     }
 
@@ -251,10 +251,9 @@ namespace {
             for (State q: S) {
                 mata::utils::push_back(synchronized_iterator, aut.delta[q]);
             }
-
-            bool add;       // check whether to add transitions
+  
             while (synchronized_iterator.advance()) {
-                add = false;
+                bool add = false;               // check whether to add transitions
 
                 // extract post from the sychronized_iterator iterator
                 const std::vector<Iterator>& moves = synchronized_iterator.get_current();
@@ -267,7 +266,7 @@ namespace {
                     Tid = existingTitr->second;
                     add = true;
                 }
-                else if((existingTitr = covered.find(T)) != covered.end()) {
+                else if ((existingTitr = covered.find(T)) != covered.end()) {
                     Tid = existingTitr->second;
                 } else {                                        // add new state
                     Tid = result.add_state();
@@ -448,7 +447,7 @@ namespace {
         back_determinized = revert(determinize(back_determinized));          // backward deteminization
 
         // not relly sure how to handle state_renaming
-        state_renaming;
+        (void) state_renaming;
 
         // two different implementations of the same algorithm, for type "after" the
         // residual automaton and removal of covering states is done after the final
