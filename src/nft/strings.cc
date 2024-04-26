@@ -184,9 +184,9 @@ namespace {
 Nft mata::nft::strings::create_identity(mata::Alphabet* alphabet, const size_t num_of_levels) {
     if (num_of_levels == 0) { throw std::runtime_error("NFT must have at least one level"); }
     const auto alphabet_symbols{ alphabet->get_alphabet_symbols() };
-    const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
-    const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
-    Nft nft{ num_of_states, { 0 }, { 0 }, {}, num_of_levels, alphabet };
+//    const size_t additional_states_per_symbol_num{ num_of_levels - 1 };
+//    const size_t num_of_states{ alphabet_symbols.size() * additional_states_per_symbol_num + 1 };
+    Nft nft{ 1, { 0 }, { 0 }, { 0 }, num_of_levels, alphabet };
     nft.insert_identity(0, alphabet_symbols.ToVector());
     return nft;
 }
