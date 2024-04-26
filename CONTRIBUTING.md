@@ -5,12 +5,12 @@ create a new feature branch, and finally [create a new pull request](https://git
 
 In case you run into some unexpected behaviour, error or anything suspicious either contact us directly through mail or
 [create a new issue](https://github.com/VeriFIT/mata/issues/new/choose).
-When creating a new issue, please, try to include everything necessary for us to know (such as the version, operation
+When creating a new issue, please, try to include everything necessary for us to know (such as the version, operating
 system, etc.) so we can sucessfully replicate the issue.
 
 ## Design style
 
-- private attributes of classes/structs should use `snake_case_` (note the trailing `_`).
+- **private** attributes of classes/structs should use `snake_case_` (note the trailing `_`).
 - `snake_case` is to be used in context of:
     - variables, and
     - functions / class methods (which are neither constructors nor destructors).
@@ -30,4 +30,3 @@ patch version, i.e., `0.0.0 -> 0.0.1`) or `#major` (increasing major version, i.
 Generally, it is recommended to use `#major` for changes that introduces backward-incompatible
 changes for people that used previous versions, and `#patch` for minor changes, such as bug-fixes,
 performance fixes or refactoring.
-
