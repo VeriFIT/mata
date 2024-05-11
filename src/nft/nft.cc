@@ -87,6 +87,9 @@ void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
         if (symbol == EPSILON) {
             return "<eps>";
         }
+        if (symbol == EPSILON - 99) {
+            return "<marker>";
+        }
         if (symbol == DONT_CARE) {
             return "<dcare>";
         }
@@ -98,7 +101,7 @@ void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
         if (symbol < 33) {
             return std::to_string(symbol);
         }
-        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+        return std::string(1, static_cast<char>(symbol));
     };
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
@@ -117,6 +120,8 @@ void Nft::print_to_DOT(std::ostream &output, const bool ascii) const {
 
             if (ascii && move.symbol < 128) {
                 output << "} [label=\"" << to_ascii(move.symbol) << "\"];" << std::endl;
+            } else if (ascii && move.symbol >= 128) {
+                output << "} [label=\"" << translate_special_symbols(move.symbol) << "\"];" << std::endl;
             } else {
                 output << "} [label=\"" << translate_special_symbols(move.symbol) << "\"];" << std::endl;
             }
