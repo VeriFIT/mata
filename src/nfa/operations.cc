@@ -147,17 +147,17 @@ namespace {
     void check_covered_and_covering(std::vector<StateSet>& covering_states,                 // covering sets for each state
                                     std::vector<StateSet>& covering_indexes,                // indexes of covering states
                                     std::unordered_map<StateSet, State>& covered,           // map of covered states
-                                    std::unordered_map<StateSet, State>* subset_map,        // map of non-covered states
+                                    std::unordered_map<StateSet, State>& subset_map,        // map of non-covered states
                                     const State Tid, const StateSet& T,                      // current state to check
                                     Nfa& result) {
 
-        std::unordered_map<StateSet, State>::iterator it = subset_map->begin();
+        std::unordered_map<StateSet, State>::iterator it = subset_map.begin();
 
         // initiate with empty StateSets
         covering_states.emplace_back(mata::utils::OrdVector<State>());
         covering_indexes.emplace_back(mata::utils::OrdVector<State>());
 
-        while (it != subset_map->end()) {               // goes through all found states
+        while (it != subset_map.end()) {               // goes through all found states
             if (it->first.IsSubsetOf(T)) {
                 // check if T is covered
                 // if so add covering state to its covering StateSet
@@ -196,7 +196,7 @@ namespace {
 
                     std::unordered_map<StateSet, State>::iterator temp = it++;
                     // move state from subset_map to covered
-                    auto transfer = subset_map->extract(temp);
+                    auto transfer = subset_map.extract(temp);
                     covered.insert(std::move(transfer));
                     continue;           // skip increasing map pointer
                 }
@@ -211,7 +211,7 @@ namespace {
 
         //assuming all sets targets are non-empty
         std::vector<std::pair<State, StateSet>> worklist;
-        std::unordered_map<StateSet, State> * subset_map = new std::unordered_map<StateSet,State>();
+        std::unordered_map<StateSet, State> subset_map;
 
         std::vector<StateSet> covering_states;          // check covering set
         std::vector<StateSet> covering_indexes;         // indexes of covering macrostates
@@ -227,12 +227,11 @@ namespace {
         }
         worklist.emplace_back(S0id, S0);
 
-        (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
+        (subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
         covering_states.emplace_back(mata::utils::OrdVector<State>());
         covering_indexes.emplace_back(mata::utils::OrdVector<State>());
 
         if (aut.delta.empty()){
-            delete subset_map;
             return result;
         }
 
@@ -263,9 +262,9 @@ namespace {
                 Symbol currentSymbol = (*moves.begin())->symbol;
                 StateSet T = synchronized_iterator.unify_targets(); // new state unify
 
-                auto existingTitr = subset_map->find(T);        // check if state was alredy discovered
+                auto existingTitr = subset_map.find(T);        // check if state was alredy discovered
                 State Tid;
-                if (existingTitr != subset_map->end()) {        // already visited state
+                if (existingTitr != subset_map.end()) {        // already visited state
                     Tid = existingTitr->second;
                     add = true;
                 }
@@ -276,7 +275,7 @@ namespace {
                     check_covered_and_covering(covering_states, covering_indexes, covered, subset_map, Tid, T, result);
 
                     if (T != covering_states[Tid]){     // new state is not covered, replace transitions
-                        (*subset_map)[mata::utils::OrdVector<State>(T)] = Tid;      // add to map
+                        subset_map[mata::utils::OrdVector<State>(T)] = Tid;      // add to map
 
                         if (aut.final.intersects_with(T))                      // add to final
                             result.final.insert(Tid);
@@ -303,7 +302,6 @@ namespace {
             }
         }
 
-        delete subset_map;
         return result;
     }
 
