@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 #include <queue>
-#include <unistd.h>
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
