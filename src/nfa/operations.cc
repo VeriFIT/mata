@@ -1042,12 +1042,12 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
         }
         const std::string& solver_type = params.at("solver");
 
-        if (solver_type == "qbf"){
+        if (solver_type == "qbf") {
             result = reduce_qbf(aut);
         } else {
             result = reduce_sat(aut, params);
         }
-     } else {
+    } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
