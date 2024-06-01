@@ -846,11 +846,10 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
 
 void work_and_not_chain(std::queue <int>& and_chain, size_t max_index, std::ostream& output) {
     std::string save;
-    int elem;
     bool not_flag = false;
 
     while (and_chain.empty() == false) {
-        elem = and_chain.front();   // get the first element
+        int elem = and_chain.front();   // get the first element
         and_chain.pop();
 
         if (elem == TSEY_NOT) {       // negate the variable for the output
@@ -951,20 +950,19 @@ Nfa mata::nfa::AutStats::build_result(std::istream& solver_result, const Paramet
             if (token.empty() || token == "v" || token == "V" || token == "0") {
                 continue;
             }
-            else if (token[0] == '-') {                 // ignore false variables
-                // todo rework hotfix
-                if (std::stoi(token.substr(1))-1  >= max_vars) {                // no more variables, end
-                end = true;
-                break;
-                }
 
-                continue;
+            try {
+                index = static_cast<size_t>(std::abs(std::stoi(token))-1);      // try catch
+            } catch (const std::exception& e) {
+                throw std::runtime_error(std::to_string(__func__) + " encountered exception: " + e.what());
             }
 
-            index = static_cast<size_t>(std::stoi(token) - 1);      // try catch
             if (index >= max_vars) {                    // no more variables, end
                 end = true;
                 break;
+            }
+            else if (token[0] == '-') {                 // ignore false variables
+                continue;
             }
             else if (index < trans_vars) {              // transition variables
                 State from =  (index % (this->state_num * this->state_num)) / this->state_num;
@@ -1044,8 +1042,6 @@ size_t mata::nfa::SatStats::example_clauses(size_t max_index) {
     }
 
     for (auto word: this->reject) {
-        std::string word_expression;
-
         if (word.empty()) {                      // special case epsilon, state 1 cannot be final
             this->output << SOL_NEG << transitions_num + 1 << SOL_DELIM << SOL_EOL;
             continue;
@@ -1055,7 +1051,7 @@ size_t mata::nfa::SatStats::example_clauses(size_t max_index) {
         size_t start_row = start_index * this->state_num * this->state_num;
 
         for (size_t i = 1; i <= this->state_num; ++i) {
-            word_expression = SOL_NEG + std::to_string(start_row + i) + SOL_DELIM + SOL_NEG;
+            std::string word_expression = SOL_NEG + std::to_string(start_row + i) + SOL_DELIM + SOL_NEG;
 
             if (word.size() == 1) {             // rejects a single letter
                 this->output << word_expression;
@@ -1072,13 +1068,12 @@ size_t mata::nfa::SatStats::example_clauses(size_t max_index) {
 void mata::nfa::SatStats::recurse_tseytin_accept(const std::vector<int>& base, size_t state, Word word, const unsigned pos,
                                                 std::vector<int>& result, size_t skip_init) {
     unsigned symb_index = word[pos];    // get current symbol
-    std::vector<int> addition;
 
     size_t current_row = symb_index * this->state_num * this->state_num + (state - 1) * this->state_num;
     size_t transitions_num = this->state_num * this->state_num * this->alpha_num;
 
     for (size_t i = 1; i <= this->state_num; ++i) {     // for variable in a row
-        addition = base;
+        std::vector<int> addition = base;
         addition.push_back(static_cast <int> (current_row + i));
         addition.push_back(TSEY_AND);
 
@@ -1095,13 +1090,12 @@ void mata::nfa::SatStats::recurse_tseytin_accept(const std::vector<int>& base, s
 void SatStats::recurse_tseytin_reject(const std::string& base, size_t state, Word word, const unsigned pos,
                                          size_t skip_init) {
     unsigned symb_index = word[pos];   // get current symbol
-    std::string addition;
 
     size_t current_row = symb_index * this->state_num * this->state_num + (state - 1) * this->state_num;
     size_t transitions_num = this->state_num * this->state_num * this->alpha_num;
 
     for (size_t i = 1; i <= this->state_num; ++i) {
-        addition = base;
+        std::string addition = base;
         addition += std::to_string(current_row + i) + SOL_DELIM + SOL_NEG;
 
         if (pos == word.size()-1) {     // end of the word
@@ -1525,7 +1519,6 @@ Nfa mata::nfa::reduce_qbf(const Nfa &aut, bool debug) {
 
     bool found = false;
     Nfa qbf_result;
-    size_t start_index;
 
     while (found != true) {
         clauses_file.close();                           // clear the file from the previous clauses
@@ -1534,7 +1527,7 @@ Nfa mata::nfa::reduce_qbf(const Nfa &aut, bool debug) {
             throw std::runtime_error("Failed to open file: " + clauses);
         }
 
-        start_index = qbf.print_qbf_header();
+        size_t start_index = qbf.print_qbf_header();
         qbf.example_clauses(start_index);
         clauses_file.flush();                           // flush the contents into the file
 
