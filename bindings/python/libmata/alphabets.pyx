@@ -82,7 +82,7 @@ cdef class OnTheFlyAlphabet(Alphabet):
         cdef umap[string, Symbol] c_symbol_map = self.thisptr.get_symbol_map()
         symbol_map = {}
         for symbol, value in c_symbol_map:
-            symbol_map[symbol.encode('utf-8')] = value
+            symbol_map[symbol.decode('utf-8')] = value
         return symbol_map
 
     def translate_symbol(self, str symbol):

@@ -314,11 +314,11 @@ public:
     bool is_acyclic() const;
 
     /**
-     * Fill @p alphabet with symbols from @p nfa.
-     * @param[in] nfa NFA with symbols to fill @p alphabet with.
-     * @param[out] alphabet Alphabet to be filled with symbols from @p nfa.
+     * Fill @p alphabet_to_fill with symbols from @p nfa.
+     * @param[in] nfa NFA with symbols to fill @p alphabet_to_fill with.
+     * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.
      */
-    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet) const;
+    void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
 
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
@@ -568,12 +568,16 @@ Nfa reduce_qbf(const Nfa &aut, bool debug = false);
  * @param[in] aut Automaton to reduce.
  * @param[out] state_renaming Mapping of original states to reduced states.
  * @param[in] params Optional parameters to control the reduction algorithm:
- * - "algorithm": "simulation"/"solvers",
+ * - "algorithm": "simulation", "residual", "solvers",
+ *     	options to parametrize residual reduction, not utilized in other reductions
+ * - "type": "after", "with",
+ * - "direction": "forward", "backward",
+ *	options to parametrize reduction using solvers, not utilized in other reductions
  * - "solver": "sat"/"sat_nfa"/"qbf".
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
-           const ParameterMap& params = {{ "algorithm", "simulation" } });
+           const ParameterMap& params = {{ "algorithm", "simulation" }, { "type", "after" }, { "direction", "forward" } });
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).

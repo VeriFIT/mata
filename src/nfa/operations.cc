@@ -116,6 +116,368 @@ namespace {
     }
 }
 
+namespace {
+    void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
+        StateSet tmp_targets;           // help set to store elements to remove
+        auto delta_begin = nfa.delta[remove].begin();
+        auto remove_size = nfa.delta[remove].size();
+        for (size_t i = 0; i < remove_size; i++) {        // remove trans from covered state
+            tmp_targets = delta_begin->targets;
+            for (const State target: tmp_targets) {
+                nfa.delta.remove(remove, delta_begin->symbol, target);
+            }
+        }
+
+        auto remove_transitions = nfa.delta.get_transitions_to(remove);
+        for (const auto& move: remove_transitions) {                                // transfer transitions from covered state to covering set
+            for (const State switch_target: covering_set) {
+                nfa.delta.add(move.source, move.symbol, switch_target);
+            }
+            nfa.delta.remove(move);
+        }
+
+        // check final  and initial states
+        nfa.final.erase(remove);
+        if (nfa.initial.contains(remove)) {
+            nfa.initial.erase(remove);
+            for (const State new_init: covering_set) {
+                nfa.initial.insert(new_init);
+            }
+        }
+    }
+
+    void check_covered_and_covering(std::vector<StateSet>& covering_states,                 // covering sets for each state
+                                    std::vector<StateSet>& covering_indexes,                // indexes of covering states
+                                    std::unordered_map<StateSet, State>& covered,           // map of covered states
+                                    std::unordered_map<StateSet, State>& subset_map,        // map of non-covered states
+                                    const State Tid, const StateSet& T,                      // current state to check
+                                    Nfa& result) {
+
+        std::unordered_map<StateSet, State>::iterator it = subset_map.begin();
+
+        // initiate with empty StateSets
+        covering_states.emplace_back(mata::utils::OrdVector<State>());
+        covering_indexes.emplace_back(mata::utils::OrdVector<State>());
+
+        while (it != subset_map.end()) {               // goes through all found states
+            if (it->first.IsSubsetOf(T)) {
+                // check if T is covered
+                // if so add covering state to its covering StateSet
+
+                covering_states[Tid].insert(it->first);
+                covering_indexes[Tid].insert(it->second);
+            }
+            else if (T.IsSubsetOf(it->first)) {
+                // check if state in map is covered
+                // if so add covering state to its covering StateSet
+
+                covering_states[it->second].insert(T);
+                covering_indexes[it->second].insert(Tid);
+
+                // check is some already existing state that had a new covering state added turned fully covered
+                if (it->first == covering_states[it->second]) {
+                    // if any covered state is in the covering set of newly turned covered state,
+                    // then it has to be replaced by its covering set
+                    //
+                    // same applies for any covered state, if it contains newly turned state in theirs
+                    // covering set, then it has to be updated
+                    State erase_state = it->second;      // covered state to remove
+                    for (const auto& covered_pair: covered) {
+                        if (covering_indexes[covered_pair.second].contains(erase_state)) {
+                            covering_indexes[covered_pair.second].erase(erase_state);
+                            covering_indexes[covered_pair.second].insert(covering_indexes[erase_state]);
+                        }
+                        if (covering_indexes[erase_state].contains(covered_pair.second)) {
+                            covering_indexes[erase_state].erase(covered_pair.second);
+                            covering_indexes[erase_state].insert(covering_indexes[covered_pair.second]);
+                        }
+                    }
+
+                    // remove covered state from the automaton, replace with covering set
+                    remove_covered_state(covering_indexes[erase_state], erase_state, result);
+
+                    std::unordered_map<StateSet, State>::iterator temp = it++;
+                    // move state from subset_map to covered
+                    auto transfer = subset_map.extract(temp);
+                    covered.insert(std::move(transfer));
+                    continue;           // skip increasing map pointer
+                }
+            }
+            ++it;
+        }
+    }
+
+    Nfa residual_with(const Nfa& aut) {         // modified algorithm of determinization
+
+        Nfa result;
+
+        //assuming all sets targets are non-empty
+        std::vector<std::pair<State, StateSet>> worklist;
+        std::unordered_map<StateSet, State> subset_map;
+
+        std::vector<StateSet> covering_states;          // check covering set
+        std::vector<StateSet> covering_indexes;         // indexes of covering macrostates
+        std::unordered_map<StateSet, State> covered;    // map of covered states for transfering new transitions
+
+        result.clear();
+        const StateSet S0 =  StateSet(aut.initial);
+        const State S0id = result.add_state();
+        result.initial.insert(S0id);
+
+        if (aut.final.intersects_with(S0)) {
+            result.final.insert(S0id);
+        }
+        worklist.emplace_back(S0id, S0);
+
+        (subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
+        covering_states.emplace_back(mata::utils::OrdVector<State>());
+        covering_indexes.emplace_back(mata::utils::OrdVector<State>());
+
+        if (aut.delta.empty()){
+            return result;
+        }
+
+        using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+        SynchronizedExistentialSymbolPostIterator synchronized_iterator;
+
+        while (!worklist.empty()) {
+            const auto Spair = worklist.back();
+            worklist.pop_back();
+            const StateSet S = Spair.second;
+            const State Sid = Spair.first;
+            if (S.empty()) {
+                // This should not happen assuming all sets targets are non-empty.
+                break;
+            }
+
+            // add moves of S to the sync ex iterator
+            // TODO: shouldn't we also reset first?
+            for (State q: S) {
+                mata::utils::push_back(synchronized_iterator, aut.delta[q]);
+            }
+  
+            while (synchronized_iterator.advance()) {
+                bool add = false;               // check whether to add transitions
+
+                // extract post from the sychronized_iterator iterator
+                const std::vector<Iterator>& moves = synchronized_iterator.get_current();
+                Symbol currentSymbol = (*moves.begin())->symbol;
+                StateSet T = synchronized_iterator.unify_targets(); // new state unify
+
+                auto existingTitr = subset_map.find(T);        // check if state was alredy discovered
+                State Tid;
+                if (existingTitr != subset_map.end()) {        // already visited state
+                    Tid = existingTitr->second;
+                    add = true;
+                }
+                else if ((existingTitr = covered.find(T)) != covered.end()) {
+                    Tid = existingTitr->second;
+                } else {                                        // add new state
+                    Tid = result.add_state();
+                    check_covered_and_covering(covering_states, covering_indexes, covered, subset_map, Tid, T, result);
+
+                    if (T != covering_states[Tid]){     // new state is not covered, replace transitions
+                        subset_map[mata::utils::OrdVector<State>(T)] = Tid;      // add to map
+
+                        if (aut.final.intersects_with(T))                      // add to final
+                            result.final.insert(Tid);
+
+                        worklist.emplace_back(Tid, T);
+                        add  = true;
+
+                    } else {            // new state is covered
+                        covered[mata::utils::OrdVector<State>(T)] = Tid;
+                    }
+                }
+
+                if (covered.find(S) != covered.end()) {
+                    continue;           // skip generationg any transitions as the source state was covered right now
+                }
+
+                if (add) {
+                    result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+                } else {
+                    for (State switch_target: covering_indexes[Tid]){
+                            result.delta.add(Sid, currentSymbol, switch_target);
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
+    void residual_recurse_coverable(const std::vector <StateSet>& macrostate_vec,   // vector of nfa macrostates
+                                    const std::vector <State>& covering_indexes,    // sub-vector of macrostates indexes
+                                    std::vector <bool>& covered,                    // flags of covered states
+                                    std::vector <bool>& visited,                    // flags fo visited states
+                                    size_t start_index,                      // starting index for covering_indexes vec
+                                    std::unordered_map<StateSet, State> *subset_map,    // mapping of indexes to macrostates
+                                    Nfa& nfa) {
+
+        StateSet check_state = macrostate_vec[covering_indexes[start_index]];
+        StateSet covering_set;                      // doesn't contain duplicates
+        std::vector<State> sub_covering_indexes;    // // indexes of covering states
+
+        for (auto i = covering_indexes.begin() + static_cast<long int>(start_index+1), e = covering_indexes.end(); i != e; i++) {
+            if (covered[*i])           // was aready processed
+                continue;
+
+            if (macrostate_vec[*i].IsSubsetOf(check_state)) {
+                covering_set.insert(macrostate_vec[*i]);                // is never covered
+                sub_covering_indexes.push_back(*i);
+            }
+        }
+
+        if (covering_set == check_state) {       // can recurse even without covered :thinking:
+
+            size_t covering_size = sub_covering_indexes.size()-1;
+            for (size_t k = 0; k < covering_size; k++) {
+                if (macrostate_vec[sub_covering_indexes[k]].size() == 1)            // end on single-sized states
+                    break;
+
+                if (visited[sub_covering_indexes[k]])                               // already processed
+                    continue;
+
+                visited[sub_covering_indexes[k]] = true;
+
+                residual_recurse_coverable(macrostate_vec, sub_covering_indexes, covered, visited, k, subset_map, nfa);
+            }
+
+            covering_set.clear();                 // clear variable to store only needed macrostates
+            for (auto index : sub_covering_indexes) {
+                if (covered[index] == 0) {
+                    auto macrostate_ptr = subset_map->find(macrostate_vec[index]);
+                        if (macrostate_ptr == subset_map->end())        // should never happen
+                             throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
+
+                    covering_set.insert(macrostate_ptr->second);
+                }
+            }
+
+            remove_covered_state(covering_set, subset_map->find(check_state)->second, nfa);
+            covered[covering_indexes[start_index]] = true;
+        }
+
+
+    }
+
+    Nfa residual_after(const Nfa&  aut) {
+        std::unordered_map<StateSet, State> *subset_map = new std::unordered_map<StateSet,State>();
+        Nfa result;
+        result = determinize(aut, subset_map);
+
+        std::vector <StateSet> macrostate_vec;              // ordered vector of macrostates
+        macrostate_vec.reserve(subset_map->size());
+        for (const auto& pair: *subset_map) {                   // order by size from largest to smallest
+            macrostate_vec.insert(std::upper_bound(macrostate_vec.begin(), macrostate_vec.end(), pair.first,
+                                [](const StateSet & a, const StateSet & b){ return a.size() > b.size(); }), pair.first);
+        }
+
+        std::vector <bool> covered(subset_map->size(), false);          // flag of covered states, removed from nfa
+        std::vector <bool> visited(subset_map->size(), false);          // flag of processed state
+
+        StateSet covering_set;                // doesn't contain duplicates
+        std::vector<State> covering_indexes;        // indexes of covering states
+        size_t macrostate_size = macrostate_vec.size();
+        for (size_t i = 0; i < macrostate_size-1; i++) {
+            if (macrostate_vec[i].size() == 1)      // end searching on single-sized macrostates
+                break;
+
+            if (visited[i])                         // was already processed
+                continue;
+
+            covering_set.clear();
+            covering_indexes.clear();
+            visited[i] = true;
+
+            for (size_t j = i+1; j < macrostate_size; j++) {        // find covering macrostates
+                if (covered[j])     // if covered there are smaller macrostates, skip
+                    continue;
+
+                if (macrostate_vec[j].IsSubsetOf(macrostate_vec[i])) {           // found covering state
+                    covering_set.insert(macrostate_vec[j]);               // is not covered
+                    covering_indexes.push_back(j);
+                }
+            }
+
+            if (covering_set == macrostate_vec[i]) {
+                size_t covering_size = covering_indexes.size()-1;
+                for (size_t k = 0; k < covering_size; k++) {      // check resurse coverability
+                    if (macrostate_vec[covering_indexes[k]].size() == 1)            // end on single-sized
+                        break;
+
+                    if (visited[covering_indexes[k]])                               // already processed
+                        continue;
+
+                    visited[covering_indexes[k]] = true;
+
+                    residual_recurse_coverable(macrostate_vec, covering_indexes, covered, visited, k, subset_map, result);
+                }
+
+                covering_set.clear();                 // clear variable to store only needed macrostates
+                for (auto index : covering_indexes) {
+                    if (covered[index] == 0) {
+                        auto macrostate_ptr = subset_map->find(macrostate_vec[index]);
+                        if (macrostate_ptr == subset_map->end())        // should never happen
+                             throw std::runtime_error(std::to_string(__func__) + " couldn't find expected element in a map.");
+
+                        covering_set.insert(macrostate_ptr->second);
+                    }
+                }
+
+                remove_covered_state(covering_set, subset_map->find(macrostate_vec[i])->second, result);
+                covered[i] = true;
+            }
+        }
+
+        delete subset_map;  // clean up
+        return result;
+    }
+
+    Nfa reduce_size_by_residual(const Nfa& aut, StateRenaming &state_renaming, const std::string& type, const std::string& direction){
+        Nfa back_determinized = aut;
+        Nfa result;
+
+        if (direction != "forward" && direction != "backward"){
+            throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"direction\" key: " + direction);
+        }
+
+        // forward canonical residual automaton is firstly backward determinized and
+        // then the residual construction is done forward, for backward residual automaton
+        // is it the opposite, so the automaton is reverted once more before and after
+        // construction, however the first two reversion negate each other out
+        if (direction == "forward")
+            back_determinized = revert(back_determinized);
+        back_determinized = revert(determinize(back_determinized));          // backward deteminization
+
+        // not relly sure how to handle state_renaming
+        (void) state_renaming;
+
+        // two different implementations of the same algorithm, for type "after" the
+        // residual automaton and removal of covering states is done after the final
+        // determinization if finished, for type "with" this residual construction is
+        // done during the last determinization, both types had similar results in
+        // effectivity, their output is almost the same expect the transitions, those
+        // may slightly differ, but number of states is the same for both types
+        if (type == "with") {
+            result = residual_with(back_determinized);
+        }
+        else if (type == "after") {
+            result = residual_after(back_determinized);
+        } else {
+            throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"type\" key: " + type);
+        }
+
+        if (direction == "backward")
+            result = revert(result);
+
+        return result.trim();
+    }
+}
+
 std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &trans) { // {{{
     std::string result = "(" + std::to_string(trans.source) + ", " +
                          std::to_string(trans.symbol) + ", " + std::to_string(trans.target) + ")";
@@ -653,6 +1015,25 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     if ("simulation" == algorithm) {
         result = reduce_size_by_simulation(aut, reduced_state_map);
     }
+    else if ("residual" == algorithm) {
+        // reduce type either 'after' or 'with' creation of residual automaton
+        if (!haskey(params, "type")) {
+            throw std::runtime_error(std::to_string(__func__) +
+                                    " requires setting the \"type\" key in the \"params\" argument; "
+                                    "received: " + std::to_string(params));
+        }
+        // forward or backward canonical residual automaton
+        if (!haskey(params, "direction")) {
+            throw std::runtime_error(std::to_string(__func__) +
+                                    " requires setting the \"direction\" key in the \"params\" argument; "
+                                    "received: " + std::to_string(params));
+        }
+
+        const std::string& residual_type = params.at("type");
+        const std::string& residual_direction = params.at("direction");
+
+        result = reduce_size_by_residual(aut, reduced_state_map, residual_type, residual_direction);
+    }
     else if ("solvers" == algorithm) {       // reduction using solvers, does not work with state_renaming
         if (!haskey(params, "solver")) {
         throw std::runtime_error(std::to_string(__func__) +
@@ -666,7 +1047,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
         } else {
             result = reduce_sat(aut, params);
         }
-    } else {
+     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
     }
@@ -759,11 +1140,11 @@ std::ostream& std::operator<<(std::ostream& os, const Nfa& nfa) {
     return os;
 }
 
-void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet) const {
+void mata::nfa::Nfa::fill_alphabet(OnTheFlyAlphabet& alphabet_to_fill) const {
     for (const StatePost& state_post: this->delta) {
         for (const SymbolPost& symbol_post: state_post) {
-            alphabet.update_next_symbol_value(symbol_post.symbol);
-            alphabet.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
+            alphabet_to_fill.update_next_symbol_value(symbol_post.symbol);
+            alphabet_to_fill.try_add_new_symbol(std::to_string(symbol_post.symbol), symbol_post.symbol);
         }
     }
 }

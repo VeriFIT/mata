@@ -312,7 +312,7 @@ void inline sort_and_rmdupl(Vector & vec)
 
     // remove duplicates
     auto it = std::unique(vec.begin(), vec.end());
-    vec.reserve(static_cast<size_t>(it - vec.begin()));
+    vec.resize(static_cast<size_t>(it - vec.begin()));
 }
 
 // CLOSING NAMESPACES AND GUARDS

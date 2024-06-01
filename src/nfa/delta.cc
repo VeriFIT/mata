@@ -524,7 +524,7 @@ void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
 
 OrdVector<Symbol> Delta::get_used_symbols() const {
     //TODO: look at the variants in profiling (there are tests in tests-nfa-profiling.cc),
-    // for instance figure out why NumberPredicate and OrdVedctor are slow,
+    // for instance figure out why NumberPredicate and OrdVector are slow,
     // try also with _STATIC_DATA_STRUCTURES_, it changes things.
 
     //below are different variant, with different data structures for accumulating symbols,
@@ -532,7 +532,7 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
 
     //WITH VECTOR (4.434 s)
-    //return get_used_symbols_vec();
+    return get_used_symbols_vec();
 
     //WITH SET (26.5 s)
     //auto from_set = get_used_symbols_set();
@@ -547,12 +547,14 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
     //WITH BOOL VECTOR (error !!!!!!!):
     //return utils::OrdVector<Symbol>(utils::NumberPredicate<Symbol>(get_used_symbols_bv()));
 
-    //WITH BOOL VECTOR (1.9s):
-    std::vector<bool> bv{ get_used_symbols_bv() };
-    utils::OrdVector<Symbol> ov{};
-    const size_t bv_size{ bv.size() };
-    for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
-    return ov;
+    //WITH BOOL VECTOR (1.9s): (The fastest, it seems.)
+    // However, it will try to allocate a vector indexed by the symbols. If there are epsilons in the automaton,
+    //  for example, the bool vector implementation will implode.
+    // std::vector<bool> bv{ get_used_symbols_bv() };
+    // utils::OrdVector<Symbol> ov{};
+    // const size_t bv_size{ bv.size() };
+    // for (Symbol i{ 0 }; i < bv_size; ++i) { if (bv[i]) { ov.push_back(i); } }
+    // return ov;
 
     ///WITH BOOL VECTOR, DIFFERENT VARIANT? (1.9s):
     //std::vector<bool> bv = get_used_symbols_bv();
@@ -577,7 +579,7 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
     static std::vector<Symbol> symbols{};
     symbols.clear();
 #else
-    std::vector<Symbol>  symbols{};
+    std::vector<Symbol> symbols{};
 #endif
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost & symbol_post: state_post) {
@@ -585,7 +587,7 @@ mata::utils::OrdVector<Symbol> Delta::get_used_symbols_vec() const {
             symbols.push_back(symbol_post.symbol);
         }
     }
-    utils::OrdVector<Symbol>  sorted_symbols(symbols);
+    utils::OrdVector<Symbol> sorted_symbols(symbols);
     return sorted_symbols;
 }
 
@@ -613,10 +615,10 @@ std::set<Symbol> Delta::get_used_symbols_set() const {
 mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static utils::SparseSet<Symbol>  symbols(64,false);
+    static utils::SparseSet<Symbol> symbols(64,false);
     symbols.clear();
 #else
-    utils::SparseSet<Symbol>  symbols(64);
+    utils::SparseSet<Symbol> symbols(64);
 #endif
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
@@ -633,19 +635,22 @@ mata::utils::SparseSet<Symbol> Delta::get_used_symbols_sps() const {
 std::vector<bool> Delta::get_used_symbols_bv() const {
 #ifdef _STATIC_STRUCTURES_
     //static seems to speed things up a little
-    static std::vector<bool>  symbols(64,false);
+    static std::vector<bool> symbols(64, false);
     symbols.clear();
 #else
-    std::vector<bool> symbols(64,false);
+    std::vector<bool> symbols(64, false);
 #endif
     //symbols.dont_track_elements();
     for (const StatePost& state_post: state_posts_) {
         for (const SymbolPost& symbol_post: state_post) {
-            reserve_on_insert(symbols,symbol_post.symbol);
+            const size_t capacity{ symbol_post.symbol + 1 };
+            reserve_on_insert(symbols, capacity);
+            if (symbols.size() < capacity) {
+                symbols.resize(capacity);
+            }
             symbols[symbol_post.symbol] = true;
         }
     }
-    //TODO: is it neccessary toreturn ordered vector? Would the number predicate suffice?
     return symbols;
 }
 

@@ -270,9 +270,11 @@ public:
 
     Delta(): state_posts_{} {}
     Delta(const Delta& other) = default;
+    Delta(Delta&& other) = default;
     explicit Delta(size_t n): state_posts_{ n } {}
 
     Delta& operator=(const Delta& other) = default;
+    Delta& operator=(Delta&& other) = default;
 
     bool operator==(const Delta& other) const;
 

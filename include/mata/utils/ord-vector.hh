@@ -147,7 +147,8 @@ public:
     // btw, do we need move here?
     reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
-    virtual inline void reserve(size_t  size) { vec_.reserve(size); }
+    virtual inline void reserve(size_t size) { vec_.reserve(size); }
+    virtual inline void resize(size_t size) { vec_.resize(size); }
 
     virtual inline void erase(const_iterator first, const_iterator last) { vec_.erase(first, last); }
 
