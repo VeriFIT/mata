@@ -578,7 +578,7 @@ Nfa reduce_qbf(const Nfa &aut, bool debug = false);
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
-           const ParameterMap& params = {{ "algorithm", "simulation" }, { "type", "after" }, { "direction", "forward" } });
+           const ParameterMap& params = {{ "algorithm", "simulation" }, { "type", "after" }, { "direction", "forward" }, {"solver", "nfa"} });
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).

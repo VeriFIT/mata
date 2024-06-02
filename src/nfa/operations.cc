@@ -1331,6 +1331,9 @@ Nfa mata::nfa::AutStats::build_result(std::istream& solver_result, const Paramet
             if (token.empty() || token == "v" || token == "V" || token == "0") {
                 continue;
             }
+            else if (token == "c") {                    // skip comments
+                break;
+            }
 
             try {
                 index = static_cast<size_t>(std::abs(std::stoi(token))-1);      // try catch
@@ -1791,7 +1794,7 @@ Nfa mata::nfa::reduce_sat(const Nfa &aut, const ParameterMap& params, bool debug
         throw std::runtime_error("Failed to open file: " + clauses);
     }
 
-    SatStats sat(2, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
+    SatStats sat(1, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
     SatStats partial_sat(sat);                                                  // help stats for partial generation of clauses
     sat.accept = std::move(get_shortest_words(aut));
 
@@ -1891,7 +1894,7 @@ Nfa mata::nfa::reduce_qbf(const Nfa &aut, bool debug) {
         throw std::runtime_error("Failed to open file: " + clauses);
     }
 
-    QbfStats qbf(2, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
+    QbfStats qbf(1, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
     qbf.accept = std::move(get_shortest_words(aut));
 
     Run* reject_run = new Run();                // variables to return the words that differ the original and created automata
