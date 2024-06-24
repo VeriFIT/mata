@@ -117,7 +117,7 @@ class ExtendableSquareMatrix {
         * @brief returns the size of the matrix
         * @return size of the matrix
         */
-        size_t size(void) const { return size_; }
+        size_t size() const { return size_; }
         
         /** Returns a capacity of the matrix. In this context,
         * the capacity of an n x n matrix corresponds to the value n_max such
@@ -126,14 +126,14 @@ class ExtendableSquareMatrix {
         * @brief returns the capacity of the matrix
         * @return capacity of the matrix
         */
-        size_t capacity(void) const { return capacity_; }
+        size_t capacity() const { return capacity_; }
         
         /** Returns a type of the matrix. The type specifies the
         * way the inner representation of the matrix is implemented.
         * @brief returns the type of the matrix
         * @return type of the matrix
         */
-        size_t type(void) const { return m_type; }
+        size_t type() const { return m_type; }
         
         //
         // VIRTUAL METHODS 
@@ -195,8 +195,7 @@ class ExtendableSquareMatrix {
         * @brief creates a deep copy of the matrix 
         * @return deep copy of the matrix
         */
-        virtual std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const 
-            = 0;
+        virtual std::unique_ptr<ExtendableSquareMatrix<T>> clone() const = 0;
         
         virtual ~ExtendableSquareMatrix() = default;
         
@@ -210,7 +209,7 @@ class ExtendableSquareMatrix {
         * @brief checks whether the Extendable square matrix is reflexive
         * @return true iff the matrix is reflexive
         */
-        bool is_reflexive(void) {
+        bool is_reflexive() const {
             size_t size = this->size();
             for(size_t i = 0; i < size; ++i) {
                 if(!get(i, i)) { return false; }
@@ -225,7 +224,7 @@ class ExtendableSquareMatrix {
         * @brief checks whether the Extendable square matrix is antisymetric
         * @return true iff the matrix is antisymetric
         */
-        bool is_antisymetric(void) {
+        bool is_antisymmetric() const {
             size_t size = this->size();
             for(size_t i = 0; i < size; ++i) {
                 for(size_t j = 0; j < size; ++j) {
@@ -243,7 +242,7 @@ class ExtendableSquareMatrix {
         * @brief checks whether the Extendable square matrix is transitive
         * @return true iff the matrix is transitive
         */
-        bool is_transitive(void) {
+        bool is_transitive() const {
             size_t size = this->size();
             for(size_t i = 0; i < size; ++i) {
                 for(size_t j = 0; j < size; ++j) {
@@ -480,7 +479,7 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         //  CLONING
         //
         
-        std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
+        std::unique_ptr<ExtendableSquareMatrix<T>> clone() const override {
             return std::make_unique<CascadeSquareMatrix<T>>(*this); 
         }
             
@@ -681,7 +680,7 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         //  CLONING
         //
         
-        std::unique_ptr<ExtendableSquareMatrix<T>> clone(void) const override { 
+        std::unique_ptr<ExtendableSquareMatrix<T>> clone() const override {
             return std::make_unique<DynamicSquareMatrix<T>>(*this); 
         }
 

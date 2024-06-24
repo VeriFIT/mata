@@ -263,7 +263,7 @@ std::vector<size_t> Partition::states_in_same_block(size_t state_idx) const {
 * vectors of states
 * @return vector of vectors of states
 */
-StateBlocks Partition::partition(void) const {
+StateBlocks Partition::partition() const {
     StateBlocks result{};
     for(const Block& block : blocks_) {
         result.emplace_back();

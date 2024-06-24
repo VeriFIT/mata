@@ -292,17 +292,17 @@ class Partition {
                     partition_(partition) {}
                 
                 // getters
-                size_t idx(void) const { return idx_; }
-                size_t state(void) const { return state_; }
+                size_t idx() const { return idx_; }
+                size_t state() const { return state_; }
                 
                 // methods which refer to the partition vectors
-                const Block& block(void) const {
+                const Block& block() const {
                     return partition_.blocks_[block_idx_];
                 }
-                const Node& node(void) const { return block().node(); }
-                const BlockItem& repr(void) const { return node().repr(); }
-                const BlockItem& first(void) const { return node().first(); }
-                const BlockItem& last(void) const { return node().last(); }
+                const Node& node() const { return block().node(); }
+                const BlockItem& repr() const { return node().repr(); }
+                const BlockItem& first() const { return node().first(); }
+                const BlockItem& last() const { return node().last(); }
         };
 
         /**
@@ -333,15 +333,15 @@ class Partition {
                     idx_(idx), node_idx_(node_idx), partition_(partition) {}
                 
                 // getters
-                size_t idx(void) const { return idx_; }
+                size_t idx() const { return idx_; }
                 
                 // methods which refer to the partition vectors 
-                const Node& node(void) const {
+                const Node& node() const {
                     return partition_.nodes_[node_idx_];
                 }
-                const BlockItem& repr(void) const { return node().repr(); }    
-                const BlockItem& first(void) const { return node().first(); }
-                const BlockItem& last(void) const { return node().last(); }        
+                const BlockItem& repr() const { return node().repr(); }
+                const BlockItem& first() const { return node().first(); }
+                const BlockItem& last() const { return node().last(); }
                 
                 // iterators
                 using const_iterator = typename BlockItems::const_iterator;
@@ -359,7 +359,7 @@ class Partition {
                 }
                 
                 // information about the block
-                size_t size(void) const { 
+                size_t size() const {
                     return last().idx() - first().idx() + 1;
                 }
                 
@@ -399,16 +399,16 @@ class Partition {
                     {}
             
                 // getters
-                size_t idx(void) const { return idx_; }
+                size_t idx() const { return idx_; }
                 
                 // methods which refer to the partition vectors
-                const BlockItem& first(void) const {
+                const BlockItem& first() const {
                     return partition_.block_items_[first_];
                 }
-                const BlockItem& last(void) const { 
+                const BlockItem& last() const {
                     return partition_.block_items_[last_];
                 }
-                const BlockItem& repr(void) const { 
+                const BlockItem& repr() const {
                     return partition_.block_items_[first_];
                 }
                 
@@ -429,7 +429,7 @@ class Partition {
                 }
                 
                 // information about the node
-                size_t size(void) const { 
+                size_t size() const {
                     return last().idx() - first().idx() + 1;
                 }
                 
@@ -449,10 +449,10 @@ class Partition {
         Partition(const Partition& other);
 
         // sizes of the used vectors
-        size_t num_of_states(void) const { return states_.size(); }
-        size_t num_of_block_items(void) const { return block_items_.size(); }
-        size_t num_of_blocks(void) const { return blocks_.size(); }
-        size_t num_of_nodes(void) const { return nodes_.size(); }
+        size_t num_of_states() const { return states_.size(); }
+        size_t num_of_block_items() const { return block_items_.size(); }
+        size_t num_of_blocks() const { return blocks_.size(); }
+        size_t num_of_nodes() const { return nodes_.size(); }
         
         // blocks splitting        
         std::vector<SplitPair> split_blocks(const SparseSet<State>& marked);
@@ -469,7 +469,7 @@ class Partition {
         const Node& get_node(size_t node_idx) const;  
         
         // converts the partition to the vector of vectors of states
-        StateBlocks partition(void) const;
+        StateBlocks partition() const;
         
         // operators
         Partition& operator=(const Partition& other);        

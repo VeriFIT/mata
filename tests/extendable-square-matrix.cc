@@ -20,22 +20,22 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());        
         e->set(0, 0, 1);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(!e->is_transitive());
         }
         
@@ -53,22 +53,22 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());        
         e->set(0, 0, 1);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(!e->is_transitive());       
         }
         
@@ -86,22 +86,22 @@ TEST_CASE("mata::utils::ExtendableSquareMatrix") {
         CHECK(e->capacity() == 5);
         CHECK(e->get(0, 0) == 0);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());        
         e->set(0, 0, 1);
         CHECK(!e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());
         e->set(1, 1, 1);
         e->set(2, 2, 1);
         e->set(3, 3, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(e->is_transitive());                  
         e->set(3, 1, 1);
         e->set(1, 2, 1);
         CHECK(e->is_reflexive());
-        CHECK(e->is_antisymetric());
+        CHECK(e->is_antisymmetric());
         CHECK(!e->is_transitive());       
         }
 
