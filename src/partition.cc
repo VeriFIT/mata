@@ -42,7 +42,7 @@ namespace mata::utils {
 * set of the partition) using initial partition represented as a vector of 
 * vectors of states.
 * The constructor works as follows:
-* - if there is any nonexisting state in the initial partition, the construction
+* - if there is any nonexistent state in the initial partition, the construction
 *   fails (state >= num_of_states)
 * - if there are duplicates in the initial partition, the construction fails
 * - if there is an empty partition class, the construction fails
@@ -89,7 +89,7 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
                    "a partition relation pair.");
             assert(!used[state_idx] && 
                    "Partition could not be created."
-                   "Duplicate occurence of a state");
+                   "Duplicate occurrence of a state");
             
             used[state_idx] = true;
             
@@ -121,7 +121,7 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
     size_t first = 0;
     size_t last = 0;
     
-    // iterating through the vector of flags saying which states have been seen.
+    // Iterating through the vector of flags saying which states have been seen.
     // We need to create an additional block which will contain all states which
     // have not been represented in the input partition if such states exist
     for(size_t state_idx = 0; state_idx < num_of_states; ++state_idx) {
@@ -134,7 +134,7 @@ Partition::Partition(size_t num_of_states, const StateBlocks& partition) {
         // if there is at least one unused state, we need to 
         // create an additional block
         // this branch will be executed only once (first time it is reached)
-        // and then it will be never executed again
+        // and then it will never be executed again
         if(all_states_used) [[unlikely]] {
             all_states_used = false;
             first = state_idx;
@@ -179,7 +179,7 @@ const Partition::BlockItem& Partition::get_block_item(
     size_t block_item_idx) const {
 
     assert(block_item_idx < num_of_block_items() &&
-           "Nonexisting block item index used.");    
+           "Nonexistent block item index used.");
     return block_items_[block_item_idx];
 }
 
@@ -189,7 +189,7 @@ const Partition::BlockItem& Partition::get_block_item(
 * @return corresponding block
 */
 const Partition::Block& Partition::get_block(size_t block_idx) const {
-    assert(block_idx < num_of_blocks() && "Nonexisting block index used.");    
+    assert(block_idx < num_of_blocks() && "Nonexistent block index used.");
     return blocks_[block_idx];
 }
 
@@ -199,7 +199,7 @@ const Partition::Block& Partition::get_block(size_t block_idx) const {
 * @return corresponding node
 */
 const Partition::Node& Partition::get_node(size_t node_idx) const {
-    assert(node_idx < num_of_nodes() && "Nonexisting node index used.");    
+    assert(node_idx < num_of_nodes() && "Nonexistent node index used.");
     return nodes_[node_idx];
 }
 
@@ -209,7 +209,7 @@ const Partition::Node& Partition::get_node(size_t node_idx) const {
 * @return corresponding block index
 */
 size_t Partition::get_block_idx(State state) const {
-    assert(state < num_of_states() && "Nonexisting state udsed");
+    assert(state < num_of_states() && "Nonexistent state used");
     return block_items_[states_[state]].block_idx_;
 }
 
@@ -296,7 +296,7 @@ StateBlocks Partition::partition() const {
 * changes its position.
 * Moreover, the node corresponding to the ancestor of the two split blocks
 * will still describe a valid contiguous interval of natural numbers <a, b>.
-* - if an nonexisting state is used, the function detects it and fails
+* - if an nonexistent state is used, the function detects it and fails
 *
 * If a block is split, the function creates a structure SplitPair which
 * contains:
@@ -309,8 +309,7 @@ StateBlocks Partition::partition() const {
 * @param[in] marked marked states which influence splitting
 * @return vector of SplitPairs which contain information about split blocks
 */
-std::vector<SplitPair> Partition::split_blocks(
-    const SparseSet<size_t>& marked) {
+std::vector<SplitPair> Partition::split_blocks(const SparseSet<size_t>& marked) {
     
     // the vector which will be returned as the result
     std::vector<SplitPair> split{};
@@ -318,11 +317,11 @@ std::vector<SplitPair> Partition::split_blocks(
     // if there is no marked state, no block could be split
     if(marked.empty()) [[unlikely]] { return split; }
 
-    // this vector contains information about blocks whose states has been
-    // marked and keeps number of states of each block which has been marked
+    // this vector contains information about blocks whose states have been
+    // marked and keep number of states of each block which has been marked
     // to ease detecting whether the whole block has been marked
     std::vector<size_t> used_blocks{};
-    if(blocks_.size()) [[likely]] { used_blocks.reserve(blocks_.size()); }
+    if(!blocks_.empty()) [[likely]] { used_blocks.reserve(blocks_.size()); }
     used_blocks.insert(used_blocks.end(), blocks_.size(), 0);
 
     // iterating through the marked states to fill used_blocks vector
@@ -455,18 +454,17 @@ Partition& Partition::operator=(const Partition& other) {
     for(size_t i = 0; i < states_num; ++i) {
         states_.push_back(other.states_[i]);
         const BlockItem& b = other.get_block_item(i);
-        block_items_.emplace_back(
-            BlockItem(b.idx_, b.state_, b.block_idx_, *this));
+        block_items_.emplace_back(b.idx_, b.state_, b.block_idx_, *this);
     }
     size_t blocks_num = other.num_of_blocks();
     for(size_t i = 0; i < blocks_num; ++i) {
         const Block& b = other.get_block(i);
-        blocks_.emplace_back(Block(b.idx_, b.node_idx_, *this));
+        blocks_.emplace_back(b.idx_, b.node_idx_, *this);
     }
     size_t nodes_num = other.num_of_nodes();
     for(size_t i = 0; i < nodes_num; ++i) {
         const Node& n = other.get_node(i);
-        nodes_.emplace_back(Node(n.idx_, n.first_, n.last_, *this));
+        nodes_.emplace_back(n.idx_, n.first_, n.last_, *this);
     }
     return *this;
 }

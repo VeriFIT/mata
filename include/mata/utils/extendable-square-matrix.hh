@@ -103,7 +103,7 @@ class ExtendableSquareMatrix {
         size_t capacity_{0};
         
         // type of the matrix which will be chosen as soon as the
-        // child class will be created
+        // child class is created
         MatrixType m_type{MatrixType::None};
 
     public:
@@ -161,7 +161,7 @@ class ExtendableSquareMatrix {
         
         /**
         * @brief changes the n x n matrix to the (n+1) x (n+1) matrix 
-        * @param[in] placeholde value which will be assigned to the 
+        * @param[in] placeholder value which will be assigned to the
         * newly allocated memory cells 
         */
         virtual void extend(T placeholder = T()) = 0;
@@ -174,7 +174,7 @@ class ExtendableSquareMatrix {
         * and added as an (n+1)th row. If the row parameter equals n, then
         * it will be initialized using default values of the type T. If the
         * col parameter equals n, the new column will be also initialized
-        * with the defauls values of the type T. Using this approach, one is
+        * with the default values of the type T. Using this approach, one is
         * able to copy only a row or column and initialize the other one with
         * default values. Calling extend_and_copy(n, n) has the same effect as
         * calling extend(). 
@@ -182,7 +182,7 @@ class ExtendableSquareMatrix {
         * the default value of the type T. 
         * @brief changes the n x n matrix to the (n+1) x (n+1) matrix with
         * copying of the existing data 
-        * @param[in] placeholde value which will be assigned to the 
+        * @param[in] placeholde value which will be assigned to the
         * newly allocated memory cells 
         */        
         virtual void extend_and_copy(size_t row, size_t col) = 0;
@@ -217,12 +217,12 @@ class ExtendableSquareMatrix {
             return true;
         }
 
-        /** This function checks whether the matrix is antisymetric. In this
-        * context, the matrix is antisymetric iff there are no indices i, j
+        /** This function checks whether the matrix is antisymmetric. In this
+        * context, the matrix is antisymmetric iff there are no indices i, j
         * where i != j and both matrix[i][j], matrix[j][i] contain nonzero 
-        * elementes of the type T
-        * @brief checks whether the Extendable square matrix is antisymetric
-        * @return true iff the matrix is antisymetric
+        * elements of the type T
+        * @brief checks whether the Extendable square matrix is antisymmetric
+        * @return true iff the matrix is antisymmetric
         */
         bool is_antisymmetric() const {
             size_t size = this->size();
@@ -278,7 +278,7 @@ class ExtendableSquareMatrix {
  *
  * This implementation tries to avoid
  * - moving the whole matrix when it is extended
- * - allocation of unneccessary data cells
+ * - allocation of unnecessary data cells
  * - violation of data locality
  *
  * The matrix is represented as a single vector of a type T. Initially,
@@ -368,14 +368,14 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         //
         
         /**
-        * @brief assings a value to the Cascade square matrix
+        * @brief Assigns a value to the Cascade square matrix.
         * @param[in] i row of the square matrix
         * @param[in] j column of the square matrix
         * @param[in] value value to be assigned to the square matrix data cell
         */
         void set(size_t i, size_t j, T value) {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
             
             // accessing the matrix in the cascading way
             data_[i >= j ? i * i + j : j * j + 2 * j - i] = value;
@@ -388,8 +388,8 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         * @return value found in the square matrix data cell
         */
         T get(size_t i, size_t j) const {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
 
             // accessing the matrix in the cascading way
             return data_[i >= j ? i * i + j : j * j + 2 * j - i];
@@ -412,14 +412,14 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
         }
 
         /**
-        * Extendes the n x n cascade matrix to the (n+1) x (n+1) matrix by 
+        * Extends the n x n cascade matrix to the (n+1) x (n+1) matrix by
         * duplicating an existing row and column. The row parameter is an index
         * of the row which should be duplicated and added as a (n+1)th row,
         * while the col parameter is an index of the column which should be
         * duplicated and added as an (n+1)th row. If the row parameter equals n,
         * then it will be initialized using default values of the type T. If the
         * col parameter equals n, the new column will be also initialized
-        * with the defauls values of the type T. Using this approach, one is
+        * with the defaults values of the type T. Using this approach, one is
         * able to copy only a row or column and initialize the other one with
         * default values. Calling extend_and_copy(n, n) has the same effect as
         * calling extend().
@@ -453,7 +453,7 @@ class CascadeSquareMatrix : public ExtendableSquareMatrix<T> {
                 }
             }
             
-            // element at the position [n, n] will be always initialized using
+            // element at the position [n, n] will always be initialized using
             // the default value of the type T
             data_.push_back(T());
             
@@ -571,14 +571,14 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         //
 
         /**
-        * @brief assings a value to the Dynamic square matrix
+        * @brief Assigns a value to the Dynamic square matrix.
         * @param[in] i row of the square matrix
         * @param[in] j column of the square matrix
         * @param[in] value value to be assigned to the square matrix data cell
         */
         T get(size_t i, size_t j) const {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
             
             return data_[i][j];
         }
@@ -590,8 +590,8 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         * @return value found in the square matrix data cell
         */
         void set(size_t i, size_t j, T value) {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
             
             data_[i][j] = value;
         }
@@ -603,7 +603,7 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         */
         void extend(T placeholder = T()) {
             assert(this->size_ < this->capacity_ 
-                   && "The matrix cannot be extened anymore");
+                   && "The matrix cannot be extended anymore");
             
             // creating a new column      
             for(size_t i = 0; i < this->size_; ++i) {
@@ -617,14 +617,14 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
         }
         
         /**
-        * Extendes the n x n dynamic matrix to the (n+1) x (n+1) matrix by 
+        * Extends the n x n dynamic matrix to the (n+1) x (n+1) matrix by
         * duplicating an existing row and column. The row parameter is an index
         * of the row which should be duplicated and added as a (n+1)th row,
         * while the col parameter is an index of the column which should be
         * duplicated and added as an (n+1)th row. If the row parameter equals n,
         * then it will be initialized using default values of the type T. If the
         * col parameter equals n, the new column will be also initialized
-        * with the defauls values of the type T. Using this approach, one is
+        * with the defaults values of the type T. Using this approach, one is
         * able to copy only a row or column and initialize the other one with
         * default values. Calling extend_and_copy(n, n) has the same effect as
         * calling extend().
@@ -668,7 +668,7 @@ class DynamicSquareMatrix : public ExtendableSquareMatrix<T> {
                 }
             }
             
-            // element at the position [n, n] will be always initialized using
+            // element at the position [n, n] will always be initialized using
             // the default value of the type T
             data_[this->size_].emplace_back(T());
             
@@ -739,14 +739,14 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         //       
 
         /**
-        * @brief assings a value to the Hashed square matrix
+        * @brief Assigns a value to the Hashed square matrix.
         * @param[in] i row of the square matrix
         * @param[in] j column of the square matrix
         * @param[in] value value to be assigned to the square matrix data cell
         */
         void set(size_t i, size_t j, T value) {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
             
             // accessing the hashmap using row matrix traversal
             data_[i * this->capacity_ + j] = value;
@@ -759,8 +759,8 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         * @return value found in the square matrix data cell
         */
         T get(size_t i, size_t j) const {
-            assert(i < this->size_ && "Nonexisting row cannot be accessed");
-            assert(j < this->size_ && "Nonexisting column cannot be accessed");
+            assert(i < this->size_ && "Nonexistent row cannot be accessed");
+            assert(j < this->size_ && "Nonexistent column cannot be accessed");
             
             // accessing the hashmap using row matrix traversal
             return data_[i * this->capacity_ + j];
@@ -773,7 +773,7 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         */
         void extend(T placeholder = T()) {
             assert(this->size_ < this->capacity_ 
-                   && "Matrix cannot be extened anymore");
+                   && "Matrix cannot be extended anymore");
 
             // creating a new row and column
             for(size_t i = 0; i < this->size_; ++i) {
@@ -787,14 +787,14 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
         }
 
         /**
-        * Extendes the n x n hashed matrix to the (n+1) x (n+1) matrix by 
+        * Extends the n x n hashed matrix to the (n+1) x (n+1) matrix by
         * duplicating an existing row and column. The row parameter is an index
         * of the row which should be duplicated and added as a (n+1)th row,
         * while the col parameter is an index of the column which should be
         * duplicated and added as an (n+1)th row. If the row parameter equals n,
         * then it will be initialized using default values of the type T. If the
         * col parameter equals n, the new column will be also initialized
-        * with the defauls values of the type T. Using this approach, one is
+        * with the defaults values of the type T. Using this approach, one is
         * able to copy only a row or column and initialize the other one with
         * default values. Calling extend_and_copy(n, n) has the same effect as
         * calling extend().
@@ -841,7 +841,7 @@ class HashedSquareMatrix : public ExtendableSquareMatrix<T> {
                 }
             }
 
-            // element at the position [n, n] will be always initialized using
+            // element at the position [n, n] will always be initialized using
             // the default value of the type T
             data_[this->size_ * this->capacity_ + this->size_] = T();
             
@@ -892,7 +892,7 @@ inline std::unique_ptr<ExtendableSquareMatrix<T>> create(MatrixType type,
 * @brief debugging function which allows us to print text representation of
 * the Extendable square matrix
 * @param[out] output stream
-* @param[in] maxtrix which will be printed
+* @param[in] matrix which will be printed
 * @return output stream
 */
 template <typename T>

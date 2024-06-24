@@ -245,16 +245,16 @@ class Partition {
         using Blocks = std::vector<Block>;
         using Nodes = std::vector<Node>;   
                 
-        /**< vector of states refering to the block items */
+        /**< vector of states referring to the block items */
         States states_{};
         
-        /**< vector of block items refering to the states and blocks */
+        /**< vector of block items referring to the states and blocks */
         BlockItems block_items_{};
         
-        /**< vector of blocks refering to the nodes  */
+        /**< vector of blocks referring to the nodes  */
         Blocks blocks_{};
         
-        /**< vector of nodes refering to the first and last block item 
+        /**< vector of nodes referring to the first and last block item
              of the node */
         Nodes nodes_{};
 
@@ -307,7 +307,7 @@ class Partition {
 
         /**
         * @class Block
-        * @brief Contains infromation about block from the current generation
+        * @brief Contains information about block from the current generation
         * of the partition.
         **/        
         class Block {
@@ -367,7 +367,7 @@ class Partition {
 
         /**
         * @class Node
-        * @brief Contains infromation about block from the current generation
+        * @brief Contains information about block from the current generation
         * of the partition or from the previous generation of the partition.
         **/         
         class Node {
@@ -444,7 +444,7 @@ class Partition {
         
         // constructors
         Partition() = default;
-        Partition(size_t num_of_states, 
+        explicit Partition(size_t num_of_states,
                   const StateBlocks& partition = StateBlocks());
         Partition(const Partition& other);
 
