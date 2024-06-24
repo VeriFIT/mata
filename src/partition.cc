@@ -530,4 +530,4 @@ std::ostream& operator<<(std::ostream& os, const Partition& p) {
     return os << result;
 }
 
-}
+} // namespace mata::utils

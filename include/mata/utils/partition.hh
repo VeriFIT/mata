@@ -27,8 +27,8 @@
  *  @author Tomáš Kocourek
  */
 
-#ifndef _PARTITION_HH_
-#define _PARTITION_HH_
+#ifndef PARTITION_HH_
+#define PARTITION_HH_
 
 #include <iostream>
 #include <vector>
@@ -482,4 +482,4 @@ class Partition {
 
 }
 
-#endif
+#endif // PARTITION_HH_

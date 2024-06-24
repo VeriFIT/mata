@@ -33,8 +33,8 @@
  *  @author Tomáš Kocourek
  */
 
-#ifndef _EXTENDABLE_SQUARE_MATRIX_HH_
-#define _EXTENDABLE_SQUARE_MATRIX_HH_
+#ifndef EXTENDABLE_SQUARE_MATRIX_HH_
+#define EXTENDABLE_SQUARE_MATRIX_HH_
 
 #include <iostream>
 #include <vector>
@@ -915,6 +915,6 @@ inline std::ostream& operator<<(std::ostream& os,
     return os << result;
 }
 
-}
+} // namespace mata::utils
 
-#endif
+#endif // EXTENDABLE_SQUARE_MATRIX_HH_
