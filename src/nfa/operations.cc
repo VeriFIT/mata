@@ -489,7 +489,7 @@ bool mata::nfa::Nfa::make_complete(const Alphabet& alphabet, State sink_state) {
 bool mata::nfa::Nfa::make_complete(const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
     bool was_something_added{ false };
 
-    size_t num_of_states{ this->num_of_states() };
+    const size_t num_of_states{ this->num_of_states() };
     for (State state = 0; state < num_of_states; ++state) {
         OrdVector<Symbol> used_symbols{};
         for (auto const &move : this->delta[state]) {
