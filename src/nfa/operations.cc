@@ -12,11 +12,13 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
 #include "mata/nfa/builder.hh"
+#include "mata/nfa/strings.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;
 
 using namespace mata::utils;
+using namespace mata::strings;
 using namespace mata::nfa;
 using mata::Symbol;
 
@@ -1031,6 +1033,20 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
         const std::string& residual_direction = params.at("direction");
 
         result = reduce_size_by_residual(aut, reduced_state_map, residual_type, residual_direction);
+    }
+    else if ("solvers" == algorithm) {       // reduction using solvers, does not work with state_renaming
+        if (!haskey(params, "solver")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " requires setting the \"solver\" key in the \"params\" argument; "
+                                 "received: " + std::to_string(params));
+        }
+        const std::string& solver_type = params.at("solver");
+
+        if (solver_type == "qbf") {
+            result = reduce_qbf(aut);
+        } else {
+            result = reduce_sat(aut, params);
+        }
     } else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"algorithm\" key: " + algorithm);
@@ -1207,4 +1223,738 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
     }
 
     return result;
+}
+
+void work_and_not_chain(std::queue <int>& and_chain, size_t max_index, std::ostream& output) {
+    std::string save;
+    bool not_flag = false;
+
+    while (and_chain.empty() == false) {
+        int elem = and_chain.front();   // get the first element
+        and_chain.pop();
+
+        if (elem == TSEY_NOT) {       // negate the variable for the output
+            output << SOL_NEG;
+            not_flag = true;
+        }
+        else if (elem == TSEY_OR) {
+            throw std::runtime_error("Unexpected format for tseytin.");
+        }
+        else if (elem != TSEY_AND) {  // variable
+            output << elem << SOL_DELIM << SOL_NEG << max_index << SOL_DELIM << SOL_EOL;
+            if (not_flag == false)      // save the opposite variable
+                save += SOL_NEG;
+
+            save += std::to_string(elem) + SOL_DELIM;
+            not_flag = false;
+        }
+    }
+
+    // print the last saved clause
+    output << save << max_index << SOL_DELIM << SOL_EOL;
+}
+
+
+void work_or_chain(const std::vector <int>& or_chain, std::ostream& output) {
+    // as the output is set to be true, clauses can be optimised
+    // clauses where output is not negated don't affect the result and can be omitted
+    // the last clause where output is negated is printed,
+    // but as the output doesn't affect the clause, it can be left out
+
+    for (auto elem: or_chain) {
+        output << elem << SOL_DELIM;
+    }
+    output << SOL_EOL;
+}
+
+// expects a clause in form of disjunctions of long and-not clauses
+size_t mata::nfa::reduction_tseytin(const std::vector <int>& input, size_t max_index, std::ostream& output) {
+    std::queue <int> part;          // and-clause, queue to keep the correct order of the operators
+    std::vector <int> or_chain;     // or-clause
+
+    for (auto index: input) {
+        if (index != TSEY_OR) {       // until or is found save the and-clause
+            part.push(index);
+        } else {      // resolve the and-clause
+            work_and_not_chain(part, max_index, output);
+            part = std::queue <int> ();        // clear queue
+            or_chain.push_back(static_cast <int> (max_index));      // save created variable to or-clause
+            ++max_index;
+        }
+    }
+
+    if (part.empty() == false) {      // finish the last clause
+        work_and_not_chain(part, max_index, output);
+        or_chain.push_back(static_cast <int> (max_index));
+        ++max_index;
+    }
+
+    work_or_chain(or_chain, output);     // resolve or-clause
+    return max_index;
+}
+
+Nfa mata::nfa::AutStats::build_result(std::istream& solver_result, const ParameterMap& params) {
+    if (!haskey(params, "solver")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                " requires setting the \"solver\" key in the \"params\" argument; "
+                                "received: " + std::to_string(params));
+    }
+
+    const std::string& solver_type = params.at("solver");
+    if (solver_type != "sat" && solver_type != "sat_nfa" &&solver_type != "qbf") {
+        throw std::runtime_error(std::to_string(__func__) +
+                                " received an unknown value of the \"solver\" key: " + solver_type);
+    }
+
+    Nfa result(this->state_num);
+    mata::utils::SparseSet <mata::nfa::State> new_initial = {0};      // always the initial state
+    mata::utils::SparseSet <mata::nfa::State> new_final;
+
+    std::string line;
+    getline(solver_result, line);           // skip first line
+    if (solver_type == "qbf")
+        getline(solver_result, line);       // skip the second line for qbf
+
+    std::string token;
+    size_t index = 0;
+    size_t trans_vars = this->state_num * this->state_num * this->alpha_num;
+    size_t max_vars = trans_vars + this->state_num;
+    bool end = false;
+
+    if (solver_type != "sat") {              // add initial state variables for nfa
+        max_vars += this->state_num;
+    }
+
+    while (getline(solver_result, line)) {
+        std::stringstream stream(line);
+        while (std::getline(stream, token, ' ')) {      // split line by spaces
+            if (token.empty() || token == "v" || token == "V" || token == "0") {
+                continue;
+            }
+            else if (token == "c") {                    // skip comments
+                break;
+            }
+
+            try {
+                index = static_cast<size_t>(std::abs(std::stoi(token))-1);      // try catch
+            } catch (const std::exception& e) {
+                throw std::runtime_error(std::to_string(__func__) + " encountered exception: " + e.what());
+            }
+
+            if (index >= max_vars) {                    // no more variables, end
+                end = true;
+                break;
+            }
+            else if (token[0] == '-') {                 // ignore false variables
+                continue;
+            }
+            else if (index < trans_vars) {              // transition variables
+                State from =  (index % (this->state_num * this->state_num)) / this->state_num;
+                State to =  (index % this->state_num);
+                Symbol symbol = static_cast<unsigned int>(index / (this->state_num * this->state_num));
+                result.delta.add(from, symbol, to);
+            }
+            else if (solver_type != "sat" && index < trans_vars + this->state_num){     // initial variables
+                new_initial.insert(index - trans_vars);
+            } else {                                    // final variables
+                new_final.insert(index - (max_vars - this->state_num));
+            }
+        }
+
+        if (end) {
+            break;
+        }
+    }
+
+    result.initial = std::move(new_initial);
+    result.final = std::move(new_final);
+    return result;
+}
+
+void mata::nfa::SatStats::determine_clauses() const{
+    size_t transitions_num = this->alpha_num * this->state_num * this->state_num;
+    for (size_t index = 1; index <= transitions_num; index += this->state_num) {    // every row
+        for (size_t j = 0; j < this->state_num; ++j) {                              // elements in row
+            for (size_t k = j+1; k < this->state_num; ++k) {                        // combinations
+                this->output << SOL_NEG << index + j << SOL_DELIM << SOL_NEG << index + k << SOL_DELIM << SOL_EOL;  // determinism
+            }
+        }
+    }
+}
+
+void mata::nfa::SatStats::complete_clauses() const{
+    size_t transitions_num = this->alpha_num * this->state_num * this->state_num;
+    for (size_t index = 1; index <= transitions_num; index += this->state_num) {    // every row
+        for (size_t j = 0; j < this->state_num; ++j) {                              // elements in a row
+            this->output << index+j << SOL_DELIM;                                   // completeness
+        }
+        this->output << SOL_EOL;
+    }
+}
+
+size_t mata::nfa::SatStats::example_clauses(size_t max_index) {
+    size_t transitions_num = this->alpha_num * this->state_num * this->state_num;
+
+    for(auto word: this->accept) {
+        std::vector <int> word_expression;      // partial expression
+        std::vector <int> accept_result;        // output for tseytin
+
+        if (word.empty()){                      // special case epsilon, set state 1 to be final
+            this->output << transitions_num + 1 << SOL_DELIM << SOL_EOL;
+            continue;
+        }
+
+        unsigned start_index = word.front();    // get symbol
+        size_t start_row = start_index * this->state_num * this->state_num;
+
+        for (size_t i = 1; i <= this->state_num; ++i) {
+            word_expression.clear();
+            // add transition
+            word_expression.push_back(static_cast <int> (start_row + i));
+            word_expression.push_back(TSEY_AND);
+
+            if (word.size() == 1) {             // accepts a single letter, final state
+                word_expression.push_back(static_cast <int> (transitions_num + i));
+                accept_result.insert(accept_result.end(), word_expression.begin(), word_expression.end());
+                accept_result.push_back(TSEY_OR);
+            } else {
+                this->recurse_tseytin_accept(word_expression, i, word, 1, accept_result);
+            }
+        }
+
+        max_index = reduction_tseytin(accept_result, max_index, output);
+    }
+
+    for (auto word: this->reject) {
+        if (word.empty()) {                      // special case epsilon, state 1 cannot be final
+            this->output << SOL_NEG << transitions_num + 1 << SOL_DELIM << SOL_EOL;
+            continue;
+        }
+
+        unsigned start_index = word.front();    // get symbol
+        size_t start_row = start_index * this->state_num * this->state_num;
+
+        for (size_t i = 1; i <= this->state_num; ++i) {
+            std::string word_expression = SOL_NEG + std::to_string(start_row + i) + SOL_DELIM + SOL_NEG;
+
+            if (word.size() == 1) {             // rejects a single letter
+                this->output << word_expression;
+                this->output << transitions_num + i << SOL_DELIM << SOL_EOL;
+            } else {
+                this->recurse_tseytin_reject(word_expression, i, word, 1);
+            }
+        }
+    }
+
+    return max_index;
+}
+
+void mata::nfa::SatStats::recurse_tseytin_accept(const std::vector<int>& base, size_t state, Word word, const unsigned pos,
+                                                std::vector<int>& result, size_t skip_init) {
+    unsigned symb_index = word[pos];    // get current symbol
+
+    size_t current_row = symb_index * this->state_num * this->state_num + (state - 1) * this->state_num;
+    size_t transitions_num = this->state_num * this->state_num * this->alpha_num;
+
+    for (size_t i = 1; i <= this->state_num; ++i) {     // for variable in a row
+        std::vector<int> addition = base;
+        addition.push_back(static_cast <int> (current_row + i));
+        addition.push_back(TSEY_AND);
+
+        if (pos == word.size() - 1) {                   // end of the word
+            addition.push_back(static_cast <int> (transitions_num + skip_init + i));
+            result.insert(result.end(), addition.begin(), addition.end());
+            result.push_back(TSEY_OR);
+        } else {
+            this->recurse_tseytin_accept(addition, i, word, pos+1, result, skip_init);
+        }
+    }
+}
+
+void SatStats::recurse_tseytin_reject(const std::string& base, size_t state, Word word, const unsigned pos,
+                                         size_t skip_init) {
+    unsigned symb_index = word[pos];   // get current symbol
+
+    size_t current_row = symb_index * this->state_num * this->state_num + (state - 1) * this->state_num;
+    size_t transitions_num = this->state_num * this->state_num * this->alpha_num;
+
+    for (size_t i = 1; i <= this->state_num; ++i) {
+        std::string addition = base;
+        addition += std::to_string(current_row + i) + SOL_DELIM + SOL_NEG;
+
+        if (pos == word.size()-1) {     // end of the word
+            this->output << addition;
+            this->output << transitions_num + skip_init + i << SOL_DELIM << SOL_EOL;
+        } else {
+            this->recurse_tseytin_reject(addition, i, word, pos+1, skip_init);
+        }
+    }
+}
+
+size_t mata::nfa::SatStats::example_nfa_clauses(size_t max_index) {
+    size_t transitions_num = this->state_num * this->state_num * this->alpha_num;
+    this->output << transitions_num + 1 << SOL_DELIM << SOL_EOL;            // force the first state 0 to be an initial state
+
+    for (auto word: this->accept) {
+        std::vector<int> expression;    // partial expression
+        std::vector<int> result;        // output for tseitin
+
+        if (word.empty()) {             // special case epsilon, set state 1 to be final state
+            this->output << transitions_num + state_num + 1 << SOL_DELIM << SOL_EOL;        // skip initial states
+            continue;
+        }
+
+        unsigned start_index = word.front();
+        size_t start_row = start_index * this->state_num * this->state_num;
+
+        for (size_t j = 0; j < this->state_num; ++j) {          // for each possible initial state
+            size_t start_state = j * this->state_num;
+
+            for (size_t i = 1; i <= this->state_num; ++i) {
+                expression.clear();
+                // set init
+                expression.push_back(static_cast <int> (transitions_num + j + 1));
+                expression.push_back(TSEY_AND);
+                // add transitions
+                expression.push_back(static_cast <int> (start_row + start_state + i));
+                expression.push_back(TSEY_AND);
+
+                if (word.size() == 1) { // accepts a single letter, add final state
+                    expression.push_back(static_cast <int> (transitions_num + this->state_num + i));    // skip initial states
+                    result.insert(result.end(), expression.begin(), expression.end());
+                    result.push_back(TSEY_OR);
+                } else {
+                    this->recurse_tseytin_accept(expression, i, word, 1, result, this->state_num);
+                }
+            }
+        }
+
+        max_index = reduction_tseytin(result, max_index, output);
+    }
+
+    for (auto word: this->reject) {
+        std::string expression;
+
+        if (word.empty()) {                                     // special case epsilon
+            for (size_t i = 1; i <= this->state_num; ++i) {     // not initial or not final
+                this->output << SOL_NEG << transitions_num + i << SOL_DELIM << SOL_NEG << transitions_num + this->state_num + i << SOL_DELIM << SOL_EOL;
+            }
+            continue;
+        }
+
+        unsigned start_index = word.front();
+        size_t start_row = start_index * this->state_num * this->state_num;
+
+        for (size_t j = 0; j < this->state_num; ++j) {
+            size_t start_state = j * this->state_num;
+
+            for (size_t i = 1; i <= this->state_num; ++i) {
+                expression = SOL_NEG + std::to_string(transitions_num + j + 1);
+                expression += SOL_DELIM + SOL_NEG + std::to_string(start_row + start_state + i) + SOL_DELIM + SOL_NEG;
+
+                if (word.size() == 1) {                         // rejects a single letter
+                    this->output << expression;
+                    this->output << transitions_num + this->state_num + i << SOL_DELIM << SOL_EOL;
+                } else {
+                    this->recurse_tseytin_reject(expression, i, word, 1, this->state_num);
+                }
+            }
+        }
+    }
+    return max_index;
+}
+
+void mata::nfa::QbfStats::init_final(size_t var_base, size_t result_base) {
+    for (size_t i = 0; i < this->state_num; i++) {      // for every possible vector combination
+        size_t start_index = var_base;
+        for (int j = static_cast<int>(this->state_bin-1); j >= 0; j--) {
+            if (i & (1 << j))                           // get the bit value
+                this->output << SOL_NEG;
+            this->output << start_index << SOL_DELIM;
+            start_index++;                              // next bit vector variable
+        }
+        this->output << result_base << SOL_DELIM << SOL_EOL;
+        result_base++;          // next init/final variable
+    }
+}
+
+void mata::nfa::QbfStats::init_final_clauses(size_t state_base, size_t end_base) {
+    size_t trans_vars = this->state_num * this->state_num * this->alpha_num + 1;  // number of trans vars + 1
+    this->init_final(state_base, trans_vars);                       // initial clauses
+    this->init_final(end_base, trans_vars + this->state_num);       // final clauses
+}
+
+void mata::nfa::QbfStats::init_final_reject(size_t var_base, size_t result_base, std::vector<int>& result) {
+    for (size_t i = 0; i < this->state_num; i++) {      // for every possible vector combination
+        int start_index = static_cast<int>(var_base);
+        for (int j = static_cast<int>(this->state_bin-1); j >= 0; j--) {
+            if ((i & (1 << j)) == 0)                    // get the bit value
+                result.push_back(TSEY_NOT);
+
+            result.push_back(start_index);
+            result.push_back(TSEY_AND);
+            start_index++;                              // next bit vector variable
+        }
+        result.push_back(TSEY_NOT);
+        result.push_back(static_cast <int> (result_base));
+        result.push_back(TSEY_OR);
+        result_base++;              // next init/final variable
+    }
+}
+
+void mata::nfa::QbfStats::init_final_clauses_reject(size_t state_base, size_t end_base, std::vector <int>& result) {
+    size_t trans_vars = this->state_num * this->state_num * this->alpha_num + 1;    // number of trans vars + 1
+    this->init_final_reject(state_base, trans_vars, result);                        // init clauses
+    this->init_final_reject(end_base, trans_vars + this->state_num, result);        // final clauses
+}
+
+void mata::nfa::QbfStats::valid_combinations(size_t start) {
+    size_t range = (1 << this->state_bin);                  // number of states possible for the given bit vector
+    for (size_t i = this->state_num; i < range; i++) {      // for every invalid combination
+        this->output << SOL_NEG << start << SOL_DELIM;      // first bit cannot be true
+
+        unsigned cnt_back = this->state_bin-1;
+        for (size_t tmp = i; tmp > 1; tmp = tmp >> 1) {
+            if (tmp & 1)
+                this->output << SOL_NEG;
+
+            this->output << start + cnt_back << SOL_DELIM;
+            cnt_back--;         // counting from the back
+        }
+        this->output << SOL_EOL;
+    }
+}
+
+void mata::nfa::QbfStats::valid_combinations_reject(size_t start, std::vector <int>& input) {
+    size_t range = (1 << this->state_bin);                  // number of states possible for the given bit vector
+    for (size_t i = this->state_num; i < range; i++) {      // for every invalid combination
+        input.push_back(static_cast <int> (start));         // first bit must be true
+
+        unsigned cnt_back = this->state_bin-1;
+        for (size_t tmp = i; tmp > 1; tmp = tmp >> 1) {     // binary representation
+            input.push_back(TSEY_AND);
+            if ((tmp & 1) == 0)
+                input.push_back(TSEY_NOT);
+
+            input.push_back(static_cast <int> (start + cnt_back));
+            cnt_back--;             // counting from the back
+        }
+        input.push_back(TSEY_OR);
+    }
+}
+
+void mata::nfa::QbfStats::accept_clauses(size_t free_var, size_t curr_trans) {
+    for (size_t i = 0; i < this->state_num; i++) {          // from state binary vector combinations
+        for (size_t j = 0; j < this->state_num; j++) {      // to state binary vector combinations
+            size_t from_state = free_var;
+            size_t to_state = free_var + this->state_bin;
+
+            for (int k = static_cast<int>(this->state_bin-1); k >= 0; k--) {        // from state
+                if (i & (1 << k))                   // binary representation
+                    this->output << SOL_NEG;
+                this->output << from_state << SOL_DELIM;
+                from_state++;
+            }
+
+            for (int l = static_cast<int>(this->state_bin-1); l >= 0; l--) {        // to state
+                if (j & (1 << l))                   // binary representation
+                    this->output << SOL_NEG;
+                this->output << to_state << SOL_DELIM;
+                to_state++;
+            }
+            this->output << curr_trans << SOL_DELIM << SOL_EOL;
+            curr_trans++;           // transition variables
+        }
+    }
+}
+
+void mata::nfa::QbfStats::reject_clauses(size_t free_var, size_t curr_trans, std::vector <int>& result) {
+    for (size_t i = 0; i < this->state_num; i++) {          // from state binary vector combinations
+        for (size_t j = 0; j < this->state_num; j++) {      // to state binary vector combinations
+            int from_state = static_cast<int>(free_var);
+            int to_state = static_cast<int>(free_var + this->state_bin);
+
+            for (int k = static_cast<int>(this->state_bin-1); k >= 0; k--) {        // from state
+                if ((i & (1 << k)) == 0)                   // binary representation
+                    result.push_back(TSEY_NOT);
+                result.push_back(from_state);
+                result.push_back(TSEY_AND);
+                from_state++;
+            }
+
+            for (int l = static_cast<int>(this->state_bin-1); l >= 0; l--) {        // to state
+                if ((j & (1 << l)) == 0)                   // binary representation
+                    result.push_back(TSEY_NOT);
+                result.push_back(to_state);
+                result.push_back(TSEY_AND);
+                to_state++;
+            }
+            result.push_back(TSEY_NOT);
+            result.push_back(static_cast <int> (curr_trans));
+            result.push_back(TSEY_OR);
+            curr_trans++;           // transition variables
+        }
+    }
+}
+
+void mata::nfa::QbfStats::example_clauses(size_t max_index){
+    size_t transitions_num = this->state_num * this->state_num * this->alpha_num;    // number of transitions
+    size_t free_var = transitions_num + 2 * this->state_num + 1;    // first free index possible to use for Tseytin transformation
+
+    this->output << transitions_num + 1 << SOL_DELIM << SOL_EOL;    // force the first state 0 to be an initial state
+
+    for (auto word: this->accept) {
+        if (word.empty()) {                         // special case epsilon, force state 0 to be final state
+            this->output << transitions_num + 1 + this->state_num << SOL_DELIM << SOL_EOL;
+            continue;
+        }
+
+        this->init_final_clauses(free_var, free_var + this->state_bin * word.size());     // initial and final clauses
+        this->valid_combinations(free_var);          // valid combination for the first binary vector
+
+        for (auto symbol: word) {
+            accept_clauses(free_var, 1 + symbol * this->state_num * this->state_num);    // transition clauses
+            free_var += this->state_bin;            // next binary vector
+            this->valid_combinations(free_var);     // valid combinations for new binary vector
+        }
+        free_var += this->state_bin;
+    }
+
+    for (auto word: this->reject) {
+        std::vector <int> result;
+
+        if (word.empty()) {     // special case epsilon, if state is initial then cannot be final
+            for (size_t i = 1; i <= this->state_num; i++) {
+                this->output << SOL_NEG << transitions_num + i << SOL_DELIM << SOL_NEG
+                             << transitions_num + i + this->state_num << SOL_DELIM << SOL_EOL;
+            }
+            continue;
+        }
+
+        this->init_final_clauses_reject(free_var, free_var + this->state_bin * word.size(), result);    // initial and final clauses
+        this->valid_combinations_reject(free_var, result);          // valid combinations for the first state
+
+        for (auto symbol: word) {
+            reject_clauses(free_var, 1 + symbol * this->state_num * this->state_num, result);    // transition clauses
+            free_var += this->state_bin;                            // next binary vector
+            this->valid_combinations_reject(free_var, result);      // valid combinations for new binary vector
+        }
+        free_var += this->state_bin;
+
+        result.pop_back();                                          // remove the last operator
+        max_index = reduction_tseytin(result, max_index, output);   // CNF transformation
+        result.clear();
+    }
+}
+
+std::filesystem::path get_path_to_solvers() {
+    std::filesystem::path current_file_path = __FILE__;             // absolute path to the current file
+    std::filesystem::path current_directory = current_file_path.parent_path();
+
+    // path to solvers dir
+    std::filesystem::path target_file_path = current_directory / "../../3rdparty/solvers/";
+    target_file_path = std::filesystem::canonical(target_file_path);    // resolve the relative path to an absolute path
+
+    return target_file_path;
+}
+
+std::string create_temp_file() {
+    char temp_name[] = "/tmp/solverXXXXXX";     // template for solver tmp files
+
+    int fd = mkstemp(temp_name);                // create a unique temporary file
+    if (fd == -1) {
+        throw std::runtime_error("Failed to create a temporary file");
+    }
+    close(fd);
+
+    return std::string(temp_name);              // return the name of the tmp file
+}
+
+Nfa mata::nfa::reduce_sat(const Nfa &aut, const ParameterMap& params, bool debug){
+    if (!haskey(params, "solver")) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                " requires setting the \"solver\" key in the \"params\" argument; "
+                                "received: " + std::to_string(params));
+    }
+    
+    const std::string& solver_type = params.at("solver");
+    if (solver_type != "sat" && solver_type != "sat_nfa")
+        throw std::runtime_error(std::to_string(__func__) +
+                                " received an unknown value of the \"solver\" key: " + solver_type);
+
+    std::filesystem::path solver_dir = get_path_to_solvers();           // get path to the solvers
+    std::string clauses = create_temp_file();                           // create temp files
+    std::string solver_out = create_temp_file();
+
+    // construct the command to run solver
+    std::string command = (solver_dir / "MiniSat.14_linux").string() + " " + clauses + " " + solver_out + " > /dev/null";
+
+    std::ofstream clauses_file(clauses, std::ios::out);                 // output file for the generated clauses
+    if (clauses_file.is_open() == false) {
+        throw std::runtime_error("Failed to open file: " + clauses);
+    }
+
+    SatStats sat(1, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
+    SatStats partial_sat(sat);                                                  // help stats for partial generation of clauses
+    sat.accept = std::move(get_shortest_words(aut));
+
+    Run* reject_run = new Run();                // variables to return the words that differ the original and created automata
+    Run* accept_run = new Run();
+    std::pair<Run*, Run*> equal_runs = std::make_pair(reject_run, accept_run);
+
+    bool found = false;
+    Nfa sat_result;
+    size_t max_var;
+
+    while (found != true) {
+        clauses_file.close();                           // clear the file from the previous clauses
+        clauses_file.open(clauses, std::ios::out);
+        if (clauses_file.is_open() == false) {
+            throw std::runtime_error("Failed to open file: " + clauses);
+        }
+
+        if (solver_type == "sat"){                      // complete dfa automaton with single initial state
+            sat.determine_clauses();
+            sat.complete_clauses();
+            max_var = sat.example_clauses(sat.state_num * sat.state_num * sat.alpha_num + sat.state_num + 1);
+        } else {                                        // nfa automaton
+            max_var = sat.example_nfa_clauses(sat.state_num * sat.state_num * sat.alpha_num + 2*sat.state_num + 1);
+        }
+        clauses_file.flush();                           // flush the contents into the file
+
+        bool unsat = false;
+        while (unsat != true) {
+            if (debug) {
+                sat.print(std::cout);       // debug output
+                sleep(1);                   // to be able to read the output
+            }
+
+            int result = system(command.c_str());       // run the solver
+
+            if (result == 2560) {       // satisfiable
+                std::ifstream result_file(solver_out, std::ios::in);        // read solver solution
+                sat_result = sat.build_result(result_file, params);
+                result_file.close();
+                if (are_equivalent(aut, sat_result, {{"algorithm", "naive"}}, equal_runs)) {
+                    found = true;                                           // found solution
+                    break;
+                } else {
+                    partial_sat.reject.clear();             // clear partial stats
+                    partial_sat.accept.clear();
+
+                    if (equal_runs.first->path.size() != 0){
+                        sat.accept.emplace(equal_runs.first->word);
+                        partial_sat.accept.emplace(equal_runs.first->word);
+                        equal_runs.first->path.clear();
+                    }
+
+                    if (equal_runs.second->path.size() != 0){
+                        sat.reject.emplace(equal_runs.second->word);
+                        partial_sat.reject.emplace(equal_runs.second->word);
+                        equal_runs.second->path.clear();
+                    }
+
+                    if (solver_type == "sat")
+                        max_var = partial_sat.example_clauses(max_var);     // additional clauses for found word
+                    else
+                        max_var = partial_sat.example_nfa_clauses(max_var);     // additional clauses for found word
+                    clauses_file.flush();
+                }
+            }
+            else if (result == 5120){           // unsatisfiable
+                unsat = true;
+                sat.state_num++;            // raise the number of states
+                partial_sat.state_num++;
+            }
+            else {          // error occured
+                throw std::runtime_error("SAT solver ended in failure");
+            }
+        }
+    }
+
+    // free memory
+    delete(accept_run);
+    delete(reject_run);
+
+    clauses_file.close();
+
+    return sat_result;
+}
+
+Nfa mata::nfa::reduce_qbf(const Nfa &aut, bool debug) {
+    std::filesystem::path solver_dir = get_path_to_solvers();           // get path to the solvers
+    std::string clauses = create_temp_file();                           // create temp files
+    std::string solver_out = create_temp_file();
+
+    // construct the command to run solver
+    std::string command = (solver_dir / "caqe").string() + " --qdo " + clauses + " > " + solver_out;
+
+    std::ofstream clauses_file(clauses, std::ios::out);                 // output file for the generated clauses
+    if (clauses_file.is_open() == false) {
+        throw std::runtime_error("Failed to open file: " + clauses);
+    }
+
+    QbfStats qbf(1, aut.delta.get_used_symbols().size(), clauses_file, {}, {});        // initial values
+    qbf.accept = std::move(get_shortest_words(aut));
+
+    Run* reject_run = new Run();                // variables to return the words that differ the original and created automata
+    Run* accept_run = new Run();
+    std::pair<Run*, Run*> equal_runs = std::make_pair(reject_run, accept_run);
+
+    bool found = false;
+    Nfa qbf_result;
+
+    while (found != true) {
+        clauses_file.close();                           // clear the file from the previous clauses
+        clauses_file.open(clauses, std::ios::out);
+        if (clauses_file.is_open() == false) {
+            throw std::runtime_error("Failed to open file: " + clauses);
+        }
+
+        size_t start_index = qbf.print_qbf_header();
+        qbf.example_clauses(start_index);
+        clauses_file.flush();                           // flush the contents into the file
+
+        if (debug) {
+            qbf.print(std::cout);       // debug output
+            sleep(1);                   // to be able to read the output
+        }
+
+        int result = system(command.c_str());       // run the solver
+
+        if (result == 2560) {       // satisfiable
+            std::ifstream result_file(solver_out, std::ios::in);        // read solver solution
+            qbf_result = qbf.build_result(result_file, {{"solver", "qbf"}});
+            result_file.close();
+
+            if (are_equivalent(aut, qbf_result, {{"algorithm", "naive"}}, equal_runs)) {
+                found = true;                                           // found solution
+            } else {
+                if (equal_runs.first->path.size() != 0) {
+                    qbf.accept.emplace(equal_runs.first->word);
+                    equal_runs.first->path.clear();
+                }
+
+                if (equal_runs.second->path.size() != 0){
+                    qbf.reject.emplace(equal_runs.second->word);
+                    equal_runs.second->path.clear();
+                }
+            }
+        }
+        else if (result == 5120){           // unsatisfiable
+            qbf.state_num++;            // raise the number of states
+            qbf.recompute_bin();
+        }
+        else {          // error occured
+            throw std::runtime_error("QBF solver ended in failure");
+        }
+    }
+
+    // free memory
+    delete(accept_run);
+    delete(reject_run);
+
+    clauses_file.close();
+
+    return qbf_result;
 }

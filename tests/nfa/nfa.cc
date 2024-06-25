@@ -2466,6 +2466,190 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
     }
 }
 
+TEST_CASE("mata::nfa::reduce_size_using_solvers()") {
+    Nfa aut;
+    StateRenaming state_renaming;
+    ParameterMap params;
+    params["algorithm"] = "solvers";
+
+    SECTION("empty automaton")
+    {
+        params["solver"] = "sat";
+        Nfa result_sat = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "sat_nfa";
+        Nfa result_sat_nfa = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "qbf";
+        Nfa result_qbf = reduce(aut, &state_renaming, params);
+
+        REQUIRE(result_sat.delta.empty());
+        REQUIRE(result_sat.initial.size() == 1);
+        REQUIRE(result_sat.final.empty());
+        REQUIRE(result_sat.num_of_states() == 1);
+
+        REQUIRE(result_sat_nfa.delta.empty());
+        REQUIRE(result_sat_nfa.final.empty());
+        REQUIRE(result_sat_nfa.num_of_states() == 1);
+
+        REQUIRE(result_qbf.delta.empty());
+        REQUIRE(result_qbf.final.empty());
+        REQUIRE(result_qbf.num_of_states() == 1);
+
+        REQUIRE(are_equivalent(aut, result_sat));
+        REQUIRE(are_equivalent(result_sat, result_sat_nfa));
+        REQUIRE(result_sat_nfa.is_identical(result_qbf));
+    }
+
+    SECTION("reduce empty automaton")
+    {
+        aut.initial = { 0 };
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(0, 1, 0);
+        aut.delta.add(1, 1, 1);
+        aut.delta.add(1, 2, 2);
+
+        params["solver"] = "sat";
+        Nfa result_sat = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "sat_nfa";
+        Nfa result_sat_nfa = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "qbf";
+        Nfa result_qbf = reduce(aut, &state_renaming, params);
+
+        REQUIRE(!result_sat.delta.empty());
+        REQUIRE(result_sat.initial.size() == 1);
+        REQUIRE(result_sat.final.empty());
+        REQUIRE(result_sat.num_of_states() == 1);
+
+        REQUIRE(result_sat_nfa.final.empty());
+        REQUIRE(result_sat_nfa.num_of_states() == 1);
+
+        REQUIRE(result_qbf.final.empty());
+        REQUIRE(result_qbf.num_of_states() == 1);
+
+        REQUIRE(are_equivalent(aut, result_sat));
+        REQUIRE(are_equivalent(result_sat, result_sat_nfa));
+        REQUIRE(result_sat_nfa.is_identical(result_qbf));
+    }
+
+    SECTION("simple automaton")
+    {
+        aut.initial = { 1 };
+        aut.final = { 3 };
+        aut.delta.add(1, 0, 2);
+        aut.delta.add(2, 1, 3);
+        aut.delta.add(3, 0, 3);
+        aut.delta.add(3, 1, 3);
+
+        params["solver"] = "sat";
+        Nfa result_sat = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "sat_nfa";
+        Nfa result_sat_nfa = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "qbf";
+        Nfa result_qbf = reduce(aut, &state_renaming, params);
+
+        REQUIRE(!result_sat.delta.empty());
+        REQUIRE(result_sat.initial.size() == 1);
+        REQUIRE(!result_sat.final.empty());
+        REQUIRE(result_sat.num_of_states() == 4);
+
+        REQUIRE(!result_sat_nfa.initial.empty());
+        REQUIRE(!result_sat_nfa.final.empty());
+        REQUIRE(result_sat_nfa.num_of_states() == 3);
+
+        REQUIRE(!result_qbf.initial.empty());
+        REQUIRE(!result_qbf.final.empty());
+        REQUIRE(result_qbf.num_of_states() == 3);
+
+        REQUIRE(are_equivalent(aut, result_sat));
+        REQUIRE(are_equivalent(result_sat, result_sat_nfa));
+        REQUIRE(are_equivalent(result_sat_nfa, result_qbf));
+    }
+
+    SECTION("reduce simple automaton sat")
+    {
+        aut.initial = { 1 };
+        aut.final = { 4 };
+        aut.delta.add(1, 0, 2);
+        aut.delta.add(1, 1, 3);
+        aut.delta.add(1, 2, 1);
+        aut.delta.add(1, 2, 2);
+        aut.delta.add(1, 2, 3);
+        aut.delta.add(2, 0, 4);
+        aut.delta.add(2, 1, 4);
+        aut.delta.add(3, 0, 4);
+        aut.delta.add(3, 1, 4);
+        aut.delta.add(4, 2, 1);
+
+        params["solver"] = "sat";
+        Nfa result_sat = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "sat_nfa";
+        Nfa result_sat_nfa = reduce(aut, &state_renaming, params);
+
+        REQUIRE(!result_sat.delta.empty());
+        REQUIRE(result_sat.initial.size() == 1);
+        REQUIRE(result_sat.final.size() == 2);
+        REQUIRE(result_sat.num_of_states() == 6);
+
+        REQUIRE(!result_sat_nfa.initial.empty());
+        REQUIRE(!result_sat_nfa.final.empty());
+        REQUIRE(result_sat_nfa.num_of_states() == 3);
+
+        REQUIRE(are_equivalent(aut, result_sat));
+        REQUIRE(are_equivalent(result_sat, result_sat_nfa));
+    }
+
+    SECTION("reduce simple automaton qbf")
+    {
+        aut.initial = { 1 };
+        aut.final = { 4 };
+        aut.delta.add(1, 0, 2);
+        aut.delta.add(1, 1, 3);
+        aut.delta.add(2, 0, 4);
+        aut.delta.add(2, 1, 4);
+        aut.delta.add(3, 0, 4);
+        aut.delta.add(3, 1, 4);
+        aut.delta.add(4, 0, 4);
+        aut.delta.add(4, 1, 4);
+
+        params["solver"] = "sat_nfa";
+        Nfa result_sat_nfa = reduce(aut, &state_renaming, params);
+
+        params["solver"] = "qbf";
+        Nfa result_qbf = reduce(aut, &state_renaming, params);
+
+        REQUIRE(!result_qbf.initial.empty());
+        REQUIRE(!result_qbf.final.empty());
+        REQUIRE(result_qbf.num_of_states() == 3);
+        REQUIRE(result_qbf.num_of_states() == result_sat_nfa.num_of_states());
+
+        REQUIRE(are_equivalent(aut, result_sat_nfa));
+        REQUIRE(are_equivalent(result_sat_nfa, result_qbf));
+    }
+
+    SECTION("error checking")
+    {
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params),
+                          Catch::Contains("requires setting the \"solver\" key in the \"params\" argument;"));
+
+        params["solver"] = "bad_solver";
+        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params),
+                          Catch::Contains("received an unknown value of the \"solver\" key"));
+
+        params["solver"] = "sat";
+        CHECK_NOTHROW(reduce(aut, &state_renaming, params));
+
+        params["solver"] = "qbf";
+        CHECK_NOTHROW(reduce(aut, &state_renaming, params));
+
+    }
+}
+
 TEST_CASE("mata::nfa::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};
