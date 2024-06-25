@@ -122,6 +122,11 @@ public:
      */
     void unify_final();
 
+    /**
+     * Swap final and non-final states in-place.
+     */
+    Nfa& swap_final_nonfinal() { final.complement(num_of_states()); return *this; }
+
     bool is_state(const State &state_to_check) const { return state_to_check < num_of_states(); }
 
     /**

@@ -35,7 +35,7 @@ Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<
     }
 
     result.make_complete(symbols, sink_state);
-    result.final.complement(result.num_of_states());
+    result.swap_final();
     return result;
 }
 
