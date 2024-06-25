@@ -218,9 +218,11 @@ public:
     Nfa& concatenate(const Nfa& aut);
 
     /**
-     * @brief In-place union
+     * @brief In-place nondeterministic union with @p aut.
+     *
+     * Does not add epsilon transitions, just unites initial and final states.
      */
-    Nfa& uni(const Nfa &aut);
+    Nfa& unite_nondet_with(const Nfa &aut);
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -467,11 +469,11 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
  */
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
-///Non-deterministic union. (does not add e-transitions, just unites initial and final states).
+/// Non-deterministic union. (does not add epsilon transitions, just unites initial and final states).
 Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 
-///Union by product construction, preserves determinism.
-Nfa union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+/// Union by product construction, preserves determinism.
+Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs.

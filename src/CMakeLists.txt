@@ -13,7 +13,7 @@ add_library(libmata STATIC
 	nfa/inclusion.cc
 	nfa/universal.cc
 	nfa/complement.cc
-	nfa/intersection.cc
+	nfa/product.cc
 	nfa/concatenation.cc
 	strings/nfa-noodlification.cc
 	strings/nfa-segmentation.cc

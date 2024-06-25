@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 
     Nfa union_aut;
     TIME_BEGIN(union);
-    mata::nfa::plumbing::uni(&union_aut, lhs, rhs);
+    mata::nfa::plumbing::union_nondet(&union_aut, lhs, rhs);
     TIME_END(union);
 
     TIME_BEGIN(naive_inclusion);

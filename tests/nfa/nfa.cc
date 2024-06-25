@@ -2496,14 +2496,14 @@ TEST_CASE("mata::nfa::union_inplace") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = lhs.uni(rhs);
+        Nfa result = lhs.unite_nondet_with(rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 
     SECTION("same automata") {
         size_t lhs_states = lhs.num_of_states();
-        Nfa result = lhs.uni(lhs);
+        Nfa result = lhs.unite_nondet_with(lhs);
         REQUIRE(result.num_of_states() == lhs_states * 2);
     }
 }

@@ -566,3 +566,31 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     swap_final_nonfinal();
     return *this;
 }
+
+Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
+    const size_t num_of_states{ this->num_of_states() };
+    auto upd_fnc = [&](State st) {
+        return st + num_of_states;
+    };
+
+    // Copy the information about aut to save the case when this is the same object as aut.
+    size_t aut_states = aut.num_of_states();
+    SparseSet<mata::nfa::State> aut_final_copy = aut.final;
+    SparseSet<mata::nfa::State> aut_initial_copy = aut.initial;
+
+    this->delta.allocate(num_of_states);
+    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+
+    // Set accepting states.
+    this->final.reserve(num_of_states + aut_states);
+    for(const State& aut_fin: aut_final_copy) {
+        this->final.insert(upd_fnc(aut_fin));
+    }
+    // Set initial states.
+    this->initial.reserve(num_of_states + aut_states);
+    for(const State& aut_ini: aut_initial_copy) {
+        this->initial.insert(upd_fnc(aut_ini));
+    }
+
+    return *this;
+}

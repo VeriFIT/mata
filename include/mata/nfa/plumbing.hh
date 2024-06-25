@@ -59,7 +59,7 @@ void construct(Nfa* result, const ParsedObject& parsed, Alphabet* alphabet = nul
     *result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void uni(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
+inline void union_nondet(Nfa *unionAutomaton, const Nfa &lhs, const Nfa &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
 
 /**
  * @brief Compute intersection of two NFAs.

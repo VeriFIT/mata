@@ -74,10 +74,10 @@ TEST_CASE("Mata::nfa::Plumbing") {
         CHECK(result.is_lang_empty());
     }
 
-    SECTION("Mata::nfa::Plumbing::union") {
+    SECTION("Mata::nfa::Plumbing::union_nondet") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::nfa::plumbing::uni(&result, lhs, rhs);
+        mata::nfa::plumbing::union_nondet(&result, lhs, rhs);
         CHECK(!result.is_lang_empty());
     }
 
