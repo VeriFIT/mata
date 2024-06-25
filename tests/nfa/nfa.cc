@@ -2410,8 +2410,6 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
         Nfa result_after = reduce(aut, &state_renaming, params_after);
         Nfa result_with = reduce(aut, &state_renaming, params_with);
 
-        result_after.print_to_DOT(std::cout);
-
         REQUIRE(result_after.num_of_states() == 6);
         REQUIRE(result_after.initial[0]);
         REQUIRE(result_after.initial[1]);
