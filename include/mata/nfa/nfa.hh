@@ -396,10 +396,10 @@ public:
     bool make_complete(const Alphabet& alphabet) { return this->make_complete(alphabet, this->num_of_states()); }
 
     /**
-     * Complement deterministic NFA in-place by adding a sink state and swapping final and non-final states.
+     * Complement deterministic automaton in-place by adding a sink state and swapping final and non-final states.
      * @param[in] symbols Symbols needed to make the automaton complete.
      * @param[in] sink_state State to be used as a sink state. Adds a new sink state when not specified.
-     * @return NFA complemented in-place.
+     * @return DFA complemented in-place.
      * @pre @c this is a deterministic automaton.
      */
     Nfa& complement_deterministic(const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);

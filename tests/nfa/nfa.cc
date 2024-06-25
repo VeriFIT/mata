@@ -982,8 +982,7 @@ TEST_CASE("mata::nfa::complement()")
     {
         OnTheFlyAlphabet alph{};
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
         Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(cmpl, empty_string_nfa));
     }
@@ -992,8 +991,7 @@ TEST_CASE("mata::nfa::complement()")
     {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
         REQUIRE(cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
@@ -1011,8 +1009,7 @@ TEST_CASE("mata::nfa::complement()")
         aut.initial = {1};
         aut.final = {1};
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
         CHECK(cmpl.is_lang_empty());
     }
@@ -1023,8 +1020,7 @@ TEST_CASE("mata::nfa::complement()")
         aut.initial = {1};
         aut.final = {1};
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
         REQUIRE(!cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"]}, {}}));
@@ -1046,8 +1042,7 @@ TEST_CASE("mata::nfa::complement()")
         aut.delta.add(1, alph["a"], 2);
         aut.delta.add(2, alph["b"], 2);
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
+        cmpl = complement(aut, alph, {{"algorithm", "classical"} });
 
         REQUIRE(!cmpl.is_in_lang(Word{}));
         REQUIRE(!cmpl.is_in_lang(Word{ alph["a"] }));
@@ -1066,8 +1061,7 @@ TEST_CASE("mata::nfa::complement()")
     {
         OnTheFlyAlphabet alph{};
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
         Nfa empty_string_nfa{ nfa::builder::create_sigma_star_nfa(&alph) };
         CHECK(are_equivalent(empty_string_nfa, cmpl));
     }
@@ -1076,8 +1070,7 @@ TEST_CASE("mata::nfa::complement()")
     {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
 
         REQUIRE(cmpl.is_in_lang({}));
         REQUIRE(cmpl.is_in_lang(Run{{ alph["a"] }, {}}));
@@ -1089,8 +1082,7 @@ TEST_CASE("mata::nfa::complement()")
         CHECK(are_equivalent(sigma_star_nfa, cmpl));
     }
 
-    SECTION("minimization vs no minimization")
-    {
+    SECTION("minimization vs no minimization") {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
         aut.initial = {0, 1};
         aut.final = {1, 2};
@@ -1101,12 +1093,8 @@ TEST_CASE("mata::nfa::complement()")
         aut.delta.add(0, alph["a"], 1);
         aut.delta.add(0, alph["a"], 2);
 
-        cmpl = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "false"}});
-
-        Nfa cmpl_min = complement(aut, alph, {{"algorithm", "classical"},
-                                    {"minimize", "true"}});
-
+        cmpl = complement(aut, alph, { {"algorithm", "classical"} });
+        Nfa cmpl_min = complement(aut, alph, { { "algorithm", "brzozowski"} });
         CHECK(are_equivalent(cmpl, cmpl_min, &alph));
         CHECK(cmpl_min.num_of_states() == 4);
         CHECK(cmpl.num_of_states() == 5);
