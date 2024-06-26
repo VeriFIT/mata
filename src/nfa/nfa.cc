@@ -569,27 +569,32 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
 
 Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     const size_t num_of_states{ this->num_of_states() };
-    auto upd_fnc = [&](State st) {
+    const size_t aut_num_of_states{ aut.num_of_states() };
+    const size_t new_num_of_states{ num_of_states + aut_num_of_states };
+    auto renumber_states = [&](State st) {
         return st + num_of_states;
     };
 
-    // Copy the information about aut to save the case when this is the same object as aut.
-    size_t aut_states = aut.num_of_states();
-    SparseSet<mata::nfa::State> aut_final_copy = aut.final;
-    SparseSet<mata::nfa::State> aut_initial_copy = aut.initial;
+    if (this == &aut) {
+        throw std::runtime_error("Performing a useless in-place union on the same NFA object");
+    }
 
+    if (final.empty() || initial.empty()) { *this = aut; return *this; }
+    if (aut.final.empty() || aut.initial.empty()) { return *this; }
+
+    this->delta.reserve(new_num_of_states);
     this->delta.allocate(num_of_states);
-    this->delta.append(aut.delta.renumber_targets(upd_fnc));
+    this->delta.append(aut.delta.renumber_targets(renumber_states));
 
     // Set accepting states.
-    this->final.reserve(num_of_states + aut_states);
-    for(const State& aut_fin: aut_final_copy) {
-        this->final.insert(upd_fnc(aut_fin));
+    this->final.reserve(new_num_of_states);
+    for(const State& aut_fin: aut.final) {
+        this->final.insert(renumber_states(aut_fin));
     }
     // Set initial states.
-    this->initial.reserve(num_of_states + aut_states);
-    for(const State& aut_ini: aut_initial_copy) {
-        this->initial.insert(upd_fnc(aut_ini));
+    this->initial.reserve(new_num_of_states);
+    for(const State& aut_ini: aut.initial) {
+        this->initial.insert(renumber_states(aut_ini));
     }
 
     return *this;

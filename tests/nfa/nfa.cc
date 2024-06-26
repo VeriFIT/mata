@@ -2502,9 +2502,7 @@ TEST_CASE("mata::nfa::union_inplace") {
     }
 
     SECTION("same automata") {
-        size_t lhs_states = lhs.num_of_states();
-        Nfa result = lhs.unite_nondet_with(lhs);
-        REQUIRE(result.num_of_states() == lhs_states * 2);
+        CHECK_THROWS(lhs.unite_nondet_with(lhs));
     }
 }
 

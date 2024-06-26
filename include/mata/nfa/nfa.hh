@@ -469,11 +469,24 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
  */
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
-/// Non-deterministic union. (does not add epsilon transitions, just unites initial and final states).
+/**
+ * @brief Compute non-deterministic union.
+ *
+ * Does not add epsilon transitions, just unites initial and final states.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
 Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 
-/// Union by product construction, preserves determinism.
-Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+/**
+ * @brief Compute union by product construction.
+ *
+ * Preserves determinism.
+ * @param[in] first_epsilon The first symbol to handle as an epsilon.
+ * @param[out] prod_map Map mapping product states to the original states.
+ * @return Union by product construction of @p lhs and @p rhs.
+ */
+Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
+                  std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute intersection of two NFAs.
