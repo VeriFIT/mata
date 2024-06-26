@@ -3287,3 +3287,76 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
         CHECK(aut.get_words(5) == std::set<mata::Word>{{}, {0}, {1}, {0, 1}, {1, 0}, {0,1,0}, {1,0,1}, {0,1,0,1}, {1,0,1,0}, {0,1,0,1,0}, {1,0,1,0,1}});
     }
 }
+
+TEST_CASE("mata::nfa::Nfa::get_word()") {
+    SECTION("empty") {
+        Nfa aut;
+        CHECK(aut.get_word(0) == std::nullopt);
+    }
+
+    SECTION("empty word") {
+        Nfa aut(1, { 0 }, { 0 });
+        CHECK(aut.get_word() == Word{});
+    }
+
+    SECTION("noodle - one final") {
+        Nfa aut(3, { 0 }, { 2 });
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(1, 1, 2);
+        CHECK(aut.get_word() == Word{ 0, 1 });
+    }
+
+    SECTION("noodle - two finals") {
+        Nfa aut(3, { 0 }, { 1, 2 });
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(1, 1, 2);
+        CHECK(aut.get_word() == Word{ 0 });
+    }
+
+    SECTION("noodle - three finals") {
+        Nfa aut(3, { 0 }, { 0, 1, 2 });
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(1, 1, 2);
+        CHECK(aut.get_word() == Word{});
+    }
+
+    SECTION("more complex initial final") {
+        Nfa aut(6, { 0, 1 }, { 1, 3, 4, 5 });
+        aut.delta.add(0, 0, 3);
+        aut.delta.add(3, 1, 4);
+        aut.delta.add(0, 2, 2);
+        aut.delta.add(3, 3, 2);
+        aut.delta.add(1, 4, 2);
+        aut.delta.add(2, 5, 5);
+        CHECK(aut.get_word() == Word{});
+    }
+
+    SECTION("more complex") {
+        Nfa aut(6, { 0, 1 }, { 5 });
+        aut.delta.add(0, 0, 3);
+        aut.delta.add(3, 1, 4);
+        aut.delta.add(0, 2, 2);
+        aut.delta.add(3, 3, 2);
+        aut.delta.add(1, 4, 2);
+        aut.delta.add(2, 5, 5);
+        CHECK(aut.get_word() == Word{ 4, 5 });
+    }
+
+    SECTION("cycle") {
+        Nfa aut(6, { 0, 2 }, { 4 });
+        aut.delta.add(2, 2, 3);
+        aut.delta.add(3, 3, 2);
+        aut.delta.add(0, 0, 1);
+        aut.delta.add(1, 1, 4);
+        CHECK(aut.get_word() == Word{ 0, 1 });
+    }
+
+    SECTION("epsilons") {
+        Nfa aut(6, { 0, 2 }, { 4 });
+        aut.delta.add(2, 2, 3);
+        aut.delta.add(3, 3, 2);
+        aut.delta.add(0, EPSILON, 1);
+        aut.delta.add(1, 1, 4);
+        CHECK(aut.get_word() == Word{ 1 });
+    }
+}

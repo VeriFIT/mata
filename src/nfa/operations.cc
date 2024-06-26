@@ -1208,3 +1208,28 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
 
     return result;
 }
+
+std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
+    if (initial.empty() || final.empty()) { return std::nullopt; }
+
+    std::vector<std::pair<State, Word>> worklist{};
+    for (const State initial_state: initial) {
+        if (final.contains(initial_state)) { return Word{}; }
+        worklist.emplace_back(initial_state, Word{});
+    }
+    std::vector<bool> searched(num_of_states());
+
+    while (!worklist.empty()) {
+        auto [state, word]{ std::move(worklist.back()) };
+        worklist.pop_back();
+        for (const Move move: delta[state].moves()) {
+            if (searched[move.target]) { continue; }
+            Word target_word{ word };
+            if (move.symbol < first_epsilon) { target_word.push_back(move.symbol); }
+            if (final.contains(move.target)) { return target_word; }
+            worklist.emplace_back(move.target, target_word);
+            searched[move.target] = true;
+        }
+    }
+    return std::nullopt;
+}
