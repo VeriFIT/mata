@@ -346,6 +346,13 @@ public:
     std::set<Word> get_words(unsigned max_length);
 
     /**
+     * @brief Get any arbitrary accepted word in the language of the automaton.
+     *
+     * The automaton is searched using DFS, returning a word for the first reached final state.
+     */
+    std::optional<Word> get_word(Symbol first_epsilon = EPSILON) const;
+
+    /**
      * @brief Make NFA complete in place.
      *
      * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
