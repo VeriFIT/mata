@@ -481,33 +481,43 @@ std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &tra
     return os << result;
 }
 
-bool mata::nfa::Nfa::make_complete(const Alphabet& alphabet, State sink_state) {
-    return this->make_complete(alphabet.get_alphabet_symbols(), sink_state);
+bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
+    OrdVector<Symbol> symbols;
+    if (alphabet != nullptr) {
+        symbols = alphabet->get_alphabet_symbols();
+    } else if (this->alphabet != nullptr) {
+        symbols = this->alphabet->get_alphabet_symbols();
+    } else {
+        symbols = delta.get_used_symbols();
+    }
+    return make_complete(symbols, sink_state);
 }
 
-bool mata::nfa::Nfa::make_complete(const mata::utils::OrdVector<Symbol>& symbols, State sink_state) {
-    bool was_something_added{ false };
-
+bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
+    bool transition_added{ false };
     const size_t num_of_states{ this->num_of_states() };
-    for (State state = 0; state < num_of_states; ++state) {
-        OrdVector<Symbol> used_symbols{};
-        for (auto const &move : this->delta[state]) {
-            used_symbols.insert(move.symbol);
+    const State sink_state_val{ sink_state.value_or(num_of_states) };
+
+    OrdVector<Symbol> used_symbols{};
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        for (const SymbolPost& symbol_post: delta[state]) {
+            used_symbols.insert(symbol_post.symbol);
         }
-        mata::utils::OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
-        for (Symbol symb : unused_symbols) {
-            this->delta.add(state, symb, sink_state);
-            was_something_added = true;
+        const OrdVector<Symbol> unused_symbols{ symbols.difference(used_symbols) };
+        for (const Symbol symbol: unused_symbols) {
+            delta.add(state, symbol, sink_state_val);
+            transition_added = true;
+        }
+        used_symbols.clear();
+    }
+
+    if (transition_added && num_of_states <= sink_state_val) {
+        for (const Symbol symbol: symbols) {
+            delta.add(sink_state_val, symbol, sink_state_val);
         }
     }
 
-    if (was_something_added && num_of_states <= sink_state) {
-        for (Symbol symbol : symbols) {
-            this->delta.add(sink_state, symbol, sink_state);
-        }
-    }
-
-    return was_something_added;
+    return transition_added;
 }
 
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.

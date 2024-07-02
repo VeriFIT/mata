@@ -875,13 +875,13 @@ TEST_CASE("mata::nfa::construct() from IntermediateAut correct calls")
 
 TEST_CASE("mata::nfa::make_complete()")
 { // {{{
-    Nfa aut(11);
+    Nfa aut{};
 
     SECTION("empty automaton, empty alphabet")
     {
         OnTheFlyAlphabet alph{};
 
-        aut.make_complete(alph, 0);
+        aut.make_complete(&alph, 0);
 
         REQUIRE(aut.initial.empty());
         REQUIRE(aut.final.empty());
@@ -892,12 +892,12 @@ TEST_CASE("mata::nfa::make_complete()")
     {
         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b" } };
 
-        aut.make_complete(alph, 0);
+        aut.make_complete(&alph, 0);
 
-        REQUIRE(aut.initial.empty());
-        REQUIRE(aut.final.empty());
-        REQUIRE(aut.delta.contains(0, alph["a"], 0));
-        REQUIRE(aut.delta.contains(0, alph["b"], 0));
+        CHECK(aut.initial.empty());
+        CHECK(aut.final.empty());
+        CHECK(!aut.delta.contains(0, alph["a"], 0));
+        CHECK(!aut.delta.contains(0, alph["b"], 0));
     }
 
     SECTION("non-empty automaton, empty alphabet")
@@ -906,12 +906,12 @@ TEST_CASE("mata::nfa::make_complete()")
 
         aut.initial = {1};
 
-        aut.make_complete(alphabet, 0);
+        aut.make_complete(&alphabet, 0);
 
-        REQUIRE(aut.initial.size() == 1);
-        REQUIRE(*aut.initial.begin() == 1);
-        REQUIRE(aut.final.empty());
-        REQUIRE(aut.delta.empty());
+        CHECK(aut.initial.size() == 1);
+        CHECK(*aut.initial.begin() == 1);
+        CHECK(aut.final.empty());
+        CHECK(aut.delta.empty());
     }
 
     SECTION("one-state automaton")
@@ -921,15 +921,15 @@ TEST_CASE("mata::nfa::make_complete()")
 
         aut.initial = {1};
 
-        aut.make_complete(alph, SINK);
+        aut.make_complete(&alph, SINK);
 
-        REQUIRE(aut.initial.size() == 1);
-        REQUIRE(*aut.initial.begin() == 1);
-        REQUIRE(aut.final.empty());
-        REQUIRE(aut.delta.contains(1, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(1, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
+        CHECK(aut.initial.size() == 1);
+        CHECK(*aut.initial.begin() == 1);
+        CHECK(aut.final.empty());
+        CHECK(aut.delta.contains(1, alph["a"], SINK));
+        CHECK(aut.delta.contains(1, alph["b"], SINK));
+        CHECK(aut.delta.contains(SINK, alph["a"], SINK));
+        CHECK(aut.delta.contains(SINK, alph["b"], SINK));
     }
 
     SECTION("bigger automaton")
@@ -946,30 +946,104 @@ TEST_CASE("mata::nfa::make_complete()")
         aut.delta.add(3, alph["b"], 5);
         aut.delta.add(4, alph["c"], 8);
 
-        aut.make_complete(alph, SINK);
+        aut.make_complete(&alph, SINK);
 
-        REQUIRE(aut.delta.contains(1, alph["a"], 2));
-        REQUIRE(aut.delta.contains(1, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(1, alph["c"], SINK));
-        REQUIRE(aut.delta.contains(2, alph["a"], 4));
-        REQUIRE(aut.delta.contains(2, alph["c"], 1));
-        REQUIRE(aut.delta.contains(2, alph["c"], 3));
-        REQUIRE(aut.delta.contains(2, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(3, alph["b"], 5));
-        REQUIRE(aut.delta.contains(3, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(3, alph["c"], SINK));
-        REQUIRE(aut.delta.contains(4, alph["c"], 8));
-        REQUIRE(aut.delta.contains(4, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(4, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(5, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(5, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(5, alph["c"], SINK));
-        REQUIRE(aut.delta.contains(8, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(8, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(8, alph["c"], SINK));
-        REQUIRE(aut.delta.contains(SINK, alph["a"], SINK));
-        REQUIRE(aut.delta.contains(SINK, alph["b"], SINK));
-        REQUIRE(aut.delta.contains(SINK, alph["c"], SINK));
+        CHECK(aut.delta.contains(1, alph["a"], 2));
+        CHECK(aut.delta.contains(1, alph["b"], SINK));
+        CHECK(aut.delta.contains(1, alph["c"], SINK));
+        CHECK(aut.delta.contains(2, alph["a"], 4));
+        CHECK(aut.delta.contains(2, alph["c"], 1));
+        CHECK(aut.delta.contains(2, alph["c"], 3));
+        CHECK(aut.delta.contains(2, alph["b"], SINK));
+        CHECK(aut.delta.contains(3, alph["b"], 5));
+        CHECK(aut.delta.contains(3, alph["a"], SINK));
+        CHECK(aut.delta.contains(3, alph["c"], SINK));
+        CHECK(aut.delta.contains(4, alph["c"], 8));
+        CHECK(aut.delta.contains(4, alph["a"], SINK));
+        CHECK(aut.delta.contains(4, alph["b"], SINK));
+        CHECK(aut.delta.contains(5, alph["a"], SINK));
+        CHECK(aut.delta.contains(5, alph["b"], SINK));
+        CHECK(aut.delta.contains(5, alph["c"], SINK));
+        CHECK(aut.delta.contains(8, alph["a"], SINK));
+        CHECK(aut.delta.contains(8, alph["b"], SINK));
+        CHECK(aut.delta.contains(8, alph["c"], SINK));
+        CHECK(aut.delta.contains(SINK, alph["a"], SINK));
+        CHECK(aut.delta.contains(SINK, alph["b"], SINK));
+        CHECK(aut.delta.contains(SINK, alph["c"], SINK));
+    }
+
+    SECTION("bigger automaton parameters from automaton with alphabet") {
+        constexpr State SINK = 9;
+        aut.initial = {1, 2};
+        aut.final = {8};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'c', 3);
+        aut.delta.add(3, 'b', 5);
+        aut.delta.add(4, 'c', 8);
+        EnumAlphabet alphabet{ 'a', 'b', 'c' };
+        aut.alphabet = &alphabet;
+
+        aut.make_complete();
+        CHECK(aut.delta.contains(1, 'a', 2));
+        CHECK(aut.delta.contains(1, 'b', SINK));
+        CHECK(aut.delta.contains(1, 'c', SINK));
+        CHECK(aut.delta.contains(2, 'a', 4));
+        CHECK(aut.delta.contains(2, 'c', 1));
+        CHECK(aut.delta.contains(2, 'c', 3));
+        CHECK(aut.delta.contains(2, 'b', SINK));
+        CHECK(aut.delta.contains(3, 'b', 5));
+        CHECK(aut.delta.contains(3, 'a', SINK));
+        CHECK(aut.delta.contains(3, 'c', SINK));
+        CHECK(aut.delta.contains(4, 'c', 8));
+        CHECK(aut.delta.contains(4, 'a', SINK));
+        CHECK(aut.delta.contains(4, 'b', SINK));
+        CHECK(aut.delta.contains(5, 'a', SINK));
+        CHECK(aut.delta.contains(5, 'b', SINK));
+        CHECK(aut.delta.contains(5, 'c', SINK));
+        CHECK(aut.delta.contains(8, 'a', SINK));
+        CHECK(aut.delta.contains(8, 'b', SINK));
+        CHECK(aut.delta.contains(8, 'c', SINK));
+        CHECK(aut.delta.contains(SINK, 'a', SINK));
+        CHECK(aut.delta.contains(SINK, 'b', SINK));
+        CHECK(aut.delta.contains(SINK, 'c', SINK));
+    }
+
+    SECTION("bigger automaton parameters from automaton") {
+        constexpr State SINK = 9;
+        aut.initial = {1, 2};
+        aut.final = {8};
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(2, 'a', 4);
+        aut.delta.add(2, 'c', 1);
+        aut.delta.add(2, 'c', 3);
+        aut.delta.add(3, 'b', 5);
+        aut.delta.add(4, 'c', 8);
+
+        aut.make_complete();
+        CHECK(aut.delta.contains(1, 'a', 2));
+        CHECK(aut.delta.contains(1, 'b', SINK));
+        CHECK(aut.delta.contains(1, 'c', SINK));
+        CHECK(aut.delta.contains(2, 'a', 4));
+        CHECK(aut.delta.contains(2, 'c', 1));
+        CHECK(aut.delta.contains(2, 'c', 3));
+        CHECK(aut.delta.contains(2, 'b', SINK));
+        CHECK(aut.delta.contains(3, 'b', 5));
+        CHECK(aut.delta.contains(3, 'a', SINK));
+        CHECK(aut.delta.contains(3, 'c', SINK));
+        CHECK(aut.delta.contains(4, 'c', 8));
+        CHECK(aut.delta.contains(4, 'a', SINK));
+        CHECK(aut.delta.contains(4, 'b', SINK));
+        CHECK(aut.delta.contains(5, 'a', SINK));
+        CHECK(aut.delta.contains(5, 'b', SINK));
+        CHECK(aut.delta.contains(5, 'c', SINK));
+        CHECK(aut.delta.contains(8, 'a', SINK));
+        CHECK(aut.delta.contains(8, 'b', SINK));
+        CHECK(aut.delta.contains(8, 'c', SINK));
+        CHECK(aut.delta.contains(SINK, 'a', SINK));
+        CHECK(aut.delta.contains(SINK, 'b', SINK));
+        CHECK(aut.delta.contains(SINK, 'c', SINK));
     }
 } // }}}
 
@@ -1904,7 +1978,7 @@ TEST_CASE("mata::nfa::is_complete()")
 
         REQUIRE(!aut.is_complete(&alph));
 
-        aut.make_complete(alph, 100);
+        aut.make_complete(&alph, 100);
         REQUIRE(aut.is_complete(&alph));
     }
 
@@ -3041,7 +3115,7 @@ TEST_CASE("A segmentation fault in the make_complement") {
     r.initial = {0};
     r.delta.add(0, 0, 0);
     REQUIRE(not r.is_complete(&alph));
-    r.make_complete(alph, 1);
+    r.make_complete(&alph, 1);
     REQUIRE(r.is_complete(&alph));
 }
 

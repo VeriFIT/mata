@@ -5,6 +5,7 @@ import networkx as nx
 
 from libc.stdint cimport uint8_t
 from libcpp cimport bool
+from libcpp.optional cimport make_optional
 from libcpp.list cimport list as clist
 from libcpp.memory cimport shared_ptr, make_shared
 from libcpp.set cimport set as cset
@@ -792,7 +793,7 @@ cdef class Nfa:
         """
         if not self.thisptr.get().is_state(sink_state):
             self.thisptr.get().add_state(self.thisptr.get().num_of_states())
-        self.thisptr.get().make_complete(<CAlphabet&>dereference(alphabet.as_base()), sink_state)
+        self.thisptr.get().make_complete(alphabet.as_base(), make_optional[State](sink_state))
 
     def get_symbols(self):
         """Return a set of symbols used on the transitions in NFA.
