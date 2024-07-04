@@ -1028,38 +1028,32 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
 }
 
 Nfa mata::nfa::determinize(
-        const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map) {
-
-    Nfa result;
+    const Nfa&  aut, std::unordered_map<StateSet, State>* subset_map,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover
+) {
+    Nfa result{};
     //assuming all sets targets are non-empty
-    std::vector<std::pair<State, StateSet>> worklist;
-    bool deallocate_subset_map = false;
-    if (subset_map == nullptr) {
-        subset_map = new std::unordered_map<StateSet,State>();
-        deallocate_subset_map = true;
-    }
+    std::vector<std::pair<State, StateSet>> worklist{};
+    std::unordered_map<StateSet, State> subset_map_local{};
+    if (subset_map == nullptr) { subset_map = &subset_map_local; }
 
-    result.clear();
-
-    const StateSet S0 =  StateSet(aut.initial);
-    const State S0id = result.add_state();
+    const StateSet S0{ aut.initial };
+    const State S0id{ result.add_state() };
     result.initial.insert(S0id);
 
     if (aut.final.intersects_with(S0)) {
         result.final.insert(S0id);
     }
     worklist.emplace_back(S0id, S0);
-
     (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
-
-    if (aut.delta.empty())
-        return result;
+    if (aut.delta.empty()) { return result; }
+    if (macrostate_discover.has_value() && !(*macrostate_discover)(result, S0id, S0)) { return result; }
 
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
-    while (!worklist.empty()) {
+    bool continue_determinization{ true };
+    while (continue_determinization && !worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
         const StateSet S = Spair.second;
@@ -1076,10 +1070,9 @@ Nfa mata::nfa::determinize(
         }
 
         while (synchronized_iterator.advance()) {
-
-            // extract post from the sychronized_iterator iterator
-            const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-            Symbol currentSymbol = (*moves.begin())->symbol;
+            // extract post from the synchronized_iterator iterator
+            const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
+            Symbol currentSymbol = (*symbol_posts.begin())->symbol;
             StateSet T = synchronized_iterator.unify_targets();
 
             const auto existingTitr = subset_map->find(T);
@@ -1095,11 +1088,13 @@ Nfa mata::nfa::determinize(
                 worklist.emplace_back(Tid, T);
             }
             result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+            if (macrostate_discover.has_value() && existingTitr == subset_map->end()
+                && !(*macrostate_discover)(result, Tid, T)) {
+                continue_determinization = false;
+                break;
+            }
         }
     }
-
-    if (deallocate_subset_map) { delete subset_map; }
-
     return result;
 }
 
