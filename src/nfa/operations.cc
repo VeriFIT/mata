@@ -1223,3 +1223,78 @@ std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
     }
     return std::nullopt;
 }
+
+std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {
+    if (initial.empty() || final.empty()) { return Word{}; }
+
+    Nfa nfa_complete{};
+    const State sink_state{ nfa_complete.add_state() };
+    nfa_complete.final.insert(sink_state);
+    std::vector<std::pair<State, StateSet>> worklist{};
+    std::unordered_map<StateSet, State> subset_map{};
+    const auto subset_map_end{ subset_map.end() };
+    const StateSet initial_states{ initial };
+    const State new_initial{ nfa_complete.add_state() };
+    nfa_complete.initial.insert(new_initial);
+    if (!final.intersects_with(initial_states)) {
+        nfa_complete.final.insert(new_initial);
+        return nfa_complete.get_word();
+    }
+    subset_map[initial_states] = new_initial;
+    worklist.emplace_back(new_initial, initial_states);
+
+    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
+
+    bool continue_complementation{ true };
+    while (continue_complementation && !worklist.empty()) {
+        const auto[macrostate, orig_states] = std::move(worklist.back());
+        worklist.pop_back();
+
+        // TODO: shouldn't we also reset first?
+        for (const State orig_state: orig_states) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
+        bool sync_it_advanced{ synchronized_iterator.advance() };
+        for (const Symbol symbol: get_symbols_to_work_with(*this, alphabet)) {
+            if (!sync_it_advanced) {
+                nfa_complete.delta.add(macrostate, symbol, sink_state);
+                continue_complementation = false;
+                break;
+            }
+
+            const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator.get_current() };
+            const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
+            if (symbol < symbol_advanced_to) {
+                nfa_complete.delta.add(macrostate, symbol, sink_state);
+                continue_complementation = false;
+                break;
+            }
+            if (symbol > symbol_advanced_to) {
+                throw std::runtime_error(
+                    "Iterating over symbols in the automaton which are missing in the shared alphabet"
+                );
+            }
+            // From now on, symbol == symbol_advanced_to.
+
+            const StateSet orig_targets{ synchronized_iterator.unify_targets() };
+            State target_macrostate;
+            const auto target_macrostate_it = subset_map.find(orig_targets);
+            if (target_macrostate_it != subset_map_end) {
+                target_macrostate = target_macrostate_it->second;
+            } else {
+                target_macrostate = nfa_complete.add_state();
+                subset_map[orig_targets] = target_macrostate;
+                worklist.emplace_back(target_macrostate, orig_targets);
+                if (!final.intersects_with(orig_targets)) {
+                    nfa_complete.final.insert(target_macrostate);
+                    continue_complementation = false;
+                }
+            }
+            nfa_complete.delta.add(macrostate, symbol, target_macrostate);
+
+            if (!continue_complementation) { break; }
+
+            sync_it_advanced = synchronized_iterator.advance();
+        }
+    }
+    return nfa_complete.get_word();
+}
