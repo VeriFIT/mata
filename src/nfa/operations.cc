@@ -249,7 +249,7 @@ namespace {
             }
 
             // add moves of S to the sync ex iterator
-            // TODO: shouldn't we also reset first?
+            synchronized_iterator.reset();
             for (State q: S) {
                 mata::utils::push_back(synchronized_iterator, aut.delta[q]);
             }
@@ -1064,7 +1064,7 @@ Nfa mata::nfa::determinize(
         }
 
         // add moves of S to the sync ex iterator
-        // TODO: shouldn't we also reset first?
+        synchronized_iterator.reset();
         for (State q: S) {
             mata::utils::push_back(synchronized_iterator, aut.delta[q]);
         }
@@ -1246,7 +1246,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
         const auto[macrostate, orig_states] = std::move(worklist.back());
         worklist.pop_back();
 
-        // TODO: shouldn't we also reset first?
+        synchronized_iterator.reset();
         for (const State orig_state: orig_states) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
         bool sync_it_advanced{ synchronized_iterator.advance() };
         for (const Symbol symbol: get_symbols_to_work_with(*this, alphabet)) {
