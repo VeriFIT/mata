@@ -651,6 +651,12 @@ Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
 
+/**
+ * Get the set of symbols to work with during operations.
+ * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
+ */
+utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
+
 } // namespace mata::nfa.
 
 namespace std {

@@ -482,15 +482,7 @@ std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &tra
 }
 
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
-    OrdVector<Symbol> symbols;
-    if (alphabet != nullptr) {
-        symbols = alphabet->get_alphabet_symbols();
-    } else if (this->alphabet != nullptr) {
-        symbols = this->alphabet->get_alphabet_symbols();
-    } else {
-        symbols = delta.get_used_symbols();
-    }
-    return make_complete(symbols, sink_state);
+    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_state);
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
@@ -782,18 +774,10 @@ bool mata::nfa::Nfa::is_deterministic() const {
     return true;
 }
 bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
-    if (alphabet == nullptr) {
-        if (this->alphabet != nullptr) {
-            alphabet = this->alphabet;
-        } else {
-            throw std::runtime_error("Checking for completeness without any alphabet to check againts.");
-        }
-    }
-    utils::OrdVector<Symbol> symbs_ls = alphabet->get_alphabet_symbols();
-    utils::OrdVector<Symbol> symbs(symbs_ls);
+    utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
+    utils::OrdVector<Symbol> symbs_ls{ symbols };
 
-    // TODO: make a general function for traversal over reachable states that can
-    // be shared by other functions?
+    // TODO: make a general function for traversal over reachable states that can be shared by other functions?
     std::list<State> worklist(initial.begin(), initial.end());
     std::unordered_set<State> processed(initial.begin(), initial.end());
 
@@ -805,7 +789,7 @@ bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
         if (!delta.empty()) {
             for (const auto &symb_stateset: delta[state]) {
                 ++n;
-                if (!haskey(symbs, symb_stateset.symbol)) {
+                if (!haskey(symbols, symb_stateset.symbol)) {
                     throw std::runtime_error(std::to_string(__func__) +
                                              ": encountered a symbol that is not in the provided alphabet");
                 }
@@ -818,7 +802,7 @@ bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
             }
         }
 
-        if (symbs.size() != n) { return false; }
+        if (symbols.size() != n) { return false; }
     }
 
     return true;
@@ -1216,6 +1200,12 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
     }
 
     return result;
+}
+
+OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet *const shared_alphabet) {
+    if (shared_alphabet != nullptr) { return shared_alphabet->get_alphabet_symbols(); }
+    else if (nfa.alphabet != nullptr) { return nfa.alphabet->get_alphabet_symbols(); }
+    else { return nfa.delta.get_used_symbols(); }
 }
 
 std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
