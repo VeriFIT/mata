@@ -580,6 +580,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     if (aut.final.empty() || aut.initial.empty()) { return *this; }
 
     this->delta.reserve(new_num_of_states);
+    // Allocate space for initial and final states from 'this' which might be missing in Delta.
     this->delta.allocate(num_of_states);
 
     auto renumber_states = [&](State st) {
