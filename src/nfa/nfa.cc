@@ -571,9 +571,6 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     const size_t num_of_states{ this->num_of_states() };
     const size_t aut_num_of_states{ aut.num_of_states() };
     const size_t new_num_of_states{ num_of_states + aut_num_of_states };
-    auto renumber_states = [&](State st) {
-        return st + num_of_states;
-    };
 
     if (this == &aut) {
         throw std::runtime_error("Performing a useless in-place union on the same NFA object");
@@ -584,6 +581,10 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
 
     this->delta.reserve(new_num_of_states);
     this->delta.allocate(num_of_states);
+
+    auto renumber_states = [&](State st) {
+        return st + num_of_states;
+    };
     this->delta.append(aut.delta.renumber_targets(renumber_states));
 
     // Set accepting states.
