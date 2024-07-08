@@ -573,7 +573,7 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
     const size_t new_num_of_states{ num_of_states + aut_num_of_states };
 
     if (this == &aut) {
-        throw std::runtime_error("Performing a useless in-place union on the same NFA object");
+        return *this;
     }
 
     if (final.empty() || initial.empty()) { *this = aut; return *this; }

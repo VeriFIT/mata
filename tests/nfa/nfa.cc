@@ -2502,7 +2502,8 @@ TEST_CASE("mata::nfa::union_inplace") {
     }
 
     SECTION("same automata") {
-        CHECK_THROWS(lhs.unite_nondet_with(lhs));
+        const Nfa lhs_copy{ lhs };
+        CHECK(are_equivalent(lhs.unite_nondet_with(lhs), lhs_copy));
     }
 }
 
