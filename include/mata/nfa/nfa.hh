@@ -122,6 +122,11 @@ public:
      */
     void unify_final();
 
+    /**
+     * Swap final and non-final states in-place.
+     */
+    Nfa& swap_final_nonfinal() { final.complement(num_of_states()); return *this; }
+
     bool is_state(const State &state_to_check) const { return state_to_check < num_of_states(); }
 
     /**
@@ -396,6 +401,15 @@ public:
      * @return True if some new transition (and sink state) was added to the automaton.
      */
     bool make_complete(const Alphabet& alphabet) { return this->make_complete(alphabet, this->num_of_states()); }
+
+    /**
+     * Complement deterministic automaton in-place by adding a sink state and swapping final and non-final states.
+     * @param[in] symbols Symbols needed to make the automaton complete.
+     * @param[in] sink_state State to be used as a sink state. Adds a new sink state when not specified.
+     * @return DFA complemented in-place.
+     * @pre @c this is a deterministic automaton.
+     */
+    Nfa& complement_deterministic(const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);
 }; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -493,12 +507,14 @@ Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon = false,
  * @param[in] aut Automaton whose complement to compute.
  * @param[in] alphabet Alphabet used for complementation.
  * @param[in] params Optional parameters to control the complementation algorithm:
- * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "algorithm":
+ *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
+ *                      non-final states.
+ *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
+ *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
  */
-Nfa complement(const Nfa& aut, const Alphabet& alphabet,
-               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
+Nfa complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params = { { "algorithm", "classical" } });
 
 /**
  * @brief Compute automaton accepting complement of @p aut.
@@ -511,12 +527,15 @@ Nfa complement(const Nfa& aut, const Alphabet& alphabet,
  * @param[in] aut Automaton whose complement to compute.
  * @param[in] symbols Symbols to complement over.
  * @param[in] params Optional parameters to control the complementation algorithm:
- * - "algorithm": "classical" (classical algorithm determinizes the automaton, makes it complete and swaps final and non-final states);
- * - "minimize": "true"/"false" (whether to compute minimal deterministic automaton for classical algorithm);
+ * - "algorithm":
+ *      - "classical": The classical algorithm determinizes the automaton, makes it complete, and swaps final and
+ *                      non-final states.
+ *      - "brzozowski": The Brzozowski algorithm determinizes the automaton using Brzozowski minimization, makes it
+ *                       complete, and swaps final and non-final states.
  * @return Complemented automaton.
  */
 Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
-               const ParameterMap& params = {{ "algorithm", "classical" }, { "minimize", "false" }});
+               const ParameterMap& params = { { "algorithm", "classical" } });
 
 /**
  * @brief Compute minimal deterministic automaton.
@@ -526,7 +545,7 @@ Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
  * - "algorithm": "brzozowski"
  * @return Minimal deterministic automaton.
  */
-Nfa minimize(const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski" }});
+Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzozowski" } });
 
 /**
  * @brief Determinize automaton.

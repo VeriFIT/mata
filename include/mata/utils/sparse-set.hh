@@ -35,7 +35,6 @@ concept Iterable = requires(T t) {
 /**
  * @brief  Implementation of a set of non-negative numbers using sparse-set.
  *
- *
  * This class implements the interface of a set (similar to std::set) using sparse-set date structure,
  * that is, a pair of vectors dense and sparse (... google it).
  * Importantly
@@ -115,13 +114,18 @@ concept Iterable = requires(T t) {
             assert(consistent());
         }
 
-        void erase(const Number val) {
-            if (contains(val)) {
-                dense[sparse[val]] = dense[size_ - 1];
-                sparse[dense[size_ - 1]] = sparse[val];
-                --size_;
-            }
+        /**
+         * Erase @p number from the set without checking for its existence.
+         * @param number Number to be erased.
+         * @pre @p number exists in the set.
+         */
+        void erase_nocheck(const Number number) {
+            dense[sparse[number]] = dense[size_ - 1];
+            sparse[dense[size_ - 1]] = sparse[number];
+            --size_;
         }
+
+        void erase(const Number val) { if (contains(val)) { erase_nocheck(val); } }
 
 //////////////////////////////////////////////////////////////////////////////////
 ///     New Mata code
@@ -236,13 +240,9 @@ concept Iterable = requires(T t) {
         }
 
         template<Iterable T>
-        void erase(const T & set) {
-            erase(set.begin(),set.end());
-        }
+        void erase(const T & set) { erase(set.begin(),set.end()); }
 
-        void erase(const std::initializer_list<Number> & list) {
-            erase(list.begin(),list.end());
-        }
+        void erase(const std::initializer_list<Number> & list) { erase(list.begin(),list.end()); }
 
         //call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
         template<class T>
@@ -261,7 +261,7 @@ concept Iterable = requires(T t) {
             Number old_domain_size = domain_size_;
             for (Number i = 0; i < new_domain_size; ++i) {
                 if (contains(i))
-                    erase(i);
+                    erase_nocheck(i);
                 else
                     insert(i);
             }
@@ -274,8 +274,8 @@ concept Iterable = requires(T t) {
 
         template<typename F>
         void filter(F && is_staying) {
-            for (Number i = 0; i < size_; i++) {
-                while (i<size_ && !is_staying(dense[i])) {
+            for (Number i{ 0 }; i < size_; ++i) {
+                while (i < size_ && !is_staying(dense[i])) {
                     erase(dense[i]);
                 }
             }

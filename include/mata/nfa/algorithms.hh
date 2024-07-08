@@ -41,8 +41,16 @@ Nfa minimize_brzozowski(const Nfa& aut);
  *  minimization.
  * @return Complemented automaton.
  */
-Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols,
-                         bool minimize_during_determinization = false);
+Nfa complement_classical(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols);
+
+/**
+ * Complement implemented by determization using Brzozowski minimization, adding a sink state and making the automaton
+ *  complete. Then it swaps final and non-final states.
+ * @param[in] aut Automaton to be complemented.
+ * @param[in] symbols Symbols needed to make the automaton complete.
+ * @return Complemented automaton.
+ */
+Nfa complement_brzozowski(const Nfa& aut, const mata::utils::OrdVector<Symbol>& symbols);
 
 /**
  * Inclusion implemented by complementation of bigger automaton, intersecting it with smaller and then it checks

@@ -555,3 +555,14 @@ bool Nfa::is_identical(const Nfa& aut) const {
     }
     return delta == aut.delta;
 }
+
+Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::optional<State> sink_state) {
+    const State sink{ sink_state.value_or(num_of_states()) };
+    if (initial.empty()) { // The automaton has no reachable states (accepting an empty language).
+        // Insert a single initial sink state.
+        initial.insert(sink);
+    }
+    make_complete(symbols, sink);
+    swap_final_nonfinal();
+    return *this;
+}
