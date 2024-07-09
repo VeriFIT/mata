@@ -352,7 +352,6 @@ public:
 		assert(rhs.vectorIsSorted());
 		return (vec_ == rhs.vec_);
 	}
-    bool operator!=(const OrdVector& rhs) const { return !(*this == rhs); }
 
     bool operator<(const OrdVector& rhs) const {
         assert(vectorIsSorted());

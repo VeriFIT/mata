@@ -27,7 +27,6 @@ struct Transition {
             : source(source), symbol(symbol), target(target) {}
 
     bool operator==(const Transition& rhs) const { return source == rhs.source && symbol == rhs.symbol && target == rhs.target; }
-    bool operator!=(const Transition& rhs) const { return !this->operator==(rhs); }
 };
 
 /**
