@@ -68,7 +68,6 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void reserve(size_t)
         CStatePost& state_post(State)
         CStatePost& operator[](State)
-        void emplace_back()
         void clear()
         bool empty()
         void resize(size_t)

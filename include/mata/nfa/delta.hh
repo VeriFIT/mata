@@ -82,6 +82,12 @@ public:
     // but useful for adding states in a random order to sort later (supposedly more efficient than inserting in a random order)
     void inline push_back(const State s) { targets.push_back(s); }
 
+    template <typename... Args>
+    StateSet& emplace_back(Args&&... args) {
+	// Forwardinng the variadic template pack of arguments to the emplace_back() of the underlying container.
+        return targets.emplace_back(std::forward<Args>(args)...);
+    }
+
     void erase(State s) { targets.erase(s); }
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
@@ -102,14 +108,18 @@ public:
     using super::begin, super::end, super::cbegin, super::cend;
     using super::OrdVector;
     using super::operator=;
+    using super::operator==;
     StatePost(const StatePost&) = default;
     StatePost(StatePost&&) = default;
     StatePost& operator=(const StatePost&) = default;
     StatePost& operator=(StatePost&&) = default;
+    bool operator==(const StatePost&) const = default;
     using super::insert;
     using super::reserve;
     using super::empty, super::size;
     using super::ToVector;
+    // dangerous, breaks the sortedness invariant
+    using super::emplace_back;
     // dangerous, breaks the sortedness invariant
     using super::push_back;
     // is adding non-const version as well ok?
@@ -330,7 +340,11 @@ public:
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
 
-    void emplace_back() { state_posts_.emplace_back(); }
+    template <typename... Args>
+    StatePost& emplace_back(Args&&... args) {
+	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+        return state_posts_.emplace_back(std::forward<Args>(args)...);
+    }
 
     void clear() { state_posts_.clear(); }
 
