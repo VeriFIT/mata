@@ -183,11 +183,11 @@ public:
     /**
      * Iterator over epsilon moves in @c StatePost represented as @c Move instances.
      */
-    Moves moves_epsilons(const Symbol first_epsilon = EPSILON) const;
+    Moves moves_epsilons(Symbol first_epsilon = EPSILON) const;
     /**
      * Iterator over alphabet (normal) symbols (not over epsilons) in @c StatePost represented as @c Move instances.
      */
-    Moves moves_symbols(const Symbol last_symbol = EPSILON - 1) const;
+    Moves moves_symbols(Symbol last_symbol = EPSILON - 1) const;
 
     /**
      * Count the number of all moves in @c StatePost.
