@@ -2471,7 +2471,7 @@ TEST_CASE("mata::nfa::union_norename()") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = uni(lhs, rhs);
+        Nfa result = union_nondet(lhs, rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
@@ -2496,15 +2496,53 @@ TEST_CASE("mata::nfa::union_inplace") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nfa result = lhs.uni(rhs);
+        Nfa result = lhs.unite_nondet_with(rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 
     SECTION("same automata") {
-        size_t lhs_states = lhs.num_of_states();
-        Nfa result = lhs.uni(lhs);
-        REQUIRE(result.num_of_states() == lhs_states * 2);
+        const Nfa lhs_copy{ lhs };
+        CHECK(are_equivalent(lhs.unite_nondet_with(lhs), lhs_copy));
+    }
+}
+
+TEST_CASE("mata::nfa::union_product()") {
+    Run one{ { 1 },{} };
+    Run zero{{ 0 }, {} };
+    Run two{ { 2 },{} };
+    Run two_three{ { 2, 3 },{} };
+
+    Nfa lhs(4);
+    lhs.initial.insert(0);
+    lhs.delta.add(0, 0, 1);
+    lhs.delta.add(0, 2, 2);
+    lhs.delta.add(2, 3, 3);
+    lhs.final.insert(1);
+    lhs.final.insert(3);
+    REQUIRE(!lhs.is_in_lang(one));
+    REQUIRE(lhs.is_in_lang(zero));
+    REQUIRE(!lhs.is_in_lang(two));
+    REQUIRE(lhs.is_in_lang(two_three));
+
+    Nfa rhs(4);
+    rhs.initial.insert(0);
+    rhs.delta.add(0, 1, 1);
+    rhs.delta.add(0, 2, 2);
+    rhs.delta.add(2, 3, 3);
+    rhs.final.insert(1);
+    rhs.final.insert(2);
+    REQUIRE(rhs.is_in_lang(one));
+    REQUIRE(!rhs.is_in_lang(zero));
+    REQUIRE(rhs.is_in_lang(two));
+    REQUIRE(!rhs.is_in_lang(two_three));
+
+    SECTION("Minimal example") {
+        Nfa result = mata::nfa::union_product(lhs, rhs);
+        CHECK(!result.is_in_lang(one));
+        CHECK(!result.is_in_lang(zero));
+        CHECK(result.is_in_lang(two));
+        CHECK(result.is_in_lang(two_three));
     }
 }
 

@@ -546,7 +546,7 @@ cdef class Nfa:
 
         :return: Self
         """
-        self.thisptr.get().uni(dereference(other.thisptr.get()))
+        self.thisptr.get().unite_nondet_with(dereference(other.thisptr.get()))
         return self
 
     def is_lang_empty(self, Run run = None):
@@ -833,7 +833,7 @@ def union(Nfa lhs, Nfa rhs):
     :return: union of lhs and rhs
     """
     result = Nfa()
-    mata_nfa.c_uni(
+    mata_nfa.c_union_nondet(
         result.thisptr.get(), dereference(lhs.thisptr.get()), dereference(rhs.thisptr.get())
     )
     return result

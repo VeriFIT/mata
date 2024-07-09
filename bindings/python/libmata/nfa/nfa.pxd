@@ -161,7 +161,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void print_to_DOT(ostream)
         CNfa& trim(StateRenaming*)
         CNfa& concatenate(CNfa&)
-        CNfa& uni(CNfa&)
+        CNfa& unite_nondet_with(CNfa&)
         void get_one_letter_aut(CNfa&)
         bool is_epsilon(Symbol)
         CBoolVector get_useful_states()
@@ -198,7 +198,7 @@ cdef extern from "mata/nfa/algorithms.hh" namespace "mata::nfa::algorithms":
 cdef extern from "mata/nfa/plumbing.hh" namespace "mata::nfa::plumbing":
     cdef void get_elements(StateSet*, CBoolVector)
     cdef void c_determinize "mata::nfa::plumbing::determinize" (CNfa*, CNfa&, umap[StateSet, State]*)
-    cdef void c_uni "mata::nfa::plumbing::uni" (CNfa*, CNfa&, CNfa&)
+    cdef void c_union_nondet "mata::nfa::plumbing::union_nondet" (CNfa*, CNfa&, CNfa&)
     cdef void c_intersection "mata::nfa::plumbing::intersection" (CNfa*, CNfa&, CNfa&, Symbol, umap[pair[State, State], State]*)
     cdef void c_concatenate "mata::nfa::plumbing::concatenate" (CNfa*, CNfa&, CNfa&, bool, StateRenaming*, StateRenaming*)
     cdef void c_complement "mata::nfa::plumbing::complement" (CNfa*, CNfa&, CAlphabet&, ParameterMap&) except +

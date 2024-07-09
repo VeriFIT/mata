@@ -566,3 +566,38 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     swap_final_nonfinal();
     return *this;
 }
+
+Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
+    const size_t num_of_states{ this->num_of_states() };
+    const size_t aut_num_of_states{ aut.num_of_states() };
+    const size_t new_num_of_states{ num_of_states + aut_num_of_states };
+
+    if (this == &aut) {
+        return *this;
+    }
+
+    if (final.empty() || initial.empty()) { *this = aut; return *this; }
+    if (aut.final.empty() || aut.initial.empty()) { return *this; }
+
+    this->delta.reserve(new_num_of_states);
+    // Allocate space for initial and final states from 'this' which might be missing in Delta.
+    this->delta.allocate(num_of_states);
+
+    auto renumber_states = [&](State st) {
+        return st + num_of_states;
+    };
+    this->delta.append(aut.delta.renumber_targets(renumber_states));
+
+    // Set accepting states.
+    this->final.reserve(new_num_of_states);
+    for(const State& aut_fin: aut.final) {
+        this->final.insert(renumber_states(aut_fin));
+    }
+    // Set initial states.
+    this->initial.reserve(new_num_of_states);
+    for(const State& aut_ini: aut.initial) {
+        this->initial.insert(renumber_states(aut_ini));
+    }
+
+    return *this;
+}

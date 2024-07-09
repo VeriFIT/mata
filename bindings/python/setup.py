@@ -219,7 +219,7 @@ setup(
                 "David Chocholatý <chocholaty.david@protonmail.com>, "
                 "Juraj Síč <sicjuraj@fit.vutbr.cz>, "
                 "Tomáš Vojnar <vojnar@fit.vutbr.cz>",
-    author_email="lengal@fit.vutbr.cz",
+    author_email="holik@fit.vutbr.cz",
     long_description=README_MD,
     long_description_content_type="text/markdown",
     keywords="automata, finite automata, alternating automata",
