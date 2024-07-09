@@ -126,8 +126,7 @@ public:
     using super::back;
     using super::filter;
 
-    void erase(const SymbolPost& s) {super::erase(s);}
-    void erase(const_iterator first, const_iterator last) {super::erase(first,last);}
+    using super::erase;
 
     using super::find;
     iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
