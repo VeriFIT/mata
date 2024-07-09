@@ -1,4 +1,5 @@
 from libcpp cimport bool
+from libcpp.optional cimport optional
 from libcpp.set cimport set as cset
 from libcpp.unordered_set cimport unordered_set as uset
 from libcpp.unordered_map cimport unordered_map as umap
@@ -178,7 +179,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         bool is_in_lang(CRun&)
         bool is_prfx_in_lang(CRun&)
         pair[CRun, bool] get_word_for_path(CRun&)
-        void make_complete(CAlphabet&, State) except +
+        void make_complete(CAlphabet*, optional[State]) except +
 
     # Automata tests
     cdef bool c_is_included "mata::nfa::is_included" (CNfa&, CNfa&, CAlphabet*, ParameterMap&)

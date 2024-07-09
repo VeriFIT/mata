@@ -367,11 +367,12 @@ public:
      *  to the NFA, it is added to it, but only in the case that some transition to @p sink_state was added.
      * In the case that NFA does not contain any states, this function does nothing.
      *
-     * @param[in] alphabet Alphabet to use for computing "missing" symbols.
-     * @param[in] sink_state The state into which new transitions are added.
-     * @return True if some new transition was added to the NFA.
+     * @param[in] alphabet Alphabet to use for computing "missing" symbols. If @c nullptr, use @c this->alphabet when
+     *  defined, otherwise use @c this->delta.get_used_symbols().
+     * @param[in] sink_state The state into which new transitions are added. If @c std::nullopt, add a new sink state.
+     * @return @c true if a new transition was added to the NFA.
      */
-    bool make_complete(const Alphabet& alphabet, State sink_state);
+    bool make_complete(const Alphabet* alphabet = nullptr, std::optional<State> sink_state = std::nullopt);
 
     /**
      * @brief Make NFA complete in place.
@@ -385,24 +386,11 @@ public:
      *  complete to from the alphabet. Prefer this version when you already have the set of symbols precomputed or plan
      *  to complete multiple automata over the same set of symbols.
      *
-     * @param[in] symbols Symbols to compute missing symbols from.
-     * @param[in] sink_state The state into which new transitions are added.
-     * @return True if some new transition was added to the automaton.
+     * @param[in] symbols Symbols to compute "missing" symbols from.
+     * @param[in] sink_state The state into which new transitions are added. If @c std::nullopt, add a new sink state.
+     * @return @c true if a new transition was added to the NFA.
      */
-    bool make_complete(const utils::OrdVector<Symbol>& symbols, State sink_state);
-
-    /**
-     * @brief Make NFA complete in place.
-     *
-     * For each state 0,...,this->num_of_states()-1, add transitions with "missing" symbols from @p alphabet
-     *  (symbols that do not occur on transitions from given state) to new sink state (if no new transitions are added,
-     *  this sink state is not created).
-     * In the case that NFA does not contain any states, this function does nothing.
-     *
-     * @param[in] alphabet Alphabet to use for computing "missing" symbols.
-     * @return True if some new transition (and sink state) was added to the automaton.
-     */
-    bool make_complete(const Alphabet& alphabet) { return this->make_complete(alphabet, this->num_of_states()); }
+    bool make_complete(const utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);
 
     /**
      * Complement deterministic automaton in-place by adding a sink state and swapping final and non-final states.
@@ -681,6 +669,12 @@ Nfa remove_epsilon(const Nfa& aut, Symbol epsilon = EPSILON);
  // Maybe we need some terminology - Symbols and Words are made of numbers.
  // What are the symbol names and their sequences?
 Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input);
+
+/**
+ * Get the set of symbols to work with during operations.
+ * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
+ */
+utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
 
 } // namespace mata::nfa.
 

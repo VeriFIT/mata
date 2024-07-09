@@ -239,7 +239,7 @@ public:
     /**
      * @brief Returns the vector of current still active positions.
      *
-     * Beware, thy will be ordered differently from how there were input into the iterator.
+     * Beware, they will be ordered differently from how there were input into the iterator.
      * This is due to swapping of the emptied positions with positions at the end.
      */
     const std::vector<Iterator>& get_current() const override { return this->currently_synchronized; };
