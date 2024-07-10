@@ -496,6 +496,21 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
         CHECK(*result == Word{});
     }
 
+    SECTION("empty automaton 2") {
+        aut.initial = { 0 };
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("empty automaton 3") {
+        aut.initial = { 0 };
+        aut.final = { 1 };
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
     SECTION("simple automaton 1") {
         aut.initial = { 0 };
         aut.final = { 0 };

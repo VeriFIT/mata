@@ -1220,23 +1220,19 @@ std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
 }
 
 std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {
-    if (initial.empty() || final.empty()) { return Word{}; }
+    if (are_disjoint(initial, final)) { return Word{}; }
+
+    std::vector<std::unordered_map<StateSet, State>::const_iterator> worklist{};
+    std::unordered_map<StateSet, State> subset_map{};
+    const auto subset_map_end{ subset_map.end() };
 
     Nfa nfa_complete{};
     const State sink_state{ nfa_complete.add_state() };
     nfa_complete.final.insert(sink_state);
-    std::vector<std::pair<State, StateSet>> worklist{};
-    std::unordered_map<StateSet, State> subset_map{};
-    const auto subset_map_end{ subset_map.end() };
-    const StateSet initial_states{ initial };
     const State new_initial{ nfa_complete.add_state() };
     nfa_complete.initial.insert(new_initial);
-    if (!final.intersects_with(initial_states)) {
-        nfa_complete.final.insert(new_initial);
-        return nfa_complete.get_word();
-    }
-    subset_map[initial_states] = new_initial;
-    worklist.emplace_back(new_initial, initial_states);
+    auto subset_map_it{ subset_map.emplace(initial, new_initial).first };
+    worklist.emplace_back(subset_map_it);
 
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
@@ -1245,11 +1241,13 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
     const auto symbols_end{ symbols.end() };
     bool continue_complementation{ true };
     while (continue_complementation && !worklist.empty()) {
-        const auto[macrostate, orig_states] = std::move(worklist.back());
+        const auto curr_state_set_it{ worklist.back() };
+        const State macrostate{ curr_state_set_it->second };
+        const StateSet& curr_state_set{ curr_state_set_it->first };
         worklist.pop_back();
 
         synchronized_iterator.reset();
-        for (const State orig_state: orig_states) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
+        for (const State orig_state: curr_state_set) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
         bool sync_it_advanced{ synchronized_iterator.advance() };
         auto symbols_it{ symbols.begin() };
         while (sync_it_advanced || symbols_it != symbols_end) {
@@ -1265,7 +1263,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
             assert(sync_it_advanced);
             const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator.get_current() };
             const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
-            const StateSet orig_targets{ synchronized_iterator.unify_targets() };
+            StateSet orig_targets{ synchronized_iterator.unify_targets() };
             State target_macrostate;
 
             if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
@@ -1275,12 +1273,12 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
                     target_macrostate = target_macrostate_it->second;
                 } else {
                     target_macrostate = nfa_complete.add_state();
-                    subset_map[orig_targets] = target_macrostate;
-                    worklist.emplace_back(target_macrostate, orig_targets);
                     if (!final.intersects_with(orig_targets)) {
                         nfa_complete.final.insert(target_macrostate);
                         continue_complementation = false;
                     }
+                    subset_map_it = subset_map.emplace(std::move(orig_targets), target_macrostate).first;
+                    worklist.emplace_back(subset_map_it);
                 }
                 nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
             } else {
