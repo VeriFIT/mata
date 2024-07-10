@@ -133,7 +133,8 @@ public:
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
     template <typename... Args>
     reference emplace_back(Args&&... args) {
-       return vec_.emplace_back(std::forward<Args>(args)...);
+	// Forwarding the variadic template pack of arguments to the emplace_back() of the underlying container.
+        return vec_.emplace_back(std::forward<Args>(args)...);
     }
 
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
@@ -144,7 +145,6 @@ public:
     // PUSH_BACK WHICH BREAKS SORTEDNESS,
     // dangerous,
     // but useful in NFA where temporarily breaking the sortedness invariant allows for a faster algorithm (e.g. revert)
-    // btw, do we need move here?
     reference push_back(Key&& t) { return emplace_back(std::move(t)); }
 
     virtual inline void reserve(size_t size) { vec_.reserve(size); }
@@ -352,7 +352,6 @@ public:
 		assert(rhs.vectorIsSorted());
 		return (vec_ == rhs.vec_);
 	}
-    bool operator!=(const OrdVector& rhs) const { return !(*this == rhs); }
 
     bool operator<(const OrdVector& rhs) const {
         assert(vectorIsSorted());

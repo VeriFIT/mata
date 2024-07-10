@@ -37,7 +37,6 @@ struct ParsedSection {
 
 	/// Equality operator
 	bool operator==(const ParsedSection& rhs) const;
-	bool operator!=(const ParsedSection& rhs) const { return !(*this == rhs); }
 
 	/// subscript operator for the key-value store
 	const std::vector<std::string>& operator[](const std::string& key) const;

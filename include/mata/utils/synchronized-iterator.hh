@@ -63,7 +63,6 @@ public:
         this->ends.emplace_back(end);
     };
 
-
     /** Empties positions and ends.
      * Though they should keep the allocated space.
      * @param size Number of elements to reserve up-front for positions and ends.

@@ -110,23 +110,9 @@ struct ClosedSet {
            insert(antichain);
        }
 
-       // operators
-
-       // Two closed sets are equivalent iff their type, borders
-       // and corresponding antichains are the same
-       bool operator==(const ClosedSet<T>& rhs) const
-        { // {{{
-            return type_ == rhs.type && min_val_ == rhs.min_val &&
-            max_val_ == rhs.max_val && antichain_ == rhs.antichain;
-        } // operator== }}}
-
-       // Two closed sets are not equivalent iff their type,
-       // borders or corresponding antichains differ
-       bool operator!=(const ClosedSet<T>& rhs) const
-        { // {{{
-            return type_ != rhs.type_ || min_val_ != rhs.min_val_ ||
-            max_val_ != rhs.max_val_ || antichain_ != rhs.antichain_;
-        } // operator!= }}}
+       /// Two closed sets are equivalent iff their type, borders and corresponding antichains are the same. They are
+       ///  not equivalent otherwise.
+       bool operator==(const ClosedSet<T>& rhs) const = default;
 
         // A closed set is considered to be smaller than the other one iff
         // it is a subset of the other one
@@ -147,7 +133,7 @@ struct ClosedSet {
         bool operator>=(const ClosedSet<T>& rhs) const
         { // {{{
             assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
-            "Types and borders of given closed sets must be the same to perform their <=-comparison.");
+            "Types and borders of given closed sets must be the same to perform their >=-comparison.");
             return contains(rhs.antichain);
         } // operator<= }}}
 

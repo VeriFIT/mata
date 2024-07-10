@@ -50,6 +50,13 @@ TEST_CASE("mata::nfa::size()") {
     CHECK(nfa.num_of_states() == 0);
 }
 
+TEST_CASE("StatePost::emplace_back()") {
+    StatePost state_post{};
+    state_post.emplace_back(1, StateSet{2, 3});
+    CHECK(state_post == StatePost{ SymbolPost{ Symbol{ 1 }, StateSet{ 2, 3 } } });
+    CHECK(*state_post.find(1) == SymbolPost{ SymbolPost{ Symbol{ 1 }, StateSet{ 2, 3 } } });
+}
+
 TEST_CASE("mata::nfa::Trans::operator<<") {
     Transition trans(1, 2, 3);
     REQUIRE(std::to_string(trans) == "(1, 2, 3)");
