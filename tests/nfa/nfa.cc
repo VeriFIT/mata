@@ -567,6 +567,34 @@ TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
         result = aut.get_word_from_complement();
         CHECK(!result.has_value());
     }
+
+    SECTION("smaller alphabet symbol") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 'b', 1);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a' });
+    }
+
+    SECTION("smaller transition symbol") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 'a', 1);
+        aut.delta.add(1, 0, 2);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 0 });
+    }
+
+    SECTION("smaller transition symbol 2") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 0, 2);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 0 });
+    }
 }
 
 TEST_CASE("mata::nfa::minimize() for profiling", "[.profiling],[minimize]") {

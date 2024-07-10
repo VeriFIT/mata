@@ -1241,6 +1241,8 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
+    const utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
+    const auto symbols_end{ symbols.end() };
     bool continue_complementation{ true };
     while (continue_complementation && !worklist.empty()) {
         const auto[macrostate, orig_states] = std::move(worklist.back());
@@ -1249,45 +1251,50 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
         synchronized_iterator.reset();
         for (const State orig_state: orig_states) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
         bool sync_it_advanced{ synchronized_iterator.advance() };
-        for (const Symbol symbol: get_symbols_to_work_with(*this, alphabet)) {
+        auto symbols_it{ symbols.begin() };
+        while (sync_it_advanced || symbols_it != symbols_end) {
             if (!sync_it_advanced) {
-                nfa_complete.delta.add(macrostate, symbol, sink_state);
+                assert(symbols_it != symbols_end);
+                // There are no more transitions from the 'orig_states' but there is a symbol from the 'symbols'. Make
+                //  the complemented NFA complete by adding a transition to a sink state. We can now return the access
+                //  word for the sink state.
+                nfa_complete.delta.add(macrostate, *symbols_it, sink_state);
                 continue_complementation = false;
                 break;
             }
-
+            assert(sync_it_advanced);
             const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator.get_current() };
             const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
-            if (symbol < symbol_advanced_to) {
-                nfa_complete.delta.add(macrostate, symbol, sink_state);
+            const StateSet orig_targets{ synchronized_iterator.unify_targets() };
+            State target_macrostate;
+
+            if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
+                // Continue with the determinization of the NFA.
+                const auto target_macrostate_it = subset_map.find(orig_targets);
+                if (target_macrostate_it != subset_map_end) {
+                    target_macrostate = target_macrostate_it->second;
+                } else {
+                    target_macrostate = nfa_complete.add_state();
+                    subset_map[orig_targets] = target_macrostate;
+                    worklist.emplace_back(target_macrostate, orig_targets);
+                    if (!final.intersects_with(orig_targets)) {
+                        nfa_complete.final.insert(target_macrostate);
+                        continue_complementation = false;
+                    }
+                }
+                nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+            } else {
+                assert(symbol_advanced_to > *symbols_it);
+                // There are more transitions from the 'orig_states', but there is a missing transition over
+                //  '*symbols_it'. Make the complemented NFA complete by adding a transition to a sink state. We can now
+                //  return the access word for the sink state.
+                nfa_complete.delta.add(macrostate, *symbols_it, sink_state);
                 continue_complementation = false;
                 break;
             }
-            if (symbol > symbol_advanced_to) {
-                throw std::runtime_error(
-                    "Iterating over symbols in the automaton which are missing in the shared alphabet"
-                );
-            }
-            // From now on, symbol == symbol_advanced_to.
-
-            const StateSet orig_targets{ synchronized_iterator.unify_targets() };
-            State target_macrostate;
-            const auto target_macrostate_it = subset_map.find(orig_targets);
-            if (target_macrostate_it != subset_map_end) {
-                target_macrostate = target_macrostate_it->second;
-            } else {
-                target_macrostate = nfa_complete.add_state();
-                subset_map[orig_targets] = target_macrostate;
-                worklist.emplace_back(target_macrostate, orig_targets);
-                if (!final.intersects_with(orig_targets)) {
-                    nfa_complete.final.insert(target_macrostate);
-                    continue_complementation = false;
-                }
-            }
-            nfa_complete.delta.add(macrostate, symbol, target_macrostate);
 
             if (!continue_complementation) { break; }
-
+            if(symbol_advanced_to >= *symbols_it) { ++symbols_it; }
             sync_it_advanced = synchronized_iterator.advance();
         }
     }
