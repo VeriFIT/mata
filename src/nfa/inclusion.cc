@@ -55,7 +55,7 @@ bool mata::nfa::algorithms::is_included_antichains(
 
         //TODO: Can this be done faster using more heuristics? E.g., compare the last elements first ...
         //TODO: Try BDDs! What about some abstractions?
-        return lhs_bigger.IsSubsetOf(rhs_bigger);
+        return lhs_bigger.is_subset_of(rhs_bigger);
     };
 
 

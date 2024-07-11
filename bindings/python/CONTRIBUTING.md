@@ -649,7 +649,7 @@ while it != end:
 #     ^-- comparsion of two iterators
     t = SymbolPost(
         dereference(it).symbol,
-        dereference(it).targets.ToVector()
+        dereference(it).targets.to_vector()
         # ^-- to access the value of iterator you need to dereference
     )
     postinc(it)

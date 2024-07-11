@@ -47,7 +47,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void push_back(CSymbolPost&)
         void remove(CSymbolPost&)
         bool empty()
-        vector[CSymbolPost] ToVector()
+        vector[CSymbolPost] to_vector()
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
 

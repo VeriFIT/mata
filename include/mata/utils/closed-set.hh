@@ -164,7 +164,7 @@ struct ClosedSet {
         void insert(const Node& node);
         void insert(const Nodes& nodes) {for (const auto& node: nodes) insert(node); }
 
-        ClosedSet Union (const ClosedSet& rhs) const;
+        ClosedSet set_union (const ClosedSet& rhs) const;
         ClosedSet intersection (const ClosedSet& rhs) const;
         ClosedSet complement () const;
 }; // class ClosedSet.
@@ -197,14 +197,14 @@ template <typename T>
 bool ClosedSet<T>::contains(const Node& node) const {
     if(type_ == ClosedSetType::upward_closed_set) {
         for(auto element : antichain_) {
-            if(element.IsSubsetOf(node)) {
+            if(element.is_subset_of(node)) {
                 return true;
             }
         }
     }
     else if(type_ == ClosedSetType::downward_closed_set) {
         for(auto element : antichain_) {
-            if(node.IsSubsetOf(element)) {
+            if(node.is_subset_of(element)) {
                 return true;
             }
         }
@@ -276,7 +276,7 @@ void ClosedSet<T>::insert(const Node& node) {
     // <=-comparable elements and the result should be upward-closed.
     if(type_ == ClosedSetType::upward_closed_set) {
         for(auto element : antichain_) {
-            if(node.IsSubsetOf(element)) {
+            if(node.is_subset_of(element)) {
                 to_erase.insert(element);
             }
         }
@@ -290,7 +290,7 @@ void ClosedSet<T>::insert(const Node& node) {
     // <=-comparable elements and the result should be downward-closed.
     else if(type_ == ClosedSetType::downward_closed_set) {
         for(auto element : antichain_) {
-            if(element.IsSubsetOf(node)) {
+            if(element.is_subset_of(node)) {
                 to_erase.insert(element);
             }
         }
@@ -310,7 +310,7 @@ void ClosedSet<T>::insert(const Node& node) {
 * @return an union of the given closed sets
 */
 template <typename T>
-ClosedSet<T> ClosedSet<T>::Union(const ClosedSet<T>& rhs) const {
+ClosedSet<T> ClosedSet<T>::set_union(const ClosedSet<T>& rhs) const {
     assert(type_ == rhs.type_ && min_val_ == rhs.min_val_ && max_val_ == rhs.max_val_ &&
     "Types and borders of given closed sets must be the same to compute their union.");
     ClosedSet<T> result(type_, min_val_, max_val_, antichain_);

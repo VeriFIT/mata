@@ -158,14 +158,14 @@ namespace {
         covering_indexes.emplace_back();
 
         while (it != subset_map.end()) {               // goes through all found states
-            if (it->first.IsSubsetOf(T)) {
+            if (it->first.is_subset_of(T)) {
                 // check if T is covered
                 // if so add covering state to its covering StateSet
 
                 covering_states[Tid].insert(it->first);
                 covering_indexes[Tid].insert(it->second);
             }
-            else if (T.IsSubsetOf(it->first)) {
+            else if (T.is_subset_of(it->first)) {
                 // check if state in map is covered
                 // if so add covering state to its covering StateSet
 
@@ -321,7 +321,7 @@ namespace {
             if (covered[*i])           // was aready processed
                 continue;
 
-            if (macrostate_vec[*i].IsSubsetOf(check_state)) {
+            if (macrostate_vec[*i].is_subset_of(check_state)) {
                 covering_set.insert(macrostate_vec[*i]);                // is never covered
                 sub_covering_indexes.push_back(*i);
             }
@@ -393,7 +393,7 @@ namespace {
                 if (covered[j])     // if covered there are smaller macrostates, skip
                     continue;
 
-                if (macrostate_vec[j].IsSubsetOf(macrostate_vec[i])) {           // found covering state
+                if (macrostate_vec[j].is_subset_of(macrostate_vec[i])) {           // found covering state
                     covering_set.insert(macrostate_vec[j]);               // is not covered
                     covering_indexes.push_back(j);
                 }
