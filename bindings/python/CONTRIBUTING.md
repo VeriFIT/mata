@@ -599,7 +599,7 @@ output = new mata_nfa.ofstream(output_file.encode('utf-8'))
 #        ^-- creates new ofstream
 #                              ^-- you need to encode the Python string to utf-8
 try:
-    self.thisptr.get().print_to_DOT(dereference(output))
+    self.thisptr.get().print_to_dot(dereference(output))
     #                               ^-- call the function with the ofstream
 finally:
 # ^-- this assures that the `output` will be cleaned

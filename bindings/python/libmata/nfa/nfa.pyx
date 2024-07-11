@@ -627,7 +627,7 @@ cdef class Nfa:
         cdef mata_nfa.ofstream* output
         output = new mata_nfa.ofstream(output_file.encode('utf-8'))
         try:
-            self.thisptr.get().print_to_DOT(dereference(output))
+            self.thisptr.get().print_to_dot(dereference(output))
         finally:
             del output
 
@@ -646,7 +646,7 @@ cdef class Nfa:
         output_stream = new mata_nfa.stringstream("".encode('ascii'))
         cdef string result
         try:
-            self.thisptr.get().print_to_DOT(dereference(output_stream))
+            self.thisptr.get().print_to_dot(dereference(output_stream))
             result = output_stream.str()
         finally:
             del output_stream

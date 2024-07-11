@@ -27,5 +27,5 @@ int main() {
     aut.delta.add(4, 'c', 8);
 
     Nfa determ{ determinize(aut) };
-    determ.print_to_DOT(std::cout);
+    determ.print_to_dot(std::cout);
 }
