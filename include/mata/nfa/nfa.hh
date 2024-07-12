@@ -494,6 +494,34 @@ Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON
                   std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
+ * @brief Compute a language difference as @p nfa_included \ @p nfa_excluded.
+ *
+ * Computed as a lazy intersection of @p nfa_included and a complement of @p nfa_excluded. The NFAs are lazily
+ *  determinized and the complement is constructed lazily as well, guided by @p nfa_included.
+ *
+ * @param[in] nfa_included NFA to include in the difference.
+ * @param[in] nfa_excluded NFA to exclude from the difference.
+ * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time. The
+ *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
+ *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
+ *  determinization should stop and return only the determinized NFA constructed so far.
+ *  The parameters are:
+        const Nfa& nfa_included,
+        const Nfa& nfa_excluded,
+        const StateSet& macrostate_included_state_set,
+        const StateSet& macrostate_excluded_state_set,
+        const State macrostate,
+        const Nfa& nfa_lang_difference.
+ * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
+ */
+Nfa lang_difference(
+    const Nfa &nfa_included, const Nfa &nfa_excluded,
+    std::optional<
+        std::function<bool(const Nfa&, const Nfa&, const StateSet&, const StateSet&, const State, const Nfa&)>
+    > macrostate_discover = std::nullopt
+);
+
+/**
  * @brief Compute intersection of two NFAs.
  *
  * Both automata can contain ε-transitions. The product preserves the ε-transitions, i.e.,
@@ -581,6 +609,7 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzo
  *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
  *  determinization should stop and return only the determinized NFA constructed so far.
  * @return Determinized automaton.
+ * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(
     const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
