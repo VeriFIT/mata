@@ -379,6 +379,34 @@ bool Nfa::is_acyclic() const {
     return acyclic;
 }
 
+bool Nfa::is_flat() const {
+    bool flat = true;
+
+    mata::nfa::Nfa::TarjanDiscoverCallback callback {};
+    callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc, const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
+        (void)tarjan_stack;
+        
+        for(const mata::nfa::State& st : scc) {
+            bool one_input_visited = false;
+            for (const mata::nfa::SymbolPost& sp : this->delta[st]) {
+                for (const mata::nfa::State& tgt : scc) {
+                    if(sp.targets.find(tgt) != sp.targets.end()) {
+                        if(one_input_visited) {
+                            flat = false;
+                            return true;
+                        }
+                        one_input_visited = true;
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+    tarjan_scc_discover(callback);
+    return flat;
+}
+
 std::string Nfa::print_to_dot() const {
     std::stringstream output;
     print_to_dot(output);
