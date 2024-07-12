@@ -1222,7 +1222,7 @@ std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
 std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {
     if (are_disjoint(initial, final)) { return Word{}; }
 
-    std::vector<std::unordered_map<StateSet, State>::const_iterator> worklist{};
+    std::vector<std::unordered_map<StateSet, State>::const_pointer> worklist{};
     std::unordered_map<StateSet, State> subset_map{};
     const auto subset_map_end{ subset_map.end() };
 
@@ -1232,7 +1232,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
     const State new_initial{ nfa_complete.add_state() };
     nfa_complete.initial.insert(new_initial);
     auto subset_map_it{ subset_map.emplace(initial, new_initial).first };
-    worklist.emplace_back(subset_map_it);
+    worklist.emplace_back(subset_map_it.operator->());
 
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
@@ -1278,7 +1278,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
                         continue_complementation = false;
                     }
                     subset_map_it = subset_map.emplace(std::move(orig_targets), target_macrostate).first;
-                    worklist.emplace_back(subset_map_it);
+                    worklist.emplace_back(subset_map_it.operator->());
                 }
                 nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
             } else {
