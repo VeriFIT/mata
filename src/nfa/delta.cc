@@ -728,12 +728,16 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const {
     return unified_targets;
 }
 
-bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const SymbolPost& sync) {
+bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sync_symbol) {
     do {
         if (is_synchronized()) {
             auto current_min_symbol_post_it = get_current_minimum();
-            if (*current_min_symbol_post_it >= sync) { break; }
+            if (current_min_symbol_post_it->symbol >= sync_symbol) { break; }
         }
     } while (advance());
-    return is_synchronized() && *get_current_minimum() == sync;
+    return is_synchronized() && get_current_minimum()->symbol == sync_symbol;
+}
+
+bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const SymbolPost& sync) {
+    return synchronize_with(sync.symbol);
 }
