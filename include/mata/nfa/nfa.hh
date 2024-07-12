@@ -695,11 +695,9 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
 
 /**
  * Get the set of symbols to work with during operations.
- * @param[in] nfas Variadic number of NFAs to get symbols from.
  * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
  */
-template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
-utils::OrdVector<Symbol> get_symbols_to_work_with(const Alphabet* const shared_alphabet = nullptr, const Nfas&... nfas);
+utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
 
 } // namespace mata::nfa.
 
