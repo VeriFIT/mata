@@ -482,7 +482,7 @@ std::ostream &std::operator<<(std::ostream &os, const mata::nfa::Transition &tra
 }
 
 bool mata::nfa::Nfa::make_complete(const Alphabet* const alphabet, const std::optional<State> sink_state) {
-    return make_complete(get_symbols_to_work_with(*this, alphabet), sink_state);
+    return make_complete(get_symbols_to_work_with(alphabet, *this), sink_state);
 }
 
 bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
@@ -774,7 +774,7 @@ bool mata::nfa::Nfa::is_deterministic() const {
     return true;
 }
 bool mata::nfa::Nfa::is_complete(Alphabet const* alphabet) const {
-    utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
+    utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(alphabet, *this) };
     utils::OrdVector<Symbol> symbs_ls{ symbols };
 
     // TODO: make a general function for traversal over reachable states that can be shared by other functions?
@@ -1188,10 +1188,25 @@ std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) const {
     return result;
 }
 
-OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata::Alphabet *const shared_alphabet) {
+template<typename... Nfas, typename = AreAllOfType<const Nfa&, Nfas...>>
+OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const mata::Alphabet *const shared_alphabet, const Nfas&... nfas) {
     if (shared_alphabet != nullptr) { return shared_alphabet->get_alphabet_symbols(); }
-    else if (nfa.alphabet != nullptr) { return nfa.alphabet->get_alphabet_symbols(); }
-    else { return nfa.delta.get_used_symbols(); }
+
+    OrdVector<Symbol> symbols{};
+    std::unordered_set<const Alphabet* const> alphabets{};
+    for (const Nfa& nfa: nfas) {
+        if (nfa.alphabet != nullptr && !alphabets.contains(nfa.alphabet)) {
+            symbols.insert(nfa.alphabet->get_alphabet_symbols());
+            alphabets.insert(nfa.alphabet);
+        }
+    }
+    if (!symbols.empty()) { return symbols; }
+
+    for (const Nfa& nfa: nfas) {
+        symbols.insert(nfa.get_used_symbols());
+    }
+    return symbols;
+
 }
 
 std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
@@ -1237,7 +1252,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
 
-    const utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
+    const utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(alphabet, *this) };
     const auto symbols_end{ symbols.end() };
     bool continue_complementation{ true };
     while (continue_complementation && !worklist.empty()) {
