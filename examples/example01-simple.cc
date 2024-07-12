@@ -14,5 +14,5 @@ int main() {
     aut.delta.add(0, 0, 2);
     aut.delta.add(1, 1, 3);
 
-    aut.print_to_DOT(std::cout);
+    aut.print_to_dot(std::cout);
 }

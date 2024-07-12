@@ -22,7 +22,7 @@ namespace {
  * @returns  The string representation of the object
  */
 template <typename T>
-std::string ToString(const T& n) {
+std::string to_str(const T& n) {
     // the output stream for the string
     std::ostringstream oss;
     // insert the object into the stream
@@ -85,7 +85,7 @@ private:  // Private data members
     VectorType vec_;
 
 private:  // Private methods
-    bool vectorIsSorted() const { return(mata::utils::is_sorted(vec_)); }
+    bool is_sorted() const { return mata::utils::is_sorted(vec_); }
 
 public:
     OrdVector() : vec_() {}
@@ -96,7 +96,7 @@ public:
     OrdVector(std::initializer_list<Key> list) : vec_(list) { utils::sort_and_rmdupl(vec_); }
     OrdVector(const OrdVector& rhs) = default;
     OrdVector(OrdVector&& other) noexcept : vec_{ std::move(other.vec_) } {}
-    explicit OrdVector(const Key& key) : vec_(1, key) { assert(vectorIsSorted()); }
+    explicit OrdVector(const Key& key) : vec_(1, key) { assert(is_sorted()); }
     template <class InputIterator>
     explicit OrdVector(InputIterator first, InputIterator last) : vec_(first, last) { utils::sort_and_rmdupl(vec_); }
 
@@ -153,7 +153,7 @@ public:
     virtual inline void erase(const_iterator first, const_iterator last) { vec_.erase(first, last); }
 
     virtual void insert(const Key& x) {
-        assert(vectorIsSorted());
+        assert(is_sorted());
 
         reserve_on_insert(vec_);
 
@@ -196,13 +196,13 @@ public:
         //// insert the new element
         //vec_[first] = x;
 
-        assert(vectorIsSorted());
+        assert(is_sorted());
     }
 
     virtual void insert(const OrdVector& vec) {
         static OrdVector tmp{};
-        assert(vectorIsSorted());
-        assert(vec.vectorIsSorted());
+        assert(is_sorted());
+        assert(vec.is_sorted());
         tmp.clear();
 
         set_union(*this,vec,tmp);
@@ -214,7 +214,7 @@ public:
          * It would be good to try it with removing epsilon transitions or determinization.
          */
         //std::swap(tmp.vec_,vec_);
-        assert(vectorIsSorted());
+        assert(is_sorted());
     }
 
     inline void clear() { vec_.clear(); }
@@ -222,7 +222,7 @@ public:
     virtual inline size_t size() const { return vec_.size(); }
 
     inline size_t count(const Key& key) const {
-        assert(vectorIsSorted());
+        assert(is_sorted());
         for (auto v : this->vec_) {
             if (v == key)
                 return 1;
@@ -241,10 +241,8 @@ public:
 
     OrdVector intersection(const OrdVector& rhs) const { return intersection(*this, rhs); }
 
-    //TODO: this code of find was duplicated, not nice.
-    // Replacing the original code by std function, but keeping the original here commented, it was nice, might be even better.
     virtual const_iterator find(const Key& key) const {
-        assert(vectorIsSorted());
+        assert(is_sorted());
 
         auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
         if (it == vec_.end() || *it != key)
@@ -253,9 +251,8 @@ public:
             return it;
     }
 
-    //TODO: the original code was duplicated, see comments above.
     virtual iterator find(const Key& key) {
-        assert(vectorIsSorted());
+        assert(is_sorted());
 
         auto it = std::lower_bound(vec_.begin(), vec_.end(),key);
         if (it == vec_.end() || *it != key)
@@ -278,12 +275,12 @@ public:
      * This function expects the vector to be sorted.
      */
     inline void erase(const Key& k) {
-        assert(vectorIsSorted());
+        assert(is_sorted());
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {
             if (*found_value_it == k) {
                 vec_.erase(found_value_it);
-                assert(vectorIsSorted());
+                assert(is_sorted());
                 return;
             }
         }
@@ -330,7 +327,7 @@ public:
 	 *
 	 * Overloaded << operator for output stream.
 	 *
-	 * @see  to_string()
+	 * @see  to_str()
 	 *
 	 * @param[in]  os    The output stream
 	 * @param[in]  vec   Assignment to the variables
@@ -341,33 +338,33 @@ public:
 		std::string result = "{";
 
 		for (auto it = vec.cbegin(); it != vec.cend(); ++it) {
-			result += ((it != vec.begin())? ", " : " ") + ToString(*it);
+			result += ((it != vec.begin())? ", " : " ") + to_str(*it);
 		}
 
 		return os << (result + "}");
 	}
 
 	bool operator==(const OrdVector& rhs) const {
-		assert(vectorIsSorted());
-		assert(rhs.vectorIsSorted());
+		assert(is_sorted());
+		assert(rhs.is_sorted());
 		return (vec_ == rhs.vec_);
 	}
 
     bool operator<(const OrdVector& rhs) const {
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+        assert(is_sorted());
+        assert(rhs.is_sorted());
         return std::lexicographical_compare(vec_.begin(), vec_.end(), rhs.vec_.begin(), rhs.vec_.end());
     }
 
-    const std::vector<Key>& ToVector() const { return vec_; }
+    const std::vector<Key>& to_vector() const { return vec_; }
 
-    bool IsSubsetOf(const OrdVector& bigger) const {
+    bool is_subset_of(const OrdVector& bigger) const {
         return std::includes(bigger.cbegin(), bigger.cend(), this->cbegin(), this->cend());
     }
 
-    bool HaveEmptyIntersection(const OrdVector& rhs) const {
-        assert(vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+    bool is_intersection_empty_with(const OrdVector& rhs) const {
+        assert(is_sorted());
+        assert(rhs.is_sorted());
 
         const_iterator itLhs = begin();
         const_iterator itRhs = rhs.begin();
@@ -395,8 +392,8 @@ public:
     void rename(const std::vector<Key> & renaming) { utils::rename(vec_, renaming); }
 
     static OrdVector difference(const OrdVector& lhs, const OrdVector& rhs) {
-        assert(lhs.vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+        assert(lhs.is_sorted());
+        assert(rhs.is_sorted());
 
         OrdVector result{};
         auto lhs_it{ lhs.begin() };
@@ -417,13 +414,13 @@ public:
             }
         }
 
-        assert(result.vectorIsSorted());
+        assert(result.is_sorted());
         return result;
     }
 
     static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
-        assert(lhs.vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+        assert(lhs.is_sorted());
+        assert(rhs.is_sorted());
 
         if (lhs.empty()) { result = rhs; return; }
         if (rhs.empty()) { result = lhs; return; }
@@ -457,7 +454,7 @@ public:
         //    }
         //}
 
-        assert(result.vectorIsSorted());
+        assert(result.is_sorted());
     }
 
     static OrdVector set_union(const OrdVector& lhs, const OrdVector& rhs) {
@@ -467,8 +464,8 @@ public:
     }
 
     static OrdVector intersection(const OrdVector& lhs, const OrdVector& rhs) {
-        assert(lhs.vectorIsSorted());
-        assert(rhs.vectorIsSorted());
+        assert(lhs.is_sorted());
+        assert(rhs.is_sorted());
 
         OrdVector result{};
 
@@ -487,7 +484,7 @@ public:
             }
         }
 
-        assert(result.vectorIsSorted());
+        assert(result.is_sorted());
         return result;
     }
 }; // Class OrdVector.
@@ -498,7 +495,7 @@ namespace std {
     template <class Key>
     struct hash<mata::utils::OrdVector<Key>> {
         std::size_t operator()(const mata::utils::OrdVector<Key>& vec) const {
-            return std::hash<std::vector<Key>>{}(vec.ToVector());
+            return std::hash<std::vector<Key>>{}(vec.to_vector());
         }
     };
 }

@@ -256,11 +256,11 @@ public:
      *
      * @return automaton in DOT format
      */
-    std::string print_to_DOT() const;
+    std::string print_to_dot() const;
     /**
      * @brief Prints the automaton to the output stream in DOT format
      */
-    void print_to_DOT(std::ostream &output) const;
+    void print_to_dot(std::ostream &output) const;
     /**
      * @brief Prints the automaton in mata format
      *

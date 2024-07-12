@@ -379,13 +379,13 @@ bool Nfa::is_acyclic() const {
     return acyclic;
 }
 
-std::string Nfa::print_to_DOT() const {
+std::string Nfa::print_to_dot() const {
     std::stringstream output;
-    print_to_DOT(output);
+    print_to_dot(output);
     return output.str();
 }
 
-void Nfa::print_to_DOT(std::ostream &output) const {
+void Nfa::print_to_dot(std::ostream &output) const {
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
 

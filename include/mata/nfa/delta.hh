@@ -116,7 +116,7 @@ public:
     using super::insert;
     using super::reserve;
     using super::empty, super::size;
-    using super::ToVector;
+    using super::to_vector;
     // dangerous, breaks the sortedness invariant
     using super::emplace_back;
     // dangerous, breaks the sortedness invariant

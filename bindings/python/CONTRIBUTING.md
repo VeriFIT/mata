@@ -599,7 +599,7 @@ output = new mata_nfa.ofstream(output_file.encode('utf-8'))
 #        ^-- creates new ofstream
 #                              ^-- you need to encode the Python string to utf-8
 try:
-    self.thisptr.get().print_to_DOT(dereference(output))
+    self.thisptr.get().print_to_dot(dereference(output))
     #                               ^-- call the function with the ofstream
 finally:
 # ^-- this assures that the `output` will be cleaned
@@ -649,7 +649,7 @@ while it != end:
 #     ^-- comparsion of two iterators
     t = SymbolPost(
         dereference(it).symbol,
-        dereference(it).targets.ToVector()
+        dereference(it).targets.to_vector()
         # ^-- to access the value of iterator you need to dereference
     )
     postinc(it)

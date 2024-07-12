@@ -142,7 +142,7 @@ cdef class SymbolPost:
 
     @property
     def targets(self):
-        cdef vector[State] states_as_vector = self.thisptr.targets.ToVector()
+        cdef vector[State] states_as_vector = self.thisptr.targets.to_vector()
         return [s for s in states_as_vector]
 
     @targets.setter
@@ -425,7 +425,7 @@ cdef class Nfa:
         :return: SymbolPost
         """
         cdef mata_nfa.CStatePost transitions = self.thisptr.get().delta.state_post(state)
-        cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.ToVector()
+        cdef vector[mata_nfa.CSymbolPost] transitions_list = transitions.to_vector()
 
         cdef vector[mata_nfa.CSymbolPost].iterator it = transitions_list.begin()
         cdef vector[mata_nfa.CSymbolPost].iterator end = transitions_list.end()
@@ -433,7 +433,7 @@ cdef class Nfa:
         while it != end:
             t = SymbolPost(
                 dereference(it).symbol,
-                dereference(it).targets.ToVector()
+                dereference(it).targets.to_vector()
             )
             postinc(it)
             transsymbols.append(t)
@@ -499,7 +499,7 @@ cdef class Nfa:
 
         :return: A set of reachable states.
         """
-        cdef vector[State] return_value = self.thisptr.get().get_reachable_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get().get_reachable_states().to_vector()
         return {state for state in return_value}
 
     def get_terminating_states(self):
@@ -507,7 +507,7 @@ cdef class Nfa:
 
         :return: A set of terminating states.
         """
-        cdef vector[State] return_value = self.thisptr.get().get_terminating_states().ToVector()
+        cdef vector[State] return_value = self.thisptr.get().get_terminating_states().to_vector()
         return {state for state in return_value}
 
     def trim(self):
@@ -627,7 +627,7 @@ cdef class Nfa:
         cdef mata_nfa.ofstream* output
         output = new mata_nfa.ofstream(output_file.encode('utf-8'))
         try:
-            self.thisptr.get().print_to_DOT(dereference(output))
+            self.thisptr.get().print_to_dot(dereference(output))
         finally:
             del output
 
@@ -646,7 +646,7 @@ cdef class Nfa:
         output_stream = new mata_nfa.stringstream("".encode('ascii'))
         cdef string result
         try:
-            self.thisptr.get().print_to_DOT(dereference(output_stream))
+            self.thisptr.get().print_to_dot(dereference(output_stream))
             result = output_stream.str()
         finally:
             del output_stream
@@ -705,7 +705,7 @@ cdef class Nfa:
         """
         cdef vector[State] return_value
         cdef StateSet input_states = StateSet(states)
-        return_value = self.thisptr.get().post(input_states, symbol).ToVector()
+        return_value = self.thisptr.get().post(input_states, symbol).to_vector()
         return {v for v in return_value}
 
     def remove_epsilon_inplace(self, Symbol epsilon = CEPSILON):
@@ -731,7 +731,7 @@ cdef class Nfa:
             return None
 
         cdef CSymbolPost epsilon_transitions = dereference(c_epsilon_symbol_posts_iter)
-        return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.ToVector())
+        return SymbolPost(epsilon_transitions.symbol, epsilon_transitions.targets.to_vector())
 
     def is_universal(self, alph.Alphabet alphabet, params = None):
         """Tests if NFA is universal with regard to the given alphabet.
@@ -1160,7 +1160,7 @@ cdef subset_map_to_dictionary(umap[StateSet, State] subset_map):
     result = {}
     cdef umap[StateSet, State].iterator it = subset_map.begin()
     while it != subset_map.end():
-        key = dereference(it).first.ToVector()
+        key = dereference(it).first.to_vector()
         value = dereference(it).second
         result[tuple(sorted(key))] = value
         postinc(it)

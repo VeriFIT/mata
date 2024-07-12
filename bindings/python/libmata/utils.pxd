@@ -44,7 +44,7 @@ cdef extern from "mata/utils/ord-vector.hh" namespace "mata::utils":
     cdef cppclass COrdVector "mata::utils::OrdVector" [T]:
         COrdVector() except+
         COrdVector(vector[T]) except+
-        vector[T] ToVector()
+        vector[T] to_vector()
         size_t size()
 
         cppclass const_iterator:

@@ -47,7 +47,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         void push_back(CSymbolPost&)
         void remove(CSymbolPost&)
         bool empty()
-        vector[CSymbolPost] ToVector()
+        vector[CSymbolPost] to_vector()
         COrdVector[CSymbolPost].const_iterator cbegin()
         COrdVector[CSymbolPost].const_iterator cend()
 
@@ -158,7 +158,7 @@ cdef extern from "mata/nfa/nfa.hh" namespace "mata::nfa":
         StateSet post(StateSet&, Symbol)
         State add_state()
         State add_state(State)
-        void print_to_DOT(ostream)
+        void print_to_dot(ostream)
         CNfa& trim(StateRenaming*)
         CNfa& concatenate(CNfa&)
         CNfa& unite_nondet_with(CNfa&)

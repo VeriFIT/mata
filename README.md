@@ -162,7 +162,7 @@ Further, you can add transitions in form of tripple `(state_from, symbol, target
 You can verify the state of your automaton by generating the automaton in `.dot` format.
 
 ```cpp
-    aut.print_to_DOT(std::cout);
+    aut.print_to_dot(std::cout);
 
     return 0;
 }

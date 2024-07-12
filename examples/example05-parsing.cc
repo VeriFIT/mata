@@ -42,6 +42,6 @@ int main(int argc, char *argv[]) {
     }
 
 
-    aut.print_to_DOT(std::cout);
+    aut.print_to_dot(std::cout);
     return EXIT_SUCCESS;
 }
