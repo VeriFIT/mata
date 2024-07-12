@@ -350,7 +350,7 @@ public:
      * you can get all words by calling
      *      get_words(aut.num_of_states())
      */
-    std::set<Word> get_words(unsigned max_length);
+    std::set<Word> get_words(unsigned max_length) const;
 
     /**
      * @brief Get any arbitrary accepted word in the language of the automaton.
@@ -358,6 +358,23 @@ public:
      * The automaton is searched using DFS, returning a word for the first reached final state.
      */
     std::optional<Word> get_word(Symbol first_epsilon = EPSILON) const;
+
+    /**
+     * @brief Get any arbitrary accepted word in the language of the complement of the automaton.
+     *
+     * The automaton is lazily determinized and made complete. The algorithm returns an arbitrary word from the
+     *  complemented NFA constructed until the first macrostate without any final states in the original automaton is
+     *  encountered.
+     *
+     * @param[in] alphabet Alphabet to use for computing the complement. If @c nullptr, uses @c this->alphabet when
+     *  defined, otherwise uses @c this->delta.get_used_symbols().
+     *
+     * @pre The automaton does not contain any epsilon transitions.
+     * TODO: Support lazy epsilon closure?
+     * @return An arbitrary word from the complemented automaton, or @c std::nullopt if the automaton is universal on
+     *  the chosen set of symbols for the complement.
+     */
+    std::optional<Word> get_word_from_complement(const Alphabet* alphabet = nullptr) const;
 
     /**
      * @brief Make NFA complete in place.
@@ -559,9 +576,15 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzo
  *
  * @param[in] aut Automaton to determinize.
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
+ * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time. The
+ *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
+ *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
+ *  determinization should stop and return only the determinized NFA constructed so far.
  * @return Determinized automaton.
  */
-Nfa determinize(const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr);
+Nfa determinize(
+    const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
 
 /**
  * @brief Reduce the size of the automaton.

@@ -432,7 +432,6 @@ TEST_CASE("mata::nfa::is_lang_empty_cex()")
     }
 }
 
-
 TEST_CASE("mata::nfa::determinize()")
 {
     Nfa aut(3);
@@ -491,6 +490,134 @@ TEST_CASE("mata::nfa::determinize()")
         auto complement_result{determinize(x)};
     }
 } // }}}
+
+TEST_CASE("mata::nfa::Nfa::get_word_from_complement()") {
+    Nfa aut{};
+    std::optional<mata::Word> result;
+    std::unordered_map<StateSet, State> subset_map;
+    EnumAlphabet alphabet{ 'a', 'b', 'c' };
+
+    SECTION("empty automaton") {
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("empty automaton 2") {
+        aut.initial = { 0 };
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("empty automaton 3") {
+        aut.initial = { 0 };
+        aut.final = { 1 };
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("simple automaton 1") {
+        aut.initial = { 0 };
+        aut.final = { 0 };
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a' });
+    }
+
+    SECTION("simple automaton 2") {
+        aut.initial = { 0 };
+        aut.final = { 1 };
+        aut.delta.add(0, 'a', 1);
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("simple automaton 2 with epsilon") {
+        aut.alphabet = &alphabet;
+        aut.initial = { 0 };
+        aut.final = { 0, 1 };
+        aut.delta.add(0, 'a', 1);
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'b' });
+    }
+
+    SECTION("nfa accepting \\eps+a+b+c") {
+        aut.alphabet = &alphabet;
+        aut.initial = { 0 };
+        aut.final = { 0, 1 };
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(0, 'c', 1);
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a', 'a' });
+    }
+
+    SECTION("nfa accepting \\eps+a+b+c+aa") {
+        aut.initial = { 0 };
+        aut.final = { 0, 1 };
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(0, 'c', 1);
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a', 'a' });
+    }
+
+    SECTION("simple automaton 3") {
+        aut.initial = { 1 };
+        aut.final = { 1, 2, 3, 4, 5 };
+        aut.delta.add(1, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+        aut.delta.add(2, 'a', 6);
+        aut.delta.add(6, 'a', 6);
+        aut.delta.add(3, 'a', 4);
+        aut.delta.add(4, 'a', 5);
+        result = aut.get_word_from_complement();
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a', 'a','a', 'a', 'a' });
+    }
+
+    SECTION("universal language") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 'a', 1);
+        result = aut.get_word_from_complement();
+        CHECK(!result.has_value());
+    }
+
+    SECTION("smaller alphabet symbol") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 'b', 1);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a' });
+    }
+
+    SECTION("smaller transition symbol") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 'a', 1);
+        aut.delta.add(1, 0, 2);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 0 });
+    }
+
+    SECTION("smaller transition symbol 2") {
+        aut.initial = { 1 };
+        aut.final = { 1 };
+        aut.delta.add(1, 0, 2);
+        result = aut.get_word_from_complement(&alphabet);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 0 });
+    }
+}
 
 TEST_CASE("mata::nfa::minimize() for profiling", "[.profiling],[minimize]") {
     Nfa aut(4);

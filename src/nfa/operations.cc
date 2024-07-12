@@ -249,7 +249,7 @@ namespace {
             }
 
             // add moves of S to the sync ex iterator
-            // TODO: shouldn't we also reset first?
+            synchronized_iterator.reset();
             for (State q: S) {
                 mata::utils::push_back(synchronized_iterator, aut.delta[q]);
             }
@@ -1028,38 +1028,32 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
 }
 
 Nfa mata::nfa::determinize(
-        const Nfa&  aut,
-        std::unordered_map<StateSet, State> *subset_map) {
-
-    Nfa result;
+    const Nfa&  aut, std::unordered_map<StateSet, State>* subset_map,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover
+) {
+    Nfa result{};
     //assuming all sets targets are non-empty
-    std::vector<std::pair<State, StateSet>> worklist;
-    bool deallocate_subset_map = false;
-    if (subset_map == nullptr) {
-        subset_map = new std::unordered_map<StateSet,State>();
-        deallocate_subset_map = true;
-    }
+    std::vector<std::pair<State, StateSet>> worklist{};
+    std::unordered_map<StateSet, State> subset_map_local{};
+    if (subset_map == nullptr) { subset_map = &subset_map_local; }
 
-    result.clear();
-
-    const StateSet S0 =  StateSet(aut.initial);
-    const State S0id = result.add_state();
+    const StateSet S0{ aut.initial };
+    const State S0id{ result.add_state() };
     result.initial.insert(S0id);
 
     if (aut.final.intersects_with(S0)) {
         result.final.insert(S0id);
     }
     worklist.emplace_back(S0id, S0);
-
     (*subset_map)[mata::utils::OrdVector<State>(S0)] = S0id;
-
-    if (aut.delta.empty())
-        return result;
+    if (aut.delta.empty()) { return result; }
+    if (macrostate_discover.has_value() && !(*macrostate_discover)(result, S0id, S0)) { return result; }
 
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
-    while (!worklist.empty()) {
+    bool continue_determinization{ true };
+    while (continue_determinization && !worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
         const StateSet S = Spair.second;
@@ -1070,16 +1064,15 @@ Nfa mata::nfa::determinize(
         }
 
         // add moves of S to the sync ex iterator
-        // TODO: shouldn't we also reset first?
+        synchronized_iterator.reset();
         for (State q: S) {
             mata::utils::push_back(synchronized_iterator, aut.delta[q]);
         }
 
         while (synchronized_iterator.advance()) {
-
-            // extract post from the sychronized_iterator iterator
-            const std::vector<Iterator>& moves = synchronized_iterator.get_current();
-            Symbol currentSymbol = (*moves.begin())->symbol;
+            // extract post from the synchronized_iterator iterator
+            const std::vector<Iterator>& symbol_posts = synchronized_iterator.get_current();
+            Symbol currentSymbol = (*symbol_posts.begin())->symbol;
             StateSet T = synchronized_iterator.unify_targets();
 
             const auto existingTitr = subset_map->find(T);
@@ -1095,11 +1088,13 @@ Nfa mata::nfa::determinize(
                 worklist.emplace_back(Tid, T);
             }
             result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
+            if (macrostate_discover.has_value() && existingTitr == subset_map->end()
+                && !(*macrostate_discover)(result, Tid, T)) {
+                continue_determinization = false;
+                break;
+            }
         }
     }
-
-    if (deallocate_subset_map) { delete subset_map; }
-
     return result;
 }
 
@@ -1153,7 +1148,7 @@ Run mata::nfa::encode_word(const Alphabet* alphabet, const std::vector<std::stri
     return { .word = alphabet->translate_word(input) };
 }
 
-std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) {
+std::set<mata::Word> mata::nfa::Nfa::get_words(unsigned max_length) const {
     std::set<mata::Word> result;
 
     // contains a pair: a state s and the word with which we got to the state s
@@ -1222,4 +1217,84 @@ std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
         }
     }
     return std::nullopt;
+}
+
+std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {
+    if (are_disjoint(initial, final)) { return Word{}; }
+
+    std::vector<std::unordered_map<StateSet, State>::const_iterator> worklist{};
+    std::unordered_map<StateSet, State> subset_map{};
+    const auto subset_map_end{ subset_map.end() };
+
+    Nfa nfa_complete{};
+    const State sink_state{ nfa_complete.add_state() };
+    nfa_complete.final.insert(sink_state);
+    const State new_initial{ nfa_complete.add_state() };
+    nfa_complete.initial.insert(new_initial);
+    auto subset_map_it{ subset_map.emplace(initial, new_initial).first };
+    worklist.emplace_back(subset_map_it);
+
+    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator{};
+
+    const utils::OrdVector<Symbol> symbols{ get_symbols_to_work_with(*this, alphabet) };
+    const auto symbols_end{ symbols.end() };
+    bool continue_complementation{ true };
+    while (continue_complementation && !worklist.empty()) {
+        const auto curr_state_set_it{ worklist.back() };
+        const State macrostate{ curr_state_set_it->second };
+        const StateSet& curr_state_set{ curr_state_set_it->first };
+        worklist.pop_back();
+
+        synchronized_iterator.reset();
+        for (const State orig_state: curr_state_set) { mata::utils::push_back(synchronized_iterator, delta[orig_state]); }
+        bool sync_it_advanced{ synchronized_iterator.advance() };
+        auto symbols_it{ symbols.begin() };
+        while (sync_it_advanced || symbols_it != symbols_end) {
+            if (!sync_it_advanced) {
+                assert(symbols_it != symbols_end);
+                // There are no more transitions from the 'orig_states' but there is a symbol from the 'symbols'. Make
+                //  the complemented NFA complete by adding a transition to a sink state. We can now return the access
+                //  word for the sink state.
+                nfa_complete.delta.add(macrostate, *symbols_it, sink_state);
+                continue_complementation = false;
+                break;
+            }
+            assert(sync_it_advanced);
+            const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator.get_current() };
+            const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
+            StateSet orig_targets{ synchronized_iterator.unify_targets() };
+            State target_macrostate;
+
+            if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
+                // Continue with the determinization of the NFA.
+                const auto target_macrostate_it = subset_map.find(orig_targets);
+                if (target_macrostate_it != subset_map_end) {
+                    target_macrostate = target_macrostate_it->second;
+                } else {
+                    target_macrostate = nfa_complete.add_state();
+                    if (!final.intersects_with(orig_targets)) {
+                        nfa_complete.final.insert(target_macrostate);
+                        continue_complementation = false;
+                    }
+                    subset_map_it = subset_map.emplace(std::move(orig_targets), target_macrostate).first;
+                    worklist.emplace_back(subset_map_it);
+                }
+                nfa_complete.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+            } else {
+                assert(symbol_advanced_to > *symbols_it);
+                // There are more transitions from the 'orig_states', but there is a missing transition over
+                //  '*symbols_it'. Make the complemented NFA complete by adding a transition to a sink state. We can now
+                //  return the access word for the sink state.
+                nfa_complete.delta.add(macrostate, *symbols_it, sink_state);
+                continue_complementation = false;
+                break;
+            }
+
+            if (!continue_complementation) { break; }
+            if(symbol_advanced_to >= *symbols_it) { ++symbols_it; }
+            sync_it_advanced = synchronized_iterator.advance();
+        }
+    }
+    return nfa_complete.get_word();
 }
