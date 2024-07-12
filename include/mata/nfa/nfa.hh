@@ -322,6 +322,7 @@ public:
 
     /**
      * @brief Is the automaton flat?
+     * 
      * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an 
      * SCC has at most one successor within this SCC.
      * 
