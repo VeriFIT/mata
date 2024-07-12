@@ -390,7 +390,7 @@ bool Nfa::is_flat() const {
             bool one_input_visited = false;
             for (const mata::nfa::SymbolPost& sp : this->delta[st]) {
                 for (const mata::nfa::State& tgt : scc) {
-                    if(sp.targets.find(tgt) != sp.targets.end()) {
+                    if(sp.targets.contains(tgt)) {
                         if(one_input_visited) {
                             flat = false;
                             return true;
