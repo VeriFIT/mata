@@ -250,11 +250,20 @@ public:
     StateSet unify_targets() const;
 
     /**
-     * @brief Synchronize with the given SymbolPost @p sync. Alignes the synchronized iterator
-     * to the same symbol as @p sync.
+     * @brief Synchronize with the given SymbolPost @p sync.
+     *
+     * Alignes the synchronized iterator to the same symbol as @p sync.
      * @return True iff the synchronized iterator points to the same symbol as @p sync.
      */
     bool synchronize_with(const SymbolPost& sync);
+
+    /**
+     * @brief Synchronize with the given symbol @p sync_symbol.
+     *
+     * Alignes the synchronized iterator to the same symbol as @p sync_symbol.
+     * @return True iff the synchronized iterator points to the same symbol as @p sync.
+     */
+    bool synchronize_with(Symbol sync_symbol);
 }; // class SynchronizedExistentialSymbolPostIterator.
 
 /**

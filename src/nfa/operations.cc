@@ -1052,8 +1052,7 @@ Nfa mata::nfa::determinize(
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
-    bool continue_determinization{ true };
-    while (continue_determinization && !worklist.empty()) {
+    while (!worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
         const StateSet S = Spair.second;
@@ -1089,10 +1088,7 @@ Nfa mata::nfa::determinize(
             }
             result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
             if (macrostate_discover.has_value() && existingTitr == subset_map->end()
-                && !(*macrostate_discover)(result, Tid, T)) {
-                continue_determinization = false;
-                break;
-            }
+                && !(*macrostate_discover)(result, Tid, T)) { return result; }
         }
     }
     return result;
@@ -1224,7 +1220,6 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
 
     std::vector<std::unordered_map<StateSet, State>::const_pointer> worklist{};
     std::unordered_map<StateSet, State> subset_map{};
-    const auto subset_map_end{ subset_map.end() };
 
     Nfa nfa_complete{};
     const State sink_state{ nfa_complete.add_state() };
@@ -1269,7 +1264,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
             if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
                 // Continue with the determinization of the NFA.
                 const auto target_macrostate_it = subset_map.find(orig_targets);
-                if (target_macrostate_it != subset_map_end) {
+                if (target_macrostate_it != subset_map.end()) {
                     target_macrostate = target_macrostate_it->second;
                 } else {
                     target_macrostate = nfa_complete.add_state();
@@ -1297,4 +1292,122 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
         }
     }
     return nfa_complete.get_word();
+}
+
+Nfa mata::nfa::lang_difference(
+    const Nfa& nfa_included, const Nfa& nfa_excluded,
+    std::optional<
+        std::function<bool(const Nfa&, const Nfa&, const StateSet&, const StateSet&, const State, const Nfa&)>
+    > macrostate_discover
+) {
+    std::unordered_set<StateSet> subset_set_included{};
+    std::unordered_set<StateSet> subset_set_excluded{};
+    using SubsetMacrostateMap = std::unordered_map<std::pair<
+        std::unordered_set<StateSet>::const_pointer,
+        std::unordered_set<StateSet>::const_pointer
+    >, State>;
+    SubsetMacrostateMap subset_macrostate_map{};
+    std::vector<SubsetMacrostateMap::const_pointer> worklist{};
+
+    // '{}' represents a sink state that is always final in the complement.
+    const auto subset_set_excluded_sink_ptr{ subset_set_excluded.insert(StateSet{}).first.operator->() };
+
+    Nfa nfa_lang_difference{};
+    const State new_initial{ nfa_lang_difference.add_state() };
+    nfa_lang_difference.initial.insert(new_initial);
+    if (nfa_included.final.intersects_with(nfa_included.initial) &&
+        !nfa_excluded.final.intersects_with(nfa_excluded.initial)) {
+        nfa_lang_difference.final.insert(new_initial);
+    }
+    auto subset_set_included_ptr{
+        subset_set_included.emplace(nfa_included.initial).first.operator->() };
+    auto subset_set_excluded_ptr{
+        subset_set_excluded.emplace(nfa_excluded.initial).first.operator->() };
+    auto subset_macrostate_map_ptr{
+        subset_macrostate_map.emplace(
+            std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), new_initial).first.operator->() };
+    worklist.emplace_back(subset_macrostate_map_ptr);
+    if (macrostate_discover.has_value()
+        && !(*macrostate_discover)(
+            nfa_included, nfa_excluded,
+            *subset_set_included_ptr, *subset_set_excluded_ptr,
+            new_initial, nfa_lang_difference)
+    ) { return nfa_lang_difference; }
+
+    using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator_included{};
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator_excluded{};
+
+    while (!worklist.empty()) {
+        const auto curr_macrostate_ptr{ worklist.back() };
+        worklist.pop_back();
+        const auto curr_state_set_included_ptr{ curr_macrostate_ptr->first.first };
+        const auto curr_state_set_excluded_ptr{ curr_macrostate_ptr->first.second };
+        const StateSet& curr_state_set_included{ *curr_state_set_included_ptr };
+        const StateSet& curr_state_set_excluded{ *curr_state_set_excluded_ptr };
+        const State macrostate{ curr_macrostate_ptr->second };
+
+        synchronized_iterator_included.reset();
+        synchronized_iterator_excluded.reset();
+        for (const State orig_state: curr_state_set_included) {
+            mata::utils::push_back(synchronized_iterator_included, nfa_included.delta[orig_state]);
+        }
+        for (const State orig_state: curr_state_set_excluded) {
+            mata::utils::push_back(synchronized_iterator_excluded, nfa_excluded.delta[orig_state]);
+        }
+        bool sync_it_included_advanced{ synchronized_iterator_included.advance() };
+        bool sync_it_excluded_advanced{ false };
+        while (sync_it_included_advanced) {
+            const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator_included.get_current() };
+            const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
+            StateSet orig_targets_included{ synchronized_iterator_included.unify_targets() };
+            sync_it_excluded_advanced = synchronized_iterator_excluded.synchronize_with(symbol_advanced_to);
+            StateSet orig_targets_excluded{
+                sync_it_excluded_advanced ? synchronized_iterator_excluded.unify_targets() : StateSet{}
+            };
+            const bool final_included_intersects_targets{ nfa_included.final.intersects_with(orig_targets_included) };
+            const bool final_excluded_intersects_targets{ nfa_excluded.final.intersects_with(orig_targets_excluded) };
+            subset_set_included_ptr = subset_set_included.insert(std::move(orig_targets_included)).first.operator->();
+            subset_set_excluded_ptr = subset_set_excluded.insert(std::move(orig_targets_excluded)).first.operator->();
+            const auto [target_macrostate_it, macrostate_inserted]{ subset_macrostate_map.emplace(
+                std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), nfa_lang_difference.num_of_states()
+            ) };
+            subset_macrostate_map_ptr = target_macrostate_it.operator->();
+            const State target_macrostate{ target_macrostate_it->second };
+            nfa_lang_difference.delta.add(macrostate, symbol_advanced_to, target_macrostate);
+            if (macrostate_inserted) {
+                // 'sync_it_excluded_advanced' is true iff there is a transition in the excluded NFA over the symbol
+                //  'symbol_advanced_to'. If sync_it_excluded_advanced == false, the complement of the excluded NFA will
+                //  have a transition over 'symbol_advanced_to' to a "sink state" which is a final state in the
+                //  complement, and therefore must always be final in the language difference.
+                if (final_included_intersects_targets) {
+                    if (subset_set_excluded_ptr == subset_set_excluded_sink_ptr
+                        || (sync_it_excluded_advanced && !final_excluded_intersects_targets)) {
+                        nfa_lang_difference.final.insert(target_macrostate);
+                    }
+                }
+                if (macrostate_discover.has_value()
+                    && !(*macrostate_discover)(
+                        nfa_included, nfa_excluded,
+                        *subset_set_included_ptr, *subset_set_excluded_ptr,
+                        target_macrostate, nfa_lang_difference)) { return nfa_lang_difference; }
+
+                worklist.emplace_back(subset_macrostate_map_ptr);
+            }
+            sync_it_included_advanced = synchronized_iterator_included.advance();
+        }
+    }
+    return nfa_lang_difference;
+}
+
+std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & nfa_included, const Nfa & nfa_excluded) {
+    return lang_difference(nfa_included, nfa_excluded,
+        [&](const Nfa& nfa_included, const Nfa& nfa_excluded,
+            const StateSet& macrostate_included_state_set, const StateSet& macrostate_excluded_state_set,
+            const State macrostate, const Nfa& nfa_lang_difference) {
+            (void)nfa_included, (void)nfa_excluded;
+            (void)macrostate_included_state_set, (void)macrostate_excluded_state_set;
+            (void)macrostate;
+            return nfa_lang_difference.final.empty();
+        }).get_word();
 }

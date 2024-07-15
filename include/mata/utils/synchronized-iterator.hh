@@ -266,7 +266,7 @@ public:
     }
 
     void reset(const size_t size = 0) {
-        SynchronizedIterator < Iterator > ::reset(size);
+        SynchronizedIterator<Iterator>::reset(size);
         if (size > 0) {
             this->currently_synchronized.reserve(size);
         }
