@@ -321,6 +321,16 @@ public:
     bool is_acyclic() const;
 
     /**
+     * @brief Is the automaton flat?
+     * 
+     * Flat automaton is an NFA whose every SCC is a simple loop. Basically each state in an 
+     * SCC has at most one successor within this SCC.
+     * 
+     * @return true <-> Automaton graph is flat.
+     */
+    bool is_flat() const;
+
+    /**
      * Fill @p alphabet_to_fill with symbols from @p nfa.
      * @param[in] nfa NFA with symbols to fill @p alphabet_to_fill with.
      * @param[out] alphabet_to_fill Alphabet to be filled with symbols from @p nfa.

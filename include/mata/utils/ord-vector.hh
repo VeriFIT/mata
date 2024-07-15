@@ -267,7 +267,7 @@ public:
     /**
      * Check whether @p key exists in the ordered vector.
      */
-    bool contains(const Key& key) { return find(key) != end(); }
+    bool contains(const Key& key) const { return find(key) != end(); }
 
     /**
      * @brief Remove @p k from sorted vector.

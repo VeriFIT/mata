@@ -328,6 +328,54 @@ TEST_CASE("mata::nfa::is_acyclic")
     }
 } // }}}
 
+TEST_CASE("mata::nfa::is_flat")
+{ // {{{
+    Nfa aut(14);
+
+    SECTION("An empty automaton is flat")
+    {
+        REQUIRE(aut.is_flat());
+    }
+
+    SECTION("An automaton with a state that is both initial and final is acyclic")
+    {
+        aut.initial = {1, 2};
+        aut.final = {2, 3};
+        REQUIRE(aut.is_flat());
+    }
+
+    SECTION("More complicated automaton")
+    {
+        aut.initial = {0};
+        aut.final = {4};
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(3, 'b', 2);
+        aut.delta.add(2, 'a', 1);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(4, 'b', 6);
+        aut.delta.add(6, 'c', 5);
+        aut.delta.add(5, 'a', 4);
+        REQUIRE(aut.is_flat());
+    }
+
+    SECTION("Nonflat automaton")
+    {
+        aut.initial = {0};
+        aut.final = {4};
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(3, 'b', 2);
+        aut.delta.add(2, 'a', 1);
+        aut.delta.add(1, 'b', 4);
+        aut.delta.add(4, 'b', 6);
+        aut.delta.add(6, 'c', 5);
+        aut.delta.add(5, 'a', 4);
+        aut.delta.add(1, 'c', 2);
+        REQUIRE(!aut.is_flat());
+    }
+} // }}}
+
 TEST_CASE("mata::nfa::get_word_for_path()")
 { // {{{
     Nfa aut(5);
