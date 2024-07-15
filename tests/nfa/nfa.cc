@@ -778,6 +778,159 @@ TEST_CASE("mata::nfa::lang_difference()") {
     }
 }
 
+TEST_CASE("mata::nfa::Nfa::get_word_from_lang_difference()") {
+    Nfa nfa_included{};
+    Nfa nfa_excluded{};
+    std::optional<Word> result{};
+    Nfa expected{};
+
+    SECTION("empty automata") {
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        CHECK(!result.has_value());
+    }
+
+    SECTION("empty included") {
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.final = { 0 };
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        CHECK(!result.has_value());
+    }
+
+    SECTION("empty excluded") {
+        nfa_included.initial = { 0 };
+        nfa_included.final = { 0 };
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("included { '', 'a' }, excluded { '' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.final = { 0, 1 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.final = { 0 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a' });
+    }
+
+    SECTION("included { '', 'a' }, excluded { 'a' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.final = { 0 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.final = { 1 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{});
+    }
+
+    SECTION("included { '', 'a' }, excluded { '', 'a' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.final = { 0, 1 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.final = { 0, 1 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        CHECK(!result.has_value());
+    }
+
+    SECTION("included { '', 'a', 'ab' }, excluded { '', 'ab' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.delta.add(1, 'b', 2);
+        nfa_included.final = { 0, 1, 2 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.delta.add(1, 'b', 2);
+        nfa_excluded.final = { 0, 2 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(*result == Word{ 'a' });
+    }
+
+    SECTION("included { '', 'a+', 'a+b' }, excluded { '', 'ab' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.delta.add(1, 'a', 1);
+        nfa_included.delta.add(1, 'b', 2);
+        nfa_included.final = { 0, 1, 2 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.delta.add(1, 'b', 2);
+        nfa_excluded.final = { 0, 2 };
+
+        expected.initial = { 0 };
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(1, 'a', 1);
+        expected.delta.add(1, 'a', 2);
+        expected.delta.add(2, 'b', 3);
+        expected.final = { 1, 3 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(expected.is_in_lang(*result));
+    }
+
+    SECTION("included { '', 'ab' }, excluded { '', 'a+', 'a+b' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.delta.add(1, 'b', 2);
+        nfa_included.final = { 0, 2 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.delta.add(1, 'a', 1);
+        nfa_excluded.delta.add(1, 'b', 2);
+        nfa_excluded.final = { 0, 1, 2 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        CHECK(!result.has_value());
+    }
+
+    SECTION("included { 'a', 'ab', '(abc)+a', '(abc)+ab' }, excluded { 'a', 'ab' }") {
+        nfa_included.initial = { 0 };
+        nfa_included.delta.add(0, 'a', 1);
+        nfa_included.delta.add(0, 'a', 2);
+        nfa_included.delta.add(0, 'a', 3);
+        nfa_included.delta.add(3, 'b', 4);
+        nfa_included.delta.add(2, 'b', 5);
+        nfa_included.delta.add(1, 'b', 6);
+        nfa_included.delta.add(6, 'c', 0);
+        nfa_included.final = { 2, 6 };
+
+        nfa_excluded.initial = { 0 };
+        nfa_excluded.delta.add(0, 'a', 1);
+        nfa_excluded.delta.add(1, 'b', 2);
+        nfa_excluded.final = { 0, 1, 2 };
+
+        expected.initial = { 0 };
+        expected.delta.add(0, 'a', 1);
+        expected.delta.add(1, 'b', 2);
+        expected.delta.add(2, 'c', 3);
+        expected.delta.add(3, 'a', 4);
+        expected.delta.add(4, 'b', 5);
+        expected.delta.add(5, 'c', 3);
+        expected.final = { 4, 5 };
+
+        result = get_word_from_lang_difference(nfa_included, nfa_excluded);
+        REQUIRE(result.has_value());
+        CHECK(expected.is_in_lang(*result));
+    }
+}
+
 TEST_CASE("mata::nfa::minimize() for profiling", "[.profiling],[minimize]") {
     Nfa aut(4);
     Nfa result;

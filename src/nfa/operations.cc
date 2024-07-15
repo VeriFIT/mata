@@ -1403,3 +1403,15 @@ Nfa mata::nfa::lang_difference(
     }
     return nfa_lang_difference;
 }
+
+std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & nfa_included, const Nfa & nfa_excluded) {
+    return lang_difference(nfa_included, nfa_excluded,
+        [&](const Nfa& nfa_included, const Nfa& nfa_excluded,
+            const StateSet& macrostate_included_state_set, const StateSet& macrostate_excluded_state_set,
+            const State macrostate, const Nfa& nfa_lang_difference) {
+            (void)nfa_included, (void)nfa_excluded;
+            (void)macrostate_included_state_set, (void)macrostate_excluded_state_set;
+            (void)macrostate;
+            return nfa_lang_difference.final.empty();
+        }).get_word();
+}

@@ -501,10 +501,9 @@ Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON
  *
  * @param[in] nfa_included NFA to include in the difference.
  * @param[in] nfa_excluded NFA to exclude from the difference.
- * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time. The
- *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
- *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
- *  determinization should stop and return only the determinized NFA constructed so far.
+ * @param[in] macrostate_discover Callback event handler for discovering a new macrostate in the language difference
+ *  automaton for the first time. Return @c true if the computation should continue, and @c false if the computation
+ *  should stop and return only the NFA for the language difference constructed so far.
  *  The parameters are:
         const Nfa& nfa_included,
         const Nfa& nfa_excluded,
@@ -727,6 +726,23 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
  * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
  */
 utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
+
+/**
+ * @brief Get any arbitrary accepted word in the language difference of @p nfa_included without @p nfa_excluded.
+ *
+ * The language difference automaton is lazily constructed without computing the whole determinized automata and the
+ *  complememt of @p nfa_excluded. The algorithm returns an arbitrary word from the language difference constructed
+ *  until the first macrostate with a final state in the original states in @p nfa_included and without any
+ *  corresponding final states in @p nfa_excluded is encountered.
+ *
+ * @pre The automaton does not contain any epsilon transitions.
+ * @param[in] nfa_included NFA to include in the language difference.
+ * @param[in] nfa_excluded NFA to exclude in the language difference.
+ * TODO: Support lazy epsilon closure?
+ * @return An arbitrary word from the language difference, or @c std::nullopt if the language difference automaton
+ *  is universal on the set of symbols from transitions of @p nfa_included.
+ */
+std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const Nfa &nfa_excluded);
 
 } // namespace mata::nfa.
 
