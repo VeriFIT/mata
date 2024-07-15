@@ -1052,8 +1052,7 @@ Nfa mata::nfa::determinize(
     using Iterator = mata::utils::OrdVector<SymbolPost>::const_iterator;
     SynchronizedExistentialSymbolPostIterator synchronized_iterator;
 
-    bool continue_determinization{ true };
-    while (continue_determinization && !worklist.empty()) {
+    while (!worklist.empty()) {
         const auto Spair = worklist.back();
         worklist.pop_back();
         const StateSet S = Spair.second;
@@ -1089,10 +1088,7 @@ Nfa mata::nfa::determinize(
             }
             result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
             if (macrostate_discover.has_value() && existingTitr == subset_map->end()
-                && !(*macrostate_discover)(result, Tid, T)) {
-                continue_determinization = false;
-                break;
-            }
+                && !(*macrostate_discover)(result, Tid, T)) { return result; }
         }
     }
     return result;
