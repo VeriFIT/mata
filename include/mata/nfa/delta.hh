@@ -26,7 +26,7 @@ struct Transition {
     Transition(const State source, const Symbol symbol, const State target)
             : source(source), symbol(symbol), target(target) {}
 
-    bool operator==(const Transition& rhs) const { return source == rhs.source && symbol == rhs.symbol && target == rhs.target; }
+    auto operator<=>(const Transition&) const = default;
 };
 
 /**
