@@ -467,3 +467,18 @@ TEST_CASE("mata::nfa::Delta::add_symbols_to()") {
         { "0", 0 }, { "1", 1 }, { "2", 2 }, { "3", 3 }
     });
 }
+
+TEST_CASE("Transition comparison") {
+    Transition tr1 {1, 2, 3};
+    Transition tr2 {1, 3, 1};
+    Transition tr3 {1, 2, 5};
+    Transition tr4 {1, 2, 1};
+    Transition tr5 {1, 2, 1};
+   
+    CHECK(tr1 < tr2);
+    CHECK(tr2 >= tr3);
+    CHECK(tr3 >= tr1);
+    CHECK(tr4 < tr3);
+    CHECK(tr5 <= tr4);
+    CHECK(tr5 == tr4);
+}
