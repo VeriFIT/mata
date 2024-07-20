@@ -36,7 +36,7 @@ namespace {
                 ++it;
             }
             if (unused_symbol == 0) { // sanity check to see if we did not use the full range of mata::Symbol
-                throw std::runtime_error("all symbols are used, we cannot compute simluation reduction");
+                throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
             }
         }
         
