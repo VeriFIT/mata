@@ -7,6 +7,7 @@
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
 #include "mata/parser/re2parser.hh"
+#include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
 using namespace mata::strings;
@@ -479,6 +480,60 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
                 CHECK(used_symbols.find(EPSILON) == used_symbols.end());
             }
         }
+    }
+
+    SECTION("Bug from noodler") {
+        Nfa l1 = mata::nfa::builder::parse_from_mata(std::string(R"V0G0N(
+@NFA-explicit
+%Alphabet-auto
+%Initial q0
+%Final q2
+q0 0 q1
+q0 1 q1
+q0 37 q1
+q0 38 q1
+q0 43 q1
+q1 0 q2
+q1 1 q2
+q1 37 q2
+q1 38 q2
+q1 43 q2
+)V0G0N"));
+        Nfa l2 = mata::nfa::builder::parse_from_mata(std::string(R"V0G0N(
+@NFA-explicit
+%Alphabet-auto
+%Initial q0
+%Final q2
+q0 0 q1
+q0 1 q1
+q0 37 q1
+q0 38 q1
+q0 43 q1
+q1 0 q2
+q1 1 q2
+q1 37 q2
+q1 38 q2
+q1 43 q2
+)V0G0N"));
+        Nfa r = mata::nfa::builder::parse_from_mata(std::string(R"V0G0N(
+@NFA-explicit
+%Alphabet-auto
+%Initial q0
+%Final q4
+q0 0 q1
+q1 0 q2
+q2 0 q3
+q3 0 q4
+)V0G0N"));
+        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(l1), std::make_shared<Nfa>(l2) },
+            std::vector<std::shared_ptr<Nfa>>{std::make_shared<Nfa>(r)},
+            false,
+            {{"reduce", "forward"}});
+        CHECK(noodles.size() == 1);
+        mata::Word word{0,0};
+        CHECK(noodles[0][0].first->get_word().value() == word);
+        CHECK(noodles[0][1].first->get_word().value() == word);
     }
 }
 

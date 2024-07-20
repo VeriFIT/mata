@@ -24,21 +24,36 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 
 namespace {
     Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
-        Symbol maxSymbol{ aut.delta.get_max_symbol() };
+        OrdVector<mata::Symbol> used_symbols = aut.delta.get_used_symbols();
+        mata::Symbol unused_symbol = 0;
+        if (!used_symbols.empty() && *used_symbols.begin() == 0) {
+            auto it = used_symbols.begin();
+            unused_symbol = *it + 1;
+            ++it;
+            const auto used_symbols_end = used_symbols.end();
+            while (it != used_symbols_end && unused_symbol == *it) {    
+                unused_symbol = *it + 1;
+                ++it;
+            }
+            if (unused_symbol == 0) { // sanity check to see if we did not use the full range of mata::Symbol
+                throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
+            }
+        }
+        
         const size_t state_num{ aut.num_of_states() };
-        Simlib::ExplicitLTS LTSforSimulation(state_num);
+        Simlib::ExplicitLTS lts_for_simulation(state_num);
 
         for (const Transition& transition : aut.delta.transitions()) {
-            LTSforSimulation.add_transition(transition.source, transition.symbol, transition.target);
+            lts_for_simulation.add_transition(transition.source, transition.symbol, transition.target);
         }
 
         // final states cannot be simulated by nonfinal -> we add new selfloops over final states with new symbol in LTS
-        for (State finalState : aut.final) {
-            LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
+        for (State final_state : aut.final) {
+            lts_for_simulation.add_transition(final_state, unused_symbol, final_state);
         }
 
-        LTSforSimulation.init();
-        return LTSforSimulation.compute_simulation();
+        lts_for_simulation.init();
+        return lts_for_simulation.compute_simulation();
     }
 
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
