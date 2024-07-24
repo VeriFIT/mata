@@ -123,6 +123,7 @@ public:
     using super::push_back;
     // is adding non-const version as well ok?
     using super::back;
+    using super::pop_back;
     using super::filter;
 
     using super::erase;
