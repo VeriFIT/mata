@@ -46,7 +46,7 @@ TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
     CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap{ { "a", 4 }, { "b", 2 }, { "c", 10 } });
 
     alphabet.add_new_symbol("e", 7);
-    CHECK_THROWS_AS(alphabet.add_new_symbol("a", 0), std::runtime_error);
+    CHECK_THROWS(alphabet.add_new_symbol("a", 0));
 
     symbols = alphabet.get_alphabet_symbols();
     expected = mata::utils::OrdVector<Symbol>{ 7, 4, 2, 10 };
@@ -55,6 +55,34 @@ TEST_CASE("mata::OnTheFlyAlphabet::add_symbols_from()") {
     CHECK(alphabet.get_symbol_map() == OnTheFlyAlphabet::StringToSymbolMap {
         { "a", 4 }, { "b", 2 }, { "c", 10 }, { "e", 7 }
     });
+
+    OnTheFlyAlphabet alphabet2{ alphabet };
+    alphabet2.add_new_symbol("f", 42);
+    CHECK(alphabet.get_alphabet_symbols() != alphabet2.get_alphabet_symbols());
+    CHECK(alphabet.translate_symb("f") != 42);
+    CHECK(alphabet2.translate_symb("f") == 42);
+    size_t num_of_symbols{ alphabet.get_alphabet_symbols().size() };
+    alphabet.erase("e");
+    alphabet.erase("f");
+    CHECK(alphabet.get_alphabet_symbols().size() + 2 == num_of_symbols);
+
+    alphabet2 = alphabet;
+    alphabet2.add_new_symbol("f", 42);
+    CHECK(alphabet.get_alphabet_symbols() != alphabet2.get_alphabet_symbols());
+    CHECK(alphabet.translate_symb("f") != 42);
+    alphabet.erase("f");
+    CHECK(alphabet2.translate_symb("f") == 42);
+
+    OnTheFlyAlphabet alphabet_copy{ alphabet };
+    alphabet2 = OnTheFlyAlphabet{ std::move(alphabet) };
+    CHECK(alphabet2.get_alphabet_symbols() == alphabet_copy.get_alphabet_symbols());
+    alphabet = alphabet2;
+    alphabet2 = std::move(alphabet);
+    CHECK(alphabet2.get_alphabet_symbols() == alphabet_copy.get_alphabet_symbols());
+    alphabet = alphabet2;
+
+    alphabet.clear();
+    CHECK(alphabet.get_number_of_symbols() == 0);
 }
 
 TEST_CASE("mata::EnumAlphabet") {
@@ -91,4 +119,29 @@ TEST_CASE("mata::EnumAlphabet") {
     CHECK(alphabet.translate_symb("1") == 1);
     CHECK_THROWS(alphabet.translate_symb("3414not a number"));
     CHECK_THROWS(alphabet.translate_symb("not a number"));
+
+    EnumAlphabet alphabet3{ alphabet };
+    alphabet3.add_new_symbol(42);
+    CHECK(alphabet.get_alphabet_symbols() != alphabet3.get_alphabet_symbols());
+    CHECK(alphabet3.get_number_of_symbols() == alphabet.get_number_of_symbols() + 1);
+    CHECK_THROWS(alphabet.translate_symb("42"));
+    CHECK(alphabet3.translate_symb("42") == 42);
+
+    alphabet3 = alphabet;
+    alphabet3.add_new_symbol(42);
+    CHECK(alphabet.get_alphabet_symbols() != alphabet3.get_alphabet_symbols());
+    CHECK(alphabet3.get_number_of_symbols() == alphabet.get_number_of_symbols() + 1);
+    CHECK_THROWS(alphabet.translate_symb("42"));
+    CHECK(alphabet3.translate_symb("42") == 42);
+
+    EnumAlphabet alphabet_copy{ alphabet };
+    alphabet3 = EnumAlphabet{ std::move(alphabet) };
+    CHECK(alphabet3.get_alphabet_symbols() == alphabet_copy.get_alphabet_symbols());
+    alphabet = alphabet3;
+    alphabet3 = std::move(alphabet);
+    CHECK(alphabet3.get_alphabet_symbols() == alphabet_copy.get_alphabet_symbols());
+    alphabet = std::move(alphabet3);
+
+    alphabet.clear();
+    CHECK(alphabet.get_number_of_symbols() == 0);
 }

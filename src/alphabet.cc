@@ -160,13 +160,47 @@ void mata::EnumAlphabet::add_new_symbol(const std::string& symbol) {
     add_new_symbol(converted_symbol);
 }
 
-void mata::EnumAlphabet::add_new_symbol(Symbol symbol) {
+void mata::EnumAlphabet::add_new_symbol(const Symbol symbol) {
     symbols_.insert(symbol);
     update_next_symbol_value(symbol);
 }
 
-void mata::EnumAlphabet::update_next_symbol_value(Symbol value) {
+void mata::EnumAlphabet::update_next_symbol_value(const Symbol value) {
     if (next_symbol_value_ <= value) {
         next_symbol_value_ = value + 1;
     }
+}
+
+size_t mata::EnumAlphabet::erase(const Symbol symbol) {
+    size_t num_of_erased{ symbols_.erase(symbol) };
+    if (symbol == next_symbol_value_ - 1) {
+        --next_symbol_value_;
+    }
+    return num_of_erased;
+}
+
+size_t mata::OnTheFlyAlphabet::erase(const Symbol symbol) {
+    const auto symbol_map_end = symbol_map_.end();
+    for (auto it = symbol_map_.begin(); it != symbol_map_end; ++it) {
+        if (it->second == symbol) {
+            if (symbol == next_symbol_value_ - 1) {
+                --next_symbol_value_;
+            }
+            symbol_map_.erase(it);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+size_t mata::OnTheFlyAlphabet::erase(const std::string& symbol_name) {
+    auto found_it{ symbol_map_.find(symbol_name) };
+    if (found_it != symbol_map_.end()) {
+        if (found_it->second == next_symbol_value_ - 1) {
+            --next_symbol_value_;
+        }
+        symbol_map_.erase(found_it);
+        return 1;
+    }
+    return 0;
 }
