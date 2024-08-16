@@ -127,9 +127,7 @@ namespace {
 
         return result;
     }
-}
 
-namespace {
     void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
         StateSet tmp_targets;           // help set to store elements to remove
         auto delta_begin = nfa.delta[remove].begin();
@@ -1207,27 +1205,71 @@ OrdVector<Symbol> mata::nfa::get_symbols_to_work_with(const Nfa& nfa, const mata
 
 std::optional<mata::Word> Nfa::get_word(const Symbol first_epsilon) const {
     if (initial.empty() || final.empty()) { return std::nullopt; }
+    if (initial.intersects_with(final)) { return Word{}; }
 
-    std::vector<std::pair<State, Word>> worklist{};
+    /// Current state state post iterator, its end iterator, and iterator in the current symbol post to target states.
+    std::vector<std::tuple<StatePost::const_iterator, StatePost::const_iterator, StateSet::const_iterator>> worklist{};
+    std::vector<bool> searched(num_of_states(), false);
+    bool final_found{};
     for (const State initial_state: initial) {
-        if (final.contains(initial_state)) { return Word{}; }
-        worklist.emplace_back(initial_state, Word{});
-    }
-    std::vector<bool> searched(num_of_states());
+        if (searched[initial_state]) { continue; }
+        searched[initial_state] = true;
 
-    while (!worklist.empty()) {
-        auto [state, word]{ std::move(worklist.back()) };
-        worklist.pop_back();
-        for (const Move move: delta[state].moves()) {
-            if (searched[move.target]) { continue; }
-            Word target_word{ word };
-            if (move.symbol < first_epsilon) { target_word.push_back(move.symbol); }
-            if (final.contains(move.target)) { return target_word; }
-            worklist.emplace_back(move.target, target_word);
-            searched[move.target] = true;
+        const StatePost& initial_state_post{ delta[initial_state] };
+        auto initial_symbol_post_it{ initial_state_post.cbegin() };
+        auto initial_symbol_post_end{ initial_state_post.cend() };
+        // Initialize the worklist for the given @p initial_state with the first valid transition.
+        while (worklist.empty() && initial_symbol_post_it != initial_state_post.cend()) {
+            auto initial_target_it{ initial_symbol_post_it->targets.cbegin() };
+            do {
+                if (searched[*initial_target_it]) {
+                    ++initial_target_it;
+                } else {
+                    worklist.emplace_back(initial_symbol_post_it, initial_symbol_post_end, initial_target_it);
+                    break;
+                }
+            } while (initial_target_it != initial_symbol_post_it->targets.cend());
+            if (initial_target_it == initial_symbol_post_it->targets.cend()) {
+                ++initial_symbol_post_it;
+            }
         }
+
+        // Try to recursively walk through the NFA transitions from the current @p initial_state until a final state is
+        //  encountered or all states reachable from @p initial_state are searched without finding any final state.
+        while (!worklist.empty()) {
+            // Using references to iterators to be able to increment the top-most element in the worklist in place.
+            auto& [state_post_it, state_post_end, targets_it]{ worklist.back() };
+            if (state_post_it != state_post_end) {
+                if (targets_it != state_post_it->targets.cend()) {
+                    if (searched[*targets_it]) { ++targets_it; continue; }
+                    if (final.contains(*targets_it)) { final_found = true; break; }
+                    searched[*targets_it] = true;
+                    const StatePost& state_post{ delta[*targets_it] };
+                    if (!state_post.empty()) {
+                        auto new_state_post_it{ state_post.cbegin() };
+                        auto new_targets_it{ new_state_post_it->cbegin() };
+                        worklist.emplace_back(new_state_post_it, state_post.cend(), new_targets_it);
+                    } else { ++targets_it; }
+                } else { // targets_it == state_post_it->targets.cend().
+                    ++state_post_it;
+                    if (state_post_it != state_post_end) { targets_it = state_post_it->cbegin(); }
+                }
+            } else { // state_post_it == state_post_end.
+                worklist.pop_back();
+                auto& [_prev_state_post_it, _prev_state_post_end, prev_targets_it]{ worklist.back() };
+                ++prev_targets_it;
+            }
+        }
+        if (final_found) { break; }
     }
-    return std::nullopt;
+
+    if (!final_found) { return std::nullopt; }
+    Word word;
+    word.reserve(worklist.size());
+    for (const auto& [symbol_post_it, symbol_post_end, _targets_it]: worklist) {
+        if (symbol_post_it->symbol < first_epsilon) { word.push_back(symbol_post_it->symbol); }
+    }
+    return word;
 }
 
 std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet) const {

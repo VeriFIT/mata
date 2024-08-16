@@ -3881,74 +3881,175 @@ TEST_CASE("mata::nfa::Nfa::get_words") {
 }
 
 TEST_CASE("mata::nfa::Nfa::get_word()") {
-    SECTION("empty") {
-        Nfa aut;
-        CHECK(aut.get_word(0) == std::nullopt);
+   SECTION("empty") {
+       Nfa aut;
+       CHECK(aut.get_word(0) == std::nullopt);
+   }
+
+   SECTION("empty word") {
+       Nfa aut(1, { 0 }, { 0 });
+       CHECK(aut.get_word() == Word{});
+   }
+
+   SECTION("noodle - one final") {
+       Nfa aut(3, { 0 }, { 2 });
+       aut.delta.add(0, 0, 1);
+       aut.delta.add(1, 1, 2);
+       CHECK(aut.get_word() == Word{ 0, 1 });
+   }
+
+   SECTION("noodle - two finals") {
+       Nfa aut(3, { 0 }, { 1, 2 });
+       aut.delta.add(0, 0, 1);
+       aut.delta.add(1, 1, 2);
+       CHECK(aut.get_word() == Word{ 0 });
+   }
+
+   SECTION("noodle - three finals") {
+       Nfa aut(3, { 0 }, { 0, 1, 2 });
+       aut.delta.add(0, 0, 1);
+       aut.delta.add(1, 1, 2);
+       CHECK(aut.get_word() == Word{});
+   }
+
+   SECTION("more complex initial final") {
+       Nfa aut(6, { 0, 1 }, { 1, 3, 4, 5 });
+       aut.delta.add(0, 0, 3);
+       aut.delta.add(3, 1, 4);
+       aut.delta.add(0, 2, 2);
+       aut.delta.add(3, 3, 2);
+       aut.delta.add(1, 4, 2);
+       aut.delta.add(2, 5, 5);
+       CHECK(aut.get_word() == Word{});
+   }
+
+   SECTION("more complex") {
+       Nfa aut(6, { 0, 1 }, { 5 });
+       aut.delta.add(0, 0, 3);
+       aut.delta.add(3, 1, 4);
+       aut.delta.add(0, 2, 2);
+       aut.delta.add(3, 3, 2);
+       aut.delta.add(1, 4, 2);
+       aut.delta.add(2, 5, 5);
+       CHECK(aut.get_word() == Word{ 0, 3, 5 });
+   }
+
+   SECTION("cycle") {
+       Nfa aut(6, { 0, 2 }, { 4 });
+       aut.delta.add(2, 2, 3);
+       aut.delta.add(3, 3, 2);
+       aut.delta.add(0, 0, 1);
+       aut.delta.add(1, 1, 4);
+       CHECK(aut.get_word() == Word{ 0, 1 });
+   }
+
+   SECTION("epsilons") {
+       Nfa aut(6, { 0, 2 }, { 4 });
+       aut.delta.add(2, 2, 3);
+       aut.delta.add(3, 3, 2);
+       aut.delta.add(0, EPSILON, 1);
+       aut.delta.add(1, 1, 4);
+       CHECK(aut.get_word() == Word{ 1 });
+   }
+
+    SECTION("Complex automaton with self loops, epsilons, and nonterminating states") {
+        Nfa aut{};
+        aut.initial = { 0 };
+        aut.final = { 4 };
+        aut.delta.add(0, 'a', 0);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(0, 'b', 2);
+        aut.delta.add(2, EPSILON, 3);
+        aut.delta.add(2, EPSILON, 1);
+        aut.delta.add(2, 'a', 0);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(3, 'a', 5);
+        aut.delta.add(3, 'c', 4);
+        aut.delta.add(4, 'a', 4);
+        CHECK(aut.get_word() == Word{ 'b', 'c' });
     }
 
-    SECTION("empty word") {
-        Nfa aut(1, { 0 }, { 0 });
-        CHECK(aut.get_word() == Word{});
+    SECTION("Complex automaton with self loops, epsilons, and nonterminating states, one separate final") {
+        Nfa aut{};
+        aut.initial = { 0, 6 };
+        aut.final = { 7 };
+        aut.delta.add(6, 'd', 7);
+        aut.delta.add(0, 'a', 0);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(0, 'b', 2);
+        aut.delta.add(2, EPSILON, 3);
+        aut.delta.add(2, EPSILON, 1);
+        aut.delta.add(2, 'a', 0);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(3, 'a', 5);
+        aut.delta.add(3, 'c', 4);
+        aut.delta.add(4, 'a', 4);
+        CHECK(aut.get_word() == Word{ 'd' });
     }
 
-    SECTION("noodle - one final") {
-        Nfa aut(3, { 0 }, { 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_word() == Word{ 0, 1 });
+    SECTION("Break after finding the first final without iterating over other initial states") {
+        Nfa aut{};
+        aut.initial = { 0, 1 };
+        aut.final = { 4, 5 };
+        aut.delta.add(0, 'a', 2);
+        aut.delta.add(2, 'c', 4);
+        aut.delta.add(1, 'd', 3);
+        aut.delta.add(3, 'd', 5);
+        CHECK(aut.get_word() == Word{ 'a', 'c' });
+   }
+
+    SECTION("Complex automaton with self loops, epsilons, and nonterminating states, no reachable final") {
+        Nfa aut{};
+        aut.initial = { 0 };
+        aut.final = { 6 };
+        aut.delta.add(0, 'a', 0);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(0, 'b', 2);
+        aut.delta.add(2, EPSILON, 3);
+        aut.delta.add(2, EPSILON, 1);
+        aut.delta.add(2, 'a', 0);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(3, 'a', 5);
+        aut.delta.add(3, 'c', 4);
+        aut.delta.add(4, 'a', 4);
+        CHECK(!aut.get_word().has_value());
     }
 
-    SECTION("noodle - two finals") {
-        Nfa aut(3, { 0 }, { 1, 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_word() == Word{ 0 });
+    SECTION("Complex automaton with self loops, epsilons, and nonterminating states, first initial nonterminating") {
+        Nfa aut{};
+        aut.initial = { 1, 2 };
+        aut.final = { 4 };
+        aut.delta.add(0, 'a', 0);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(0, 'b', 2);
+        aut.delta.add(2, EPSILON, 3);
+        aut.delta.add(2, EPSILON, 1);
+        aut.delta.add(2, 'a', 0);
+        aut.delta.add(2, 'a', 2);
+        aut.delta.add(3, 'a', 5);
+        aut.delta.add(3, 'c', 4);
+        aut.delta.add(4, 'a', 4);
+        CHECK(aut.get_word() == Word{ 'c' });
     }
 
-    SECTION("noodle - three finals") {
-        Nfa aut(3, { 0 }, { 0, 1, 2 });
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 2);
-        CHECK(aut.get_word() == Word{});
-    }
-
-    SECTION("more complex initial final") {
-        Nfa aut(6, { 0, 1 }, { 1, 3, 4, 5 });
-        aut.delta.add(0, 0, 3);
-        aut.delta.add(3, 1, 4);
-        aut.delta.add(0, 2, 2);
-        aut.delta.add(3, 3, 2);
-        aut.delta.add(1, 4, 2);
-        aut.delta.add(2, 5, 5);
-        CHECK(aut.get_word() == Word{});
-    }
-
-    SECTION("more complex") {
-        Nfa aut(6, { 0, 1 }, { 5 });
-        aut.delta.add(0, 0, 3);
-        aut.delta.add(3, 1, 4);
-        aut.delta.add(0, 2, 2);
-        aut.delta.add(3, 3, 2);
-        aut.delta.add(1, 4, 2);
-        aut.delta.add(2, 5, 5);
-        CHECK(aut.get_word() == Word{ 4, 5 });
-    }
-
-    SECTION("cycle") {
-        Nfa aut(6, { 0, 2 }, { 4 });
-        aut.delta.add(2, 2, 3);
-        aut.delta.add(3, 3, 2);
-        aut.delta.add(0, 0, 1);
-        aut.delta.add(1, 1, 4);
-        CHECK(aut.get_word() == Word{ 0, 1 });
-    }
-
-    SECTION("epsilons") {
-        Nfa aut(6, { 0, 2 }, { 4 });
-        aut.delta.add(2, 2, 3);
-        aut.delta.add(3, 3, 2);
-        aut.delta.add(0, EPSILON, 1);
-        aut.delta.add(1, 1, 4);
-        CHECK(aut.get_word() == Word{ 1 });
+    SECTION("Complex automaton with self loops, epsilons, and nonterminating states, long nonterminating sequence") {
+        Nfa aut{};
+        aut.initial = { 0 };
+        aut.final = { 2 };
+        aut.delta.add(0, 'a', 0);
+        aut.delta.add(0, 'b', 2);
+        aut.delta.add(1, 'b', 1);
+        aut.delta.add(0, 'b', 1);
+        aut.delta.add(1, EPSILON, 3);
+        aut.delta.add(1, 'a', 0);
+        aut.delta.add(1, 'a', 1);
+        aut.delta.add(3, 'a', 5);
+        aut.delta.add(3, 'c', 4);
+        aut.delta.add(4, 'a', 4);
+        CHECK(aut.get_word() == Word{ 'b' });
     }
 }
