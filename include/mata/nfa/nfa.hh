@@ -31,7 +31,7 @@
 #include "delta.hh"
 
 /**
- * Nondeterministic Finite Automata including structures, transitions and algorithms.
+ * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
  *
  * In particular, this includes:
  *   1. Structures (Automaton, Transitions, Results, Delta),
@@ -56,6 +56,7 @@ public:
     Delta delta;
     utils::SparseSet<State> initial{};
     utils::SparseSet<State> final{};
+
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
     ///  are up to the user.
@@ -127,7 +128,7 @@ public:
      */
     Nfa& swap_final_nonfinal() { final.complement(num_of_states()); return *this; }
 
-    bool is_state(const State &state_to_check) const { return state_to_check < num_of_states(); }
+    bool is_state(const State& state_to_check) const { return state_to_check < num_of_states(); }
 
     /**
      * @brief Clear the underlying NFA to a blank NFA.
@@ -261,6 +262,7 @@ public:
      * @brief Prints the automaton to the output stream in DOT format
      */
     void print_to_dot(std::ostream &output) const;
+
     /**
      * @brief Prints the automaton in mata format
      *
