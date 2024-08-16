@@ -150,7 +150,8 @@ public:
     virtual inline void reserve(size_t size) { vec_.reserve(size); }
     virtual inline void resize(size_t size) { vec_.resize(size); }
 
-    virtual inline void erase(const_iterator first, const_iterator last) { vec_.erase(first, last); }
+    virtual inline iterator erase(const_iterator pos) { return vec_.erase(pos); }
+    virtual inline iterator erase(const_iterator first, const_iterator last) { return vec_.erase(first, last); }
 
     virtual void insert(const Key& x) {
         assert(is_sorted());
@@ -274,18 +275,18 @@ public:
      *
      * This function expects the vector to be sorted.
      */
-    inline void erase(const Key& k) {
+    inline size_t erase(const Key& k) {
         assert(is_sorted());
         auto found_value_it = std::lower_bound(vec_.begin(), vec_.end(), k);
         if (found_value_it != vec_.end()) {
             if (*found_value_it == k) {
                 vec_.erase(found_value_it);
                 assert(is_sorted());
-                return;
+                return 1;
             }
         }
 
-        throw std::runtime_error("Key is not in OrdVector.");
+        return 0;
     }
 
     virtual inline bool empty() const { return vec_.empty(); }

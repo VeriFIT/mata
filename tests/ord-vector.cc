@@ -15,7 +15,7 @@ TEST_CASE("mata::utils::OrdVector::erase()") {
     CHECK(set == OrdVectorT{ 1, 2, 4, 6 });
     set.erase(4);
     CHECK(set == OrdVectorT{ 1, 2, 6 });
-    CHECK_THROWS(set.erase(5));
+    CHECK(set.erase(5) == 0);
     set.erase(2);
     CHECK(set == OrdVectorT{ 1, 6 });
     set.erase(1);
@@ -25,11 +25,11 @@ TEST_CASE("mata::utils::OrdVector::erase()") {
     CHECK(set == OrdVectorT{ 3 });
     set.erase(3);
     CHECK(set.empty());
-    CHECK_THROWS(set.erase(0));
+    CHECK(set.erase(0) == 0);
     set.emplace_back(3);
     set.emplace_back(4);
     CHECK(set == OrdVectorT{ 3, 4 });
-    CHECK_THROWS(set.erase(0));
+    CHECK(set.erase(0) == 0);
 }
 
 TEST_CASE("mata::utils::OrdVector::front())") {
