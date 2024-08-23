@@ -82,6 +82,8 @@ public:
 
     bool operator==(const Alphabet &) const = delete;
 
+    virtual void clear() { throw std::runtime_error("Unimplemented"); }
+
 protected:
     virtual const void *address() const { return this; }
 }; // class Alphabet.
@@ -114,6 +116,8 @@ public:
     IntAlphabet(const IntAlphabet&) = default;
 
     IntAlphabet& operator=(const IntAlphabet& int_alphabet) = delete;
+
+    void clear() override { throw std::runtime_error("Nonsensical use of clear() on IntAlphabet."); }
 
 protected:
     const void* address() const override { return &alphabet_instance; }
@@ -167,8 +171,12 @@ private:
 class EnumAlphabet : public Alphabet {
 public:
     explicit EnumAlphabet() = default;
-    EnumAlphabet(const EnumAlphabet& rhs) = default;
+    EnumAlphabet(const EnumAlphabet& alphabet) = default;
+    explicit EnumAlphabet(const EnumAlphabet* const alphabet): EnumAlphabet(*alphabet) {}
     EnumAlphabet(EnumAlphabet&& rhs) = default;
+
+    EnumAlphabet& operator=(const EnumAlphabet& rhs) = default;
+    EnumAlphabet& operator=(EnumAlphabet&& rhs) = default;
 
     utils::OrdVector<Symbol> get_alphabet_symbols() const override { return symbols_; }
     utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override {
@@ -176,9 +184,6 @@ public:
     }
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
-
-private:
-    EnumAlphabet& operator=(const EnumAlphabet& rhs);
 
 public:
     /**
@@ -247,6 +252,28 @@ public:
      * @param value The value of the newly added symbol.
      */
     void update_next_symbol_value(Symbol value);
+
+    /**
+     * @brief Erase a symbol from the alphabet.
+     * @return Number of symbols erased (0 or 1).
+     */
+    size_t erase(const Symbol symbol);
+
+    /**
+     * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
+     * @return Iterator following the last removed element.
+     */
+    void erase(utils::OrdVector<Symbol>::const_iterator pos) { symbols_.erase(pos); }
+
+    /**
+     * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
+     * @return Iterator following the last removed element.
+     */
+    void erase(utils::OrdVector<Symbol>::const_iterator first, utils::OrdVector<Symbol>::const_iterator last) {
+        symbols_.erase(first, last);
+    }
+
+    void clear() override { symbols_.clear(); next_symbol_value_ = 0; }
 }; // class EnumAlphabet.
 
 /**
@@ -261,8 +288,13 @@ public:
     using InsertionResult = std::pair<StringToSymbolMap::const_iterator, bool>;
 
     explicit OnTheFlyAlphabet(Symbol init_symbol = 0) : next_symbol_value_(init_symbol) {};
-    OnTheFlyAlphabet(const OnTheFlyAlphabet& rhs) : symbol_map_(rhs.symbol_map_), next_symbol_value_(rhs.next_symbol_value_) {}
+    OnTheFlyAlphabet(const OnTheFlyAlphabet& alphabet) = default;
+    OnTheFlyAlphabet(OnTheFlyAlphabet&& alphabet) = default;
+    explicit OnTheFlyAlphabet(const OnTheFlyAlphabet* const alphabet): OnTheFlyAlphabet(*alphabet) {}
     explicit OnTheFlyAlphabet(StringToSymbolMap str_sym_map) : symbol_map_(std::move(str_sym_map)) {}
+
+    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs) = default;
+    OnTheFlyAlphabet& operator=(OnTheFlyAlphabet&& rhs) = default;
 
     /**
      * Create alphabet from a list of symbol names.
@@ -287,9 +319,6 @@ public:
     utils::OrdVector<Symbol> get_complement(const utils::OrdVector<Symbol>& symbols) const override;
 
     std::string reverse_translate_symbol(Symbol symbol) const override;
-
-private:
-    OnTheFlyAlphabet& operator=(const OnTheFlyAlphabet& rhs);
 
 public:
     /**
@@ -375,6 +404,34 @@ public:
      * @param value The value of the newly added symbol.
      */
     void update_next_symbol_value(Symbol value);
+
+    /**
+     * @brief Remove a symbol name value pair specified by its @p symbol from the alphabet.
+     *
+     * @warning Complexity: O(n), where n is the number of symbols in the alphabet.
+     * @return Number of symbols removed (0 or 1).
+     */
+    size_t erase(Symbol symbol);
+
+    /**
+     * @brief Remove a symbol name value pair specified by its @p symbol_name from the alphabet.
+     * @return Number of symbols removed (0 or 1).
+     */
+    size_t erase(const std::string& symbol_name);
+
+    /**
+     * @brief Remove a symbol name value pair from the position @p pos from the alphabet.
+     */
+    void erase(StringToSymbolMap::const_iterator pos) { symbol_map_.erase(pos); }
+
+    /**
+     * @brief Remove a symbol name value pair from the positions between @p first and @p last from the alphabet.
+     */
+    void erase(StringToSymbolMap::const_iterator first, StringToSymbolMap::const_iterator last) {
+        symbol_map_.erase(first, last);
+    }
+
+    void clear() override { symbol_map_.clear(); next_symbol_value_ = 0; }
 }; // class OnTheFlyAlphabet.
 } // namespace mata
 
