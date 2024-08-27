@@ -1,6 +1,8 @@
 add_executable(tests
 		ord-vector.cc
 		sparse-set.cc
+		partition.cc
+		extendable-square-matrix.cc
 		synchronized-iterator.cc
 		main.cc
 		alphabet.cc
