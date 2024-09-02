@@ -1,0 +1,5 @@
+iny:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-automata-simulation $1 iny
+
+simlib-rt:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/bench-automata-simulation $1 forward
