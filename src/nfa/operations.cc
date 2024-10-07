@@ -56,21 +56,14 @@ namespace {
         return lts_for_simulation.compute_simulation();
     }
 
-    bool vec_contains(std::vector<std::pair<State, State>> vec, std::pair<State, State> par){
-        for (size_t i = 0; i < vec.size(); i++){
-            if (vec[i] == par){
-                return true;
-            }
-        }
-        return false;
+    int index_fn(int alph, int x, int y, size_t alph_size, size_t no_states){
+        return alph + x * alph_size + y * alph_size * no_states;
     }
 
     Simlib::Util::BinaryRelation compute_iny_direct_simulation(const Nfa& aut) {
         // ! Preprocessing
         Nfa reverted_nfa;
         std::vector<std::vector<bool>> result_sim_tmp {}; // R_tmp
-
-        std::vector<std::pair<State, State>> result_sim {}; // R
         std::vector<std::pair<State, State>> worklist {}; // Worklist
 
         // Alphabet extraction
@@ -79,7 +72,11 @@ namespace {
         std::vector<Symbol> alph_syms = alph.get_alphabet_symbols().to_vector();
 
         size_t no_states = aut.num_of_states();
-        size_t ***matrix;
+        size_t matrix_size = no_states * no_states * alph_syms.size();
+
+        std::vector<int> matrix;
+        matrix.resize(matrix_size);
+        //size_t ***matrix;
 
         result_sim_tmp.resize(no_states);
         for (int i = 0; i < no_states; i++){
@@ -87,6 +84,7 @@ namespace {
         }
 
         // Matrix allocation
+        /*
         matrix = static_cast<size_t ***>(malloc(sizeof(size_t **) * alph_syms.size()));
         for (size_t i = 0; i < alph_syms.size(); i++) {
             matrix[i] = static_cast<size_t **>(malloc(sizeof(size_t *) * no_states));
@@ -94,6 +92,7 @@ namespace {
                 matrix[i][j] = static_cast<size_t *>(malloc(sizeof(size_t) * no_states));
             }
         }
+        */
 
         reverted_nfa = revert(aut); // Reverted NFA
         // ! End of preprocessing
@@ -107,11 +106,13 @@ namespace {
 
                     auto symbol_q = aut.delta[q].find(alph_syms[x]);
                     if (symbol_q == aut.delta[q].end()) {
-                        matrix[x][p][q] = 0;
+                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = 0;
+                        //matrix[x][p][q] = 0;
                         q_size = 0;
                     } else {
                         q_size = (*symbol_q).num_of_targets();
-                        matrix[x][p][q] = q_size;
+                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = q_size;
+                        //matrix[x][p][q] = q_size;
                     }
 
                     auto symbol_p = aut.delta[p].find(alph_syms[x]);
@@ -121,8 +122,7 @@ namespace {
                         p_size = (*symbol_p).num_of_targets();
                     }
                     if ((p_size != 0 && q_size == 0) || (aut.final.contains(p) && !aut.final.contains(q))) {
-                        if (!vec_contains(result_sim, std::pair(p,q))) {
-                            result_sim.push_back(std::pair(p,q)); // R append 
+                        if (result_sim_tmp[p][q] != false) {
                             worklist.push_back(std::pair(p,q)); // worklist append
                             result_sim_tmp[p][q] = false;
                         }
@@ -145,15 +145,15 @@ namespace {
                     continue;
                 } 
                 for (State q: (*symbol_q_).targets.to_vector()) {
-                    matrix[x][working_pair.first][q]--;
-                    if (matrix[x][working_pair.first][q] == 0) {
+                    //matrix[x][working_pair.first][q]--;
+                    matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)]--;
+                    if (matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)] == 0) {
                         auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(alph_syms[x]);
                         if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
                             continue;
                         }
                         for (State p: (*symbol_p_).targets.to_vector()) {
-                            if (!vec_contains(result_sim, std::pair(p,q))) {
-                                result_sim.push_back(std::pair(p,q)); // R append 
+                            if (result_sim_tmp[p][q] != false) {
                                 worklist.push_back(std::pair(p,q)); // worklist append
                                 result_sim_tmp[p][q] = false;
                             }
@@ -165,6 +165,7 @@ namespace {
         // ! End of Propagate until fixpoint
 
         //Free the matrix
+        /*
         for (size_t i = 0; i < alph_syms.size(); i++){
             for (size_t j = 0; j < no_states; j++){
                 free(matrix[i][j]);
@@ -172,6 +173,7 @@ namespace {
             free(matrix[i]);
         }
         free(matrix);
+        */
 
         //Printig of the final relation:
         /*
