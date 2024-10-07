@@ -1,0 +1,2 @@
+testsim:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/testing-simulation $1

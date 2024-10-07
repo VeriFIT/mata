@@ -39,7 +39,7 @@ namespace {
                 throw std::runtime_error("all symbols are used, we cannot compute simulation reduction");
             }
         }
-        
+
         const size_t state_num{ aut.num_of_states() };
         Simlib::ExplicitLTS lts_for_simulation(state_num);
 
@@ -54,6 +54,137 @@ namespace {
 
         lts_for_simulation.init();
         return lts_for_simulation.compute_simulation();
+    }
+
+    int index_fn(int alph, int x, int y, size_t alph_size, size_t no_states){
+        return alph + x * alph_size + y * alph_size * no_states;
+    }
+
+    Simlib::Util::BinaryRelation compute_iny_direct_simulation(const Nfa& aut) {
+        // ! Preprocessing
+        Nfa reverted_nfa;
+        std::vector<std::vector<bool>> result_sim_tmp {}; // R_tmp
+        std::vector<std::pair<State, State>> worklist {}; // Worklist
+
+        // Alphabet extraction
+        mata::OnTheFlyAlphabet alph;
+        aut.fill_alphabet(alph);
+        std::vector<Symbol> alph_syms = alph.get_alphabet_symbols().to_vector();
+
+        size_t no_states = aut.num_of_states();
+        size_t matrix_size = no_states * no_states * alph_syms.size();
+
+        std::vector<int> matrix;
+        matrix.resize(matrix_size);
+        //size_t ***matrix;
+
+        result_sim_tmp.resize(no_states);
+        for (int i = 0; i < no_states; i++){
+            result_sim_tmp[i].resize(no_states, true);
+        }
+
+        // Matrix allocation
+        /*
+        matrix = static_cast<size_t ***>(malloc(sizeof(size_t **) * alph_syms.size()));
+        for (size_t i = 0; i < alph_syms.size(); i++) {
+            matrix[i] = static_cast<size_t **>(malloc(sizeof(size_t *) * no_states));
+            for (size_t j = 0; j < no_states; j++) {
+                matrix[i][j] = static_cast<size_t *>(malloc(sizeof(size_t) * no_states));
+            }
+        }
+        */
+
+        reverted_nfa = revert(aut); // Reverted NFA
+        // ! End of preprocessing
+
+        // ! Initial refinement
+        for (size_t x = 0; x < alph_syms.size(); x++) {
+            for (size_t p = 0; p < no_states; p++) {
+                for (size_t q = 0; q < no_states; q++) {
+                    size_t q_size;
+                    size_t p_size;
+
+                    auto symbol_q = aut.delta[q].find(alph_syms[x]);
+                    if (symbol_q == aut.delta[q].end()) {
+                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = 0;
+                        //matrix[x][p][q] = 0;
+                        q_size = 0;
+                    } else {
+                        q_size = (*symbol_q).num_of_targets();
+                        matrix[index_fn(x, p, q, alph_syms.size(), no_states)] = q_size;
+                        //matrix[x][p][q] = q_size;
+                    }
+
+                    auto symbol_p = aut.delta[p].find(alph_syms[x]);
+                    if (symbol_p == aut.delta[p].end()) {
+                        p_size = 0;
+                    } else {
+                        p_size = (*symbol_p).num_of_targets();
+                    }
+                    if ((p_size != 0 && q_size == 0) || (aut.final.contains(p) && !aut.final.contains(q))) {
+                        if (result_sim_tmp[p][q] != false) {
+                            worklist.push_back(std::pair(p,q)); // worklist append
+                            result_sim_tmp[p][q] = false;
+                        }
+                    }
+                }
+            }
+        }
+        // ! End of initional refinement
+
+        // ! Propagate until fixpoint
+        size_t worklist_size;
+        std::pair<State, State> working_pair;
+        while ((worklist_size = worklist.size()) != 0) {
+            working_pair = worklist[worklist_size - 1];
+            worklist.pop_back();
+
+            for (size_t x = 0; x < alph_syms.size(); x++) {
+                auto symbol_q_ = reverted_nfa.delta[working_pair.second].find(alph_syms[x]);
+                if (symbol_q_ == reverted_nfa.delta[working_pair.second].end()) {
+                    continue;
+                } 
+                for (State q: (*symbol_q_).targets.to_vector()) {
+                    //matrix[x][working_pair.first][q]--;
+                    matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)]--;
+                    if (matrix[index_fn(x, working_pair.first, q, alph_syms.size(), no_states)] == 0) {
+                        auto symbol_p_ = reverted_nfa.delta[working_pair.first].find(alph_syms[x]);
+                        if (symbol_p_ == reverted_nfa.delta[working_pair.first].end()) {
+                            continue;
+                        }
+                        for (State p: (*symbol_p_).targets.to_vector()) {
+                            if (result_sim_tmp[p][q] != false) {
+                                worklist.push_back(std::pair(p,q)); // worklist append
+                                result_sim_tmp[p][q] = false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        // ! End of Propagate until fixpoint
+
+        //Free the matrix
+        /*
+        for (size_t i = 0; i < alph_syms.size(); i++){
+            for (size_t j = 0; j < no_states; j++){
+                free(matrix[i][j]);
+            }
+            free(matrix[i]);
+        }
+        free(matrix);
+        */
+
+        //Printig of the final relation:
+        /*
+        std::cout << "The final relation is:" << std::endl;
+        for (std::pair final: result_sim){
+            std::cout << final.first << " , " << final.second << std::endl;
+        }
+        */
+        Simlib::Util::BinaryRelation tmp = Simlib::Util::BinaryRelation(result_sim_tmp);
+        return tmp; // This does not work yet, only the calculation of the relation is done
+        // The result is stored in result_sim vector
     }
 
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
@@ -990,6 +1121,9 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     const std::string& direction = params.at("direction");
     if ("simulation" == relation && direction == "forward") {
         return compute_fw_direct_simulation(aut);
+    }
+    else if ("simulation" == relation && direction == "iny") {
+        return compute_iny_direct_simulation(aut);
     }
     else {
         throw std::runtime_error(std::to_string(__func__) +
