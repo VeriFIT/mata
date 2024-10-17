@@ -167,10 +167,10 @@ bool mata::nfa::algorithms::is_included_antichains(
                         cex->word.clear();
                         cex->word.push_back(smaller_symbol);
                         ProdStateType trav = prod_state;
-                        while (paths[trav].first != trav)
+                        while (paths.at(trav).first != trav)
                         { // go back until initial state
-                            cex->word.push_back(paths[trav].second);
-                            trav = paths[trav].first;
+                            cex->word.push_back(paths.at(trav).second);
+                            trav = paths.at(trav).first;
                         }
 
                         std::reverse(cex->word.begin(), cex->word.end());
