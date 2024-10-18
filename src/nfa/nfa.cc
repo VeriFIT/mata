@@ -117,6 +117,36 @@ std::vector<State> Nfa::distances_from_initial() const {
     return distances;
 }
 
+std::vector<std::pair<State, Run>> Nfa::distances_from_initial_with_runs() const {
+    std::vector<std::pair<State, Run>> distances(num_of_states()+1, std::make_pair(Limits::max_state, Run()));
+    BoolVector visited(num_of_states()+1, false);
+    std::deque<State> que;
+
+    for (State qi: initial) {
+        visited[qi] = true;
+        distances[qi] = std::make_pair(0, Run{{},{qi}});
+        que.push_back(qi);
+    }
+
+    while (!que.empty()) {
+        State src = que.front();
+        que.pop_front();
+        for (Move move : delta[src].moves()) {
+            if (!visited[move.target]) {
+                visited[move.target] = true;
+                Word shortest_word = distances[src].second.word;
+                shortest_word.push_back(move.symbol);
+                std::vector<State> shortest_path = distances[src].second.path;
+                shortest_path.push_back(move.target);
+                distances[move.target] = std::make_pair(distances[src].first + 1, Run{shortest_word,shortest_path});
+                que.push_back(move.target);
+            }
+        }
+    }
+
+    return distances;
+}
+
 Nfa& Nfa::trim(StateRenaming* state_renaming) {
 #ifdef _STATIC_STRUCTURES_
     BoolVector useful_states{ useful_states() };
