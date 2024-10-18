@@ -21,9 +21,21 @@ bool mata::nfa::algorithms::is_included_naive(
     } else {
         bigger_cmpl = complement(bigger, *alphabet);
     }
-    Nfa nfa_isect = intersection(smaller, bigger_cmpl);
 
-    return nfa_isect.is_lang_empty(cex);
+    std::unordered_map<std::pair<State,State>,State> prod_map;
+    Nfa nfa_isect = intersection(smaller, bigger_cmpl, Limits::max_symbol, &prod_map);
+
+    bool result = nfa_isect.is_lang_empty(cex);
+    if (cex != nullptr && !result) {
+        std::unordered_map<State,State> nfa_isect_state_to_smaller_state;
+        for (const auto& prod_map_item : prod_map) {
+            nfa_isect_state_to_smaller_state[prod_map_item.second] = prod_map_item.first.first;
+        }
+        for (State& path_state : cex->path) {
+            path_state = nfa_isect_state_to_smaller_state[path_state];
+        }
+    }
+    return result;
 } // is_included_naive }}}
 
 

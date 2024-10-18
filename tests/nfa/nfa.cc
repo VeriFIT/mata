@@ -2184,15 +2184,22 @@ q9 196608 q9
 q10 67 q5
 )"
             ))[0]);
-        bool is_incl = mata::nfa::algorithms::is_included_antichains(smaller, bigger, nullptr, &cex);
-        REQUIRE(!is_incl);
-        REQUIRE(smaller.is_in_lang(cex.word));
-        REQUIRE(!bigger.is_in_lang(cex.word));
-        REQUIRE(cex.path.size() == cex.word.size() + 1);
-        for (size_t i = 0; i < cex.word.size(); ++i) {
-            const auto& s = smaller.delta[cex.path[i]].find(cex.word[i]);
-            REQUIRE(s != smaller.delta[cex.path[i]].end());
-            REQUIRE(s->targets.contains(cex.path[i+1]));
+        
+        for (const auto& algo : ALGORITHMS) {
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &cex, nullptr, params);
+                REQUIRE(!is_incl);
+                REQUIRE(smaller.is_in_lang(cex.word));
+                REQUIRE(!bigger.is_in_lang(cex.word));
+                REQUIRE(cex.path.size() == cex.word.size() + 1);
+                for (size_t i = 0; i < cex.word.size(); ++i) {
+                    const auto& s = smaller.delta[cex.path[i]].find(cex.word[i]);
+                    REQUIRE(s != smaller.delta[cex.path[i]].end());
+                    CHECK(s->targets.contains(cex.path[i+1]));
+                }
+            }
         }
     }
 
