@@ -1919,12 +1919,18 @@ TEST_CASE("mata::nfa::is_included()")
         bigger.final = {1};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            CHECK(is_incl);
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+                CHECK(is_incl);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            CHECK(!is_incl);
+                is_incl = is_included(bigger, smaller, &cex, &alph, params);
+                CHECK(!is_incl);
+                CHECK(cex.word.empty());
+                REQUIRE(cex.path.size() == 1);
+                CHECK(cex.path[0] == 1);
+            }
         }
     }
 
@@ -1937,12 +1943,15 @@ TEST_CASE("mata::nfa::is_included()")
         bigger.final = {11};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            CHECK(is_incl);
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+                CHECK(is_incl);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            CHECK(is_incl);
+                is_incl = is_included(bigger, smaller, &cex, &alph, params);
+                CHECK(is_incl);
+            }
         }
     }
 
@@ -1953,15 +1962,20 @@ TEST_CASE("mata::nfa::is_included()")
         smaller.final = {1};
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-            REQUIRE(!is_incl);
-            REQUIRE(cex.word.empty());
+                REQUIRE(!is_incl);
+                REQUIRE(cex.word.empty());
+                REQUIRE(cex.path.size() == 1);
+                CHECK(cex.path[0] == 1);
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(cex.word.empty());
-            REQUIRE(is_incl);
+                is_incl = is_included(bigger, smaller, &cex, &alph, params);
+                REQUIRE(cex.word.empty());
+                REQUIRE(is_incl);
+            }
         }
     }
 
@@ -1979,12 +1993,15 @@ TEST_CASE("mata::nfa::is_included()")
         bigger.delta.add(11, alph["b"], 11);
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &alph, params);
-            REQUIRE(is_incl);
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &alph, params);
+                REQUIRE(is_incl);
 
-            is_incl = is_included(bigger, smaller, &alph, params);
-            REQUIRE(!is_incl);
+                is_incl = is_included(bigger, smaller, &alph, params);
+                REQUIRE(!is_incl);
+            }
         }
     }
 
@@ -2002,20 +2019,25 @@ TEST_CASE("mata::nfa::is_included()")
         bigger.delta.add(12, alph["b"], 12);
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
 
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+                bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
 
-            REQUIRE(!is_incl);
-            REQUIRE((
-                cex.word == Word{alph["a"], alph["b"]} ||
-                cex.word == Word{alph["b"], alph["a"]}));
+                REQUIRE(!is_incl);
+                REQUIRE((
+                    cex.word == Word{alph["a"], alph["b"]} ||
+                    cex.word == Word{alph["b"], alph["a"]}));
+                REQUIRE(cex.path == std::vector<State>{1,1,1});
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_incl);
-            REQUIRE((
-                cex.word == Word{alph["a"], alph["b"]} ||
-                cex.word == Word{alph["b"], alph["a"]}));
+                is_incl = is_included(bigger, smaller, &cex, &alph, params);
+                REQUIRE(is_incl);
+                REQUIRE((
+                    cex.word == Word{alph["a"], alph["b"]} ||
+                    cex.word == Word{alph["b"], alph["a"]}));
+                REQUIRE(cex.path == std::vector<State>{1,1,1});
+            }
         }
     }
 
@@ -2042,26 +2064,31 @@ TEST_CASE("mata::nfa::is_included()")
         bigger.delta.add(15, alph["b"], 15);
 
         for (const auto& algo : ALGORITHMS) {
-            params["algorithm"] = algo;
-            bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
-            REQUIRE(!is_incl);
+            SECTION(algo)
+            {
+                params["algorithm"] = algo;
+                bool is_incl = is_included(smaller, bigger, &cex, &alph, params);
+                REQUIRE(!is_incl);
 
-            REQUIRE(cex.word.size() == 4);
-            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-            REQUIRE(cex.word[2] != cex.word[3]);
+                REQUIRE(cex.word.size() == 4);
+                REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+                REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+                REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+                REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+                REQUIRE(cex.word[2] != cex.word[3]);
+                REQUIRE(cex.path == std::vector<State>{1,1,1,1,1});
 
-            is_incl = is_included(bigger, smaller, &cex, &alph, params);
-            REQUIRE(is_incl);
+                is_incl = is_included(bigger, smaller, &cex, &alph, params);
+                REQUIRE(is_incl);
 
-            REQUIRE(cex.word.size() == 4);
-            REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-            REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-            REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-            REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-            REQUIRE(cex.word[2] != cex.word[3]);
+                REQUIRE(cex.word.size() == 4);
+                REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+                REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+                REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+                REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+                REQUIRE(cex.word[2] != cex.word[3]);
+                REQUIRE(cex.path == std::vector<State>{1,1,1,1,1});
+            }
         }
     }
 
@@ -2161,6 +2188,12 @@ q10 67 q5
         REQUIRE(!is_incl);
         REQUIRE(smaller.is_in_lang(cex.word));
         REQUIRE(!bigger.is_in_lang(cex.word));
+        REQUIRE(cex.path.size() == cex.word.size() + 1);
+        for (size_t i = 0; i < cex.word.size(); ++i) {
+            const auto& s = smaller.delta[cex.path[i]].find(cex.word[i]);
+            REQUIRE(s != smaller.delta[cex.path[i]].end());
+            REQUIRE(s->targets.contains(cex.path[i+1]));
+        }
     }
 
     SECTION("wrong parameters 1")

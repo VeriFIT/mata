@@ -69,7 +69,7 @@ bool mata::nfa::algorithms::is_included_antichains(
     //Is |S| < |S'| for the inut pairs (q,S) and (q',S')?
     // auto smaller_set = [](const ProdStateType & a, const ProdStateType & b) { return std::get<1>(a).size() < std::get<1>(b).size(); };
 
-    std::vector<State> distances_smaller = revert(smaller).distances_from_initial();
+    std::vector<std::pair<State, Run>> distances_smaller = revert(smaller).distances_from_initial_with_runs(); // we assume that revert keeps the same number of states, so that Run.path is correct for cex
     std::vector<State> distances_bigger = revert(bigger).distances_from_initial();
 
     // auto closer_dist = [&](const ProdStateType & a, const ProdStateType & b) {
@@ -96,7 +96,7 @@ bool mata::nfa::algorithms::is_included_antichains(
     };
 
     auto lengths_incompatible = [&](const ProdStateType& pair) {
-        return distances_smaller[std::get<0>(pair)] < std::get<2>(pair);
+        return distances_smaller[std::get<0>(pair)].first < std::get<2>(pair);
     };
 
     auto insert_to_pairs = [&](ProdStatesType & pairs,const ProdStateType & pair) {
@@ -118,7 +118,7 @@ bool mata::nfa::algorithms::is_included_antichains(
         if (smaller.final[state] &&
             are_disjoint(bigger.initial, bigger.final))
         {
-            if (cex != nullptr) { cex->word.clear(); }
+            if (cex != nullptr) { cex->word.clear(); cex->path = {state}; }
             return false;
         }
 
@@ -160,20 +160,26 @@ bool mata::nfa::algorithms::is_included_antichains(
             for (const State& smaller_succ : smaller_move.targets) {
                 const ProdStateType succ = {smaller_succ, bigger_succ, min_dst(bigger_succ)};
 
-                if (lengths_incompatible(succ) || (smaller.final[smaller_succ] &&
-                    !bigger.final.intersects_with(bigger_succ)))
+                if (lengths_incompatible(succ) ||
+                    (smaller.final[smaller_succ] && !bigger.final.intersects_with(bigger_succ)))
                 {
                     if (cex != nullptr) {
                         cex->word.clear();
+                        cex->path.clear();
+                        cex->word = distances_smaller[smaller_succ].second.word;
                         cex->word.push_back(smaller_symbol);
+                        cex->path = distances_smaller[smaller_succ].second.path;
+                        cex->path.push_back(smaller_state);
                         ProdStateType trav = prod_state;
                         while (paths.at(trav).first != trav)
                         { // go back until initial state
                             cex->word.push_back(paths.at(trav).second);
+                            cex->path.push_back(std::get<0>(paths.at(trav).first));
                             trav = paths.at(trav).first;
                         }
 
                         std::reverse(cex->word.begin(), cex->word.end());
+                        std::reverse(cex->path.begin(), cex->path.end());
                     }
 
                     return false;
