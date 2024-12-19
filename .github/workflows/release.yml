@@ -26,7 +26,7 @@ jobs:
 
       - name: Infer the new version (without tagging)
         id: tagger
-        uses: phish108/autotag-action@1.1.51
+        uses: phish108/autotag-action@1.1.64
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
@@ -38,7 +38,7 @@ jobs:
           echo "${{ steps.tagger.outputs.new-tag }}" > VERSION
 
       - name: Tag the new version
-        uses: phish108/autotag-action@1.1.51
+        uses: phish108/autotag-action@1.1.64
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
@@ -49,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.12"]
 
     steps:
       - uses: actions/checkout@v4
@@ -84,14 +84,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.12"]
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Infer the new version (without tagging)
         id: tagger
-        uses: phish108/autotag-action@1.1.51
+        uses: phish108/autotag-action@1.1.64
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           release-branch: devel
