@@ -3906,19 +3906,17 @@ TEST_CASE("mata::nfa::get_useful_states() for profiling", "[.profiling],[useful_
     }
 }
 
-TEST_CASE("mata::nfa::trim() trivial") {
-    Nfa aut{1};
-    aut.initial.insert(0);
-    aut.final.insert(0);
-    aut.trim();
-}
-
-TEST_CASE("mata::nfa::trim()")
-{
+TEST_CASE("mata::nfa::Nfa::trim()") {
     Nfa orig_aut{20};
     FILL_WITH_AUT_A(orig_aut);
     orig_aut.delta.remove(1, 'a', 10);
 
+    SECTION("trivial") {
+        Nfa aut{1};
+        aut.initial.insert(0);
+        aut.final.insert(0);
+        aut.trim();
+    }
 
     SECTION("Without state map") {
         Nfa aut{orig_aut};
@@ -3961,6 +3959,58 @@ TEST_CASE("mata::nfa::trim()")
         CHECK(state_map.empty());
     }
 }
+
+// TEST_CASE("mata::nfa::trim()") {
+//     Nfa orig_aut{20};
+//     FILL_WITH_AUT_A(orig_aut);
+//     orig_aut.delta.remove(1, 'a', 10);
+//
+//     SECTION("trivial") {
+//         Nfa aut{1};
+//         aut.initial.insert(0);
+//         aut.final.insert(0);
+//         aut.trim();
+//     }
+//
+//     SECTION("Without state map") {
+//         Nfa aut{ orig_aut };
+//         Nfa trimmed_aut{ trimmed(orig_aut) };
+//         CHECK(trimmed_aut.initial.size() == orig_aut.initial.size());
+//         CHECK(trimmed_aut.final.size() == orig_aut.final.size());
+//         CHECK(trimmed_aut.num_of_states() == 4);
+//         for (const Word &word: get_shortest_words(orig_aut)) {
+//             CHECK(trimmed_aut.is_in_lang(Run{word,{}}));
+//         }
+//
+//         trimmed_aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+//         trimmed_aut = trimmed(trimmed_aut);
+//         CHECK(trimmed_aut.delta.empty());
+//         CHECK(trimmed_aut.num_of_states() == 0);
+//     }
+//
+//     SECTION("With state map") {
+//         Nfa aut{orig_aut};
+//         StateRenaming state_map{};
+//         aut = trimmed(aut, &state_map);
+//         CHECK(aut.initial.size() == orig_aut.initial.size());
+//         CHECK(aut.final.size() == orig_aut.final.size());
+//         CHECK(aut.num_of_states() == 4);
+//         for (const Word &word: get_shortest_words(orig_aut)) {
+//             CHECK(aut.is_in_lang(Run{word,{}}));
+//         }
+//         REQUIRE(state_map.size() == 4);
+//         CHECK(state_map.at(1) == 0);
+//         CHECK(state_map.at(3) == 1);
+//         CHECK(state_map.at(7) == 3);
+//         CHECK(state_map.at(5) == 2);
+//
+//         aut.final.erase(2); // '2' is the new final state in the earlier trimmed automaton.
+//         aut = trimmed(aut, &state_map);
+//         CHECK(aut.delta.empty());
+//         CHECK(aut.num_of_states() == 0);
+//         CHECK(state_map.empty());
+//     }
+// }
 
 TEST_CASE("mata::nfa::Nfa::delta.empty()")
 {
@@ -4522,6 +4572,7 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
         CHECK(aut.get_word() == Word{ 'b', 'c' });
     }
 
+    // FIXME: 1 Causes a nondeterministic segmentation fault in the get_word() function.
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, one separate final") {
         Nfa aut{};
         aut.initial = { 0, 6 };
@@ -4552,6 +4603,7 @@ TEST_CASE("mata::nfa::Nfa::get_word()") {
         CHECK(aut.get_word() == Word{ 'a', 'c' });
    }
 
+    // FIXME: 2 Causes a nondeterministic segmentation fault in the get_word() function.
     SECTION("Complex automaton with self loops, epsilons, and nonterminating states, no reachable final") {
         Nfa aut{};
         aut.initial = { 0 };

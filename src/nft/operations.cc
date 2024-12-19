@@ -283,10 +283,10 @@ Nft mata::nft::project_out(const Nft& nft, const utils::OrdVector<Level>& levels
     // of levels k, k+1, k+2, ..., num_of_levels-1 in the ordered-vector levels_to_project.
     // If there is no such sequence, then k == num_of_levels.
     size_t seq_start_idx = nft.num_of_levels;
-    const std::vector<Level> levels_to_proj_v = levels_to_project.to_vector();
+    const std::vector<Level>& levels_to_proj_v = levels_to_project.to_vector();
     for (auto levels_to_proj_v_revit = levels_to_proj_v.rbegin();
          levels_to_proj_v_revit != levels_to_proj_v.rend() && *levels_to_proj_v_revit == seq_start_idx - 1;
-         ++levels_to_proj_v_revit, --seq_start_idx);
+         ++levels_to_proj_v_revit, --seq_start_idx) {}
 
     // Only states whose level is part of the sequence (will have level 0) can additionally be marked as final.
     auto can_be_final = [&](State s) {
@@ -885,7 +885,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
 
 //TODO: Implement for NFT
 bool mata::nft::Nft::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
-    std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
+    // std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
     return nfa::Nfa::is_in_lang(run, use_epsilon, match_prefix);
 }
 

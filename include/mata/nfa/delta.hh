@@ -255,7 +255,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;
@@ -370,6 +370,7 @@ public:
     StatePost& mutable_state_post(State source);
 
     void defragment(const BoolVector& is_staying, const std::vector<State>& renaming);
+    friend Delta defragmented_delta(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
     template <typename... Args>
     StatePost& emplace_back(Args&&... args) {
@@ -499,6 +500,7 @@ public:
 
     const StateSet& get_successors(State state, Symbol symbol) const;
 
+    // TODO(nfa): Implement.
     StateSet get_successors(State state, Symbol symbol, EpsilonClosureOpt epsilon_closure_opt) const;
 
     /**
@@ -542,9 +544,12 @@ public:
      * @brief Get the maximum non-epsilon used symbol.
      */
     Symbol get_max_symbol() const;
+
 protected:
     std::vector<StatePost> state_posts_;
 }; // class Delta.
+
+Delta defragmented_delta(const Delta& delta, const BoolVector& is_staying, const std::vector<State>& renaming);
 
 /**
  * @brief Iterator over transitions represented as @c Transition instances.
@@ -599,7 +604,7 @@ public:
     // Prefix increment
     const_iterator& operator++();
     // Postfix increment
-    const const_iterator operator++(int);
+    const_iterator operator++(int);
 
     const_iterator& operator=(const const_iterator& other) noexcept = default;
     const_iterator& operator=(const_iterator&&) = default;

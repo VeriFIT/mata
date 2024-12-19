@@ -15,6 +15,7 @@
 #include <cassert>
 #include <unordered_map>
 #include <vector>
+#include <ranges>
 #include <cstdint>
 
 /// macro for debug outputs
@@ -48,14 +49,28 @@
  */
 namespace mata {
 
-/// Representation of bool vector by a vector of uint8_t.
+template <typename T, typename Predicate>
+auto enumerate(const std::vector<T>& vec, Predicate pred) {
+	return std::views::iota(size_t{ 0 }, vec.size())
+		 | std::views::filter([&](const size_t i) { return pred(vec[i]); })
+		 | std::views::transform([&](const size_t i) { return std::pair(i, vec[i]); });
+}
+
+template <typename T, typename Predicate>
+auto filter_indices(const std::vector<T>& vec, Predicate pred) {
+	return std::views::iota(size_t{ 0 }, vec.size())
+		 | std::views::filter([&](const size_t i) { return pred(vec[i]); });
+}
+
+
+/// Representation of a bool vector by a vector of uint8_t.
 class BoolVector : public std::vector<uint8_t> {
 public:
-    BoolVector(size_t size, bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
+    BoolVector(const size_t size, const bool value) : std::vector<uint8_t>(size, value ? 1 : 0) {}
     BoolVector(const BoolVector&) = default;
     BoolVector(BoolVector&&) noexcept = default;
     BoolVector() = default;
-    BoolVector(std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
+    BoolVector(const std::initializer_list<uint8_t> uint8_ts): std::vector<uint8_t>(uint8_ts) {}
     explicit BoolVector(const std::vector<uint8_t>& uint8_ts): std::vector<uint8_t>(uint8_ts) {}
 
     BoolVector& operator=(const BoolVector&) = default;

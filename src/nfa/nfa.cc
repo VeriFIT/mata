@@ -50,9 +50,8 @@ namespace {
             }
         }
 
-        State state;
         while (!worklist.empty()) {
-            state = worklist.back();
+            const State state{ worklist.back() };
             worklist.pop_back();
             for (const SymbolPost& move: nfa.delta[state]) {
                 for (const State target_state: move.targets) {
@@ -73,19 +72,16 @@ void Nfa::remove_epsilon(const Symbol epsilon)
     *this = mata::nfa::remove_epsilon(*this, epsilon);
 }
 
-StateSet Nfa::get_reachable_states() const {
+StateSet Nfa::get_reachable_states(const std::function<bool(State)> &filter) const {
     StateBoolArray reachable_bool_array{ reachable_states(*this) };
 
     StateSet reachable_states{};
     const size_t num_of_states{ this->num_of_states() };
-    for (State original_state{ 0 }; original_state < num_of_states; ++original_state)
-    {
-        if (reachable_bool_array[original_state])
-        {
-            reachable_states.insert(original_state);
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        if (reachable_bool_array[state] && (filter == nullptr || filter(state))) {
+            reachable_states.insert(state);
         }
     }
-
     return reachable_states;
 }
 
@@ -178,6 +174,59 @@ Nfa& Nfa::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
+
+// Nfa mata::nfa::trimmed(const Nfa& nfa, StateRenaming* state_renaming, SparseSet<State> initial_states, SparseSet<State> final_states) {
+Nfa mata::nfa::trimmed(const Nfa &nfa, StateRenaming *state_renaming,
+                       std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states,
+                       std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) {
+    if (!initial_states) { initial_states = nfa.initial; }
+    if (!final_states) { final_states = nfa.final; }
+
+    // Compute useful states using Tarjan's algorithm.
+    // The result is a bool vector where true means the state is useful.
+#ifdef _STATIC_STRUCTURES_
+    BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+    useful_states.clear();
+    useful_states = nfa.get_useful_states(initial_states, final_states);
+#else
+    BoolVector useful_states{ nfa.get_useful_states(initial_states, final_states) };
+#endif
+    Nfa nfa_trimmed{};
+
+    const size_t useful_states_size{ useful_states.size() };
+    std::vector<State> renaming(useful_states_size);
+    for (State new_state{ 0 }, orig_state{ 0 }; orig_state < useful_states_size; ++orig_state) {
+        if (useful_states[orig_state]) {
+            renaming[orig_state] = new_state;
+            ++new_state;
+        }
+    }
+
+    nfa_trimmed.delta = defragmented_delta(nfa.delta, useful_states, renaming);
+
+    nfa_trimmed.initial = initial_states.value_or(nfa.initial);
+    nfa_trimmed.final = final_states.value_or(nfa.final);
+
+    auto is_state_useful = [&](State q){return q < useful_states.size() && useful_states[q];};
+    nfa_trimmed.initial.filter(is_state_useful);
+    nfa_trimmed.final.filter(is_state_useful);
+    auto rename_state = [&](State q){return renaming[q];};
+    nfa_trimmed.initial.rename(rename_state);
+    nfa_trimmed.final.rename(rename_state);
+    nfa_trimmed.initial.truncate();
+    nfa_trimmed.final.truncate();
+    if (state_renaming != nullptr) {
+        state_renaming->clear();
+        state_renaming->reserve(useful_states_size);
+        for (State q{ 0 }; q < useful_states_size; ++q) {
+            if (useful_states[q]) {
+                (*state_renaming)[q] = renaming[q];
+            }
+        }
+    }
+    return nfa_trimmed;
+}
+
 namespace {
     // A structure to store metadata related to each state/node during the computation
     // of useful states. It contains Tarjan's metadata and the state of the
@@ -240,13 +289,13 @@ namespace {
  *    in @p tarjan_stack as it contains states that can reach this closed SCC.
  *
  */
-void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
+void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback, const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states) const {
     std::vector<TarjanNodeData> node_info(this->num_of_states());
     std::vector<State> program_stack;
     std::vector<State> tarjan_stack;
     unsigned long index_cnt = 0;
 
-    for(const State& q0 : initial) {
+    for(const State& q0 : (initial_states.value_or(this->initial)).get()) {
         program_stack.push_back(q0);
     }
 
@@ -320,13 +369,16 @@ void Nfa::tarjan_scc_discover(const TarjanDiscoverCallback& callback) const {
     }
 }
 
-BoolVector Nfa::get_useful_states() const {
+BoolVector Nfa::get_useful_states(const std::optional<std::reference_wrapper<const SparseSet<State>>> initial_states, const std::optional<std::reference_wrapper<const SparseSet<State>>> final_states) const {
     BoolVector useful(this->num_of_states(), false);
     bool final_scc = false;
 
+    const SparseSet<State>& used_initial_states{ initial_states.value_or(initial) };
+    const SparseSet<State>& used_final_states{ final_states.value_or(this->final) };
+
     TarjanDiscoverCallback callback {};
-    callback.state_discover = [&](State state) -> bool {
-        if(this->final.contains(state)) {
+    callback.state_discover = [&](const State state) -> bool {
+        if(used_final_states.contains(state)) {
             useful[state] = true;
         }
         return false;
@@ -345,18 +397,18 @@ BoolVector Nfa::get_useful_states() const {
         final_scc = false;
         return false;
     };
-    callback.scc_state_discover = [&](State state) {
+    callback.scc_state_discover = [&](const State state) {
         if(useful[state]) {
             final_scc = true;
         }
     };
-    callback.succ_state_discover = [&](State act_state, State next_state) {
+    callback.succ_state_discover = [&](const State act_state, const State next_state) {
         if(useful[next_state]) {
             useful[act_state] = true;
         }
     };
 
-    tarjan_scc_discover(callback);
+    tarjan_scc_discover(callback, used_initial_states);
     return useful;
 }
 
@@ -473,21 +525,20 @@ void Nfa::print_to_dot(std::ostream &output, const bool decode_ascii_chars, cons
 
         std::vector<std::pair<Symbol, Symbol>> intervals;
         auto symbols_it = symbols.begin();
-        std::pair<Symbol, Symbol> interval{*symbols_it, *symbols_it};
+        std::pair<Symbol, Symbol> symbols_interval{*symbols_it, *symbols_it};
         ++symbols_it;
         for (; symbols_it != symbols.end(); ++symbols_it) {
-            if (*symbols_it == interval.second + 1) {
-                interval.second = *symbols_it;
+            if (*symbols_it == symbols_interval.second + 1) {
+                symbols_interval.second = *symbols_it;
             } else {
-                intervals.push_back(interval);
-                interval = {*symbols_it, *symbols_it};
+                intervals.push_back(symbols_interval);
+                symbols_interval = {*symbols_it, *symbols_it};
             }
         }
-        intervals.push_back(interval);
+        intervals.push_back(symbols_interval);
 
         for (const auto& interval: intervals) {
-            const size_t interval_size = interval.second - interval.first + 1;
-            if (interval_size == 1) {
+            if (const size_t interval_size = interval.second - interval.first + 1; interval_size == 1) {
                 result += translate_symbol(interval.first) + ",";
             } else if (interval_size == 2) {
                 result += translate_symbol(interval.first) + "," + translate_symbol(interval.second) + ",";
@@ -626,17 +677,16 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
 }
 
 StateSet Nfa::post(const StateSet& states, const Symbol symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
-    auto get_epsilon_closure = [&](const StateSet& states) {
-        StateSet closure{ states };
+    auto get_epsilon_closure = [&](const StateSet& source_states) {
+        StateSet closure{ source_states };
         std::queue<State> worklist;
-        for (const State state: states) {
+        for (const State state: source_states) {
             worklist.push(state);
         }
         while (!worklist.empty()) {
             const State state = worklist.front();
             worklist.pop();
-            auto move_it{ delta[state].find(EPSILON) };
-            if (move_it != delta[state].end()) {
+            if (auto move_it{ delta[state].find(EPSILON) }; move_it != delta[state].end()) {
                 for (const State target: move_it->targets) {
                     if (!closure.contains(target)) {
                         closure.insert(target);
@@ -870,7 +920,7 @@ Nfa Nfa::decode_utf8() const {
         if (is_nondet) {
             state_post.insert(symbol_post);
         } else {
-            state_post.emplace_back(std::move(symbol_post));
+            state_post.emplace_back(symbol_post);
         }
     };
 

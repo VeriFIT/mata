@@ -170,6 +170,10 @@ public:
         compute_epsilon_depths(); // Map depths to epsilon transitions.
     }
 
+    Segmentation(const Segmentation& other) = default;
+    Segmentation(Segmentation&& other) = default;
+    // Segmentation& operator=(const Segmentation& other) = default;
+    // Segmentation& operator=(Segmentation&& other) = default;
     /**
      * Get segmentation depths for ε-transitions.
      * @return Map of depths to lists of ε-transitions.
@@ -200,7 +204,7 @@ public:
     const VisitedEpsMap& get_visited_eps() const { return this->visited_eps; }
 
 private:
-    const std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
+    std::set<Symbol> epsilons; ///< Symbol for which to execute segmentation.
     /// Automaton to execute segmentation for. Must be a segment automaton (can be split into @p segments).
     const SegNfa& automaton;
     EpsilonDepthTransitions epsilon_depth_transitions{}; ///< Epsilon depths.
@@ -263,8 +267,8 @@ private:
 
     /**
      * Add states with non-epsilon transitions to the @p worklist.
-     * @param move[in] Move from current state.
-     * @param depth[in] Current depth.
+     * @param state_depth_pair[in] Current depth for a state.
+     * @param move[in] Move from the current state.
      * @param worklist[out] Worklist of state and depth pairs to process.
      */
     void add_transitions_to_worklist(const StateDepthTuple& state_depth_pair, const SymbolPost& move,
@@ -299,7 +303,7 @@ using NoodleWithEpsilonsCounter = std::vector<SegmentWithEpsilonsCounter>;
 /**
  * @brief segs_one_initial_final
  *
- * segments_one_initial_final[init, final] is the pointer to automaton created from one of
+ * segments_one_initial_final[init, final] is a pointer to an automaton created from one of
  * the segments such that init and final are one of the initial and final states of the segment
  * and the created automaton takes this segment, sets initial={init}, final={final}
  * and trims it; also segments_one_initial_final[unused_state, final] is used for the first
@@ -315,15 +319,40 @@ void segs_one_initial_final(
  * @brief Create noodles from segment automaton @p aut.
  *
  * Segment automaton is a chain of finite automata (segments) connected via ε-transitions.
- * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
+ * A noodle is a vector of pointers to a copy of the segments automata created as if there was exactly one ε-transition
  *  between each two consecutive segments.
  *
- * @param[in] automaton Segment automaton to noodlify.
+ * @param[in] aut Segment automaton to noodlify.
  * @param[in] epsilon Epsilon symbol to noodlify for.
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
  */
 std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+
+class Noodlification {
+private:
+    size_t index{ 0 };  
+    const SegNfa& aut;
+    Symbol epsilon;
+    bool include_empty;
+    const std::set<Symbol> epsilons;
+    Segmentation segmentation;
+    const std::vector<Nfa>& segments;
+    const Segmentation::EpsilonDepthTransitions& epsilon_depths;
+    const State unused_state;
+    size_t num_of_permutations;
+    size_t epsilon_depths_size;
+    std::map<std::pair<State, State>, std::shared_ptr<Nfa>> segments_one_initial_final{};
+
+    std::optional<Noodle> curr_noodle{ std::nullopt };
+    bool finished{ false };
+public:
+    Noodlification(const SegNfa& aut, Symbol epsilon, bool include_empty = false);
+
+    bool next();        
+
+    std::optional<Noodle> get_curr_noodle();
+};
 
 /**
  * @brief Create noodles from segment automaton @p aut.
@@ -332,7 +361,7 @@ std::vector<Noodle> noodlify(const SegNfa& aut, Symbol epsilon, bool include_emp
  * A noodle is a vector of pointers to copy of the segments automata created as if there was exactly one ε-transition
  *  between each two consecutive segments.
  *
- * @param[in] automaton Segment automaton to noodlify.
+ * @param[in] aut Segment automaton to noodlify.
  * @param[in] epsilons Epsilon symbols to noodlify for.
  * @param[in] include_empty Whether to also include empty noodles.
  * @return A list of all (non-empty) noodles.
@@ -410,14 +439,14 @@ struct TransducerNoodleElement {
     std::shared_ptr<Nfa> output_aut;
     unsigned output_index;
 
-    TransducerNoodleElement(std::shared_ptr<Nft> transducer, std::shared_ptr<Nfa> input_aut, unsigned input_index, std::shared_ptr<Nfa> output_aut, unsigned output_index)
-                : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
+    TransducerNoodleElement(const std::shared_ptr<Nft>& transducer, const std::shared_ptr<Nfa>& input_aut, const unsigned input_index, const std::shared_ptr<Nfa>& output_aut, const unsigned output_index)
+        : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
 
 std::vector<TransducerNoodle> noodlify_for_transducer(
-    std::shared_ptr<Nft> nft,
+    const std::shared_ptr<Nft>& nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
     const std::vector<std::shared_ptr<Nfa>>& output_automata,
     bool reduce_intersection = false

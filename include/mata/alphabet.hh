@@ -347,7 +347,7 @@ public:
 
     Symbol translate_symb(const std::string& str) override;
 
-    virtual Word translate_word(const WordName& word_name) const override;
+    Word translate_word(const WordName& word_name) const override;
 
     /**
      * @brief Add new symbol to the alphabet with the value of @c next_symbol_value.

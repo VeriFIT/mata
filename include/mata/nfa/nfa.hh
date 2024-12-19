@@ -181,7 +181,7 @@ public:
      * @return Set of reachable states.
      * TODO: with the new get_useful_states, it might be useless now.
      */
-    StateSet get_reachable_states() const;
+    StateSet get_reachable_states(const std::function<bool(State)> &filter = nullptr) const;
 
     /**
      * @brief Get set of terminating states.
@@ -198,7 +198,8 @@ public:
      *
      * @return BoolVector Bool vector whose ith value is true iff the state i is useful.
      */
-    BoolVector get_useful_states() const;
+    // BoolVector get_useful_states() const;
+    BoolVector get_useful_states(std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt) const;
 
     /**
      * @brief Structure for storing callback functions (event handlers) utilizing
@@ -218,9 +219,9 @@ public:
     /**
      * @brief Tarjan's SCC discover algorihm.
      *
-     * @param callback Callbacks class to instantiate callbacks for the Tarjan's algorithm.
+     * @param callback Callback class to instantiate callbacks for the Tarjan's algorithm.
      */
-    void tarjan_scc_discover(const TarjanDiscoverCallback& callback) const;
+    void tarjan_scc_discover(const TarjanDiscoverCallback& callback, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt) const;
 
     /**
      * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
@@ -942,6 +943,21 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alp
  *  is universal on the set of symbols from transitions of @p nfa_included.
  */
 std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const Nfa &nfa_excluded);
+
+
+
+    /**
+     * @brief Remove inaccessible (unreachable) and not co-accessible (non-terminating) states in-place.
+     *
+     * Remove states which are not accessible (unreachable; state is accessible when the state is the endpoint of a path
+     * starting from an initial state) or not co-accessible (non-terminating; state is co-accessible when the state is
+     * the starting point of a path ending in a final state).
+     *
+     * @param[out] state_renaming Mapping of trimmed states to new states.
+     * @return @c this after trimming.
+     */
+    // Nfa trimmed(const Nfa& nfa, StateRenaming* state_renaming = nullptr);
+    Nfa trimmed(const Nfa& nfa, StateRenaming* state_renaming = nullptr, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> initial_states = std::nullopt, std::optional<std::reference_wrapper<const utils::SparseSet<State>>> final_states = std::nullopt);
 
 } // namespace mata::nfa.
 
