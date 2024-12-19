@@ -1,5 +1,5 @@
 BUILD_DIR=build
-MAKE_FLAGS=-j 6
+MAKE_FLAGS=-j 12
 TEST_FLAGS=-j 50 --output-on-failure
 
 .PHONY: all debug debug-werror release release-werror coverage doc clean test test-coverage test-performance
