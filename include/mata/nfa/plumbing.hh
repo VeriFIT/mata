@@ -4,6 +4,8 @@
 #ifndef MATA_NFA_PLUMBING_HH_
 #define MATA_NFA_PLUMBING_HH_
 
+#include "mata/nfa/algorithms.hh"
+#include "mata/nfa/types.hh"
 #include "nfa.hh"
 #include "builder.hh"
 
@@ -35,8 +37,8 @@ inline void complement(
                                        { "minimize",  "false"}}) { *result = complement(aut, alphabet, params);
 }
 
-inline void minimize(Nfa* res, const Nfa &aut) { *res = minimize(aut); }
-
+inline void minimize(Nfa* res, const Nfa &aut, const ParameterMap& params = {{ "algorithm", "brzozowski"}}) { *res = minimize(aut, params); }
+ 
 inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr) {
     *result = determinize(aut, subset_map);
 }
