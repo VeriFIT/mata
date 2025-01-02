@@ -4,14 +4,12 @@
 #include <algorithm>
 #include <list>
 #include <unordered_set>
-#include <iterator>
 
 // MATA headers
 #include "mata/cntnfa/delta.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/cntnfa/cntnfa.hh"
 #include "mata/cntnfa/algorithms.hh"
-#include "mata/cntnfa/builder.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;

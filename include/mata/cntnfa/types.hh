@@ -8,7 +8,6 @@
 
 // Note: Temporary local includes for convenience.
 #include "../alphabet.hh"
-#include "../parser/parser.hh"
 
 #include <limits>
 

@@ -8,17 +8,11 @@
 //  fragile_revert).
 //#define _STATIC_STRUCTURES_
 
-#include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <memory>
-#include <limits>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
-#include <queue>
 
 // #include "mata/alphabet.hh"
 // #include "mata/parser/parser.hh"
@@ -32,11 +26,8 @@
 
 // Note: Temporary local includes for convenience.
 #include "../alphabet.hh"
-#include "../parser/parser.hh"
 #include "../utils/utils.hh"
 #include "../utils/ord-vector.hh"
-#include "../parser/inter-aut.hh"
-#include "../utils/synchronized-iterator.hh"
 #include "../utils/sparse-set.hh"
 #include "types.hh"
 #include "delta.hh"

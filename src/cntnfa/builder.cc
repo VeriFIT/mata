@@ -1,7 +1,6 @@
 // TODO: Insert header file.
 
 #include "mata/cntnfa/builder.hh"
-#include "mata/parser/mintermization.hh"
 
 #include <fstream>
 

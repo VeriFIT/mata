@@ -4,6 +4,8 @@
 #ifndef MATA_NFA_STRING_SOLVING_HH_
 #define MATA_NFA_STRING_SOLVING_HH_
 
+#include <memory>
+
 #include "mata/alphabet.hh"
 #include "delta.hh"
 #include "types.hh"

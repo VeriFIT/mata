@@ -4,12 +4,10 @@
 
 #include "mata/cntnfa/types.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/cntnfa/cntnfa.hh"
 #include "mata/cntnfa/delta.hh"
 
 
 #include <algorithm>
-#include <list>
 #include <iterator>
 #include <queue>
 
