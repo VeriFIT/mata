@@ -34,7 +34,7 @@ add_library(libmata STATIC
 	nft/operations.cc
 	nft/builder.cc
 	nft/strings.cc
-	cntnfa/nfa.cc
+	cntnfa/cntnfa.cc
 	cntnfa/inclusion.cc
 	cntnfa/universal.cc
 	cntnfa/complement.cc

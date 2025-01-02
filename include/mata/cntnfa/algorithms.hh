@@ -4,7 +4,7 @@
 #ifndef MATA_NFA_INTERNALS_HH_
 #define MATA_NFA_INTERNALS_HH_
 
-#include "nfa.hh"
+#include "cntnfa.hh"
 #include "mata/simlib/util/binary_relation.hh"
 
 /**

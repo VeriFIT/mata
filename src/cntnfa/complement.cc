@@ -2,8 +2,8 @@
  */
 
 // MATA headers
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/algorithms.hh"
+#include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/algorithms.hh"
 
 using namespace mata::nfa;
 using namespace mata::utils;

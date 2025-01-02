@@ -7,11 +7,11 @@
 #include <iterator>
 
 // MATA headers
-#include "mata/nfa/delta.hh"
+#include "mata/cntnfa/delta.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/algorithms.hh"
-#include "mata/nfa/builder.hh"
+#include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/algorithms.hh"
+#include "mata/cntnfa/builder.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using std::tie;

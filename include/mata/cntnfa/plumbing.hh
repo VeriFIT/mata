@@ -4,7 +4,7 @@
 #ifndef MATA_NFA_PLUMBING_HH_
 #define MATA_NFA_PLUMBING_HH_
 
-#include "nfa.hh"
+#include "cntnfa.hh"
 #include "builder.hh"
 
 using namespace mata::nfa::builder;

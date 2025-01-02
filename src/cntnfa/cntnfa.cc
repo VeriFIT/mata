@@ -8,8 +8,8 @@
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/algorithms.hh"
+#include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/algorithms.hh"
 #include <mata/simlib/explicit_lts.hh>
 
 using namespace mata::utils;

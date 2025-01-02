@@ -5,9 +5,9 @@
 #define MATA_NFA_STRING_SOLVING_HH_
 
 #include "mata/alphabet.hh"
-#include "mata/nfa/delta.hh"
-#include "mata/nfa/types.hh"
-#include "nfa.hh"
+#include "delta.hh"
+#include "types.hh"
+#include "cntnfa.hh"
 
 /**
  * NFA algorithms usable for solving string constraints.

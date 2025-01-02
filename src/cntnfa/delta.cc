@@ -2,10 +2,10 @@
  */
 // TODO: Add file header.
 
-#include "mata/nfa/types.hh"
+#include "mata/cntnfa/types.hh"
 #include "mata/utils/sparse-set.hh"
-#include "mata/nfa/nfa.hh"
-#include "mata/nfa/delta.hh"
+#include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/delta.hh"
 
 
 #include <algorithm>
