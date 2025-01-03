@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+#include <optional>
 
 // #include "mata/alphabet.hh"
 // #include "mata/parser/parser.hh"
