@@ -11,7 +11,7 @@
 
 #include <limits>
 
-namespace mata::nfa {
+namespace mata::cntnfa {
 
 extern const std::string TYPE_NFA;
 
@@ -131,15 +131,15 @@ struct Nfa; ///< A non-deterministic finite automaton.
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = Limits::max_symbol;
 
-} // namespace mata::nfa.
+} // namespace mata::cntnfa.
 
 // Hash specialization for CounterState.
 namespace std {
     template<>
-    struct hash<mata::nfa::CounterState> {
-        size_t operator()(const mata::nfa::CounterState& cs) const noexcept {
+    struct hash<mata::cntnfa::CounterState> {
+        size_t operator()(const mata::cntnfa::CounterState& cs) const noexcept {
             // Note: Hash the State (unsigned long).
-            return std::hash<mata::nfa::State>{}(cs.state);
+            return std::hash<mata::cntnfa::State>{}(cs.state);
         }
     };
 } // namespace std.

@@ -1,4 +1,4 @@
-/* nfa.cc -- operations for NFA
+/* cntnfa.cc -- operations for NFA
  */
 
 #include <algorithm>
@@ -11,14 +11,14 @@
 #include <mata/simlib/explicit_lts.hh>
 
 using namespace mata::utils;
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 using mata::Symbol;
 using mata::Word;
 using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-const std::string mata::nfa::TYPE_NFA = "NFA";
+const std::string mata::cntnfa::TYPE_NFA = "NFA";
 
 const State Limits::min_state;
 const State Limits::max_state;
@@ -65,7 +65,7 @@ namespace {
 
 void Nfa::remove_epsilon(const Symbol epsilon)
 {
-    *this = mata::nfa::remove_epsilon(*this, epsilon);
+    *this = mata::cntnfa::remove_epsilon(*this, epsilon);
 }
 
 StateSet Nfa::get_reachable_states() const {
@@ -400,14 +400,14 @@ bool Nfa::is_acyclic() const {
 bool Nfa::is_flat() const {
     bool flat = true;
 
-    mata::nfa::Nfa::TarjanDiscoverCallback callback {};
-    callback.scc_discover = [&](const std::vector<mata::nfa::State>& scc, const std::vector<mata::nfa::State>& tarjan_stack) -> bool {
+    mata::cntnfa::Nfa::TarjanDiscoverCallback callback {};
+    callback.scc_discover = [&](const std::vector<mata::cntnfa::State>& scc, const std::vector<mata::cntnfa::State>& tarjan_stack) -> bool {
         (void)tarjan_stack;
         
-        for(const mata::nfa::State& st : scc) {
+        for(const mata::cntnfa::State& st : scc) {
             bool one_input_visited = false;
-            for (const mata::nfa::SymbolPost& sp : this->delta[st]) {
-                for (const mata::nfa::State& tgt : scc) {
+            for (const mata::cntnfa::SymbolPost& sp : this->delta[st]) {
+                for (const mata::cntnfa::State& tgt : scc) {
                     if(sp.targets.contains(tgt)) {
                         if(one_input_visited) {
                             flat = false;
@@ -613,7 +613,7 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     return *this;
 }
 
-Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
+Nfa& Nfa::unite_nondet_with(const mata::cntnfa::Nfa& aut) {
     const size_t num_of_states{ this->num_of_states() };
     const size_t aut_num_of_states{ aut.num_of_states() };
     const size_t new_num_of_states{ num_of_states + aut_num_of_states };

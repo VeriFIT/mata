@@ -10,8 +10,8 @@
 /**
  * Concrete NFA implementations of algorithms, such as complement, inclusion, or universality checking.
  *
- * This is a separation of the implementation from the interface defined in mata::nfa.
- * Note, that in mata::nfa interface, there are particular dispatch functions calling
+ * This is a separation of the implementation from the interface defined in mata::cntnfa.
+ * Note, that in mata::cntnfa interface, there are particular dispatch functions calling
  * these function according to parameters provided by a user.
  * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
  * to check for universality based on antichain-based algorithm.
@@ -23,7 +23,7 @@
  *   4. Intersection/concatenation with epsilon transitions, or,
  *   5. Computing relation.
  */
-namespace mata::nfa::algorithms {
+namespace mata::cntnfa::algorithms {
 
 /**
  * Brzozowski minimization of automata (revert -> determinize -> revert -> determinize).
@@ -128,6 +128,6 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
-} // Namespace mata::nfa::algorithms.
+} // namespace mata::cntnfa::algorithms.
 
 #endif // MATA_NFA_INTERNALS_HH_

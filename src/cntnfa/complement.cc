@@ -1,14 +1,14 @@
-/* nfa-complement.cc -- NFA complement
+/* cntnfa-complement.cc -- NFA complement
  */
 
 // MATA headers
 #include "mata/cntnfa/cntnfa.hh"
 #include "mata/cntnfa/algorithms.hh"
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 using namespace mata::utils;
 
-Nfa mata::nfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols) {
+Nfa mata::cntnfa::algorithms::complement_classical(const Nfa& aut, const OrdVector<Symbol>& symbols) {
     return determinize(aut)
         .trim()
         .complement_deterministic(symbols);
@@ -25,11 +25,11 @@ Nfa algorithms::complement_brzozowski(const Nfa& aut, const OrdVector<Symbol>& s
     return result.complement_deterministic(symbols);
 }
 
-Nfa mata::nfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
-    return mata::nfa::complement(aut, alphabet.get_alphabet_symbols(), params);
+Nfa mata::cntnfa::complement(const Nfa& aut, const Alphabet& alphabet, const ParameterMap& params) {
+    return mata::cntnfa::complement(aut, alphabet.get_alphabet_symbols(), params);
 }
 
-Nfa mata::nfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
+Nfa mata::cntnfa::complement(const Nfa& aut, const mata::utils::OrdVector<mata::Symbol>& symbols, const ParameterMap& params) {
     // Setting the requested algorithm.
     decltype(algorithms::complement_classical)* algo = algorithms::complement_classical;
     if (!haskey(params, "algorithm")) {

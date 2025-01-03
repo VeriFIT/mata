@@ -1,4 +1,4 @@
-/* nfa.hh -- Nondeterministic finite automaton (over finite words).
+/* cntnfa.hh -- Nondeterministic finite automaton (over finite words) with counters.
  */
 
 #ifndef MATA_NFA_HH_
@@ -41,10 +41,10 @@
  *   2. Algorithms (operations, checks, tests),
  *   3. Constructions.
  *
- * Other algorithms are included in mata::nfa::Plumbing (simplified API for, e.g., binding)
- * and mata::nfa::algorithms (concrete implementations of algorithms, such as for complement).
+ * Other algorithms are included in mata::cntnfa::Plumbing (simplified API for, e.g., binding)
+ * and mata::cntnfa::algorithms (concrete implementations of algorithms, such as for complement).
  */
-namespace mata::nfa {
+namespace mata::cntnfa {
 
 /**
  * A struct representing an NFA.
@@ -757,7 +757,7 @@ Run encode_word(const Alphabet* alphabet, const std::vector<std::string>& input)
  * Get the set of symbols to work with during operations.
  * @param[in] shared_alphabet Optional alphabet shared between NFAs passed as an argument to a function.
  */
-utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
+utils::OrdVector<Symbol> get_symbols_to_work_with(const cntnfa::Nfa& nfa, const Alphabet* const shared_alphabet = nullptr);
 
 /**
  * @brief Get any arbitrary accepted word in the language difference of @p nfa_included without @p nfa_excluded.
@@ -776,21 +776,21 @@ utils::OrdVector<Symbol> get_symbols_to_work_with(const nfa::Nfa& nfa, const Alp
  */
 std::optional<Word> get_word_from_lang_difference(const Nfa &nfa_included, const Nfa &nfa_excluded);
 
-} // namespace mata::nfa.
+} // namespace mata::cntnfa.
 
 namespace std {
 template <>
-struct hash<mata::nfa::Transition> {
-	inline size_t operator()(const mata::nfa::Transition& trans) const {
-		size_t accum = std::hash<mata::nfa::State>{}(trans.source);
+struct hash<mata::cntnfa::Transition> {
+	inline size_t operator()(const mata::cntnfa::Transition& trans) const {
+		size_t accum = std::hash<mata::cntnfa::State>{}(trans.source);
 		accum = mata::utils::hash_combine(accum, trans.symbol);
 		accum = mata::utils::hash_combine(accum, trans.target);
 		return accum;
 	}
 };
 
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Transition& trans);
-std::ostream& operator<<(std::ostream& os, const mata::nfa::Nfa& nfa);
+std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Transition& trans);
+std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Nfa& nfa);
 } // namespace std.
 
 #endif /* MATA_NFA_HH_ */

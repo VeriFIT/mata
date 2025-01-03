@@ -23,7 +23,6 @@ add_library(libmata STATIC
 	nfa/delta.cc
 	nfa/operations.cc
 	nfa/builder.cc
-
 	nft/nft.cc
 	nft/inclusion.cc
 	nft/universal.cc

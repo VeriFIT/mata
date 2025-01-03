@@ -1,4 +1,4 @@
-/* nfa-strings.hh -- Operations on NFAs for string solving.
+/* cntnfa-strings.hh -- Operations on NFAs for string solving.
  */
 
 #ifndef MATA_NFA_STRING_SOLVING_HH_
@@ -16,12 +16,12 @@
  */
 namespace mata::strings {
 
-using Nfa = nfa::Nfa;
-using State = nfa::State;
-using StateSet = nfa::StateSet;
-using Transition = nfa::Transition;
-using ParameterMap = nfa::ParameterMap;
-using SymbolPost = nfa::SymbolPost;
+using Nfa = cntnfa::Nfa;
+using State = cntnfa::State;
+using StateSet = cntnfa::StateSet;
+using Transition = cntnfa::Transition;
+using ParameterMap = cntnfa::ParameterMap;
+using SymbolPost = cntnfa::SymbolPost;
 
 /**
  * Class mapping states to the shortest words accepted by languages of the states.

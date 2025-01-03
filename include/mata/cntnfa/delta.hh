@@ -16,7 +16,7 @@
 
 #include <iterator>
 
-namespace mata::nfa {
+namespace mata::cntnfa {
 
 /// A single transition in Delta represented as a triple(source, symbol, target).
 struct Transition {
@@ -97,7 +97,7 @@ public:
 
     std::vector<Target>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<Target>::iterator find(State s) { return targets.find(s); }
-}; // class mata::nfa::SymbolPost.
+}; // class mata::cntnfa::SymbolPost.
 
 /**
  * @brief A data structure representing possible transitions over different symbols from a source state.
@@ -569,6 +569,6 @@ public:
     bool operator==(const const_iterator& other) const;
 }; // class Delta::Transitions::const_iterator.
 
-} // namespace mata::nfa.
+} // namespace mata::cntnfa.
 
 #endif //MATA_DELTA_HH

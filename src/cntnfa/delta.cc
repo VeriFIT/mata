@@ -12,7 +12,7 @@
 #include <queue>
 
 using namespace mata::utils;
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 using mata::Symbol;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
@@ -513,7 +513,7 @@ StatePost::Moves::Moves(
 
 void Delta::add_symbols_to(OnTheFlyAlphabet& target_alphabet) const {
     size_t aut_num_of_states{ num_of_states() };
-    for (mata::nfa::State state{ 0 }; state < aut_num_of_states; ++state) {
+    for (mata::cntnfa::State state{ 0 }; state < aut_num_of_states; ++state) {
         for (const SymbolPost& move: state_post(state)) {
             target_alphabet.update_next_symbol_value(move.symbol);
             target_alphabet.try_add_new_symbol(std::to_string(move.symbol), move.symbol);
@@ -528,7 +528,7 @@ OrdVector<Symbol> Delta::get_used_symbols() const {
 
     //below are different variant, with different data structures for accumulating symbols,
     //that then must be converted to an OrdVector
-    //measured are times with "mata::nfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
+    //measured are times with "mata::cntnfa::get_used_symbols speed, harder", "[.profiling]" now on line 104 of nfa-profiling.cc
 
     //WITH VECTOR (4.434 s)
     return get_used_symbols_vec();

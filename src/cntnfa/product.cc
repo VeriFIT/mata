@@ -1,4 +1,4 @@
-/* nfa-intersection.cc -- Intersection of NFAs
+/* cntnfa-intersection.cc -- Intersection of NFAs
  */
 
 // MATA headers
@@ -8,7 +8,7 @@
 #include <functional>
 
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 
 namespace {
 
@@ -20,10 +20,10 @@ using InvertedProductStorage = std::vector<State>;
 
 } // Anonymous namespace.
 
-namespace mata::nfa {
+namespace mata::cntnfa {
 
-//TODO: move this method to nfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
-Nfa mata::nfa::algorithms::product(
+//TODO: move this method to cntnfa.hh? It is something one might want to use (e.g. for union, inclusion, equivalence of DFAs).
+Nfa mata::cntnfa::algorithms::product(
         const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State)>&& final_condition,
         const Symbol first_epsilon, ProductMap *product_map) {
 
@@ -225,4 +225,4 @@ Nfa mata::nfa::algorithms::product(
     return product;
 } // intersection().
 
-} // namespace mata::nfa.
+} // namespace mata::cntnfa.

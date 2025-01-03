@@ -1,4 +1,4 @@
-/* nfa-incl.cc -- NFA language inclusion
+/* cntnfa-incl.cc -- NFA language inclusion
  */
 
 // MATA headers
@@ -6,11 +6,11 @@
 #include "mata/cntnfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 using namespace mata::utils;
 
 /// naive language inclusion check (complementation + intersection + emptiness)
-bool mata::nfa::algorithms::is_included_naive(
+bool mata::cntnfa::algorithms::is_included_naive(
         const Nfa &smaller,
         const Nfa &bigger,
         const Alphabet *const alphabet,//TODO: this should not be needed, likewise for equivalence
@@ -41,7 +41,7 @@ bool mata::nfa::algorithms::is_included_naive(
 
 /// language inclusion check using Antichains
 // TODO, what about to construct the separator from this?
-bool mata::nfa::algorithms::is_included_antichains(
+bool mata::cntnfa::algorithms::is_included_antichains(
     const Nfa&             smaller,
     const Nfa&             bigger,
     const Alphabet* const  alphabet, //TODO: this parameter is not used
@@ -278,7 +278,7 @@ namespace {
 }
 
 // The dispatching method that calls the correct one based on parameters
-bool mata::nfa::is_included(
+bool mata::cntnfa::is_included(
         const Nfa &smaller,
         const Nfa &bigger,
         Run *cex,
@@ -288,7 +288,7 @@ bool mata::nfa::is_included(
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
 
-bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
+bool mata::cntnfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {
     //TODO: add comment on what this is doing, what is __func__ ...
     AlgoType algo{ set_algorithm(std::to_string(__func__), params) };
@@ -303,6 +303,6 @@ bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *a
     return compute_equivalence(lhs, rhs, alphabet, algo);
 }
 
-bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
+bool mata::cntnfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const ParameterMap& params) {
     return are_equivalent(lhs, rhs, nullptr, params);
 }

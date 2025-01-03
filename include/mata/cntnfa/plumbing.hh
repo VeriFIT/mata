@@ -7,7 +7,7 @@
 #include "cntnfa.hh"
 #include "builder.hh"
 
-using namespace mata::nfa::builder;
+using namespace mata::cntnfa::builder;
 
 /**
  * Simplified NFA API, used in binding to call NFA algorithms.
@@ -15,7 +15,7 @@ using namespace mata::nfa::builder;
  * In particular, this mostly includes operations and checks, that do not return Automaton,
  * but instead take resulting automaton as pointer (e.g. `void f(Nfa* result, const Nfa& lhs, const Nfa& rhs)`).
  */
-namespace mata::nfa::plumbing {
+namespace mata::cntnfa::plumbing {
 
 inline void get_elements(StateSet* element_set, const BoolVector& bool_vec) {
     element_set->clear();
@@ -91,6 +91,6 @@ inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsil
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
-} // namespace mata::nfa::Plumbing.
+} // namespace mata::cntnfa::Plumbing.
 
 #endif // MATA_NFA_PLUMBING_HH_

@@ -12,9 +12,9 @@
 /**
  * Namespace providing options to build NFAs.
  */
-namespace mata::nfa::builder {
+namespace mata::cntnfa::builder {
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 
 using NameStateMap = std::unordered_map<std::string, State>;
 
@@ -92,6 +92,6 @@ Nfa parse_from_mata(const std::string& nfa_in_mata);
  */
 Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
-} // namespace mata::nfa::builder.
+} // namespace mata::cntnfa::builder.
 
 #endif //LIBMATA_BUILDER_HH

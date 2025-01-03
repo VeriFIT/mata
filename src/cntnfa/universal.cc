@@ -1,4 +1,4 @@
-/* nfa-universal.cc -- NFA universality
+/* cntnfa-universal.cc -- NFA universality
  */
 
 // MATA headers
@@ -6,7 +6,7 @@
 #include "mata/cntnfa/algorithms.hh"
 #include "mata/utils/sparse-set.hh"
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 using namespace mata::utils;
 
 //TODO: this could be merged with inclusion, or even removed, universality could be implemented using inclusion,
@@ -14,7 +14,7 @@ using namespace mata::utils;
 
 
 /// naive universality check (complementation + emptiness)
-bool mata::nfa::algorithms::is_universal_naive(
+bool mata::cntnfa::algorithms::is_universal_naive(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
@@ -26,7 +26,7 @@ bool mata::nfa::algorithms::is_universal_naive(
 
 
 /// universality check using Antichains
-bool mata::nfa::algorithms::is_universal_antichains(
+bool mata::cntnfa::algorithms::is_universal_antichains(
 	const Nfa&         aut,
 	const Alphabet&    alphabet,
 	Run*               cex)
@@ -131,7 +131,7 @@ bool mata::nfa::algorithms::is_universal_antichains(
 } // }}}
 
 // The dispatching method that calls the correct one based on parameters.
-bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
+bool mata::cntnfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const ParameterMap& params) const {
 	// setting the default algorithm
 	decltype(algorithms::is_universal_naive)* algo = algorithms::is_universal_naive;
 	if (!haskey(params, "algorithm")) {
@@ -151,6 +151,6 @@ bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, Run* cex, const Para
 	return algo(*this, alphabet, cex);
 } // is_universal()
 
-bool mata::nfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
+bool mata::cntnfa::Nfa::is_universal(const Alphabet& alphabet, const ParameterMap& params) const {
     return this->is_universal(alphabet, nullptr, params);
 }

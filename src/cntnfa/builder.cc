@@ -4,8 +4,8 @@
 
 #include <fstream>
 
-using namespace mata::nfa;
-using mata::nfa::Nfa;
+using namespace mata::cntnfa;
+using mata::cntnfa::Nfa;
 using mata::Symbol;
 
 Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
@@ -173,10 +173,10 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 } // construct().
 
 void builder::construct(
-        mata::nfa::Nfa *result,
+        mata::cntnfa::Nfa *result,
         const mata::IntermediateAut &inter_aut,
         mata::Alphabet *alphabet,
-        mata::nfa::builder::NameStateMap *state_map
+        mata::cntnfa::builder::NameStateMap *state_map
 ) {
     *result = construct(inter_aut, alphabet, state_map);
 }

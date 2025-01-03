@@ -1,13 +1,13 @@
-/* nfa-concatenation.cc -- Concatenation of NFAs
+/* cntnfa-concatenation.cc -- Concatenation of NFAs
  */
 
 // MATA headers
 #include "mata/cntnfa/cntnfa.hh"
 #include "mata/cntnfa/algorithms.hh"
 
-using namespace mata::nfa;
+using namespace mata::cntnfa;
 
-namespace mata::nfa {
+namespace mata::cntnfa {
 
 Nfa concatenate(const Nfa& lhs, const Nfa& rhs, bool use_epsilon,
                 StateRenaming* lhs_state_renaming, StateRenaming* rhs_state_renaming) {
@@ -21,8 +21,8 @@ Nfa& Nfa::concatenate(const Nfa& aut) {
     };
 
     // copy the information about aut to save the case when this is the same object as aut.
-    utils::SparseSet<mata::nfa::State> aut_initial = aut.initial;
-    utils::SparseSet<mata::nfa::State> aut_final = aut.final;
+    utils::SparseSet<mata::cntnfa::State> aut_initial = aut.initial;
+    utils::SparseSet<mata::cntnfa::State> aut_final = aut.final;
     size_t aut_n = aut.num_of_states();
 
     this->delta.allocate(n);
@@ -131,4 +131,4 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
     return result;
 } // concatenate_eps().
-} // Namespace mata::nfa.
+} // namespace mata::cntnfa.
