@@ -11,6 +11,10 @@
 
 #include <limits>
 
+// Use this for undefined ID or index.
+#define MAX_SIZE_T (std::numeric_limits<size_t>::max())
+#define UNDEFINED_ID MAX_SIZE_T
+
 namespace mata::cntnfa {
 
 extern const std::string TYPE_NFA;
@@ -18,68 +22,66 @@ extern const std::string TYPE_NFA;
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;
 
-/// State with a counter (@c State @c state and @c void* @c counter_ptr).
-struct CounterState {
+/// State with an annotation (@c State @c state and @c size_t @c annotation_id).
+/// TODO: Move this to the annotation header file.
+struct AnnotationState {
     State state; ///< Automaton state.
-    void* counter_ptr; ///< Pointer to the counter table when transitioning to a state.
+    size_t annotation_id; ///< Unique ID for the position in the vector of transition annotations.
 
-    CounterState() : state(), counter_ptr(nullptr) {}
+    AnnotationState() : state(), annotation_id(UNDEFINED_ID) {}
+    AnnotationState(const State state, size_t annotation_id) : state(state), annotation_id(annotation_id) {} // NOLINT(*-explicit-constructor)
 
-    CounterState(const CounterState&) = default;
-    CounterState(CounterState&&) = default;
-    CounterState& operator=(const CounterState&) = default;
-    CounterState& operator=(CounterState&&) = default;
+    AnnotationState(const AnnotationState&) = default;
+    AnnotationState(AnnotationState&&) = default;
+    AnnotationState& operator=(const AnnotationState&) = default;
+    AnnotationState& operator=(AnnotationState&&) = default;
 
-    CounterState(const State& state): state{ state }, counter_ptr(nullptr) {} // NOLINT(*-explicit-constructor)
-    CounterState(State&& state): state{ state }, counter_ptr(nullptr) {} // NOLINT(*-explicit-constructor)
-    CounterState& operator=(const State& other) { state = other; return *this; }
-    CounterState& operator=(State&& other) { state = other; return *this; }
-
-    CounterState(const State state, void* counter_ptr) : state(state), counter_ptr(counter_ptr) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(const State& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(State&& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
 
     auto operator<=>(const State& other) const { return state <=> other; }
     bool operator==(const State other) const { return state == other; }
-    auto operator<=>(const CounterState&) const = default;
-    bool operator==(const CounterState& other) const { return state == other; }
-
+    auto operator<=>(const AnnotationState&) const = default;
+    bool operator==(const AnnotationState& other) const { return state == other; }
 
     operator State() const { return state; } // NOLINT(*-explicit-constructor)
 };
 
-/// TODO: Can be very slow! Change this later.
-class CounterStateSet : public mata::utils::OrdVector<CounterState> {
+/// Set of states with annotation.
+/// TODO: Move this to the annotation header file.
+class AnnotationStateSet : public mata::utils::OrdVector<AnnotationState> {
 public:
-    CounterStateSet() = default;
+    AnnotationStateSet() = default;
 
-    CounterStateSet(State state) { // NOLINT(*-explicit-constructor)
-        this->push_back(CounterState(state));
+    AnnotationStateSet(State state) { // NOLINT(*-explicit-constructor)
+        this->push_back(AnnotationState(state));
     }
-    CounterStateSet(StateSet& state_set) { // NOLINT(*-explicit-constructor)
+    AnnotationStateSet(StateSet& state_set) { // NOLINT(*-explicit-constructor)
         for (const State& state: state_set) {
             this->push_back(state);
         }
     }
-    CounterStateSet(StateSet&& state_set) { // NOLINT(*-explicit-constructor)
+    AnnotationStateSet(StateSet&& state_set) { // NOLINT(*-explicit-constructor)
         for (const State& state: state_set) {
             this->push_back(state);
         }
     }
-    CounterStateSet& operator=(const StateSet& state_set) {
-        for (const State& state: state_set) {
-            this->push_back(state);
-        }
-        return *this;
-    }
-    CounterStateSet& operator=(StateSet&& state_set) {
+    AnnotationStateSet& operator=(const StateSet& state_set) {
         for (const State& state: state_set) {
             this->push_back(state);
         }
         return *this;
     }
-    CounterStateSet(const CounterStateSet& counter_state_set) = default;
-    CounterStateSet(CounterStateSet&& counter_state_set) noexcept = default;
-    CounterStateSet& operator=(const CounterStateSet& counter_state_set) = default;
-    CounterStateSet& operator=(CounterStateSet&& counter_state_set) noexcept = default;
+    AnnotationStateSet& operator=(StateSet&& state_set) {
+        for (const State& state: state_set) {
+            this->push_back(state);
+        }
+        return *this;
+    }
+    AnnotationStateSet(const AnnotationStateSet& counter_state_set) = default;
+    AnnotationStateSet(AnnotationStateSet&& counter_state_set) noexcept = default;
+    AnnotationStateSet& operator=(const AnnotationStateSet& counter_state_set) = default;
+    AnnotationStateSet& operator=(AnnotationStateSet&& counter_state_set) noexcept = default;
 
     // FIXME: This is severely limiting. Basically, this cannot ever be used in production unless explicitly requested.
     //  Should this be explicit? Probably no, but some iteration over CounterStateSet which would behave as a StateSet would be good.
@@ -94,9 +96,9 @@ public:
 };
 
 // Note: Added for better readability.
-using Target = CounterState;
+using Target = AnnotationState;
 // Note: Added for better readability.
-using TargetSet = CounterStateSet;
+using TargetSet = AnnotationStateSet;
 
 struct Run {
     Word word{}; ///< A finite-length word.
@@ -136,10 +138,10 @@ constexpr Symbol EPSILON = Limits::max_symbol;
 // Hash specialization for CounterState.
 namespace std {
     template<>
-    struct hash<mata::cntnfa::CounterState> {
-        size_t operator()(const mata::cntnfa::CounterState& cs) const noexcept {
+    struct hash<mata::cntnfa::AnnotationState> {
+        size_t operator()(const mata::cntnfa::AnnotationState& as) const noexcept {
             // Note: Hash the State (unsigned long).
-            return std::hash<mata::cntnfa::State>{}(cs.state);
+            return std::hash<mata::cntnfa::State>{}(as.state);
         }
     };
 } // namespace std.
