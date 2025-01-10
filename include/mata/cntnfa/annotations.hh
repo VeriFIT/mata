@@ -129,7 +129,6 @@ public:
 // Store all possible annotation types in a variant.
 using TransitionAnnotationVariant = std::variant<CounterIncrement, CounterTest>;
 
-// TransitionAnnotationsCollection should be similar to Delta? Probably yes. Ask about this approach.
 class TransitionAnnotationsCollection {
 private:
     std::vector<std::vector<TransitionAnnotationVariant>> annotations;
@@ -137,10 +136,30 @@ private:
 public:
     TransitionAnnotationsCollection() = default;
 
+    /**
+     * Create a new annotation set and return its ID (index).
+     */
     size_t createAnnotations();
+
+    /**
+     * Add an operation to the set at the given annotations_id.
+     */
     void addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
+
+    /**
+     * Retrieve the set of operations for the given annotations_id.
+     */
     const std::vector<TransitionAnnotationVariant>& getAnnotations(size_t annotations_id) const;
+
+    /**
+     * Get the total number of annotation sets.
+     */
     size_t size() const;
+
+    /**
+     * Clear all annotations.
+     */
+    void clear();
 };
 
 } // namespace mata::cntnfa.

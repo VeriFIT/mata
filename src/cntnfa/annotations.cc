@@ -48,4 +48,8 @@ size_t TransitionAnnotationsCollection::size() const {
     return annotations.size();
 }
 
+void TransitionAnnotationsCollection::clear() {
+    annotations.clear();
+}
+
 } // namespace mata::cntnfa.
