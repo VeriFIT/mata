@@ -22,84 +22,6 @@ extern const std::string TYPE_NFA;
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;
 
-/// State with an annotation (@c State @c state and @c size_t @c annotation_id).
-/// TODO: Move this to the annotation header file.
-struct AnnotationState {
-    State state; ///< Automaton state.
-    size_t annotation_id; ///< Unique ID for the position in the vector of transition annotations.
-
-    AnnotationState() : state(), annotation_id(UNDEFINED_ID) {}
-    AnnotationState(const State state, size_t annotation_id) : state(state), annotation_id(annotation_id) {} // NOLINT(*-explicit-constructor)
-
-    AnnotationState(const AnnotationState&) = default;
-    AnnotationState(AnnotationState&&) = default;
-    AnnotationState& operator=(const AnnotationState&) = default;
-    AnnotationState& operator=(AnnotationState&&) = default;
-
-    AnnotationState(const State& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
-    AnnotationState(State&& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
-
-    auto operator<=>(const State& other) const { return state <=> other; }
-    bool operator==(const State other) const { return state == other; }
-    auto operator<=>(const AnnotationState&) const = default;
-    bool operator==(const AnnotationState& other) const { return state == other; }
-
-    operator State() const { return state; } // NOLINT(*-explicit-constructor)
-};
-
-/// Set of states with annotation.
-/// TODO: Move this to the annotation header file.
-class AnnotationStateSet : public mata::utils::OrdVector<AnnotationState> {
-public:
-    AnnotationStateSet() = default;
-
-    AnnotationStateSet(State state) { // NOLINT(*-explicit-constructor)
-        this->push_back(AnnotationState(state));
-    }
-    AnnotationStateSet(StateSet& state_set) { // NOLINT(*-explicit-constructor)
-        for (const State& state: state_set) {
-            this->push_back(state);
-        }
-    }
-    AnnotationStateSet(StateSet&& state_set) { // NOLINT(*-explicit-constructor)
-        for (const State& state: state_set) {
-            this->push_back(state);
-        }
-    }
-    AnnotationStateSet& operator=(const StateSet& state_set) {
-        for (const State& state: state_set) {
-            this->push_back(state);
-        }
-        return *this;
-    }
-    AnnotationStateSet& operator=(StateSet&& state_set) {
-        for (const State& state: state_set) {
-            this->push_back(state);
-        }
-        return *this;
-    }
-    AnnotationStateSet(const AnnotationStateSet& counter_state_set) = default;
-    AnnotationStateSet(AnnotationStateSet&& counter_state_set) noexcept = default;
-    AnnotationStateSet& operator=(const AnnotationStateSet& counter_state_set) = default;
-    AnnotationStateSet& operator=(AnnotationStateSet&& counter_state_set) noexcept = default;
-
-    // FIXME: This is severely limiting. Basically, this cannot ever be used in production unless explicitly requested.
-    //  Should this be explicit? Probably no, but some iteration over CounterStateSet which would behave as a StateSet would be good.
-    //  But that is already happening, no?
-    operator StateSet() const { // NOLINT(*-explicit-constructor)
-        StateSet state_set;
-        for (const auto& target : *this) {
-            state_set.push_back(target.state);
-        }
-        return state_set;
-    }
-};
-
-// Note: Added for better readability.
-using Target = AnnotationState;
-// Note: Added for better readability.
-using TargetSet = AnnotationStateSet;
-
 struct Run {
     Word word{}; ///< A finite-length word.
     std::vector<State> path{}; ///< A finite-length path through automaton.
@@ -134,16 +56,5 @@ struct Nfa; ///< A non-deterministic finite automaton.
 constexpr Symbol EPSILON = Limits::max_symbol;
 
 } // namespace mata::cntnfa.
-
-// Hash specialization for CounterState.
-namespace std {
-    template<>
-    struct hash<mata::cntnfa::AnnotationState> {
-        size_t operator()(const mata::cntnfa::AnnotationState& as) const noexcept {
-            // Note: Hash the State (unsigned long).
-            return std::hash<mata::cntnfa::State>{}(as.state);
-        }
-    };
-} // namespace std.
 
 #endif //MATA_TYPES_HH

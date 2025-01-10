@@ -13,6 +13,7 @@
 #include "../utils/synchronized-iterator.hh"
 #include "../alphabet.hh"
 #include "types.hh"
+#include "annotations.hh"
 
 #include <iterator>
 
