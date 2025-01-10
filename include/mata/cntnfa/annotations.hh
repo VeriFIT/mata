@@ -3,8 +3,9 @@
 #ifndef ANNOTATIONS_HH
 #define ANNOTATIONS_HH
 
-#include <memory>
+#include <variant>
 
+#include "mata/utils/ord-vector.hh"
 #include "types.hh"
 #include "counters.hh"
 
@@ -13,18 +14,18 @@ namespace mata::cntnfa {
 /// State with an annotation (@c State @c state and @c size_t @c annotation_id).
 struct AnnotationState {
     State state; ///< Automaton state.
-    size_t annotation_id; ///< Unique ID for the position in the vector of transition annotations.
+    size_t annotations_id; ///< Unique ID for the position in the vector of transition annotations collection.
 
-    AnnotationState() : state(), annotation_id(UNDEFINED_ID) {}
-    AnnotationState(const State state, size_t annotation_id) : state(state), annotation_id(annotation_id) {} // NOLINT(*-explicit-constructor)
+    AnnotationState() : state(), annotations_id(UNDEFINED_ID) {}
+    AnnotationState(const State state, size_t annotations_id) : state(state), annotations_id(annotations_id) {} // NOLINT(*-explicit-constructor)
 
     AnnotationState(const AnnotationState&) = default;
     AnnotationState(AnnotationState&&) = default;
     AnnotationState& operator=(const AnnotationState&) = default;
     AnnotationState& operator=(AnnotationState&&) = default;
 
-    AnnotationState(const State& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
-    AnnotationState(State&& state): state{ state }, annotation_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(const State& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(State&& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
 
     auto operator<=>(const State& other) const { return state <=> other; }
     bool operator==(const State other) const { return state == other; }
@@ -94,7 +95,7 @@ public:
     virtual ~TransitionAnnotation() = default;
 
     virtual void execute(CounterSet& counters) const = 0;
-    virtual bool test(const CounterSet& counters);
+    virtual bool test(const CounterSet& counters) = 0;
 };
 
 /// Class for incrementing and decrementing a counter by its ID.
@@ -112,12 +113,35 @@ public:
 };
 /// TODO: Add CounterTest class.
 
-using TransitionAnnotationPtr = std::unique_ptr<TransitionAnnotation>;
-using TransitionAnnotations = std::vector<TransitionAnnotationPtr>;
+class CounterTest : public TransitionAnnotation {
+private:
+    size_t counter_id; ///< The ID of the counter to test.
+    CounterValue expected_value; ///< Expected value for testing.
 
-// TODO: Try to recreate this like a class to encapsulate the logic.
+public:
+    CounterTest() = default;
+    CounterTest(size_t counter_id, CounterValue expected_value) : counter_id(counter_id), expected_value(expected_value) {}
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) override;
+};
+
+// Store all possible annotation types in a variant.
+using TransitionAnnotationVariant = std::variant<CounterIncrement, CounterTest>;
+
 // TransitionAnnotationsCollection should be similar to Delta? Probably yes. Ask about this approach.
-using TransitionAnnotationsCollection = std::vector<TransitionAnnotations>;
+class TransitionAnnotationsCollection {
+private:
+    std::vector<std::vector<TransitionAnnotationVariant>> annotations;
+
+public:
+    TransitionAnnotationsCollection() = default;
+
+    size_t createAnnotations();
+    void addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
+    const std::vector<TransitionAnnotationVariant>& getAnnotations(size_t annotations_id) const;
+    size_t size() const;
+};
 
 } // namespace mata::cntnfa.
 

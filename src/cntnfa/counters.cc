@@ -53,7 +53,7 @@ const CounterRegister& CounterRegisterSet::getCounter(size_t id) const {
     return counters[id];
 }
 
-size_t CounterRegisterSet::size() {
+size_t CounterRegisterSet::size() const {
     return counters.size();
 }
 

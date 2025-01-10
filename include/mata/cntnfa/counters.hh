@@ -66,7 +66,7 @@ public:
     CounterRegister& operator[](size_t id) { return counters[id]; }
     const CounterRegister& operator[](size_t id) const { return counters[id]; }
 
-    size_t size();
+    size_t size() const;
     // Note: Custom debug output. This should be removed later.
     void print() const;
 
