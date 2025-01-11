@@ -22,6 +22,7 @@ add_executable(tests
 		nft/nft-profiling.cc
 		nft/nft-plumbing.cc
 		nft/strings.cc
+		cntnfa/delta.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
