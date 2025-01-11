@@ -129,12 +129,12 @@ public:
 // Store all possible annotation types in a variant.
 using TransitionAnnotationVariant = std::variant<CounterIncrement, CounterTest>;
 
-class TransitionAnnotationsCollection {
+class AnnotationCollection {
 private:
     std::vector<std::vector<TransitionAnnotationVariant>> annotations;
 
 public:
-    TransitionAnnotationsCollection() = default;
+    AnnotationCollection() : annotations{} {}
 
     /**
      * Create a new annotation set and return its ID (index).

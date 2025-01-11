@@ -1,15 +1,13 @@
 /* delta.cc -- Operations on Delta.
  */
-// TODO: Add file header.
-
-#include "mata/cntnfa/types.hh"
-#include "mata/utils/sparse-set.hh"
-#include "mata/cntnfa/delta.hh"
-
 
 #include <algorithm>
 #include <iterator>
 #include <queue>
+
+#include "mata/cntnfa/types.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/cntnfa/delta.hh"
 
 using namespace mata::utils;
 using namespace mata::cntnfa;

@@ -568,7 +568,8 @@ Nfa mata::cntnfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     }
 
     // Construct the automaton without epsilon transitions.
-    Nfa result{ Delta{}, aut.initial, aut.final, aut.alphabet };
+    Nfa result{ Delta{}, AnnotationCollection{}, 
+                aut.initial, aut.final, aut.alphabet };
     for (const auto& state_closure_pair : eps_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.

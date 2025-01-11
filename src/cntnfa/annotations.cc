@@ -18,6 +18,16 @@ void CounterIncrement::execute(CounterSet& counters) const {
     }
 }
 
+bool CounterIncrement::test(const CounterSet& counters) {
+    (void)counters;
+    return true;
+}
+
+void CounterTest::execute(CounterSet& counters) const {
+    (void)counters;
+    return;
+}
+
 bool CounterTest::test(const CounterSet& counters) {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterTest: Invalid counter ID.");
@@ -25,30 +35,30 @@ bool CounterTest::test(const CounterSet& counters) {
     return counters[counter_id].value == expected_value;
 }
 
-size_t TransitionAnnotationsCollection::createAnnotations() {
+size_t AnnotationCollection::createAnnotations() {
     annotations.emplace_back();
     return annotations.size() - 1;
 }
 
-void TransitionAnnotationsCollection::addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
+void AnnotationCollection::addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
     if (annotations_id >= annotations.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
     annotations[annotations_id].push_back(annotation);
 }
 
-const std::vector<TransitionAnnotationVariant>& TransitionAnnotationsCollection::getAnnotations(size_t annotations_id) const {
+const std::vector<TransitionAnnotationVariant>& AnnotationCollection::getAnnotations(size_t annotations_id) const {
     if (annotations_id >= annotations.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
     return annotations[annotations_id];
 }
 
-size_t TransitionAnnotationsCollection::size() const {
+size_t AnnotationCollection::size() const {
     return annotations.size();
 }
 
-void TransitionAnnotationsCollection::clear() {
+void AnnotationCollection::clear() {
     annotations.clear();
 }
 

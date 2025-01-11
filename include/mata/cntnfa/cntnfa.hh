@@ -1,8 +1,8 @@
-/* cntnfa.hh -- Nondeterministic finite automaton (over finite words) with counters.
+/* cntnfa.hh -- Nondeterministic finite automaton (over finite words) with annotations.
  */
 
-#ifndef MATA_NFA_HH_
-#define MATA_NFA_HH_
+#ifndef MATA_CNTNFA_HH
+#define MATA_CNTNFA_HH
 
 // Static data structures, such as search stack, in algorithms. Might have some effect on some algorithms (like
 //  fragile_revert).
@@ -15,23 +15,13 @@
 #include <vector>
 #include <optional>
 
-// #include "mata/alphabet.hh"
-// #include "mata/parser/parser.hh"
-// #include "mata/utils/utils.hh"
-// #include "mata/utils/ord-vector.hh"
-// #include "mata/parser/inter-aut.hh"
-// #include "mata/utils/synchronized-iterator.hh"
-// #include "mata/utils/sparse-set.hh"
-// #include "types.hh"
-// #include "delta.hh"
-
-// Note: Temporary local includes for convenience.
-#include "../alphabet.hh"
-#include "../utils/utils.hh"
-#include "../utils/ord-vector.hh"
-#include "../utils/sparse-set.hh"
-#include "types.hh"
-#include "delta.hh"
+#include "mata/alphabet.hh"
+#include "mata/utils/utils.hh"
+#include "mata/utils/ord-vector.hh"
+#include "mata/utils/sparse-set.hh"
+#include "mata/cntnfa/annotations.hh"
+#include "mata/cntnfa/types.hh"
+#include "mata/cntnfa/delta.hh"
 
 /**
  * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -57,6 +47,7 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     Delta delta;
+    AnnotationCollection annotation_collection; // Note: Added annotation collection for storing NFA transition annotations.
     utils::SparseSet<State> initial{};
     utils::SparseSet<State> final{};
 
@@ -71,9 +62,11 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    explicit Nfa(Delta delta = {}, utils::SparseSet<State> initial_states = {},
-                 utils::SparseSet<State> final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+    explicit Nfa(Delta delta = {}, AnnotationCollection annotation_collection = {},
+                 utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {},
+                 Alphabet* alphabet = nullptr)
+        : delta(std::move(delta)), annotation_collection(std::move(annotation_collection)),
+          initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
@@ -82,7 +75,8 @@ public:
      */
     explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
                  StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), initial(initial_states), final(final_states), alphabet(alphabet) {}
+        : delta(num_of_states), annotation_collection(),
+          initial(initial_states), final(final_states), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -90,7 +84,8 @@ public:
     Nfa(const Nfa& other) = default;
 
     Nfa(Nfa&& other) noexcept
-        : delta{ std::move(other.delta) }, initial{ std::move(other.initial) }, final{ std::move(other.final) },
+        : delta{ std::move(other.delta) }, annotation_collection{ std::move(other.annotation_collection) },
+          initial{ std::move(other.initial) }, final{ std::move(other.final) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
     Nfa& operator=(const Nfa& other) = default;
@@ -793,4 +788,4 @@ std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Transition& trans
 std::ostream& operator<<(std::ostream& os, const mata::cntnfa::Nfa& nfa);
 } // namespace std.
 
-#endif /* MATA_NFA_HH_ */
+#endif /* MATA_CNTNFA_HH */

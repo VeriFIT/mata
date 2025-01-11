@@ -3,19 +3,13 @@
 #ifndef MATA_DELTA_HH
 #define MATA_DELTA_HH
 
-// #include "mata/utils/sparse-set.hh"
-// #include "mata/utils/synchronized-iterator.hh"
-// #include "mata/alphabet.hh"
-// #include "types.hh"
-
-// Note: Temporary local includes for convenience.
-#include "../utils/sparse-set.hh"
-#include "../utils/synchronized-iterator.hh"
-#include "../alphabet.hh"
-#include "types.hh"
-#include "annotations.hh"
-
 #include <iterator>
+
+#include "mata/utils/sparse-set.hh"
+#include "mata/utils/synchronized-iterator.hh"
+#include "mata/alphabet.hh"
+#include "mata/cntnfa/types.hh"
+#include "mata/cntnfa/annotations.hh"
 
 namespace mata::cntnfa {
 
