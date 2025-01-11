@@ -17,7 +17,7 @@
 
 namespace mata::cntnfa {
 
-extern const std::string TYPE_NFA;
+extern const std::string TYPE_CNTNFA;
 
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;

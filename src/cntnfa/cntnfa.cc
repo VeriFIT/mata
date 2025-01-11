@@ -18,7 +18,7 @@ using mata::BoolVector;
 
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
-const std::string mata::cntnfa::TYPE_NFA = "NFA";
+const std::string mata::cntnfa::TYPE_CNTNFA = "CNTNFA";
 
 const State Limits::min_state;
 const State Limits::max_state;

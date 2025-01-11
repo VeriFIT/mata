@@ -12,9 +12,9 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
     Nfa aut;
     assert(nullptr != alphabet);
 
-    if (parsec.type != TYPE_NFA) {
+    if (parsec.type != TYPE_CNTNFA) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 TYPE_NFA + "\"");
+                                 TYPE_CNTNFA + "\"");
     }
 
     bool remove_state_map = false;
@@ -99,7 +99,7 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
     if (!inter_aut.is_nfa()) {
         throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" +
-                                 TYPE_NFA + "\"");
+                                 TYPE_CNTNFA + "\"");
     }
 
     NameStateMap tmp_state_map;

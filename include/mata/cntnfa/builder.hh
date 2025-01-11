@@ -3,11 +3,10 @@
 #ifndef LIBMATA_BUILDER_HH
 #define LIBMATA_BUILDER_HH
 
-#include "cntnfa.hh"
-#include "mata/parser/inter-aut.hh"
-
 #include <filesystem>
 
+#include "cntnfa.hh"
+#include "mata/parser/inter-aut.hh"
 
 /**
  * Namespace providing options to build NFAs.
