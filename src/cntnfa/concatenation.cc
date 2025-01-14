@@ -100,7 +100,7 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     for (const auto& lhs_final_state: lhs.final) {
         for (const auto& rhs_initial_state: rhs.initial) {
             result.delta.add(lhs_final_state, epsilon,
-                             _rhs_states_renaming[rhs_initial_state]);
+                             Target(_rhs_states_renaming[rhs_initial_state]));
         }
     }
 
@@ -119,7 +119,7 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
             {
                 result.delta.add(_rhs_states_renaming[rhs_state],
                                  rhs_move.symbol,
-                                 _rhs_states_renaming[rhs_state_to]);
+                                 Target(_rhs_states_renaming[rhs_state_to]));
             }
         }
     }
@@ -131,4 +131,5 @@ Nfa algorithms::concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& ep
     if (rhs_state_renaming != nullptr) { *rhs_state_renaming = _rhs_states_renaming; }
     return result;
 } // concatenate_eps().
+
 } // namespace mata::cntnfa.

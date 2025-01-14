@@ -24,6 +24,8 @@ struct AnnotationState {
     AnnotationState& operator=(const AnnotationState&) = default;
     AnnotationState& operator=(AnnotationState&&) = default;
 
+    AnnotationState& operator++() { ++state; return *this; }
+
     AnnotationState(const State& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
     AnnotationState(State&& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
 
@@ -35,7 +37,7 @@ struct AnnotationState {
     operator State() const { return state; } // NOLINT(*-explicit-constructor)
 };
 
-/// Set of states with annotation.
+/// TODO: Write a comment for doxygen.
 class AnnotationStateSet : public mata::utils::OrdVector<AnnotationState> {
 public:
     AnnotationStateSet() = default;
@@ -46,6 +48,11 @@ public:
     AnnotationStateSet(StateSet& state_set) { // NOLINT(*-explicit-constructor)
         for (const State& state: state_set) {
             this->push_back(state);
+        }
+    }
+    AnnotationStateSet(const StateSet& state_set) {
+        for (const State& state : state_set) {
+            this->push_back(AnnotationState(state));
         }
     }
     AnnotationStateSet(StateSet&& state_set) { // NOLINT(*-explicit-constructor)

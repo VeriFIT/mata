@@ -6,6 +6,7 @@
 #include <iterator>
 
 // MATA headers
+#include "mata/cntnfa/annotations.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/cntnfa/cntnfa.hh"
 #include <mata/simlib/explicit_lts.hh>
@@ -529,8 +530,8 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
     for (const State orig_initial_state: initial) {
         const StatePost& moves{ delta.state_post(orig_initial_state) };
         for (const auto& transitions: moves) {
-            for (const State state_to: transitions.targets) {
-                delta.add(new_initial_state, transitions.symbol, state_to);
+            for (const Target target: transitions.targets) {
+                delta.add(new_initial_state, transitions.symbol, target);
             }
         }
         if (final[orig_initial_state]) { final.insert(new_initial_state); }
@@ -541,7 +542,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
 
 void Nfa::unify_final() {
     if (final.empty() || final.size() == 1) { return; }
-    const State new_final_state{ add_state() };
+    const Target new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
         const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
         for (const auto& transitions: transitions_to) {

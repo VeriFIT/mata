@@ -126,26 +126,26 @@ namespace {
         return result;
     }
 
-    void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
-        StateSet tmp_targets;           // help set to store elements to remove
+    void remove_covered_state(const TargetSet& covering_set, const State remove, Nfa& nfa) {
+        TargetSet tmp_targets; // help set to store elements to remove
         auto delta_begin = nfa.delta[remove].begin();
         auto remove_size = nfa.delta[remove].size();
-        for (size_t i = 0; i < remove_size; i++) {        // remove trans from covered state
+        for (size_t i = 0; i < remove_size; i++) { // remove trans from covered state
             tmp_targets = delta_begin->targets;
-            for (const State target: tmp_targets) {
+            for (const Target target: tmp_targets) {
                 nfa.delta.remove(remove, delta_begin->symbol, target);
             }
         }
 
         auto remove_transitions = nfa.delta.get_transitions_to(remove);
         for (const auto& move: remove_transitions) {                                // transfer transitions from covered state to covering set
-            for (const State switch_target: covering_set) {
+            for (const Target switch_target: covering_set) {
                 nfa.delta.add(move.source, move.symbol, switch_target);
             }
             nfa.delta.remove(move);
         }
 
-        // check final  and initial states
+        // check final and initial states
         nfa.final.erase(remove);
         if (nfa.initial.contains(remove)) {
             nfa.initial.erase(remove);
@@ -306,7 +306,7 @@ namespace {
                 if (add) {
                     result.delta.mutable_state_post(Sid).insert(SymbolPost(currentSymbol, Tid));
                 } else {
-                    for (State switch_target: covering_indexes[Tid]){
+                    for (Target switch_target: covering_indexes[Tid]){
                             result.delta.add(Sid, currentSymbol, switch_target);
                     }
                 }
@@ -499,7 +499,7 @@ bool mata::cntnfa::Nfa::make_complete(const Alphabet* const alphabet, const std:
 bool mata::cntnfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::optional<State> sink_state) {
     bool transition_added{ false };
     const size_t num_of_states{ this->num_of_states() };
-    const State sink_state_val{ sink_state.value_or(num_of_states) };
+    const Target sink_state_val{ sink_state.value_or(num_of_states) };
 
     OrdVector<Symbol> used_symbols{};
     for (State state{ 0 }; state < num_of_states; ++state) {
@@ -577,7 +577,7 @@ Nfa mata::cntnfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
             for (const SymbolPost& move : aut.delta[eps_cl_state]) {
                 if (move.symbol == epsilon) continue;
                 // TODO: this could be done more efficiently if we had a better add method
-                for (State tgt_state : move.targets) {
+                for (Target tgt_state : move.targets) {
                     result.delta.add(src_state, move.symbol, tgt_state);
                 }
             }
@@ -715,9 +715,9 @@ Nfa mata::cntnfa::simple_revert(const Nfa& aut) {
     const size_t num_of_states{ aut.num_of_states() };
     result.delta.allocate(num_of_states);
 
-    for (State sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
+    for (Target sourceState{ 0 }; sourceState < num_of_states; ++sourceState) {
         for (const SymbolPost &transition: aut.delta[sourceState]) {
-            for (const State targetState: transition.targets) {
+            for (const Target targetState: transition.targets) {
                 result.delta.add(targetState, transition.symbol, sourceState);
             }
         }
@@ -869,7 +869,7 @@ bool mata::cntnfa::Nfa::is_prfx_in_lang(const Run& run) const {
 }
 
 bool mata::cntnfa::Nfa::is_lang_empty(Run* cex) const {
-    //TOOD: hot fix for performance reasons for TACAS.
+    //  TODO: hot fix for performance reasons for TACAS.
     // Perhaps make the get_useful_states return a witness on demand somehow.
     if (!cex) {
         return is_lang_empty_scc();
@@ -1279,7 +1279,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
     std::unordered_map<StateSet, State> subset_map{};
 
     Nfa nfa_complete{};
-    const State sink_state{ nfa_complete.add_state() };
+    const Target sink_state{ nfa_complete.add_state() };
     nfa_complete.final.insert(sink_state);
     const State new_initial{ nfa_complete.add_state() };
     nfa_complete.initial.insert(new_initial);
@@ -1316,7 +1316,7 @@ std::optional<mata::Word> Nfa::get_word_from_complement(const Alphabet* alphabet
             const std::vector<Iterator>& orig_symbol_posts{ synchronized_iterator.get_current() };
             const Symbol symbol_advanced_to{ (*orig_symbol_posts.begin())->symbol };
             StateSet orig_targets{ synchronized_iterator.unify_targets() };
-            State target_macrostate;
+            Target target_macrostate;
 
             if (symbols_it == symbols_end || symbol_advanced_to <= *symbols_it) {
                 // Continue with the determinization of the NFA.
@@ -1430,7 +1430,7 @@ Nfa mata::cntnfa::lang_difference(
                 std::make_pair(subset_set_included_ptr, subset_set_excluded_ptr), nfa_lang_difference.num_of_states()
             ) };
             subset_macrostate_map_ptr = target_macrostate_it.operator->();
-            const State target_macrostate{ target_macrostate_it->second };
+            const Target target_macrostate{ target_macrostate_it->second };
             nfa_lang_difference.delta.add(macrostate, symbol_advanced_to, target_macrostate);
             if (macrostate_inserted) {
                 // 'sync_it_excluded_advanced' is true iff there is a transition in the excluded NFA over the symbol

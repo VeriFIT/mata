@@ -384,15 +384,18 @@ public:
      */
     size_t num_of_transitions() const;
 
-    void add(State state_from, Symbol symbol, State state_to);
-    void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
-    void remove(State src, Symbol symb, State tgt);
-    void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
+    void add(State source, Symbol symbol, Target target);
+    void add(State source, Symbol symbol, State target);
+    void add(const Transition& transition) { add(transition.source, transition.symbol, transition.target); }
+
+    void remove(State source, Symbol symbol, Target target);
+    void remove(const Transition& transition) { remove(transition.source, transition.symbol, transition.target); }
 
     /**
      * Check whether @c Delta contains a passed transition.
      */
-    bool contains(State src, Symbol symb, State tgt) const;
+    bool contains(State source, Symbol symbol, Target target) const;
+
     /**
      * Check whether @c Delta contains a transition passed as a triple.
      */
@@ -430,11 +433,12 @@ public:
     /**
      * @brief Add transitions to multiple destinations
      *
-     * @param state_from From
-     * @param symbol Symbol
-     * @param states Set of states to
+     * @param source Source state
+     * @param symbol Transition symbol
+     * @param targets Set of target states
      */
-    void add(const State state_from, const Symbol symbol, const StateSet& states);
+    void add(const State source, const Symbol symbol, const TargetSet& targets);
+    void add(const State source, const Symbol symbol, const StateSet& targets);
 
     using const_iterator = std::vector<StatePost>::const_iterator;
     const_iterator cbegin() const { return state_posts_.cbegin(); }
@@ -506,7 +510,7 @@ private:
 /**
  * @brief Iterator over transitions represented as @c Transition instances.
  *
- * It iterates over triples (State source, Symbol symbol, State target).
+ * It iterates over triples (State source, Symbol symbol, Target target).
  */
 class Delta::Transitions {
 public:

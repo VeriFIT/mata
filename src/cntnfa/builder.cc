@@ -82,7 +82,7 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
         State src_state = get_state_name(body_line[0]);
         Symbol symbol = alphabet->translate_symb(body_line[1]);
-        State tgt_state = get_state_name(body_line[2]);
+        Target tgt_state = get_state_name(body_line[2]);
 
         aut.delta.add(src_state, symbol, tgt_state);
     }
@@ -140,7 +140,7 @@ Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* a
 
         State src_state = get_state_name(trans.first.name);
         Symbol symbol = alphabet->translate_symb(trans.second.children[0].node.name);
-        State tgt_state = get_state_name(trans.second.children[1].node.name);
+        Target tgt_state = get_state_name(trans.second.children[1].node.name);
 
         aut.delta.add(src_state, symbol, tgt_state);
     }
@@ -186,7 +186,7 @@ Nfa builder::create_single_word_nfa(const std::vector<Symbol>& word) {
     Nfa nfa{ word_size + 1, { 0 }, { word_size } };
 
     for (State state{ 0 }; state < word_size; ++state) {
-        nfa.delta.add(state, word[state], state + 1);
+        nfa.delta.add(state, word[state], Target(state + 1));
     }
     return nfa;
 }
@@ -199,7 +199,7 @@ Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, mata::
     Nfa nfa{ word_size + 1, { 0 }, { word_size }, alphabet };
 
     for (State state{ 0 }; state < word_size; ++state) {
-        nfa.delta.add(state, alphabet->translate_symb(word[state]), state + 1);
+        nfa.delta.add(state, alphabet->translate_symb(word[state]), Target(state + 1));
     }
     return nfa;
 }
@@ -211,7 +211,7 @@ Nfa builder::create_empty_string_nfa() {
 Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
     Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
     for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
-        nfa.delta.add(0, symbol, 0);
+        nfa.delta.add(0, symbol, Target(0));
     }
     return nfa;
 }
