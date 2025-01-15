@@ -121,10 +121,11 @@ public:
     /**
      * @brief Add the @p annotation to the annotation set with @p annotations_id index.
      *
-     * @param[in] annotations_id The index of annotation set.= to insert annotation.
+     * @param[in] annotations_id The index of annotation set to insert.
      * @param[in] annotation The transition annotation to insert.
+     * @return The index of annotation set for this annotation.
      */
-    void add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
+    size_t add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
 
     /**
      * @brief Get the total number of annotation sets in annotation collection.
@@ -139,7 +140,7 @@ public:
      * @param[in] annotations_id The index of annotation set in annotation collection.
      * @return The annotation set with @p annotations_id index.
      */
-    const std::vector<TransitionAnnotationVariant>& get_annotation_set(size_t annotations_id) const;
+    const OrdVector<TransitionAnnotationVariant>& get_annotation_set(size_t annotations_id) const;
 
     /**
      * Unify initial states into a single new initial state.

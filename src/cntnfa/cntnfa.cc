@@ -7,6 +7,7 @@
 
 // MATA headers
 #include "mata/cntnfa/annotations.hh"
+#include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/cntnfa/cntnfa.hh"
 #include <mata/simlib/explicit_lts.hh>
@@ -587,22 +588,25 @@ size_t Nfa::num_of_states() const {
     });
 }
 
-/// TODO: Rewrite this to match the add_state() function.
 size_t Nfa::create_annotation_set() {
-    return annotation_collection.createAnnotations();
+    const size_t num_of_annotation_sets{ this->num_of_annotation_sets() };
+    annotation_collection.allocate(num_of_annotation_sets + 1);
+    return num_of_annotation_sets;
 }
 
-/// TODO: Rewrite this to match the add_state(State state) function.
-void Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
-    annotation_collection.addAnnotation(annotations_id, annotation);
+size_t Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
+    if (annotations_id >= annotation_collection.num_of_annotation_sets()) {
+        annotation_collection.allocate(annotations_id + 1);
+    }
+    annotation_collection[annotations_id].insert(annotation);
+    return annotations_id;
 }
 
-/// TODO: Rewrite this to match the num_of_states() function.
 size_t Nfa::num_of_annotation_sets() const {
-    return annotation_collection.size();
+    return annotation_collection.num_of_annotation_sets();
 }
 
-const std::vector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
+const OrdVector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
     return annotation_collection.getAnnotations(annotations_id);
 }
 

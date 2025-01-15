@@ -47,14 +47,19 @@ void AnnotationCollection::addAnnotation(size_t annotations_id, const Transition
     annotations[annotations_id].push_back(annotation);
 }
 
-const std::vector<TransitionAnnotationVariant>& AnnotationCollection::getAnnotations(size_t annotations_id) const {
+const OrdVector<TransitionAnnotationVariant>& AnnotationCollection::getAnnotations(size_t annotations_id) const {
     if (annotations_id >= annotations.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
     return annotations[annotations_id];
 }
 
-size_t AnnotationCollection::size() const {
+void AnnotationCollection::allocate(const size_t num_of_annotation_sets) {
+    assert(num_of_annotation_sets >= this->size());
+    annotations.resize(num_of_annotation_sets);
+}
+
+size_t AnnotationCollection::num_of_annotation_sets() const {
     return annotations.size();
 }
 

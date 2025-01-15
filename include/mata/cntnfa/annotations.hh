@@ -9,6 +9,8 @@
 #include "types.hh"
 #include "counters.hh"
 
+using namespace mata::utils;
+
 namespace mata::cntnfa {
 
 /// State with an annotation (@c State @c state and @c size_t @c annotation_id).
@@ -112,13 +114,22 @@ private:
     CounterValue increment_value; ///< The value to increment (can be negative for decrement).
 
 public:
-    CounterIncrement() = default;
+    CounterIncrement() : counter_id(UNDEFINED_ID), increment_value(0) {}
     CounterIncrement(size_t counter_id, CounterValue increment_value) : counter_id(counter_id), increment_value(increment_value) {}
+
+    bool operator==(const CounterIncrement& other) const {
+        return counter_id == other.counter_id && increment_value == other.increment_value;
+    }
+    auto operator<=>(const CounterIncrement& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+            return cmp;
+        }
+        return increment_value <=> other.increment_value;
+    }
 
     void execute(CounterSet& counters) const override;
     bool test(const CounterSet& counters) override;
 };
-/// TODO: Add CounterTest class.
 
 class CounterTest : public TransitionAnnotation {
 private:
@@ -126,22 +137,48 @@ private:
     CounterValue expected_value; ///< Expected value for testing.
 
 public:
-    CounterTest() = default;
-    CounterTest(size_t counter_id, CounterValue expected_value) : counter_id(counter_id), expected_value(expected_value) {}
+    CounterTest() : counter_id(UNDEFINED_ID), expected_value(0) {}
+    CounterTest(size_t counter_id, CounterValue expected_value)
+        : counter_id(counter_id), expected_value(expected_value) {}
+
+    bool operator==(const CounterTest& other) const {
+        return counter_id == other.counter_id && expected_value == other.expected_value;
+    }
+    auto operator<=>(const CounterTest& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+            return cmp;
+        }
+        return expected_value <=> other.expected_value;
+    }
 
     void execute(CounterSet& counters) const override;
     bool test(const CounterSet& counters) override;
 };
 
-// Store all possible annotation types in a variant.
+/*  Store all possible annotation types in a variant.
+    Note: All types in TransitionAnnotationVariant must implement comparison operators
+    (e.g., operator==, operator<=>) to ensure proper usage in containers requiring ordering.  */
 using TransitionAnnotationVariant = std::variant<CounterIncrement, CounterTest>;
 
 class AnnotationCollection {
 private:
-    std::vector<std::vector<TransitionAnnotationVariant>> annotations;
+    std::vector<OrdVector<TransitionAnnotationVariant>> annotations;
 
 public:
     AnnotationCollection() : annotations{} {}
+
+    OrdVector<TransitionAnnotationVariant>& operator[](size_t annotations_id) {
+        if (annotations_id >= annotations.size()) {
+            throw std::out_of_range("Annotation ID is out of range.");
+        }
+        return annotations[annotations_id];
+    }
+    const OrdVector<TransitionAnnotationVariant>& operator[](size_t annotations_id) const {
+        if (annotations_id >= annotations.size()) {
+            throw std::out_of_range("Annotation ID is out of range.");
+        }
+        return annotations[annotations_id];
+    }
 
     /**
      * Create a new annotation set and return its ID (index).
@@ -156,12 +193,18 @@ public:
     /**
      * Retrieve the set of operations for the given annotations_id.
      */
-    const std::vector<TransitionAnnotationVariant>& getAnnotations(size_t annotations_id) const;
+    const OrdVector<TransitionAnnotationVariant>& getAnnotations(size_t annotations_id) const;
+
+    /**
+     * Allocate annotation sets up to num_of_annotation_sets sets, creating an empty set for yet unallocated set.
+     * num_of_annotation_sets have to be at least size() + 1.
+     */
+    void allocate(const size_t num_of_annotation_sets);
 
     /**
      * Get the total number of annotation sets.
      */
-    size_t size() const;
+    size_t num_of_annotation_sets() const;
 
     /**
      * Clear all annotations.
