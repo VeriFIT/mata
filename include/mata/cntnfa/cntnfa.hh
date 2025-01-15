@@ -109,7 +109,37 @@ public:
      * This includes the initial and final states as well as states in the transition relation.
      * @return The number of states.
      */
-     size_t num_of_states() const;
+    size_t num_of_states() const;
+
+    /**
+     * @brief Create an annotation set in the collection of annotations.
+     *
+     * @return The index of annotation set.
+     */
+    size_t create_annotation_set();
+
+    /**
+     * @brief Add the @p annotation to the annotation set with @p annotations_id index.
+     *
+     * @param[in] annotations_id The index of annotation set.= to insert annotation.
+     * @param[in] annotation The transition annotation to insert.
+     */
+    void add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
+
+    /**
+     * @brief Get the total number of annotation sets in annotation collection.
+     *
+     * @return The number of annotation sets.
+     */
+    size_t num_of_annotation_sets() const;
+
+    /**
+     * @brief Get the annotation from @p annotations_id index.
+     *
+     * @param[in] annotations_id The index of annotation set in annotation collection.
+     * @return The annotation set with @p annotations_id index.
+     */
+    const std::vector<TransitionAnnotationVariant>& get_annotation_set(size_t annotations_id) const;
 
     /**
      * Unify initial states into a single new initial state.
@@ -273,6 +303,7 @@ public:
      * @return automaton in DOT format
      */
     std::string print_to_dot() const;
+
     /**
      * @brief Prints the automaton to the output stream in DOT format
      */
@@ -287,6 +318,7 @@ public:
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     std::string print_to_mata() const;
+
     /**
      * @brief Prints the automaton to the output stream in mata format
      *

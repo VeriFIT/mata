@@ -587,8 +587,28 @@ size_t Nfa::num_of_states() const {
     });
 }
 
+/// TODO: Rewrite this to match the add_state() function.
+size_t Nfa::create_annotation_set() {
+    return annotation_collection.createAnnotations();
+}
+
+/// TODO: Rewrite this to match the add_state(State state) function.
+void Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
+    annotation_collection.addAnnotation(annotations_id, annotation);
+}
+
+/// TODO: Rewrite this to match the num_of_states() function.
+size_t Nfa::num_of_annotation_sets() const {
+    return annotation_collection.size();
+}
+
+const std::vector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
+    return annotation_collection.getAnnotations(annotations_id);
+}
+
 void Nfa::clear() {
     delta.clear();
+    annotation_collection.clear();
     initial.clear();
     final.clear();
 }
