@@ -35,25 +35,6 @@ bool CounterTest::test(const CounterSet& counters) {
     return counters[counter_id].value == expected_value;
 }
 
-size_t AnnotationCollection::createAnnotations() {
-    annotations.emplace_back();
-    return annotations.size() - 1;
-}
-
-void AnnotationCollection::addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
-    if (annotations_id >= annotations.size()) {
-        throw std::out_of_range("Invalid annotation ID.");
-    }
-    annotations[annotations_id].push_back(annotation);
-}
-
-const OrdVector<TransitionAnnotationVariant>& AnnotationCollection::getAnnotations(size_t annotations_id) const {
-    if (annotations_id >= annotations.size()) {
-        throw std::out_of_range("Invalid annotation ID.");
-    }
-    return annotations[annotations_id];
-}
-
 void AnnotationCollection::allocate(const size_t num_of_annotation_sets) {
     assert(num_of_annotation_sets >= this->size());
     annotations.resize(num_of_annotation_sets);

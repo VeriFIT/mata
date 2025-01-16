@@ -181,21 +181,6 @@ public:
     }
 
     /**
-     * Create a new annotation set and return its ID (index).
-     */
-    size_t createAnnotations();
-
-    /**
-     * Add an operation to the set at the given annotations_id.
-     */
-    void addAnnotation(size_t annotations_id, const TransitionAnnotationVariant& annotation);
-
-    /**
-     * Retrieve the set of operations for the given annotations_id.
-     */
-    const OrdVector<TransitionAnnotationVariant>& getAnnotations(size_t annotations_id) const;
-
-    /**
      * Allocate annotation sets up to num_of_annotation_sets sets, creating an empty set for yet unallocated set.
      * num_of_annotation_sets have to be at least size() + 1.
      */

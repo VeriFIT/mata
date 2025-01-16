@@ -607,7 +607,10 @@ size_t Nfa::num_of_annotation_sets() const {
 }
 
 const OrdVector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
-    return annotation_collection.getAnnotations(annotations_id);
+    if (annotations_id >= annotation_collection.num_of_annotation_sets()) {
+        throw std::out_of_range("Invalid annotation ID.");
+    }
+    return annotation_collection[annotations_id];
 }
 
 void Nfa::clear() {
