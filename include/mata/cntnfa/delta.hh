@@ -53,6 +53,9 @@ public:
 
     SymbolPost() = default;
     explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
+
+    SymbolPost(Symbol symbol, Target target) : symbol{ symbol }, targets{ target } {}
+    SymbolPost(Symbol symbol, TargetSet targets) : symbol{ symbol }, targets{ std::move(targets) } {}
     SymbolPost(Symbol symbol, State state_to) : symbol{ symbol }, targets{ state_to } {}
     SymbolPost(Symbol symbol, StateSet states_to) : symbol{ symbol }, targets{ std::move(states_to) } {}
 
