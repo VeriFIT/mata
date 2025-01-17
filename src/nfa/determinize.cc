@@ -11,7 +11,7 @@ using namespace mata::utils;
 using namespace mata::nfa;
 using mata::Symbol;
 
-Nfa mata::nfa::determinize(
+Nfa mata::nfa::algorithms::determinize_classic(
     const Nfa &aut, std::unordered_map<StateSet, State> *subset_map,
     std::optional<std::function<bool(const Nfa &, const State, const StateSet &)>> macrostate_discover)
 {
@@ -102,7 +102,7 @@ Nfa mata::nfa::determinize(
     return result;
 }
 
-Nfa mata::nfa::determinize_boost(Nfa &aut, std::unordered_map<BoostSet, State> *subset_map,
+Nfa mata::nfa::algorithms::determinize_boost(Nfa &aut, std::unordered_map<BoostSet, State> *subset_map,
 std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover)
 {
     using BoostSet = mata::utils::BoostVector;
@@ -219,4 +219,42 @@ std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostat
         }
     }
     return result;
+}
+
+
+Nfa mata::nfa::determinize(
+    const Nfa &aut, 
+    std::unordered_map<StateSet, State> *subset_map,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover,
+    const ParameterMap& params)
+{
+    if (!haskey(params, "algorithm"))
+        {
+            throw std::runtime_error(
+                                    "Determinize requires setting the \"algo\" key in the \"params\" argument; "
+                                    "received: " +
+                                    std::to_string(params));
+        }
+
+    const std::string &str_algo = params.at("algorithm");
+
+    if(str_algo == "classic")
+    {
+        return algorithms::determinize_classic(aut, subset_map, macrostate_discover);
+    }
+    else if(str_algo == "boost")
+    {
+        if(subset_map != nullptr)
+        {
+            std::unordered_map<BoostSet, State> subset_map_boost{};
+            return algorithms::determinize_boost(const_cast<Nfa&>(aut), &subset_map_boost);
+        }
+
+        else return algorithms::determinize_boost(const_cast<Nfa&>(aut));
+    }
+    else
+    {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " received an unknown value of the \"algo\" key: " + str_algo);
+    }
 }

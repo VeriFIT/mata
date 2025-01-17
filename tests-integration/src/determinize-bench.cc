@@ -42,12 +42,12 @@ int main(int argc, char *argv[])
     mata::nfa::plumbing::determinize(&det, aut);
     TIME_END(determinize);
 
-    Nfa det_boost;
-    TIME_BEGIN(determinize_boost);
-    // > START OF PROFILED CODE
-    // Only determinize_boost and its callees will be measured
-    mata::nfa::plumbing::determinize_boost(&det_boost, aut);
-    TIME_END(determinize_boost);
+    // Nfa det_boost;
+    // TIME_BEGIN(determinize_boost);
+    // // > START OF PROFILED CODE
+    // // Only determinize_boost and its callees will be measured
+    // mata::nfa::plumbing::determinize_boost(&det_boost, aut);
+    // TIME_END(determinize_boost);
 
 
     return EXIT_SUCCESS;

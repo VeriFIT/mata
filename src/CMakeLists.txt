@@ -11,6 +11,7 @@ add_library(libmata STATIC
 	re2parser.cc
 	nfa/nfa.cc
 	nfa/inclusion.cc
+	nfa/determinize.cc
 	nfa/universal.cc
 	nfa/complement.cc
 	nfa/product.cc

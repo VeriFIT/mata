@@ -31,25 +31,6 @@
 #include "types.hh"
 #include "delta.hh"
 
-// Debug macro, remove later
-#define BREAKPOINT(code) do{\
-    std::cout << "reached breakpoint " << code << std::endl;\
-    if(err_code == code)\
-    {\
-        std::cout << "exiting at breakpoint " << code << std::endl;\
-        return aut;\
-    }\
-} while(0);
-
-// Another one
-#define BREAKPOINT_UNIFY_TARGETS(code) do{\
-    std::cout << "reached breakpoint " << code << std::endl;\
-    if(err_code == code)\
-    {\
-        std::cout << "exiting at breakpoint " << code << std::endl;\
-        return {};\
-    }\
-} while(0);\
 
 /**
  * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -636,7 +617,7 @@ Nfa complement(const Nfa& aut, const utils::OrdVector<Symbol>& symbols,
 Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzozowski" } });
 
 /**
- * @brief Determinize automaton.
+ * @brief Determinize automaton. Calls the correct method based on the dispatcher
  *
  * @param[in] aut Automaton to determinize.
  * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
@@ -644,21 +625,15 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzo
  *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
  *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
  *  determinization should stop and return only the determinized NFA constructed so far.
+ * @param[in] params Optional parameters to control the determinization algorithm: "classic", "boost" (Default: "classic").
  * @return Determinized automaton.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
 Nfa determinize(
-    const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
-    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
-
-/**
- * @brief Version of determinize that uses the Boost library.
- * 
- * @param aut Input non-deterministic automaton.
- * @return Output deterministic automaton.
- */
-Nfa determinize_boost(Nfa& aut, std::unordered_map<BoostSet, State> *subset_map = nullptr,
-    std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover = std::nullopt);
+    const Nfa& aut, 
+    std::unordered_map<StateSet, State> *subset_map = nullptr,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt,
+    const ParameterMap& params = { { "algorithm", "classic" } });
 
 /**
  * @brief Reduce the size of the automaton.

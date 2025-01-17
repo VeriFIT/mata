@@ -133,6 +133,32 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
+/**
+ * @brief Determinize automaton.
+ *
+ * @param[in] aut Automaton to determinize.
+ * @param[out] subset_map Map that maps sets of states of input automaton to states of determinized automaton.
+ * @param[in] macrostate_discover Callback event handler for discovering a new macrostate for the first time. The
+ *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
+ *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
+ *  determinization should stop and return only the determinized NFA constructed so far.
+ * @return Determinized automaton.
+ * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
+ */
+Nfa determinize_classic(
+    const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
+    std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
+
+/**
+ * @brief Version of determinize that uses the Boost library.
+ * 
+ * @param aut Input non-deterministic automaton.
+ * @return Output deterministic automaton.
+ */
+Nfa determinize_boost(
+    Nfa& aut, std::unordered_map<BoostSet, State> *subset_map = nullptr,
+    std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover = std::nullopt);
+
 } // Namespace mata::nfa::algorithms.
 
 #endif // MATA_NFA_INTERNALS_HH_

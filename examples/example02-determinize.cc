@@ -48,31 +48,6 @@ int main() {
     std::unordered_map<StateSet, State> subset_map;
     Nfa determ = determinize(aut, &subset_map);
 
-    // Boost part of the example
-    std::cout << "Boost determinization: \n\n\n\n\n\n\n";
-    std::unordered_map<BoostSet, State> subset_map_boost;
-    Nfa determ_boost = determinize_boost(aut, &subset_map_boost);
-    std::cout << "\n\n\n\n\n\n\n\n";
-
-    #ifdef PRINTTODOT
-    std::cout << "Normal in dot format: ";
     determ.print_to_dot(std::cout);
-
-    std::cout << "Boost in dot format: ";
-    determ_boost.print_to_dot(std::cout);
-    #endif
-
-    determ.show_initial();
-    determ.show_final();
-
-    determ_boost.show_initial();
-    determ_boost.show_final();
-
-    std::cout << "For normal, 2 maps to " << subset_map[{2}] << std::endl;
-    BoostSet bs{2, false, true};
-    bs.resize(aut.delta.num_of_states() + 1);
-    std::cout << "For boost, 2 maps to " << subset_map_boost[bs] << std::endl;
-    bs.print();
-    std::cout << std::endl;
 
 }
