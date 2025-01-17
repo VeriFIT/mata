@@ -5,6 +5,7 @@
 
 #include "mata/alphabet.hh"
 #include "mata/parser/parser.hh"
+#include "mata/utils/boost-vector.hh"
 
 #include <limits>
 
@@ -14,6 +15,7 @@ extern const std::string TYPE_NFA;
 
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;
+using BoostSet = mata::utils::BoostVector;
 
 struct Run {
     Word word{}; ///< A finite-length word.

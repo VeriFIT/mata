@@ -79,6 +79,13 @@ int main(int argc, char *argv[]) {
     // > END OF PROFILED CODE
     TIME_END(determinize);
 
+    Nfa det_aut_boost;
+    TIME_BEGIN(determinize_boost);
+    // > START OF PROFILED CODE
+    // Only determinize and its callees will be measured
+    mata::nfa::plumbing::determinize_boost(&det_aut_boost, aut);
+    TIME_END(determinize_boost);
+
     TIME_BEGIN(naive_universality);
     // > START OF PROFILED CODE
     // Only universality check and its callees will be measured

@@ -76,6 +76,11 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  */
 bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
+/*
+    A version of the antichain inclusion test using boost bit vectors.
+*/
+bool is_included_antichains_boost(Nfa& smaller, Nfa& bigger, Run* cex);
+
 /**
  * Universality check implemented by checking emptiness of complemented automaton
  * @param[in] aut Automaton which universality is checked

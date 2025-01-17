@@ -245,7 +245,7 @@ concept Iterable = requires(T t) {
         void erase(const std::initializer_list<Number> & list) { erase(list.begin(),list.end()); }
 
         //call this (instead of the friend are_disjoint) if you want the other container to be iterated (e.g. if it does not have constant membership)
-        template<class T>
+        template<class T> // This should work with boost vectors
         bool intersects_with(const T & set) const {
             for (auto i=set.begin();i<set.end();i++) {
                 if (contains(*i))

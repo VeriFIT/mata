@@ -629,3 +629,29 @@ Nfa& Nfa::unite_nondet_with(const mata::nfa::Nfa& aut) {
 
     return *this;
 }
+
+void Nfa::show_final()
+{
+    std::cout << "Final states: ";
+    for(unsigned long i = 0; i <= num_of_states(); i++)
+    {
+        if(final.contains(i))
+        {
+            std::cout << i << " ";
+        }
+    }
+    std::cout << std::endl;
+}
+
+void Nfa::show_initial()
+{
+    std::cout << "Initial states: ";
+    for(unsigned long i = 0; i <= num_of_states(); i++)
+    {
+        if(initial.contains(i))
+        {
+            std::cout << i << " ";
+        }
+    }
+    std::cout << std::endl;
+}

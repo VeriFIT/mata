@@ -11,6 +11,8 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 option(MATA_WERROR "Warnings should be handled as errors" OFF)
 option(MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
 
+include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/3rdparty/boost)
+
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # Store compile commands into 'build/compile_commands.json', which are needed, beside others, for linters.
@@ -71,10 +73,10 @@ set(MATA_COMMON_WARNINGS
         -Wextra
         -Wall
         -Wfloat-equal
-        -Wctor-dtor-privacy
         -Weffc++
-        -Woverloaded-virtual
         -Wold-style-cast
+        -Wctor-dtor-privacy
+        -Woverloaded-virtual
         -Wunused-parameter
         -Wsign-compare
         -Wunused-parameter

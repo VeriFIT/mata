@@ -49,6 +49,7 @@ class SymbolPost {
 public:
     Symbol symbol{};
     StateSet targets{};
+    BoostSet targets_boost{};
 
     SymbolPost() = default;
     explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
@@ -75,6 +76,7 @@ public:
 
     void insert(State s);
     void insert(const StateSet& states);
+    void copy_to_boost(State num_of_states);
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
@@ -91,6 +93,7 @@ public:
 
     std::vector<State>::const_iterator find(State s) const { return targets.find(s); }
     std::vector<State>::iterator find(State s) { return targets.find(s); }
+
 }; // class mata::nfa::SymbolPost.
 
 /**
@@ -193,6 +196,17 @@ public:
      * Count the number of all moves in @c StatePost.
      */
     size_t num_of_moves() const;
+
+    /**
+     * Calls copy_to_boost for each SymbolPost()
+     */
+    void copy_to_boost(State num_of_states);
+
+    /**
+     * Debug, calls this function for all symbolposts
+     */
+    void print_targets_boost();
+    void print_targets_normal();
 }; // class StatePost.
 
 /**
@@ -245,10 +259,12 @@ public:
  */
 class SynchronizedExistentialSymbolPostIterator : public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
 public:
+
     /**
      * @brief Get union of all targets.
      */
     StateSet unify_targets() const;
+
 
     /**
      * @brief Synchronize with the given SymbolPost @p sync.
@@ -256,7 +272,7 @@ public:
      * Alignes the synchronized iterator to the same symbol as @p sync.
      * @return True iff the synchronized iterator points to the same symbol as @p sync.
      */
-    bool synchronize_with(const SymbolPost& sync);
+    bool synchronize_with(const Symbol sync_symbol);
 
     /**
      * @brief Synchronize with the given symbol @p sync_symbol.
@@ -264,8 +280,18 @@ public:
      * Alignes the synchronized iterator to the same symbol as @p sync_symbol.
      * @return True iff the synchronized iterator points to the same symbol as @p sync.
      */
-    bool synchronize_with(Symbol sync_symbol);
+    bool synchronize_with(const SymbolPost& sync);
+
+    /**
+     * @brief A version of unify_targets that works with boost vectors.
+     * 
+     * @param err_code For debugging, remove later.
+     */
+    mata::utils::BoostVector unify_targets_boost() const;
+
 }; // class SynchronizedExistentialSymbolPostIterator.
+
+
 
 /**
  * @brief Delta is a data structure for representing transition relation.
@@ -387,6 +413,10 @@ public:
     void add(const Transition& trans) { add(trans.source, trans.symbol, trans.target); }
     void remove(State src, Symbol symb, State tgt);
     void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
+
+    void copy_to_boost(bool max_states = false);
+    void print_targets_boost();
+    void print_targets_normal();
 
     /**
      * Check whether @c Delta contains a passed transition.

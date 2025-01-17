@@ -44,10 +44,19 @@ int main(int argc, char *argv[]) {
     mata::nfa::is_included(lhs, rhs, &alphabet, params);
     TIME_END(automata_inclusion_naive);
 
+
     params["algorithm"] = "antichains";
     TIME_BEGIN(automata_inclusion_antichain);
-    mata::nfa::is_included(lhs, rhs, &alphabet, params);
+    bool test = mata::nfa::is_included(lhs, rhs, &alphabet, params);
+    std::cout << "Result: " << test << std::endl;
     TIME_END(automata_inclusion_antichain);
+
+    
+    TIME_BEGIN(automata_inclusion_boost_antichain);
+    bool test2 = mata::nfa::antichain_boost(lhs, rhs, nullptr);
+    std::cout << "Result: " << test2 << std::endl;
+    TIME_END(automata_inclusion_boost_antichain);
+    
 
     return EXIT_SUCCESS;
 }

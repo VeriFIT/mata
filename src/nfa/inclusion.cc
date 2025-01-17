@@ -221,6 +221,187 @@ bool mata::nfa::algorithms::is_included_antichains(
     return true;
 } // }}}
 
+bool mata::nfa::algorithms::is_included_antichains_boost(Nfa& smaller, Nfa& bigger, Run* cex)
+{
+    // Data types
+    using BoostSet = mata::utils::BoostVector;
+    using ProdStateType = std::tuple<State, BoostSet, size_t>;      // (q, S, Distance?)
+    using ProdStatesType = std::vector<ProdStateType>;
+    using ProcessedType = std::vector<ProdStatesType>;
+
+    // Switch the SymbolPosts of the bigger NFA to bit vectors
+    bigger.delta.copy_to_boost(true);
+
+    // Bit vectors representing initial and final states of the bigger NFA
+    BoostSet BiggerInitial{ bigger.initial.begin(), bigger.initial.end() };
+    BoostSet BiggerFinal{ bigger.final.begin(), bigger.final.end() };
+
+    // If a state is "subsumed"/covered by another state
+    auto subsumes = [](const ProdStateType& lhs, const ProdStateType& rhs)
+    {
+        // If we aren't comparing "equivalent"/matching states
+        if(std::get<0>(lhs) != std::get<0>(rhs))
+        {
+            return false;
+        }
+
+        const BoostSet& lhs_bigger = std::get<1>(lhs);
+        const BoostSet& rhs_bigger = std::get<1>(rhs);
+
+        return lhs_bigger.is_subset_of(rhs_bigger);
+    };
+
+    // Pairs (q, S) to be processed, where q is a state of the smaller NFA and S is a set of states/macrostate of the bigger NFA
+    ProdStatesType worklist{};
+
+    // Already processed states (up to the number of the smaller NFA)
+    ProcessedType processed(smaller.num_of_states());
+
+    // Distances from the initial states for both automata
+    std::vector<State> distances_smaller = revert(smaller).distances_from_initial();
+    std::vector<State> distances_bigger = revert(bigger).distances_from_initial();
+
+    auto min_dst = [&](const BoostSet& set)
+    {
+        // Empty set case
+        if(set.empty())
+            return Limits::max_state;
+
+        // A selection-sort esque algorhitm, might not be too efficient
+        auto min_state = set.find_first();
+        for(State s = min_state; s != BoostSet::npos; s = set.find_next(s))
+        {
+            if(distances_bigger[s] < distances_bigger[min_state])
+                min_state = s;
+        }
+
+        return distances_bigger[min_state];
+    };
+
+
+    // Lenghts incompatible lambda function
+    auto lengths_incompatible = [&](const ProdStateType& pair)
+    {
+        // Return true if the distance of 'q' from smaller's initial state is bigger than the distance of the prodstatetype?
+        return distances_smaller[std::get<0>(pair)] < std::get<2>(pair);
+    };
+
+    // 'paths[s] == t' denotes that state 's' was accessed from state 't',
+    // 'paths[s] == s' means that 's' is an initial state
+    std::map<ProdStateType, std::pair<ProdStateType, Symbol>> paths;
+
+    // Synchronized iterator instance for firs precomputing the distances and then for the main processing part
+    SynchronizedExistentialSymbolPostIterator sync_iterator;
+
+    // Calculate the minimum distance for macrostate (?) of the smaller nfa
+    std::unordered_map<std::pair<State, Symbol>, size_t> min_distances;
+
+    // Initialize the worklist first with the initial smaller state
+    for(const auto& state : smaller.initial)
+    {
+        if(smaller.final[state] && !BiggerFinal.intersects_with(BiggerInitial))
+        {
+            if(cex != nullptr)
+            {
+                cex->word.clear();
+            }
+
+            return false;
+        }
+
+        const ProdStateType st = std::tuple(state, BiggerInitial, min_dst(BiggerInitial));
+        worklist.push_back(st);
+        processed[state].push_back(st);
+
+        if(cex != nullptr)
+        {
+            paths.insert({ st, {st, 0}});
+        }
+    }
+
+    // Clear the synchronized iterator
+    sync_iterator.reset();
+
+    // Process the worklist, main loop
+    while(!worklist.empty())
+    {
+        // Next product state
+        ProdStateType prod_state = *worklist.rbegin();
+        worklist.pop_back();
+
+        const State& smaller_state = std::get<0>(prod_state);
+        const BoostSet& bigger_set = std::get<1>(prod_state);
+
+        sync_iterator.reset();
+        for(State q = bigger_set.find_first(); q != BoostSet::npos; q = bigger_set.find_next(q))
+        {
+            mata::utils::push_back(sync_iterator, bigger.delta[q]);
+        }
+
+        // All transitions leaving smaller state
+        for(const auto& smaller_move : smaller.delta[smaller_state])
+        {
+            const Symbol& smaller_symbol = smaller_move.symbol;
+
+            BoostSet bigger_successor = {};
+            if(sync_iterator.synchronize_with(smaller_move))
+            {
+                bigger_successor = sync_iterator.unify_targets_boost();
+            }
+
+            for(const State& smaller_successor : smaller_move.targets)
+            {
+                const ProdStateType successor = {smaller_successor, bigger_successor, min_dst(bigger_successor)};
+
+                if(lengths_incompatible(successor) || (smaller.final[smaller_successor] &&
+                    !BiggerFinal.intersects_with(bigger_successor)))
+                {
+                    if(cex != nullptr)
+                    {
+                        cex->word.clear();
+                        cex->word.push_back(smaller_symbol);
+                        ProdStateType trav = prod_state;
+                        while(paths[trav].first != trav)
+                        {
+                            cex->word.push_back(paths[trav].second);
+                            trav = paths[trav].first;
+                        }
+
+                        std::reverse(cex->word.begin(), cex->word.end());
+                    }
+
+                    return false;
+                }
+
+                bool is_subsumed = false;
+                for(const auto& anti_state : processed[smaller_successor])
+                {
+                    if(subsumes(anti_state, successor))
+                    {
+                        is_subsumed = true;
+                        break;
+                    }
+                }
+
+                if(is_subsumed) continue;
+
+                for(ProdStatesType* ds : {&processed[smaller_successor], &worklist})
+                {
+                    std::erase_if(*ds, [&](const auto& d){ return subsumes(successor, d); });
+                    ds->push_back(successor);
+                }
+
+                if(cex != nullptr)
+                {
+                    paths[successor] = {prod_state, smaller_symbol};
+                }
+            }
+
+        }
+    }
+    return true;
+}
+
 namespace {
     using AlgoType = decltype(algorithms::is_included_naive)*;
 
@@ -268,6 +449,11 @@ bool mata::nfa::is_included(
     AlgoType algo{set_algorithm(std::to_string(__func__), params)};
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
+
+bool mata::nfa::antichain_boost(Nfa &smaller, Nfa &bigger, Run *cex)
+{
+    return algorithms::is_included_antichains_boost(smaller, bigger, cex);
+}
 
 bool mata::nfa::are_equivalent(const Nfa& lhs, const Nfa& rhs, const Alphabet *alphabet, const ParameterMap& params)
 {

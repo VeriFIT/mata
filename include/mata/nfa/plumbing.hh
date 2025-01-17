@@ -41,6 +41,10 @@ inline void determinize(Nfa* result, const Nfa& aut, std::unordered_map<StateSet
     *result = determinize(aut, subset_map);
 }
 
+inline void determinize_boost(Nfa* result, Nfa& aut, std::unordered_map<BoostSet, State> *subset_map = nullptr) {
+    *result = determinize_boost(aut, subset_map);
+}
+
 inline void reduce(Nfa* result, const Nfa &aut, StateRenaming *state_renaming = nullptr,
                    const ParameterMap& params = {{ "algorithm", "simulation"}}) {
     *result = reduce(aut, state_renaming, params);

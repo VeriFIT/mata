@@ -24,11 +24,32 @@
 #include "mata/parser/parser.hh"
 #include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
+#include "mata/utils/boost-vector.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/utils/sparse-set.hh"
 #include "types.hh"
 #include "delta.hh"
+
+// Debug macro, remove later
+#define BREAKPOINT(code) do{\
+    std::cout << "reached breakpoint " << code << std::endl;\
+    if(err_code == code)\
+    {\
+        std::cout << "exiting at breakpoint " << code << std::endl;\
+        return aut;\
+    }\
+} while(0);
+
+// Another one
+#define BREAKPOINT_UNIFY_TARGETS(code) do{\
+    std::cout << "reached breakpoint " << code << std::endl;\
+    if(err_code == code)\
+    {\
+        std::cout << "exiting at breakpoint " << code << std::endl;\
+        return {};\
+    }\
+} while(0);\
 
 /**
  * @brief Nondeterministic Finite Automata including structures, transitions and algorithms.
@@ -429,6 +450,10 @@ public:
      * @pre @c this is a deterministic automaton.
      */
     Nfa& complement_deterministic(const mata::utils::OrdVector<Symbol>& symbols, std::optional<State> sink_state = std::nullopt);
+
+    // Debug functions
+    void show_initial();
+    void show_final();
 }; // struct Nfa.
 
 // Allow variadic number of arguments of the same type.
@@ -627,6 +652,15 @@ Nfa determinize(
     std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
 
 /**
+ * @brief Version of determinize that uses the Boost library.
+ * 
+ * @param aut Input non-deterministic automaton.
+ * @return Output deterministic automaton.
+ */
+Nfa determinize_boost(Nfa& aut, std::unordered_map<BoostSet, State> *subset_map = nullptr,
+    std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover = std::nullopt);
+
+/**
  * @brief Reduce the size of the automaton.
  *
  * @param[in] aut Automaton to reduce.
@@ -668,6 +702,13 @@ bool is_included(const Nfa& smaller, const Nfa& bigger, Run* cex, const Alphabet
 inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* const alphabet = nullptr,
                         const ParameterMap& params = {{ "algorithm", "antichains" }}) {
     return is_included(smaller, bigger, nullptr, alphabet, params);
+}
+
+bool antichain_boost(Nfa &smaller, Nfa &bigger, Run *cex);
+
+inline bool antichain_boost_test(Nfa &smaller, Nfa &bigger, Run *cex)
+{
+    return antichain_boost(smaller, bigger, cex);
 }
 
 /**

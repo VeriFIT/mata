@@ -419,6 +419,14 @@ public:
         return result;
     }
 
+    void print() const
+    {
+        for (auto it = vec_.begin(); it != vec_.end(); ++it)
+        {
+            std::cout << *it << " ";
+        }
+    }
+
     static void set_union(const OrdVector& lhs, const OrdVector& rhs, OrdVector& result) {
         assert(lhs.is_sorted());
         assert(rhs.is_sorted());
