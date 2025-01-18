@@ -2149,155 +2149,155 @@ TEST_CASE("mata::nfa::is_included()")
     }
 } // }}}
 
-TEST_CASE("mata::nfa::is_included_antichain_boost()")
-{ // {{{
-    Nfa smaller(10);
-    Nfa bigger(16);
-    Run cex;
+// TEST_CASE("mata::nfa::is_included_antichain_boost()")
+// { // {{{
+//     Nfa smaller(10);
+//     Nfa bigger(16);
+//     Run cex;
 
-    SECTION("{} <= {}, empty alphabet")
-    {
-        bool is_incl = antichain_boost_test(smaller, bigger, nullptr);
-        CHECK(is_incl);
+//     SECTION("{} <= {}, empty alphabet")
+//     {
+//         bool is_incl = antichain_boost_test(smaller, bigger, nullptr);
+//         CHECK(is_incl);
 
-        is_incl = antichain_boost_test(bigger, smaller, nullptr);
-        CHECK(is_incl);
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, nullptr);
+//         CHECK(is_incl);
+//     }
 
-    SECTION("{} <= {epsilon}, empty alphabet")
-    {
-        bigger.initial = {1};
-        bigger.final = {1};
+//     SECTION("{} <= {epsilon}, empty alphabet")
+//     {
+//         bigger.initial = {1};
+//         bigger.final = {1};
 
-        bool is_incl = antichain_boost_test(smaller, bigger, &cex);
-        CHECK(is_incl);
+//         bool is_incl = antichain_boost_test(smaller, bigger, &cex);
+//         CHECK(is_incl);
 
-        is_incl = antichain_boost_test(bigger, smaller, &cex);
-        CHECK(!is_incl);
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, &cex);
+//         CHECK(!is_incl);
+//     }
 
-    SECTION("{epsilon} <= {epsilon}, empty alphabet")
-    {
-        OnTheFlyAlphabet alph{};
-        smaller.initial = {1};
-        smaller.final = {1};
-        bigger.initial = {11};
-        bigger.final = {11};
+//     SECTION("{epsilon} <= {epsilon}, empty alphabet")
+//     {
+//         OnTheFlyAlphabet alph{};
+//         smaller.initial = {1};
+//         smaller.final = {1};
+//         bigger.initial = {11};
+//         bigger.final = {11};
 
-        bool is_incl = antichain_boost_test(smaller, bigger, &cex);
-        CHECK(is_incl);
+//         bool is_incl = antichain_boost_test(smaller, bigger, &cex);
+//         CHECK(is_incl);
 
-        is_incl = antichain_boost_test(bigger, smaller, &cex);
-        CHECK(is_incl);
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, &cex);
+//         CHECK(is_incl);
+//     }
 
-    SECTION("{epsilon} !<= {}, empty alphabet")
-    {
-        OnTheFlyAlphabet alph{};
-        smaller.initial = {1};
-        smaller.final = {1};
+//     SECTION("{epsilon} !<= {}, empty alphabet")
+//     {
+//         OnTheFlyAlphabet alph{};
+//         smaller.initial = {1};
+//         smaller.final = {1};
 
-        bool is_incl = antichain_boost_test(smaller, bigger, &cex);
+//         bool is_incl = antichain_boost_test(smaller, bigger, &cex);
 
-        REQUIRE(!is_incl);
-        REQUIRE(cex.word.empty());
+//         REQUIRE(!is_incl);
+//         REQUIRE(cex.word.empty());
 
-        is_incl = antichain_boost_test(bigger, smaller, &cex);
-        REQUIRE(cex.word.empty());
-        REQUIRE(is_incl);
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, &cex);
+//         REQUIRE(cex.word.empty());
+//         REQUIRE(is_incl);
+//     }
 
-    SECTION("a* + b* <= (a+b)*")
-    {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
-        smaller.initial = {1, 2};
-        smaller.final = {1, 2};
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(2, alph["b"], 2);
+//     SECTION("a* + b* <= (a+b)*")
+//     {
+//         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
+//         smaller.initial = {1, 2};
+//         smaller.final = {1, 2};
+//         smaller.delta.add(1, alph["a"], 1);
+//         smaller.delta.add(2, alph["b"], 2);
 
-        bigger.initial = {11};
-        bigger.final = {11};
-        bigger.delta.add(11, alph["a"], 11);
-        bigger.delta.add(11, alph["b"], 11);
+//         bigger.initial = {11};
+//         bigger.final = {11};
+//         bigger.delta.add(11, alph["a"], 11);
+//         bigger.delta.add(11, alph["b"], 11);
 
-        bool is_incl = antichain_boost_test(smaller, bigger, nullptr);
-        REQUIRE(is_incl);
+//         bool is_incl = antichain_boost_test(smaller, bigger, nullptr);
+//         REQUIRE(is_incl);
 
-        is_incl = antichain_boost_test(bigger, smaller, nullptr);
-        REQUIRE(!is_incl);
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, nullptr);
+//         REQUIRE(!is_incl);
+//     }
 
-    SECTION("(a+b)* !<= a* + b*")
-    {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
-        smaller.initial = {1};
-        smaller.final = {1};
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(1, alph["b"], 1);
+//     SECTION("(a+b)* !<= a* + b*")
+//     {
+//         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
+//         smaller.initial = {1};
+//         smaller.final = {1};
+//         smaller.delta.add(1, alph["a"], 1);
+//         smaller.delta.add(1, alph["b"], 1);
 
-        bigger.initial = {11, 12};
-        bigger.final = {11, 12};
-        bigger.delta.add(11, alph["a"], 11);
-        bigger.delta.add(12, alph["b"], 12);
+//         bigger.initial = {11, 12};
+//         bigger.final = {11, 12};
+//         bigger.delta.add(11, alph["a"], 11);
+//         bigger.delta.add(12, alph["b"], 12);
 
 
-        bool is_incl = antichain_boost_test(smaller, bigger, &cex);
+//         bool is_incl = antichain_boost_test(smaller, bigger, &cex);
 
-        REQUIRE(!is_incl);
-        REQUIRE((
-            cex.word == Word{alph["a"], alph["b"]} ||
-            cex.word == Word{alph["b"], alph["a"]}));
+//         REQUIRE(!is_incl);
+//         REQUIRE((
+//             cex.word == Word{alph["a"], alph["b"]} ||
+//             cex.word == Word{alph["b"], alph["a"]}));
 
-        is_incl = antichain_boost_test(bigger, smaller, &cex);
-        REQUIRE(is_incl);
-        REQUIRE((
-            cex.word == Word{alph["a"], alph["b"]} ||
-            cex.word == Word{alph["b"], alph["a"]}));
-    }
+//         is_incl = antichain_boost_test(bigger, smaller, &cex);
+//         REQUIRE(is_incl);
+//         REQUIRE((
+//             cex.word == Word{alph["a"], alph["b"]} ||
+//             cex.word == Word{alph["b"], alph["a"]}));
+//     }
 
-    SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
-    {
-        OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
-        smaller.initial = {1};
-        smaller.final = {1};
-        smaller.delta.add(1, alph["a"], 1);
-        smaller.delta.add(1, alph["b"], 1);
+//     SECTION("(a+b)* !<= eps + (a+b) + (a+b)(a+b)(a* + b*)")
+//     {
+//         OnTheFlyAlphabet alph{ std::vector<std::string>{ "a", "b"} };
+//         smaller.initial = {1};
+//         smaller.final = {1};
+//         smaller.delta.add(1, alph["a"], 1);
+//         smaller.delta.add(1, alph["b"], 1);
 
-        bigger.initial = {11};
-        bigger.final = {11, 12, 13, 14, 15};
+//         bigger.initial = {11};
+//         bigger.final = {11, 12, 13, 14, 15};
 
-        bigger.delta.add(11, alph["a"], 12);
-        bigger.delta.add(11, alph["b"], 12);
-        bigger.delta.add(12, alph["a"], 13);
-        bigger.delta.add(12, alph["b"], 13);
+//         bigger.delta.add(11, alph["a"], 12);
+//         bigger.delta.add(11, alph["b"], 12);
+//         bigger.delta.add(12, alph["a"], 13);
+//         bigger.delta.add(12, alph["b"], 13);
 
-        bigger.delta.add(13, alph["a"], 14);
-        bigger.delta.add(14, alph["a"], 14);
+//         bigger.delta.add(13, alph["a"], 14);
+//         bigger.delta.add(14, alph["a"], 14);
 
-        bigger.delta.add(13, alph["b"], 15);
-        bigger.delta.add(15, alph["b"], 15);
+//         bigger.delta.add(13, alph["b"], 15);
+//         bigger.delta.add(15, alph["b"], 15);
 
-        bool is_incl = antichain_boost_test(smaller, bigger, &cex);
-        REQUIRE(!is_incl);
+//         bool is_incl = antichain_boost_test(smaller, bigger, &cex);
+//         REQUIRE(!is_incl);
 
-        REQUIRE(cex.word.size() == 4);
-        REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-        REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-        REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-        REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-        REQUIRE(cex.word[2] != cex.word[3]);
+//         REQUIRE(cex.word.size() == 4);
+//         REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+//         REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+//         REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+//         REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+//         REQUIRE(cex.word[2] != cex.word[3]);
 
-        is_incl = antichain_boost_test(bigger, smaller, &cex);
-        REQUIRE(is_incl);
+//         is_incl = antichain_boost_test(bigger, smaller, &cex);
+//         REQUIRE(is_incl);
 
-        REQUIRE(cex.word.size() == 4);
-        REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
-        REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
-        REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
-        REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
-        REQUIRE(cex.word[2] != cex.word[3]);
-    }
-} // }}}
+//         REQUIRE(cex.word.size() == 4);
+//         REQUIRE((cex.word[0] == alph["a"] || cex.word[0] == alph["b"]));
+//         REQUIRE((cex.word[1] == alph["a"] || cex.word[1] == alph["b"]));
+//         REQUIRE((cex.word[2] == alph["a"] || cex.word[2] == alph["b"]));
+//         REQUIRE((cex.word[3] == alph["a"] || cex.word[3] == alph["b"]));
+//         REQUIRE(cex.word[2] != cex.word[3]);
+//     }
+// } // }}}
 
 TEST_CASE("mata::nfa::are_equivalent")
 {

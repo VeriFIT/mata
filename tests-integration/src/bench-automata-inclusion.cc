@@ -53,7 +53,8 @@ int main(int argc, char *argv[]) {
 
     
     TIME_BEGIN(automata_inclusion_boost_antichain);
-    bool test2 = mata::nfa::antichain_boost(lhs, rhs, nullptr);
+    params["algorithm"] = "boost";
+    bool test2 = mata::nfa::is_included(lhs, rhs, &alphabet, params);
     std::cout << "Result: " << test2 << std::endl;
     TIME_END(automata_inclusion_boost_antichain);
     

@@ -79,7 +79,7 @@ bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabe
 /*
     A version of the antichain inclusion test using boost bit vectors.
 */
-bool is_included_antichains_boost(Nfa& smaller, Nfa& bigger, Run* cex);
+bool is_included_antichains_boost(const Nfa& smaller, const Nfa& bigger,  const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton

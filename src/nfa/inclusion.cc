@@ -245,8 +245,15 @@ bool mata::nfa::algorithms::is_included_antichains(
     return true;
 } // }}}
 
-bool mata::nfa::algorithms::is_included_antichains_boost(Nfa &smaller, Nfa &bigger, Run *cex)
+bool mata::nfa::algorithms::is_included_antichains_boost(
+    const Nfa &smaller, 
+    const Nfa &bigger,
+    const Alphabet *const alphabet,
+    Run *cex)
 {
+    // For compatibility with AlgoType, other than that this parameter is not used
+    (void)alphabet;
+
     // Data types
     using BoostSet = mata::utils::BoostVector;
     using ProdStateType = std::tuple<State, BoostSet, size_t>; // (q, S, Distance?)
@@ -254,7 +261,7 @@ bool mata::nfa::algorithms::is_included_antichains_boost(Nfa &smaller, Nfa &bigg
     using ProcessedType = std::vector<ProdStatesType>;
 
     // Switch the SymbolPosts of the bigger NFA to bit vectors
-    bigger.delta.copy_to_boost(true);
+    const_cast<Nfa&>(bigger).delta.copy_to_boost(true);
 
     // Bit vectors representing initial and final states of the bigger NFA
     BoostSet BiggerInitial{bigger.initial.begin(), bigger.initial.end()};
@@ -464,7 +471,10 @@ namespace
         {
             algo = algorithms::is_included_antichains;
         }
-        // TODO
+        else if("boost" == str_algo)
+        {
+            algo = algorithms::is_included_antichains_boost;
+        }
         else
         {
             throw std::runtime_error(std::to_string(__func__) +
@@ -487,11 +497,6 @@ bool mata::nfa::is_included(
     AlgoType algo{set_algorithm(std::to_string(__func__), params)};
     return algo(smaller, bigger, alphabet, cex);
 } // is_included }}}
-
-bool mata::nfa::antichain_boost(Nfa &smaller, Nfa &bigger, Run *cex)
-{
-    return algorithms::is_included_antichains_boost(smaller, bigger, cex);
-}
 
 bool mata::nfa::are_equivalent(const Nfa &lhs, const Nfa &rhs, const Alphabet *alphabet, const ParameterMap &params)
 {

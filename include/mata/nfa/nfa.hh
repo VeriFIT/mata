@@ -679,13 +679,6 @@ inline bool is_included(const Nfa& smaller, const Nfa& bigger, const Alphabet* c
     return is_included(smaller, bigger, nullptr, alphabet, params);
 }
 
-bool antichain_boost(Nfa &smaller, Nfa &bigger, Run *cex);
-
-inline bool antichain_boost_test(Nfa &smaller, Nfa &bigger, Run *cex)
-{
-    return antichain_boost(smaller, bigger, cex);
-}
-
 /**
  * @brief Perform equivalence check of two NFAs: @p lhs and @p rhs.
  *
