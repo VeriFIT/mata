@@ -32,23 +32,24 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
+    ParameterMap params;
+
     // Setting precision of the times to fixed points and 4 decimal places
     std::cout << std::fixed << std::setprecision(4);
 
-    Nfa det;
+    params["algorithm"] = "classic";
     TIME_BEGIN(determinize);
     // > START OF PROFILED CODE
     // Only determinize and its callees will be measured
-    mata::nfa::plumbing::determinize(&det, aut);
+    Nfa det = mata::nfa::determinize(aut, nullptr, std::nullopt, params);
     TIME_END(determinize);
 
-    // Nfa det_boost;
-    // TIME_BEGIN(determinize_boost);
-    // // > START OF PROFILED CODE
-    // // Only determinize_boost and its callees will be measured
-    // mata::nfa::plumbing::determinize_boost(&det_boost, aut);
-    // TIME_END(determinize_boost);
-
+    params["algorithm"] = "boost";
+    TIME_BEGIN(determinize_boost);
+    // > START OF PROFILED CODE
+    // Only determinize_boost and its callees will be measured
+    Nfa det_boost = mata::nfa::determinize(aut, nullptr, std::nullopt, params);
+    TIME_END(determinize_boost);
 
     return EXIT_SUCCESS;
 }

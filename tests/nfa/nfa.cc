@@ -1960,6 +1960,7 @@ TEST_CASE("mata::nfa::is_included()")
     const std::unordered_set<std::string> ALGORITHMS = {
         "naive",
         "antichains",
+        "boost"
     };
 
     SECTION("{} <= {}, empty alphabet")
