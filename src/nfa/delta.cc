@@ -53,6 +53,7 @@ void SymbolPost::insert(const StateSet &states)
     }
 }
 
+#ifdef USE_BOOST
 void Delta::copy_to_boost(bool max_states)
 {
     for (auto state_post = state_posts_.begin(); state_post < state_posts_.end(); state_post++)
@@ -84,6 +85,7 @@ void Delta::print_targets_boost()
     }
     std::cout << std::endl;
 }
+#endif
 
 void Delta::print_targets_normal()
 {
@@ -96,11 +98,13 @@ void Delta::print_targets_normal()
     std::cout << std::endl;
 }
 
+#ifdef USE_BOOST
 void StatePost::print_targets_boost()
 {
     for (auto symbol_post = begin(); symbol_post < end(); symbol_post++)
         (*symbol_post).targets_boost.print();
 }
+#endif
 
 void StatePost::print_targets_normal()
 {
@@ -937,6 +941,7 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const
     return unified_targets;
 }
 
+#ifdef USE_BOOST
 mata::utils::BoostVector SynchronizedExistentialSymbolPostIterator::unify_targets_boost() const {
     if (!is_synchronized()) return {};
     using BoostSet = mata::utils::BoostVector;
@@ -953,6 +958,7 @@ mata::utils::BoostVector SynchronizedExistentialSymbolPostIterator::unify_target
 
     return unified_targets;
 }
+#endif
 
 bool SynchronizedExistentialSymbolPostIterator::synchronize_with(const Symbol sync_symbol)
 {

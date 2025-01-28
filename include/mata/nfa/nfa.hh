@@ -24,7 +24,6 @@
 #include "mata/parser/parser.hh"
 #include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
-#include "mata/utils/boost-vector.hh"
 #include "mata/parser/inter-aut.hh"
 #include "mata/utils/synchronized-iterator.hh"
 #include "mata/utils/sparse-set.hh"
@@ -625,7 +624,7 @@ Nfa minimize(const Nfa &aut, const ParameterMap& params = { { "algorithm", "brzo
  *  parameters are the determinized NFA constructed so far, the current macrostate, and the set of the original states
  *  corresponding to the macrostate. Return @c true if the determinization should continue, and @c false if the
  *  determinization should stop and return only the determinized NFA constructed so far.
- * @param[in] params Optional parameters to control the determinization algorithm: "classic", "boost" (Default: "classic").
+ * @param[in] params Optional parameters to control the determinization algorithm: "classic", "boost" (if USE_BOOST is defined) (Default: "classic").
  * @return Determinized automaton.
  * @todo: TODO: Add support for specifying first epsilon symbol and compute epsilon closure during determinization.
  */
@@ -658,7 +657,7 @@ Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
  * @param[out] cex Counterexample for the inclusion.
  * @param[in] alphabet Alphabet of both NFAs to compute with.
  * @param[in] params Optional parameters to control the equivalence check algorithm:
- * - "algorithm": "naive", "antichains" (Default: "antichains")
+ * - "algorithm": "naive", "antichains", "boost" (Default: "antichains")
  * @return True if @p smaller is included in @p bigger, false otherwise.
  */
 bool is_included(const Nfa& smaller, const Nfa& bigger, Run* cex, const Alphabet* alphabet = nullptr,

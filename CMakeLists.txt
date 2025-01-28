@@ -10,8 +10,17 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
 
 option(MATA_WERROR "Warnings should be handled as errors" OFF)
 option(MATA_ENABLE_COVERAGE "Build with coverage compiler flags" OFF)
+option(USE_BOOST "Add access to determinization/inclusion algorithms which use dynamic_bitset as opposed to OrdVectors" OFF)
 
-include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/3rdparty/boost)
+if(DEFINED ENV{USE_BOOST})
+    set(USE_BOOST $ENV{USE_BOOST})
+endif()
+
+if(USE_BOOST)
+    message("Including boost")
+    include_directories(SYSTEM ${PROJECT_SOURCE_DIR}/3rdparty/boost)
+    add_definitions(-DUSE_BOOST)
+endif()
 
 # Only do these if this is the main project, and not if it is included through add_subdirectory
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)

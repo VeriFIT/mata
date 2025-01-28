@@ -1,6 +1,8 @@
 #ifndef BOOST_VECTOR_HH
 #define BOOST_VECTOR_HH
 
+#ifdef USE_BOOST
+
 #include <vector>
 #include <algorithm>
 #include <cassert>
@@ -282,4 +284,5 @@ namespace std {
     };
 }
 
-#endif
+#endif // USE_BOOST
+#endif // BOOST_VECTOR_HH

@@ -44,12 +44,14 @@ int main(int argc, char *argv[])
     Nfa det = mata::nfa::determinize(aut, nullptr, std::nullopt, params);
     TIME_END(determinize);
 
+    #ifdef USE_BOOST
     params["algorithm"] = "boost";
     TIME_BEGIN(determinize_boost);
     // > START OF PROFILED CODE
     // Only determinize_boost and its callees will be measured
     Nfa det_boost = mata::nfa::determinize(aut, nullptr, std::nullopt, params);
     TIME_END(determinize_boost);
+    #endif
 
     return EXIT_SUCCESS;
 }

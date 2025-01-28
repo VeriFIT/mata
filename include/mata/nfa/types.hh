@@ -15,7 +15,10 @@ extern const std::string TYPE_NFA;
 
 using State = unsigned long;
 using StateSet = mata::utils::OrdVector<State>;
+
+#ifdef USE_BOOST
 using BoostSet = mata::utils::BoostVector;
+#endif
 
 struct Run {
     Word word{}; ///< A finite-length word.

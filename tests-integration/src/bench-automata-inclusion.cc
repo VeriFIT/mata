@@ -52,11 +52,13 @@ int main(int argc, char *argv[]) {
     std::cout << "Result: " << test2 << std::endl;
     TIME_END(automata_inclusion_antichain);
 
+    #ifdef USE_BOOST
     TIME_BEGIN(automata_inclusion_boost_antichain);
     params["algorithm"] = "boost";
     bool test3 = mata::nfa::is_included(lhs, rhs, &alphabet, params);
     std::cout << "Result: " << test3 << std::endl;
     TIME_END(automata_inclusion_boost_antichain);
+    #endif
 
     return EXIT_SUCCESS;
 }

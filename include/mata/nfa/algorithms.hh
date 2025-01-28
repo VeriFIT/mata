@@ -76,10 +76,12 @@ bool is_included_naive(const Nfa& smaller, const Nfa& bigger, const Alphabet* al
  */
 bool is_included_antichains(const Nfa& smaller, const Nfa& bigger, const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
 
+#ifdef USE_BOOST
 /*
     A version of the antichain inclusion test using boost bit vectors.
 */
 bool is_included_antichains_boost(const Nfa& smaller, const Nfa& bigger,  const Alphabet*  alphabet = nullptr, Run* cex = nullptr);
+#endif
 
 /**
  * Universality check implemented by checking emptiness of complemented automaton
@@ -149,6 +151,7 @@ Nfa determinize_classic(
     const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
     std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
 
+#ifdef USE_BOOST
 /**
  * @brief Version of determinize that uses the Boost library.
  * 
@@ -158,7 +161,7 @@ Nfa determinize_classic(
 Nfa determinize_boost(
     Nfa& aut, std::unordered_map<BoostSet, State> *subset_map = nullptr,
     std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover = std::nullopt);
-
+#endif
 } // Namespace mata::nfa::algorithms.
 
 #endif // MATA_NFA_INTERNALS_HH_

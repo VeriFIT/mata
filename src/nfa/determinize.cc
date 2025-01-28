@@ -102,6 +102,7 @@ Nfa mata::nfa::algorithms::determinize_classic(
     return result;
 }
 
+#ifdef USE_BOOST
 Nfa mata::nfa::algorithms::determinize_boost(Nfa &aut, std::unordered_map<BoostSet, State> *subset_map,
 std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostate_discover)
 {
@@ -220,6 +221,7 @@ std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostat
     }
     return result;
 }
+#endif
 
 
 Nfa mata::nfa::determinize(
@@ -242,6 +244,7 @@ Nfa mata::nfa::determinize(
     {
         return algorithms::determinize_classic(aut, subset_map, macrostate_discover);
     }
+    #ifdef USE_BOOST
     else if(str_algo == "boost")
     {
         if(subset_map != nullptr)
@@ -252,6 +255,7 @@ Nfa mata::nfa::determinize(
 
         else return algorithms::determinize_boost(const_cast<Nfa&>(aut));
     }
+    #endif
     else
     {
         throw std::runtime_error(std::to_string(__func__) +

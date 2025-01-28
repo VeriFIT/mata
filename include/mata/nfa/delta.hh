@@ -49,7 +49,9 @@ class SymbolPost {
 public:
     Symbol symbol{};
     StateSet targets{};
+    #ifdef USE_BOOST
     BoostSet targets_boost{};
+    #endif
 
     SymbolPost() = default;
     explicit SymbolPost(Symbol symbol) : symbol{ symbol }, targets{} {}
@@ -76,7 +78,10 @@ public:
 
     void insert(State s);
     void insert(const StateSet& states);
+
+    #ifdef USE_BOOST
     void copy_to_boost(State num_of_states);
+    #endif
 
     // THIS BREAKS THE SORTEDNESS INVARIANT,
     // dangerous,
@@ -197,15 +202,19 @@ public:
      */
     size_t num_of_moves() const;
 
+    #ifdef USE_BOOST
     /**
      * Calls copy_to_boost for each SymbolPost()
      */
     void copy_to_boost(State num_of_states);
+    #endif
 
+    #ifdef USE_BOOST
     /**
      * Debug, calls this function for all symbolposts
      */
     void print_targets_boost();
+    #endif
     void print_targets_normal();
 }; // class StatePost.
 
@@ -282,12 +291,14 @@ public:
      */
     bool synchronize_with(const SymbolPost& sync);
 
+    #ifdef USE_BOOST
     /**
      * @brief A version of unify_targets that works with boost vectors.
      * 
      * @param err_code For debugging, remove later.
      */
     mata::utils::BoostVector unify_targets_boost() const;
+    #endif
 
 }; // class SynchronizedExistentialSymbolPostIterator.
 
@@ -414,8 +425,10 @@ public:
     void remove(State src, Symbol symb, State tgt);
     void remove(const Transition& trans) { remove(trans.source, trans.symbol, trans.target); }
 
+    #ifdef USE_BOOST
     void copy_to_boost(bool max_states = false);
     void print_targets_boost();
+    #endif
     void print_targets_normal();
 
     /**

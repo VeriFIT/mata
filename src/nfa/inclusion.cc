@@ -245,6 +245,7 @@ bool mata::nfa::algorithms::is_included_antichains(
     return true;
 } // }}}
 
+#ifdef USE_BOOST
 bool mata::nfa::algorithms::is_included_antichains_boost(
     const Nfa &smaller, 
     const Nfa &bigger,
@@ -432,6 +433,7 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
     }
     return true;
 }
+#endif
 
 namespace
 {
@@ -471,10 +473,12 @@ namespace
         {
             algo = algorithms::is_included_antichains;
         }
+        #ifdef USE_BOOST
         else if("boost" == str_algo)
         {
             algo = algorithms::is_included_antichains_boost;
         }
+        #endif
         else
         {
             throw std::runtime_error(std::to_string(__func__) +
