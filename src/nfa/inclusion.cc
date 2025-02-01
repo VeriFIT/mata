@@ -267,6 +267,8 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
     // Bit vectors representing initial and final states of the bigger NFA
     BoostSet BiggerInitial{bigger.initial.begin(), bigger.initial.end()};
     BoostSet BiggerFinal{bigger.final.begin(), bigger.final.end()};
+    BiggerInitial.resize(bigger.num_of_states());
+    BiggerFinal.resize(bigger.num_of_states());
 
     // If a state is "subsumed"/covered by another state
     auto subsumes = [](const ProdStateType &lhs, const ProdStateType &rhs)
@@ -377,7 +379,7 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
             BoostSet bigger_successor = {};
             if (sync_iterator.synchronize_with(smaller_move))
             {
-                bigger_successor = sync_iterator.unify_targets_boost();
+                bigger_successor = sync_iterator.unify_targets_boost(bigger.num_of_states());
             }
 
             for (const State &smaller_successor : smaller_move.targets)

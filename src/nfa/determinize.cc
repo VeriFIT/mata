@@ -125,7 +125,8 @@ std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostat
     // Initial and final states of the input NFA
     BoostSet S0{aut.initial.begin(), aut.initial.end()};
     S0.resize(aut.num_of_states());
-    const BoostSet FinalStates{aut.final.begin(), aut.final.end()};
+    BoostSet FinalStates{aut.final.begin(), aut.final.end()};
+    FinalStates.resize(aut.num_of_states());
 
     // Should be 0, initial state
     const State S0id{result.add_state()}; 
@@ -189,7 +190,7 @@ std::optional<std::function<bool(Nfa&, const State, const BoostSet&)>> macrostat
             Symbol currentSymbol = (*symbol_posts.begin())->symbol;
 
             // At the first iteration the synciterator has access to the set of initial states of the NFA
-            BoostSet Targets = synchronized_iterator.unify_targets_boost();
+            BoostSet Targets = synchronized_iterator.unify_targets_boost(aut.num_of_states());
 
             // Check if this set was already processed
             const auto existingTitr = subset_map->find(Targets);

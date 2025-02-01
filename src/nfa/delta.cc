@@ -942,12 +942,12 @@ StateSet SynchronizedExistentialSymbolPostIterator::unify_targets() const
 }
 
 #ifdef USE_BOOST
-mata::utils::BoostVector SynchronizedExistentialSymbolPostIterator::unify_targets_boost() const {
+mata::utils::BoostVector SynchronizedExistentialSymbolPostIterator::unify_targets_boost(size_t num_of_states) const {
     if (!is_synchronized()) return {};
     using BoostSet = mata::utils::BoostVector;
 
     // Zero vector
-    BoostSet unified_targets{}; // I still don't get why 32 but it's in the original version
+    BoostSet unified_targets{num_of_states};
 
     // Unify with the current symbol post using OR (note: resizing is handled by the | operator)
     for (const StatePost::const_iterator &symbol_post_it : get_current())

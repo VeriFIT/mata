@@ -295,9 +295,9 @@ public:
     /**
      * @brief A version of unify_targets that works with boost vectors.
      * 
-     * @param err_code For debugging, remove later.
+     * @param num_of_states initial size of unified_targets
      */
-    mata::utils::BoostVector unify_targets_boost() const;
+    mata::utils::BoostVector unify_targets_boost(size_t num_of_states) const;
     #endif
 
 }; // class SynchronizedExistentialSymbolPostIterator.
