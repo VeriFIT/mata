@@ -327,7 +327,7 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
     SynchronizedExistentialSymbolPostIterator sync_iterator;
 
     // Calculate the minimum distance for macrostate (?) of the smaller nfa
-    std::unordered_map<std::pair<State, Symbol>, size_t> min_distances;
+    std::unordered_map<BoostSet, size_t> min_distances;
 
     // Initialize the worklist first with the initial smaller state
     for (const auto &state : smaller.initial)
@@ -342,7 +342,10 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
             return false;
         }
 
-        const ProdStateType st = std::tuple(state, BiggerInitial, min_dst(BiggerInitial));
+        size_t initial_distance = min_dst(BiggerInitial);
+        min_distances[BiggerInitial] = initial_distance;
+
+        const ProdStateType st = std::tuple(state, BiggerInitial, initial_distance);
         worklist.push_back(st);
         processed[state].push_back(st);
 
@@ -384,7 +387,19 @@ bool mata::nfa::algorithms::is_included_antichains_boost(
 
             for (const State &smaller_successor : smaller_move.targets)
             {
-                const ProdStateType successor = {smaller_successor, bigger_successor, min_dst(bigger_successor)};
+                size_t min_distance;
+                if(min_distances.find(bigger_successor) == min_distances.end())
+                {
+                    min_distance = min_dst(bigger_successor);
+                    min_distances[bigger_successor] = min_distance;
+                }
+
+                else
+                {
+                    min_distance = min_distances[bigger_successor];
+                }
+
+                const ProdStateType successor = {smaller_successor, bigger_successor, min_distance};
 
                 if (lengths_incompatible(successor) || (smaller.final[smaller_successor] &&
                                                         !BiggerFinal.intersects_with(bigger_successor)))
