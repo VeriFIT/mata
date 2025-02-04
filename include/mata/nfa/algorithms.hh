@@ -15,13 +15,6 @@
  * these function according to parameters provided by a user.
  * E.g. we can call the following function: `is_universal(aut, alph, {{'algorithm', 'antichains'}})`
  * to check for universality based on antichain-based algorithm.
- *
- * In particular, this includes algorithms for:
- *   1. Complementation,
- *   2. Inclusion,
- *   3. Universality checking,
- *   4. Intersection/concatenation with epsilon transitions, or,
- *   5. Computing relation.
  */
 namespace mata::nfa::algorithms {
 
@@ -137,6 +130,43 @@ Nfa product(const Nfa& lhs, const Nfa& rhs, const std::function<bool(State,State
  */
 Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool use_epsilon = false,
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
+
+/**
+ * @brief Reduce NFA using residual construction.
+ *
+ * @param[in] nfa NFA to reduce.
+ * @param[in] state_renaming Map mapping original states to the reduced states.
+ * @param[in] type Type of the residual construction (values: "after", "with").
+ * @param[in] direction Direction of the residual construction (values: "forward", "backward").
+ */
+Nfa reduce_residual(const Nfa& nfa, StateRenaming &state_renaming,
+                    const std::string& type, const std::string& direction);
+
+/**
+ * @brief Reduce NFA using residual construction.
+ *
+ * The residual construction of the residual automaton and the removal of the
+ *  covering states is done during the last determinization.
+ *
+ * Similar performance to `reduce_residual_after()`.
+ * The output is almost the same except the transitions: transitions may
+ *  slightly differ, but the number of states is the same for both algorithm
+ *  types.
+ */
+Nfa reduce_residual_with(const Nfa& nfa);
+
+/**
+ * @brief Reduce NFA using residual construction.
+ *
+ * The residual construction of the residual automaton and the removal of the
+ *  covering states is done after the final determinization.
+ *
+ * Similar performance to `reduce_residual_with()`.
+ * The output is almost the same except the transitions: transitions may
+ *  slightly differ, but the number of states is the same for both algorithm
+ *  types.
+ */
+Nfa reduce_residual_after(const Nfa& nfa);
 
 } // Namespace mata::nfa::algorithms.
 

@@ -93,6 +93,36 @@ inline void concatenate(Nfa* res, const Nfa& lhs, const Nfa& rhs, bool use_epsil
     *res = concatenate(lhs, rhs, use_epsilon, lhs_result_state_renaming, rhs_result_state_renaming);
 }
 
-} // namespace mata::nfa::Plumbing.
+/**
+ * @brief Reduce NFA using residual construction.
+ *
+ * The residual construction of the residual automaton and the removal of the
+ *  covering states is done during the last determinization.
+ *
+ * Similar performance to `reduce_residual_after()`.
+ * The output is almost the same except the transitions: transitions may
+ *  slightly differ, but the number of states is the same for both algorithm
+ *  types.
+ */
+inline void reduce_residual_with(Nfa* res, const Nfa& nfa) {
+  *res = algorithms::reduce_residual_with(nfa);
+}
+
+/**
+ * @brief Reduce NFA using residual construction.
+ *
+ * The residual construction of the residual automaton and the removal of the
+ *  covering states is done after the final determinization.
+ *
+ * Similar performance to `reduce_residual_with()`.
+ * The output is almost the same except the transitions: transitions may
+ *  slightly differ, but the number of states is the same for both algorithm
+ *  types.
+ */
+inline void reduce_residual_after(Nfa* res, const Nfa& nfa) {
+  *res = algorithms::reduce_residual_after(nfa);
+}
+
+} // namespace mata::nfa::plumbing.
 
 #endif // MATA_NFA_PLUMBING_HH_
