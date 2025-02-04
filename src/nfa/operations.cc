@@ -942,7 +942,9 @@ Nfa mata::nfa::minimize(
 
     const std::string& str_algo = params.at("algorithm");
     if ("brzozowski" == str_algo) {  /* default */ }
-    else {
+    else if ("hopcroft" == str_algo) {
+        algo = algorithms::minimize_hopcroft;
+    } else {
         throw std::runtime_error(std::to_string(__func__) +
             " received an unknown value of the \"algorithm\" key: " + str_algo);
     }

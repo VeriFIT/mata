@@ -622,6 +622,10 @@ def test_minimize(
     minimized = mata_nfa.minimize(lhs)
     assert minimized.get_num_of_transitions() == 1
 
+    lhs.trim()
+    minimized_hopcroft = mata_nfa.minimize(lhs, {"algorithm": "hopcroft"})
+    assert minimized_hopcroft.get_num_of_transitions() == 1
+
 
 def test_to_dot():
     lhs = mata_nfa.Nfa()

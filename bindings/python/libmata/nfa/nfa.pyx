@@ -970,14 +970,23 @@ def remove_epsilon(Nfa lhs, Symbol epsilon = CEPSILON):
     mata_nfa.c_remove_epsilon(result.thisptr.get(), dereference(lhs.thisptr.get()), epsilon)
     return result
 
-def minimize(Nfa lhs):
+def minimize(Nfa lhs, params = None):
     """Minimizes the automaton lhs
 
     :param Nfa lhs: automaton to be minimized
+    :param Dict params: Additional parameters for the minimization operation:
+      - "algorithm":
+        - "brzozowski": The Brzozowski minimization algorithm.
+        - "hopcroft": The Hopcroft minimization algorithm, only works on trimmed (no useless states) DFAs as input.
     :return: minimized automaton
     """
+    params = params or {"algorithm": "brzozowski"}
     result = Nfa()
-    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()))
+    mata_nfa.c_minimize(result.thisptr.get(), dereference(lhs.thisptr.get()),
+        {
+            k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
+        }
+    )
     return result
 
 def reduce_with_state_map(Nfa aut, params = None):
