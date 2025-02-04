@@ -132,13 +132,13 @@ jobs:
         run: |
           make -C bindings/python pypi-release
 
-      - name: Upload to TestPypi
-        run: |
-          python3 -m twine upload bindings/python/dist/*.tar.gz
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
-          TWINE_REPOSITORY: testpypi
+      # - name: Upload to TestPypi
+      #   run: |
+      #     python3 -m twine upload bindings/python/dist/*.tar.gz
+      #   env:
+      #     TWINE_USERNAME: __token__
+      #     TWINE_PASSWORD: ${{ secrets.TESTPYPI_SECRET_TOKEN }}
+      #     TWINE_REPOSITORY: testpypi
 
       - name: Upload to Pypi
         run: |
