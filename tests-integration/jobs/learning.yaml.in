@@ -1,0 +1,2 @@
+learn:
+  cmd: @CMAKE_CURRENT_BINARY_DIR@/templates/test-learning $1 
