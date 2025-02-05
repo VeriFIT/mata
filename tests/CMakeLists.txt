@@ -13,6 +13,7 @@ add_executable(tests
 		nfa/nfa-product.cc
 		nfa/nfa-profiling.cc
 		nfa/nfa-plumbing.cc
+		nfa/learning.cc
 		nft/delta.cc
 		nft/nft.cc
 		nft/builder.cc
