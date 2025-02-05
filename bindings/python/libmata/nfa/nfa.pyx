@@ -994,7 +994,8 @@ def reduce_with_state_map(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
-        - "algorithm": "simulation"
+        - "algorithm":
+          - "simulation": Reduce size by simulation.
     :return: (Reduced automaton, state map of original to new states)
     """
     params = params or {"algorithm": "simulation"}
@@ -1013,8 +1014,16 @@ def reduce(Nfa aut, params = None):
 
     :param Nfa aut: Original automaton to reduce.
     :param Dict params: Additional parameters for the reduction algorithm:
-        - "algorithm": "simulation"
-    :return: Reduced automaton
+        - "algorithm":
+          - "simulation": Reduce size by simulation.
+          - "residual": Reduce size by residual construction.
+        - "type":
+          - "after": (Only for "algorithm": "residual") Residual construction after the last determinization.
+          - "with": (Only for "algorithm": "residual") Residual construction during the last determinization.
+        - "direction":
+          - "forward": (Only for "algorithm": "residual") Forward residual construction.
+          - "backward": (Only for "algorithm": "residual") Backward residual construction.
+    :return: Reduced automaton.
     """
     params = params or {"algorithm": "simulation"}
     result = Nfa()
@@ -1023,6 +1032,26 @@ def reduce(Nfa aut, params = None):
                         k.encode('utf-8'): v.encode('utf-8') for k, v in params.items()
                     }
                     )
+    return result
+
+def reduce_residual_after(Nfa aut):
+    """Reduce the automaton by residual construction after the last determinization.
+
+    :param Nfa aut: Original automaton to reduce.
+    :return: Reduced automaton.
+    """
+    result = Nfa()
+    mata_nfa.c_reduce_residual_after(result.thisptr.get(), dereference(aut.thisptr.get()))
+    return result
+
+def reduce_residual_with(Nfa aut):
+    """Reduce the automaton by residual construction during the last determinization.
+
+    :param Nfa aut: Original automaton to reduce.
+    :return: Reduced automaton.
+    """
+    result = Nfa()
+    mata_nfa.c_reduce_residual_with(result.thisptr.get(), dereference(aut.thisptr.get()))
     return result
 
 def compute_relation(Nfa lhs, params = None):

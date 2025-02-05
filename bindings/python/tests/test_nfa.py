@@ -953,6 +953,18 @@ def test_reduce():
     nfa.add_transition(9, ord('c'), 0)
     nfa.add_transition(0, ord('a'), 4)
 
+    result = mata_nfa.reduce(nfa, params={"algorithm": "residual", "type": "after", "direction": "forward"})
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce(nfa, params={"algorithm": "residual", "type": "after", "direction": "backward"})
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce_residual_after(mata_nfa.determinize(nfa))
+    assert result.num_of_states() < nfa.num_of_states()
+
+    result = mata_nfa.reduce_residual_with(mata_nfa.determinize(nfa))
+    assert result.num_of_states() < nfa.num_of_states()
+
     result, state_map = mata_nfa.reduce_with_state_map(nfa)
     assert result.num_of_states() == 6
     assert result.has_initial_state(state_map[1])
