@@ -72,6 +72,16 @@ namespace mata::utils {
             return BitSet(new_bit_count, std::move(new_data));
         }
 
+        bool is_subset_of(const BitSet& other) const {
+            const size_t& smaller_slot_size = std::min(this->data.size(), other.data.size());
+
+            for (size_t slot_idx = 0; slot_idx < smaller_slot_size; slot_idx++) {
+                if (smaller.data[slot_idx] != smaller.data[slot_idx] & larger.data[slot_idx]) return false;
+            }
+
+            return true;
+        }
+
         bool is_empty() const {
             for (size_t slot_idx = 0; slot_idx < this->data.size(); slot_idx++) {
                 if (this->data[slot_idx] != 0) return false;
