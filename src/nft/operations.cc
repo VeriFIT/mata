@@ -677,6 +677,120 @@ Nft mata::nft::revert(const Nft& aut) {
     //return somewhat_simple_revert(aut);
 }
 
+Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode = JumpMode::RepeatSymbol) {
+    const size_t num_of_states = aut.num_of_states();
+
+    // Find states with level zero and rename them.
+    std::vector<State> renaming(num_of_states, Limits::max_state);
+    size_t num_of_zerostates = 0;
+    for (State s = 0; s < num_of_states; ++s) {
+        if (aut.levels[s] == 0) {
+            renaming[s] = num_of_zerostates++;
+        }
+    }
+
+    // Rename initial states
+    SparseSet<State> new_initial;
+    for (const State s: aut.initial) {
+        new_initial.insert(renaming[s]);
+    }
+    // Rename final states
+    SparseSet<State> new_final;
+    for (const State s: aut.final) {
+        new_final.insert(renaming[s]);
+    }
+    // Create new automaton
+    Nft aut_inv = Nft(num_of_zerostates, std::move(new_initial), std::move(new_final), Levels(num_of_zerostates, 0), aut.num_of_levels, aut.alphabet);
+
+    // Main part of the algorithm.
+    // Invert each TREE between one root (zero-state) and all its leaves (zeor-states)
+    std::vector<SparseSet<State>> tree_leaves(num_of_zerostates);   // Indexed by tree root (zero-state).
+    std::queue<State> worklist;
+    for (State tree_root = 0; tree_root < num_of_states; ++tree_root) {
+        // Test if the state is a root of some tree.
+        if (aut.levels[tree_root] != 0) {
+            continue;   // Not a root.
+        }
+        // First, visit all states of the tree and create their inverted versions (with inverted levels) in aut_inv.
+        worklist.push(tree_root);
+        while (!worklist.empty()) {
+            State src = worklist.front();
+            worklist.pop();
+            for (const SymbolPost& move: aut.delta[src]) {
+                for (const State trg: move.targets) {
+                    if (aut.levels[trg] == 0) {
+                        // A leaf has been reached.
+                        tree_leaves[tree_root].insert(trg);
+                        continue;
+                    }
+                    // Create new state wiht inverted level.
+                    State tgt_inv = aut_inv.add_state_with_level(aut.num_of_levels - aut.levels[trg]);
+                    renaming[trg] = tgt_inv;
+                    worklist.push(trg);
+                }
+            }
+        }
+
+        // Second, iterate over the tree again and map its transitions to aut_inv.
+        worklist.push(tree_root);
+        while (!worklist.empty()) {
+            State src = worklist.front();
+            worklist.pop();
+            for (const SymbolPost& move: aut.delta[src]) {
+                for (const State trg: move.targets) {
+                    const bool is_src_root = src == tree_root;
+                    const bool is_trg_leaf = aut.levels[trg] == 0;
+                    if (is_src_root && is_trg_leaf) {
+                        // It is a direct transition between two zero-states (the root and a leaf).
+                        // Just copy it.
+                        if (jump_mode == JumpMode::AppendDontCares && aut.num_of_levels > 1) {
+                            const State aux_state = aut_inv.add_state_with_level(aut.num_of_levels - 1);
+                            aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
+                            aut_inv.delta.add(aux_state, move.symbol, renaming[trg]);
+                        } else {
+                            aut_inv.delta.add(renaming[src], move.symbol, renaming[trg]);
+                        }
+                    } else if (is_src_root) {
+                        // It is a transition from a zero-state (root) to a nonzero-state (inner node).
+                        // Map it as transitions from that nonzero-state (inner node) to all tree leaves (zero-states).
+                        for (const State tree_trg: tree_leaves[tree_root]) {
+                            if (jump_mode == JumpMode::AppendDontCares && aut.levels[trg] > 1) {
+                                const State aux_state = aut_inv.add_state_with_level(aut.num_of_levels - 1);
+                                aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
+                                aut_inv.delta.add(aux_state, move.symbol, renaming[tree_trg]);
+                            } else {
+                                aut_inv.delta.add(renaming[trg], move.symbol, renaming[tree_trg]);
+                            }
+                        }
+                    } else if (is_trg_leaf) {
+                        // It is a transition from a nonzero-state (inner node) to a zero-state (leaf).
+                        // Map it as transitions from a zero-state (root) to that nonzero-state (inner node).
+                        if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
+                            const State aux_state = aut_inv.add_state_with_level(aut.num_of_levels - 1);
+                            aut_inv.delta.add(renaming[tree_root], DONT_CARE, aux_state);
+                            aut_inv.delta.add(aux_state, move.symbol, renaming[src]);
+                        } else {
+                            aut_inv.delta.add(renaming[tree_root], move.symbol, renaming[src]);
+                        }
+                    } else {
+                        // It is a transition between two nonzero-states (inner nodes).
+                        // Just swap the source and target.
+                        if (jump_mode == JumpMode::AppendDontCares && (aut.levels[trg] - aut.levels[src]) > 1) {
+                            const State aux_state = aut_inv.add_state_with_level(aut.levels[trg] - 1);
+                            aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
+                            aut_inv.delta.add(aux_state, move.symbol, renaming[src]);
+                        } else {
+                            aut_inv.delta.add(renaming[trg], move.symbol, renaming[src]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return aut_inv;
+}
+
 std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     if (run.path.empty()) { return {{}, true}; }
 

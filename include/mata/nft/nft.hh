@@ -67,6 +67,13 @@ public:
      * @param[in] levels_vector Vector of levels to be appended.
      */
     void append(const Levels& levels_vector) { for (const Level& level: levels_vector) { push_back(level); } }
+
+    /**
+     * @brief Count the number of occurrences of a level in @c this.
+     *
+     * @param[in] level Level to be counted.
+     */
+    size_t count(Level level) const { return std::count(begin(), end(), level); }
 };
 
 /**
@@ -166,6 +173,12 @@ public:
      * @return The requested @p state.
      */
     State add_state_with_level(State state, Level level);
+
+    /**
+     * Get the number of states with level @p level.
+     * @return The number of states with level @p level.
+     */
+    size_t num_of_states_with_level(Level level) const;
 
     /**
      * Inserts a @p word into the NFT from a source state @p source to a target state @p target.
@@ -758,6 +771,20 @@ Nft simple_revert(const Nft& aut);
 // It replaces random access addition to SymbolPost by push_back and sorting later, so far seems the slowest of all, except on
 //  dense automata, where it is almost as slow as simple_revert. Candidate for removal.
 Nft somewhat_simple_revert(const Nft& aut);
+
+/**
+ * @brief Inverts the levels of the given transducer @p aut.
+ *
+ * The function inverts the levels of the transducer, i.e., the level 0 becomes the last level, level 1 becomes the
+ * second last level, and so on.
+ *
+ * @param[in] aut The transducer for inverting levels.
+ * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+ * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+ * of @c DONT_CARE symbols.
+ * @return A new transducer with inverted levels.
+ */
+Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 // Removing epsilon transitions
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);

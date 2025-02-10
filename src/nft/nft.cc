@@ -23,6 +23,10 @@ using StateBoolArray = std::vector<bool>; ///< Bool array for states in the auto
 const std::string mata::nft::TYPE_NFT = "NFT";
 
 
+size_t Nft::num_of_states_with_level(const Level level) const {
+    return levels.count(level);
+}
+
 Nft& Nft::trim(StateRenaming* state_renaming) {
 
 #ifdef _STATIC_STRUCTURES_
