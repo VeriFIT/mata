@@ -1831,6 +1831,162 @@ TEST_CASE("mata::nft::revert()")
     }
 } // }}}
 
+TEST_CASE("mata::nft::Levels") {
+    SECTION("empty") {
+        Levels levels;
+        CHECK(levels.count(3) == 0);
+    }
+
+    SECTION("existing") {
+        Levels levels = { 1, 0, 1, 0, 4, 2, 0 };
+        CHECK(levels.count(0) == 3);
+        CHECK(levels.count(1) == 2);
+        CHECK(levels.count(2) == 1);
+        CHECK(levels.count(4) == 1);
+    }
+
+    SECTION("non-existing") {
+        Levels levels = { 1, 0, 1, 0, 4, 2, 0 };
+        CHECK(levels.count(3) == 0);
+        CHECK(levels.count(5) == 0);
+    }
+}
+
+TEST_CASE("mata::nft::Nft::invert_levels()") {
+    SECTION("jump_mpde == RepeatSymbol") {
+        SECTION("empty automaton") {
+            Nft aut;
+            Nft aut_new = invert_levels(aut);
+            CHECK(aut_new.num_of_states() == 0);
+            CHECK(are_equivalent(aut, aut_new));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+        }
+
+        SECTION("no transition only states") {
+            Nft aut(3);
+            aut.initial.insert(1);
+            aut.final.insert(2);
+            aut.num_of_levels = 1;
+            aut.levels = { 1, 0, 0 };
+            Nft aut_new = invert_levels(aut);
+            CHECK(aut_new.is_lang_empty());
+            CHECK(aut_new.delta.num_of_transitions() == 0);
+            CHECK(are_equivalent(aut, aut_new));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+        }
+
+        SECTION("Linear - 2 levels") {
+            Nft aut(3);
+            aut.initial.insert(0);
+            aut.final.insert(2);
+            aut.num_of_levels = 2;
+            aut.levels = { 0, 1, 0 };
+            aut.delta.add(0, 'a', 1);
+            aut.delta.add(1, 'b', 2);
+            Nft aut_new = invert_levels(aut);
+
+            Nft expected = Nft(3);
+            expected.initial.insert(0);
+            expected.final.insert(2);
+            expected.num_of_levels = 2;
+            expected.levels = { 0, 1, 0 };
+            expected.delta.add(0, 'b', 1);
+            expected.delta.add(1, 'a', 2);
+
+            CHECK(aut_new.num_of_states() == 3);
+            CHECK(aut_new.delta.num_of_transitions() == 2);
+            CHECK(are_equivalent(aut_new, expected));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+        }
+
+        SECTION("Linear 2 - 2 levels") {
+            Nft aut(5);
+            aut.initial.insert(0);
+            aut.final.insert(4);
+            aut.num_of_levels = 2;
+            aut.levels = { 0, 1, 0, 1, 0 };
+            aut.delta.add(0, 'a', 1);
+            aut.delta.add(1, 'b', 2);
+            aut.delta.add(2, 'c', 3);
+            aut.delta.add(3, 'd', 4);
+            Nft aut_new = invert_levels(aut);
+
+            Nft expected = Nft(5);
+            expected.initial.insert(0);
+            expected.final.insert(4);
+            expected.num_of_levels = 2;
+            expected.levels = {0, 1, 0, 1, 0};
+            expected.delta.add(0, 'b', 1);
+            expected.delta.add(1, 'a', 2);
+            expected.delta.add(2, 'd', 3);
+            expected.delta.add(3, 'c', 4);
+
+            CHECK(aut_new.num_of_states() == 5);
+            CHECK(aut_new.delta.num_of_transitions() == 4);
+            CHECK(are_equivalent(aut_new, expected));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+        }
+
+        SECTION("Linear + long jump - 3 levels") {
+            Nft aut(4);
+            aut.initial.insert(0);
+            aut.final.insert(3);
+            aut.num_of_levels = 3;
+            aut.levels = { 0, 1, 2, 0 };
+            aut.delta.add(0, 'a', 1);
+            aut.delta.add(1, 'b', 2);
+            aut.delta.add(2, 'c', 3);
+            aut.delta.add(0, 'd', 3);
+            Nft aut_new = invert_levels(aut);
+
+            Nft expected = Nft(4);
+            expected.initial.insert(0);
+            expected.final.insert(3);
+            expected.num_of_levels = 3;
+            expected.levels = {0, 1, 2, 0};
+            expected.delta.add(0, 'd', 3);
+            expected.delta.add(0, 'c', 1);
+            expected.delta.add(1, 'b', 2);
+            expected.delta.add(2, 'a', 3);
+
+            CHECK(aut_new.num_of_states() == 4);
+            CHECK(aut_new.delta.num_of_transitions() == 4);
+            CHECK(are_equivalent(aut_new, expected));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+        }
+
+        SECTION("Linear + long jump 2 - 4 levels") {
+            Nft aut(4);
+            aut.initial.insert(0);
+            aut.final.insert(3);
+            aut.num_of_levels = 4;
+            aut.levels = { 0, 1, 3, 0 };
+            aut.delta.add(0, 'a', 1);
+            aut.delta.add(1, 'b', 2);
+            aut.delta.add(2, 'c', 3);
+            aut.delta.add(0, 'd', 2);
+            Nft aut_new = invert_levels(aut);
+
+            Nft expected = Nft(4);
+            expected.initial.insert(0);
+            expected.final.insert(3);
+            expected.num_of_levels = 4;
+            expected.levels = {0, 1, 3, 0};
+            expected.delta.add(0, 'c', 1);
+            expected.delta.add(1, 'b', 2);
+            expected.delta.add(2, 'a', 3);
+            expected.delta.add(1, 'd', 3);
+
+            CHECK(aut_new.num_of_states() == 4);
+            CHECK(aut_new.delta.num_of_transitions() == 4);
+            CHECK(are_equivalent(aut_new, expected));
+            CHECK(are_equivalent(invert_levels(aut_new), aut));
+
+        }
+
+    }
+}
+
 
 TEST_CASE("mata::nft::Nft::is_deterministic()")
 { // {{{

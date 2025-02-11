@@ -61,6 +61,18 @@ StatePost::const_iterator Delta::epsilon_symbol_posts(const StatePost& state_pos
     return state_post.end();
 }
 
+StateSet StatePost::get_successors() const {
+    StateSet successors;
+    for (const SymbolPost& symbol_post: *this) {
+        successors.insert(symbol_post.targets);
+    }
+    return successors;
+}
+
+StateSet Delta::get_successors(const State state) const {
+    return state_post(state).get_successors();
+}
+
 std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
     std::vector<Transition> transitions_to_state{};
     const size_t num_of_states{ this->num_of_states() };
@@ -73,6 +85,17 @@ std::vector<Transition> Delta::get_transitions_to(const State state_to) const {
         }
     }
     return transitions_to_state;
+}
+
+std::vector<Transition> Delta::get_transitions_between(const State state_from, const State state_to) const {
+    std::vector<Transition> transitions_between{};
+    for (const SymbolPost& symbol_post: state_post(state_from)) {
+        const StateSet::const_iterator state_to_find_it = symbol_post.targets.find(state_to);
+        if (state_to_find_it != symbol_post.targets.end()) {
+            transitions_between.push_back({ state_from, symbol_post.symbol, state_to });
+        }
+    }
+    return transitions_between;
 }
 
 void Delta::add(const State source, Symbol symbol, const State target) {

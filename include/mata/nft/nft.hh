@@ -73,7 +73,7 @@ public:
      *
      * @param[in] level Level to be counted.
      */
-    size_t count(Level level) const { return std::count(begin(), end(), level); }
+    size_t count(Level level) const { return static_cast<size_t>(std::count(begin(), end(), level)); }
 };
 
 /**
