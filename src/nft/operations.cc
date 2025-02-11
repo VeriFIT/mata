@@ -677,6 +677,136 @@ Nft mata::nft::revert(const Nft& aut) {
     //return somewhat_simple_revert(aut);
 }
 
+Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
+    const size_t num_of_states = aut.num_of_states();
+
+    // Find states with level zero and rename them.
+    std::vector<State> renaming(num_of_states, Limits::max_state);
+    size_t num_of_zerostates = 0;
+    for (State s = 0; s < num_of_states; ++s) {
+        if (aut.levels[s] == 0) {
+            renaming[s] = num_of_zerostates++;
+        }
+    }
+
+    // Rename initial states
+    SparseSet<State> new_initial;
+    for (const State s: aut.initial) {
+        new_initial.insert(renaming[s]);
+    }
+    // Rename final states
+    SparseSet<State> new_final;
+    for (const State s: aut.final) {
+        new_final.insert(renaming[s]);
+    }
+    // Create new automaton
+    Nft aut_inv = Nft(num_of_zerostates, std::move(new_initial), std::move(new_final), Levels(num_of_zerostates, 0), aut.num_of_levels, aut.alphabet);
+
+    // Creates new states with inverted levels for each inner state in the path.
+    auto create_states_with_inverted_levels = [&](const std::vector<State>& path_states) {
+        for (const State s: path_states) {
+            if (aut.levels[s] == 0) { continue; }
+            renaming[s] = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - aut.levels[s]));
+        }
+    };
+
+    // Returns transitions of the path.
+    auto get_path_transitions = [&](const std::vector<State>& path_states) {
+        std::vector<Transition> path_transitions;
+        for (size_t i = 0; i < path_states.size() - 1; ++i) {
+            const State src = path_states[i];
+            const State trg = path_states[i + 1];
+            std::vector<Transition> transitions_between = aut.delta.get_transitions_between(src, trg);
+            path_transitions.insert(path_transitions.end(), transitions_between.begin(), transitions_between.end());
+        }
+
+        return path_transitions;
+    };
+
+    // Creates inverted transitions for each transition in the path.
+    // Can work with different jump modes.
+    auto map_inverted_transitions = [&](const std::vector<Transition>& path, const State head, const State tail) {
+        for (const auto &[src, symbol, trg]: path) {
+            const bool is_src_head = src == head;
+            const bool is_trg_tail = trg == tail;
+            if (is_src_head && is_trg_tail) {
+                // It is a direct transition between two zero-states (the head and the tail).
+                // Just copy it.
+                if (jump_mode == JumpMode::AppendDontCares && aut.num_of_levels > 1) {
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - 1));
+                    aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[trg]);
+                } else {
+                    aut_inv.delta.add(renaming[src], symbol, renaming[trg]);
+                }
+            } else if (is_src_head) {
+                // It is a transition from a zero-state (head) to a nonzero-state (inner state).
+                // Map it as transition from that nonzero-state (inner state) to the tail (zero-states).
+                if (jump_mode == JumpMode::AppendDontCares && aut.levels[trg] > 1) {
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - 1));
+                    aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[tail]);
+                } else {
+                    aut_inv.delta.add(renaming[trg], symbol, renaming[tail]);
+                }
+
+            } else if (is_trg_tail) {
+                // It is a transition from a nonzero-state (inner state) to a zero-state (tail).
+                // Map it as transition from the zero-state (head) to that nonzero-state (inner state).
+                if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[src]);
+                } else {
+                    aut_inv.delta.add(renaming[head], symbol, renaming[src]);
+                }
+            } else {
+                // It is a transition between two nonzero-states (inner states).
+                // Just swap the source and target.
+                if (jump_mode == JumpMode::AppendDontCares && (aut.levels[trg] - aut.levels[src]) > 1) {
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
+                    aut_inv.delta.add(aux_state, symbol, renaming[src]);
+                } else {
+                    aut_inv.delta.add(renaming[trg], symbol, renaming[src]);
+                }
+            }
+        }
+    };
+
+    // Main loop of the algorithm.
+    for (State path_head = 0; path_head < num_of_states; ++path_head) {
+        // Test if the state is a head of some path.
+        if (aut.levels[path_head] != 0) {
+            continue;   // Not a head.
+        }
+        // Process all paths using dfs.
+        std::stack<std::pair<State, std::vector<State>>> stack;
+        stack.push({ path_head, { path_head } });
+        while (!stack.empty()) {
+            auto [src, path] = stack.top();
+            stack.pop();
+
+            if (aut.levels[src] == 0 && path.size() > 1) {
+                // A tail of the path (src) has been reached.
+                create_states_with_inverted_levels(path);
+                const std::vector<Transition> path_transitions = get_path_transitions(path);
+                map_inverted_transitions(path_transitions, path.front(), path.back());
+                continue;
+            }
+
+            for (const State trg: aut.delta[src].get_successors()) {
+                // Extend the path.
+                std::vector<State> new_path = path;
+                new_path.push_back(trg);
+                stack.push({ trg, std::move(new_path) });
+            }
+        }
+    }
+
+    return aut_inv;
+}
+
 std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     if (run.path.empty()) { return {{}, true}; }
 
