@@ -726,6 +726,17 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     // Creates inverted transitions for each transition in the path.
     // Can work with different jump modes.
     auto map_inverted_transitions = [&](const std::vector<Transition>& path, const State head, const State tail) {
+        // Auxiliary state between two states can be reused for transitions over different symbols.
+        // The key is a pair of source and target states.
+        // auxiliar_states map will be used only if the jump_mode is JumpMode::AppendDontCares.
+        std::unordered_map<std::pair<State, State>, State> auxiliar_states;
+        auto get_aux_state = [&](const State src, const State trg, const size_t level) {
+            const std::pair<State, State> key{ src, trg };
+            if (auxiliar_states.find(key) == auxiliar_states.end()) {
+                auxiliar_states[key] = aut_inv.add_state_with_level(static_cast<Level>(level));
+            }
+            return auxiliar_states[key];
+        };
         for (const auto &[src, symbol, trg]: path) {
             const bool is_src_head = src == head;
             const bool is_trg_tail = trg == tail;
@@ -733,7 +744,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a direct transition between two zero-states (the head and the tail).
                 // Just copy it.
                 if (jump_mode == JumpMode::AppendDontCares && aut.num_of_levels > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - 1));
+                    const State aux_state = get_aux_state(src, trg, aut.num_of_levels - 1);
                     aut_inv.delta.add(renaming[src], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[trg]);
                 } else {
@@ -743,7 +754,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition from a zero-state (head) to a nonzero-state (inner state).
                 // Map it as transition from that nonzero-state (inner state) to the tail (zero-states).
                 if (jump_mode == JumpMode::AppendDontCares && aut.levels[trg] > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - 1));
+                    const State aux_state = get_aux_state(src, trg, aut.num_of_levels - 1);
                     aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[tail]);
                 } else {
@@ -754,7 +765,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition from a nonzero-state (inner state) to a zero-state (tail).
                 // Map it as transition from the zero-state (head) to that nonzero-state (inner state).
                 if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    const State aux_state = get_aux_state(src, trg, aut_inv.levels[renaming[src]] - 1);
                     aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[src]);
                 } else {
@@ -764,7 +775,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition between two nonzero-states (inner states).
                 // Just swap the source and target.
                 if (jump_mode == JumpMode::AppendDontCares && (aut.levels[trg] - aut.levels[src]) > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
+                    const State aux_state = get_aux_state(src, trg, aut_inv.levels[renaming[src]] - 1);
                     aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[src]);
                 } else {
