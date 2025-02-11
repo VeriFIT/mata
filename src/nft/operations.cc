@@ -754,7 +754,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition from a nonzero-state (inner state) to a zero-state (tail).
                 // Map it as transition from the zero-state (head) to that nonzero-state (inner state).
                 if (jump_mode == JumpMode::AppendDontCares && (aut.num_of_levels - aut.levels[src]) > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.num_of_levels - 1));
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
                     aut_inv.delta.add(renaming[head], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[src]);
                 } else {
@@ -764,7 +764,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // It is a transition between two nonzero-states (inner states).
                 // Just swap the source and target.
                 if (jump_mode == JumpMode::AppendDontCares && (aut.levels[trg] - aut.levels[src]) > 1) {
-                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut.levels[trg] - 1));
+                    const State aux_state = aut_inv.add_state_with_level(static_cast<Level>(aut_inv.levels[renaming[src]] - 1));
                     aut_inv.delta.add(renaming[trg], DONT_CARE, aux_state);
                     aut_inv.delta.add(aux_state, symbol, renaming[src]);
                 } else {
