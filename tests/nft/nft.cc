@@ -2271,8 +2271,6 @@ TEST_CASE("mata::nft::Nft::invert_levels()") {
             aut.delta.add(5, 'j', 4);
             Nft aut_new = invert_levels(aut, JumpMode::AppendDontCares);
 
-            aut_new.print_to_dot(std::cerr);
-
             Nft expected = Nft(18);
             expected.initial.insert(0);
             expected.final.insert(10);
