@@ -784,7 +784,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
         std::stack<std::pair<State, std::vector<State>>> stack;
         stack.push({ path_head, { path_head } });
         while (!stack.empty()) {
-            auto &[src, path] = stack.top();
+            auto [src, path] = stack.top();
             stack.pop();
 
             if (aut.levels[src] == 0 && path.size() > 1) {
@@ -799,7 +799,7 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
                 // Extend the path.
                 std::vector<State> new_path = path;
                 new_path.push_back(trg);
-                stack.push({ trg, new_path });
+                stack.push({ trg, std::move(new_path) });
             }
         }
     }
