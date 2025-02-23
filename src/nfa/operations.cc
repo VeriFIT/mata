@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <list>
+#include <string>
 #include <unordered_set>
 
 // MATA headers
@@ -54,10 +55,17 @@ namespace {
         return lts_for_simulation.compute_simulation();
     }
 
-    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
+    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction) {
         Nfa result;
+        Nfa aut_m;
+
+        if (simulation_direction == "backward")
+            aut_m = revert(aut);
+        else
+            aut_m = aut;
+
         const auto sim_relation = algorithms::compute_relation(
-                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+                aut_m, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -66,7 +74,7 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-        const size_t num_of_states = aut.num_of_states();
+        const size_t num_of_states = aut_m.num_of_states();
 
         // map each state q of aut to the state of the reduced automaton representing the simulation class of q
         for (State q = 0; q < num_of_states; ++q) {
@@ -83,12 +91,12 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State q_class_state = state_renaming.at(q);
 
-            if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
+            if (aut_m.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
                 result.initial.insert(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (const auto &q_trans : aut.delta.state_post(q)) {
+                for (const auto &q_trans : aut_m.delta.state_post(q)) {
                     const StateSet representatives_of_states_to = [&]{
                         StateSet state_set;
                         for (auto s : q_trans.targets) {
@@ -117,11 +125,14 @@ namespace {
                     result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
                 }
 
-                if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
+                if (aut_m.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
                     result.final.insert(q_class_state);
                 }
             }
         }
+
+        if (simulation_direction == "backward")
+            result = revert(result);
 
         return result;
     }
@@ -1147,7 +1158,8 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        result = reduce_size_by_simulation(aut, reduced_state_map);
+        const std::string& simulation_direction = params.at("direction");
+        result = reduce_size_by_simulation(aut, reduced_state_map, simulation_direction);
     }
     else if ("residual" == algorithm) {
         // reduce type either 'after' or 'with' creation of residual automaton
