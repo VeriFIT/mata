@@ -27,8 +27,9 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
             }
         }
 
-        for (State s{ 0 }; s < nft.num_of_states(); s++) {
-            if (nft.levels[s]== 0) {
+        size_t original_num_of_states = nft.num_of_states();
+        for (State s{ 0 }; s < original_num_of_states; s++) {
+            if (nft.levels[s] == 0) {
                 nft.insert_word(s, loop_word, s);
             }
         }
