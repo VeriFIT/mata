@@ -48,4 +48,12 @@ void AnnotationCollection::clear() {
     annotations.clear();
 }
 
+void AnnotationCollection::insert_annotation(TransitionAnnotationVariant annotation, size_t index)
+{
+    if (index >= this->num_of_annotation_sets()) {
+        this->allocate(index + 1);
+    }
+    annotations[index].push_back(annotation);
+}
+
 } // namespace mata::cntnfa.

@@ -195,6 +195,11 @@ public:
      * Clear all annotations.
      */
     void clear();
+
+    /**
+     * Insert an annotation into annotations vector using index.
+     */
+    void insert_annotation(TransitionAnnotationVariant annotation, size_t id);
 };
 
 } // namespace mata::cntnfa.
