@@ -24,6 +24,7 @@ add_executable(tests
 		nft/strings.cc
 		cntnfa/delta.cc
 		cntnfa/cntnfa.cc
+		cntnfa/annotations.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc
