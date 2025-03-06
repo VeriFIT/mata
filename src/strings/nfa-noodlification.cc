@@ -538,10 +538,10 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
             TransducerNoodleElement transd_el{
                 .transducer = element_nft,
-                .input_index = element.second[0],
                 .input_aut = std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))),
-                .output_index = element.second[1],
-                .output_aut = std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1))))
+                .input_index = element.second[0],
+                .output_aut = std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))),
+                .output_index = element.second[1]
             };
 
             seg_nfa_to_transducer_el[element_aut] = transd_el;
