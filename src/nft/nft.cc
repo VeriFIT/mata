@@ -438,7 +438,7 @@ bool Nft::are_there_jump_transitions() {
         Level tgt_level = levels[transition.target];
         if (tgt_level == 0) {
             // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
-            tgt_level = tgt_level + num_of_levels;
+            tgt_level = tgt_level + static_cast<unsigned>(num_of_levels);
         }
         if (tgt_level - src_level != 1) {
             return true;
