@@ -181,15 +181,15 @@ public:
     }
 
     /**
-     * Allocate annotation sets up to num_of_annotation_sets sets, creating an empty set for yet unallocated set.
-     * num_of_annotation_sets have to be at least size() + 1.
+     * Allocate annotation sets up to "size" sets, creating an empty set for yet unallocated set.
+     * "size" has to be at least size() + 1.
      */
-    void allocate(const size_t num_of_annotation_sets);
+    void allocate(const size_t size);
 
     /**
      * Get the total number of annotation sets.
      */
-    size_t num_of_annotation_sets() const;
+    size_t size() const;
 
     /**
      * Clear all annotations.
@@ -199,7 +199,7 @@ public:
     /**
      * Insert an annotation into annotations vector using index.
      */
-    void insert_annotation(TransitionAnnotationVariant annotation, size_t id);
+    void insert_annotation(TransitionAnnotationVariant annotation, size_t index);
 };
 
 } // namespace mata::cntnfa.

@@ -35,12 +35,12 @@ bool CounterTest::test(const CounterSet& counters) {
     return counters[counter_id].value == expected_value;
 }
 
-void AnnotationCollection::allocate(const size_t num_of_annotation_sets) {
-    assert(num_of_annotation_sets >= this->size());
-    annotations.resize(num_of_annotation_sets);
+void AnnotationCollection::allocate(const size_t size) {
+    assert(size >= annotations.size());
+    annotations.resize(size);
 }
 
-size_t AnnotationCollection::num_of_annotation_sets() const {
+size_t AnnotationCollection::size() const {
     return annotations.size();
 }
 
@@ -50,7 +50,7 @@ void AnnotationCollection::clear() {
 
 void AnnotationCollection::insert_annotation(TransitionAnnotationVariant annotation, size_t index)
 {
-    if (index >= this->num_of_annotation_sets()) {
+    if (index >= annotations.size()) {
         this->allocate(index + 1);
     }
     annotations[index].push_back(annotation);

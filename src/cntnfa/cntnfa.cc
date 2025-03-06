@@ -595,7 +595,7 @@ size_t Nfa::create_annotation_set() {
 }
 
 size_t Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
-    if (annotations_id >= annotation_collection.num_of_annotation_sets()) {
+    if (annotations_id >= annotation_collection.size()) {
         annotation_collection.allocate(annotations_id + 1);
     }
     annotation_collection[annotations_id].insert(annotation);
@@ -603,11 +603,11 @@ size_t Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVari
 }
 
 size_t Nfa::num_of_annotation_sets() const {
-    return annotation_collection.num_of_annotation_sets();
+    return annotation_collection.size();
 }
 
 const OrdVector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
-    if (annotations_id >= annotation_collection.num_of_annotation_sets()) {
+    if (annotations_id >= annotation_collection.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
     return annotation_collection[annotations_id];

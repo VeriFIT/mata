@@ -1,5 +1,7 @@
 // TODO: Insert header file.
 
+#include <limits>
+
 #include "mata/cntnfa/counters.hh"
 
 namespace mata::cntnfa {
@@ -26,42 +28,28 @@ void CounterRegister::reset() {
     value = initial_value;
 }
 
-// Note: Custom debug output. This should be removed later.
-void CounterRegister::print() const {
-    std::cout << "ID: " << id << ", Value: " << value << ", Initial: " << initial_value << "\n";
-}
-
 /*
     Methods for CounterRegisterSet.
 */
 
-void CounterRegisterSet::addCounter(CounterValue value) {
-    counters.emplace_back(counters.size(), value);
-}
-
-CounterRegister& CounterRegisterSet::getCounter(size_t id) {
-    if (id >= counters.size()) {
-        throw std::runtime_error("CounterRegisterSet: Counter with this ID does not exist.");
-    }
-    return counters[id];
-}
-
-const CounterRegister& CounterRegisterSet::getCounter(size_t id) const {
-    if (id >= counters.size()) {
-        throw std::runtime_error("CounterRegisterSet: Counter with this ID does not exist.");
-    }
-    return counters[id];
+void CounterRegisterSet::allocate(const size_t size) {
+    assert(size >= annotations.size());
+    counters.resize(size);
 }
 
 size_t CounterRegisterSet::size() const {
     return counters.size();
 }
 
-// Note: Custom debug output. This should be removed later.
-void CounterRegisterSet::print() const {
-    for (const auto& counter : counters) {
-        counter.print();
+void CounterRegisterSet::clear() {
+    counters.clear();
+}
+
+void CounterRegisterSet::insert_counter(CounterRegister counter, size_t index) {
+    if (index >= counters.size()) {
+        this->allocate(index + 1);
     }
+    counters.insert(counters.begin() + static_cast<long>(index), counter);
 }
 
 } // namespace mata::cntnfa.
