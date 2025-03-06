@@ -405,9 +405,11 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
-    constexpr Symbol INPUT_DELIMITER = EPSILON-1;
-    constexpr Symbol OUTPUT_DELIMITER = EPSILON-2;
+    // delimiters, we cannot use EPSILON, because that is normal EPSILON which can be used in nft (non-preserving lengths nfts are allowed) and EPSILON-1 is DONT_CARE
+    constexpr Symbol INPUT_DELIMITER = EPSILON-2;
+    constexpr Symbol OUTPUT_DELIMITER = EPSILON-3;
 
+    // to have less noodles, we try to have one initial and one final state for each input/output automaton
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas;
     for (std::shared_ptr<Nfa> input_automaton : input_automata) {
         if (!unified_nfas.contains(input_automaton)) {
@@ -422,16 +424,19 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         }
     }
 
+    // concatenate input and output automata to one input/output automaton connected with INPUT_DELIMITER/OUTPUT_DELIMITER
     Nfa concatenated_input{*input_automata[0]};
-    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 2; i < input_automata.size(); ++i) {
+    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < input_automata.size(); ++i) {
         concatenated_input = concatenate_eps(concatenated_input, *input_automata[i], INPUT_DELIMITER);
     }
     Nfa concatenated_output{*output_automata[0]};
-    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 2; i < output_automata.size(); ++i) {
+    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < output_automata.size(); ++i) {
         concatenated_output = concatenate_eps(concatenated_output, *output_automata[i], OUTPUT_DELIMITER);
     }
 
+    // we will work with nfts, so we just transfer nfas to nfts
     Nft concatenated_input_nft(std::move(concatenated_input));
+    Nft concatenated_output_nft(std::move(concatenated_output));
 
     auto add_self_loop_for_every_default_state = [](Nft& nft, Symbol symbol) {
         Word sym_word(nft.num_of_levels, symbol);
@@ -445,14 +450,16 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     };
 
     Nft intersection = *nft;
+
+    // we intersect input nfa with nft on the input track but we need to add INPUT_DELIMITER as a "epsilon transition" of nft
     add_self_loop_for_every_default_state(intersection, INPUT_DELIMITER);
-    intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0);
+    intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
+    intersection.trim();
 
-    Nft concatenated_output_nft(std::move(concatenated_output));
-
+    // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft and INPUT_DELIMITER as "epsilon transition" of output nfa
+    add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
     add_self_loop_for_every_default_state(intersection, OUTPUT_DELIMITER);
-    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1);
-
+    intersection = mata::nft::compose(concatenated_output_nft, intersection, 0, 1, false);
     intersection.trim();
 
     if(intersection.final.empty()) {
@@ -491,15 +498,19 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         intersection_nfa.delta.remove(trans);
     }
 
-    std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el;
     std::vector<TransducerNoodle> result;
-    for (const auto& noodle : noodlify_mult_eps(intersection, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
+    std::map<std::shared_ptr<SegNfa>,TransducerNoodleElement> seg_nfa_to_transducer_el;
+    for (const auto& noodle : noodlify_mult_eps(intersection_nfa, {INPUT_DELIMITER, OUTPUT_DELIMITER}, false)) {
         TransducerNoodle new_noodle;
         for (const auto& element : noodle) {
             auto element_aut = element.first;
             
             if (seg_nfa_to_transducer_el.contains(element_aut)) {
-                new_noodle.push_back(seg_nfa_to_transducer_el.at(element_aut));
+                // we already processed this element_aut, we just need to update the indexes
+                TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);
+                transd_el.input_index = element.second[0];
+                transd_el.output_index= element.second[1];
+                new_noodle.push_back(transd_el);
                 continue;
             }
 
