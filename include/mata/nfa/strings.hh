@@ -4,10 +4,8 @@
 #ifndef MATA_NFA_STRING_SOLVING_HH_
 #define MATA_NFA_STRING_SOLVING_HH_
 
-#include "mata/alphabet.hh"
-#include "mata/nfa/delta.hh"
-#include "mata/nfa/types.hh"
-#include "nfa.hh"
+#include "mata/nfa/nfa.hh"
+#include "mata/nft/nft.hh"
 
 /**
  * NFA algorithms usable for solving string constraints.
@@ -20,6 +18,8 @@ using StateSet = nfa::StateSet;
 using Transition = nfa::Transition;
 using ParameterMap = nfa::ParameterMap;
 using SymbolPost = nfa::SymbolPost;
+
+using Nft = nft::Nft;
 
 /**
  * Class mapping states to the shortest words accepted by languages of the states.
@@ -402,6 +402,22 @@ std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
    const std::vector<std::shared_ptr<Nfa>>& lhs_automata,
    const std::vector<std::shared_ptr<Nfa>>& rhs_automata,
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
+
+struct TransducerNoodleElement {
+    std::shared_ptr<Nft> transducer;
+    std::shared_ptr<Nfa> input_aut;
+    unsigned input_index;
+    std::shared_ptr<Nfa> output_aut;
+    unsigned output_index;
+};
+
+using TransducerNoodle = std::vector<TransducerNoodleElement>;
+
+std::vector<TransducerNoodle> noodlify_for_transducer(
+    std::shared_ptr<Nft> nft,
+    const std::vector<std::shared_ptr<Nfa>>& input_automata,
+    const std::vector<std::shared_ptr<Nfa>>& output_automata
+);
 
 /**
  * @brief Process epsilon map to a sequence of values (sorted according to key desc)
