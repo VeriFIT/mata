@@ -432,6 +432,21 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
     return *this;
 }
 
+bool Nft::are_there_jump_transitions() {
+    for (const Transition& transition : delta.transitions()) {
+        Level src_level = levels[transition.source];
+        Level tgt_level = levels[transition.target];
+        if (tgt_level == 0) {
+            // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
+            tgt_level = tgt_level + num_of_levels;
+        }
+        if (tgt_level - src_level != 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void Nft::clear() {
     mata::nfa::Nfa::clear();
     levels.clear();

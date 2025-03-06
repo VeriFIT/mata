@@ -268,44 +268,49 @@ public:
     State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels);
 
     /**
-    * Inserts identity transitions into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
-    *  the vector.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts identity transitions into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
+     *  the vector.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-    * Inserts identity transitions into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts identity transitions into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, const Alphabet* alphabet, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-    * Inserts an identity transition into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param symbol The symbol used for the identity transition.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts an identity transition into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param symbol The symbol used for the identity transition.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
+     * @brief Checks if the transition contains any jump transition
+     */
+    bool are_there_jump_transitions();
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.
