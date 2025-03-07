@@ -415,12 +415,14 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
         if (!unified_nfas.contains(input_automaton)) {
             input_automaton->unify_initial();
             input_automaton->unify_final();
+            unified_nfas.insert(input_automaton);
         }
     }
     for (std::shared_ptr<Nfa> output_automaton : output_automata) {
         if (!unified_nfas.contains(output_automaton)) {
             output_automaton->unify_initial();
             output_automaton->unify_final();
+            unified_nfas.insert(output_automaton);
         }
     }
 
