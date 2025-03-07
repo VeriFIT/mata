@@ -46,6 +46,14 @@ void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfa
     }
 }
 
+Nfa concatenate_with(const std::vector<std::shared_ptr<Nfa>>& nfas, mata::Symbol delimiter) {
+    Nfa concatenation{*nfas[0]};
+    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < nfas.size(); ++i) {
+        concatenation = concatenate_eps(concatenation, *nfas[i], delimiter, true);
+    }
+    return concatenation;
+}
+
 } // namespace
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
@@ -360,22 +368,9 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     unify_initial_and_final_states(lhs_automata, unified_nfas);
     unify_initial_and_final_states(rhs_automata, unified_nfas);
 
-    const auto lhs_aut_begin{ lhs_automata.begin() };
-    const auto lhs_aut_end{ lhs_automata.end() };
-    const auto rhs_aut_begin{ rhs_automata.begin() };
-    const auto rhs_aut_end{ rhs_automata.end() };
-
     // Automaton representing the left side concatenated over epsilon transitions.
-    Nfa concatenated_lhs{ **lhs_aut_begin };
-    for (auto next_lhs_aut_it{ lhs_aut_begin + 1 }; next_lhs_aut_it != lhs_aut_end;
-         ++next_lhs_aut_it) {
-        concatenated_lhs = concatenate_eps(concatenated_lhs, **next_lhs_aut_it, EPSILON, true);
-    }
-    Nfa concatenated_rhs{ **rhs_aut_begin };
-    for (auto next_rhs_aut_it{ rhs_aut_begin + 1 }; next_rhs_aut_it != rhs_aut_end;
-         ++next_rhs_aut_it) {
-        concatenated_rhs = concatenate_eps(concatenated_rhs, **next_rhs_aut_it, EPSILON-1, true); // we use EPSILON-1
-    }
+    Nfa concatenated_lhs = concatenate_with(lhs_automata, EPSILON);
+    Nfa concatenated_rhs = concatenate_with(rhs_automata, EPSILON-1);
 
     auto product_pres_eps_trans{
             intersection(concatenated_lhs, concatenated_rhs, EPSILON-1).trim() };
@@ -422,14 +417,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     unify_initial_and_final_states(output_automata, unified_nfas);
 
     // concatenate input and output automata to one input/output automaton connected with INPUT_DELIMITER/OUTPUT_DELIMITER
-    Nfa concatenated_input{*input_automata[0]};
-    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < input_automata.size(); ++i) {
-        concatenated_input = concatenate_eps(concatenated_input, *input_automata[i], INPUT_DELIMITER);
-    }
-    Nfa concatenated_output{*output_automata[0]};
-    for (std::vector<std::shared_ptr<Nfa>>::size_type i = 1; i < output_automata.size(); ++i) {
-        concatenated_output = concatenate_eps(concatenated_output, *output_automata[i], OUTPUT_DELIMITER);
-    }
+    Nfa concatenated_input = concatenate_with(input_automata, INPUT_DELIMITER);
+    Nfa concatenated_output = concatenate_with(output_automata, OUTPUT_DELIMITER);
 
     // we will work with nfts, so we just transfer nfas to nfts
     Nft concatenated_input_nft(std::move(concatenated_input));
