@@ -558,8 +558,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
                         worklist.insert(tgt);
                     }
                     assert(
-                        (element_aut_levels[src] == 0 && element_aut_levels[tgt] == 1) ||
-                        (element_aut_levels[src] == 1 && element_aut_levels[tgt] == 0)
+                        (element_aut_levels[state_to_process] == 0 && element_aut_levels[tgt] == 1) ||
+                        (element_aut_levels[state_to_process] == 1 && element_aut_levels[tgt] == 0)
                     );
                 }
             }
