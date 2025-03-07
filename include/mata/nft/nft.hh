@@ -583,7 +583,7 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
  * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
- * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
