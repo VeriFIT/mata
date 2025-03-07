@@ -27,6 +27,25 @@ size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransiti
     return num_of_permutations;
 }
 
+/**
+ * @brief Unify (as best as possible) the initial states and the final states of NFAs in @p nfas
+ * 
+ * The unification happens only if the given automaton is not already unified, i.e. it is in @p unified_nfas.
+ * We also add the newly unified automata to @p unified_nfas.
+ * 
+ * @param[in] nfas The automata to unify
+ * @param[in,out] unified_nfas The set of already unified automata
+ */
+void unify_initial_and_final_states(const std::vector<std::shared_ptr<Nfa>>& nfas, std::unordered_set<std::shared_ptr<Nfa>>& unified_nfas) {
+    for (std::shared_ptr<Nfa> nfa : nfas) {
+        if (!unified_nfas.contains(nfa)) {
+            nfa->unify_initial();
+            nfa->unify_final();
+            unified_nfas.insert(nfa);
+        }
+    }
+}
+
 } // namespace
 
 std::vector<seg_nfa::Noodle> seg_nfa::noodlify(const SegNfa& aut, const Symbol epsilon, bool include_empty) {
@@ -337,26 +356,14 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     const std::vector<std::shared_ptr<Nfa>>& rhs_automata, bool include_empty, const ParameterMap& params) {
     if (lhs_automata.empty() || rhs_automata.empty()) { return {}; }
 
+    std::unordered_set<std::shared_ptr<Nfa>> unified_nfas; // Unify each automaton only once.
+    unify_initial_and_final_states(lhs_automata, unified_nfas);
+    unify_initial_and_final_states(rhs_automata, unified_nfas);
+
     const auto lhs_aut_begin{ lhs_automata.begin() };
     const auto lhs_aut_end{ lhs_automata.end() };
     const auto rhs_aut_begin{ rhs_automata.begin() };
     const auto rhs_aut_end{ rhs_automata.end() };
-
-    std::unordered_set<std::shared_ptr<Nfa>> unified_nfas; // Unify each automaton only once.
-    for (auto lhs_aut_iter{ lhs_aut_begin }; lhs_aut_iter != lhs_aut_end; ++lhs_aut_iter) {
-        if (unified_nfas.find(*lhs_aut_iter) == unified_nfas.end()) {
-            lhs_aut_iter->get()->unify_initial();
-            lhs_aut_iter->get()->unify_final();
-            unified_nfas.insert(*lhs_aut_iter);
-        }
-    }
-    for (auto rhs_aut_iter{ rhs_aut_begin }; rhs_aut_iter != rhs_aut_end; ++rhs_aut_iter) {
-        if (unified_nfas.find(*rhs_aut_iter) == unified_nfas.end()) {
-            rhs_aut_iter->get()->unify_initial();
-            rhs_aut_iter->get()->unify_final();
-            unified_nfas.insert(*rhs_aut_iter);
-        }
-    }
 
     // Automaton representing the left side concatenated over epsilon transitions.
     Nfa concatenated_lhs{ **lhs_aut_begin };
@@ -411,20 +418,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
     // to have less noodles, we try to have one initial and one final state for each input/output automaton
     std::unordered_set<std::shared_ptr<Nfa>> unified_nfas;
-    for (std::shared_ptr<Nfa> input_automaton : input_automata) {
-        if (!unified_nfas.contains(input_automaton)) {
-            input_automaton->unify_initial();
-            input_automaton->unify_final();
-            unified_nfas.insert(input_automaton);
-        }
-    }
-    for (std::shared_ptr<Nfa> output_automaton : output_automata) {
-        if (!unified_nfas.contains(output_automaton)) {
-            output_automaton->unify_initial();
-            output_automaton->unify_final();
-            unified_nfas.insert(output_automaton);
-        }
-    }
+    unify_initial_and_final_states(input_automata, unified_nfas);
+    unify_initial_and_final_states(output_automata, unified_nfas);
 
     // concatenate input and output automata to one input/output automaton connected with INPUT_DELIMITER/OUTPUT_DELIMITER
     Nfa concatenated_input{*input_automata[0]};
