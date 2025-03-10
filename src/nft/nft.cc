@@ -314,12 +314,12 @@ Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
 
 Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
     Nft result{ std::move(nfa) };
-    result.levels = Levels(result.num_of_states(), num_of_levels); // num_of_levels represents that the state does not have level assigned yet
+    result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
     result.num_of_levels = num_of_levels;
 
     // We apply simple DFS
     StateSet worklist; // worklist for DFS
-    for (State initial_state : nfa.initial) {
+    for (State initial_state : result.initial) {
         // start with initial states, which should be level 0
         result.levels[initial_state] = 0;
         worklist.insert(initial_state);
@@ -328,7 +328,7 @@ Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
     while (!worklist.empty()) {
         State state_to_process = worklist.back();
         worklist.pop_back();
-        for (State tgt : nfa.delta[state_to_process].get_successors()) {
+        for (State tgt : result.delta[state_to_process].get_successors()) {
             Level next_level = result.levels[state_to_process] + 1;
             if (next_level == num_of_levels) {
                 next_level = 0;
@@ -492,7 +492,7 @@ bool Nft::are_there_jump_transitions() {
         Level tgt_level = levels[transition.target];
         if (tgt_level == 0) {
             // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
-            tgt_level = tgt_level + static_cast<unsigned>(num_of_levels);
+            tgt_level = tgt_level + static_cast<Level>(num_of_levels);
         }
         if (tgt_level - src_level != 1) {
             return true;
