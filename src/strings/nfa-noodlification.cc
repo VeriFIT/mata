@@ -368,7 +368,7 @@ std::vector<seg_nfa::NoodleWithEpsilonsCounter> seg_nfa::noodlify_for_equation(
     unify_initial_and_final_states(lhs_automata, unified_nfas);
     unify_initial_and_final_states(rhs_automata, unified_nfas);
 
-    // Automaton representing the left side concatenated over epsilon transitions.
+    // Automata representing the left/rigth side concatenated over different epsilon transitions.
     Nfa concatenated_lhs = concatenate_with(lhs_automata, EPSILON);
     Nfa concatenated_rhs = concatenate_with(rhs_automata, EPSILON-1);
 
