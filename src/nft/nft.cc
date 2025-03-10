@@ -293,6 +293,25 @@ Nft& Nft::operator=(Nft&& other) noexcept {
     return *this;
 }
 
+
+Nft& Nft::operator=(const mata::nfa::Nfa& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
+Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
 State Nft::add_state() {
     const State state{ Nfa::add_state() };
     levels.set(state);

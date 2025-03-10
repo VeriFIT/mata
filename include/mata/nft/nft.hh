@@ -130,9 +130,6 @@ public:
         return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
     }
 
-    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
-    explicit Nft(mata::nfa::Nfa&& other): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
-
     /**
      * @brief Construct a new explicit NFT from other NFT.
      */
@@ -150,6 +147,12 @@ public:
 
     Nft& operator=(const Nft& other) = default;
     Nft& operator=(Nft&& other) noexcept;
+
+    // Construct NFT from NFA
+    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
+    explicit Nft(mata::nfa::Nfa&& other): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
+    Nft& operator=(const mata::nfa::Nfa& other) noexcept;
+    Nft& operator=(mata::nfa::Nfa&& other) noexcept;
 
     /**
      * Add a new (fresh) state to the automaton.
