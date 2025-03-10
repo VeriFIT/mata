@@ -542,31 +542,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
             // We need to create NFTi, therefore we add levels to NFAi by simple DFS which adds to each state
             // the level opposite of the level of the previous state.
-            nft::Levels element_aut_levels(element_aut->num_of_states(), 2); // 2 represents that the automaton does not have level yet
-            StateSet worklist; // worklist for DFS
-            for (State initial_state : element_aut->initial) {
-                // start with initial states, which should be level 0
-                element_aut_levels[initial_state] = 0;
-                worklist.insert(initial_state);
-            }
-            while (!worklist.empty()) {
-                State state_to_process = worklist.back();
-                worklist.pop_back();
-                for (State tgt : element_aut->delta[state_to_process].get_successors()) {
-                    if (element_aut_levels[tgt] == 2) { // tgt does not have a level yet
-                        element_aut_levels[tgt] = (element_aut_levels[state_to_process] == 0) ? 1 : 0;
-                        worklist.insert(tgt);
-                    }
-                    assert(
-                        (element_aut_levels[state_to_process] == 0 && element_aut_levels[tgt] == 1) ||
-                        (element_aut_levels[state_to_process] == 1 && element_aut_levels[tgt] == 0)
-                    );
-                }
-            }
-
-            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(std::move(*element_aut));
-            element_nft->levels = element_aut_levels;
-            element_nft->num_of_levels = 2;
+            std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(Nft::from_nfa_leveled(std::move(*element_aut), 2));
 
             TransducerNoodleElement transd_el{
                 .transducer = element_nft,
