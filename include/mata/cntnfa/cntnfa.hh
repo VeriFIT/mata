@@ -47,9 +47,9 @@ public:
      * The set of states of this automaton are the numbers from 0 to the number of states minus one.
      */
     Delta delta;
-    AnnotationCollection annotation_collection; // Note: Added annotation collection for storing NFA transition annotations.
     utils::SparseSet<State> initial{};
     utils::SparseSet<State> final{};
+    AnnotationCollection annotation_collection; // Note: Added annotation collection for storing NFA transition annotations.
 
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
@@ -62,21 +62,20 @@ public:
     std::unordered_map<std::string, void*> attributes{};
 
 public:
-    explicit Nfa(Delta delta = {}, AnnotationCollection annotation_collection = {},
-                 utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {},
-                 Alphabet* alphabet = nullptr)
-        : delta(std::move(delta)), annotation_collection(std::move(annotation_collection)),
-          initial(std::move(initial_states)), final(std::move(final_states)), alphabet(alphabet) {}
+    explicit Nfa(Delta delta = {}, utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {},
+                 AnnotationCollection annotation_collection = {}, Alphabet* alphabet = nullptr)
+        : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)),
+          annotation_collection(std::move(annotation_collection)), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
      *
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
-    explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {},
-                 StateSet final_states = {}, Alphabet* alphabet = nullptr)
-        : delta(num_of_states), annotation_collection(),
-          initial(initial_states), final(final_states), alphabet(alphabet) {}
+    explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {}, StateSet final_states = {},
+                 AnnotationCollection annotation_collection = {}, Alphabet* alphabet = nullptr)
+        : delta(num_of_states), initial(initial_states), final(final_states),
+          annotation_collection(annotation_collection), alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -84,8 +83,9 @@ public:
     Nfa(const Nfa& other) = default;
 
     Nfa(Nfa&& other) noexcept
-        : delta{ std::move(other.delta) }, annotation_collection{ std::move(other.annotation_collection) },
+        : delta{ std::move(other.delta) },
           initial{ std::move(other.initial) }, final{ std::move(other.final) },
+          annotation_collection{ std::move(other.annotation_collection) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
     Nfa& operator=(const Nfa& other) = default;

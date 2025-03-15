@@ -1,6 +1,7 @@
 // TODO: Insert header file.
 
 #include "mata/cntnfa/builder.hh"
+#include "mata/cntnfa/annotations.hh"
 
 #include <fstream>
 
@@ -196,7 +197,7 @@ Nfa builder::create_single_word_nfa(const std::vector<std::string>& word, mata::
         alphabet = new OnTheFlyAlphabet{ word };
     }
     const size_t word_size{ word.size() };
-    Nfa nfa{ word_size + 1, { 0 }, { word_size }, alphabet };
+    Nfa nfa{ word_size + 1, { 0 }, { word_size }, {}, alphabet };
 
     for (State state{ 0 }; state < word_size; ++state) {
         nfa.delta.add(state, alphabet->translate_symb(word[state]), Target(state + 1));
@@ -209,7 +210,7 @@ Nfa builder::create_empty_string_nfa() {
 }
 
 Nfa builder::create_sigma_star_nfa(mata::Alphabet* alphabet) {
-    Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, alphabet };
+    Nfa nfa{ 1, StateSet{ 0 }, StateSet{ 0 }, {}, alphabet };
     for (const mata::Symbol& symbol : alphabet->get_alphabet_symbols()) {
         nfa.delta.add(0, symbol, Target(0));
     }
