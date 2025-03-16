@@ -140,13 +140,25 @@ namespace {
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction) {
         Nfa result;
         
-        if (simulation_direction == "forward" || simulation_direction == "backward"){
+        if (simulation_direction == "forward"){
             // Compute the simulation based on simulation_direction
             const auto sim_relation = algorithms::compute_relation(
-                    aut, ParameterMap{{ "relation", "simulation"}, { "direction", simulation_direction}});
+                    aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
             
             // Merge states based on the selected rule
             result = merge_in_one_direction(aut, state_renaming, sim_relation);
+            return result;
+        }
+        else if (simulation_direction == "backward"){
+            Nfa aut_r = revert(aut);
+
+            // Compute the simulation based on simulation_direction
+            const auto sim_relation = algorithms::compute_relation(
+                    aut_r, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+            
+            // Merge states based on the selected rule
+            result = merge_in_one_direction(aut_r, state_renaming, sim_relation);
+            return revert(result);
         }
         else if (simulation_direction == "bidirect"){
             // Compute the forward simulation
@@ -1171,11 +1183,6 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     const std::string& direction = params.at("direction");
     if ("simulation" == relation && direction == "forward") {
         return compute_direct_simulation(aut);
-    }
-    else if ("simulation" == relation && direction == "backward") {
-        // When computing the reverse simulation, we simply revert the automaton
-        Nfa tmp_aut = revert(aut);
-        return compute_direct_simulation(tmp_aut);
     }
     else {
         throw std::runtime_error(std::to_string(__func__) +
