@@ -22,7 +22,7 @@ using mata::Symbol;
 using StateBoolArray = std::vector<bool>; ///< Bool array for states in the automaton.
 
 namespace {
-    Simlib::Util::BinaryRelation compute_fw_direct_simulation(const Nfa& aut) {
+    Simlib::Util::BinaryRelation compute_direct_simulation(const Nfa& aut) {
         OrdVector<mata::Symbol> used_symbols = aut.delta.get_used_symbols();
         mata::Symbol unused_symbol = 0;
         if (!used_symbols.empty() && *used_symbols.begin() == 0) {
@@ -54,18 +54,10 @@ namespace {
         lts_for_simulation.init();
         return lts_for_simulation.compute_simulation();
     }
-
-    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction) {
+    
+    // Merging based on the first and second rule (From the paper 'On NFA Reduction')
+    Nfa merge_in_one_direction(const Nfa& aut, StateRenaming& state_renaming, const Simlib::Util::BinaryRelation& sim_relation){
         Nfa result;
-        Nfa aut_m;
-
-        if (simulation_direction == "backward")
-            aut_m = revert(aut);
-        else
-            aut_m = aut;
-
-        const auto sim_relation = algorithms::compute_relation(
-                aut_m, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
         auto sim_relation_symmetric = sim_relation;
         sim_relation_symmetric.restrict_to_symmetric();
@@ -74,7 +66,7 @@ namespace {
         std::vector<size_t> quot_proj;
         sim_relation_symmetric.get_quotient_projection(quot_proj);
 
-        const size_t num_of_states = aut_m.num_of_states();
+        const size_t num_of_states = aut.num_of_states();
 
         // map each state q of aut to the state of the reduced automaton representing the simulation class of q
         for (State q = 0; q < num_of_states; ++q) {
@@ -91,12 +83,12 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State q_class_state = state_renaming.at(q);
 
-            if (aut_m.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
+            if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
                 result.initial.insert(q_class_state);
             }
 
             if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (const auto &q_trans : aut_m.delta.state_post(q)) {
+                for (const auto &q_trans : aut.delta.state_post(q)) {
                     const StateSet representatives_of_states_to = [&]{
                         StateSet state_set;
                         for (auto s : q_trans.targets) {
@@ -125,14 +117,53 @@ namespace {
                     result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
                 }
 
-                if (aut_m.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
+                if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
                     result.final.insert(q_class_state);
                 }
             }
         }
+        return result;
+    }
 
-        if (simulation_direction == "backward")
-            result = revert(result);
+    // Merging based on the third rule (From the paper 'On NFA Reduction')
+    Nfa merge_in_both_directions(const Nfa& aut,
+                                StateRenaming& state_renaming, 
+                                const Simlib::Util::BinaryRelation& fw_relation,
+                                const Simlib::Util::BinaryRelation& bw_relation)
+    {
+        Nfa result;
+
+
+        return result;
+    }
+
+    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction) {
+        Nfa result;
+        
+        if (simulation_direction == "forward" || simulation_direction == "backward"){
+            // Compute the simulation based on simulation_direction
+            const auto sim_relation = algorithms::compute_relation(
+                    aut, ParameterMap{{ "relation", "simulation"}, { "direction", simulation_direction}});
+            
+            // Merge states based on the selected rule
+            result = merge_in_one_direction(aut, state_renaming, sim_relation);
+        }
+        else if (simulation_direction == "bidirect"){
+            // Compute the forward simulation
+            const auto sim_fw_relation = algorithms::compute_relation(
+                    aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+
+            // Compute the backward simulation
+            const auto sim_bw_relation = algorithms::compute_relation(
+                    aut, ParameterMap{{ "relation", "simulation"}, { "direction", "backward"}});
+            
+            // Merge states based on the third rule
+            result = merge_in_both_directions(aut, state_renaming, sim_fw_relation, sim_bw_relation);
+        }
+        else {
+            // TODO throw some error
+            std::cerr << "TODO error" << std::endl;
+        }
 
         return result;
     }
@@ -1139,7 +1170,12 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     const std::string& relation = params.at("relation");
     const std::string& direction = params.at("direction");
     if ("simulation" == relation && direction == "forward") {
-        return compute_fw_direct_simulation(aut);
+        return compute_direct_simulation(aut);
+    }
+    else if ("simulation" == relation && direction == "backward") {
+        // When computing the reverse simulation, we simply revert the automaton
+        Nfa tmp_aut = revert(aut);
+        return compute_direct_simulation(tmp_aut);
     }
     else {
         throw std::runtime_error(std::to_string(__func__) +
