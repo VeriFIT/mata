@@ -5495,7 +5495,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ nft::strings::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
-        Nfa result{ project_to(nft_applied_nfa, 1).to_nfa_move() };
+        Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
         result.trim();
         Nfa expected{};
@@ -5513,7 +5513,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ nft::strings::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
-        Nfa result{ project_to(nft_applied_nfa, 1).to_nfa_move() };
+        Nfa result{ nft_applied_nfa.to_nfa_move() };
         result.remove_epsilon();
         result.trim();
         Nfa expected{};
@@ -5523,5 +5523,14 @@ TEST_CASE("mata::nft::Nft::apply()") {
         expected.delta.add(2, 'e', 3);
         expected.final.insert(3);
         CHECK(nfa::are_equivalent(result, expected));
+    }
+
+    SECTION("apply with 5 tapes") {
+        Nfa nfa{};
+        parser::create_nfa(&nfa, "(a|b)*");
+        Nft nft{1, {0}, {0}, {{0,0}}, 5};
+        nft.insert_identity(0, 'a');
+        CHECK(nft.apply(nfa).num_of_levels == 4);
+        CHECK(nft.apply(nfa, 3, false).num_of_levels == 5);
     }
 }

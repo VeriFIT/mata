@@ -34,10 +34,10 @@ int main() {
     Nfa nfa{};
     parser::create_nfa(&nfa, "ABCDEFggg");
 
-    // Compute the pre-image of an NFA as an NFT, identical to nft || Id(nfa).
-    Nft backward_applied_nft = nft.apply_backward(nfa);
-    // Extract a pre-image NFA for the tape 0.
-    Nfa nfa_pre_image{ project_to(backward_applied_nft, 0) };
+    // Compute the pre-image of an NFA (applies NFA to the image tape, i.e., tape 1)
+    Nft backward_applied_nft = nft.apply(nfa, 1);
+    // Extract a pre-image NFA.
+    Nfa nfa_pre_image{ backward_applied_nft.to_nfa_move() };
     // Minimize the result pre-image using hopcroft minimization.
     nfa_pre_image = determinize(remove_epsilon(nfa_pre_image).trim());
     assert(nfa_pre_image.is_deterministic());
