@@ -484,7 +484,7 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
     return *this;
 }
 
-bool Nft::are_there_jump_transitions() {
+bool Nft::contains_jump_transitions() {
     if (num_of_levels == 1) { return false; }
     
     for (const Transition& transition : delta.transitions()) {

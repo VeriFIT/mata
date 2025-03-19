@@ -462,7 +462,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     }
 
     // we assume that the operations did not add jump transitions
-    assert(!intersection.are_there_jump_transitions());
+    assert(!intersection.contains_jump_transitions());
 
 
     // Delimiters are always on both tracks together, but we want it to become

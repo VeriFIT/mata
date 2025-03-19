@@ -329,7 +329,7 @@ public:
     /**
      * @brief Checks if the transition contains any jump transition
      */
-    bool are_there_jump_transitions();
+    bool contains_jump_transitions();
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.
