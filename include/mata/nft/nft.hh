@@ -481,30 +481,38 @@ public:
     /**
      * @brief Apply @p nfa to @c this.
      *
-     * Identical to `Id(nfa) || this`.
+     * Intersects @p nfa with level @p level_to_apply_on of @c this. For 2-level NFT, the default values returns the image
+     * of @p nfa, where you can use to_nfa_copy() or to_nfa_move() to get NFA representation of this language. If you need
+     * pre-image of @p nfa for 2-level NFT, set @p level_to_apply_on to 1.
      * @param nfa NFA to apply.
      * @param level_to_apply_on Which level to apply the @p nfa on.
+     * @param project_out_applied_level Whether the @p level_to_apply_on is projected out from final NFT.
      * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
      *  is interpreted as a sequence repeating the same symbol, or as a single instance of the symbol followed by a
      *  sequence of @c DONT_CARE symbols.
      * @return
      */
     Nft apply(
-        const nfa::Nfa& nfa, Level level_to_apply_on = 0,
+        const nfa::Nfa& nfa, Level level_to_apply_on = 0, bool project_out_applied_level = true,
         JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
-     * @brief Apply @p nfa to @c this backward.
+     * @brief Apply @p word to @c this.
      *
-     * Identical to `this || Id(nfa)`.
-     * @param nfa NFA to apply.
+     * Intersects { @p word } with level @p level_to_apply_on of @c this. For 2-level NFT, the default values returns the image
+     * of @p word, where you can use to_nfa_copy() or to_nfa_move() to get NFA representation of this language. If you need
+     * pre-image of @p word for 2-level NFT, set @p level_to_apply_on to 1.
+     * @param word Word to apply.
      * @param level_to_apply_on Which level to apply the @p nfa on.
+     * @param project_out_applied_level Whether the @p level_to_apply_on is projected out from final NFT.
      * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
      *  is interpreted as a sequence repeating the same symbol, or as a single instance of the symbol followed by a
      *  sequence of @c DONT_CARE symbols.
      * @return
      */
-    Nft apply_backward(const nfa::Nfa& nfa, Level level_to_apply_on = 1, JumpMode jump_mode = JumpMode::RepeatSymbol) const;
+    Nft apply(
+        const Word& word, Level level_to_apply_on = 0, bool project_out_applied_level = true,
+        JumpMode jump_mode = JumpMode::RepeatSymbol) const;
 
     /**
      * @brief Copy NFT as NFA.
