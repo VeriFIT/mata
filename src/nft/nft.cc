@@ -293,6 +293,58 @@ Nft& Nft::operator=(Nft&& other) noexcept {
     return *this;
 }
 
+
+Nft& Nft::operator=(const mata::nfa::Nfa& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
+Nft& Nft::operator=(mata::nfa::Nfa&& other) noexcept {
+    if (this != &other) {
+        mata::nfa::Nfa::operator=(other);
+        levels = Levels(num_of_states(), DEFAULT_LEVEL);
+        num_of_levels = 1;
+    }
+    return *this;
+}
+
+Nft Nft::from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels) {
+    Nft result{ std::move(nfa) };
+    result.levels = Levels(result.num_of_states(), static_cast<Level>(num_of_levels)); // num_of_levels represents that the state does not have level assigned yet
+    result.num_of_levels = num_of_levels;
+
+    // We apply simple DFS
+    StateSet worklist; // worklist for DFS
+    for (State initial_state : result.initial) {
+        // start with initial states, which should be level 0
+        result.levels[initial_state] = 0;
+        worklist.insert(initial_state);
+    }
+
+    while (!worklist.empty()) {
+        State state_to_process = worklist.back();
+        worklist.pop_back();
+        for (State tgt : result.delta[state_to_process].get_successors()) {
+            Level next_level = result.levels[state_to_process] + 1;
+            if (next_level == num_of_levels) {
+                next_level = 0;
+            }
+            if (result.levels[tgt] == num_of_levels) { // tgt does not have a level yet
+                result.levels[tgt] = next_level;
+                worklist.insert(tgt);
+            } else if (result.levels[tgt] != next_level) {
+                throw std::runtime_error("Creating Nft from Nfa that does not represent a valid Nft in mata::nft::Nft::from_nfa_leveled()");
+            }
+        }
+    }
+
+    return result;
+}
+
 State Nft::add_state() {
     const State state{ Nfa::add_state() };
     levels.set(state);
@@ -430,6 +482,23 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
         insert_word(state, Word(num_of_levels, symbol), state);
 //    }
     return *this;
+}
+
+bool Nft::contains_jump_transitions() {
+    if (num_of_levels == 1) { return false; }
+    
+    for (const Transition& transition : delta.transitions()) {
+        Level src_level = levels[transition.source];
+        Level tgt_level = levels[transition.target];
+        if (tgt_level == 0) {
+            // we want to check if the difference between src and tgt levels is at most 1 modulo num_of_levels
+            tgt_level = tgt_level + static_cast<Level>(num_of_levels);
+        }
+        if (tgt_level - src_level != 1) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void Nft::clear() {

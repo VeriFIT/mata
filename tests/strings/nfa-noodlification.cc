@@ -568,3 +568,180 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() for profiling", "[.profili
         seg_nfa::noodlify_for_equation(left_side, right_side);
     }
 }
+
+TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
+    Nfa x, y, z, w;
+    Nft t;
+
+    SECTION("Simple - 1 input, 1 output") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "(a|b)*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'b'}, 0);
+        Nft copy = t;
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x)}, {std::make_shared<Nfa>(y)});
+        REQUIRE(noodles.size() == 1);
+        REQUIRE(noodles[0].size() == 1);
+        auto segment = noodles[0][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+    }
+
+    SECTION("Simple - 1 input, 2 output") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'b'}, 0);
+        Nft copy = t;
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x)}, {std::make_shared<Nfa>(y), std::make_shared<Nfa>(z)});
+        REQUIRE(noodles.size() == 1);
+        REQUIRE(noodles[0].size() == 2);
+        auto segment = noodles[0][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+        segment = noodles[0][1];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(z, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 1);
+    }
+
+    SECTION("Simple - 2 input, 1 output") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'b'}, 0);
+        Nft copy = t;
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
+        REQUIRE(noodles.size() == 1);
+        REQUIRE(noodles[0].size() == 2);
+        auto segment = noodles[0][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+        segment = noodles[0][1];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 1);
+        CHECK(segment.output_index == 0);
+    }
+
+    SECTION("Simple - 2 input, 2 output") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "(a|b)*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'b'}, 0);
+        Nft copy = t;
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y), std::make_shared<Nfa>(w)});
+        REQUIRE(noodles.size() == 2);
+
+        REQUIRE(noodles[0].size() == 3);
+        auto segment = noodles[0][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+        segment = noodles[0][1];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        if (segment.input_index == 0) {
+            CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+            CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+            CHECK(segment.input_index == 0);
+            CHECK(segment.output_index == 1);
+        } else {
+            CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+            CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+            CHECK(segment.input_index == 1);
+            CHECK(segment.output_index == 0);
+        }
+        segment = noodles[1][2];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+        CHECK(segment.input_index == 1);
+        CHECK(segment.output_index == 1);
+        
+        REQUIRE(noodles[1].size() == 3);
+        segment = noodles[1][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+        segment = noodles[1][1];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        if (segment.input_index == 0) {
+            CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+            CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+            CHECK(segment.input_index == 0);
+            CHECK(segment.output_index == 1);
+        } else {
+            CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+            CHECK(mata::nfa::are_equivalent(y, *segment.output_aut));
+            CHECK(segment.input_index == 1);
+            CHECK(segment.output_index == 0);
+        }
+        segment = noodles[1][2];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+        CHECK(segment.input_index == 1);
+        CHECK(segment.output_index == 1);
+    }
+
+    SECTION("More complex - 2 input, 1 output") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "(a|b)*");
+        create_nfa(&z, "(a|b)*");
+        create_nfa(&w, "a*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'a'}, 0);
+        Nft copy = t;
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
+        REQUIRE(noodles.size() == 1);
+        REQUIRE(noodles[0].size() == 2);
+        auto segment = noodles[0][0];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(x, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+        CHECK(segment.input_index == 0);
+        CHECK(segment.output_index == 0);
+        segment = noodles[0][1];
+        CHECK(mata::nft::are_equivalent(*segment.transducer, copy));
+        CHECK(mata::nfa::are_equivalent(z, *segment.input_aut));
+        CHECK(mata::nfa::are_equivalent(w, *segment.output_aut));
+        CHECK(segment.input_index == 1);
+        CHECK(segment.output_index == 0);
+    }
+
+    SECTION("More complex - 2 input, 1 output, no noodles") {
+        create_nfa(&x, "(a|b)*");
+        create_nfa(&y, "b+");
+        create_nfa(&z, "(a|b)*");
+        t = Nft::with_levels(2, 1, {}, {0}, {0});
+        t.add_transition(0, {'a', 'a'}, 0);
+        t.add_transition(0, {'b', 'a'}, 0);
+        auto noodles = seg_nfa::noodlify_for_transducer(std::make_shared<Nft>(t), {std::make_shared<Nfa>(x), std::make_shared<Nfa>(z)}, {std::make_shared<Nfa>(y)});
+        REQUIRE(noodles.size() == 0);
+    }
+}

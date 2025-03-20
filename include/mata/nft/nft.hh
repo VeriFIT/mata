@@ -130,8 +130,6 @@ public:
         return Nft{ std::move(delta), std::move(initial_states), std::move(final_states), std::move(levels), num_of_levels, alphabet };
     }
 
-    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(other.num_of_states(), DEFAULT_LEVEL) {}
-
     /**
      * @brief Construct a new explicit NFT from other NFT.
      */
@@ -149,6 +147,27 @@ public:
 
     Nft& operator=(const Nft& other) = default;
     Nft& operator=(Nft&& other) noexcept;
+
+    // Construct NFT from NFA
+    explicit Nft(const mata::nfa::Nfa& other): mata::nfa::Nfa(other), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
+    explicit Nft(mata::nfa::Nfa&& other): mata::nfa::Nfa(std::move(other)), levels(num_of_states(), DEFAULT_LEVEL), num_of_levels(1) {}
+    Nft& operator=(const mata::nfa::Nfa& other) noexcept;
+    Nft& operator=(mata::nfa::Nfa&& other) noexcept;
+
+    /**
+     * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
+     * 
+     * It assumes that @p nfa is a representation of an nft without jump transitions.
+     * It assign to each state the level based on the distance from the initial state.
+     * For example, if there are 2 levels, the initial states are level 0, the following
+     * states are level 1, the states after that level 0, etc.
+     * 
+     * If you only have one level, then it is more efficient to call the constructor that
+     * takes Nfa as input.
+     * 
+     * @throws std::runtime_error if some state should be assigned two different levels
+     */
+    static Nft from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels);
 
     /**
      * Add a new (fresh) state to the automaton.
@@ -268,44 +287,49 @@ public:
     State insert_word_by_parts(State source, const std::vector<Word>& word_parts_on_levels);
 
     /**
-    * Inserts identity transitions into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
-    *  the vector.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts identity transitions into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param symbols The vector of symbols used for the identity transition. Identity will be created for each symbol in
+     *  the vector.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, const std::vector<Symbol>& symbols, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-    * Inserts identity transitions into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts identity transitions into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param alpahbet The alphabet with symbols used for the identity transition. Identity will be created for each symbol in the @p alphabet.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, const Alphabet* alphabet, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-    * Inserts an identity transition into the NFT.
-    *
-    * @param state The state where the identity transition will be inserted. @p state server as both the source and
-    *  target state.
-    * @param symbol The symbol used for the identity transition.
-    * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
-    * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
-    * of @c DONT_CARE symbols.
-    * @return Self with inserted identity.
-    */
+     * Inserts an identity transition into the NFT.
+     *
+     * @param state The state where the identity transition will be inserted. @p state server as both the source and
+     *  target state.
+     * @param symbol The symbol used for the identity transition.
+     * @param jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
+     * is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence
+     * of @c DONT_CARE symbols.
+     * @return Self with inserted identity.
+     */
     Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
+
+    /**
+     * @brief Checks if the transition contains any jump transition
+     */
+    bool contains_jump_transitions();
 
     /**
      * @brief Clear the underlying NFT to a blank NFT.
@@ -577,12 +601,14 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_levels Ordered vector of synchronization levels of the @p lhs.
  * @param[in] rhs_sync_levels Ordered vector of synchronization levels of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we want to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
 Nft compose(const Nft& lhs, const Nft& rhs,
             const utils::OrdVector<Level>& lhs_sync_levels, const utils::OrdVector<Level>& rhs_sync_levels,
+            bool project_out_sync_levels = true,
             JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
@@ -596,11 +622,12 @@ Nft compose(const Nft& lhs, const Nft& rhs,
  * @param[in] rhs Second transducer to compose.
  * @param[in] lhs_sync_level The synchronization level of the @p lhs.
  * @param[in] rhs_sync_level The synchronization level of the @p rhs.
+ * @param[in] project_out_sync_levels Whether we wont to project out the synchronization levels.
  * @param[in] jump_mode Specifies if the symbol on a jump transition (a transition with a length greater than 1)
  *  is interpreted as a sequence repeating the same symbol or as a single instance of the symbol followed by a sequence of @c DONT_CARE.
  * @return A new NFT after the composition.
  */
-Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, JumpMode jump_mode = JumpMode::RepeatSymbol);
+Nft compose(const Nft& lhs, const Nft& rhs, Level lhs_sync_level = 1, Level rhs_sync_level = 0, bool project_out_sync_levels = true, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Concatenate two NFTs.
