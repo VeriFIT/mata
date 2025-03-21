@@ -30,6 +30,10 @@ namespace mata::parser {
       */
     nfa::Nfa create_nfa(const std::string &pattern, bool use_epsilon = false, mata::Symbol epsilon_value = 306,
                     bool use_reduce = true, const Encoding encoding = Encoding::Latin1);
+
+    // version for python binding
+    void create_nfa(nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, mata::Symbol epsilon_value = 306,
+                    bool use_reduce = true, const Encoding encoding = Encoding::Latin1);
 }
 
 #endif // MATA_RE2PARSER_HH

@@ -522,3 +522,7 @@ mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, bool use_eps
 
     return result;
 }
+
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
+    *nfa = create_nfa(pattern, use_epsilon, epsilon_value, use_reduce, encoding);
+}
