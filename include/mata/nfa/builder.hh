@@ -105,6 +105,18 @@ Nfa parse_from_mata(const std::string& nfa_in_mata);
  */
 Nfa parse_from_mata(const std::filesystem::path& nfa_file);
 
+/**
+ * @brief Create NFA from @p regex
+ * 
+ * The created NFA does not contain epsilons, is trimmed and reduced.
+ * It uses the parser from RE2, see mata/parser/re2praser.hh for more
+ * details and options. The limitations on @p regex are the same as for
+ * RE2, see https://github.com/google/re2/wiki/Syntax.
+ * 
+ * @param regex regular expression
+ */
+Nfa create_from_regex(const std::string& regex);
+
 } // namespace mata::nfa::builder.
 
 #endif //LIBMATA_BUILDER_HH

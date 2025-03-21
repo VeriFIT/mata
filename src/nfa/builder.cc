@@ -2,6 +2,7 @@
 
 #include "mata/nfa/builder.hh"
 #include "mata/parser/mintermization.hh"
+#include "mata/parser/re2parser.hh"
 
 #include <fstream>
 #include <random>
@@ -302,4 +303,8 @@ Nfa builder::parse_from_mata(const std::filesystem::path& nfa_file) {
 Nfa builder::parse_from_mata(const std::string& nfa_in_mata) {
     std::istringstream nfa_stream(nfa_in_mata);
     return parse_from_mata(nfa_stream);
+}
+
+Nfa builder::create_from_regex(const std::string& regex) {
+    return parser::create_nfa(regex);
 }
