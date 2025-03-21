@@ -41,6 +41,11 @@ namespace {
             LTSforSimulation.add_transition(finalState, maxSymbol + 1, finalState);
         }
 
+        // similarly, states on different levels cannot be simulate, we add self loops over the same fresh symbol for each state of the same level
+        for (State state = 0; state < state_num; ++state) {
+            LTSforSimulation.add_transition(state, maxSymbol + 2 + aut.levels[state], state);
+        }
+
         LTSforSimulation.init();
         return LTSforSimulation.compute_simulation();
     }

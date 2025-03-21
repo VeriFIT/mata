@@ -14,6 +14,7 @@
 #include "mata/nft/builder.hh"
 #include "mata/nft/plumbing.hh"
 #include "mata/nft/algorithms.hh"
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
 
 using namespace mata;
@@ -2673,6 +2674,60 @@ TEST_CASE("mata::nft::fw-direct-simulation()")
         REQUIRE(result.get(8,1));
         REQUIRE(result.get(8,2));
         REQUIRE(result.get(8,5));
+    }
+
+    SECTION("more than one level")
+    {
+        Nft aut;
+        aut.add_state_with_level(0, 0);
+        aut.add_state_with_level(1, 0);
+        aut.add_state_with_level(2, 1);
+        aut.add_state_with_level(3, 1);
+
+        aut.initial.insert(0);
+        aut.final.insert(3);
+
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(0, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+
+        Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut);
+        Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
+
+        CHECK(sim_for_nfa.get(0,0));
+        CHECK(!sim_for_nfa.get(0,1));
+        CHECK(!sim_for_nfa.get(0,2));
+        CHECK(!sim_for_nfa.get(0,3));
+        CHECK(!sim_for_nfa.get(1,0));
+        CHECK(sim_for_nfa.get(1,1));
+        CHECK(sim_for_nfa.get(1,2));
+        CHECK(!sim_for_nfa.get(1,3));
+        CHECK(!sim_for_nfa.get(2,0));
+        CHECK(sim_for_nfa.get(2,1));
+        CHECK(sim_for_nfa.get(2,2));
+        CHECK(!sim_for_nfa.get(2,3));
+        CHECK(!sim_for_nfa.get(3,0));
+        CHECK(!sim_for_nfa.get(3,1));
+        CHECK(!sim_for_nfa.get(3,2));
+        CHECK(sim_for_nfa.get(3,3));
+
+        CHECK(sim_for_nft.get(0,0));
+        CHECK(!sim_for_nft.get(0,1));
+        CHECK(!sim_for_nft.get(0,2));
+        CHECK(!sim_for_nft.get(0,3));
+        CHECK(!sim_for_nft.get(1,0));
+        CHECK(sim_for_nft.get(1,1));
+        CHECK(!sim_for_nft.get(1,2));
+        CHECK(!sim_for_nft.get(1,3));
+        CHECK(!sim_for_nft.get(2,0));
+        CHECK(!sim_for_nft.get(2,1));
+        CHECK(sim_for_nft.get(2,2));
+        CHECK(!sim_for_nft.get(2,3));
+        CHECK(!sim_for_nft.get(3,0));
+        CHECK(!sim_for_nft.get(3,1));
+        CHECK(!sim_for_nft.get(3,2));
+        CHECK(sim_for_nft.get(3,3));
     }
 } // }}
 
