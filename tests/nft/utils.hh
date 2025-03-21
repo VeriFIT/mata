@@ -20,9 +20,11 @@
 	x.delta.add(7, 'a', 5); \
 	x.delta.add(5, 'a', 5); \
 	x.delta.add(5, 'c', 9); \
+	x.levels.set(10); \
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
+	x.add_state(14); \
 	x.initial = {4}; \
 	x.final = {2, 12}; \
 	x.delta.add(4, 'c', 8); \
@@ -37,6 +39,7 @@
 	x.delta.add(2, 'c', 12); \
 	x.delta.add(12, 'a', 14); \
 	x.delta.add(14, 'b', 12); \
+	x.levels.set(14); \
 
 // Automaton C
 // the same as B, but with small symbols
@@ -55,6 +58,7 @@
 	x.delta.add(2, 3, 12); \
 	x.delta.add(12, 1, 14); \
 	x.delta.add(14, 2, 12);   \
+	x.levels.set(14); \
 
 // Automaton D // shomewhat larger
 #define FILL_WITH_AUT_D(x) \
@@ -90,9 +94,11 @@
     x.delta.add(3, 110, 3);\
     x.delta.add(3, 111, 2);\
     x.delta.add(3, 114, 3);\
+	x.levels.set(3); \
 
 // Automaton E
 #define FILL_WITH_AUT_E(x) \
+	x.add_state(4); \
 	x.initial = {1, 3}; \
 	x.final = {4}; \
 	x.delta.add(1, 'b', 2); \
