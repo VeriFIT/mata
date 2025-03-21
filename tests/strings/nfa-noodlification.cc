@@ -364,10 +364,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 
     SECTION("Simple automata") {
         Nfa x, y, z, w;
-        create_nfa(&x, "a*");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "(a|b)*");
+        x = create_nfa("a*");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("(a|b)*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {0, 1} }, {y, {1, 1} }},
@@ -387,11 +387,11 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 
     SECTION("Simple automata -- epsilon result") {
         Nfa x, y, z, w, astar;
-        create_nfa(&x, "a+");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "(a|b)+");
-        create_nfa(&astar, "a*");
+        x = create_nfa("a+");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("(a|b)+");
+        astar = create_nfa("a*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 1} }, {z, {1, 1} }},
@@ -414,10 +414,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 
     SECTION("Simple automata -- epsilon input") {
         Nfa x, y, z, w;
-        create_nfa(&x, "");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "(a|b)*");
+        x = create_nfa("");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("(a|b)*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({} );
        std::vector<seg_nfa::NoodleWithEpsilonsCounter> noodles = seg_nfa::noodlify_for_equation(
@@ -436,10 +436,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 
     SECTION("Simple automata -- epsilon input 2") {
         Nfa x, y, z, w;
-        create_nfa(&x, "");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "(a|b)*");
+        x = create_nfa("");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("(a|b)*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{y, {1, 1} }},
@@ -461,10 +461,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_equation() both sides") {
 
     SECTION("Simple automata -- regex 1") {
         Nfa x, y, z, u;
-        create_nfa(&x, "a");
-        create_nfa(&y, "ab*");
-        create_nfa(&z, "ab*");
-        create_nfa(&u, "a*");
+        x = create_nfa("a");
+        y = create_nfa("ab*");
+        z = create_nfa("ab*");
+        u = create_nfa("a*");
 
         auto res = std::vector<std::vector<std::pair<Nfa, seg_nfa::VisitedEpsilonsCounterVector>>>({
                 {{x, {0, 0} }, {x, {1, 1} }},
@@ -574,8 +574,8 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     Nft t;
 
     SECTION("Simple - 1 input, 1 output") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "(a|b)*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("(a|b)*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
@@ -592,9 +592,9 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     }
 
     SECTION("Simple - 1 input, 2 output") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
@@ -617,9 +617,9 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     }
 
     SECTION("Simple - 2 input, 1 output") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
@@ -642,10 +642,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     }
 
     SECTION("Simple - 2 input, 2 output") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "(a|b)*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("(a|b)*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'b'}, 0);
@@ -709,10 +709,10 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     }
 
     SECTION("More complex - 2 input, 1 output") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "(a|b)*");
-        create_nfa(&z, "(a|b)*");
-        create_nfa(&w, "a*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("(a|b)*");
+        z = create_nfa("(a|b)*");
+        w = create_nfa("a*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'a'}, 0);
@@ -735,9 +735,9 @@ TEST_CASE("mata::nfa::SegNfa::noodlify_for_transducer()") {
     }
 
     SECTION("More complex - 2 input, 1 output, no noodles") {
-        create_nfa(&x, "(a|b)*");
-        create_nfa(&y, "b+");
-        create_nfa(&z, "(a|b)*");
+        x = create_nfa("(a|b)*");
+        y = create_nfa("b+");
+        z = create_nfa("(a|b)*");
         t = Nft::with_levels(2, 1, {}, {0}, {0});
         t.add_transition(0, {'a', 'a'}, 0);
         t.add_transition(0, {'b', 'a'}, 0);

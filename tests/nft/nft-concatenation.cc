@@ -578,12 +578,9 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("mata::nft::(a|b)*") {
-    Nft aut1{ Nft::with_levels(1) };
-    mata::parser::create_nfa(&aut1, "a*");
-    Nft aut2{ Nft::with_levels(1) };
-    mata::parser::create_nfa(&aut2, "b*");
-    Nft aut3{ Nft::with_levels(1) };
-    mata::parser::create_nfa(&aut3, "a*b*");
+    Nft aut1{ mata::parser::create_nfa("a*") };
+    Nft aut2{ mata::parser::create_nfa("b*") };
+    Nft aut3{ mata::parser::create_nfa("a*b*") };
     const Nft concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }

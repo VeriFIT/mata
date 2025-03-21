@@ -31,8 +31,7 @@ int main() {
     // NFT nft transduces a sequence of 'abcd' to 'ABCDEF', accepting the same suffix on all tapes.
 
     // Create NFA from a regex, each character mapping to its UTF-8 value.
-    Nfa nfa{};
-    parser::create_nfa(&nfa, "ABCDEFggg");
+    Nfa nfa = parser::create_nfa("ABCDEFggg");
 
     // Compute the pre-image of an NFA (applies NFA to the image tape, i.e., tape 1)
     Nft backward_applied_nft = nft.apply(nfa, 1);

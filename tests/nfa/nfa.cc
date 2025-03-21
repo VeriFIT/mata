@@ -2324,10 +2324,8 @@ TEST_CASE("mata::nfa::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "a*");
-        Nfa aut2;
-        mata::parser::create_nfa(&aut2, "(a|b)*");
+        Nfa aut = mata::parser::create_nfa("a*");
+        Nfa aut2 = mata::parser::create_nfa("(a|b)*");
         CHECK(!are_equivalent(aut, aut2));
     }
 
@@ -3811,8 +3809,7 @@ TEST_CASE("mata::nfa::Nfa::unify_(initial/final)()") {
     }
 
     SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "a*b*");
+        Nfa aut = mata::parser::create_nfa("a*b*");
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
             aut.unify_final();
@@ -4013,8 +4010,7 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 	}
 
     SECTION("from regex (a+b*a*)") {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
+        Nfa aut = mata::parser::create_nfa("(a+b*a*)", false, EPSILON, false);
 
         mata::BoolVector bv = aut.get_useful_states();
         mata::BoolVector ref({ 1, 0, 1, 0, 1, 0, 1, 0, 0});

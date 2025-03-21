@@ -578,12 +578,9 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("(a|b)*") {
-    Nfa aut1;
-    mata::parser::create_nfa(&aut1, "a*");
-    Nfa aut2;
-    mata::parser::create_nfa(&aut2, "b*");
-    Nfa aut3;
-    mata::parser::create_nfa(&aut3, "a*b*");
+    Nfa aut1 = mata::parser::create_nfa("a*");
+    Nfa aut2 = mata::parser::create_nfa("b*");
+    Nfa aut3 = mata::parser::create_nfa("a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }

@@ -17,13 +17,18 @@ enum class Encoding {
 };
 
 
-/**
- * @brief Parser from regular expression to automata.
- *
- * Currently supported automata types are NFA and AFA.
- */
 namespace mata::parser {
-    void create_nfa(nfa::Nfa* nfa, const std::string &pattern, bool use_epsilon = false, mata::Symbol epsilon_value = 306,
+     /**
+      * @brief Creates NFA from regular expression using RE2 parser
+      * 
+      * @param pattern regex as string
+      * @param use_epsilon whether to keep epsilon transitions in created NFA
+      * @param epsilon_value symbol representing epsilon
+      * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
+      * @param encoding encoding of the regex, default is Latin1
+      * @return Nfa corresponding to pattern
+      */
+    nfa::Nfa create_nfa(const std::string &pattern, bool use_epsilon = false, mata::Symbol epsilon_value = 306,
                     bool use_reduce = true, const Encoding encoding = Encoding::Latin1);
 }
 
