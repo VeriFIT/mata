@@ -2682,7 +2682,7 @@ TEST_CASE("mata::nft::fw-direct-simulation()")
         aut.add_state_with_level(0, 0);
         aut.add_state_with_level(1, 0);
         aut.add_state_with_level(2, 1);
-        aut.add_state_with_level(3, 1);
+        aut.add_state_with_level(3, 0);
 
         aut.initial.insert(0);
         aut.final.insert(3);
