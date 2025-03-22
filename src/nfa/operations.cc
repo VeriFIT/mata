@@ -10,7 +10,8 @@
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
-#include <mata/simlib/explicit_lts.hh>
+#include "mata/utils/synchronized-iterator.hh"
+#include "mata/simlib/explicit_lts.hh"
 
 using std::tie;
 
@@ -309,63 +310,86 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
     return transition_added;
 }
 
-//TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
-    // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
-
-    // TODO: grossly inefficient
     // first we compute the epsilon closure
     const size_t num_of_states{aut.num_of_states() };
-    for (size_t i{ 0 }; i < num_of_states; ++i)
-    {
-        for (const auto& trans: aut.delta[i])
-        { // initialize
-            const auto it_ins_pair = eps_closure.insert({i, {i}});
-            if (trans.symbol == epsilon)
-            {
-                StateSet& closure = it_ins_pair.first->second;
-                // TODO: Fix possibly insert to OrdVector. Create list already ordered, then merge (do not need to resize each time);
-                closure.insert(trans.targets);
+
+    // delta keeping only epsilon transitions
+    std::vector<StateSet> eps_delta(num_of_states);
+    // its inverse
+    std::vector<StateSet> eps_delta_inverse(num_of_states);
+
+    // compute the epsilon delta
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        const StatePost& post{ aut.delta[state] };
+        const auto eps_move_it { post.find(epsilon) }; //TODO: make faster if default epsilon by checking back
+        if (eps_move_it != post.end()) {
+            eps_delta[state] = eps_move_it->targets;
+            for (State target_of_epsilon_transition : eps_move_it->targets) {
+                eps_delta_inverse[target_of_epsilon_transition].insert(state);
             }
         }
     }
 
-    bool changed = true;
-    while (changed) { // Compute the fixpoint.
-        changed = false;
-        for (size_t i = 0; i < num_of_states; ++i) {
-            const StatePost& post{ aut.delta[i] };
-            const auto eps_move_it { post.find(epsilon) };//TODO: make faster if default epsilon
-            if (eps_move_it != post.end()) {
-                StateSet& src_eps_cl = eps_closure[i];
-                for (const State tgt: eps_move_it->targets) {
-                    const StateSet& tgt_eps_cl = eps_closure[tgt];
-                    for (const State st: tgt_eps_cl) {
-                        if (src_eps_cl.count(st) == 0) {
-                            changed = true;
-                            break;
-                        }
-                    }
-                    src_eps_cl.insert(tgt_eps_cl);
-                }
+    // compute the transition closure of the epsilon delta
+    // by using simplified Floyd-Warshall algorithm, see
+    // https://stackoverflow.com/a/76173280
+    for (State state{ 0 }; state < num_of_states; ++state) {
+        // for every pair of transitions
+        //       before_state -epsilon-> state -epsilon-> after_state
+        // we add transition
+        //       before_state -epsilon-> after_state
+        const StateSet& after_states = eps_delta[state];
+        const StateSet& before_states = eps_delta_inverse[state];
+
+        if (after_states.empty() || before_states.empty()) {
+            // there is no such pair of transitions
+            continue;
+        }
+
+        for (State before_state : before_states) {
+            if (before_state != state) {
+                eps_delta[before_state].insert(after_states);
+            }
+        }
+        for (State after_state : after_states) {
+            if (after_state != state) {
+                eps_delta_inverse[after_state].insert(before_states);
             }
         }
     }
+
+    // At this point eps_delta represents epsilon closure, but it might not be reflexive
 
     // Construct the automaton without epsilon transitions.
-    Nfa result{ Delta{}, aut.initial, aut.final, aut.alphabet };
-    for (const auto& state_closure_pair : eps_closure) { // For every state.
-        State src_state = state_closure_pair.first;
-        for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
-            if (aut.final[eps_cl_state]) result.final.insert(src_state);
-            for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-                if (move.symbol == epsilon) continue;
-                // TODO: this could be done more efficiently if we had a better add method
-                for (State tgt_state : move.targets) {
-                    result.delta.add(src_state, move.symbol, tgt_state);
-                }
+    Nfa result { num_of_states, aut.initial, aut.final, aut.alphabet };
+    SynchronizedExistentialSymbolPostIterator synchronized_iterator;
+    for (State source = 0; source < num_of_states; ++source) {
+        if (eps_delta[source].empty()) {
+            // there is no state reachable from source using epsilon transitions
+            // which means aut.delta[source] does not contain epsilon transition
+            // and we can just copy it to result.delta[source]
+            if (!aut.delta[source].empty()) {
+                result.delta.mutable_state_post(source) = aut.delta[source];
             }
+        }
+
+        eps_delta[source].insert(source); // add itself to epsilon closure to make it reflexive
+
+        // all transitions (except epsilon ones) from any state in epsilon closure must also start from source
+        synchronized_iterator.reset();
+        for (State eps_cl_state : eps_delta[source]) { // for every state in its epsilon closure
+            mata::utils::push_back(synchronized_iterator, aut.delta[eps_cl_state]);
+            // source is final if some state in its epsilon closure is final
+            if (aut.final[eps_cl_state]) { result.final.insert(source); }
+        }
+        while (synchronized_iterator.advance()) {
+            const std::vector<StatePost::const_iterator>& symbol_posts = synchronized_iterator.get_current();
+            Symbol current_symbol = (*symbol_posts.begin())->symbol;
+            if (current_symbol == epsilon) { continue; } // we do not want to add epsilon transitions
+            StateSet targets{ synchronized_iterator.unify_targets() };
+            // we can emplace_back and not break sortedness, as we are using synchronized iterator that advances SymbolPosts in order
+            result.delta.mutable_state_post(source).emplace_back(current_symbol, targets);
         }
     }
     return result;
