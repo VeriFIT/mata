@@ -52,6 +52,7 @@ namespace {
 
     Nft reduce_size_by_simulation(const Nft& aut, StateRenaming &state_renaming) {
         Nft result;
+        result.num_of_levels = aut.num_of_levels;
         const auto sim_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
@@ -68,7 +69,8 @@ namespace {
         for (State q = 0; q < num_of_states; ++q) {
             const State qReprState = quot_proj[q];
             if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-                const State qClass = result.add_state();
+                assert(aut.levels[q] == aut.levels[qReprState]);
+                const State qClass = result.add_state_with_level(aut.levels[qReprState]);
                 state_renaming[qReprState] = qClass;
                 state_renaming[q] = qClass;
             } else {

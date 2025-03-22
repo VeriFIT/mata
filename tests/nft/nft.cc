@@ -2819,6 +2819,31 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()")
         Nft result = reduce(aut.trim(), &state_renaming);
         CHECK(are_equivalent(result, aut));
     }
+
+    SECTION("multiple tapes")
+    {
+        aut.add_state_with_level(0, 0);
+        aut.add_state_with_level(1, 0);
+        aut.initial = { 0 };
+        aut.final = { 1 };
+        aut.add_transition(0, {'a', 'a'}, 1);
+        aut.add_transition(0, {'a', 'a'}, 1);
+        aut.add_transition(0, {'a', 'a'}, 1);
+        REQUIRE(aut.num_of_states() == 5);
+        Nft result = reduce(aut, &state_renaming);
+        CHECK(are_equivalent(result, aut));
+        REQUIRE(result.num_of_states() == 3);
+        REQUIRE(state_renaming.size() == 5);
+        State middle_state = state_renaming.at(2);
+        CHECK(middle_state == state_renaming.at(3));
+        CHECK(middle_state == state_renaming.at(4));
+        CHECK(result.delta.contains(state_renaming.at(0), 'a', middle_state));
+        CHECK(result.delta.contains(middle_state, 'a', state_renaming.at(1)));
+        REQUIRE(result.num_of_levels == 2);
+        CHECK(result.levels[state_renaming.at(0)] == 0);
+        CHECK(result.levels[state_renaming.at(1)] == 0);
+        CHECK(result.levels[middle_state] == 1);
+    }
 }
 
 TEST_CASE("mata::nft::union_norename()") {
