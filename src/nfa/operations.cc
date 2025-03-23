@@ -372,6 +372,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
             if (!aut.delta[source].empty()) {
                 result.delta.mutable_state_post(source) = aut.delta[source];
             }
+            continue;
         }
 
         eps_delta[source].insert(source); // add itself to epsilon closure to make it reflexive
