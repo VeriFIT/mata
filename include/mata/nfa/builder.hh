@@ -124,6 +124,8 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  *     NFA accepting the language of multiple 'a's followed by one 'b'.
  *     See also issue #494.
  * 
+ * @sa mata::parser::create_nfa()
+ * 
  * @param regex regular expression
  */
 Nfa create_from_regex(const std::string& regex);

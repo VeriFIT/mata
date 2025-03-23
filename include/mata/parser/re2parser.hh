@@ -32,6 +32,8 @@ namespace mata::parser {
       *     is not expected to be used in regex matching. Therefore, stuff
       *     like ^, $, \b, etc. are ignored in the regex.
       * 
+      * @sa mata::nfa::builder::create_from_regex()
+      * 
       * @param pattern regex as a string
       * @param use_epsilon whether to keep epsilon transitions in created NFA
       * @param epsilon_value symbol representing epsilon
