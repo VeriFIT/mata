@@ -450,6 +450,10 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
     intersection.trim();
 
+    if(intersection.final.empty()) {
+        return {};
+    }
+
     // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
     // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
     add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
@@ -496,6 +500,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // and replace it with one transition
     //     source ---DELIMITER---> target
     Nfa intersection_nfa{intersection.to_nfa_move()};
+    intersection_nfa = mata::nfa::reduce(intersection_nfa);
     // add "source ---DELIMITER---> target" transitions
     for (const auto& [middle_state,first_trans] : middle_state_to_delimiter_transition_as_target) {
         Transition second_trans = middle_state_to_delimiter_transition_as_source.at(middle_state);
