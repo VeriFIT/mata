@@ -7,9 +7,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/nfa/builder.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/strings.hh"
-#include "mata/parser/re2parser.hh"
 
 using namespace mata::nft;
 using namespace mata::strings;
@@ -578,9 +578,9 @@ TEST_CASE("mata::nft::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("mata::nft::(a|b)*") {
-    Nft aut1{ mata::parser::create_nfa("a*") };
-    Nft aut2{ mata::parser::create_nfa("b*") };
-    Nft aut3{ mata::parser::create_nfa("a*b*") };
+    Nft aut1{ mata::nfa::builder::create_from_regex("a*") };
+    Nft aut2{ mata::nfa::builder::create_from_regex("b*") };
+    Nft aut3{ mata::nfa::builder::create_from_regex("a*b*") };
     const Nft concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }

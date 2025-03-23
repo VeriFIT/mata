@@ -7,7 +7,6 @@
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/builder.hh"
-#include "mata/parser/re2parser.hh"
 #include "mata/parser/parser.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
@@ -245,7 +244,7 @@ TEST_CASE("nft::reluctant_replacement()") {
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
     ReluctantReplaceSUT reluctant_replace{};
     SECTION("nft::end_marker_dfa()") {
-        regex = parser::create_nfa("cb+a+");
+        regex = nfa::builder::create_from_regex("cb+a+");
         nfa::Nfa dfa_end_marker{ reluctant_replace.end_marker_dfa(regex) };
         nfa::Nfa dfa_expected_end_marker{};
         dfa_expected_end_marker.initial = { 0 };
@@ -523,7 +522,7 @@ TEST_CASE("mata::nft::strings::reluctant_nfa_with_marker()") {
     ReluctantReplaceSUT reluctant_replace{};
 
     SECTION("regex cb+a+") {
-        nfa::Nfa nfa{ reluctant_replace.reluctant_nfa_with_marker(mata::parser::create_nfa("cb+a+"), BEGIN_MARKER, &alphabet) };
+        nfa::Nfa nfa{ reluctant_replace.reluctant_nfa_with_marker(nfa::builder::create_from_regex("cb+a+"), BEGIN_MARKER, &alphabet) };
         nfa::Nfa expected{ nfa::builder::parse_from_mata(std::string(
             "@NFA-explicit\n%Alphabet-auto\n%Initial q0\n%Final q3\nq0 99 q1\nq0 4294967195 q0\nq1 98 q2\nq1 4294967195 q1\nq2 97 q3\nq2 98 q2\nq2 4294967195 q2\n")) };
         CHECK(nfa::are_equivalent(nfa, expected));

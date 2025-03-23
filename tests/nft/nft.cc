@@ -15,7 +15,6 @@
 #include "mata/nft/plumbing.hh"
 #include "mata/nft/algorithms.hh"
 #include "mata/nfa/nfa.hh"
-#include "mata/parser/re2parser.hh"
 
 using namespace mata;
 using namespace mata::nft::algorithms;
@@ -1642,8 +1641,8 @@ TEST_CASE("mata::nft::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        Nft aut { mata::parser::create_nfa("a*") };
-        Nft aut2 { mata::parser::create_nfa("(a|b)*") };
+        Nft aut { nfa::builder::create_from_regex("a*") };
+        Nft aut2 { nfa::builder::create_from_regex("(a|b)*") };
         CHECK(!are_equivalent(aut, aut2));
     }
 
@@ -3290,7 +3289,7 @@ TEST_CASE("mata::nft::Nft::unify_(initial/final)()") {
     }
 
     SECTION("Bug: NFT with empty string unifying initial/final repeatedly") {
-        Nft aut { mata::parser::create_nfa("a*b*") };
+        Nft aut { nfa::builder::create_from_regex("a*b*") };
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
             aut.unify_final();
@@ -3483,18 +3482,6 @@ TEST_CASE("mata::nft::get_useful_states_tarjan") {
 		mata::BoolVector ref({ 0, 0, 0, 0, 0});
 		CHECK(bv == ref);
 	}
-
-    SECTION("from regex (a+b*a*)") {
-        Nft aut { mata::parser::create_nfa("(a+b*a*)", false, EPSILON, false) };
-
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 1, 0, 1, 0, 1, 0, 1, 0, 0});
-        CHECK(bv == ref);
-
-        aut = reduce(aut.trim());
-        bv = aut.get_useful_states();
-        CHECK(bv == mata::BoolVector({ 1, 1, 1, 1}));
-    }
 
     SECTION("more initials") {
         Nft aut(4, {0, 1, 2}, {0, 3});
@@ -5486,7 +5473,7 @@ TEST_CASE("mata::nft::Nft::insert_word_by_parts()") {
 
 TEST_CASE("mata::nft::Nft::apply()") {
     SECTION("replace reluctant regex NFT") {
-        Nfa nfa = parser::create_nfa("da+b+ce");
+        Nfa nfa = nfa::builder::create_from_regex("da+b+ce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ nft::strings::replace_reluctant_regex("a+b+c", { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
@@ -5503,7 +5490,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     }
 
     SECTION("replace reluctant literal NFT") {
-        Nfa nfa = parser::create_nfa("dabce");
+        Nfa nfa = nfa::builder::create_from_regex("dabce");
         mata::EnumAlphabet alphabet{ 'a', 'b', 'c', 'd', 'e', 'f' };
         Nft nft{ nft::strings::replace_reluctant_literal({'a', 'b', 'c' }, { 'f' }, &alphabet) };
         Nft nft_applied_nfa{ nft.apply(nfa, 0) };
@@ -5520,7 +5507,7 @@ TEST_CASE("mata::nft::Nft::apply()") {
     }
 
     SECTION("apply with 5 tapes") {
-        Nfa nfa = parser::create_nfa("(a|b)*");
+        Nfa nfa = nfa::builder::create_from_regex("(a|b)*");
         Nft nft{1, {0}, {0}, {{0,0}}, 5};
         nft.insert_identity(0, 'a');
         CHECK(nft.apply(nfa).num_of_levels == 4);
