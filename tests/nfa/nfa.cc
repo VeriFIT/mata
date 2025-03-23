@@ -14,7 +14,6 @@
 #include "mata/nfa/builder.hh"
 #include "mata/nfa/plumbing.hh"
 #include "mata/nfa/algorithms.hh"
-#include "mata/parser/re2parser.hh"
 
 using namespace mata;
 using namespace mata::nfa::algorithms;
@@ -2324,10 +2323,8 @@ TEST_CASE("mata::nfa::are_equivalent")
 
     SECTION("a* != (a|b)*, was throwing exception")
     {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "a*");
-        Nfa aut2;
-        mata::parser::create_nfa(&aut2, "(a|b)*");
+        Nfa aut = nfa::builder::create_from_regex("a*");
+        Nfa aut2 = nfa::builder::create_from_regex("(a|b)*");
         CHECK(!are_equivalent(aut, aut2));
     }
 
@@ -3811,8 +3808,7 @@ TEST_CASE("mata::nfa::Nfa::unify_(initial/final)()") {
     }
 
     SECTION("Bug: NFA with empty string unifying initial/final repeatedly") {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "a*b*");
+        Nfa aut = nfa::builder::create_from_regex("a*b*");
         for (size_t i{ 0 }; i < 8; ++i) {
             aut.unify_initial();
             aut.unify_final();
@@ -4011,19 +4007,6 @@ TEST_CASE("mata::nfa::get_useful_states_tarjan") {
 		mata::BoolVector ref({ 0, 0, 0, 0, 0});
 		CHECK(bv == ref);
 	}
-
-    SECTION("from regex (a+b*a*)") {
-        Nfa aut;
-        mata::parser::create_nfa(&aut, "(a+b*a*)", false, EPSILON, false);
-
-        mata::BoolVector bv = aut.get_useful_states();
-        mata::BoolVector ref({ 1, 0, 1, 0, 1, 0, 1, 0, 0});
-        CHECK(bv == ref);
-
-        aut = reduce(aut.trim());
-        bv = aut.get_useful_states();
-        CHECK(bv == mata::BoolVector({ 1, 1, 1, 1}));
-    }
 
     SECTION("more initials") {
         Nfa aut(4, {0, 1, 2}, {0, 3});

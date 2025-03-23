@@ -498,36 +498,31 @@ namespace {
         };
 }
 
- /**
- * The main method, it creates NFA from regex.
- * @param pattern regex as string
- * @param use_epsilon whether to create NFA with epsilon transitions or not
- * @param epsilon_value value, that will represent epsilon on transitions
- * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
- * @param encoding encoding of the regex, default is Latin1
- * @return Nfa corresponding to pattern
- */
-void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
-    if (nfa == nullptr) {
-        throw std::runtime_error("create_nfa: nfa should not be NULL");
-    }
-
+mata::nfa::Nfa mata::parser::create_nfa(const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
+    mata::nfa::Nfa result;
     RegexParser regexParser{};
     auto parsed_regex = regexParser.parse_regex_string(pattern, encoding);
     auto program = parsed_regex->CompileToProg(regexParser.options.max_mem() * 2 / 3);
     // FIXME: use_epsilon = false completely breaks the method convert_pro_to_nfa(). Needs fixing before allowing to
     //  pass the argument use_epsilon to convert_pro_to_nfa().
-    regexParser.convert_pro_to_nfa(nfa, program, true, epsilon_value);
+    regexParser.convert_pro_to_nfa(&result, program, true, epsilon_value);
     delete program;
     // Decrements reference count and deletes object if the count reaches 0
     parsed_regex->Decref();
+
      //TODO: should this really be done implicitly?
     if(!use_epsilon) {
-        *nfa = mata::nfa::remove_epsilon(*nfa, epsilon_value);
+        result = mata::nfa::remove_epsilon(result, epsilon_value);
     }
     //TODO: in fact, maybe parser should not do trimming and reducing, maybe these operations should be done transparently.
     if(use_reduce) {
         //TODO: trimming might be unnecessary, regex->nfa construction should not produce useless states. Or does it?
-        *nfa = mata::nfa::reduce(nfa->trim());
+        result = mata::nfa::reduce(result.trim());
     }
+
+    return result;
+}
+
+void mata::parser::create_nfa(nfa::Nfa* nfa, const std::string& pattern, bool use_epsilon, mata::Symbol epsilon_value, bool use_reduce, const Encoding encoding) {
+    *nfa = create_nfa(pattern, use_epsilon, epsilon_value, use_reduce, encoding);
 }

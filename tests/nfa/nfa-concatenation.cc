@@ -9,7 +9,7 @@
 
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/strings.hh"
-#include "mata/parser/re2parser.hh"
+#include "mata/nfa/builder.hh"
 
 using namespace mata::nfa;
 using namespace mata::strings;
@@ -578,12 +578,9 @@ TEST_CASE("mata::nfa::concatenate() over epsilon symbol") {
 }
 
 TEST_CASE("(a|b)*") {
-    Nfa aut1;
-    mata::parser::create_nfa(&aut1, "a*");
-    Nfa aut2;
-    mata::parser::create_nfa(&aut2, "b*");
-    Nfa aut3;
-    mata::parser::create_nfa(&aut3, "a*b*");
+    Nfa aut1 = builder::create_from_regex("a*");
+    Nfa aut2 = builder::create_from_regex("b*");
+    Nfa aut3 = builder::create_from_regex("a*b*");
     auto concatenated_aut{ concatenate(aut1, aut2) };
     CHECK(are_equivalent(concatenated_aut, aut3));
 }
