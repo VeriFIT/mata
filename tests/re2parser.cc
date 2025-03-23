@@ -1287,6 +1287,44 @@ TEST_CASE("mata::Parser error")
         CHECK(are_equivalent(x, y));
     }
 
+    // TODO uncomment these two after the issues are fixed
+
+    // SECTION("Regex from issue #457") {
+    //     Nfa x{2, {0}, {1}};
+    //     x.delta.add(0,'a',1);
+    //     x.delta.add(0,'b',1);
+    //     Nfa y = mata::parser::create_nfa("(a|b)");
+    //     CHECK(are_equivalent(x, y));
+    //     y = mata::parser::create_nfa("(a$|b)");
+    //     CHECK(are_equivalent(x, y));
+    //     y = mata::parser::create_nfa("a|b");
+    //     CHECK(are_equivalent(x, y));
+    //     y = mata::parser::create_nfa("a$|b");
+    //     CHECK(are_equivalent(x, y));
+    // }
+
+    // SECTION("Regexes from issue #437") {
+    //     std::vector<std::string> regexes = {
+    //         "^.*[sS][yY][sS][tT][eE][mM][pP][aA][tT][hH]\\=([hH][tT]{2}[pP][sS]?)|([fF][tT][pP])",
+    //         R"REGEX(^[^\f\n\r\t\v]{65}|[^\f\n\r\t\v]+[\f\n\r\t\v]+[^\f\n\r\t\v]{65}|[^\f\n\r\t\v]+[\f\n\r\t\v]+[^\f\n\r\t\v]+[\f\n\r\t\v]+[^\f\n\r\t\v]{65})REGEX",
+    //         R"REGEX(^get (X.downloadX[ -~]*|X.supernode[ -~]|X.status[ -~]|X.network[ -~]*|X.files|X.hash\=[0-9a-f]*X[ -~]*) httpX1.1|user-agent: kazaa|x-kazaa(-username|-network|-ip|-supernodeip|-xferid|-xferuid|tag)|^give [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]?[0-9]?[0-9]?)REGEX",
+    //         R"REGEX(^(\*[\x01\x02].*\x03\x0b|\*\x01.?.?.?.?\x01)|flapon|toc_signon.*0x)REGEX",
+    //         R"REGEX(^(\x11\x20\x01...?\x11|\xfe\xfd.?.?.?.?.?.?(\x14\x01\x06|\xff\xff\xff))|[\]\x01].?battlefield2)REGEX",
+    //         R"REGEX(^(\x13bittorrent protocol|azver\x01$|get Xscrape\?info_hash\=get Xannounce\?info_hash\=|get XclientXbitcometX|GET Xdata\?fid\=)|d1:ad2:id20:|\x08'7P\)[RP])REGEX",
+    //         R"REGEX(^[a-z][a-z0-9\-_]+|login: [\x09-\x0d -~]* name: [\x09-\x0d -~]* Directory:)REGEX",
+    //         R"REGEX(^get X.*icy-metadata:1|icy [1-5][0-9][0-9] [\x09-\x0d -~]*(content-type:audio|icy-))REGEX",
+    //         R"REGEX(^([()]|get)(...?.?.?(reg|get|query)|.+User-Agent: (MozillaX4\.0 \(compatible; (MSIE 6\.0; Windows NT 5\.1;? ?\)|MSIE 5\.00; Windows 98\))))|Keep-Alive\x0d\x0a\x0d\x0a[26])REGEX",
+    //         R"REGEX(^[\f\n\r\t\v]*Accept-Language[\f\n\r\t\v]*|3a|[\f\n\r\t\v]*([^\r\n]*?\x2c){20})REGEX"
+    //     };
+
+    //     for (std::string regex : regexes) {
+    //         Nfa x = mata::parser::create_nfa(regex);
+    //         Nfa y = mata::parser::create_nfa(regex.substr(1));
+    //         CHECK(!x.is_lang_empty());
+    //         CHECK(are_equivalent(x, y));
+    //     }
+    // }
+
     SECTION("Another failing regex") {
         Nfa x = mata::parser::create_nfa("(cd(abcde)+)|(a(aaa)+|ccc+)");
         CHECK(!x.is_in_lang(Run{ Word{ 'a', 'a', 'a' }, {} }));
