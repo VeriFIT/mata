@@ -110,8 +110,19 @@ Nfa parse_from_mata(const std::filesystem::path& nfa_file);
  * 
  * The created NFA does not contain epsilons, is trimmed and reduced.
  * It uses the parser from RE2, see mata/parser/re2praser.hh for more
- * details and options. The limitations on @p regex are the same as for
- * RE2, see https://github.com/google/re2/wiki/Syntax.
+ * details and options.
+ * 
+ * At https://github.com/google/re2/wiki/Syntax, you can find the syntax
+ * of @p regex with following futher limitations:
+ *  1) The allowed characters are the first 256 characters of Unicode,
+ *     i.e., Latin1 encoding (ASCII + 128 more characters). For the 
+ *     full Unicode, check mata/parser/re2praser.hh.
+ *  2) The created automaton represents the language of the regex and
+ *     is not expected to be used in regex matching. Therefore, stuff
+ *     like ^, $, \b, etc. are ignored in the regex. For example, the
+ *     regular expressions a*b and ^a*b will both result in the same
+ *     NFA accepting the language of multiple 'a's followed by one 'b'.
+ *     See also issue #494.
  * 
  * @param regex regular expression
  */

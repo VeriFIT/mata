@@ -21,7 +21,18 @@ namespace mata::parser {
      /**
       * @brief Creates NFA from regular expression using RE2 parser
       * 
-      * @param pattern regex as string
+      * At https://github.com/google/re2/wiki/Syntax, you can find the syntax
+      * of regular expressions with following futher limitations:
+      *  1) If you use UTF8 encoding, the created NFA will have the values of
+      *     bytes instead of full symbols. For example, the character Ā whose
+      *     Unicode code point is U+0100 and is represented in UTF8 as two
+      *     bytes c4 80 will have two transitions, one with c4 followed with
+      *     by 80, to encode it.
+      *  2) The created automaton represents the language of the regex and
+      *     is not expected to be used in regex matching. Therefore, stuff
+      *     like ^, $, \b, etc. are ignored in the regex.
+      * 
+      * @param pattern regex as a string
       * @param use_epsilon whether to keep epsilon transitions in created NFA
       * @param epsilon_value symbol representing epsilon
       * @param use_reduce if set to true the result is trimmed and reduced using simulation reduction
