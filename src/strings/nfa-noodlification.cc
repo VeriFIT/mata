@@ -468,6 +468,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // we assume that the operations did not add jump transitions
     assert(!intersection.contains_jump_transitions());
 
+    intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim());
 
     // Delimiters are always on both tracks together, but we want it to become
     // a jump transition, so that noodlify_mult_eps works correctly.
@@ -514,8 +515,6 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_source) {
         intersection_nfa.delta.remove(trans);
     }
-
-    intersection_nfa = mata::nfa::reduce(intersection_nfa);
 
     // intersection_nfa should now be an NFA that has NFT segments, where segments are divided by
     // delimiters. We would have something like
