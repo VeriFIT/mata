@@ -149,14 +149,15 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                             continue;
                         }
                         for (State target : eps_move_it_s->targets) {
-                            assert(aut.levels[target] == cur_level + 1);
                             if (cur_level == aut.num_of_levels-1) {
+                                assert(aut.levels[target] == DEFAULT_LEVEL);
                                 std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
                                 safe_epsilon_runs.push_back(new_safe_epsilon_run);
                                 eps_delta[state].insert(target);
                                 eps_delta_inverse[target].insert(state);
                             } else if (reversed_nfa.delta[target].size() == 1) {
+                                assert(aut.levels[target] == cur_level + 1);
                                 std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
                                 new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
