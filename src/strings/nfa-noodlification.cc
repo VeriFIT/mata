@@ -500,7 +500,6 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // and replace it with one transition
     //     source ---DELIMITER---> target
     Nfa intersection_nfa{intersection.to_nfa_move()};
-    intersection_nfa = mata::nfa::reduce(intersection_nfa);
     // add "source ---DELIMITER---> target" transitions
     for (const auto& [middle_state,first_trans] : middle_state_to_delimiter_transition_as_target) {
         Transition second_trans = middle_state_to_delimiter_transition_as_source.at(middle_state);
@@ -515,6 +514,8 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     for (const auto& [middle_state,trans] : middle_state_to_delimiter_transition_as_source) {
         intersection_nfa.delta.remove(trans);
     }
+
+    intersection_nfa = mata::nfa::reduce(intersection_nfa);
 
     // intersection_nfa should now be an NFA that has NFT segments, where segments are divided by
     // delimiters. We would have something like
