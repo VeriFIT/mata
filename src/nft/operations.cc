@@ -139,7 +139,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
             std::vector<std::vector<State>> state_safe_epsilon_runs{ {state} };
             for (Level cur_level = 0; cur_level < aut.num_of_levels; ++cur_level) {
                 std::vector<std::vector<State>> new_state_safe_epsilon_runs;
-                for (std::vector<State> safe_epsilon_run : state_safe_epsilon_runs) {
+                for (const std::vector<State>& safe_epsilon_run : state_safe_epsilon_runs) {
                     State state_s = safe_epsilon_run.back();
                     const StatePost& post_s{ aut.delta[state_s] };
                     const auto eps_move_it_s { post_s.find(epsilon) };
@@ -151,13 +151,15 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                         for (State target : eps_move_it_s->targets) {
                             assert(aut.levels[target] == cur_level + 1);
                             if (cur_level == aut.num_of_levels-1) {
-                                safe_epsilon_run.push_back(target);
-                                safe_epsilon_runs.push_back(safe_epsilon_run);
+                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                new_safe_epsilon_run.push_back(target);
+                                safe_epsilon_runs.push_back(new_safe_epsilon_run);
                                 eps_delta[state].insert(target);
                                 eps_delta_inverse[target].insert(state);
                             } else if (reversed_nfa.delta[target].size() == 1) {
-                                safe_epsilon_run.push_back(target);
-                                new_state_safe_epsilon_runs.push_back(safe_epsilon_run);
+                                std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
+                                new_safe_epsilon_run.push_back(target);
+                                new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
                             }
                         }
                     }
