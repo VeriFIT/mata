@@ -327,7 +327,7 @@ public:
     Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-     * @brief Checks if the transition contains any jump transition
+     * @brief Checks if the transducer contains any jump transition
      */
     bool contains_jump_transitions();
 
