@@ -403,7 +403,8 @@ seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsi
 std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
-    const std::vector<std::shared_ptr<Nfa>>& output_automata
+    const std::vector<std::shared_ptr<Nfa>>& output_automata,
+    bool reduce_intersection
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
@@ -468,7 +469,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // we assume that the operations did not add jump transitions
     assert(!intersection.contains_jump_transitions());
 
-    intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
+    if (reduce_intersection) {
+        intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
+    }
 
     // Delimiters are always on both tracks together, but we want it to become
     // a jump transition, so that noodlify_mult_eps works correctly.
