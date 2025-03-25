@@ -409,6 +409,9 @@ struct TransducerNoodleElement {
     unsigned input_index;
     std::shared_ptr<Nfa> output_aut;
     unsigned output_index;
+
+    TransducerNoodleElement(std::shared_ptr<Nft> transducer, std::shared_ptr<Nfa> input_aut, unsigned input_index, std::shared_ptr<Nfa> output_aut, unsigned output_index)
+                : transducer(transducer), input_aut(input_aut), input_index(input_index), output_aut(output_aut), output_index(output_index) { }
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
