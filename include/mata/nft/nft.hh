@@ -829,7 +829,7 @@ Nft somewhat_simple_revert(const Nft& aut);
 Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
- * @brief Remove simple epsilon transitions.
+ * @brief Remove simple epsilon transitions while 
  * 
  * Simple epsilon transitions are the transitions of the form
  *      q0 -epsilon-> q1 -epsilon-> q2 -epsilon-> ... -epsilon-> qn
@@ -837,8 +837,13 @@ Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
  * with level 1, 2, ..., num_of_levels and for each qi, for 0 < i < n,
  * there is only 1 transition going to qi (the transition qi-1 -epsilon-> qi)
  * and only 1 transition going from qi (the transition qi -epsilon -> qi+1).
- *  
+ * This means that if there was some state p0 going with epsilon to q1,
+ * these to epsilon transitions would not be removed.
+ * 
  * Furthermore. assumes that the NFT @p aut does not have jump transitions.
+ * 
+ * The resulting automaton has the same number of states as @p aut, just the
+ * transitions can change. It is recommended to run trim() after this function.
  * 
  * @param aut NFT without jump transitions
  * @param epsilon symbol representing epsilon
