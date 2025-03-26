@@ -8,6 +8,7 @@
 
 // MATA headers
 #include "mata/nfa/delta.hh"
+#include "mata/nfa/types.hh"
 #include "mata/utils/sparse-set.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
@@ -54,9 +55,12 @@ namespace {
         lts_for_simulation.init();
         return lts_for_simulation.compute_simulation();
     }
+
     
     // Merging based on the first and second rule (From the paper 'On NFA Reduction')
-    Nfa merge_in_one_direction(const Nfa& aut, StateRenaming& state_renaming, const Simlib::Util::BinaryRelation& sim_relation){
+    Nfa merge_in_one_direction(const Nfa& aut, StateRenaming& state_renaming, 
+                               const Simlib::Util::BinaryRelation& sim_relation,
+                               const bool little_brother){
         Nfa result;
 
         auto sim_relation_symmetric = sim_relation;
@@ -97,14 +101,18 @@ namespace {
                         return state_set;
                     }();
 
-                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
+                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_toA
+                    // this technique is known as little brother elimination. It can pose problems to simulation fixpoint
                     StateSet representatives_class_states;
                     for (const State s : representatives_of_states_to) {
                         bool is_state_important = true; // if true, we need to keep the transition from q to s
-                        for (const State p : representatives_of_states_to) {
-                            if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
-                                is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
-                                break;
+
+                        if (little_brother){
+                            for (const State p : representatives_of_states_to) {
+                                if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
+                                    is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
+                                    break;
+                                }
                             }
                         }
                         if (is_state_important) {
@@ -137,6 +145,57 @@ namespace {
         return result;
     }
 
+    Nfa simulation_fixpoint(const Nfa& aut){
+        Nfa result;
+        Nfa tmp = aut;
+
+        std::unordered_map<State,State> state_map_dummy;
+
+        bool forward_eq = false;
+        bool backward_eq = false;
+
+        while (!(forward_eq && backward_eq)){
+            
+            state_map_dummy.clear();
+            
+            // Compute the forward simulation TODO take out into a function
+            const auto sim_relation_fw = algorithms::compute_relation(
+                    tmp, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+            result = merge_in_one_direction(tmp, state_map_dummy, sim_relation_fw, false);
+
+            if (tmp.num_of_states() == result.num_of_states()){
+                forward_eq = true;
+            }
+            else {
+                forward_eq = false;
+            }
+                
+            tmp = result;
+
+            state_map_dummy.clear();
+
+            // Compute the backward simulation TODO take out into a function
+            Nfa aut_r = revert(tmp);
+            const auto sim_relation_bw = algorithms::compute_relation(
+                    aut_r, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+            
+            result = merge_in_one_direction(aut_r, state_map_dummy, sim_relation_bw, false);
+            result = revert(result);
+
+            if (tmp.num_of_states() == result.num_of_states()){
+                backward_eq = true;
+            }
+            else {
+                backward_eq = false;
+            }
+
+            tmp = result;
+        }
+    
+        result = tmp;
+        return result;
+    }
+
     Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction) {
         Nfa result;
         
@@ -146,7 +205,7 @@ namespace {
                     aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
             
             // Merge states based on the selected rule
-            result = merge_in_one_direction(aut, state_renaming, sim_relation);
+            result = merge_in_one_direction(aut, state_renaming, sim_relation, true);
             return result;
         }
         else if (simulation_direction == "backward"){
@@ -157,7 +216,7 @@ namespace {
                     aut_r, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
             
             // Merge states based on the selected rule
-            result = merge_in_one_direction(aut_r, state_renaming, sim_relation);
+            result = merge_in_one_direction(aut_r, state_renaming, sim_relation, true);
             return revert(result);
         }
         else if (simulation_direction == "bidirect"){
@@ -171,6 +230,14 @@ namespace {
             
             // Merge states based on the third rule
             result = merge_in_both_directions(aut, state_renaming, sim_fw_relation, sim_bw_relation);
+            std::cerr << "ERROR: bidirect not implemented yet";
+
+            return result;
+        }
+        else if (simulation_direction == "fixpoint"){
+            // TODO this does not support state renaming
+            result = simulation_fixpoint(aut);
+            return result;
         }
         else {
             // TODO throw some error
