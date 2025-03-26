@@ -80,7 +80,7 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
-void Nft::remove_epsilon(Symbol epsilon = EPSILON) {
+void Nft::remove_epsilon(Symbol epsilon) {
     *this = mata::nft::remove_epsilon(*this, epsilon);
 }
 
