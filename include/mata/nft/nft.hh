@@ -360,6 +360,13 @@ public:
     Nft& trim(StateRenaming* state_renaming = nullptr);
 
     /**
+     * Remove simple epsilon transitions from the automaton.
+     * 
+     * @sa mata::nft::remove_epsilon()
+     */
+    void remove_epsilon(Symbol epsilon = EPSILON);
+
+    /**
      * @brief In-place concatenation.
      */
     Nft& concatenate(const Nft& aut);
@@ -821,7 +828,22 @@ Nft somewhat_simple_revert(const Nft& aut);
  */
 Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
-// Removing epsilon transitions
+/**
+ * @brief Remove simple epsilon transitions.
+ * 
+ * Simple epsilon transitions are the transitions of the form
+ *      q0 -epsilon-> q1 -epsilon-> q2 -epsilon-> ... -epsilon-> qn
+ * where q0 and qn are level 0 states, the states inbetween are states
+ * with level 1, 2, ..., num_of_levels and for each qi, for 0 < i < n,
+ * there is only 1 transition going to qi (the transition qi-1 -epsilon-> qi)
+ * and only 1 transition going from qi (the transition qi -epsilon -> qi+1).
+ *  
+ * Furthermore. assumes that the NFT @p aut does not have jump transitions.
+ * 
+ * @param aut NFT without jump transitions
+ * @param epsilon symbol representing epsilon
+ * @return NFT whose language is same as @p aut but does not contain simple epsilon transitions
+ */
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
 /**

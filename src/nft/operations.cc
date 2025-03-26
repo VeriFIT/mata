@@ -129,10 +129,17 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     const size_t num_of_states{aut.num_of_states() };
     mata::nfa::Nfa reversed_nfa{ mata::nfa::revert(aut) };
 
+    // this vector will collect epsilon run from level 0 state to level 0 state
+    // that contains only epsilon transitions, and all states inbetween (i.e.
+    // not-level-0 states) will have only one epsilon transition going to it
+    // and one epsilon transition going from it
     std::vector<std::vector<State>> safe_epsilon_runs;
 
-    std::vector<StateSet> eps_delta(num_of_states);
-    std::vector<StateSet> eps_delta_inverse(num_of_states);
+    // for each level 0 state q, eps_delta[q] represents all states to which
+    // we can get to by some safe epsilon run
+    std::map<State,StateSet> eps_delta;
+    // its inverse
+    std::map<State,StateSet> eps_delta_inverse;
 
     for (State state = 0; state != num_of_states; ++state) {
         if (aut.levels[state] == DEFAULT_LEVEL) {
@@ -150,16 +157,20 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
                         }
                         for (State target : eps_move_it_s->targets) {
                             if (cur_level == aut.num_of_levels-1) {
+                                // we are at the last level, next level will be 0
                                 assert(aut.levels[target] == DEFAULT_LEVEL);
                                 std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
+                                // we finish with generating this safe epsilon run and push it to safe_epsilon_runs directly
                                 safe_epsilon_runs.push_back(new_safe_epsilon_run);
                                 eps_delta[state].insert(target);
                                 eps_delta_inverse[target].insert(state);
                             } else if (reversed_nfa.delta[target].size() == 1) {
+                                // we are not at the last level, next state must be level incremented by one (assuming no jumps)
                                 assert(aut.levels[target] == cur_level + 1);
                                 std::vector<State> new_safe_epsilon_run = safe_epsilon_run;
                                 new_safe_epsilon_run.push_back(target);
+                                // this safe epsilon run is not finished yet, we save new_state_safe_epsilon_runs to return to it
                                 new_state_safe_epsilon_runs.push_back(new_safe_epsilon_run);
                             }
                         }
@@ -202,11 +213,12 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
         }
     }
 
-    // At this point eps_delta represents epsilon closure, but it might not be reflexive
+    // At this point eps_delta represents epsilon closure of level 0 states, but it might not be reflexive
 
     // Construct the automaton without epsilon transitions.
     Nft result{ aut };
 
+    // we first remove all epsilon transitions
     std::set<Transition> safe_epsilon_runs_transitions;
     for (const auto& safe_epsilon_run : safe_epsilon_runs) {
         for (size_t i = 0; i < safe_epsilon_run.size()-1; ++i) {
@@ -218,11 +230,12 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
         }
     }
 
+    // we add new transitions using epsilon closure
     for (State state{ 0 }; state < num_of_states; ++state) {
         for (State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
             if (aut.final[eps_cl_state]) result.final.insert(state);
+            // we only need to add the first transition to level 1 state
             for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-                // TODO: this could be done more efficiently if we had a better add method
                 for (State tgt_state : move.targets) {
                     result.delta.add(state, move.symbol, tgt_state);
                 }
