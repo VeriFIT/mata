@@ -137,9 +137,9 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
     // for each level 0 state q, eps_delta[q] represents all states to which
     // we can get to by some safe epsilon run
-    std::map<State,StateSet> eps_delta;
+    std::vector<StateSet> eps_delta(num_of_states);
     // its inverse
-    std::map<State,StateSet> eps_delta_inverse;
+    std::vector<StateSet> eps_delta_inverse(num_of_states);
 
     for (State state = 0; state != num_of_states; ++state) {
         if (aut.levels[state] == DEFAULT_LEVEL) {
@@ -217,6 +217,7 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
 
     // Construct the automaton without epsilon transitions.
     Nft result{ aut };
+    result.delta.allocate(num_of_states); // just to be safe
 
     // we first remove all epsilon transitions
     std::set<Transition> safe_epsilon_runs_transitions;
@@ -233,11 +234,11 @@ Nft mata::nft::remove_epsilon(const Nft& aut, Symbol epsilon) {
     // we add new transitions using epsilon closure
     for (State state{ 0 }; state < num_of_states; ++state) {
         for (State eps_cl_state : eps_delta[state]) { // For every state in its epsilon closure.
-            if (aut.final[eps_cl_state]) result.final.insert(state);
-            // we only need to add the first transition to level 1 state
-            for (const SymbolPost& move : aut.delta[eps_cl_state]) {
-                for (State tgt_state : move.targets) {
-                    result.delta.add(state, move.symbol, tgt_state);
+            if (eps_cl_state != state) { // transitions from state are already in result
+                if (aut.final[eps_cl_state]) { result.final.insert(state); }
+                // we only need to add the first transition to level 1 state
+                for (const SymbolPost& move : result.delta[eps_cl_state]) {
+                    result.delta.add(state, move.symbol, move.targets);
                 }
             }
         }

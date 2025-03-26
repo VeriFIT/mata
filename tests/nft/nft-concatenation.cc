@@ -62,7 +62,9 @@ using Symbol = mata::Symbol;
 
 TEST_CASE("mata::nft::concatenate()") {
     Nft lhs{};
+    lhs.num_of_levels = 1;
     Nft rhs{};
+    rhs.num_of_levels = 1;
     Nft result{};
 
     SECTION("Empty automaton without states") {

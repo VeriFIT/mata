@@ -3011,7 +3011,7 @@ TEST_CASE("mata::nft::remove_epsilon()") {
         aut.add_transition(0, {'b', 'a', 'a'}, 3);
         aut.add_transition(3, {'a', 'a', 'a'}, 2);
         aut.add_transition(1, {'a', 'a', 'a'}, 2);
-        aut.add_transition(2,  {'c', 'b', 'd'});
+        aut.add_transition(2,  {'c', 'b', 'd'}, 2);
         aut.remove_epsilon('a');
         REQUIRE(aut.delta[0].size() == 2);
         CHECK(aut.delta[0].to_vector()[0].symbol == 'b');

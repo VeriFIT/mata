@@ -829,7 +829,7 @@ Nft somewhat_simple_revert(const Nft& aut);
 Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
- * @brief Remove simple epsilon transitions while 
+ * @brief Remove simple epsilon transitions.
  * 
  * Simple epsilon transitions are the transitions of the form
  *      q0 -epsilon-> q1 -epsilon-> q2 -epsilon-> ... -epsilon-> qn

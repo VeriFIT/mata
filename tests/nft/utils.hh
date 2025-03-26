@@ -3,6 +3,7 @@
 
 // Automaton A
 #define FILL_WITH_AUT_A(x) \
+	x.num_of_levels = 1; \
     x.initial = {1, 3}; \
 	x.final = {5}; \
 	x.delta.add(1, 'a', 3); \
@@ -24,6 +25,7 @@
 
 // Automaton B
 #define FILL_WITH_AUT_B(x) \
+	x.num_of_levels = 1; \
 	x.add_state(14); \
 	x.initial = {4}; \
 	x.final = {2, 12}; \
@@ -44,6 +46,7 @@
 // Automaton C
 // the same as B, but with small symbols
 #define FILL_WITH_AUT_C(x) \
+	x.num_of_levels = 1; \
 	x.initial = {4}; \
 	x.final = {2, 12}; \
 	x.delta.add(4, 3, 8); \
@@ -62,6 +65,7 @@
 
 // Automaton D // shomewhat larger
 #define FILL_WITH_AUT_D(x) \
+	x.num_of_levels = 1; \
     x.initial = {0}; \
     x.final = {3}; \
     x.delta.add(0, 46, 0); \
@@ -98,6 +102,7 @@
 
 // Automaton E
 #define FILL_WITH_AUT_E(x) \
+	x.num_of_levels = 1; \
 	x.add_state(4); \
 	x.initial = {1, 3}; \
 	x.final = {4}; \
