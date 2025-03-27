@@ -439,9 +439,14 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
     auto to_ascii = [&](const Symbol symbol) {
         // Translate only printable ASCII characters.
         if (symbol < 33) {
-            return std::to_string(symbol);
+            return "<" + std::to_string(symbol) + ">";
         }
-        return "\\'" + std::string(1, static_cast<char>(symbol)) + "\\'";
+        switch (symbol) {
+            case '"':     return std::string("\\\"");
+            case '\\':    return std::string("\\\\");
+            case EPSILON: return std::string("<eps>");
+            default:      return std::string(1, static_cast<char>(symbol));
+        }
     };
 
     output << "digraph finiteAutomaton {" << std::endl
@@ -474,12 +479,12 @@ void Nfa::print_to_dot(std::ostream &output, const bool ascii) const {
     output << "}" << std::endl;
 }
 
-void Nfa::print_to_dot(const std::string& filename) const {
+void Nfa::print_to_dot(const std::string& filename, const bool ascii) const {
     std::ofstream output(filename);
     if (!output) {
         throw std::ios_base::failure("Failed to open file: " + filename);
     }
-    print_to_dot(output);
+    print_to_dot(output, ascii);
 }
 
 std::string Nfa::print_to_mata(const Alphabet* alphabet) const {

@@ -5,6 +5,8 @@
 #include <list>
 #include <optional>
 #include <iterator>
+#include <fstream>
+#include <string>
 
 // MATA headers
 #include "mata/utils/sparse-set.hh"
@@ -88,24 +90,24 @@ std::string Nft::print_to_dot(const bool ascii) const {
 
 void Nft::print_to_dot(std::ostream &output, const bool ascii) const {
     auto translate_special_symbols = [&](const Symbol symbol) -> std::string {
-        if (symbol == EPSILON) {
-            return "<eps>";
+        switch (symbol) {
+            case EPSILON:      return "<eps>";
+            case EPSILON - 99: return "<marker>";
+            case DONT_CARE:    return "<dcare>";
+            default:           return std::to_string(symbol);
         }
-        if (symbol == EPSILON - 99) {
-            return "<marker>";
-        }
-        if (symbol == DONT_CARE) {
-            return "<dcare>";
-        }
-        return std::to_string(symbol);
     };
 
     auto to_ascii = [&](const Symbol symbol) {
         // Translate only printable ASCII characters.
         if (symbol < 33) {
-            return std::to_string(symbol);
+            return "<" + std::to_string(symbol) + ">";
         }
-        return std::string(1, static_cast<char>(symbol));
+        switch (symbol) {
+            case '"':  return std::string("\\\"");
+            case '\\': return std::string("\\\\");
+            default:   return std::string(1, static_cast<char>(symbol));
+        }
     };
     output << "digraph finiteAutomaton {" << std::endl
                  << "node [shape=circle];" << std::endl;
@@ -142,6 +144,14 @@ void Nft::print_to_dot(std::ostream &output, const bool ascii) const {
     }
 
     output << "}" << std::endl;
+}
+
+void Nft::print_to_dot(const std::string& filename, const bool ascii) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_dot(output, ascii);
 }
 
 std::string Nft::print_to_mata() const {
@@ -197,6 +207,14 @@ void Nft::print_to_mata(std::ostream &output) const {
     for (const Transition& trans: delta.transitions()) {
         output << "q" << trans.source << " " << trans.symbol << " q" << trans.target << std::endl;
     }
+}
+
+void Nft::print_to_mata(const std::string& filename) const {
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::ios_base::failure("Failed to open file: " + filename);
+    }
+    print_to_mata(output);
 }
 
 Nft Nft::get_one_letter_aut(Symbol abstract_symbol) const {
@@ -486,7 +504,7 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
 
 bool Nft::contains_jump_transitions() {
     if (num_of_levels == 1) { return false; }
-    
+
     for (const Transition& transition : delta.transitions()) {
         Level src_level = levels[transition.source];
         Level tgt_level = levels[transition.target];
