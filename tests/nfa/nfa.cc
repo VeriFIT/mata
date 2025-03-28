@@ -2891,7 +2891,7 @@ TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
     SECTION("line") {
         Nfa aut(3);
         aut.initial.insert(0);
-        aut.final.insert(2);
+        aut.final.insert(3);
         aut.delta.add(0, 'a', 1);
         aut.delta.add(1, 'a', 2);
         aut.delta.add(2, 'a', 3);
