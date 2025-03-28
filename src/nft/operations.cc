@@ -843,28 +843,6 @@ std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     return {word, true};
 }
 
-//TODO: this is not efficient
-bool mata::nft::Nft::is_in_lang(const Run& run) const {
-    StateSet current_post(this->initial);
-    for (const Symbol sym : run.word) {
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
-
-/// Checks whether the prefix of a string is in the language of an automaton
-// TODO: slow and it should share code with is_in_lang
-bool mata::nft::Nft::is_prfx_in_lang(const Run& run) const {
-    StateSet current_post{ this->initial };
-    for (const Symbol sym : run.word) {
-        if (this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
-
 Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {
     //compute the minimal deterministic automaton, Brzozovski algorithm
     return determinize(revert(determinize(revert(aut))));

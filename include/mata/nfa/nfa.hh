@@ -347,8 +347,28 @@ public:
      */
     void print_to_mata(const std::string& filename, const Alphabet* alphabet = nullptr) const;
 
-    // TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
-    StateSet post(const StateSet& states, const Symbol& symbol) const;
+    /**
+     * @brief Get the set of states reachable from the given set of states over the given symbol.
+     * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     *
+     * @param states Set of states to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given set of states over the given symbol.
+     */
+    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const;
+
+    /**
+     * @brief Get the set of states reachable from the given state over the given symbol.
+     *
+     * @param state A state to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given state over the given symbol.
+     */
+    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const {
+        return post(StateSet{ state }, symbol, eps_closure_opt);
+    }
 
     /**
      * Check whether the language of NFA is empty.
@@ -412,12 +432,14 @@ public:
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 
     /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Run& word) const;
+    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prfx = false) const;
     /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
+    bool is_in_lang(const Word& word, bool use_epsilon = false) { return is_in_lang(Run{ word, {} }, use_epsilon); }
 
     /// Checks whether the prefix of a string is in the language of an automaton
-    bool is_prfx_in_lang(const Run& word) const;
+    bool is_prfx_in_lang(const Run& word, bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+    /// Checks whether the prefix of a string is in the language of an automaton
+    bool is_prfx_in_lang(const Word& word, bool use_epsilon = false) const { return is_prfx_in_lang(Run{ word, {} }, use_epsilon); }
 
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 

@@ -156,15 +156,15 @@ public:
 
     /**
      * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
-     * 
+     *
      * It assumes that @p nfa is a representation of an nft without jump transitions.
      * It assign to each state the level based on the distance from the initial state.
      * For example, if there are 2 levels, the initial states are level 0, the following
      * states are level 1, the states after that level 0, etc.
-     * 
+     *
      * If you only have one level, then it is more efficient to call the constructor that
      * takes Nfa as input.
-     * 
+     *
      * @throws std::runtime_error if some state should be assigned two different levels
      */
     static Nft from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels);
@@ -450,14 +450,6 @@ public:
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
-
-    /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Run& word) const;
-    /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Word& word) { return is_in_lang(Run{ word, {} }); }
-
-    /// Checks whether the prefix of a string is in the language of an automaton
-    bool is_prfx_in_lang(const Run& word) const;
 
     /**
      * @brief Checks whether track words are in the language of the transducer.

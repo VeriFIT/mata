@@ -826,6 +826,345 @@ TEST_CASE("mata::nfa::lang_difference()") {
     }
 }
 
+TEST_CASE("mata::nfa::Nfa::is_in_lang()") {
+    SECTION("without epsilon transitions") {
+        SECTION("empty language") {
+            Nfa nfa{};
+            CHECK(!nfa.is_in_lang(Word{}));
+        }
+
+        SECTION("epsilon language") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 0 };
+            CHECK(nfa.is_in_lang(Word{}));
+        }
+
+        SECTION("ab in ab|ac") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(0, 'a', 3);
+            nfa.delta.add(3, 'c', 4);
+            nfa.final = { 2, 4 };
+
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }));
+        }
+
+        SECTION("ab not in abcd") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(2, 'c', 3);
+            nfa.delta.add(3, 'd', 4);
+            nfa.final = { 4 };
+
+            CHECK(!nfa.is_in_lang(Word{ 'a', 'b' }));
+        }
+    }
+
+    SECTION("with epsilon transitions") {
+        SECTION("empty language") {
+            Nfa nfa{};
+            CHECK(!nfa.is_in_lang(Word{}, true));
+        }
+
+        SECTION("epsilon language") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 0 };
+            CHECK(nfa.is_in_lang(Word{}, true));
+        }
+
+        SECTION("epsilon language 2") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 6 };
+            nfa.delta.add(0, EPSILON, 0);
+            nfa.delta.add(1, EPSILON, 1);
+            nfa.delta.add(2, EPSILON, 2);
+            nfa.delta.add(3, EPSILON, 3);
+            nfa.delta.add(4, EPSILON, 4);
+            nfa.delta.add(5, EPSILON, 5);
+            nfa.delta.add(6, EPSILON, 6);
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(3, EPSILON, 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(5, EPSILON, 6);
+            nfa.delta.add(4, EPSILON, 2);
+            nfa.delta.add(5, EPSILON, 3);
+            nfa.delta.add(6, EPSILON, 0);
+
+            CHECK(nfa.is_in_lang(Word{}, true));
+        }
+
+        SECTION("ab in ab|ac with EPSILON at the beginning") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, 'a', 2);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(0, EPSILON, 4);
+            nfa.delta.add(4, 'a', 5);
+            nfa.delta.add(5, 'c', 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }, true));
+        }
+
+        SECTION("ab in ab|ac with EPSILON in the middle") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(0, 'a', 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(5, 'c', 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }, true));
+        }
+
+        SECTION("ab in ab|cd with EPSILON at the end") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(0, 'c', 4);
+            nfa.delta.add(4, 'd', 5);
+            nfa.delta.add(5, EPSILON, 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }, true));
+
+        }
+
+        SECTION("ab in ab|cd with EPSILON interleaving") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, 'a', 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(3, 'b', 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(0, EPSILON, 6);
+            nfa.delta.add(6, 'c', 7);
+            nfa.delta.add(7, EPSILON, 8);
+            nfa.delta.add(8, 'd', 9);
+            nfa.delta.add(9, EPSILON, 10);
+            nfa.final = { 5, 10 };
+
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }, true));
+        }
+
+        SECTION("complex ab, abc, abxxy") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(1, 'x', 3);
+            nfa.delta.add(2, EPSILON, 4);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(3, 'y', 5);
+            nfa.delta.add(3, EPSILON, 1);
+            nfa.delta.add(4, EPSILON, 1);
+            nfa.delta.add(4, EPSILON, 4);
+            nfa.delta.add(4, 'b', 6);
+            nfa.delta.add(5, 'c', 7);
+            nfa.delta.add(6, EPSILON, 5);
+            nfa.final = { 5, 7 };
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b', 'c' }, true));
+            CHECK(nfa.is_in_lang(Word{ 'a', 'b', 'x', 'x', 'y' }, true));
+            CHECK(!nfa.is_in_lang(Word{ }, true));
+            CHECK(!nfa.is_in_lang(Word{ 'a' }, true));
+        }
+    }
+}
+
+TEST_CASE("mata::nfa::Nfa::is_prfx_in_lang()") {
+    SECTION("without epsilon transitions") {
+        SECTION("empty language") {
+            Nfa nfa{};
+            CHECK(!nfa.is_prfx_in_lang(Word{}));
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }));
+        }
+
+        SECTION("epsilon language") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 0 };
+            CHECK(nfa.is_prfx_in_lang(Word{}));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }));
+        }
+
+        SECTION("ab in ab|ac") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(0, 'a', 3);
+            nfa.delta.add(3, 'c', 4);
+            nfa.final = { 2, 4 };
+
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }));
+        }
+
+        SECTION("ab not in abcd") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(2, 'c', 3);
+            nfa.delta.add(3, 'd', 4);
+            nfa.final = { 4 };
+
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'a', 'b' }));
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'c', 'd', 'e' }));
+        }
+    }
+
+    SECTION("with epsilon transitions") {
+        SECTION("empty language") {
+            Nfa nfa{};
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("epsilon language") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 0 };
+            CHECK(nfa.is_prfx_in_lang(Word{}, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("epsilon language 2") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.final = { 6 };
+            nfa.delta.add(0, EPSILON, 0);
+            nfa.delta.add(1, EPSILON, 1);
+            nfa.delta.add(2, EPSILON, 2);
+            nfa.delta.add(3, EPSILON, 3);
+            nfa.delta.add(4, EPSILON, 4);
+            nfa.delta.add(5, EPSILON, 5);
+            nfa.delta.add(6, EPSILON, 6);
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(3, EPSILON, 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(5, EPSILON, 6);
+            nfa.delta.add(4, EPSILON, 2);
+            nfa.delta.add(5, EPSILON, 3);
+            nfa.delta.add(6, EPSILON, 0);
+
+            CHECK(nfa.is_prfx_in_lang(Word{}, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("ab in ab|ac with EPSILON at the beginning") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, 'a', 2);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(0, EPSILON, 4);
+            nfa.delta.add(4, 'a', 5);
+            nfa.delta.add(5, 'c', 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("ab in ab|ac with EPSILON in the middle") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(0, 'a', 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(5, 'c', 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("ab in ab|cd with EPSILON at the end") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, 'b', 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(0, 'c', 4);
+            nfa.delta.add(4, 'd', 5);
+            nfa.delta.add(5, EPSILON, 6);
+            nfa.final = { 3, 6 };
+
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+
+        }
+
+        SECTION("ab in ab|cd with EPSILON interleaving") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, EPSILON, 1);
+            nfa.delta.add(1, 'a', 2);
+            nfa.delta.add(2, EPSILON, 3);
+            nfa.delta.add(3, 'b', 4);
+            nfa.delta.add(4, EPSILON, 5);
+            nfa.delta.add(0, EPSILON, 6);
+            nfa.delta.add(6, 'c', 7);
+            nfa.delta.add(7, EPSILON, 8);
+            nfa.delta.add(8, 'd', 9);
+            nfa.delta.add(9, EPSILON, 10);
+            nfa.final = { 5, 10 };
+
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+        }
+
+        SECTION("complex ab, abc, abxxy") {
+            Nfa nfa{};
+            nfa.initial = { 0 };
+            nfa.delta.add(0, 'a', 1);
+            nfa.delta.add(1, EPSILON, 2);
+            nfa.delta.add(1, 'x', 3);
+            nfa.delta.add(2, EPSILON, 4);
+            nfa.delta.add(2, 'b', 3);
+            nfa.delta.add(3, 'y', 5);
+            nfa.delta.add(3, EPSILON, 1);
+            nfa.delta.add(4, EPSILON, 1);
+            nfa.delta.add(4, EPSILON, 4);
+            nfa.delta.add(4, 'b', 6);
+            nfa.delta.add(5, 'c', 7);
+            nfa.delta.add(6, EPSILON, 5);
+            nfa.final = { 5, 7 };
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'x', 'x', 'y' }, true));
+            CHECK(!nfa.is_prfx_in_lang(Word{ }, true));
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'a' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'd', 'e' }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'c', 'c', 'd', 'e'  }, true));
+            CHECK(nfa.is_prfx_in_lang(Word{ 'a', 'b', 'x', 'x', 'y', 'c', 'd', 'e'  }, true));
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'c', 'd', 'e' }, true));
+            CHECK(!nfa.is_prfx_in_lang(Word{ 'a', 'c', 'd', 'e' }, true));
+        }
+    }
+}
+
 TEST_CASE("mata::nfa::Nfa::get_word_from_lang_difference()") {
     Nfa nfa_included{};
     Nfa nfa_excluded{};

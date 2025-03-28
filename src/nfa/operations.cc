@@ -632,24 +632,21 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run) const {
+bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prfx) const {
     StateSet current_post(this->initial);
-    for (const Symbol sym : run.word) {
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
 
-/// Checks whether the prefix of a string is in the language of an automaton
-// TODO: slow and it should share code with is_in_lang
-bool mata::nfa::Nfa::is_prfx_in_lang(const Run& run) const {
-    StateSet current_post{ this->initial };
+    if (use_epsilon) {
+        // Compute epsilon closure from the initial states.
+        current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::BEFORE);
+    }
+
+    const EpsilonClosureOpt closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
-        if (this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym);
+        if (match_prfx && this->final.intersects_with(current_post)) { return true; }
+        current_post = this->post(current_post, sym, closure_opt);
         if (current_post.empty()) { return false; }
     }
+
     return this->final.intersects_with(current_post);
 }
 
