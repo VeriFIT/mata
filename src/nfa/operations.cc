@@ -967,7 +967,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
         return Nfa{ dfa_trimmed };
     }
     assert(dfa_trimmed.is_deterministic());
-    assert(dfa_trimmed.get_useful_states().size() == dfa_trimmed.num_of_states());
+    assert(dfa_trimmed.get_useful_states().count() == dfa_trimmed.num_of_states());
 
     // Initialize equivalence classes. The initial partition is {Q}.
     RefinablePartition<State> brp(dfa_trimmed.num_of_states());
