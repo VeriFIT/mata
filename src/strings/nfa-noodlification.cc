@@ -29,10 +29,10 @@ size_t get_num_of_permutations(const seg_nfa::Segmentation::EpsilonDepthTransiti
 
 /**
  * @brief Unify (as best as possible) the initial states and the final states of NFAs in @p nfas
- * 
+ *
  * The unification happens only if the given automaton is not already unified, i.e. it is in @p unified_nfas.
  * We also add the newly unified automata to @p unified_nfas.
- * 
+ *
  * @param[in] nfas The automata to unify
  * @param[in,out] unified_nfas The set of already unified automata
  */
@@ -426,7 +426,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
 
     auto add_self_loop_for_every_default_state = [](Nft& nft, Symbol symbol) {
         Word sym_word(nft.num_of_levels, symbol);
-        
+
         size_t original_num_of_states = nft.num_of_states();
         for (State s{ 0 }; s < original_num_of_states; s++) {
             if (nft.levels[s] == 0) {
@@ -529,7 +529,7 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
             std::shared_ptr<Nfa> element_aut = element.first;
 
             // element.second then keeps the index representing which input/output automaton it is connected with
-            
+
             if (seg_nfa_to_transducer_el.contains(element_aut)) {
                 // we already processed this NFAi so we can find NFTi in seg_nfa_to_transducer_el
                 TransducerNoodleElement transd_el = seg_nfa_to_transducer_el.at(element_aut);

@@ -404,11 +404,16 @@ std::vector<NoodleWithEpsilonsCounter> noodlify_for_equation(
    bool include_empty = false, const ParameterMap& params = {{ "reduce", "false"}});
 
 struct TransducerNoodleElement {
-    std::shared_ptr<Nft> transducer;
-    std::shared_ptr<Nfa> input_aut;
-    unsigned input_index;
-    std::shared_ptr<Nfa> output_aut;
-    unsigned output_index;
+    std::shared_ptr<Nft> transducer{};
+    std::shared_ptr<Nfa> input_aut{};
+    unsigned input_index{};
+    std::shared_ptr<Nfa> output_aut{};
+    unsigned output_index{};
+
+    // Default constructor
+    // Default constructor
+    // TransducerNoodleElement()
+    //     : transducer(nullptr), input_aut(nullptr), output_aut(nullptr), input_index(-1), output_index(-1) {}
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
