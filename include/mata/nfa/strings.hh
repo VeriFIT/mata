@@ -410,10 +410,6 @@ struct TransducerNoodleElement {
     std::shared_ptr<Nfa> output_aut{};
     unsigned output_index{};
 
-    // Default constructor
-    // Default constructor
-    // TransducerNoodleElement()
-    //     : transducer(nullptr), input_aut(nullptr), output_aut(nullptr), input_index(-1), output_index(-1) {}
 };
 
 using TransducerNoodle = std::vector<TransducerNoodleElement>;
