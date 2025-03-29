@@ -156,15 +156,15 @@ public:
 
     /**
      * @brief Creates Nft from @p nfa with specified @p num_of_levels automatically.
-     * 
+     *
      * It assumes that @p nfa is a representation of an nft without jump transitions.
      * It assign to each state the level based on the distance from the initial state.
      * For example, if there are 2 levels, the initial states are level 0, the following
      * states are level 1, the states after that level 0, etc.
-     * 
+     *
      * If you only have one level, then it is more efficient to call the constructor that
      * takes Nfa as input.
-     * 
+     *
      * @throws std::runtime_error if some state should be assigned two different levels
      */
     static Nft from_nfa_leveled(mata::nfa::Nfa nfa, size_t num_of_levels);
@@ -435,6 +435,12 @@ public:
      */
     void print_to_dot(std::ostream &output, bool ascii = false) const;
     /**
+     * @brief Prints the automaton to the file in DOT format
+     * @param filename Name of the file to print the automaton to
+     * @param[in] ascii Whether to use ASCII characters for the output.
+     */
+    void print_to_dot(const std::string& filename, const bool ascii = false) const;
+    /**
      * @brief Prints the automaton in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
@@ -451,7 +457,15 @@ public:
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     void print_to_mata(std::ostream &output) const;
-
+    /**
+     * @brief Prints the automaton to the file in mata format
+     * @param filename Name of the file to print the automaton to
+     *
+     * If you need to parse the automaton again, use IntAlphabet in construct()
+     *
+     * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
+     */
+    void print_to_mata(const std::string& filename) const;
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
