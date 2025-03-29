@@ -80,6 +80,10 @@ Nft& Nft::trim(StateRenaming* state_renaming) {
     return *this;
 }
 
+void Nft::remove_epsilon(Symbol epsilon) {
+    *this = mata::nft::remove_epsilon(*this, epsilon);
+}
+
 std::string Nft::print_to_dot(const bool ascii) const {
     std::stringstream output;
     print_to_dot(output, ascii);

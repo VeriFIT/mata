@@ -34,6 +34,7 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
     x.delta.add(7, 'a', 5); \
     x.delta.add(5, 'a', 5); \
     x.delta.add(5, 'c', 9); \
+	x.levels.set(10); \
 
 
 // Automaton B
@@ -52,6 +53,7 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
     x.delta.add(2, 'c', 12); \
     x.delta.add(12, 'a', 14); \
     x.delta.add(14, 'b', 12); \
+	x.levels.set(14); \
 
 // }}}
 
