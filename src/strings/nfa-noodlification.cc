@@ -403,7 +403,8 @@ seg_nfa::VisitedEpsilonsCounterVector seg_nfa::process_eps_map(const VisitedEpsi
 std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     std::shared_ptr<Nft> nft,
     const std::vector<std::shared_ptr<Nfa>>& input_automata,
-    const std::vector<std::shared_ptr<Nfa>>& output_automata
+    const std::vector<std::shared_ptr<Nfa>>& output_automata,
+    bool reduce_intersection
 ) {
     if (input_automata.empty() || output_automata.empty()) { return {}; }
 
@@ -450,6 +451,10 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     intersection = mata::nft::compose(concatenated_input_nft, intersection, 0, 0, false);
     intersection.trim();
 
+    if(intersection.final.empty()) {
+        return {};
+    }
+
     // we intersect output nfa with nft on the output track but we need to add OUTPUT_DELIMITER as a "epsilon transition" of nft
     // and, we also need to INPUT_DELIMITER as "epsilon transition" of the output nfa, so that we do not lose it
     add_self_loop_for_every_default_state(concatenated_output_nft, INPUT_DELIMITER);
@@ -464,6 +469,9 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
     // we assume that the operations did not add jump transitions
     assert(!intersection.contains_jump_transitions());
 
+    if (reduce_intersection) {
+        intersection = mata::nft::reduce(mata::nft::remove_epsilon(intersection).trim()).trim();
+    }
 
     // Delimiters are always on both tracks together, but we want it to become
     // a jump transition, so that noodlify_mult_eps works correctly.
@@ -544,16 +552,13 @@ std::vector<seg_nfa::TransducerNoodle> seg_nfa::noodlify_for_transducer(
             // the level opposite of the level of the previous state.
             std::shared_ptr<Nft> element_nft = std::make_shared<Nft>(Nft::from_nfa_leveled(std::move(*element_aut), 2));
 
-            TransducerNoodleElement transd_el{
-                .transducer = element_nft,
+            TransducerNoodleElement transd_el{element_nft,
                 // the language of the input automaton is the projection to input track
-                .input_aut = std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))),
-                .input_index = element.second[0],
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 0)))), element.second[0],
                 // the language of the output automaton is the projection to output track
-                .output_aut = std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))),
-                .output_index = element.second[1]
+                std::make_shared<Nfa>(nfa::reduce(nfa::remove_epsilon(nft::project_to(*element_nft, 1)))), element.second[1]
             };
-            seg_nfa_to_transducer_el[element_aut] = transd_el;
+            seg_nfa_to_transducer_el.insert({element_aut, transd_el});
             new_noodle.push_back(transd_el);
         }
         result.push_back(new_noodle);
