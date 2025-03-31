@@ -425,21 +425,75 @@ public:
      */
     void fill_alphabet(mata::OnTheFlyAlphabet& alphabet_to_fill) const;
 
-    /// Is the language of the automaton universal?
+    /**
+     * @brief Check whether the language of the automaton is universal.
+     *
+     * @param alphabet Alphabet to use for checking the universality.
+     * @param cex Counterexample path for a case the language is not universal.
+     * @param params Optional parameters to control the universality check algorithm:
+     * - "algorithm":
+     *      - "antichains": The algorithm uses antichains to check the universality.
+     *      - "naive": The algorithm uses the naive approach to check the universality.
+     *
+     * @return True if the language of the automaton is universal, false otherwise.
+     */
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
-    /// Is the language of the automaton universal?
+
+    /**
+     * @brief Check whether the language of the automaton is universal.
+     *
+     * @param alphabet Alphabet to use for checking the universality.
+     * @param params Optional parameters to control the universality check algorithm:
+     * - "algorithm":
+     *     - "antichains": The algorithm uses antichains to check the universality.
+     *     - "naive": The algorithm uses the naive approach to check the universality.
+     *
+     * @return True if the language of the automaton is universal, false otherwise.
+     */
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
 
-    /// Checks whether a word is in the language of an automaton.
+    /**
+     * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prfx Whether to also match the prefix of the word.
+     *
+     * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
+     */
     bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prfx = false) const;
-    /// Checks whether a word is in the language of an automaton.
-    bool is_in_lang(const Word& word, bool use_epsilon = false) { return is_in_lang(Run{ word, {} }, use_epsilon); }
 
-    /// Checks whether the prefix of a string is in the language of an automaton
-    bool is_prfx_in_lang(const Run& word, bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
-    /// Checks whether the prefix of a string is in the language of an automaton
-    bool is_prfx_in_lang(const Word& word, bool use_epsilon = false) const { return is_prfx_in_lang(Run{ word, {} }, use_epsilon); }
+    /**
+     * @brief Check whether a word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prfx Whether to also match the prefix of the word.
+     *
+     * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
+     */
+    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prfx = false) { return is_in_lang(Run{ word, {} }, use_epsilon, match_prfx); }
+
+    /**
+     * @brief Check whether a prefix of a run is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the run is in the language of the automaton, false otherwise.
+     */
+    bool is_prfx_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+
+    /**
+     * @brief Check whether a prefix of a word is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the word is in the language of the automaton, false otherwise.
+     */
+    bool is_prfx_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prfx_in_lang(Run{ word, {} }, use_epsilon); }
 
     std::pair<Run, bool> get_word_for_path(const Run& run) const;
 
