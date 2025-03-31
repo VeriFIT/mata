@@ -566,7 +566,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     StateSet res{};
 
     // If the symbol is EPSILON, we can stay in the same state.
-    if (symbol == EPSILON && !(eps_closure_opt & EpsilonClosureOpt::NONE)) {
+    if (symbol == EPSILON && eps_closure_opt != EpsilonClosureOpt::NONE) {
         res = states;
     }
 
