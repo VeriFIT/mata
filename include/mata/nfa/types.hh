@@ -20,29 +20,12 @@ struct Run {
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
-// TODO: Put it into a separate file, maybe even in utils.
-///////////////////////////////////////////////////////////
 enum class EpsilonClosureOpt : unsigned {
     NONE   = 1 << 0,   ///< No epsilon closure.
     BEFORE = 1 << 1,   ///< Epsilon closure before the transition.
-    AFTER  = 1 << 2    ///< Epsilon closure after the transition.
-
+    AFTER  = 1 << 2,    ///< Epsilon closure after the transition.
+    BEFORE_AND_AFTER = BEFORE | AFTER ///< Epsilon closure before and after the transition.
 };
-// Enable bitwise OR for any enum class with unsigned underlying type
-template <typename Enum>
-constexpr typename std::enable_if_t<std::is_enum_v<Enum> && std::is_unsigned_v<std::underlying_type_t<Enum>>, Enum>
-operator|(Enum lhs, Enum rhs) {
-    using Underlying = std::underlying_type_t<Enum>;
-    return static_cast<Enum>(static_cast<Underlying>(lhs) | static_cast<Underlying>(rhs));
-}
-// Enable bitwise AND for checking flags for any enum class with unsigned underlying type
-template <typename Enum>
-constexpr typename std::enable_if_t<std::is_enum_v<Enum> && std::is_unsigned_v<std::underlying_type_t<Enum>>, bool>
-operator&(Enum lhs, Enum rhs) {
-    using Underlying = std::underlying_type_t<Enum>;
-    return static_cast<Underlying>(lhs) & static_cast<Underlying>(rhs);
-}
-///////////////////////////////////////////////////////////
 
 using StateRenaming = std::unordered_map<State, State>;
 

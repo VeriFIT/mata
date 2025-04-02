@@ -575,7 +575,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     }
 
     StateSet from_states = states;
-    if (eps_closure_opt & EpsilonClosureOpt::BEFORE) {
+    if (eps_closure_opt == EpsilonClosureOpt::BEFORE) {
         // Before making the step using the symbol, we compute the epsilon closure.
         from_states = get_epsilon_closure(states);
     }
@@ -589,7 +589,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
         }
     }
 
-    if (eps_closure_opt & EpsilonClosureOpt::AFTER) {
+    if (eps_closure_opt == EpsilonClosureOpt::AFTER) {
         // We need to compute the epsilon closure of the resulting states.
         res = get_epsilon_closure(res);
     }
