@@ -168,6 +168,17 @@ Nfa reduce_residual_with(const Nfa& nfa);
  */
 Nfa reduce_residual_after(const Nfa& nfa);
 
+
+/**
+ * @brief TODO
+ */
+Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming, const std::string& simulation_direction);
+
+/**
+ * @brief TODO
+ */
+Simlib::Util::BinaryRelation compute_direct_simulation(const Nfa& aut);
+
 } // Namespace mata::nfa::algorithms.
 
 #endif // MATA_NFA_INTERNALS_HH_
