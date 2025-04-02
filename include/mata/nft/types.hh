@@ -20,6 +20,7 @@ using State = mata::nfa::State;
 using StateSet = mata::nfa::StateSet;
 
 using Run = mata::nfa::Run;
+using EpsilonClosureOpt = mata::nfa::EpsilonClosureOpt;
 
 using StateRenaming = mata::nfa::StateRenaming;
 

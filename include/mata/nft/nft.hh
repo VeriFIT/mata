@@ -445,11 +445,58 @@ public:
      */
     void print_to_mata(std::ostream &output) const;
 
+    /**
+     * @brief Get the set of states reachable from the given set of states over the given symbol.
+     * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
+     *
+     * @param states Set of states to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given set of states over the given symbol.
+     */
+    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const;
+
+    /**
+     * @brief Get the set of states reachable from the given state over the given symbol.
+     *
+     * @param state A state to compute the post set from.
+     * @param symbol Symbol to compute the post set for.
+     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @return Set of states reachable from the given state over the given symbol.
+     */
+    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const {
+        return post(StateSet{ state }, symbol, eps_closure_opt);
+    }
+
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, Run* cex = nullptr,
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
+
+    /**
+     * @brief Check whether a run over the word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to also match the prefix of the word.
+     *
+     * @return True if the run (or its prefix) is in the language of the automaton, false otherwise.
+     */
+    bool is_in_lang(const Run& word, bool use_epsilon = false, bool match_prefix = false) const;
+
+    /**
+     * @brief Check whether a word (or its prefix) is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     * @param match_prefix Whether to also match the prefix of the word.
+     *
+     * @return True if the word (or its prefix) is in the language of the automaton, false otherwise.
+     */
+    bool is_in_lang(const Word& word, const bool use_epsilon = false, const bool match_prefix = false) {
+         return is_in_lang(Run{ word, {} }, use_epsilon, match_prefix);
+    }
 
     /**
      * @brief Checks whether track words are in the language of the transducer.

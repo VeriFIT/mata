@@ -207,6 +207,11 @@ void Nft::get_one_letter_aut(Nft& result) const {
     result = get_one_letter_aut();
 }
 
+StateSet Nft::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt eps_closure_opt) const {
+    std::cerr << "Warning: Nft::post uses Nfa::post, which is not designed for NFT's jump transitions" << std::endl;
+    return nfa::Nfa::post(states, symbol, eps_closure_opt);
+}
+
 void Nft::make_one_level_aut(const utils::OrdVector<Symbol> &dont_care_symbol_replacements, const JumpMode jump_mode) {
     const bool dcare_for_dcare = dont_care_symbol_replacements == utils::OrdVector<Symbol>({ DONT_CARE });
     std::vector<Transition> transitions_to_del;
@@ -486,7 +491,7 @@ Nft& Nft::insert_identity(const State state, const Symbol symbol, const JumpMode
 
 bool Nft::contains_jump_transitions() {
     if (num_of_levels == 1) { return false; }
-    
+
     for (const Transition& transition : delta.transitions()) {
         Level src_level = levels[transition.source];
         Level tgt_level = levels[transition.target];
