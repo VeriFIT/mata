@@ -640,10 +640,10 @@ bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bo
         current_post = this->post(current_post, EPSILON, EpsilonClosureOpt::BEFORE);
     }
 
-    const EpsilonClosureOpt closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
+    const EpsilonClosureOpt epsilon_closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
         if (match_prefix && this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym, closure_opt);
+        current_post = this->post(current_post, sym, epsilon_closure_opt);
         if (current_post.empty()) { return false; }
     }
 
