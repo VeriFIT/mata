@@ -632,7 +632,7 @@ std::pair<Run, bool> mata::nfa::Nfa::get_word_for_path(const Run& run) const {
 }
 
 //TODO: this is not efficient
-bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prfx) const {
+bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
     StateSet current_post(this->initial);
 
     if (use_epsilon) {
@@ -642,7 +642,7 @@ bool mata::nfa::Nfa::is_in_lang(const Run& run, const bool use_epsilon, const bo
 
     const EpsilonClosureOpt closure_opt = use_epsilon ? EpsilonClosureOpt::AFTER : EpsilonClosureOpt::NONE;
     for (const Symbol sym : run.word) {
-        if (match_prfx && this->final.intersects_with(current_post)) { return true; }
+        if (match_prefix && this->final.intersects_with(current_post)) { return true; }
         current_post = this->post(current_post, sym, closure_opt);
         if (current_post.empty()) { return false; }
     }

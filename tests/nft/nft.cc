@@ -2539,7 +2539,7 @@ TEST_CASE("mata::nft::is_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::nft::is_prfx_in_lang()")
+TEST_CASE("mata::nft::is_in_lang() preffix")
 { // {{{
     Nft aut('q'+1);
 
@@ -2547,10 +2547,10 @@ TEST_CASE("mata::nft::is_prfx_in_lang()")
     {
         Run w;
         w.word = {'a', 'b', 'd'};
-        REQUIRE(!aut.is_prfx_in_lang(w));
+        REQUIRE(!aut.is_in_lang(w, false, true));
 
         w.word = { };
-        REQUIRE(!aut.is_prfx_in_lang(w));
+        REQUIRE(!aut.is_in_lang(w, false, true));
     }
 
     SECTION("automaton accepting only epsilon")
@@ -2560,10 +2560,10 @@ TEST_CASE("mata::nft::is_prfx_in_lang()")
 
         Run w;
         w.word = { };
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = {'a', 'b'};
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
     }
 
     SECTION("small automaton")
@@ -2572,28 +2572,28 @@ TEST_CASE("mata::nft::is_prfx_in_lang()")
 
         Run w;
         w.word = {'b', 'a'};
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = { };
-        REQUIRE(!aut.is_prfx_in_lang(w));
+        REQUIRE(!aut.is_in_lang(w, false, true));
 
         w.word = {'c', 'b', 'a'};
-        REQUIRE(!aut.is_prfx_in_lang(w));
+        REQUIRE(!aut.is_in_lang(w, false, true));
 
         w.word = {'c', 'b', 'a', 'a'};
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = {'a', 'a'};
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = Word(100000, 'a');
-        REQUIRE(aut.is_prfx_in_lang(w));
+        REQUIRE(aut.is_in_lang(w, false, true));
 
         w.word = Word(100000, 'b');
-        REQUIRE(!aut.is_prfx_in_lang(w));
+        REQUIRE(!aut.is_in_lang(w, false, true));
     }
 } // }}}
 
