@@ -315,8 +315,9 @@ public:
     /**
      * @brief Prints the automaton to the file in DOT format
      * @param filename Name of the file to print the automaton to
+     * @param[in] ascii Whether to use ASCII characters for the output.
      */
-    void print_to_dot(const std::string& filename) const;
+    void print_to_dot(const std::string& filename, const bool ascii = false) const;
 
     /**
      * @brief Prints the automaton in mata format

@@ -327,7 +327,7 @@ public:
     Nft& insert_identity(State state, Symbol symbol, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
     /**
-     * @brief Checks if the transition contains any jump transition
+     * @brief Checks if the transducer contains any jump transition
      */
     bool contains_jump_transitions();
 
@@ -358,6 +358,13 @@ public:
      * @return @c this after trimming.
      */
     Nft& trim(StateRenaming* state_renaming = nullptr);
+
+    /**
+     * Remove simple epsilon transitions from the automaton.
+     * 
+     * @sa mata::nft::remove_epsilon()
+     */
+    void remove_epsilon(Symbol epsilon = EPSILON);
 
     /**
      * @brief In-place concatenation.
@@ -428,6 +435,12 @@ public:
      */
     void print_to_dot(std::ostream &output, bool ascii = false) const;
     /**
+     * @brief Prints the automaton to the file in DOT format
+     * @param filename Name of the file to print the automaton to
+     * @param[in] ascii Whether to use ASCII characters for the output.
+     */
+    void print_to_dot(const std::string& filename, const bool ascii = false) const;
+    /**
      * @brief Prints the automaton in mata format
      *
      * If you need to parse the automaton again, use IntAlphabet in construct()
@@ -444,7 +457,6 @@ public:
      * TODO handle alphabet of the automaton, currently we print the exact value of the symbols
      */
     void print_to_mata(std::ostream &output) const;
-
     /**
      * @brief Get the set of states reachable from the given set of states over the given symbol.
      * TODO: Relict from VATA. What to do with inclusion/ universality/ this post function? Revise all of them.
@@ -860,7 +872,27 @@ Nft somewhat_simple_revert(const Nft& aut);
  */
 Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
-// Removing epsilon transitions
+/**
+ * @brief Remove simple epsilon transitions.
+ * 
+ * Simple epsilon transitions are the transitions of the form
+ *      q0 -epsilon-> q1 -epsilon-> q2 -epsilon-> ... -epsilon-> qn
+ * where q0 and qn are level 0 states, the states in-between are states
+ * with level 1, 2, ..., num_of_levels and for each qi, for 0 < i < n,
+ * there is only 1 transition going to qi (the transition qi-1 -epsilon-> qi)
+ * and only 1 transition going from qi (the transition qi -epsilon -> qi+1).
+ * This means that if there was some state p0 going with epsilon to q1,
+ * these to epsilon transitions would not be removed.
+ * 
+ * Furthermore, this assumes that the NFT @p aut does not have jump transitions.
+ * 
+ * The resulting automaton has the same number of states as @p aut, just the
+ * transitions can change. It is recommended to run trim() after this function.
+ * 
+ * @param aut NFT without jump transitions
+ * @param epsilon symbol representing epsilon
+ * @return NFT whose language is same as @p aut but does not contain simple epsilon transitions
+ */
 Nft remove_epsilon(const Nft& aut, Symbol epsilon = EPSILON);
 
 /**

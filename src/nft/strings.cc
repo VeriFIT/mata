@@ -393,7 +393,6 @@ Nft ReluctantReplace::reluctant_leftmost_nft(nfa::Nfa nfa, Alphabet* alphabet, S
     Nft nft_reluctant_leftmost{
         nft::builder::create_from_nfa(nfa, 2, { EPSILON }, { EPSILON }) };
     const size_t regex_num_of_states{ nft_reluctant_leftmost.num_of_states() };
-    assert(nft_reluctant_leftmost.is_deterministic());
     const utils::OrdVector<Symbol> alphabet_symbols{ alphabet->get_alphabet_symbols() };
     nft_reluctant_leftmost.levels.resize(regex_num_of_states + replacement.size() * 2 + alphabet_symbols.size() + 4);
 

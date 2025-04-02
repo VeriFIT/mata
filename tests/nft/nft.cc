@@ -14,6 +14,7 @@
 #include "mata/nft/builder.hh"
 #include "mata/nft/plumbing.hh"
 #include "mata/nft/algorithms.hh"
+#include "mata/nfa/algorithms.hh"
 #include "mata/nfa/nfa.hh"
 
 using namespace mata;
@@ -2674,6 +2675,60 @@ TEST_CASE("mata::nft::fw-direct-simulation()")
         REQUIRE(result.get(8,2));
         REQUIRE(result.get(8,5));
     }
+
+    SECTION("more than one level")
+    {
+        Nft aut;
+        aut.add_state_with_level(0, 0);
+        aut.add_state_with_level(1, 0);
+        aut.add_state_with_level(2, 1);
+        aut.add_state_with_level(3, 0);
+
+        aut.initial.insert(0);
+        aut.final.insert(3);
+
+        aut.delta.add(0, 'a', 1);
+        aut.delta.add(1, 'a', 3);
+        aut.delta.add(0, 'a', 2);
+        aut.delta.add(2, 'a', 3);
+
+        Simlib::Util::BinaryRelation sim_for_nfa = mata::nfa::algorithms::compute_relation(aut);
+        Simlib::Util::BinaryRelation sim_for_nft = compute_relation(aut);
+
+        CHECK(sim_for_nfa.get(0,0));
+        CHECK(!sim_for_nfa.get(0,1));
+        CHECK(!sim_for_nfa.get(0,2));
+        CHECK(!sim_for_nfa.get(0,3));
+        CHECK(!sim_for_nfa.get(1,0));
+        CHECK(sim_for_nfa.get(1,1));
+        CHECK(sim_for_nfa.get(1,2));
+        CHECK(!sim_for_nfa.get(1,3));
+        CHECK(!sim_for_nfa.get(2,0));
+        CHECK(sim_for_nfa.get(2,1));
+        CHECK(sim_for_nfa.get(2,2));
+        CHECK(!sim_for_nfa.get(2,3));
+        CHECK(!sim_for_nfa.get(3,0));
+        CHECK(!sim_for_nfa.get(3,1));
+        CHECK(!sim_for_nfa.get(3,2));
+        CHECK(sim_for_nfa.get(3,3));
+
+        CHECK(sim_for_nft.get(0,0));
+        CHECK(!sim_for_nft.get(0,1));
+        CHECK(!sim_for_nft.get(0,2));
+        CHECK(!sim_for_nft.get(0,3));
+        CHECK(!sim_for_nft.get(1,0));
+        CHECK(sim_for_nft.get(1,1));
+        CHECK(!sim_for_nft.get(1,2));
+        CHECK(!sim_for_nft.get(1,3));
+        CHECK(!sim_for_nft.get(2,0));
+        CHECK(!sim_for_nft.get(2,1));
+        CHECK(sim_for_nft.get(2,2));
+        CHECK(!sim_for_nft.get(2,3));
+        CHECK(!sim_for_nft.get(3,0));
+        CHECK(!sim_for_nft.get(3,1));
+        CHECK(!sim_for_nft.get(3,2));
+        CHECK(sim_for_nft.get(3,3));
+    }
 } // }}
 
 TEST_CASE("mata::nft::reduce_size_by_simulation()")
@@ -2763,6 +2818,31 @@ TEST_CASE("mata::nft::reduce_size_by_simulation()")
         aut.initial = { 0 };
         Nft result = reduce(aut.trim(), &state_renaming);
         CHECK(are_equivalent(result, aut));
+    }
+
+    SECTION("multiple tapes")
+    {
+        aut.add_state_with_level(0, 0);
+        aut.add_state_with_level(1, 0);
+        aut.initial = { 0 };
+        aut.final = { 1 };
+        aut.add_transition(0, {'a', 'a'}, 1);
+        aut.add_transition(0, {'a', 'a'}, 1);
+        aut.add_transition(0, {'a', 'a'}, 1);
+        REQUIRE(aut.num_of_states() == 5);
+        Nft result = reduce(aut, &state_renaming);
+        CHECK(are_equivalent(result, aut));
+        REQUIRE(result.num_of_states() == 3);
+        REQUIRE(state_renaming.size() == 5);
+        State middle_state = state_renaming.at(2);
+        CHECK(middle_state == state_renaming.at(3));
+        CHECK(middle_state == state_renaming.at(4));
+        CHECK(result.delta.contains(state_renaming.at(0), 'a', middle_state));
+        CHECK(result.delta.contains(middle_state, 'a', state_renaming.at(1)));
+        REQUIRE(result.num_of_levels == 2);
+        CHECK(result.levels[state_renaming.at(0)] == 0);
+        CHECK(result.levels[state_renaming.at(1)] == 0);
+        CHECK(result.levels[middle_state] == 1);
     }
 }
 
@@ -2906,22 +2986,45 @@ TEST_CASE("mata::nft::get_trans_as_sequence(}") {
     REQUIRE(std::vector<Transition>{ transitions.begin(), transitions.end() } == expected);
 }
 
-TEST_CASE("mata::nft::remove_epsilon()")
-{
-    Nft aut{20};
-    FILL_WITH_AUT_A(aut);
-    aut.remove_epsilon('c');
-    REQUIRE(aut.delta.contains(10, 'a', 7));
-    REQUIRE(aut.delta.contains(10, 'b', 7));
-    REQUIRE(!aut.delta.contains(10, 'c', 7));
-    REQUIRE(aut.delta.contains(7, 'a', 5));
-    REQUIRE(aut.delta.contains(7, 'a', 3));
-    REQUIRE(!aut.delta.contains(7, 'c', 3));
-    REQUIRE(aut.delta.contains(7, 'b', 9));
-    REQUIRE(aut.delta.contains(7, 'a', 7));
-    REQUIRE(aut.delta.contains(5, 'a', 5));
-    REQUIRE(!aut.delta.contains(5, 'c', 9));
-    REQUIRE(aut.delta.contains(5, 'a', 9));
+TEST_CASE("mata::nft::remove_epsilon()") {
+    SECTION("1 tape") {
+        Nft aut{20};
+        FILL_WITH_AUT_A(aut);
+        aut.remove_epsilon('c');
+        REQUIRE(aut.delta.contains(10, 'a', 7));
+        REQUIRE(aut.delta.contains(10, 'b', 7));
+        REQUIRE(!aut.delta.contains(10, 'c', 7));
+        REQUIRE(aut.delta.contains(7, 'a', 5));
+        REQUIRE(aut.delta.contains(7, 'a', 3));
+        REQUIRE(!aut.delta.contains(7, 'c', 3));
+        REQUIRE(aut.delta.contains(7, 'b', 9));
+        REQUIRE(aut.delta.contains(7, 'a', 7));
+        REQUIRE(aut.delta.contains(5, 'a', 5));
+        REQUIRE(!aut.delta.contains(5, 'c', 9));
+        REQUIRE(aut.delta.contains(5, 'a', 9));
+    }
+
+    SECTION("3 tapes") {
+        Nft aut{4, {0}, {2}};
+        aut.num_of_levels = 3;
+        aut.add_transition(0, {'a', 'a', 'a'}, 1);
+        aut.add_transition(0, {'b', 'a', 'a'}, 3);
+        aut.add_transition(3, {'a', 'a', 'a'}, 2);
+        aut.add_transition(1, {'a', 'a', 'a'}, 2);
+        aut.add_transition(2,  {'c', 'b', 'd'}, 2);
+        aut.remove_epsilon('a');
+        REQUIRE(aut.delta[0].size() == 2);
+        CHECK(aut.delta[0].to_vector()[0].symbol == 'b');
+        CHECK(aut.delta[0].to_vector()[1].symbol == 'c');
+        REQUIRE(aut.delta[2].size() == 1);
+        CHECK(aut.delta[0].to_vector()[1].targets == aut.delta[2].to_vector()[0].targets);
+        REQUIRE(aut.delta[1].size() == 1);
+        CHECK(aut.delta[1].to_vector()[0].symbol == 'c');
+        CHECK(aut.delta[1].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
+        REQUIRE(aut.delta[3].size() == 1);
+        CHECK(aut.delta[3].to_vector()[0].symbol == 'c');
+        CHECK(aut.delta[3].to_vector()[0].targets == aut.delta[2].to_vector()[0].targets);
+    }
 }
 
 TEST_CASE("Profile mata::nft::remove_epsilon()", "[.profiling]")

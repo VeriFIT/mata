@@ -35,6 +35,7 @@
 # the build directory
 build/
 Testing/
+build-wasm/
 
 # documentation
 doc/api/
@@ -63,6 +64,7 @@ bindings/python/libmata.cpp
 bindings/python/**/*.dot
 bindings/python/**/*.pdf
 bindings/python/MANIFEST
+bindings/python/virtenv
 
 # Performance and profiling tests
 tests-integration/pycobench.tasks
