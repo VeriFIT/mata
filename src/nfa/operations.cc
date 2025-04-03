@@ -1088,20 +1088,7 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
     return result;
 }
 
-
-Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
-
-    auto both_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
-        return Nfa{};
-
-    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
-}
-
-Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
+Nfa mata::nfa::product_or(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
     auto one_final = [&](const State lhs_state,const State rhs_state) {
         return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
     };
@@ -1111,7 +1098,30 @@ Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_
     return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
 }
 
+Nfa mata::nfa::product_and(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
+    auto both_final = [&](const State lhs_state,const State rhs_state) {
+        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
+    };
+
+    if (lhs.final.empty() || lhs.initial.empty() || rhs.final.empty() || rhs.initial.empty()) {
+         return Nfa{};
+    }
+    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
+}
+
+Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+    return product_and(lhs, rhs, first_epsilon, prod_map);
+}
+
 Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) { return Nfa{ lhs }.unite_nondet_with(rhs); }
+
+Nfa mata::nfa::union_det_complete_by_product_or(const Nfa &lhs, const Nfa &rhs) {
+    assert(lhs.is_deterministic());
+    assert(rhs.is_deterministic());
+    assert(lhs.is_complete());
+    assert(rhs.is_complete());
+    return product_or(lhs, rhs, EPSILON);
+}
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {

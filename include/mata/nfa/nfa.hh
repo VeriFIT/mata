@@ -562,15 +562,37 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 
 /**
- * @brief Compute union by product construction.
+ * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
  *
- * Preserves determinism.
- * @param[in] first_epsilon The first symbol to handle as an epsilon.
- * @param[out] prod_map Map mapping product states to the original states.
- * @return Union by product construction of @p lhs and @p rhs.
+ * The union is computed by product construction with or condition on the final states.
+ * @param lhs First complete deterministic automaton.
+ * @param rhs Second complete deterministic automaton.
  */
-Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
-                  std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+Nfa union_det_complete_by_product_or(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * @brief Compute product of two NFAs with OR condition on the final states.
+ *
+ * Automata must share alphabets. //TODO: this is not implemented yet.
+ * @param lhs First NFA.
+ * @param rhs Second NFA.
+ * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
+ * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ */
+Nfa product_or(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
+               std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+
+/**
+ * @brief Compute product of two NFAs with AND condition on the final states.
+ *
+ * Automata must share alphabets. //TODO: this is not implemented yet.
+ * @param lhs First NFA.
+ * @param rhs Second NFA.
+ * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
+ * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ */
+Nfa product_and(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
+               std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute a language difference as @p nfa_included \ @p nfa_excluded.
