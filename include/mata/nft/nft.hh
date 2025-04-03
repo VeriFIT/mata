@@ -361,7 +361,7 @@ public:
 
     /**
      * Remove simple epsilon transitions from the automaton.
-     * 
+     *
      * @sa mata::nft::remove_epsilon()
      */
     void remove_epsilon(Symbol epsilon = EPSILON);
@@ -374,7 +374,7 @@ public:
     /**
      * @brief In-place union
      */
-    Nft& uni(const Nft &aut);
+    Nft& unite_nondet_with(const Nft &aut);
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -594,7 +594,7 @@ template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::val
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
 
-Nft uni(const Nft &lhs, const Nft &rhs);
+Nft union_nondet(const Nft &lhs, const Nft &rhs);
 
 /**
  * @brief Compute intersection of two NFTs.
@@ -844,7 +844,7 @@ Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
  * @brief Remove simple epsilon transitions.
- * 
+ *
  * Simple epsilon transitions are the transitions of the form
  *      q0 -epsilon-> q1 -epsilon-> q2 -epsilon-> ... -epsilon-> qn
  * where q0 and qn are level 0 states, the states in-between are states
@@ -853,12 +853,12 @@ Nft invert_levels(const Nft& aut, JumpMode jump_mode = JumpMode::RepeatSymbol);
  * and only 1 transition going from qi (the transition qi -epsilon -> qi+1).
  * This means that if there was some state p0 going with epsilon to q1,
  * these to epsilon transitions would not be removed.
- * 
+ *
  * Furthermore, this assumes that the NFT @p aut does not have jump transitions.
- * 
+ *
  * The resulting automaton has the same number of states as @p aut, just the
  * transitions can change. It is recommended to run trim() after this function.
- * 
+ *
  * @param aut NFT without jump transitions
  * @param epsilon symbol representing epsilon
  * @return NFT whose language is same as @p aut but does not contain simple epsilon transitions

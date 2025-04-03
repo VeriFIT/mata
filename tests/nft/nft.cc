@@ -2865,7 +2865,7 @@ TEST_CASE("mata::nft::union_norename()") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nft result = uni(lhs, rhs);
+        Nft result = union_nondet(lhs, rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
@@ -2890,14 +2890,14 @@ TEST_CASE("mata::nft::union_inplace") {
     REQUIRE(!rhs.is_in_lang(zero));
 
     SECTION("failing minimal scenario") {
-        Nft result = lhs.uni(rhs);
+        Nft result = lhs.unite_nondet_with(rhs);
         REQUIRE(result.is_in_lang(one));
         REQUIRE(result.is_in_lang(zero));
     }
 
     SECTION("same automata") {
         size_t lhs_states = lhs.num_of_states();
-        Nft result = lhs.uni(lhs);
+        Nft result = lhs.unite_nondet_with(lhs);
         REQUIRE(result.num_of_states() == lhs_states * 2);
     }
 }
