@@ -1104,7 +1104,7 @@ Nfa mata::nfa::product_and(const Nfa &lhs, const Nfa &rhs, const Symbol first_ep
     };
 
     if (lhs.final.empty() || lhs.initial.empty() || rhs.final.empty() || rhs.initial.empty()) {
-         return Nfa{};
+        return Nfa{};
     }
     return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
 }
