@@ -136,14 +136,20 @@ public:
      size_t num_of_states() const;
 
     /**
-     * Unify initial states into a single new initial state.
+     * @brief Unify initial states into a single new initial state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+     * @return @c this after unification.
      */
-    void unify_initial();
+    Nfa& unify_initial(bool force_new_state = false);
 
     /**
-     * Unify final states into a single new final state.
+     * @brief Unify final states into a single new final state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+     * @return @c this after unification.
      */
-    void unify_final();
+    Nfa& unify_final(bool force_new_state = false);
 
     /**
      * Swap final and non-final states in-place.
