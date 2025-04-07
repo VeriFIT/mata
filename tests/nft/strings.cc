@@ -1,13 +1,11 @@
 // TODO: some header
 
 #include <vector>
-#include <fstream>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
 #include "mata/nfa/builder.hh"
-#include "mata/parser/parser.hh"
 #include "mata/nft/nft.hh"
 #include "mata/nft/builder.hh"
 #include "mata/nft/strings.hh"
@@ -613,6 +611,22 @@ TEST_CASE("mata::nft::strings::replace_reluctant_literal()") {
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
 
+    SECTION("'' replace with 'abc' replace single") {
+        nft = nft::strings::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::Single);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'a', 'b', 'c', 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
+                                   { 'a', 'b', 'c', 'a', 'b' } }));
+     }
+
+    SECTION("'' replace with 'abc' replace all") {
+        nft = nft::strings::replace_reluctant_literal(Word{}, Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b' },
+                                   { 'a', 'b' } }));
+     }
+
     SECTION("'abcc' replace with 'a' replace all") {
         nft = nft::strings::replace_reluctant_literal(Word{ 'a', 'b', 'c', 'c' }, Word{ 'a' },  &alphabet, ReplaceMode::All);
         CHECK(nft.is_tuple_in_lang({ { 'a', 'b', 'c', 'c' },
@@ -803,6 +817,22 @@ TEST_CASE("mata::nft::strings::replace_reluctant_regex()") {
     Nft nft{};
     Nft expected{};
     EnumAlphabet alphabet{ 'a', 'b', 'c' };
+
+    SECTION("'' replace with 'abc' replace single") {
+        nft = nft::strings::replace_reluctant_regex("a*", Word{ 'b', 'b', 'b' },  &alphabet, ReplaceMode::Single);
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'b', 'b' },
+                                   { 'b', 'b', 'b', 'a', 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'c', 'c' },
+                                   { 'b', 'b', 'b', 'c', 'c' } }));
+     }
+
+    SECTION("'' replace with 'abc' replace all") {
+        nft = nft::strings::replace_reluctant_regex("a*", Word{ 'a', 'b', 'c' },  &alphabet, ReplaceMode::All);
+        CHECK(nft.is_tuple_in_lang({ { 'b', 'b' },
+                                   { 'b', 'b' } }));
+        CHECK(nft.is_tuple_in_lang({ { 'a', 'a', 'b' },
+                                   { 'a', 'b', 'c', 'a', 'b', 'c', 'b' } }));
+     }
 
     SECTION("'a+b+c' replace with 'dd' replace all") {
         // Use replace symbol with symbol.
