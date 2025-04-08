@@ -545,7 +545,7 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt eps_closure_opt) const {
+StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
     auto get_epsilon_closure = [&](const StateSet& states) {
         StateSet closure{ states };
         std::queue<State> worklist;
@@ -571,7 +571,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     StateSet res{};
 
     // If the symbol is EPSILON, we can stay in the same state.
-    if (symbol == EPSILON && eps_closure_opt != EpsilonClosureOpt::NONE) {
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::NONE) {
         res = states;
     }
 
@@ -580,7 +580,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     }
 
     StateSet from_states = states;
-    if (eps_closure_opt == EpsilonClosureOpt::BEFORE) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::BEFORE) {
         // Before making the step using the symbol, we compute the epsilon closure.
         from_states = get_epsilon_closure(states);
     }
@@ -594,7 +594,7 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
         }
     }
 
-    if (eps_closure_opt == EpsilonClosureOpt::AFTER) {
+    if (epsilon_closure_opt == EpsilonClosureOpt::AFTER) {
         // We need to compute the epsilon closure of the resulting states.
         res = get_epsilon_closure(res);
     }

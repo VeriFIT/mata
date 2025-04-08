@@ -354,21 +354,21 @@ public:
      *
      * @param states Set of states to compute the post set from.
      * @param symbol Symbol to compute the post set for.
-     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given set of states over the given symbol.
      */
-    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const;
+    StateSet post(const StateSet& states, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const;
 
     /**
      * @brief Get the set of states reachable from the given state over the given symbol.
      *
      * @param state A state to compute the post set from.
      * @param symbol Symbol to compute the post set for.
-     * @param eps_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
+     * @param epsilon_closure_opt Epsilon closure option. Perform epsilon closure before and/or after the post operation.
      * @return Set of states reachable from the given state over the given symbol.
      */
-    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt eps_closure_opt = EpsilonClosureOpt::NONE) const {
-        return post(StateSet{ state }, symbol, eps_closure_opt);
+    StateSet post(const State state, const Symbol& symbol, EpsilonClosureOpt epsilon_closure_opt = EpsilonClosureOpt::NONE) const {
+        return post(StateSet{ state }, symbol, epsilon_closure_opt);
     }
 
     /**

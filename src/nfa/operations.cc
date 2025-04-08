@@ -312,7 +312,7 @@ bool mata::nfa::Nfa::make_complete(const OrdVector<Symbol>& symbols, const std::
 //TODO: based on the comments inside, this function needs to be rewritten in a more optimal way.
 Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     // cannot use multimap, because it can contain multiple occurrences of (a -> a), (a -> a)
-    std::unordered_map<State, StateSet> eps_closure;
+    std::unordered_map<State, StateSet> epsilon_closure;
 
     // TODO: grossly inefficient
     // first we compute the epsilon closure
@@ -321,7 +321,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
     {
         for (const auto& trans: aut.delta[i])
         { // initialize
-            const auto it_ins_pair = eps_closure.insert({i, {i}});
+            const auto it_ins_pair = epsilon_closure.insert({i, {i}});
             if (trans.symbol == epsilon)
             {
                 StateSet& closure = it_ins_pair.first->second;
@@ -338,9 +338,9 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
             const StatePost& post{ aut.delta[i] };
             const auto eps_move_it { post.find(epsilon) };//TODO: make faster if default epsilon
             if (eps_move_it != post.end()) {
-                StateSet& src_eps_cl = eps_closure[i];
+                StateSet& src_eps_cl = epsilon_closure[i];
                 for (const State tgt: eps_move_it->targets) {
-                    const StateSet& tgt_eps_cl = eps_closure[tgt];
+                    const StateSet& tgt_eps_cl = epsilon_closure[tgt];
                     for (const State st: tgt_eps_cl) {
                         if (src_eps_cl.count(st) == 0) {
                             changed = true;
@@ -355,7 +355,7 @@ Nfa mata::nfa::remove_epsilon(const Nfa& aut, Symbol epsilon) {
 
     // Construct the automaton without epsilon transitions.
     Nfa result{ Delta{}, aut.initial, aut.final, aut.alphabet };
-    for (const auto& state_closure_pair : eps_closure) { // For every state.
+    for (const auto& state_closure_pair : epsilon_closure) { // For every state.
         State src_state = state_closure_pair.first;
         for (State eps_cl_state : state_closure_pair.second) { // For every state in its epsilon closure.
             if (aut.final[eps_cl_state]) result.final.insert(src_state);

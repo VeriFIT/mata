@@ -750,27 +750,17 @@ cdef class Nfa:
             }
         )
 
-    def is_in_lang(self, vector[Symbol] word, use_epsilon = False):
+    def is_in_lang(self, vector[Symbol] word, use_epsilon = False, match_prefix = False):
         """Tests if word is in language.
 
         :param vector[Symbol] word: tested word.
         :param bool use_epsilon: whether the automaton uses epsilon transitions.
+        :param bool match_prefix: whether to match prefix of the word.
         :return: true if word is in language of the NFA.
         """
         run = Run()
         run.thisptr.word = word
-        return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon)
-
-    def is_prefix_in_lang(self, vector[Symbol] word, use_epsilon = False):
-        """Test if any prefix of the word is in the language.
-
-        :param vector[Symbol] word: tested word
-        :param bool use_epsilon: whether the automaton uses epsilon transitions.
-        :return: true if any prefix of word is in language of the NFA.
-        """
-        run = Run()
-        run.thisptr.word = word
-        return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon, True)
+        return self.thisptr.get().is_in_lang(dereference(run.thisptr), use_epsilon, match_prefix)
 
     def get_word_for_path(self, path):
         """For a given path (set of states) returns a corresponding word
