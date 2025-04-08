@@ -422,52 +422,146 @@ TEST_CASE("Mata::nft::compose()") {
     }
 
     SECTION("level ordering") {
-        lhs = Nft(13, { 0 }, { 12 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
-        lhs.delta.add(0, 'u', 1);
-        lhs.delta.add(1, 'a', 2);
-        lhs.delta.add(2, 'b', 3);
-        lhs.delta.add(3, 'v', 4);
-        lhs.delta.add(4, 'w', 5);
-        lhs.delta.add(5, 'c', 6);
-        lhs.delta.add(6, 'x', 7);
-        lhs.delta.add(7, 'y', 8);
-        lhs.delta.add(8, 'd', 9);
-        lhs.delta.add(9, 'e', 10);
-        lhs.delta.add(10, 'z', 11);
-        lhs.delta.add(11, 'f', 12);
+        SECTION("no jump") {
+            lhs = Nft(13, { 0 }, { 12 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs.delta.add(0, 'u', 1);
+            lhs.delta.add(1, 'a', 2);
+            lhs.delta.add(2, 'b', 3);
+            lhs.delta.add(3, 'v', 4);
+            lhs.delta.add(4, 'w', 5);
+            lhs.delta.add(5, 'c', 6);
+            lhs.delta.add(6, 'x', 7);
+            lhs.delta.add(7, 'y', 8);
+            lhs.delta.add(8, 'd', 9);
+            lhs.delta.add(9, 'e', 10);
+            lhs.delta.add(10, 'z', 11);
+            lhs.delta.add(11, 'f', 12);
 
-        rhs = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
-        rhs.delta.add(0, 'g', 1);
-        rhs.delta.add(1, 'h', 2);
-        rhs.delta.add(2, 'u', 3);
-        rhs.delta.add(3, 'i', 4);
-        rhs.delta.add(4, 'v', 5);
-        rhs.delta.add(5, 'w', 6);
-        rhs.delta.add(6, 'j', 7);
-        rhs.delta.add(7, 'x', 8);
-        rhs.delta.add(8, 'y', 9);
-        rhs.delta.add(9, 'k', 10);
-        rhs.delta.add(10, 'l', 11);
-        rhs.delta.add(11, 'm', 12);
-        rhs.delta.add(12, 'z', 13);
+            rhs = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            rhs.delta.add(0, 'g', 1);
+            rhs.delta.add(1, 'h', 2);
+            rhs.delta.add(2, 'u', 3);
+            rhs.delta.add(3, 'i', 4);
+            rhs.delta.add(4, 'v', 5);
+            rhs.delta.add(5, 'w', 6);
+            rhs.delta.add(6, 'j', 7);
+            rhs.delta.add(7, 'x', 8);
+            rhs.delta.add(8, 'y', 9);
+            rhs.delta.add(9, 'k', 10);
+            rhs.delta.add(10, 'l', 11);
+            rhs.delta.add(11, 'm', 12);
+            rhs.delta.add(12, 'z', 13);
 
-        expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
-        expected.delta.add(0, 'g', 1);
-        expected.delta.add(1, 'h', 2);
-        expected.delta.add(2, 'a', 3);
-        expected.delta.add(3, 'b', 4);
-        expected.delta.add(4, 'i', 5);
-        expected.delta.add(5, 'c', 6);
-        expected.delta.add(6, 'j', 7);
-        expected.delta.add(7, 'd', 8);
-        expected.delta.add(8, 'e', 9);
-        expected.delta.add(9, 'k', 10);
-        expected.delta.add(10, 'l', 11);
-        expected.delta.add(11, 'm', 12);
-        expected.delta.add(12, 'f', 13);
+            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected.delta.add(0, 'g', 1);
+            expected.delta.add(1, 'h', 2);
+            expected.delta.add(2, 'a', 3);
+            expected.delta.add(3, 'b', 4);
+            expected.delta.add(4, 'i', 5);
+            expected.delta.add(5, 'c', 6);
+            expected.delta.add(6, 'j', 7);
+            expected.delta.add(7, 'd', 8);
+            expected.delta.add(8, 'e', 9);
+            expected.delta.add(9, 'k', 10);
+            expected.delta.add(10, 'l', 11);
+            expected.delta.add(11, 'm', 12);
+            expected.delta.add(12, 'f', 13);
 
-        result = compose(lhs, rhs, { 0, 3, 4, 6, 7, 10 }, { 2, 4, 5, 7, 8, 12 });
+            result = compose(lhs, rhs, { 0, 3, 4, 6, 7, 10 }, { 2, 4, 5, 7, 8, 12 });
 
-        CHECK(are_equivalent(result, expected));
+            CHECK(are_equivalent(result, expected));
+        }
+
+        SECTION("long jump - JumpMode::RepeatSymbol") {
+            lhs = Nft(12, { 0 }, { 11 }, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs.delta.add(0, 'u', 1);
+            lhs.delta.add(1, 'a', 2);
+            lhs.delta.add(2, 'v', 3);
+            lhs.delta.add(3, 'w', 4);
+            lhs.delta.add(4, 'c', 5);
+            lhs.delta.add(5, 'x', 6);
+            lhs.delta.add(6, 'y', 7);
+            lhs.delta.add(7, 'd', 8);
+            lhs.delta.add(8, 'e', 9);
+            lhs.delta.add(9, 'z', 10);
+            lhs.delta.add(10, 'f', 11);
+
+            rhs = Nft(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 }, 13);
+            rhs.delta.add(0, 'g', 1);
+            rhs.delta.add(1, 'h', 2);
+            rhs.delta.add(2, 'u', 3);
+            rhs.delta.add(3, 'i', 4);
+            rhs.delta.add(4, 'v', 5);
+            rhs.delta.add(5, 'w', 6);
+            rhs.delta.add(6, 'j', 7);
+            rhs.delta.add(7, 'x', 8);
+            rhs.delta.add(8, 'y', 9);
+            rhs.delta.add(9, 'z', 10);
+
+            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected.delta.add(0, 'g', 1);
+            expected.delta.add(1, 'h', 2);
+            expected.delta.add(2, 'a', 3);
+            expected.delta.add(3, 'a', 4);
+            expected.delta.add(4, 'i', 5);
+            expected.delta.add(5, 'c', 6);
+            expected.delta.add(6, 'j', 7);
+            expected.delta.add(7, 'd', 8);
+            expected.delta.add(8, 'e', 9);
+            expected.delta.add(9, 'y', 10);
+            expected.delta.add(10, 'y', 11);
+            expected.delta.add(11, 'y', 12);
+            expected.delta.add(12, 'f', 13);
+
+            result = compose(lhs, rhs, { 0, 3, 4, 6, 7, 10 }, { 2, 4, 5, 7, 8, 12 }, true, JumpMode::RepeatSymbol);
+
+            CHECK(are_equivalent(result, expected, JumpMode::RepeatSymbol));
+        }
+
+        SECTION("long jump - JumpMode::AppendDontCares") {
+            lhs = Nft(12, { 0 }, { 11 }, { 0, 1, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 }, 12);
+            lhs.delta.add(0, 'u', 1);
+            lhs.delta.add(1, 'a', 2);
+            lhs.delta.add(2, 'v', 3);
+            lhs.delta.add(3, 'w', 4);
+            lhs.delta.add(4, 'c', 5);
+            lhs.delta.add(5, 'x', 6);
+            lhs.delta.add(6, 'y', 7);
+            lhs.delta.add(7, 'd', 8);
+            lhs.delta.add(8, 'e', 9);
+            lhs.delta.add(9, 'z', 10);
+            lhs.delta.add(10, 'f', 11);
+
+            rhs = Nft(11, { 0 }, { 10 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 12, 0 }, 13);
+            rhs.delta.add(0, 'g', 1);
+            rhs.delta.add(1, 'h', 2);
+            rhs.delta.add(2, 'u', 3);
+            rhs.delta.add(3, 'i', 4);
+            rhs.delta.add(4, 'v', 5);
+            rhs.delta.add(5, 'w', 6);
+            rhs.delta.add(6, 'j', 7);
+            rhs.delta.add(7, 'x', 8);
+            rhs.delta.add(8, 'y', 9);
+            rhs.delta.add(9, 'z', 10);
+
+            expected = Nft(14, { 0 }, { 13 }, { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0 }, 13);
+            expected.delta.add(0, 'g', 1);
+            expected.delta.add(1, 'h', 2);
+            expected.delta.add(2, 'a', 3);
+            expected.delta.add(3, DONT_CARE, 4);
+            expected.delta.add(4, 'i', 5);
+            expected.delta.add(5, 'c', 6);
+            expected.delta.add(6, 'j', 7);
+            expected.delta.add(7, 'd', 8);
+            expected.delta.add(8, 'e', 9);
+            expected.delta.add(9, DONT_CARE, 10);
+            expected.delta.add(10, DONT_CARE, 11);
+            expected.delta.add(11, DONT_CARE, 12);
+            expected.delta.add(12, 'f', 13);
+
+            result = compose(lhs, rhs, { 0, 3, 4, 6, 7, 10 }, { 2, 4, 5, 7, 8, 12 }, true, JumpMode::AppendDontCares);
+
+            CHECK(are_equivalent(result, expected, JumpMode::AppendDontCares));
+        }
     }
 }
