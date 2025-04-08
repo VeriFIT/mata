@@ -564,7 +564,7 @@ Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 /**
  * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
  *
- * The union is computed by product construction with or condition on the final states.
+ * The union is computed by product construction with OR condition on the final states.
  * @param lhs First complete deterministic automaton.
  * @param rhs Second complete deterministic automaton.
  */
