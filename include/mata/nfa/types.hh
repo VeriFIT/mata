@@ -20,7 +20,7 @@ struct Run {
     std::vector<State> path{}; ///< A finite-length path through automaton.
 };
 
-enum class ProductFinalCondition {
+enum class ProductFinalStateCondition {
     AND, ///< Both original states have to be final.
     OR,  ///< At least one of the original states has to be final.
 };

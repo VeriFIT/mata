@@ -1088,17 +1088,17 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
     return result;
 }
 
-Nfa mata::nfa::product(const Nfa &lhs, const Nfa &rhs, const ProductFinalCondition final_condition,
+Nfa mata::nfa::product(const Nfa &lhs, const Nfa &rhs, const ProductFinalStateCondition final_condition,
                        const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
 
     std::function<bool(const State, const State)> is_productstate_final_func;
-    if (final_condition == ProductFinalCondition::OR) {
+    if (final_condition == ProductFinalStateCondition::OR) {
         if (lhs.initial.empty() || lhs.final.empty()) { return rhs; }
         if (rhs.initial.empty() || rhs.final.empty()) { return lhs; }
         is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
             return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
         };
-    } else if (final_condition == ProductFinalCondition::AND) {
+    } else if (final_condition == ProductFinalStateCondition::AND) {
         if (lhs.initial.empty() || lhs.final.empty()) { return Nfa{}; }
         if (rhs.initial.empty() || rhs.final.empty()) { return Nfa{}; }
         is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
@@ -1112,7 +1112,7 @@ Nfa mata::nfa::product(const Nfa &lhs, const Nfa &rhs, const ProductFinalConditi
 }
 
 Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
-    return product(lhs, rhs, ProductFinalCondition::AND, first_epsilon, prod_map);
+    return product(lhs, rhs, ProductFinalStateCondition::AND, first_epsilon, prod_map);
 }
 
 Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) { return Nfa{ lhs }.unite_nondet_with(rhs); }
@@ -1122,7 +1122,7 @@ Nfa mata::nfa::union_det_complete(const Nfa &lhs, const Nfa &rhs) {
     assert(rhs.is_deterministic());
     assert(lhs.is_complete());
     assert(rhs.is_complete());
-    return product(lhs, rhs, ProductFinalCondition::OR, EPSILON);
+    return product(lhs, rhs, ProductFinalStateCondition::OR, EPSILON);
 }
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {

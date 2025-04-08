@@ -582,7 +582,7 @@ Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
  * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  */
-Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalCondition final_condition = ProductFinalCondition::AND,
+Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_condition = ProductFinalStateCondition::AND,
             Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**

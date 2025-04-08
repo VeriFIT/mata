@@ -45,7 +45,7 @@ enum class JumpMode {
     AppendDontCares ///< Append a sequence of DONT_CAREs to the symbol on the jump.
 };
 
-using ProductFinalCondition = mata::nfa::ProductFinalCondition;
+using ProductFinalStateCondition = mata::nfa::ProductFinalStateCondition;
 
 /// An epsilon symbol which is now defined as the maximal value of data type used for symbols.
 constexpr Symbol EPSILON = mata::nfa::EPSILON;
