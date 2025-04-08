@@ -374,7 +374,7 @@ public:
     /**
      * @brief In-place union
      */
-    Nft& uni(const Nft &aut);
+    Nft& unite_nondet_with(const Nft &aut);
 
     /**
      * Unify transitions to create a directed graph with at most a single transition between two states.
@@ -639,7 +639,17 @@ template<typename... Ts> using conjunction = std::is_same<bool_pack<true,Ts::val
 /// Check that all types in a sequence of parameters @p Ts are of type @p T.
 template<typename T, typename... Ts> using AreAllOfType = typename conjunction<std::is_same<Ts, T>...>::type;
 
-Nft uni(const Nft &lhs, const Nft &rhs);
+/**
+ * @brief Compute non-deterministic union.
+ *
+ * Does not add epsilon transitions, just unites initial and final states.
+ * @return Non-deterministic union of @p lhs and @p rhs.
+ */
+Nft union_nondet(const Nft &lhs, const Nft &rhs);
+
+Nft union_det_complete(const Nft &lhs, const Nft &rhs) = delete;
+Nft product(const Nft &lhs, const Nft &rhs, ProductFinalStateCondition final_condition,
+    Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) = delete;
 
 /**
  * @brief Compute intersection of two NFTs.

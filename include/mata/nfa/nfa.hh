@@ -136,14 +136,20 @@ public:
      size_t num_of_states() const;
 
     /**
-     * Unify initial states into a single new initial state.
+     * @brief Unify initial states into a single new initial state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when initial states are already unified.
+     * @return @c this after unification.
      */
-    void unify_initial();
+    Nfa& unify_initial(bool force_new_state = false);
 
     /**
-     * Unify final states into a single new final state.
+     * @brief Unify final states into a single new final state.
+     *
+     * @param[in] force_new_state Whether to force creating a new state even when final states are already unified.
+     * @return @c this after unification.
      */
-    void unify_final();
+    Nfa& unify_final(bool force_new_state = false);
 
     /**
      * Swap final and non-final states in-place.
@@ -620,15 +626,28 @@ OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
 
 /**
- * @brief Compute union by product construction.
+ * @brief Compute union of two complete deterministic NFAs. Perserves determinism.
  *
- * Preserves determinism.
- * @param[in] first_epsilon The first symbol to handle as an epsilon.
- * @param[out] prod_map Map mapping product states to the original states.
- * @return Union by product construction of @p lhs and @p rhs.
+ * The union is computed by product construction with OR condition on the final states.
+ * @param lhs First complete deterministic automaton.
+ * @param rhs Second complete deterministic automaton.
  */
-Nfa union_product(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
-                  std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * @brief Compute product of two NFAs with OR condition on the final states.
+ *
+ * Automata must share alphabets. //TODO: this is not implemented yet.
+ * @param lhs First NFA.
+ * @param rhs Second NFA.
+ * @param final_condition Condition for a product state to be final.
+ *  - AND: both original states have to be final.
+ *  - OR: at least one of the original states has to be final.
+ * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
+ * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
+ */
+Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalStateCondition final_condition = ProductFinalStateCondition::AND,
+            Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute a language difference as @p nfa_included \ @p nfa_excluded.

@@ -943,12 +943,12 @@ Nft mata::nft::minimize(
     return algo(aut);
 }
 
-Nft mata::nft::uni(const Nft &lhs, const Nft &rhs) {
+Nft mata::nft::union_nondet(const Nft &lhs, const Nft &rhs) {
     Nft union_nft{ lhs };
-    return union_nft.uni(rhs);
+    return union_nft.unite_nondet_with(rhs);
 }
 
-Nft& Nft::uni(const Nft& aut) {
+Nft& Nft::unite_nondet_with(const Nft& aut) {
     size_t n = this->num_of_states();
     auto upd_fnc = [&](State st) {
         return st + n;

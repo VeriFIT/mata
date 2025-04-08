@@ -62,7 +62,7 @@ void construct(Nft* result, const ParsedObject& parsed, Alphabet* alphabet = nul
     *result = builder::construct(parsed, alphabet, state_map);
 }
 
-inline void uni(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAutomaton = uni(lhs, rhs); }
+inline void union_nondet(Nft *unionAutomaton, const Nft &lhs, const Nft &rhs) { *unionAutomaton = union_nondet(lhs, rhs); }
 
 /**
  * @brief Compute intersection of two NFTs.

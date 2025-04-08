@@ -77,10 +77,10 @@ TEST_CASE("Mata::nft::Plumbing") {
         CHECK(result.is_lang_empty());
     }
 
-    SECTION("Mata::nft::Plumbing::union") {
+    SECTION("Mata::nft::Plumbing::union_nondet") {
         FILL_WITH_AUT_A(lhs);
         FILL_WITH_AUT_B(lhs);
-        mata::nft::plumbing::uni(&result, lhs, rhs);
+        mata::nft::plumbing::union_nondet(&result, lhs, rhs);
         CHECK(!result.is_lang_empty());
     }
 

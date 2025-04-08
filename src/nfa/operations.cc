@@ -1085,30 +1085,42 @@ Nfa mata::nfa::algorithms::minimize_hopcroft(const Nfa& dfa_trimmed) {
     return result;
 }
 
+Nfa mata::nfa::product(const Nfa &lhs, const Nfa &rhs, const ProductFinalStateCondition final_condition,
+                       const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
 
-Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+    std::function<bool(const State, const State)> is_productstate_final_func;
+    if (final_condition == ProductFinalStateCondition::OR) {
+        if (lhs.initial.empty() || lhs.final.empty()) { return rhs; }
+        if (rhs.initial.empty() || rhs.final.empty()) { return lhs; }
+        is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
+            return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
+        };
+    } else if (final_condition == ProductFinalStateCondition::AND) {
+        if (lhs.initial.empty() || lhs.final.empty()) { return Nfa{}; }
+        if (rhs.initial.empty() || rhs.final.empty()) { return Nfa{}; }
+        is_productstate_final_func = [&](const State lhs_state, const State rhs_state) {
+            return lhs.final.contains(lhs_state)&& rhs.final.contains(rhs_state);
+        };
+    } else {
+        throw std::runtime_error(std::to_string(__func__) + " received an unknown value of the \"final_condition\"");
+    }
 
-    auto both_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) && rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty() || rhs.initial.empty() || rhs.final.empty())
-        return Nfa{};
-
-    return algorithms::product(lhs, rhs, both_final, first_epsilon, prod_map);
+    return algorithms::product(lhs, rhs, std::move(is_productstate_final_func), first_epsilon, prod_map);
 }
 
-Nfa mata::nfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) {
-    auto one_final = [&](const State lhs_state,const State rhs_state) {
-        return lhs.final.contains(lhs_state) || rhs.final.contains(rhs_state);
-    };
-
-    if (lhs.final.empty() || lhs.initial.empty()) { return rhs; }
-    if (rhs.final.empty() || rhs.initial.empty()) { return lhs; }
-    return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
+Nfa mata::nfa::intersection(const Nfa& lhs, const Nfa& rhs, const Symbol first_epsilon, std::unordered_map<std::pair<State, State>, State>  *prod_map) {
+    return product(lhs, rhs, ProductFinalStateCondition::AND, first_epsilon, prod_map);
 }
 
 Nfa mata::nfa::union_nondet(const Nfa &lhs, const Nfa &rhs) { return Nfa{ lhs }.unite_nondet_with(rhs); }
+
+Nfa mata::nfa::union_det_complete(const Nfa &lhs, const Nfa &rhs) {
+    assert(lhs.is_deterministic());
+    assert(rhs.is_deterministic());
+    assert(lhs.is_complete());
+    assert(rhs.is_complete());
+    return product(lhs, rhs, ProductFinalStateCondition::OR, EPSILON);
+}
 
 Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {

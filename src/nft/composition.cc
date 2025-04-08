@@ -55,12 +55,11 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     Level rhs_offset{ 0 };
     Level lhs_lvl{ 0 };
     Level rhs_lvl{ 0 };
-    for (auto lhs_sync_levels_it{ lhs_sync_levels.begin() }, rhssync_levels_it{ rhs_sync_levels.begin ()};
+    for (auto lhs_sync_levels_it{ lhs_sync_levels.begin() }, rhs_sync_levels_it{ rhs_sync_levels.begin ()};
          lhs_sync_levels_it != lhs_sync_levels.end();
-         ++lhs_sync_levels_it, ++rhssync_levels_it)
-    {
+         ++lhs_sync_levels_it, ++rhs_sync_levels_it) {
         lhs_lvl = *lhs_sync_levels_it + lhs_offset;
-        rhs_lvl = *rhssync_levels_it + rhs_offset;
+        rhs_lvl = *rhs_sync_levels_it + rhs_offset;
         if (lhs_lvl < rhs_lvl) {
             lhs_new_levels_mask.insert(lhs_new_levels_mask.end(), rhs_lvl - lhs_lvl, true);
             rhs_new_levels_mask.insert(rhs_new_levels_mask.end(), rhs_lvl - lhs_lvl, false);

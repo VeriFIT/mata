@@ -326,17 +326,19 @@ cdef class Nfa:
         """
         self.thisptr.get().final.erase(state)
 
-    def clear_final(self):
+    def clear_final(self) -> Self:
         """Clears final state set of the automaton."""
         self.thisptr.get().final.clear()
+        return self
 
-    def unify_initial(self):
+    def unify_initial(self, bool force_new_state = False) -> Self:
         """Unify initial states into a single new initial state."""
-        self.thisptr.get().unify_initial()
+        self.thisptr.get().unify_initial(force_new_state)
+        return self
 
-    def unify_final(self):
+    def unify_final(self, bool force_new_state = False) -> Self:
         """Unify final states into a single new final state."""
-        self.thisptr.get().unify_final()
+        self.thisptr.get().unify_final(force_new_state)
 
     def add_transition_object(self, Transition tr):
         """Adds transition to automaton

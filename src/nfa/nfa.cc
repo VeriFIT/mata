@@ -602,34 +602,40 @@ StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonCl
     return res;
 }
 
- void Nfa::unify_initial() {
-    if (initial.empty() || initial.size() == 1) { return; }
-    const State new_initial_state{add_state() };
+ Nfa& Nfa::unify_initial(const bool force_new_state) {
+    if (!force_new_state && (initial.empty() || initial.size() == 1)) { return *this; }
+
+    const State new_initial_state{ add_state() };
     for (const State orig_initial_state: initial) {
-        const StatePost& moves{ delta.state_post(orig_initial_state) };
-        for (const auto& transitions: moves) {
-            for (const State state_to: transitions.targets) {
-                delta.add(new_initial_state, transitions.symbol, state_to);
+        const StatePost& state_post{ delta.state_post(orig_initial_state) };
+        for (const auto& symbol_post: state_post) {
+            for (const State target: symbol_post.targets) {
+                delta.add(new_initial_state, symbol_post.symbol, target);
             }
         }
         if (final[orig_initial_state]) { final.insert(new_initial_state); }
     }
+
     initial.clear();
     initial.insert(new_initial_state);
+    return *this;
 }
 
-void Nfa::unify_final() {
-    if (final.empty() || final.size() == 1) { return; }
+Nfa& Nfa::unify_final(const bool force_new_state) {
+    if (!force_new_state && (final.empty() || final.size() == 1)) { return *this; }
+
     const State new_final_state{ add_state() };
     for (const auto& orig_final_state: final) {
         const auto transitions_to{ delta.get_transitions_to(orig_final_state) };
-        for (const auto& transitions: transitions_to) {
-            delta.add(transitions.source, transitions.symbol, new_final_state);
+        for (const auto& transition: transitions_to) {
+            delta.add(transition.source, transition.symbol, new_final_state);
         }
         if (initial[orig_final_state]) { initial.insert(new_final_state); }
     }
+
     final.clear();
     final.insert(new_final_state);
+    return *this;
 }
 
 Nfa& Nfa::operator=(Nfa&& other) noexcept {

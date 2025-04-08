@@ -27,6 +27,11 @@ enum class EpsilonClosureOpt : unsigned {
     BEFORE_AND_AFTER = BEFORE | AFTER ///< Epsilon closure before and after the transition.
 };
 
+enum class ProductFinalStateCondition {
+    AND, ///< Both original states have to be final.
+    OR,  ///< At least one of the original states has to be final.
+};
+
 using StateRenaming = std::unordered_map<State, State>;
 
 /**

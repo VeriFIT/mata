@@ -3641,7 +3641,7 @@ TEST_CASE("mata::nfa::union_inplace") {
     }
 }
 
-TEST_CASE("mata::nfa::union_product()") {
+TEST_CASE("mata::nfa::product(OR)") {
     Run one{ { 1 },{} };
     Run zero{{ 0 }, {} };
     Run two{ { 2 },{} };
@@ -3672,7 +3672,7 @@ TEST_CASE("mata::nfa::union_product()") {
     REQUIRE(!rhs.is_in_lang(two_three));
 
     SECTION("Minimal example") {
-        Nfa result = mata::nfa::union_product(lhs, rhs);
+        Nfa result = mata::nfa::product(lhs, rhs, ProductFinalStateCondition::OR);
         CHECK(!result.is_in_lang(one));
         CHECK(!result.is_in_lang(zero));
         CHECK(result.is_in_lang(two));
