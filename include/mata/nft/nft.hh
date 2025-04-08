@@ -628,11 +628,12 @@ Nft intersection(const Nft& lhs, const Nft& rhs,
                  State lhs_first_aux_state = Limits::max_state, State rhs_first_aux_state = Limits::max_state);
 
 /**
- * @brief Composes two NFTs.
+ * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
  *
- * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
- *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
- *  output of `a`.
+ * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
+ * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
+ * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
+ * levels are projected out from the resulting NFT.
  *
  * Vectors of synchronization levels have to be non-empty and of the the same size.
  *
@@ -651,11 +652,12 @@ Nft compose(const Nft& lhs, const Nft& rhs,
             JumpMode jump_mode = JumpMode::RepeatSymbol);
 
 /**
- * @brief Composes two NFTs.
+ * @brief Composes two NFTs (lhs || rhs; read as "rhs after lhs").
  *
- * Takes two NFTs and their corresponding synchronization levels as input, and returns a new NFT that represents their
- *  composition as `lhs || rhs` where `a || b` (read as "a pipe b", or "b after a") means apply `a` on input and then apply `b` on
- *  output of `a`.
+ * This function computes the composition of two NFTs, `lhs` and `rhs`, by aligning their synchronization levels.
+ * Transitions between two synchronization levels are ordered as follows: first the transitions of `lhs`, then
+ * the transitions of `rhs` followed by next synchronization level (if exists). By default, synchronization
+ * levels are projected out from the resulting NFT.
  *
  * @param[in] lhs First transducer to compose.
  * @param[in] rhs Second transducer to compose.
