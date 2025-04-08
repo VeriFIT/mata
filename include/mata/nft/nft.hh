@@ -602,9 +602,9 @@ template<typename T, typename... Ts> using AreAllOfType = typename conjunction<s
  */
 Nft union_nondet(const Nft &lhs, const Nft &rhs);
 
-Nft union_det_complete_by_product_or(const Nft &lhs, const Nft &rhs) = delete;
-Nft product_or(const Nft &lhs, const Nft &rhs, Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) = delete;
-Nft product_and(const Nft &lhs, const Nft &rhs, Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) = delete;
+Nft union_det_complete(const Nft &lhs, const Nft &rhs) = delete;
+Nft product(const Nft &lhs, const Nft &rhs, ProductFinalCondition final_condition,
+    Symbol first_epsilon, std::unordered_map<std::pair<State,State>,State> *prod_map) = delete;
 
 /**
  * @brief Compute intersection of two NFTs.

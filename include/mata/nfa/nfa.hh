@@ -568,7 +568,7 @@ Nfa union_nondet(const Nfa &lhs, const Nfa &rhs);
  * @param lhs First complete deterministic automaton.
  * @param rhs Second complete deterministic automaton.
  */
-Nfa union_det_complete_by_product_or(const Nfa &lhs, const Nfa &rhs);
+Nfa union_det_complete(const Nfa &lhs, const Nfa &rhs);
 
 /**
  * @brief Compute product of two NFAs with OR condition on the final states.
@@ -576,23 +576,14 @@ Nfa union_det_complete_by_product_or(const Nfa &lhs, const Nfa &rhs);
  * Automata must share alphabets. //TODO: this is not implemented yet.
  * @param lhs First NFA.
  * @param rhs Second NFA.
+ * @param final_condition Condition for a product state to be final.
+ *  - AND: both original states have to be final.
+ *  - OR: at least one of the original states has to be final.
  * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
  * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
  */
-Nfa product_or(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
-               std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
-
-/**
- * @brief Compute product of two NFAs with AND condition on the final states.
- *
- * Automata must share alphabets. //TODO: this is not implemented yet.
- * @param lhs First NFA.
- * @param rhs Second NFA.
- * @param first_epsilon Smallest epsilon symbol. //TODO: this should eventually be taken from the alphabet as anything larger than the largest symbol?
- * @param prod_map Mapping of pairs of the original states (lhs_state, rhs_state) to new product states (not used internally, allocated only when !=nullptr, expensive).
- */
-Nfa product_and(const Nfa &lhs, const Nfa &rhs, Symbol first_epsilon = EPSILON,
-               std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
+Nfa product(const Nfa &lhs, const Nfa &rhs, ProductFinalCondition final_condition = ProductFinalCondition::AND,
+            Symbol first_epsilon = EPSILON, std::unordered_map<std::pair<State,State>,State> *prod_map = nullptr);
 
 /**
  * @brief Compute a language difference as @p nfa_included \ @p nfa_excluded.
