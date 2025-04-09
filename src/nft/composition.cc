@@ -68,6 +68,14 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     // first insert the non-synchronization levels from lhs, then from rhs, and finally the synchronization level itself.
     // For the last block of non-synchronization levels after the last synchronization level,
     // insert the non-synchronization levels from lhs first, followed by the levels from rhs.
+    // Example:
+    //                 LHS                         |                    RHS
+    // --------------------------------------------+---------------------------------------------
+    //            num_of_levels = 5                |             num_of_levels = 4
+    //          sync_levels = { 2, 4 }             |            sync_levels = { 1, 2 }
+    // --------------------------------------------|---------------------------------------------
+    //       nonsync_levels_cnt = { 2, 1, 0 }      |       nonsync_levels_cnt = { 1, 0, 1 }
+    //  new_levels_mask = { 0, 0, 1, 0, 0, 0, 1 }  |  new_levels_mask = { 1, 1, 0, 0, 1, 0, 0 }
     auto lhs_nonsync_levels_cnt_it = lhs_nonsync_levels_cnt.cbegin();
     auto rhs_nonsync_levels_cnt_it = rhs_nonsync_levels_cnt.cbegin();
     BoolVector lhs_new_levels_mask;
