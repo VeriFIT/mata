@@ -533,7 +533,7 @@ public:
      *
      * @return True if the prefix of the run is in the language of the automaton, false otherwise.
      */
-    bool is_prfx_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+    bool is_prefix_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
 
     /**
      * @brief Check whether a prefix of a word is in the language of an automaton.
@@ -543,7 +543,7 @@ public:
      *
      * @return True if the prefix of the word is in the language of the automaton, false otherwise.
      */
-    bool is_prfx_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prfx_in_lang(Run{ word, {} }, use_epsilon); }
+    bool is_prefix_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prefix_in_lang(Run{ word, {} }, use_epsilon); }
 
     /**
      * @brief Checks whether track words are in the language of the transducer.
