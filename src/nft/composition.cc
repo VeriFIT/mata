@@ -41,7 +41,7 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     //    The vector lhs_nonsync_levels_cnt = { 2, 0, 1 } indicates that
     //    - before the first synchronization level (i == 0) there are 2 non-synchronization levels
     //    - before the second synchronization level (i == 1) there are 0 non-synchronization levels
-    //    - after the last synchronization level (i == |sync| - 1) there is 1 non-synchronization level
+    //    - after the last synchronization level (i == |sync|) there is 1 non-synchronization level
     std::vector<unsigned> lhs_nonsync_levels_cnt;
     std::vector<unsigned> rhs_nonsync_levels_cnt;
     const size_t num_of_sync_levels = lhs_sync_levels.size();
@@ -52,14 +52,14 @@ Nft compose(const Nft& lhs, const Nft& rhs, const OrdVector<Level>& lhs_sync_lev
     // Before the first synchronization level (i == 0)
     lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it++);
     rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it++);
-    // Before each synchronization level (i < |sync| - 1)
+    // Before each synchronization level (i < |sync|)
     for (size_t i = 1; i < num_of_sync_levels; ++i) {
         lhs_nonsync_levels_cnt.push_back(*lhs_sync_levels_it - *(lhs_sync_levels_it - 1) - 1);
         rhs_nonsync_levels_cnt.push_back(*rhs_sync_levels_it - *(rhs_sync_levels_it - 1) - 1);
         ++lhs_sync_levels_it;
         ++rhs_sync_levels_it;
     }
-    // After the last synchronization level (i == |sync| - 1)
+    // After the last synchronization level (i == |sync|)
     lhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(lhs.num_of_levels) - *(lhs_sync_levels_it - 1) - 1);
     rhs_nonsync_levels_cnt.push_back(static_cast<unsigned>(rhs.num_of_levels) - *(rhs_sync_levels_it - 1) - 1);
 
