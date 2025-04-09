@@ -247,8 +247,11 @@ public:
 
 /**
  * @brief Specialization of utils::SynchronizedExistentialIterator for iterating over SymbolPosts.
+ * 
+ * @todo Rename to SynchronizedExistentialStatePostIterator?
+ * @todo Move to synchronized-iterator.hh? Or add better explanation on how to use it here.
  */
-class SynchronizedExistentialSymbolPostIterator : public utils::SynchronizedExistentialIterator<utils::OrdVector<SymbolPost>::const_iterator> {
+class SynchronizedExistentialSymbolPostIterator : public utils::SynchronizedExistentialIterator<StatePost::const_iterator> {
 public:
     /**
      * @brief Get union of all targets.

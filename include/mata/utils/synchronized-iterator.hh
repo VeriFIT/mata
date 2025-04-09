@@ -10,21 +10,18 @@ namespace mata::utils {
 
 /**
  * Two classes that provide "synchronized" iterators through a vector of ordered vectors,
- * (or of some ordered OrdContainer that have a similar iterator),
- * needed in computation of post
- * in subset construction, product, and non-determinization.
+ * (or of some ordered OrdContainer that have a similar iterator), needed in computation
+ * of post in subset construction, product, and determinization.
  *
- * The Type stored in OrdContainers must be comparable with <,>,==,!=,<=,>=,
- * and it must be a total (linear) ordering.
- * The intended usage in, for instance, determinisation is for Type to be TransSymbolStates.
- * TransSymbolStates is ordered by the symbol.
+ * The Type stored in OrdContainers must be comparable with <,>,==,!=,<=,>=, and it must
+ * be a total (linear) ordering. The intended usage in, for instance, determinization is
+ * for Type to be StatePost. StatePost is ordered by the symbol.
  *
- * SynchronisedIterator is the parent virtual class.
- * It stores a vector of end-iterators for the OrdContainer v and a vector of current positions.
- * They are filled in using the function push_back(begin,end), that adds begin and end iterators of v to positions and
- *  ends, respectively
- * Method advance advances all positions forward so that they are synchronized on the next smallest equiv class
- * (next smallest symbol in the case of TransSymbolStates).
+ * SynchronisedIterator is the parent virtual class. It stores a vector of end-iterators
+ * for the OrdContainer v and a vector of current positions. They are filled in using
+ * the function push_back(begin,end), that adds begin and end iterators of v to positions
+ * and ends, respectively. Method advance advances all positions forward so that they are
+ * synchronized on the next smallest equiv class (next symbol in the case of StatePost).
  *
  * There are two versions of the class.
  * i) In product, ALL positions must point to currently the smallest equiv. class (Moves with the same symbol).
