@@ -2540,7 +2540,7 @@ TEST_CASE("mata::nft::is_complete()")
     }
 } // }}}
 
-TEST_CASE("mata::nft::is_in_lang() preffix")
+TEST_CASE("mata::nft::is_prfx_in_lang()")
 { // {{{
     Nft aut('q'+1);
 
@@ -2548,10 +2548,10 @@ TEST_CASE("mata::nft::is_in_lang() preffix")
     {
         Run w;
         w.word = {'a', 'b', 'd'};
-        REQUIRE(!aut.is_in_lang(w, false, true));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = { };
-        REQUIRE(!aut.is_in_lang(w, false, true));
+        REQUIRE(!aut.is_prfx_in_lang(w));
     }
 
     SECTION("automaton accepting only epsilon")
@@ -2561,10 +2561,10 @@ TEST_CASE("mata::nft::is_in_lang() preffix")
 
         Run w;
         w.word = { };
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'a', 'b'};
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
     }
 
     SECTION("small automaton")
@@ -2573,28 +2573,28 @@ TEST_CASE("mata::nft::is_in_lang() preffix")
 
         Run w;
         w.word = {'b', 'a'};
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = { };
-        REQUIRE(!aut.is_in_lang(w, false, true));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'a'};
-        REQUIRE(!aut.is_in_lang(w, false, true));
+        REQUIRE(!aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'a', 'a'};
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'a', 'a'};
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = {'c', 'b', 'b', 'a', 'c', 'b'};
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = Word(100000, 'a');
-        REQUIRE(aut.is_in_lang(w, false, true));
+        REQUIRE(aut.is_prfx_in_lang(w));
 
         w.word = Word(100000, 'b');
-        REQUIRE(!aut.is_in_lang(w, false, true));
+        REQUIRE(!aut.is_prfx_in_lang(w));
     }
 } // }}}
 
