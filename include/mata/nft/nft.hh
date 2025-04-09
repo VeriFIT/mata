@@ -526,6 +526,26 @@ public:
     }
 
     /**
+     * @brief Check whether a prefix of a run is in the language of an automaton.
+     *
+     * @param word The run to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the run is in the language of the automaton, false otherwise.
+     */
+    bool is_prfx_in_lang(const Run& word, const bool use_epsilon = false) const { return is_in_lang(word, use_epsilon, true); }
+
+    /**
+     * @brief Check whether a prefix of a word is in the language of an automaton.
+     *
+     * @param word The word to check.
+     * @param use_epsilon Whether the automaton uses epsilon transitions.
+     *
+     * @return True if the prefix of the word is in the language of the automaton, false otherwise.
+     */
+    bool is_prfx_in_lang(const Word& word, const bool use_epsilon = false) const { return is_prfx_in_lang(Run{ word, {} }, use_epsilon); }
+
+    /**
      * @brief Checks whether track words are in the language of the transducer.
      *
      * That is, the function checks whether a tuple @p track_words (word1, word2, word3, ..., wordn) is in the regular
