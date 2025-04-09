@@ -156,7 +156,7 @@ Nft mata::nft::algorithms::product(const Nft& lhs, const Nft& rhs, const std::fu
                 for (const State specific_target : specific_symbol_post.targets) {
                     const Level specific_target_level = dcare_on_lhs ? rhs.levels[specific_target] : lhs.levels[specific_target];
                     // When using JumpMode::RepeatSymbol, we wait in the source state that has a deeper target.
-                    // Because of this we need to, in the next iteration, forbid transitions that has been already passed.
+                    // Because of this we need to, in the next iteration, forbid transitions that have been already passed.
                     if ((dcare_target_level != 0 && dcare_target_level <= specific_src_level) ||
                         (specific_target_level != 0 && specific_target_level <= dcare_src_level)) {
                         continue;
