@@ -402,8 +402,8 @@ def test_in_language(
     assert fa_one_divisible_by_two.is_in_lang([1, 1])
     assert not fa_one_divisible_by_two.is_in_lang([1, 1, 1])
 
-    assert fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 1, 0])
-    assert not fa_one_divisible_by_four.is_prefix_in_lang([1, 1, 1, 0, 0])
+    assert fa_one_divisible_by_four.is_in_lang([1, 1, 1, 1, 0], match_prefix=True)
+    assert not fa_one_divisible_by_four.is_in_lang([1, 1, 1, 0, 0], match_prefix=True)
     assert not mata_nfa.accepts_epsilon(fa_one_divisible_by_four)
 
     lhs = mata_nfa.Nfa(2)

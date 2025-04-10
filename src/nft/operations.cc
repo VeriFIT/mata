@@ -883,6 +883,12 @@ Nft mata::nft::invert_levels(const Nft& aut, const JumpMode jump_mode) {
     return aut_inv;
 }
 
+//TODO: Implement for NFT
+bool mata::nft::Nft::is_in_lang(const Run& run, const bool use_epsilon, const bool match_prefix) const {
+    std::cerr << "Warning: Nft::is_in_lang uses Nfa::is_in_lang, which is not designed for NFT's jump transitions" << std::endl;
+    return nfa::Nfa::is_in_lang(run, use_epsilon, match_prefix);
+}
+
 std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
     if (run.path.empty()) { return {{}, true}; }
 
@@ -907,28 +913,6 @@ std::pair<Run, bool> mata::nft::Nft::get_word_for_path(const Run& run) const {
         cur = newSt;    // update current state
     }
     return {word, true};
-}
-
-//TODO: this is not efficient
-bool mata::nft::Nft::is_in_lang(const Run& run) const {
-    StateSet current_post(this->initial);
-    for (const Symbol sym : run.word) {
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
-}
-
-/// Checks whether the prefix of a string is in the language of an automaton
-// TODO: slow and it should share code with is_in_lang
-bool mata::nft::Nft::is_prfx_in_lang(const Run& run) const {
-    StateSet current_post{ this->initial };
-    for (const Symbol sym : run.word) {
-        if (this->final.intersects_with(current_post)) { return true; }
-        current_post = this->post(current_post, sym);
-        if (current_post.empty()) { return false; }
-    }
-    return this->final.intersects_with(current_post);
 }
 
 Nft mata::nft::algorithms::minimize_brzozowski(const Nft& aut) {

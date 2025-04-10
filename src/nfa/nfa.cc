@@ -545,20 +545,60 @@ void Nfa::get_one_letter_aut(Nfa& result) const {
     result = get_one_letter_aut();
 }
 
-StateSet Nfa::post(const StateSet& states, const Symbol& symbol) const {
+StateSet Nfa::post(const StateSet& states, const Symbol& symbol, const EpsilonClosureOpt epsilon_closure_opt) const {
+    auto get_epsilon_closure = [&](const StateSet& states) {
+        StateSet closure{ states };
+        std::queue<State> worklist;
+        for (const State state: states) {
+            worklist.push(state);
+        }
+        while (!worklist.empty()) {
+            const State state = worklist.front();
+            worklist.pop();
+            auto move_it{ delta[state].find(EPSILON) };
+            if (move_it != delta[state].end()) {
+                for (const State target: move_it->targets) {
+                    if (!closure.contains(target)) {
+                        closure.insert(target);
+                        worklist.push(target);
+                    }
+                }
+            }
+        }
+        return closure;
+    };
+
     StateSet res{};
+
+    // If the symbol is EPSILON, we can stay in the same state.
+    if (symbol == EPSILON && epsilon_closure_opt != EpsilonClosureOpt::NONE) {
+        res = states;
+    }
+
     if (delta.empty()) {
         return res;
     }
 
-    for (const State state: states) {
+    StateSet from_states = states;
+    if (epsilon_closure_opt == EpsilonClosureOpt::BEFORE) {
+        // Before making the step using the symbol, we compute the epsilon closure.
+        from_states = get_epsilon_closure(states);
+    }
+
+    // Now, we can make the step using the symbol.
+    for (const State state: from_states) {
         const StatePost& post{ delta[state] };
-        // TODO: This does not handle epsilons.
         const auto move_it{ post.find(symbol) };
         if (move_it != post.end()) {
             res.insert(move_it->targets);
         }
     }
+
+    if (epsilon_closure_opt == EpsilonClosureOpt::AFTER) {
+        // We need to compute the epsilon closure of the resulting states.
+        res = get_epsilon_closure(res);
+    }
+
     return res;
 }
 
