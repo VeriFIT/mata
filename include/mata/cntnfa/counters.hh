@@ -47,7 +47,7 @@ private:
 
 public:
     // TODO: Add the necessary constructors later.
-    CounterRegisterSet() = default;
+    CounterRegisterSet() : counters() {}
 
     CounterRegister& operator[](size_t id) { return counters[id]; }
     const CounterRegister& operator[](size_t id) const { return counters[id]; }

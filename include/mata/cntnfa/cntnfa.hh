@@ -16,6 +16,7 @@
 #include <optional>
 
 #include "mata/alphabet.hh"
+#include "mata/cntnfa/counters.hh"
 #include "mata/utils/utils.hh"
 #include "mata/utils/ord-vector.hh"
 #include "mata/utils/sparse-set.hh"
@@ -49,7 +50,9 @@ public:
     Delta delta;
     utils::SparseSet<State> initial{};
     utils::SparseSet<State> final{};
-    AnnotationCollection annotation_collection; // Note: Added annotation collection for storing NFA transition annotations.
+
+    AnnotationCollection annotation_collection; ///< Annotation collection for storing annotations.
+    CounterRegisterSet counter_set; ///< Counter register set for storing counters.
 
     Alphabet* alphabet = nullptr; ///< The alphabet which can be shared between multiple automata.
     /// Key value store for additional attributes for the NFA. Keys are attribute names as strings and the value types
@@ -63,9 +66,11 @@ public:
 
 public:
     explicit Nfa(Delta delta = {}, utils::SparseSet<State> initial_states = {}, utils::SparseSet<State> final_states = {},
-                 AnnotationCollection annotation_collection = {}, Alphabet* alphabet = nullptr)
+                 AnnotationCollection annotation_collection = {}, CounterRegisterSet counter_set = {},
+                 Alphabet* alphabet = nullptr)
         : delta(std::move(delta)), initial(std::move(initial_states)), final(std::move(final_states)),
-          annotation_collection(std::move(annotation_collection)), alphabet(alphabet) {}
+          annotation_collection(std::move(annotation_collection)), counter_set(std::move(counter_set)),
+          alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA with num_of_states states and optionally set initial and final states.
@@ -73,9 +78,11 @@ public:
      * @param[in] num_of_states Number of states for which to preallocate Delta.
      */
     explicit Nfa(const unsigned long num_of_states, StateSet initial_states = {}, StateSet final_states = {},
-                 AnnotationCollection annotation_collection = {}, Alphabet* alphabet = nullptr)
+                 AnnotationCollection annotation_collection = {}, CounterRegisterSet counter_set = {},
+                 Alphabet* alphabet = nullptr)
         : delta(num_of_states), initial(initial_states), final(final_states),
-          annotation_collection(annotation_collection), alphabet(alphabet) {}
+          annotation_collection(annotation_collection), counter_set(counter_set),
+          alphabet(alphabet) {}
 
     /**
      * @brief Construct a new explicit NFA from other NFA.
@@ -86,6 +93,7 @@ public:
         : delta{ std::move(other.delta) },
           initial{ std::move(other.initial) }, final{ std::move(other.final) },
           annotation_collection{ std::move(other.annotation_collection) },
+          counter_set{ std::move(other.counter_set) },
           alphabet{ other.alphabet }, attributes{ std::move(other.attributes) } { other.alphabet = nullptr; }
 
     Nfa& operator=(const Nfa& other) = default;
