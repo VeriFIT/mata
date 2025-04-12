@@ -129,8 +129,16 @@ public:
     using super::erase;
 
     using super::find;
-    iterator find(const Symbol symbol) { return super::find({ symbol, {} }); }
-    const_iterator find(const Symbol symbol) const { return super::find({ symbol, {} }); }
+    iterator find(const Symbol symbol) {
+        static SymbolPost symbol_post{};
+        symbol_post.symbol = symbol;
+        return super::find(symbol_post);
+    }
+    const_iterator find(const Symbol symbol) const {
+        static SymbolPost symbol_post{};
+        symbol_post.symbol = symbol;
+        return super::find(symbol_post);
+    }
 
     ///returns an iterator to the smallest epsilon, or end() if there is no epsilon
     const_iterator first_epsilon_it(Symbol first_epsilon) const;
