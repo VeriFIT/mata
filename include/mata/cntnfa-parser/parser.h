@@ -6,6 +6,7 @@
 #include <string>
 
 #include "mata/utils/ord-vector.hh"
+#include "mata/cntnfa/cntnfa.hh"
 
 namespace mata::cntnfa {
 
@@ -77,6 +78,11 @@ ParsedTransition parseFlexibleTransition(const std::string& line);
  * Parse .mata file describing @NFA-explicit automaton into ParsedNfa.
  */
 ParsedNfa parseNfaFromFile(const std::string& filename);
+
+/**
+ * Convert parsed NFA with counters into internal Nfa representation.
+ */
+Nfa convertParsedNfaToNfa(const ParsedNfa& parsedNfa);
 
 }; // namespace mata::cntnfa
 
