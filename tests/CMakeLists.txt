@@ -26,6 +26,7 @@ add_executable(tests
 		cntnfa/cntnfa.cc
 		cntnfa/annotations.cc
 		cntnfa/builder.cc
+		cntnfa-parser/parser.cc
 		strings/nfa-noodlification.cc
 		strings/nfa-segmentation.cc
 		strings/nfa-string-solving.cc

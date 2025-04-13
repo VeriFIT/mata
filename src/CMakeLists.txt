@@ -11,7 +11,6 @@ add_library(libmata STATIC
 	mintermization.cc
 	parser.cc
 	re2parser.cc
-	cntnfa-parser/parser.cc
 	nfa/nfa.cc
 	nfa/inclusion.cc
 	nfa/universal.cc
@@ -45,6 +44,7 @@ add_library(libmata STATIC
 	cntnfa/builder.cc
 	cntnfa/annotations.cc
 	cntnfa/counters.cc
+	cntnfa-parser/parser.cc
 )
 
 # libmata needs at least c++20
