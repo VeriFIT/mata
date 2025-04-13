@@ -9,6 +9,9 @@
 
 namespace mata::cntnfa {
 
+/**
+ * Parsed representation of a single transition before converting to Nfa.
+ */
 struct ParsedTransition {
     std::string source;
     std::string symbol;
@@ -37,6 +40,9 @@ struct ParsedTransition {
     }
 };
 
+/**
+ * Parsed representation of Nfa with counters from .mata file.
+ */
 struct ParsedNfa {
     std::string sectionType;
     std::unordered_set<std::string> states;
@@ -56,10 +62,20 @@ struct ParsedNfa {
           transitions() {}
 };
 
+/**
+ * Parse tokens from a line (space-separated) into a target set.
+ */
 void parseLineIntoSet(std::istringstream& iss, std::unordered_set<std::string>& targetSet);
 
+/**
+ * Parse a transition line into ParsedTransition.
+ * Expected line format: source [symbol] [annotations...] target
+ */
 ParsedTransition parseFlexibleTransition(const std::string& line);
 
+/**
+ * Parse .mata file describing @NFA-explicit automaton into ParsedNfa.
+ */
 ParsedNfa parseNfaFromFile(const std::string& filename);
 
 }; // namespace mata::cntnfa
