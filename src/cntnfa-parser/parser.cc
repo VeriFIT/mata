@@ -97,6 +97,59 @@ ParsedNfa parseNfaFromFile(const std::string& filename) {
     return nfa;
 }
 
+ParsedNfa parseNfaFromString(const std::string& content) {
+    ParsedNfa nfa;
+    std::istringstream iss(content);
+    std::string line, buffer;
+
+    while (std::getline(iss, line)) {
+        size_t commentPos = line.find('#');
+        if (commentPos != std::string::npos) {
+            line = line.substr(0, commentPos); // Remove comment part
+        }
+
+        while (!line.empty() && line.back() == '\\') {
+            buffer += line.substr(0, line.length() - 1);
+            std::getline(iss, line);
+        }
+        line = buffer + line;
+        buffer.clear();
+
+        if (line.empty()) {
+            continue;
+        }
+
+        std::istringstream line_iss(line);
+
+        if (line[0] == '@') {
+            nfa.sectionType = line.substr(1); // @NFA-explicit
+        } else if (line[0] == '%') {
+            std::string key;
+            line_iss >> key;
+            key = key.substr(1); // Remove '%'
+            if (key == "States-enum") { // %States-enum q0 q1 q2 ...
+                parseLineIntoSet(line_iss, nfa.states);
+            } else if (key == "Alphabet-enum") { // %Alphabet-enum a b c ...
+                parseLineIntoSet(line_iss, nfa.alphabet);
+            } else if (key == "Initial") { // %Initial q0 q2 ...
+                parseLineIntoSet(line_iss, nfa.initialStates);
+            } else if (key == "Final") { // %Final q3 ...
+                parseLineIntoSet(line_iss, nfa.finalStates);
+            } else if (key == "Registers") { // %Registers c0 c1 ...
+                parseLineIntoSet(line_iss, nfa.registers);
+            }
+        } else {
+            try {
+                nfa.transitions.push_back(parseFlexibleTransition(line));
+            } catch (const std::exception& e) {
+                std::cerr << "Error parsing transition: " << e.what() << "\n";
+            }
+        }
+    }
+
+    return nfa;
+}
+
 Nfa convertParsedNfaToNfa(const ParsedNfa& parsedNfa) {
     Nfa nfa;
 

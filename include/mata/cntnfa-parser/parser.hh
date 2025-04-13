@@ -80,6 +80,11 @@ ParsedTransition parseFlexibleTransition(const std::string& line);
 ParsedNfa parseNfaFromFile(const std::string& filename);
 
 /**
+ * Parse .mata content from a string into ParsedNfa.
+ */
+ParsedNfa parseNfaFromString(const std::string& content);
+
+/**
  * Convert parsed NFA with counters into internal Nfa representation.
  */
 Nfa convertParsedNfaToNfa(const ParsedNfa& parsedNfa);
