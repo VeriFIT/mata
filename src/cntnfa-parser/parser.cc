@@ -2,7 +2,7 @@
 
 #include <fstream>
 
-#include "mata/cntnfa-parser/parser.h"
+#include "mata/cntnfa-parser/parser.hh"
 
 namespace mata::cntnfa {
 
