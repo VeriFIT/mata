@@ -29,11 +29,12 @@ struct ParsedSection {
 	std::string type;
 	KeyListStore dict;
 	std::list<BodyLine> body;
+	std::list<std::vector<BodyLine>> annotations;
 
-	ParsedSection() : type(), dict(), body() {}
+	ParsedSection() : type(), dict(), body(), annotations() {}
 
 	/// Is the section empty?
-	bool empty() const { return type.empty() && dict.empty() && body.empty(); }
+	bool empty() const { return type.empty() && dict.empty() && body.empty() && annotations.empty(); }
 
 	/// Equality operator
 	bool operator==(const ParsedSection& rhs) const;
