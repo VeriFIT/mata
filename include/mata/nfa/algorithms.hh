@@ -137,7 +137,7 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
  * @param[in] nfa NFA to reduce
  * @param[out] state_renaming Map mapping original states to the reduced states.
  */
-Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming);
+Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming, ReductionDirection direction = ReductionDirection::FORWARD);
 
 /**
  * @brief Reduce NFA using residual construction.

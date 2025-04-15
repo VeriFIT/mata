@@ -1079,7 +1079,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, ReductionAl
 
     switch(reduction_algorithm) {
         case ReductionAlgorithm::SIMULATION:
-            result = algorithms::reduce_simulation(aut, reduced_state_map);
+            result = algorithms::reduce_simulation(aut, reduced_state_map, direction);
             break;
         case ReductionAlgorithm::RESIDUAL_AFTER:
             result = algorithms::reduce_residual(aut, reduced_state_map, "after", direction);
@@ -1528,10 +1528,13 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & n
         }).get_word();
 }
 
-Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming) {
+Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming, ReductionDirection direction) {
     Nfa result;
-    const auto sim_relation = algorithms::compute_relation(
-            aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+    if (direction != ReductionDirection::FORWARD) {
+        throw std::runtime_error(std::to_string(__func__) +
+                                 " can only reduce simulation by forward direction (for now)");
+    }
+    const auto sim_relation = algorithms::compute_relation(aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
 
     auto sim_relation_symmetric = sim_relation;
     sim_relation_symmetric.restrict_to_symmetric();
