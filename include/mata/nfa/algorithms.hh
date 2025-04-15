@@ -148,7 +148,7 @@ Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming);
  * @param[in] direction Direction of the residual construction (values: "forward", "backward").
  */
 Nfa reduce_residual(const Nfa& nfa, StateRenaming &state_renaming,
-                    const std::string& type, const std::string& direction);
+                    const std::string& type, ReductionDirection direction);
 
 /**
  * @brief Reduce NFA using residual construction.

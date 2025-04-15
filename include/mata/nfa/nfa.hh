@@ -788,6 +788,9 @@ Nfa determinize(
     const Nfa& aut, std::unordered_map<StateSet, State> *subset_map = nullptr,
     std::optional<std::function<bool(const Nfa&, const State, const StateSet&)>> macrostate_discover = std::nullopt);
 
+enum class ReductionAlgorithm { SIMULATION, RESIDUAL_AFTER, RESIDUAL_WITH };
+enum class ReductionDirection { FORWARD, BACKWARD };
+
 /**
  * @brief Reduce the size of the automaton.
  *
@@ -801,7 +804,8 @@ Nfa determinize(
  * @return Reduced automaton.
  */
 Nfa reduce(const Nfa &aut, StateRenaming *state_renaming = nullptr,
-           const ParameterMap& params = {{ "algorithm", "simulation" }, { "type", "after" }, { "direction", "forward" } });
+           ReductionAlgorithm reduction_algorithm = ReductionAlgorithm::SIMULATION,
+           ReductionDirection direction = ReductionDirection::FORWARD);
 
 /**
  * @brief Checks inclusion of languages of two NFAs: @p smaller and @p bigger (smaller <= bigger).

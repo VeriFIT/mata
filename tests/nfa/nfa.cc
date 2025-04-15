@@ -3288,19 +3288,11 @@ TEST_CASE("mata::nfa::algorithms::minimize_hopcroft()") {
 TEST_CASE("mata::nfa::reduce_size_by_residual()") {
     Nfa aut;
     StateRenaming state_renaming;
-    ParameterMap params_after, params_with;
-    params_after["algorithm"] = "residual";
-    params_with["algorithm"] = "residual";
 
     SECTION("empty automaton")
     {
-        params_after["type"] = "after";
-        params_after["direction"] = "forward";
-        params_with["type"] = "with";
-        params_with["direction"] = "forward";
-
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Nfa result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER);
+        Nfa result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH);
 
         REQUIRE(result_after.delta.empty());
         REQUIRE(result_after.initial.empty());
@@ -3311,16 +3303,12 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
     SECTION("simple automaton")
     {
-        params_after["type"] = "after";
-        params_after["direction"] = "forward";
-        params_with["type"] = "with";
-        params_with["direction"] = "forward";
         aut.add_state(2);
         aut.initial.insert(1);
 
         aut.final.insert(2);
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Nfa result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER);
+        Nfa result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH);
 
         REQUIRE(result_after.num_of_states() == 0);
         REQUIRE(result_after.initial.empty());
@@ -3330,8 +3318,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
         REQUIRE(are_equivalent(aut, result_after));
 
         aut.delta.add(1, 'a', 2);
-        result_after = reduce(aut, &state_renaming, params_after);
-        result_with = reduce(aut, &state_renaming, params_with);
+        result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER);
+        result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH);
 
         REQUIRE(result_after.num_of_states() == 2);
         REQUIRE(result_after.initial[0]);
@@ -3343,10 +3331,6 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
     SECTION("medium automaton")
     {
-        params_after["type"] = "after";
-        params_after["direction"] = "forward";
-        params_with["type"] = "with";
-        params_with["direction"] = "forward";
         aut.add_state(4);
 
         aut.initial = { 1 };
@@ -3359,8 +3343,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
         aut.delta.add(3, 'a', 3);
         aut.delta.add(2, 'a', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Nfa result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER);
+        Nfa result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH);
 
         REQUIRE(result_after.num_of_states() == 4);
         REQUIRE(result_after.initial[0]);
@@ -3380,10 +3364,6 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
     SECTION("big automaton")
     {
-        params_after["type"] = "after";
-        params_after["direction"] = "forward";
-        params_with["type"] = "with";
-        params_with["direction"] = "forward";
         aut.add_state(7);
 
         aut.initial = { 0 };
@@ -3423,8 +3403,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
         aut.delta.add(6, 'c', 1);
         aut.delta.add(6, 'd', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Nfa result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER);
+        Nfa result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH);
 
         REQUIRE(result_after.num_of_states() == 5);
         REQUIRE(result_after.initial[0]);
@@ -3485,11 +3465,6 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
     SECTION("backward residual big automaton")
     {
-        params_after["type"] = "after";
-        params_after["direction"] = "backward";
-        params_with["type"] = "with";
-        params_with["direction"] = "backward";
-
         aut.add_state(7);
 
         aut.initial = { 0 };
@@ -3529,8 +3504,8 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
         aut.delta.add(6, 'c', 1);
         aut.delta.add(6, 'd', 1);
 
-        Nfa result_after = reduce(aut, &state_renaming, params_after);
-        Nfa result_with = reduce(aut, &state_renaming, params_with);
+        Nfa result_after = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_AFTER, ReductionDirection::BACKWARD);
+        Nfa result_with = reduce(aut, &state_renaming, ReductionAlgorithm::RESIDUAL_WITH, ReductionDirection::BACKWARD);
 
         REQUIRE(result_after.num_of_states() == 6);
         REQUIRE(result_after.initial[0]);
@@ -3560,28 +3535,6 @@ TEST_CASE("mata::nfa::reduce_size_by_residual()") {
 
         REQUIRE(are_equivalent(result_after, result_with));
         REQUIRE(are_equivalent(aut, result_after));
-
-    }
-
-    SECTION("error checking")
-    {
-        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
-                          Catch::Matchers::ContainsSubstring("requires setting the \"type\" key in the \"params\" argument;"));
-
-        params_after["type"] = "bad_type";
-        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
-                          Catch::Matchers::ContainsSubstring("requires setting the \"direction\" key in the \"params\" argument;"));
-
-        params_after["direction"] = "unknown_direction";
-        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
-                          Catch::Matchers::ContainsSubstring("received an unknown value of the \"direction\" key"));
-
-        params_after["direction"] = "forward";
-        CHECK_THROWS_WITH(reduce(aut, &state_renaming, params_after),
-                          Catch::Matchers::ContainsSubstring("received an unknown value of the \"type\" key"));
-
-        params_after["type"] = "after";
-        CHECK_NOTHROW(reduce(aut, &state_renaming, params_after));
 
     }
 }
