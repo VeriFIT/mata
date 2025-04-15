@@ -54,78 +54,6 @@ namespace {
         return lts_for_simulation.compute_simulation();
     }
 
-    Nfa reduce_size_by_simulation(const Nfa& aut, StateRenaming &state_renaming) {
-        Nfa result;
-        const auto sim_relation = algorithms::compute_relation(
-                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
-
-        auto sim_relation_symmetric = sim_relation;
-        sim_relation_symmetric.restrict_to_symmetric();
-
-        // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
-        std::vector<size_t> quot_proj;
-        sim_relation_symmetric.get_quotient_projection(quot_proj);
-
-        const size_t num_of_states = aut.num_of_states();
-
-        // map each state q of aut to the state of the reduced automaton representing the simulation class of q
-        for (State q = 0; q < num_of_states; ++q) {
-            const State qReprState = quot_proj[q];
-            if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
-                const State qClass = result.add_state();
-                state_renaming[qReprState] = qClass;
-                state_renaming[q] = qClass;
-            } else {
-                state_renaming[q] = state_renaming[qReprState];
-            }
-        }
-
-        for (State q = 0; q < num_of_states; ++q) {
-            const State q_class_state = state_renaming.at(q);
-
-            if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
-                result.initial.insert(q_class_state);
-            }
-
-            if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
-                for (const auto &q_trans : aut.delta.state_post(q)) {
-                    const StateSet representatives_of_states_to = [&]{
-                        StateSet state_set;
-                        for (auto s : q_trans.targets) {
-                            state_set.insert(quot_proj[s]);
-                        }
-                        return state_set;
-                    }();
-
-                    // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
-                    StateSet representatives_class_states;
-                    for (const State s : representatives_of_states_to) {
-                        bool is_state_important = true; // if true, we need to keep the transition from q to s
-                        for (const State p : representatives_of_states_to) {
-                            if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
-                                is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
-                                break;
-                            }
-                        }
-                        if (is_state_important) {
-                            representatives_class_states.insert(state_renaming.at(s));
-                        }
-                    }
-
-                    // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
-                    // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
-                    result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
-                }
-
-                if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
-                    result.final.insert(q_class_state);
-                }
-            }
-        }
-
-        return result;
-    }
-
     void remove_covered_state(const StateSet& covering_set, const State remove, Nfa& nfa) {
         StateSet tmp_targets;           // help set to store elements to remove
         auto delta_begin = nfa.delta[remove].begin();
@@ -1156,7 +1084,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        result = reduce_size_by_simulation(aut, reduced_state_map);
+        result = algorithms::reduce_simulation(aut, reduced_state_map);
     }
     else if ("residual" == algorithm) {
         // reduce type either 'after' or 'with' creation of residual automaton
@@ -1615,6 +1543,78 @@ std::optional<mata::Word> mata::nfa::get_word_from_lang_difference(const Nfa & n
             (void)macrostate;
             return nfa_lang_difference.final.empty();
         }).get_word();
+}
+
+Nfa mata::nfa::algorithms::reduce_simulation(const Nfa& aut, StateRenaming &state_renaming) {
+    Nfa result;
+    const auto sim_relation = algorithms::compute_relation(
+            aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+
+    auto sim_relation_symmetric = sim_relation;
+    sim_relation_symmetric.restrict_to_symmetric();
+
+    // for State q, quot_proj[q] should be the representative state representing the symmetric class of states in simulation
+    std::vector<size_t> quot_proj;
+    sim_relation_symmetric.get_quotient_projection(quot_proj);
+
+    const size_t num_of_states = aut.num_of_states();
+
+    // map each state q of aut to the state of the reduced automaton representing the simulation class of q
+    for (State q = 0; q < num_of_states; ++q) {
+        const State qReprState = quot_proj[q];
+        if (state_renaming.count(qReprState) == 0) { // we need to map q's class to a new state in reducedAut
+            const State qClass = result.add_state();
+            state_renaming[qReprState] = qClass;
+            state_renaming[q] = qClass;
+        } else {
+            state_renaming[q] = state_renaming[qReprState];
+        }
+    }
+
+    for (State q = 0; q < num_of_states; ++q) {
+        const State q_class_state = state_renaming.at(q);
+
+        if (aut.initial[q]) { // if a symmetric class contains initial state, then the whole class should be initial
+            result.initial.insert(q_class_state);
+        }
+
+        if (quot_proj[q] == q) { // we process only transitions starting from the representative state, this is enough for simulation
+            for (const auto &q_trans : aut.delta.state_post(q)) {
+                const StateSet representatives_of_states_to = [&]{
+                    StateSet state_set;
+                    for (auto s : q_trans.targets) {
+                        state_set.insert(quot_proj[s]);
+                    }
+                    return state_set;
+                }();
+
+                // get the class states of those representatives that are not simulated by another representative in representatives_of_states_to
+                StateSet representatives_class_states;
+                for (const State s : representatives_of_states_to) {
+                    bool is_state_important = true; // if true, we need to keep the transition from q to s
+                    for (const State p : representatives_of_states_to) {
+                        if (s != p && sim_relation.get(s, p)) { // if p (different from s) simulates s
+                            is_state_important = false; // as p simulates s, the transition from q to s is not important to keep, as it is subsumed in transition from q to p
+                            break;
+                        }
+                    }
+                    if (is_state_important) {
+                        representatives_class_states.insert(state_renaming.at(s));
+                    }
+                }
+
+                // add the transition 'q_class_state-q_trans.symbol->representatives_class_states' at the end of transition list of transitions starting from q_class_state
+                // as the q_trans.symbol should be the largest symbol we saw (as we iterate trough getTransitionsFromState(q) which is ordered)
+                result.delta.mutable_state_post(q_class_state).insert(SymbolPost(q_trans.symbol, representatives_class_states));
+            }
+
+            if (aut.final[q]) { // if q is final, then all states in its class are final => we make q_class_state final
+                result.final.insert(q_class_state);
+            }
+        }
+    }
+
+    return result;
 }
 
 Nfa mata::nfa::algorithms::reduce_residual(const Nfa& nfa, StateRenaming &state_renaming, const std::string& type, const std::string& direction) {

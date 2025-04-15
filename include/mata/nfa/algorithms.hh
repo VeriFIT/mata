@@ -132,10 +132,18 @@ Nfa concatenate_eps(const Nfa& lhs, const Nfa& rhs, const Symbol& epsilon, bool 
                     StateRenaming* lhs_state_renaming = nullptr, StateRenaming* rhs_state_renaming = nullptr);
 
 /**
+ * @brief Reduce NFA using (forward) simulation.
+ * 
+ * @param[in] nfa NFA to reduce
+ * @param[out] state_renaming Map mapping original states to the reduced states.
+ */
+Nfa reduce_simulation(const Nfa& nfa, StateRenaming &state_renaming);
+
+/**
  * @brief Reduce NFA using residual construction.
  *
  * @param[in] nfa NFA to reduce.
- * @param[in] state_renaming Map mapping original states to the reduced states.
+ * @param[out] state_renaming Map mapping original states to the reduced states.
  * @param[in] type Type of the residual construction (values: "after", "with").
  * @param[in] direction Direction of the residual construction (values: "forward", "backward").
  */
