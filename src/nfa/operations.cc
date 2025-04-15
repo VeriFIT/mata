@@ -1084,7 +1084,7 @@ Nfa mata::nfa::reduce(const Nfa &aut, StateRenaming *state_renaming, const Param
     std::unordered_map<State,State> reduced_state_map;
     const std::string& algorithm = params.at("algorithm");
     if ("simulation" == algorithm) {
-        result = reduce_size_by_simulation(aut, reduced_state_map);
+        result = algorithms::reduce_simulation(aut, reduced_state_map);
     }
     else if ("residual" == algorithm) {
         // reduce type either 'after' or 'with' creation of residual automaton
