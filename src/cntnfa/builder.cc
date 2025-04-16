@@ -94,6 +94,11 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
     return aut;
 } // construct().
 
+// Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec,
+//                                    Alphabet* alphabet, NameStateMap* state_map)
+// {
+// } // construct_counter_nfa().
+
 Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);

@@ -8,15 +8,18 @@
 namespace mata::cntnfa {
 
 using CounterValue = int;
+using CounterName = std::string;
 using CounterValueSet = mata::utils::OrdVector<CounterValue>;
 
 /// Register for counters.
 struct CounterRegister {
     CounterValue value; ///< Current counter value.
     CounterValue initial_value; ///< Initial counter value.
+    CounterName name; ///< Name of the counter.
 
-    CounterRegister() : value(0), initial_value(0) {}
-    CounterRegister(CounterValue value) : value(value), initial_value(value) {}
+    CounterRegister() : value(0), initial_value(0), name() {}
+    CounterRegister(CounterValue value, CounterName name)
+        : value(value), initial_value(value), name(name) {}
 
     CounterRegister(const CounterRegister&) = default;
     CounterRegister(CounterRegister&&) = default;
@@ -44,18 +47,28 @@ struct CounterRegister {
 class CounterRegisterSet {
 private:
     std::vector<CounterRegister> counters; ///< Stores counters.
+    std::unordered_map<CounterName, size_t> name_to_index; ///< Maps counter name to its index.
 
 public:
     // TODO: Add the necessary constructors later.
-    CounterRegisterSet() : counters() {}
+    CounterRegisterSet() : counters(), name_to_index() {}
 
     CounterRegister& operator[](size_t id) { return counters[id]; }
     const CounterRegister& operator[](size_t id) const { return counters[id]; }
 
     void allocate(const size_t size);
+
     size_t size() const;
+
     void clear();
-    void insert_counter(CounterRegister counter, size_t index);
+
+    void set(size_t index, const CounterRegister& counter);
+    size_t insert(const CounterName& name, CounterValue value = 0);
+
+    bool has(const CounterName& name) const;
+    const CounterName& get_name(size_t index) const;
+    size_t get_index(const CounterName& name) const;
+
     // TODO: Add iterators later.
 };
 

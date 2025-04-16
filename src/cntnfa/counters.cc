@@ -33,7 +33,7 @@ void CounterRegister::reset() {
 */
 
 void CounterRegisterSet::allocate(const size_t size) {
-    assert(size >= annotations.size());
+    assert(size >= counters.size());
     counters.resize(size);
 }
 
@@ -45,11 +45,40 @@ void CounterRegisterSet::clear() {
     counters.clear();
 }
 
-void CounterRegisterSet::insert_counter(CounterRegister counter, size_t index) {
+void CounterRegisterSet::set(size_t index, const CounterRegister& counter) {
     if (index >= counters.size()) {
         this->allocate(index + 1);
     }
-    counters.insert(counters.begin() + static_cast<long>(index), counter);
+    counters[index] = counter;
+    name_to_index[counter.name] = index;
+}
+
+size_t CounterRegisterSet::insert(const CounterName& name, CounterValue value) {
+    auto it = name_to_index.find(name);
+    if (it != name_to_index.end()) {
+        return it->second;
+    }
+    size_t index = counters.size();
+    counters.emplace_back(value, name);
+    name_to_index[name] = index;
+    return index;
+}
+
+bool CounterRegisterSet::has(const CounterName& name) const {
+    return name_to_index.contains(name);
+}
+
+const CounterName& CounterRegisterSet::get_name(size_t index) const {
+    return counters.at(index).name;
+}
+
+size_t CounterRegisterSet::get_index(const CounterName& name) const {
+    auto it = name_to_index.find(name);
+    if (it != name_to_index.end()) {
+        return it->second;
+    } else {
+        return static_cast<size_t>(-1);
+    }
 }
 
 } // namespace mata::cntnfa.
