@@ -1,14 +1,20 @@
 /* nfa.cc -- reduction on NFA
  */
 
+#include <algorithm>
+#include <ostream>
 #include <string>
 
 // MATA headers
+#include "mata/alphabet.hh"
 #include "mata/nfa/types.hh"
 #include "mata/nfa/delta.hh"
 #include "mata/nfa/nfa.hh"
 #include "mata/nfa/algorithms.hh"
+#include "mata/simlib/util/binary_relation.hh"
 #include <mata/simlib/explicit_lts.hh>
+#include <unordered_map>
+#include <vector>
 
 using namespace mata::utils;
 using namespace mata::nfa;
@@ -90,6 +96,28 @@ namespace {
         return result;
     }
 
+    void rename_states(StateRenaming& state_renaming,
+                       State p,
+                       State q)
+    {
+        // States p and q are in relation such that "p is simulated by q"
+        state_renaming[p] = q;
+
+        // Now the state renaming must be updated, firstly in the forward direction
+        // If (q is simulated by x) and (p is simulated by q) -> (p is simulated by x)
+        if (state_renaming.count(q) != 0) {
+            state_renaming[p] = state_renaming[q];
+        }
+
+        // Now the backwards direction
+        // if (x is simulated by p) and (p is simulated as q) -> (x is simulated as q)
+        for (auto& pair: state_renaming) {
+            if (pair.second == p) {
+                state_renaming[pair.first] = state_renaming[p];
+            }
+        }
+    }
+
     // Merging based on the third rule (From the paper 'On NFA Reduction')
     Nfa merge_in_both_directions(const Nfa& aut,
                                 StateRenaming& state_renaming, 
@@ -98,7 +126,98 @@ namespace {
     {
         Nfa result;
 
-        // TODO TODAY!!!
+        const size_t num_of_states = aut.num_of_states();
+
+        Simlib::Util::BinaryRelation work_relation;
+        work_relation.resize(num_of_states, 0);
+
+        // Fill the work relation
+        for (size_t i = 0; i < num_of_states; i++){
+            for (size_t j = 0; j < num_of_states; j++){
+                work_relation.set(i, j, bw_relation.get(i, j) & fw_relation.get(i, j));
+                //std::cerr << work_relation.get(i, j) << " ";
+            }
+            //std::cerr << std::endl;
+        }
+
+        // Set the state renaming
+        std::vector<State> simulated_states {};
+        for (State p = 0; p < num_of_states; p++) {
+            // Find the first occurence of one (ignore diagonal)
+            for (State q = 0; q < num_of_states; q++){
+                // If the one is before diagonal (symmetric pairs must NOT merge one into another)
+                if (work_relation.get(p, q) == 1 && p != q && p > q) {
+                    // p is simulated by q, rename p
+                    rename_states(state_renaming, p, q);
+                    simulated_states.push_back(p);
+                    break;
+                }
+                // If the one is after diagonal
+                if (work_relation.get(p, q) == 1 && p != q && p < q) {
+                    // Check for symmetry
+                    if (work_relation.get(q, p) == 1){
+                        continue; // Do nothing
+                    }
+                    rename_states(state_renaming, p, q);
+                    simulated_states.push_back(p);
+                    break;
+                }
+            }
+        }
+
+        // Rename the states the will not be deleted
+        size_t renamed = 0;
+        for (State p = 0; p < num_of_states; p++) {
+            // The state is not simulated
+            if (state_renaming.count(p) == 0) {
+                // Rename the state
+                state_renaming[p] = renamed;
+    
+                // Rename every occurence of p in state_renaming are replace it with its new name
+                for (auto& pair : state_renaming) {
+                    if (pair.second == p) {
+                        state_renaming[pair.first] = renamed;
+                    }
+                }
+
+                // Increment for the next state
+                renamed++;
+            }
+
+        }
+
+        // Add the new states 
+        result.add_state(num_of_states - simulated_states.size() - 1);
+
+        // Build the resulting automaton based on the simulated_states and state_renaming
+        for (State p = 0; p < num_of_states; ++p) {
+            // If the state is simulated, its not added to the resulting automaton
+            if (std::find(simulated_states.begin(), simulated_states.end(), p) != simulated_states.end()) {
+                continue;
+            }
+
+            // The current state
+            State renamed_state = state_renaming[p];
+
+            // Check for Initial
+            if (aut.initial[p]){
+                result.initial.insert(renamed_state);
+            }
+
+            // Copy transitions
+            for (const auto &p_trans_symbol : aut.delta.state_post(p)) {
+                for (const auto &target_state :p_trans_symbol.targets){
+                    // The transition is translated
+                    result.delta.add(renamed_state, p_trans_symbol.symbol, state_renaming[target_state]);
+                }
+            }
+
+            // Check for Final
+            if (aut.final[p]){
+                result.final.insert(renamed_state);
+            }
+
+        }
 
         return result;
     }
@@ -168,17 +287,18 @@ Nfa mata::nfa::algorithms::reduce_size_by_simulation(const Nfa& aut, StateRenami
         return result;
     }
     else if (simulation_direction == "backward"){
-        Nfa aut_r = revert(aut);
 
         // Compute the simulation based on simulation_direction
         const auto sim_relation = algorithms::compute_relation(
-                aut_r, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
+                aut, ParameterMap{{ "relation", "simulation"}, { "direction", "backward"}});
         
         // Merge states based on the selected rule
+        Nfa aut_r = revert(aut);
         result = merge_in_one_direction(aut_r, state_renaming, sim_relation, true);
         return revert(result);
     }
     else if (simulation_direction == "bidirect"){
+        // TODO this does not support state renaming
         // Compute the forward simulation
         const auto sim_fw_relation = algorithms::compute_relation(
                 aut, ParameterMap{{ "relation", "simulation"}, { "direction", "forward"}});
@@ -189,7 +309,6 @@ Nfa mata::nfa::algorithms::reduce_size_by_simulation(const Nfa& aut, StateRenami
         
         // Merge states based on the third rule
         result = merge_in_both_directions(aut, state_renaming, sim_fw_relation, sim_bw_relation);
-        std::cerr << "ERROR: bidirect not implemented yet";
 
         return result;
     }

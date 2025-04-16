@@ -1027,6 +1027,10 @@ Simlib::Util::BinaryRelation mata::nfa::algorithms::compute_relation(const Nfa& 
     if ("simulation" == relation && direction == "forward") {
         return mata::nfa::algorithms::compute_direct_simulation(aut);
     }
+    if ("simulation" == relation && direction == "backward") {
+        Nfa aut_r = revert(aut);
+        return mata::nfa::algorithms::compute_direct_simulation(aut_r);
+    }
     else {
         throw std::runtime_error(std::to_string(__func__) +
                                  " received an unknown value of the \"relation\" key: " + relation);
