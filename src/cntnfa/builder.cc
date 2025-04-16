@@ -9,6 +9,119 @@ using namespace mata::cntnfa;
 using mata::cntnfa::Nfa;
 using mata::Symbol;
 
+Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Alphabet* alphabet, NameStateMap* state_map)
+{
+    Nfa aut;
+    assert(alphabet != nullptr);
+
+    // A lambda for translating state names to identifiers
+    if (parsec.type != TYPE_CNTNFA) {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_CNTNFA + "\"");
+    }
+
+    bool remove_state_map = false;
+    if (state_map == nullptr) {
+        state_map = new NameStateMap();
+        remove_state_map = true;
+    }
+
+    // A lambda for translating state names to identifiers
+    auto get_state = [&aut, &state_map](const std::string& name) -> State {
+        auto it = state_map->find(name);
+        if (it == state_map->end()) {
+            State s = aut.add_state();
+            (*state_map)[name] = s;
+            return s;
+        }
+        return it->second;
+    };
+
+    // A lambda for cleanup
+    auto clean_up = [&]() {
+        if (remove_state_map) delete state_map;
+    };
+
+    // Parse the initial states
+    if (parsec.haskey("Initial")) {
+        for (const auto& name : parsec["Initial"])
+            aut.initial.insert(get_state(name));
+    }
+
+    // Parse the final states
+    if (parsec.haskey("Final")) {
+        for (const auto& name : parsec["Final"])
+            aut.final.insert(get_state(name));
+    }
+
+    // Parse the registers
+    if (parsec.haskey("Registers")) {
+        for (const auto& name : parsec["Registers"]) {
+            aut.counter_set.insert(name);
+        }
+    }
+
+    // Parse the transitions
+    for (const auto& line : parsec.body) {
+        if (line.size() < 3) {
+            clean_up();
+            throw std::runtime_error("Invalid transition: too few tokens");
+        }
+
+        State source = get_state(line[0]);
+        Symbol symbol = alphabet->translate_symb(line[1]);
+        State target = get_state(line.back());
+
+        // Allocate annotation group
+        size_t annotation_id = aut.annotation_collection.size();
+        aut.annotation_collection.allocate(annotation_id + 1);
+
+        // Parse all annotation groups between symbol and target
+        for (size_t i = 2; i + 1 < line.size(); ++i) {
+            if (line[i] == "(") {
+                std::vector<std::string> group;
+                ++i;
+                while (i < line.size() && line[i] != ")") {
+                    group.push_back(line[i]);
+                    ++i;
+                }
+
+                if (group.size() != 3) {
+                    clean_up();
+                    throw std::runtime_error("Annotation must have 3 parts: (type name value)");
+                }
+
+                const std::string& type = group[0];
+                const std::string& name = group[1];
+                int value = std::stoi(group[2]);
+
+                if (!aut.counter_set.has(name)) {
+                    clean_up();
+                    throw std::runtime_error("Unknown counter in annotation: " + name);
+                }
+
+                size_t counter_id = aut.counter_set.get_index(name);
+
+                if (type == "test") {
+                    aut.annotation_collection.insert_annotation(
+                        CounterTest{counter_id, value}, annotation_id);
+                } else if (type == "increment") {
+                    aut.annotation_collection.insert_annotation(
+                        CounterIncrement{counter_id, value}, annotation_id);
+                } else {
+                    clean_up();
+                    throw std::runtime_error("Unsupported annotation type: " + type);
+                }
+            }
+        }
+
+        // Create transition with annotation ID
+        aut.delta.add(source, symbol, AnnotationState{target, annotation_id});
+    }
+
+    clean_up();
+    return aut;
+} // construct_counter_nfa().
+
 Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
     assert(nullptr != alphabet);
@@ -93,11 +206,6 @@ Nfa builder::construct(const mata::parser::ParsedSection& parsec, mata::Alphabet
 
     return aut;
 } // construct().
-
-// Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec,
-//                                    Alphabet* alphabet, NameStateMap* state_map)
-// {
-// } // construct_counter_nfa().
 
 Nfa builder::construct(const mata::IntermediateAut& inter_aut, mata::Alphabet* alphabet, NameStateMap* state_map) {
     Nfa aut;
