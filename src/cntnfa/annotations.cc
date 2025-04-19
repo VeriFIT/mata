@@ -1,6 +1,7 @@
 // TODO: Insert header file.
 
 #include "mata/cntnfa/annotations.hh"
+#include <string>
 
 namespace mata::cntnfa {
 
@@ -23,6 +24,10 @@ bool CounterIncrement::test(const CounterSet& counters) {
     return true;
 }
 
+std::string CounterIncrement::get_type() const {
+    return "increment";
+}
+
 void CounterTest::execute(CounterSet& counters) const {
     (void)counters;
     return;
@@ -33,6 +38,10 @@ bool CounterTest::test(const CounterSet& counters) {
         throw std::runtime_error("CounterTest: Invalid counter ID.");
     }
     return counters[counter_id].value == expected_value;
+}
+
+std::string CounterTest::get_type() const {
+    return "test";
 }
 
 void AnnotationCollection::allocate(const size_t size) {

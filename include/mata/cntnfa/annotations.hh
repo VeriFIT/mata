@@ -105,6 +105,8 @@ public:
 
     virtual void execute(CounterSet& counters) const = 0;
     virtual bool test(const CounterSet& counters) = 0;
+
+    virtual std::string get_type() const = 0;
 };
 
 /// Class for incrementing and decrementing a counter by its ID.
@@ -129,6 +131,10 @@ public:
 
     void execute(CounterSet& counters) const override;
     bool test(const CounterSet& counters) override;
+    std::string get_type() const override;
+
+    size_t get_counter_id() const { return counter_id; }
+    CounterValue get_increment_value() const { return increment_value; }
 };
 
 class CounterTest : public TransitionAnnotation {
@@ -153,6 +159,10 @@ public:
 
     void execute(CounterSet& counters) const override;
     bool test(const CounterSet& counters) override;
+    std::string get_type() const override;
+
+    size_t get_counter_id() const { return counter_id; }
+    CounterValue get_expected_value() const { return expected_value; }
 };
 
 /*  Store all possible annotation types in a variant.

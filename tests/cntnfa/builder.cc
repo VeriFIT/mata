@@ -5,7 +5,9 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
 
+#include "mata/cntnfa/annotations.hh"
 #include "mata/cntnfa/cntnfa.hh"
+#include "mata/cntnfa/types.hh"
 #include "mata/cntnfa/builder.hh"
 
 using namespace mata::cntnfa;
@@ -218,6 +220,172 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             CHECK(parsed.counter_set.size() == nfa.counter_set.size());
             CHECK(parsed.annotation_collection.size() == nfa.annotation_collection.size());
             CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+        }
+    }
+
+    SECTION("Simple automaton - With annotations") {
+        Nfa nfa;
+        nfa.initial = { 0 };
+        nfa.final = { 1 };
+
+        // Counters
+        size_t c0 = nfa.counter_set.insert("c0");
+        size_t c1 = nfa.counter_set.insert("c1");
+
+        // Annotations
+        size_t ann0 = nfa.create_annotation_set();
+        size_t ann1 = nfa.create_annotation_set();
+        nfa.add_annotation(ann0, CounterTest{c0, 0});
+        nfa.add_annotation(ann1, CounterIncrement{c1, 1});
+
+        // Transitions
+        nfa.delta.add(0, 0, Target{0, UNDEFINED_ANNOTATIONS});
+        nfa.delta.add(0, 1, Target{1, ann0});
+        nfa.delta.add(1, 2, Target{0, ann1});
+
+        std::string input = R"(@CNTNFA-explicit
+            %Alphabet-auto
+            %Initial q0
+            %Final q1
+            %Registers c0 c1
+            q0 0 q0
+            q0 1 (test c0 0) q1
+            q1 2 (increment c1 1) q0
+        )";
+
+        SECTION("From string") {
+            auto section = mata::parser::parse_mf_section(input);
+
+            OnTheFlyAlphabet alphabet;
+            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+
+            CHECK(parsed.initial == nfa.initial);
+            CHECK(parsed.final == nfa.final);
+            CHECK(parsed.counter_set.size() == nfa.counter_set.size());
+            CHECK(parsed.annotation_collection.size() == nfa.annotation_collection.size());
+            CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+
+            CHECK(parsed.get_annotation_set(0).size() == nfa.get_annotation_set(0).size());
+            CHECK(parsed.get_annotation_set(1).size() == nfa.get_annotation_set(1).size());
+        }
+
+        SECTION("From file") {
+            std::filesystem::path file_path = "temp-simple-withanns.mata";
+            std::ofstream(file_path) << input;
+            std::ifstream file(file_path);
+            auto section = mata::parser::parse_mf_section(file);
+            file.close();
+            std::filesystem::remove(file_path);
+
+            OnTheFlyAlphabet alphabet;
+            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+
+            CHECK(parsed.initial == nfa.initial);
+            CHECK(parsed.final == nfa.final);
+            CHECK(parsed.counter_set.size() == nfa.counter_set.size());
+            CHECK(parsed.annotation_collection.size() == nfa.annotation_collection.size());
+            CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+
+            CHECK(parsed.get_annotation_set(0).size() == nfa.get_annotation_set(0).size());
+            CHECK(parsed.get_annotation_set(1).size() == nfa.get_annotation_set(1).size());
+        }
+    }
+
+    SECTION("Larger automaton - With annotations") {
+        Nfa nfa;
+        nfa.initial = { 0, 5 };
+        nfa.final = { 8, 10 };
+
+        // Counters
+        size_t c0 = nfa.counter_set.insert("c0");
+        size_t c1 = nfa.counter_set.insert("c1");
+        size_t c2 = nfa.counter_set.insert("c2");
+
+        // Annotations
+        size_t ann0 = nfa.create_annotation_set();
+        size_t ann1 = nfa.create_annotation_set();
+        size_t ann2 = nfa.create_annotation_set();
+        size_t ann3 = nfa.create_annotation_set();
+        size_t ann4 = nfa.create_annotation_set();
+        size_t ann5 = nfa.create_annotation_set();
+        size_t ann6 = nfa.create_annotation_set();
+        size_t ann7 = nfa.create_annotation_set();
+        nfa.add_annotation(ann0, CounterTest{ c0, 0 });     // test c0 0
+        nfa.add_annotation(ann1, CounterIncrement{ c1, 1 });// increment c1 1
+        nfa.add_annotation(ann2, CounterTest{ c1, 1 });     // test c1 1
+        nfa.add_annotation(ann2, CounterIncrement{ c2, 2 });// increment c2 2
+        nfa.add_annotation(ann3, CounterIncrement{ c1, 1 });// increment c1 1
+        nfa.add_annotation(ann4, CounterIncrement{ c0, 3 });// increment c0 3
+        nfa.add_annotation(ann5, CounterTest{ c1, 1 });     // test c1 1
+        nfa.add_annotation(ann5, CounterIncrement{ c2, 2 });// increment c2 2
+        nfa.add_annotation(ann6, CounterTest{ c0, 0 });     // test c0 0
+        nfa.add_annotation(ann7, CounterTest{ c1, 1 });     // test c1 1
+        nfa.add_annotation(ann7, CounterIncrement{ c2, 2 });// increment c2 2
+
+        // Transitions
+        nfa.delta.add(0, 'a', Target{1, ann0});
+        nfa.delta.add(1, 'b', Target{2, ann1});
+        nfa.delta.add(2, 'c', Target{3, ann2});
+        nfa.delta.add(3, 'd', Target{4, UNDEFINED_ANNOTATIONS});
+        nfa.delta.add(4, 'e', Target{5, ann3});
+        nfa.delta.add(5, 'f', Target{6, ann4});
+        nfa.delta.add(6, 'g', Target{7, ann5});
+        nfa.delta.add(7, 'h', Target{8, UNDEFINED_ANNOTATIONS});
+        nfa.delta.add(8, 'i', Target{9, ann6});
+        nfa.delta.add(9, 'j', Target{10, ann7});
+
+        std::string input = R"(@CNTNFA-explicit
+            %Alphabet-auto
+            %Initial q0 q5
+            %Final q8 q10
+            %Registers c0 c1 c2
+            q0 a (test c0 0) q1
+            q1 b (increment c1 1) q2
+            q2 c (test c1 1) (increment c2 2) q3
+            q3 d q4
+            q4 e (increment c1 1) q5
+            q5 f (increment c0 3) q6
+            q6 g (test c1 1) (increment c2 2) q7
+            q7 h q8
+            q8 i (test c0 0) q9
+            q9 j (test c1 1) (increment c2 2) q10
+        )";
+
+        SECTION("From string") {
+            auto section = mata::parser::parse_mf_section(input);
+
+            OnTheFlyAlphabet alphabet;
+            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+
+            CHECK(parsed.initial == nfa.initial);
+            CHECK(parsed.final == nfa.final);
+            CHECK(parsed.counter_set.size() == nfa.counter_set.size());
+            CHECK(parsed.annotation_collection.size() == nfa.annotation_collection.size());
+            CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+
+            CHECK(parsed.get_annotation_set(0).size() == nfa.get_annotation_set(0).size());
+            CHECK(parsed.get_annotation_set(1).size() == nfa.get_annotation_set(1).size());
+        }
+
+        SECTION("From file") {
+            std::filesystem::path file_path = "temp-simple-withanns.mata";
+            std::ofstream(file_path) << input;
+            std::ifstream file(file_path);
+            auto section = mata::parser::parse_mf_section(file);
+            file.close();
+            std::filesystem::remove(file_path);
+
+            OnTheFlyAlphabet alphabet;
+            Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+
+            CHECK(parsed.initial == nfa.initial);
+            CHECK(parsed.final == nfa.final);
+            CHECK(parsed.counter_set.size() == nfa.counter_set.size());
+            CHECK(parsed.annotation_collection.size() == nfa.annotation_collection.size());
+            CHECK(parsed.delta.num_of_transitions() == nfa.delta.num_of_transitions());
+
+            CHECK(parsed.get_annotation_set(0).size() == nfa.get_annotation_set(0).size());
+            CHECK(parsed.get_annotation_set(1).size() == nfa.get_annotation_set(1).size());
         }
     }
 }
