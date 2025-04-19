@@ -18,7 +18,7 @@ struct AnnotationState {
     State state; ///< Automaton state.
     size_t annotations_id; ///< Unique ID for the position in the vector of transition annotations collection.
 
-    AnnotationState() : state(), annotations_id(UNDEFINED_ID) {}
+    AnnotationState() : state(), annotations_id(UNDEFINED_ANNOTATIONS) {}
     AnnotationState(const State state, size_t annotations_id) : state(state), annotations_id(annotations_id) {} // NOLINT(*-explicit-constructor)
 
     AnnotationState(const AnnotationState&) = default;
@@ -28,8 +28,8 @@ struct AnnotationState {
 
     AnnotationState& operator++() { ++state; return *this; }
 
-    AnnotationState(const State& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
-    AnnotationState(State&& state): state{ state }, annotations_id(UNDEFINED_ID) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(const State& state): state{ state }, annotations_id(UNDEFINED_ANNOTATIONS) {} // NOLINT(*-explicit-constructor)
+    AnnotationState(State&& state): state{ state }, annotations_id(UNDEFINED_ANNOTATIONS) {} // NOLINT(*-explicit-constructor)
 
     auto operator<=>(const State& other) const { return state <=> other; }
     bool operator==(const State other) const { return state == other; }
@@ -114,7 +114,7 @@ private:
     CounterValue increment_value; ///< The value to increment (can be negative for decrement).
 
 public:
-    CounterIncrement() : counter_id(UNDEFINED_ID), increment_value(0) {}
+    CounterIncrement() : counter_id(UNDEFINED_COUNTER), increment_value(0) {}
     CounterIncrement(size_t counter_id, CounterValue increment_value) : counter_id(counter_id), increment_value(increment_value) {}
 
     bool operator==(const CounterIncrement& other) const {
@@ -137,7 +137,7 @@ private:
     CounterValue expected_value; ///< Expected value for testing.
 
 public:
-    CounterTest() : counter_id(UNDEFINED_ID), expected_value(0) {}
+    CounterTest() : counter_id(UNDEFINED_COUNTER), expected_value(0) {}
     CounterTest(size_t counter_id, CounterValue expected_value)
         : counter_id(counter_id), expected_value(expected_value) {}
 

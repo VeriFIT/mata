@@ -2,6 +2,7 @@
 
 #include "mata/cntnfa/builder.hh"
 #include "mata/cntnfa/annotations.hh"
+#include "mata/cntnfa/types.hh"
 
 #include <fstream>
 
@@ -15,8 +16,9 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
     assert(alphabet != nullptr);
 
     // A lambda for translating state names to identifiers
-    if (parsec.type != TYPE_CNTNFA) {
-        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"" + TYPE_CNTNFA + "\"");
+    // TODO: Currently supports only explicit CNTNFA
+    if (parsec.type != "CNTNFA-explicit") {
+        throw std::runtime_error(std::string(__FUNCTION__) + ": expecting type \"CNTNFA-explicit\"");
     }
 
     bool remove_state_map = false;
@@ -29,7 +31,12 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
     auto get_state = [&aut, &state_map](const std::string& name) -> State {
         auto it = state_map->find(name);
         if (it == state_map->end()) {
-            State s = aut.add_state();
+            State s;
+            if (name.size() >= 2 && name[0] == 'q' && std::isdigit(name[1])) {
+                s = aut.add_state(static_cast<State>(std::stoi(name.substr(1))));
+            } else {
+                s = aut.add_state();
+            }
             (*state_map)[name] = s;
             return s;
         }
@@ -72,8 +79,11 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
         State target = get_state(line.back());
 
         // Allocate annotation group
-        size_t annotation_id = aut.annotation_collection.size();
-        aut.annotation_collection.allocate(annotation_id + 1);
+        // size_t annotations_id = aut.annotation_collection.size();
+        // aut.annotation_collection.allocate(annotation_id + 1);
+
+        // Default: no annotations
+        size_t annotations_id = UNDEFINED_ANNOTATIONS;
 
         // Parse all annotation groups between symbol and target
         for (size_t i = 2; i + 1 < line.size(); ++i) {
@@ -99,14 +109,18 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
                     throw std::runtime_error("Unknown counter in annotation: " + name);
                 }
 
+                if (annotations_id == UNDEFINED_ANNOTATIONS) {
+                    annotations_id = aut.create_annotation_set();
+                }
+
                 size_t counter_id = aut.counter_set.get_index(name);
 
                 if (type == "test") {
                     aut.annotation_collection.insert_annotation(
-                        CounterTest{counter_id, value}, annotation_id);
+                        CounterTest{counter_id, value}, annotations_id);
                 } else if (type == "increment") {
                     aut.annotation_collection.insert_annotation(
-                        CounterIncrement{counter_id, value}, annotation_id);
+                        CounterIncrement{counter_id, value}, annotations_id);
                 } else {
                     clean_up();
                     throw std::runtime_error("Unsupported annotation type: " + type);
@@ -115,7 +129,7 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
         }
 
         // Create transition with annotation ID
-        aut.delta.add(source, symbol, AnnotationState{target, annotation_id});
+        aut.delta.add(source, symbol, AnnotationState{target, annotations_id});
     }
 
     clean_up();

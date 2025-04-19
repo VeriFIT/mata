@@ -11,9 +11,10 @@
 
 #include <limits>
 
-// Use this for undefined ID or index.
+// Use this for undefined annotations
 #define MAX_SIZE_T (std::numeric_limits<size_t>::max())
-#define UNDEFINED_ID MAX_SIZE_T
+#define UNDEFINED_ANNOTATIONS MAX_SIZE_T
+#define UNDEFINED_COUNTER MAX_SIZE_T
 
 namespace mata::cntnfa {
 
