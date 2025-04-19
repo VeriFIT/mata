@@ -16,6 +16,49 @@ using OnTheFlyAlphabet = mata::OnTheFlyAlphabet;
 
 using Word = std::vector<Symbol>;
 
+TEST_CASE("CntNfa: construct_counter_nfa - Empty automaton") {
+    Delta delta;
+    Nfa expected{ delta, {}, {} };
+
+    SECTION("from string") {
+        std::string input_str = R"(@CNTNFA
+            %Initial
+            %Final
+            %Registers
+        )";
+
+        mata::parser::ParsedSection section = mata::parser::parse_mf_section(input_str);
+        OnTheFlyAlphabet alphabet;
+        Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+        CHECK(parsed.initial.empty());
+        CHECK(parsed.final.empty());
+        CHECK(parsed.counter_set.size() == 0);
+        CHECK(parsed.annotation_collection.size() == 0);
+        CHECK(parsed.delta.num_of_transitions() == 0);
+    }
+
+    SECTION("from file") {
+        std::filesystem::path temp_path = "./temp-test-construct_counter_nfa-empty.mata";
+        {
+            std::ofstream out(temp_path);
+            out << "@CNTNFA\n%Initial\n%Final\n%Registers\n";
+        }
+
+        std::ifstream file_stream(temp_path);
+        mata::parser::ParsedSection section = mata::parser::parse_mf_section(file_stream);
+        file_stream.close();
+        std::filesystem::remove(temp_path);
+
+        OnTheFlyAlphabet alphabet;
+        Nfa parsed = builder::construct_counter_nfa(section, &alphabet);
+        CHECK(parsed.initial.empty());
+        CHECK(parsed.final.empty());
+        CHECK(parsed.counter_set.size() == 0);
+        CHECK(parsed.annotation_collection.size() == 0);
+        CHECK(parsed.delta.num_of_transitions() == 0);
+    }
+}
+
 TEST_CASE("CntNfa: parse_from_mata()") {
     Delta delta;
 
