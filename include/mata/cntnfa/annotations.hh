@@ -109,24 +109,55 @@ public:
     virtual std::string get_type() const = 0;
 };
 
+/// Class for assigning a value to a counter by its ID.
+// Note: (:= c0 0) is a counter assignment in Mata format.
+class CounterAssign : public TransitionAnnotation {
+private:
+    size_t counter_id; ///< The ID of the counter to assign.
+    CounterValue value; ///< The value to assign.
+
+public:
+    CounterAssign() : counter_id(UNDEFINED_COUNTER), value(0) {}
+    CounterAssign(size_t counter_id, CounterValue value)
+        : counter_id(counter_id), value(value) {}
+
+    bool operator==(const CounterAssign& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterAssign& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+            return cmp;
+        }
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) override;
+    std::string get_type() const override;
+
+    size_t get_counter_id() const { return counter_id; }
+    CounterValue get_value() const { return value; }
+};
+
 /// Class for incrementing and decrementing a counter by its ID.
+// Note: (+ c0 1) or (+ c0 -1) is a counter increment in Mata format.
 class CounterIncrement : public TransitionAnnotation {
 private:
     size_t counter_id; ///< The ID of the counter to modify.
-    CounterValue increment_value; ///< The value to increment (can be negative for decrement).
+    CounterValue value; ///< The value to increment (can be negative for decrement).
 
 public:
-    CounterIncrement() : counter_id(UNDEFINED_COUNTER), increment_value(0) {}
-    CounterIncrement(size_t counter_id, CounterValue increment_value) : counter_id(counter_id), increment_value(increment_value) {}
+    CounterIncrement() : counter_id(UNDEFINED_COUNTER), value(0) {}
+    CounterIncrement(size_t counter_id, CounterValue value) : counter_id(counter_id), value(value) {}
 
     bool operator==(const CounterIncrement& other) const {
-        return counter_id == other.counter_id && increment_value == other.increment_value;
+        return counter_id == other.counter_id && value == other.value;
     }
     auto operator<=>(const CounterIncrement& other) const {
         if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
             return cmp;
         }
-        return increment_value <=> other.increment_value;
+        return value <=> other.value;
     }
 
     void execute(CounterSet& counters) const override;
@@ -134,27 +165,29 @@ public:
     std::string get_type() const override;
 
     size_t get_counter_id() const { return counter_id; }
-    CounterValue get_increment_value() const { return increment_value; }
+    CounterValue get_value() const { return value; }
 };
 
+/// Class for testing a counter's value against an expected value.
+// Note: (= c0 0) is a counter test in Mata format.
 class CounterTest : public TransitionAnnotation {
 private:
     size_t counter_id; ///< The ID of the counter to test.
-    CounterValue expected_value; ///< Expected value for testing.
+    CounterValue value; ///< Expected value for testing.
 
 public:
-    CounterTest() : counter_id(UNDEFINED_COUNTER), expected_value(0) {}
-    CounterTest(size_t counter_id, CounterValue expected_value)
-        : counter_id(counter_id), expected_value(expected_value) {}
+    CounterTest() : counter_id(UNDEFINED_COUNTER), value(0) {}
+    CounterTest(size_t counter_id, CounterValue value)
+        : counter_id(counter_id), value(value) {}
 
     bool operator==(const CounterTest& other) const {
-        return counter_id == other.counter_id && expected_value == other.expected_value;
+        return counter_id == other.counter_id && value == other.value;
     }
     auto operator<=>(const CounterTest& other) const {
         if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
             return cmp;
         }
-        return expected_value <=> other.expected_value;
+        return value <=> other.value;
     }
 
     void execute(CounterSet& counters) const override;
@@ -162,13 +195,69 @@ public:
     std::string get_type() const override;
 
     size_t get_counter_id() const { return counter_id; }
-    CounterValue get_expected_value() const { return expected_value; }
+    CounterValue get_value() const { return value; }
+};
+
+/// Class for checking if a counter's value is greater than a threshold.
+// Note: (> c0 0) is a counter greater than check in Mata format.
+class CounterGreater : public TransitionAnnotation {
+private:
+    size_t counter_id; ///< The ID of the counter to check.
+    CounterValue value; ///< The threshold value for comparison.
+
+public:
+    CounterGreater() : counter_id(UNDEFINED_COUNTER), value(0) {}
+    CounterGreater(size_t counter_id, CounterValue value)
+        : counter_id(counter_id), value(value) {}
+
+    bool operator==(const CounterGreater& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterGreater& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) override;
+    std::string get_type() const override;
+
+    size_t get_counter_id() const { return counter_id; }
+    CounterValue get_value() const { return value; }
+};
+
+/// Class for checking if a counter's value is less than a threshold.
+// Note: (< c0 0) is a counter less than check in Mata format.
+class CounterLess : public TransitionAnnotation {
+private:
+    size_t counter_id; ///< The ID of the counter to check.
+    CounterValue value; ///< The threshold value for comparison.
+
+public:
+    CounterLess() : counter_id(UNDEFINED_COUNTER), value(0) {}
+    CounterLess(size_t counter_id, CounterValue value)
+        : counter_id(counter_id), value(value) {}
+
+    bool operator==(const CounterLess& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterLess& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) override;
+    std::string get_type() const override;
+
+    size_t get_counter_id() const { return counter_id; }
+    CounterValue get_value() const { return value; }
 };
 
 /*  Store all possible annotation types in a variant.
     Note: All types in TransitionAnnotationVariant must implement comparison operators
     (e.g., operator==, operator<=>) to ensure proper usage in containers requiring ordering.  */
-using TransitionAnnotationVariant = std::variant<CounterIncrement, CounterTest>;
+using TransitionAnnotationVariant = std::variant<CounterAssign, CounterIncrement, CounterTest, CounterGreater, CounterLess>;
 
 class AnnotationCollection {
 private:
@@ -209,7 +298,7 @@ public:
     /**
      * Insert an annotation into annotations vector using index.
      */
-    void insert_annotation(TransitionAnnotationVariant annotation, size_t index);
+    void insert(TransitionAnnotationVariant annotation, size_t index);
 };
 
 } // namespace mata::cntnfa.

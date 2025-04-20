@@ -10,22 +10,29 @@ namespace mata::cntnfa {
     Methods for CounterRegister.
 */
 
-void CounterRegister::increment(CounterValue amount) {
-    if (value > std::numeric_limits<CounterValue>::max() - amount) {
+void CounterRegister::increment(CounterValue value) {
+    if (this->value > std::numeric_limits<CounterValue>::max() - value) {
         throw std::overflow_error("CounterRegister: Increment operation would result in overflow.");
     }
-    value += amount;
+    this->value += value;
 }
 
-void CounterRegister::decrement(CounterValue amount) {
-    if (amount > value) {
+void CounterRegister::decrement(CounterValue value) {
+    if (value > this->value) {
         throw std::underflow_error("CounterRegister: Decrement operation would result in a negative value.");
     }
-    value -= amount;
+    this->value -= value;
+}
+
+void CounterRegister::set(CounterValue value) {
+    if (value < 0) {
+        throw std::invalid_argument("CounterRegister: Value cannot be negative.");
+    }
+    this->value = value;
 }
 
 void CounterRegister::reset() {
-    value = initial_value;
+    this->value = this->initial_value;
 }
 
 /*

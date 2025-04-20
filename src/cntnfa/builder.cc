@@ -116,10 +116,10 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
                 size_t counter_id = aut.counter_set.get_index(name);
 
                 if (type == "test") {
-                    aut.annotation_collection.insert_annotation(
+                    aut.annotation_collection.insert(
                         CounterTest{counter_id, value}, annotations_id);
                 } else if (type == "increment") {
-                    aut.annotation_collection.insert_annotation(
+                    aut.annotation_collection.insert(
                         CounterIncrement{counter_id, value}, annotations_id);
                 } else {
                     clean_up();

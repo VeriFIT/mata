@@ -33,11 +33,14 @@ struct CounterRegister {
 
     operator CounterValue() const { return value; }
 
-    // Increment the counter by 1 (or specified amount).
-    void increment(CounterValue amount = 1);
+    // Increment the counter by 1 (or specified value).
+    void increment(CounterValue value = 1);
 
-    // Decrement the counter by 1 (or specified amount).
-    void decrement(CounterValue amount = 1);
+    // Decrement the counter by 1 (or specified value).
+    void decrement(CounterValue value = 1);
+
+    // Set the counter to a specific value.
+    void set(CounterValue value);
 
     // Reset the counter to its initial value.
     void reset();
