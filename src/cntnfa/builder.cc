@@ -115,12 +115,21 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
 
                 size_t counter_id = aut.counter_set.get_index(name);
 
-                if (type == "test") {
+                if (type == ":=") {
                     aut.annotation_collection.insert(
-                        CounterTest{counter_id, value}, annotations_id);
-                } else if (type == "increment") {
+                        CounterAssign{counter_id, value}, annotations_id);
+                } else if (type == "+") {
                     aut.annotation_collection.insert(
                         CounterIncrement{counter_id, value}, annotations_id);
+                } else if (type == "=") {
+                    aut.annotation_collection.insert(
+                        CounterTest{counter_id, value}, annotations_id);
+                } else if (type == ">") {
+                    aut.annotation_collection.insert(
+                        CounterGreater{counter_id, value}, annotations_id);
+                } else if (type == "<") {
+                    aut.annotation_collection.insert(
+                        CounterLess{counter_id, value}, annotations_id);
                 } else {
                     clean_up();
                     throw std::runtime_error("Unsupported annotation type: " + type);

@@ -249,8 +249,8 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             %Final q1
             %Registers c0 c1
             q0 0 q0
-            q0 1 (test c0 0) q1
-            q1 2 (increment c1 1) q0
+            q0 1 (= c0 0) q1
+            q1 2 (+ c1 1) q0
         )";
 
         SECTION("From string") {
@@ -310,17 +310,18 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         size_t ann5 = nfa.create_annotation_set();
         size_t ann6 = nfa.create_annotation_set();
         size_t ann7 = nfa.create_annotation_set();
-        nfa.add_annotation(ann0, CounterTest{ c0, 0 });     // test c0 0
-        nfa.add_annotation(ann1, CounterIncrement{ c1, 1 });// increment c1 1
-        nfa.add_annotation(ann2, CounterTest{ c1, 1 });     // test c1 1
-        nfa.add_annotation(ann2, CounterIncrement{ c2, 2 });// increment c2 2
-        nfa.add_annotation(ann3, CounterIncrement{ c1, 1 });// increment c1 1
-        nfa.add_annotation(ann4, CounterIncrement{ c0, 3 });// increment c0 3
-        nfa.add_annotation(ann5, CounterTest{ c1, 1 });     // test c1 1
-        nfa.add_annotation(ann5, CounterIncrement{ c2, 2 });// increment c2 2
-        nfa.add_annotation(ann6, CounterTest{ c0, 0 });     // test c0 0
-        nfa.add_annotation(ann7, CounterTest{ c1, 1 });     // test c1 1
-        nfa.add_annotation(ann7, CounterIncrement{ c2, 2 });// increment c2 2
+
+        nfa.add_annotation(ann0, CounterTest{ c0, 0 });     // = c0 0
+        nfa.add_annotation(ann1, CounterIncrement{ c1, 1 });// + c1 1
+        nfa.add_annotation(ann2, CounterTest{ c1, 1 });     // = c1 1
+        nfa.add_annotation(ann2, CounterIncrement{ c2, 2 });// + c2 2
+        nfa.add_annotation(ann3, CounterIncrement{ c1, 1 });// + c1 1
+        nfa.add_annotation(ann4, CounterIncrement{ c0, 3 });// + c0 3
+        nfa.add_annotation(ann5, CounterTest{ c1, 1 });     // = c1 1
+        nfa.add_annotation(ann5, CounterIncrement{ c2, 2 });// + c2 2
+        nfa.add_annotation(ann6, CounterTest{ c0, 0 });     // = c0 0
+        nfa.add_annotation(ann7, CounterTest{ c1, 1 });     // = c1 1
+        nfa.add_annotation(ann7, CounterIncrement{ c2, 2 });// + c2 2
 
         // Transitions
         nfa.delta.add(0, 'a', Target{1, ann0});
@@ -339,16 +340,16 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
             %Initial q0 q5
             %Final q8 q10
             %Registers c0 c1 c2
-            q0 a (test c0 0) q1
-            q1 b (increment c1 1) q2
-            q2 c (test c1 1) (increment c2 2) q3
+            q0 a (= c0 0) q1
+            q1 b (+ c1 1) q2
+            q2 c (= c1 1) (+ c2 2) q3
             q3 d q4
-            q4 e (increment c1 1) q5
-            q5 f (increment c0 3) q6
-            q6 g (test c1 1) (increment c2 2) q7
+            q4 e (+ c1 1) q5
+            q5 f (+ c0 3) q6
+            q6 g (= c1 1) (+ c2 2) q7
             q7 h q8
-            q8 i (test c0 0) q9
-            q9 j (test c1 1) (increment c2 2) q10
+            q8 i (= c0 0) q9
+            q9 j (= c1 1) (+ c2 2) q10
         )";
 
         SECTION("From string") {
