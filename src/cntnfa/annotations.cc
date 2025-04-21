@@ -26,13 +26,13 @@ bool CounterAssign::test(const CounterSet& counters) const {
     return true;
 }
 
-std::string CounterAssign::get_type() const {
-    return "CounterAssign";
-}
-
 bool CounterAssign::apply(CounterSet& counters) const {
     execute(counters);
     return true;
+}
+
+std::string CounterAssign::get_type() const {
+    return "CounterAssign";
 }
 
 void CounterIncrement::execute(CounterSet& counters) const {
@@ -54,13 +54,13 @@ bool CounterIncrement::test(const CounterSet& counters) const {
     return true;
 }
 
-std::string CounterIncrement::get_type() const {
-    return "CounterIncrement";
-}
-
 bool CounterIncrement::apply(CounterSet& counters) const {
     execute(counters);
     return true;
+}
+
+std::string CounterIncrement::get_type() const {
+    return "CounterIncrement";
 }
 
 void CounterTest::execute(CounterSet& counters) const {
@@ -75,12 +75,12 @@ bool CounterTest::test(const CounterSet& counters) const {
     return counters[counter_id].value == value;
 }
 
-std::string CounterTest::get_type() const {
-    return "CounterTest";
-}
-
 bool CounterTest::apply(CounterSet& counters) const {
     return test(counters);
+}
+
+std::string CounterTest::get_type() const {
+    return "CounterTest";
 }
 
 void CounterGreater::execute(CounterSet& counters) const {
@@ -95,12 +95,12 @@ bool CounterGreater::test(const CounterSet& counters) const {
     return counters[counter_id].value > value;
 }
 
-std::string CounterGreater::get_type() const {
-    return "CounterGreater";
-}
-
 bool CounterGreater::apply(CounterSet& counters) const {
     return test(counters);
+}
+
+std::string CounterGreater::get_type() const {
+    return "CounterGreater";
 }
 
 void CounterLess::execute(CounterSet& counters) const {
@@ -115,12 +115,12 @@ bool CounterLess::test(const CounterSet& counters) const {
     return counters[counter_id].value < value;
 }
 
-std::string CounterLess::get_type() const {
-    return "CounterLess";
-}
-
 bool CounterLess::apply(CounterSet& counters) const {
     return test(counters);
+}
+
+std::string CounterLess::get_type() const {
+    return "CounterLess";
 }
 
 /* AnnotationCollection */
@@ -138,14 +138,14 @@ void AnnotationCollection::clear() {
     annotations.clear();
 }
 
-void AnnotationCollection::insert(TransitionAnnotationVariant annotation, size_t index) {
+void AnnotationCollection::insert(std::shared_ptr<TransitionAnnotation> annotation, size_t index) {
     if (index >= annotations.size()) {
         this->allocate(index + 1);
     }
     annotations[index].push_back(annotation);
 }
 
-size_t AnnotationCollection::insert(const TransitionAnnotationVariant& annotation) {
+size_t AnnotationCollection::insert(std::shared_ptr<TransitionAnnotation> annotation) {
     annotations.emplace_back();
     annotations.back().push_back(annotation);
     return annotations.size() - 1;

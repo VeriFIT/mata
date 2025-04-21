@@ -3259,7 +3259,7 @@ TEST_CASE("mata::cntnfa::unite_nondet_counter_nfas()") {
     // First automaton
     Nfa lhs(2);
     size_t c0_id_lhs = lhs.counter_set.insert("c0");
-    size_t ann_set_lhs = lhs.annotation_collection.insert(CounterIncrement{c0_id_lhs, 1});
+    size_t ann_set_lhs = lhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c0_id_lhs, 1));
 
     lhs.initial.insert(0);
     lhs.delta.add(0, 0, AnnotationState(1, ann_set_lhs));
@@ -3271,7 +3271,7 @@ TEST_CASE("mata::cntnfa::unite_nondet_counter_nfas()") {
     // Second automaton
     Nfa rhs(2);
     size_t c1_id_rhs = rhs.counter_set.insert("c1");
-    size_t ann_set_rhs = rhs.annotation_collection.insert(CounterIncrement{c1_id_rhs, 2});
+    size_t ann_set_rhs = rhs.annotation_collection.insert(std::make_shared<CounterIncrement>(c1_id_rhs, 2));
 
     rhs.initial.insert(0);
     rhs.delta.add(0, 1, AnnotationState(1, ann_set_rhs));

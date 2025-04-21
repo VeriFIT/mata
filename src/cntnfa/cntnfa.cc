@@ -594,7 +594,7 @@ size_t Nfa::create_annotation_set() {
     return num_of_annotation_sets;
 }
 
-size_t Nfa::add_annotation(size_t annotations_id, const TransitionAnnotationVariant& annotation) {
+size_t Nfa::add_annotation(size_t annotations_id, std::shared_ptr<TransitionAnnotation> annotation) {
     if (annotations_id >= annotation_collection.size()) {
         annotation_collection.allocate(annotations_id + 1);
     }
@@ -610,7 +610,7 @@ size_t Nfa::num_of_counters() const {
     return counter_set.size();
 }
 
-const OrdVector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
+const OrdVector<std::shared_ptr<TransitionAnnotation>>& Nfa::get_annotation_set(size_t annotations_id) const {
     if (annotations_id >= annotation_collection.size()) {
         throw std::out_of_range("Invalid annotation ID.");
     }
@@ -686,36 +686,28 @@ Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
     }
 
     // Lambda function for remapping annotation counter IDs using name mapping
-    // FIXME: It can be done more efficiently by using C++17 or C++20 std::variant practices
-    auto remap_annotation_counters = [&](const TransitionAnnotationVariant& annotation) -> TransitionAnnotationVariant {
+    auto remap_annotation_counters = [&](const std::shared_ptr<TransitionAnnotation>& ann)
+        -> std::shared_ptr<TransitionAnnotation>
+    {
+        size_t old_id = ann->get_counter_id();
+        CounterValue val = ann->get_value();
+        const auto& name = aut.counter_set.get_name(old_id);
+        size_t new_id = remapped_counter_ids.at(name);
+
         // Handle each annotation type individually
-        if (std::holds_alternative<CounterAssign>(annotation)) {
-            const auto& ann = std::get<CounterAssign>(annotation);
-            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
-            return CounterAssign{remapped_counter_ids.at(name), ann.get_value()};
+        if (ann->get_type() == "CounterAssign") {
+            return std::make_shared<CounterAssign>(new_id, val);
+        } else if (ann->get_type() == "CounterIncrement") {
+            return std::make_shared<CounterIncrement>(new_id, val);
+        } else if (ann->get_type() == "CounterTest") {
+            return std::make_shared<CounterTest>(new_id, val);
+        } else if (ann->get_type() == "CounterGreater") {
+            return std::make_shared<CounterGreater>(new_id, val);
+        } else if (ann->get_type() == "CounterLess") {
+            return std::make_shared<CounterLess>(new_id, val);
         }
-        if (std::holds_alternative<CounterIncrement>(annotation)) {
-            const auto& ann = std::get<CounterIncrement>(annotation);
-            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
-            return CounterIncrement{remapped_counter_ids.at(name), ann.get_value()};
-        }
-        if (std::holds_alternative<CounterTest>(annotation)) {
-            const auto& ann = std::get<CounterTest>(annotation);
-            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
-            return CounterTest{remapped_counter_ids.at(name), ann.get_value()};
-        }
-        if (std::holds_alternative<CounterGreater>(annotation)) {
-            const auto& ann = std::get<CounterGreater>(annotation);
-            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
-            return CounterGreater{remapped_counter_ids.at(name), ann.get_value()};
-        }
-        if (std::holds_alternative<CounterLess>(annotation)) {
-            const auto& ann = std::get<CounterLess>(annotation);
-            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
-            return CounterLess{remapped_counter_ids.at(name), ann.get_value()};
-        }
-        // For other types of annotations, return them unchanged
-        return annotation;
+
+        throw std::runtime_error("Unknown annotation type: " + ann->get_type());
     };
 
     // Copy and remap annotation sets

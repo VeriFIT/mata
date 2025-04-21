@@ -223,7 +223,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         }
     }
 
-    SECTION("Simple automaton - With annotations") {
+    SECTION("Simple automaton - With annotations (only test and increment)") {
         Nfa nfa;
         nfa.initial = { 0 };
         nfa.final = { 1 };
@@ -235,8 +235,8 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         // Annotations
         size_t ann0 = nfa.create_annotation_set();
         size_t ann1 = nfa.create_annotation_set();
-        nfa.add_annotation(ann0, CounterTest{c0, 0});
-        nfa.add_annotation(ann1, CounterIncrement{c1, 1});
+        nfa.add_annotation(ann0, std::make_shared<CounterTest>(c0, 0));
+        nfa.add_annotation(ann1, std::make_shared<CounterIncrement>(c1, 1));
 
         // Transitions
         nfa.delta.add(0, 0, Target{0, UNDEFINED_ANNOTATIONS});
@@ -291,7 +291,7 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         }
     }
 
-    SECTION("Larger automaton - With annotations") {
+    SECTION("Larger automaton - With annotations (only test and increment)") {
         Nfa nfa;
         nfa.initial = { 0, 5 };
         nfa.final = { 8, 10 };
@@ -311,17 +311,17 @@ TEST_CASE("CntNfa: construct_counter_nfa()") {
         size_t ann6 = nfa.create_annotation_set();
         size_t ann7 = nfa.create_annotation_set();
 
-        nfa.add_annotation(ann0, CounterTest{ c0, 0 });     // = c0 0
-        nfa.add_annotation(ann1, CounterIncrement{ c1, 1 });// + c1 1
-        nfa.add_annotation(ann2, CounterTest{ c1, 1 });     // = c1 1
-        nfa.add_annotation(ann2, CounterIncrement{ c2, 2 });// + c2 2
-        nfa.add_annotation(ann3, CounterIncrement{ c1, 1 });// + c1 1
-        nfa.add_annotation(ann4, CounterIncrement{ c0, 3 });// + c0 3
-        nfa.add_annotation(ann5, CounterTest{ c1, 1 });     // = c1 1
-        nfa.add_annotation(ann5, CounterIncrement{ c2, 2 });// + c2 2
-        nfa.add_annotation(ann6, CounterTest{ c0, 0 });     // = c0 0
-        nfa.add_annotation(ann7, CounterTest{ c1, 1 });     // = c1 1
-        nfa.add_annotation(ann7, CounterIncrement{ c2, 2 });// + c2 2
+        nfa.add_annotation(ann0, std::make_shared<CounterTest>(c0, 0));     // = c0 0
+        nfa.add_annotation(ann1, std::make_shared<CounterIncrement>(c1, 1));// + c1 1
+        nfa.add_annotation(ann2, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann2, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
+        nfa.add_annotation(ann3, std::make_shared<CounterIncrement>(c1, 1));// + c1 1
+        nfa.add_annotation(ann4, std::make_shared<CounterIncrement>(c0, 3));// + c0 3
+        nfa.add_annotation(ann5, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann5, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
+        nfa.add_annotation(ann6, std::make_shared<CounterTest>(c0, 0));     // = c0 0
+        nfa.add_annotation(ann7, std::make_shared<CounterTest>(c1, 1));     // = c1 1
+        nfa.add_annotation(ann7, std::make_shared<CounterIncrement>(c2, 2));// + c2 2
 
         // Transitions
         nfa.delta.add(0, 'a', Target{1, ann0});

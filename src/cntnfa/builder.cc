@@ -117,19 +117,19 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
 
                 if (type == ":=") {
                     aut.annotation_collection.insert(
-                        CounterAssign{counter_id, value}, annotations_id);
+                        std::make_unique<CounterAssign>(counter_id, value), annotations_id);
                 } else if (type == "+") {
                     aut.annotation_collection.insert(
-                        CounterIncrement{counter_id, value}, annotations_id);
+                        std::make_unique<CounterIncrement>(counter_id, value), annotations_id);
                 } else if (type == "=") {
                     aut.annotation_collection.insert(
-                        CounterTest{counter_id, value}, annotations_id);
+                        std::make_unique<CounterTest>(counter_id, value), annotations_id);
                 } else if (type == ">") {
                     aut.annotation_collection.insert(
-                        CounterGreater{counter_id, value}, annotations_id);
+                        std::make_unique<CounterGreater>(counter_id, value), annotations_id);
                 } else if (type == "<") {
                     aut.annotation_collection.insert(
-                        CounterLess{counter_id, value}, annotations_id);
+                        std::make_unique<CounterLess>(counter_id, value), annotations_id);
                 } else {
                     clean_up();
                     throw std::runtime_error("Unsupported annotation type: " + type);

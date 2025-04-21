@@ -886,9 +886,7 @@ bool mata::cntnfa::Nfa::is_in_lang_of_counter_nfa(const Run& run) const {
                     bool passed = true;
                     for (const auto& ann : anns) {
                         // Perform the annotation operation (execution or test using apply)
-                        passed &= std::visit([&](const auto& a) {
-                            return a.apply(next_cfg.counters);
-                        }, ann);
+                        passed &= ann->apply(next_cfg.counters);
 
                         // Stop early if a test fails
                         if (!passed) {
