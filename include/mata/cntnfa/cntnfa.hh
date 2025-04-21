@@ -281,8 +281,6 @@ public:
 
     /**
      * @brief In-place nondeterministic union of counter NFA with @p aut.
-     *
-     * 
      */
     Nfa& unite_nondet_counter_nfa_with(const Nfa &aut);
 
@@ -414,6 +412,9 @@ public:
                       const ParameterMap& params = {{ "algorithm", "antichains" }}) const;
     /// Is the language of the automaton universal?
     bool is_universal(const Alphabet& alphabet, const ParameterMap& params) const;
+
+    /// This method checks whether a given run (input word) is accepted by a counter NFA.
+    bool is_in_lang_of_counter_nfa(const Run& run) const;
 
     /// Checks whether a word is in the language of an automaton.
     bool is_in_lang(const Run& word) const;
@@ -557,7 +558,14 @@ OnTheFlyAlphabet create_alphabet(const std::vector<Nfa*>& nfas);
 OnTheFlyAlphabet create_alphabet(const std::vector<const Nfa*>& nfas);
 
 /**
- * @brief Compute non-deterministic union.
+ * @brief Compute non-deterministic union of two counter NFAs.
+ *
+ * Counter NFAs are unnecessarily contain counters or annotations.
+ */
+Nfa union_nondet_counter_nfas(const Nfa &lhs, const Nfa &rhs);
+
+/**
+ * @brief Compute non-deterministic union of two NFAs (no counters or annotations).
  *
  * Does not add epsilon transitions, just unites initial and final states.
  * @return Non-deterministic union of @p lhs and @p rhs.

@@ -848,6 +848,85 @@ std::pair<Run, bool> mata::cntnfa::Nfa::get_word_for_path(const Run& run) const 
     return {word, true};
 }
 
+bool mata::cntnfa::Nfa::is_in_lang_of_counter_nfa(const Run& run) const {
+    std::vector<Configuration> configs;
+
+    // For each initial state, create a configuration that includes the current counter set state
+    for (State s : this->initial) {
+        configs.push_back(Configuration{ s, this->counter_set }); // Clearer
+    }
+
+    // Process each symbol in the input word one-by-one
+    for (const Symbol sym : run.word) {
+        std::vector<Configuration> next_configs;
+
+        // For each configuration, check the transitions for the current symbol
+        for (const auto& cfg : configs) {
+            // Look up possible transitions from the current state
+            const StatePost& post = this->delta[cfg.state];
+
+            // Find the transitions that match the current symbol
+            auto symbol_it = post.find(sym);
+            if (symbol_it == post.end()) {
+                continue;
+            }
+
+            // For every transition target reachable via this symbol
+            for (const auto& tgt : symbol_it->targets) {
+                // Copy the current configuration
+                Configuration next_cfg = cfg;
+                // Update the state to the target state
+                next_cfg.state = tgt.state;
+
+                // If the transition has annotations (counter operations or checks)
+                if (tgt.annotations_id != UNDEFINED_ANNOTATIONS) {
+                    const auto& anns = this->annotation_collection[tgt.annotations_id];
+
+                    // Check if all annotations pass
+                    bool passed = true;
+                    for (const auto& ann : anns) {
+                        // Perform the annotation operation (execution or test using apply)
+                        passed &= std::visit([&](const auto& a) {
+                            return a.apply(next_cfg.counters);
+                        }, ann);
+
+                        // Stop early if a test fails
+                        if (!passed) {
+                            break;
+                        }
+                    }
+
+                    // Skip this transition if any annotation test fails
+                    if (!passed) {
+                        continue;
+                    }
+                }
+
+                // Add the new configuration if annotations passed
+                next_configs.push_back(std::move(next_cfg));
+            }
+        }
+
+        // No successful transitions
+        if (next_configs.empty()) {
+            return false;
+        }
+
+        // Move to the next set of configurations
+        configs = std::move(next_configs);
+    }
+
+    // After processing all symbols, check if any of the configurations end in a final state
+    for (const auto& cfg : configs) {
+        if (this->final.contains(cfg.state)) {
+            return true;
+        }
+    }
+
+    // No configuration reached a final state, reject the run
+    return false;
+}
+
 //TODO: this is not efficient
 bool mata::cntnfa::Nfa::is_in_lang(const Run& run) const {
     StateSet current_post(this->initial);
@@ -973,7 +1052,13 @@ Nfa mata::cntnfa::union_product(const Nfa &lhs, const Nfa &rhs, const Symbol fir
     return algorithms::product(lhs, rhs, one_final, first_epsilon, prod_map);
 }
 
-Nfa mata::cntnfa::union_nondet(const Nfa &lhs, const Nfa &rhs) { return Nfa{ lhs }.unite_nondet_with(rhs); }
+Nfa mata::cntnfa::union_nondet_counter_nfas(const Nfa &lhs, const Nfa &rhs) {
+    return Nfa{lhs}.unite_nondet_counter_nfa_with(rhs);
+}
+
+Nfa mata::cntnfa::union_nondet(const Nfa &lhs, const Nfa &rhs) {
+    return Nfa{lhs}.unite_nondet_with(rhs);
+}
 
 Simlib::Util::BinaryRelation mata::cntnfa::algorithms::compute_relation(const Nfa& aut, const ParameterMap& params) {
     if (!haskey(params, "relation")) {

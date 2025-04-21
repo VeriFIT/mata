@@ -3,11 +3,8 @@
 #ifndef MATA_TYPES_HH
 #define MATA_TYPES_HH
 
-// #include "mata/alphabet.hh"
-// #include "mata/parser/parser.hh"
-
-// Note: Temporary local includes for convenience.
-#include "../alphabet.hh"
+#include "mata/cntnfa/counters.hh"
+#include "mata/alphabet.hh"
 
 #include <limits>
 
@@ -26,6 +23,12 @@ using StateSet = mata::utils::OrdVector<State>;
 struct Run {
     Word word{}; ///< A finite-length word.
     std::vector<State> path{}; ///< A finite-length path through automaton.
+};
+
+// Configuration of the counter automaton.
+struct Configuration {
+    State state; ///< The current state of the automaton.
+    CounterSet counters; ///< The current values of the counters.
 };
 
 using StateRenaming = std::unordered_map<State, State>;

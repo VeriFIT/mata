@@ -3251,6 +3251,42 @@ TEST_CASE("mata::cntnfa::reduce_size_by_residual()") {
     }
 }
 
+TEST_CASE("mata::cntnfa::unite_nondet_counter_nfas()") {
+    // Define runs for testing
+    Run zero{{0}, {}};
+    Run one{{1}, {}};
+
+    // First automaton
+    Nfa lhs(2);
+    size_t c0_id_lhs = lhs.counter_set.insert("c0");
+    size_t ann_set_lhs = lhs.annotation_collection.insert(CounterIncrement{c0_id_lhs, 1});
+
+    lhs.initial.insert(0);
+    lhs.delta.add(0, 0, AnnotationState(1, ann_set_lhs));
+    lhs.final.insert(1);
+
+    REQUIRE(lhs.is_in_lang_of_counter_nfa(zero));
+    REQUIRE_FALSE(lhs.is_in_lang_of_counter_nfa(one));
+
+    // Second automaton
+    Nfa rhs(2);
+    size_t c1_id_rhs = rhs.counter_set.insert("c1");
+    size_t ann_set_rhs = rhs.annotation_collection.insert(CounterIncrement{c1_id_rhs, 2});
+
+    rhs.initial.insert(0);
+    rhs.delta.add(0, 1, AnnotationState(1, ann_set_rhs));
+    rhs.final.insert(1);
+
+    REQUIRE(rhs.is_in_lang_of_counter_nfa(one));
+    REQUIRE_FALSE(rhs.is_in_lang_of_counter_nfa(zero));
+
+    SECTION("Union accepts both languages") {
+        Nfa result = union_nondet_counter_nfas(lhs, rhs);
+        CHECK(result.is_in_lang_of_counter_nfa(zero));
+        CHECK(result.is_in_lang_of_counter_nfa(one));
+    }
+}
+
 TEST_CASE("mata::cntnfa::union_norename()") {
     Run one{{1},{}};
     Run zero{{0}, {}};

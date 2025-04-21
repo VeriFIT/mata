@@ -21,13 +21,18 @@ void CounterAssign::execute(CounterSet& counters) const {
     }
 }
 
-bool CounterAssign::test(const CounterSet& counters) {
+bool CounterAssign::test(const CounterSet& counters) const {
     (void)counters;
     return true;
 }
 
 std::string CounterAssign::get_type() const {
     return "CounterAssign";
+}
+
+bool CounterAssign::apply(CounterSet& counters) const {
+    execute(counters);
+    return true;
 }
 
 void CounterIncrement::execute(CounterSet& counters) const {
@@ -44,7 +49,7 @@ void CounterIncrement::execute(CounterSet& counters) const {
     }
 }
 
-bool CounterIncrement::test(const CounterSet& counters) {
+bool CounterIncrement::test(const CounterSet& counters) const {
     (void)counters;
     return true;
 }
@@ -53,12 +58,17 @@ std::string CounterIncrement::get_type() const {
     return "CounterIncrement";
 }
 
+bool CounterIncrement::apply(CounterSet& counters) const {
+    execute(counters);
+    return true;
+}
+
 void CounterTest::execute(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterTest::test(const CounterSet& counters) {
+bool CounterTest::test(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterTest: Invalid counter ID.");
     }
@@ -69,12 +79,16 @@ std::string CounterTest::get_type() const {
     return "CounterTest";
 }
 
+bool CounterTest::apply(CounterSet& counters) const {
+    return test(counters);
+}
+
 void CounterGreater::execute(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterGreater::test(const CounterSet& counters) {
+bool CounterGreater::test(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterGreater: Invalid counter ID.");
     }
@@ -85,12 +99,16 @@ std::string CounterGreater::get_type() const {
     return "CounterGreater";
 }
 
+bool CounterGreater::apply(CounterSet& counters) const {
+    return test(counters);
+}
+
 void CounterLess::execute(CounterSet& counters) const {
     (void)counters;
     return;
 }
 
-bool CounterLess::test(const CounterSet& counters) {
+bool CounterLess::test(const CounterSet& counters) const {
     if (counter_id >= counters.size()) {
         throw std::runtime_error("CounterLess: Invalid counter ID.");
     }
@@ -99,6 +117,10 @@ bool CounterLess::test(const CounterSet& counters) {
 
 std::string CounterLess::get_type() const {
     return "CounterLess";
+}
+
+bool CounterLess::apply(CounterSet& counters) const {
+    return test(counters);
 }
 
 /* AnnotationCollection */
@@ -116,12 +138,17 @@ void AnnotationCollection::clear() {
     annotations.clear();
 }
 
-void AnnotationCollection::insert(TransitionAnnotationVariant annotation, size_t index)
-{
+void AnnotationCollection::insert(TransitionAnnotationVariant annotation, size_t index) {
     if (index >= annotations.size()) {
         this->allocate(index + 1);
     }
     annotations[index].push_back(annotation);
+}
+
+size_t AnnotationCollection::insert(const TransitionAnnotationVariant& annotation) {
+    annotations.emplace_back();
+    annotations.back().push_back(annotation);
+    return annotations.size() - 1;
 }
 
 } // namespace mata::cntnfa.

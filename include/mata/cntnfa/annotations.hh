@@ -104,9 +104,11 @@ public:
     virtual ~TransitionAnnotation() = default;
 
     virtual void execute(CounterSet& counters) const = 0;
-    virtual bool test(const CounterSet& counters) = 0;
+    virtual bool test(const CounterSet& counters) const = 0;
 
     virtual std::string get_type() const = 0;
+
+    virtual bool apply(CounterSet&) const = 0;
 };
 
 /// Class for assigning a value to a counter by its ID.
@@ -132,8 +134,9 @@ public:
     }
 
     void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) override;
+    bool test(const CounterSet& counters) const override;
     std::string get_type() const override;
+    bool apply(CounterSet& counters) const override;
 
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
@@ -161,8 +164,9 @@ public:
     }
 
     void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) override;
+    bool test(const CounterSet& counters) const override;
     std::string get_type() const override;
+    bool apply(CounterSet& counters) const override;
 
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
@@ -191,8 +195,9 @@ public:
     }
 
     void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) override;
+    bool test(const CounterSet& counters) const override;
     std::string get_type() const override;
+    bool apply(CounterSet& counters) const override;
 
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
@@ -219,8 +224,9 @@ public:
     }
 
     void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) override;
+    bool test(const CounterSet& counters) const override;
     std::string get_type() const override;
+    bool apply(CounterSet& counters) const override;
 
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
@@ -247,8 +253,9 @@ public:
     }
 
     void execute(CounterSet& counters) const override;
-    bool test(const CounterSet& counters) override;
+    bool test(const CounterSet& counters) const override;
     std::string get_type() const override;
+    bool apply(CounterSet& counters) const override;
 
     size_t get_counter_id() const { return counter_id; }
     CounterValue get_value() const { return value; }
@@ -256,7 +263,8 @@ public:
 
 /*  Store all possible annotation types in a variant.
     Note: All types in TransitionAnnotationVariant must implement comparison operators
-    (e.g., operator==, operator<=>) to ensure proper usage in containers requiring ordering.  */
+    (e.g., operator==, operator<=>) to ensure proper usage in containers requiring ordering.
+    FIXME: Maybe simple polymorphic behavior would be more readable than std::variant   */
 using TransitionAnnotationVariant = std::variant<CounterAssign, CounterIncrement, CounterTest, CounterGreater, CounterLess>;
 
 class AnnotationCollection {
@@ -299,6 +307,11 @@ public:
      * Insert an annotation into annotations vector using index.
      */
     void insert(TransitionAnnotationVariant annotation, size_t index);
+
+    /**
+     * Create a new annotation set at the end of the vector, inserting the annotation into it and returning its index.
+     */
+    size_t insert(const TransitionAnnotationVariant& annotation);
 };
 
 } // namespace mata::cntnfa.
