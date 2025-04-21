@@ -44,7 +44,7 @@ void CounterRegisterSet::reserve(const size_t n) {
 }
 
 void CounterRegisterSet::allocate(const size_t new_size) {
-    assert(size >= counters.size());
+    assert(new_size >= counters.size());
     counters.resize(new_size);
 }
 

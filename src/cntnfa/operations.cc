@@ -947,6 +947,113 @@ bool mata::cntnfa::Nfa::is_prfx_in_lang(const Run& run) const {
     return this->final.intersects_with(current_post);
 }
 
+bool mata::cntnfa::Nfa::is_counter_nfa_lang_empty(Run* cex) const {
+    using Config = Configuration;
+
+    // Custom hasher for configuration (state + counter values)
+    struct ConfigHasher {
+        std::size_t operator()(const Config& cfg) const {
+            std::size_t seed = std::hash<State>()(cfg.state);
+            for (size_t i = 0; i < cfg.counters.size(); ++i) {
+                seed ^= std::hash<CounterValue>()(cfg.counters.get(i)) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+            }
+            return seed;
+        }
+    };
+
+    std::list<Config> worklist; // queue of configurations to explore
+    std::unordered_set<Config, ConfigHasher> processed; // visited configurations
+    std::unordered_map<Config, Config, ConfigHasher> predecessors; // for path reconstruction
+    std::unordered_map<Config, Symbol, ConfigHasher> incoming_symbol; // transitions used
+
+    // Start from initial states with zero-initialized counters
+    for (State s : initial) {
+        Config init_cfg{s, counter_set}; // counters are copied from `counter_set` which holds zero-initialized values
+        worklist.push_back(init_cfg);
+        processed.insert(init_cfg);
+        predecessors[init_cfg] = init_cfg;
+    }
+
+    // BFS-style traversal over configurations
+    while (!worklist.empty()) {
+        Config cfg = worklist.front();
+        worklist.pop_front();
+
+        // If current state is final, we've found a word in the language
+        if (final.contains(cfg.state)) {
+            if (cex) {
+                Run path;
+                Config current = cfg;
+
+                while (predecessors[current].state != current.state) {
+                    path.path.push_back(current.state);
+                    path.word.push_back(incoming_symbol[current]);
+                    current = predecessors[current];
+                }
+
+                path.path.push_back(current.state);
+                std::reverse(path.path.begin(), path.path.end());
+                std::reverse(path.word.begin(), path.word.end());
+                *cex = std::move(path);
+            }
+
+            return false; // Language is not empty
+        }
+
+        // Explore all transitions from current state
+        for (const auto& [symbol, post] : delta[cfg.state]) {
+            for (const auto& tgt : post) {
+                Config next_cfg = cfg;
+                next_cfg.state = tgt.state;
+
+                // Apply annotations in correct order:
+                // 1. Assignments/Increments: modify counter values
+                // 2. Tests: validate if the transition is allowed
+
+                bool passed = true;
+
+                if (tgt.annotations_id != UNDEFINED_ANNOTATIONS) {
+                    const auto& anns = annotation_collection[tgt.annotations_id];
+
+                    // First: apply counter updates
+                    for (const auto& ann : anns) {
+                        const std::string& type = ann->get_type();
+                        if (type == "CounterAssign" || type == "CounterIncrement") {
+                            ann->apply(next_cfg.counters); // these mutate counters
+                        }
+                    }
+
+                    // Then: check counter conditions
+                    for (const auto& ann : anns) {
+                        const std::string& type = ann->get_type();
+                        if (type == "CounterTest" || type == "CounterGreater" || type == "CounterLess") {
+                            if (!ann->test(next_cfg.counters)) { // use test(), not apply(), to avoid mutation
+                                passed = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!passed) {
+                    continue; // skip invalid transitions
+                }
+
+                // If this configuration was not visited yet, enqueue it
+                if (!processed.contains(next_cfg)) {
+                    worklist.push_back(next_cfg);
+                    processed.insert(next_cfg);
+                    predecessors[next_cfg] = cfg;
+                    incoming_symbol[next_cfg] = symbol;
+                }
+            }
+        }
+    }
+
+    // No accepting run found, language is empty
+    return true;
+} // is_counter_nfa_lang_empty().
+
 bool mata::cntnfa::Nfa::is_lang_empty(Run* cex) const {
     //  TODO: hot fix for performance reasons for TACAS.
     // Perhaps make the get_useful_states return a witness on demand somehow.

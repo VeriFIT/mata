@@ -53,8 +53,11 @@ private:
     std::unordered_map<CounterName, size_t> name_to_index; ///< Maps counter name to its index.
 
 public:
-    // TODO: Add the necessary constructors later.
     CounterRegisterSet() : counters(), name_to_index() {}
+
+    bool operator==(const CounterRegisterSet& other) const {
+        return counters == other.counters;
+    }
 
     CounterRegister& operator[](size_t id) { return counters[id]; }
     const CounterRegister& operator[](size_t id) const { return counters[id]; }
@@ -76,7 +79,6 @@ public:
     size_t get_index(const CounterName& name) const;
 
     const CounterRegister& get(size_t index) const;
-    // TODO: Add iterators later.
 };
 
 // Added for better readability.

@@ -353,6 +353,11 @@ public:
     StateSet post(const StateSet& states, const Symbol& symbol) const;
 
     /**
+     * @brief Check whether the language of counter NFA is empty.
+     */
+    bool is_counter_nfa_lang_empty(Run* cex = nullptr) const;
+
+    /**
      * Check whether the language of NFA is empty. 
      * Currently calls is_lang_empty_scc if cex is null 
      * @param[out] cex Counter-example path for a case the language is not empty.

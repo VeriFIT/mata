@@ -29,6 +29,14 @@ struct Run {
 struct Configuration {
     State state; ///< The current state of the automaton.
     CounterSet counters; ///< The current values of the counters.
+
+    Configuration() : state(), counters() {}
+    Configuration(State state, CounterSet counters)
+        : state(state), counters(counters) {}
+
+    bool operator==(const Configuration& other) const {
+        return state == other.state && counters == other.counters;
+    }
 };
 
 using StateRenaming = std::unordered_map<State, State>;
