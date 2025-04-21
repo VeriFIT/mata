@@ -39,9 +39,13 @@ void CounterRegister::reset() {
     Methods for CounterRegisterSet.
 */
 
-void CounterRegisterSet::allocate(const size_t size) {
+void CounterRegisterSet::reserve(const size_t n) {
+    counters.reserve(n);
+}
+
+void CounterRegisterSet::allocate(const size_t new_size) {
     assert(size >= counters.size());
-    counters.resize(size);
+    counters.resize(new_size);
 }
 
 size_t CounterRegisterSet::size() const {
@@ -61,6 +65,8 @@ void CounterRegisterSet::set(size_t index, const CounterRegister& counter) {
 }
 
 size_t CounterRegisterSet::insert(const CounterName& name, CounterValue value) {
+    // Note: If a counter with the same name exists, reuse it.
+    // This assumes all counters with the same name represent the same logical counter.
     auto it = name_to_index.find(name);
     if (it != name_to_index.end()) {
         return it->second;
@@ -79,6 +85,15 @@ const CounterName& CounterRegisterSet::get_name(size_t index) const {
     return counters.at(index).name;
 }
 
+std::vector<CounterName> CounterRegisterSet::get_names() const {
+    std::vector<CounterName> names;
+    names.reserve(counters.size());
+    for (size_t i = 0; i < counters.size(); ++i) {
+        names.push_back(get_name(i));
+    }
+    return names;
+}
+
 size_t CounterRegisterSet::get_index(const CounterName& name) const {
     auto it = name_to_index.find(name);
     if (it != name_to_index.end()) {
@@ -86,6 +101,13 @@ size_t CounterRegisterSet::get_index(const CounterName& name) const {
     } else {
         return static_cast<size_t>(-1);
     }
+}
+
+const CounterRegister& CounterRegisterSet::get(size_t index) const {
+    if (index >= counters.size()) {
+        throw std::out_of_range("CounterRegisterSet: Index out of range.");
+    }
+    return counters[index];
 }
 
 } // namespace mata::cntnfa.

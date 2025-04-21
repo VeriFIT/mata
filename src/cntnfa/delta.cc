@@ -208,6 +208,34 @@ bool Delta::empty() const {
     return true;
 }
 
+void Delta::append(const std::vector<StatePost>& post_vector) {
+    for(const StatePost& pst : post_vector) {
+        this->state_posts_.push_back(pst);
+    }
+}
+
+void Delta::append_remapped(const Delta& other, State state_offset, size_t annotation_set_offset) {
+    for (State s = 0; s < other.num_of_states(); ++s) {
+        State new_source = s + state_offset;
+        const auto& state_post = other[s];
+
+        for (const auto& symbol_post : state_post) {
+            Symbol symbol = symbol_post.symbol;
+            AnnotationStateSet new_targets;
+
+            for (const auto& target : symbol_post.targets) {
+                State new_target = target.state + state_offset;
+                size_t new_ann_id = (target.annotations_id == UNDEFINED_ANNOTATIONS)
+                    ? UNDEFINED_ANNOTATIONS
+                    : target.annotations_id + annotation_set_offset;
+                new_targets.push_back({new_target, new_ann_id});
+            }
+
+            this->add(new_source, symbol, new_targets);
+        }
+    }
+}
+
 Delta::Transitions::const_iterator::const_iterator(const Delta& delta): delta_{ &delta } {
     const size_t post_size = delta_->num_of_states();
     for (size_t i = 0; i < post_size; ++i) {

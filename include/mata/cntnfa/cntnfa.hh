@@ -143,6 +143,13 @@ public:
     size_t num_of_annotation_sets() const;
 
     /**
+     * @brief Get the number of counters in the automaton.
+     * 
+     * @return The number of counters.
+     */
+    size_t num_of_counters() const;
+
+    /**
      * @brief Get the annotation from @p annotations_id index.
      *
      * @param[in] annotations_id The index of annotation set in annotation collection.
@@ -271,6 +278,13 @@ public:
      * @brief In-place concatenation.
      */
     Nfa& concatenate(const Nfa& aut);
+
+    /**
+     * @brief In-place nondeterministic union of counter NFA with @p aut.
+     *
+     * 
+     */
+    Nfa& unite_nondet_counter_nfa_with(const Nfa &aut);
 
     /**
      * @brief In-place nondeterministic union with @p aut.

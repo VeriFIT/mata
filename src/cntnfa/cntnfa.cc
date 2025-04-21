@@ -606,6 +606,10 @@ size_t Nfa::num_of_annotation_sets() const {
     return annotation_collection.size();
 }
 
+size_t Nfa::num_of_counters() const {
+    return counter_set.size();
+}
+
 const OrdVector<TransitionAnnotationVariant>& Nfa::get_annotation_set(size_t annotations_id) const {
     if (annotations_id >= annotation_collection.size()) {
         throw std::out_of_range("Invalid annotation ID.");
@@ -638,6 +642,104 @@ Nfa& Nfa::complement_deterministic(const OrdVector<Symbol>& symbols, std::option
     }
     make_complete(symbols, sink);
     swap_final_nonfinal();
+    return *this;
+}
+
+Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
+    // Edge cases
+    if (this == &aut) {
+        return *this;
+    }
+
+    if (final.empty() || initial.empty()) {
+        *this = aut;
+        return *this;
+    }
+    if (aut.final.empty() || aut.initial.empty()) {
+        return *this;
+    }
+
+    // Compute the new number of states, counters, and annotation sets
+    const size_t state_offset = this->num_of_states();
+    const size_t counter_offset = this->num_of_counters();
+    const size_t annotation_set_offset = this->num_of_annotation_sets();
+
+    const size_t total_states = aut.num_of_states() + state_offset;
+    const size_t total_counters = aut.num_of_counters() + counter_offset;
+    const size_t total_annotation_sets = aut.num_of_annotation_sets() + annotation_set_offset;
+
+    // Reserve space for new states
+    this->delta.reserve(total_states);
+    // Allocate space for initial and final states from 'this' which might be missing in Delta
+    this->delta.allocate(state_offset);
+    // Reserve space for new counters
+    this->counter_set.reserve(total_counters);
+    // Allocate space for new annotation sets
+    this->annotation_collection.allocate(total_annotation_sets);
+
+    // Copy counters from the other automaton and store their new IDs
+    std::unordered_map<CounterName, size_t> remapped_counter_ids;
+    for (size_t i = 0; i < aut.counter_set.size(); ++i) {
+        const CounterRegister& counter = aut.counter_set.get(i);
+        size_t counter_id = this->counter_set.insert(counter.name, counter.value);
+        remapped_counter_ids[counter.name] = counter_id;
+    }
+
+    // Lambda function for remapping annotation counter IDs using name mapping
+    // FIXME: It can be done more efficiently by using C++17 or C++20 std::variant practices
+    auto remap_annotation_counters = [&](const TransitionAnnotationVariant& annotation) -> TransitionAnnotationVariant {
+        // Handle each annotation type individually
+        if (std::holds_alternative<CounterAssign>(annotation)) {
+            const auto& ann = std::get<CounterAssign>(annotation);
+            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
+            return CounterAssign{remapped_counter_ids.at(name), ann.get_value()};
+        }
+        if (std::holds_alternative<CounterIncrement>(annotation)) {
+            const auto& ann = std::get<CounterIncrement>(annotation);
+            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
+            return CounterIncrement{remapped_counter_ids.at(name), ann.get_value()};
+        }
+        if (std::holds_alternative<CounterTest>(annotation)) {
+            const auto& ann = std::get<CounterTest>(annotation);
+            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
+            return CounterTest{remapped_counter_ids.at(name), ann.get_value()};
+        }
+        if (std::holds_alternative<CounterGreater>(annotation)) {
+            const auto& ann = std::get<CounterGreater>(annotation);
+            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
+            return CounterGreater{remapped_counter_ids.at(name), ann.get_value()};
+        }
+        if (std::holds_alternative<CounterLess>(annotation)) {
+            const auto& ann = std::get<CounterLess>(annotation);
+            const auto& name = aut.counter_set.get_name(ann.get_counter_id());
+            return CounterLess{remapped_counter_ids.at(name), ann.get_value()};
+        }
+        // For other types of annotations, return them unchanged
+        return annotation;
+    };
+
+    // Copy and remap annotation sets
+    for (size_t i = 0; i < aut.annotation_collection.size(); ++i) {
+        const auto& anns = aut.annotation_collection[i];
+        size_t new_index = i + annotation_set_offset;
+        for (const auto& ann : anns) {
+            this->annotation_collection.insert(remap_annotation_counters(ann), new_index);
+        }
+    }
+
+    // Copy transitions from 'aut', renumber states and annotations
+    this->delta.append_remapped(aut.delta, state_offset, annotation_set_offset);
+
+    // Merge initial states
+    for (const State& s : aut.initial) {
+        this->initial.insert(s + state_offset);
+    }
+
+    // Merge final states
+    for (const State& s : aut.final) {
+        this->final.insert(s + state_offset);
+    }
+
     return *this;
 }
 

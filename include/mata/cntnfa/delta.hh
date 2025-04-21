@@ -415,11 +415,12 @@ public:
      *
      * @param post_vector Vector of posts to be appended.
      */
-    void append(const std::vector<StatePost>& post_vector) {
-        for(const StatePost& pst : post_vector) {
-            this->state_posts_.push_back(pst);
-        }
-    }
+    void append(const std::vector<StatePost>& post_vector);
+
+    /**
+     * @brief Append with remapped states and annotations.
+     */
+    void append_remapped(const Delta& other, State state_offset, size_t annotation_set_offset);
 
     /**
      * @brief Copy posts of delta and apply a lambda update function on each state from

@@ -59,7 +59,9 @@ public:
     CounterRegister& operator[](size_t id) { return counters[id]; }
     const CounterRegister& operator[](size_t id) const { return counters[id]; }
 
-    void allocate(const size_t size);
+    void reserve(const size_t n);
+
+    void allocate(const size_t new_size);
 
     size_t size() const;
 
@@ -70,8 +72,10 @@ public:
 
     bool has(const CounterName& name) const;
     const CounterName& get_name(size_t index) const;
+    std::vector<CounterName> get_names() const;
     size_t get_index(const CounterName& name) const;
 
+    const CounterRegister& get(size_t index) const;
     // TODO: Add iterators later.
 };
 
