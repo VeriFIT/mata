@@ -117,19 +117,28 @@ Nfa builder::construct_counter_nfa(const mata::parser::ParsedSection& parsec, Al
 
                 if (type == ":=") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterAssign>(counter_id, value), annotations_id);
+                        std::make_shared<CounterAssign>(counter_id, value), annotations_id);
                 } else if (type == "+") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterIncrement>(counter_id, value), annotations_id);
+                        std::make_shared<CounterIncrement>(counter_id, value), annotations_id);
                 } else if (type == "=") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterEqual>(counter_id, value), annotations_id);
+                        std::make_shared<CounterEqual>(counter_id, value), annotations_id);
+                } else if (type == "!=") {
+                    aut.annotation_collection.insert(
+                        std::make_shared<CounterNotEqual>(counter_id, value), annotations_id);
                 } else if (type == ">") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterGreater>(counter_id, value), annotations_id);
+                        std::make_shared<CounterGreater>(counter_id, value), annotations_id);
                 } else if (type == "<") {
                     aut.annotation_collection.insert(
-                        std::make_unique<CounterLess>(counter_id, value), annotations_id);
+                        std::make_shared<CounterLess>(counter_id, value), annotations_id);
+                } else if (type == ">=") {
+                    aut.annotation_collection.insert(
+                        std::make_shared<CounterGreaterEqual>(counter_id, value), annotations_id);
+                } else if (type == "<=") {
+                    aut.annotation_collection.insert(
+                        std::make_shared<CounterLessEqual>(counter_id, value), annotations_id);
                 } else {
                     clean_up();
                     throw std::runtime_error("Unsupported annotation type: " + type);

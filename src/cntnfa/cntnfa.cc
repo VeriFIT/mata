@@ -701,10 +701,16 @@ Nfa& Nfa::unite_nondet_counter_nfa_with(const Nfa &aut) {
             return std::make_shared<CounterIncrement>(new_id, val);
         } else if (ann->get_type() == "CounterEqual") {
             return std::make_shared<CounterEqual>(new_id, val);
+        } else if (ann->get_type() == "CounterNotEqual") {
+            return std::make_shared<CounterNotEqual>(new_id, val);
         } else if (ann->get_type() == "CounterGreater") {
             return std::make_shared<CounterGreater>(new_id, val);
         } else if (ann->get_type() == "CounterLess") {
             return std::make_shared<CounterLess>(new_id, val);
+        } else if (ann->get_type() == "CounterGreaterEqual") {
+            return std::make_shared<CounterGreaterEqual>(new_id, val);
+        } else if (ann->get_type() == "CounterLessEqual") {
+            return std::make_shared<CounterLessEqual>(new_id, val);
         }
 
         throw std::runtime_error("Unknown annotation type: " + ann->get_type());

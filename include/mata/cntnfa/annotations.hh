@@ -191,6 +191,30 @@ public:
     std::string get_type() const override;
 };
 
+/// Class for checking if a counter's value is NOT equal to the value.
+// Note: (!= c0 0) is a counter NOT equal check in Mata format.
+class CounterNotEqual : public TransitionAnnotation {
+public:
+    CounterNotEqual() = default;
+    CounterNotEqual(size_t counter_id, CounterValue value)
+        : TransitionAnnotation(counter_id, value) {}
+
+    bool operator==(const CounterNotEqual& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterNotEqual& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) {
+            return cmp;
+        }
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) const override;
+    bool apply(CounterSet& counters) const override;
+    std::string get_type() const override;
+};
+
 /// Class for checking if a counter's value is greater than a threshold.
 // Note: (> c0 0) is a counter greater than check in Mata format.
 class CounterGreater : public TransitionAnnotation {
@@ -225,6 +249,50 @@ public:
         return counter_id == other.counter_id && value == other.value;
     }
     auto operator<=>(const CounterLess& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) const override;
+    bool apply(CounterSet& counters) const override;
+    std::string get_type() const override;
+};
+
+/// Class for checking if a counter's value is greater than a threshold or equal to it.
+// Note: (>= c0 0) is a counter greater or equal check in Mata format.
+class CounterGreaterEqual : public TransitionAnnotation {
+public:
+CounterGreaterEqual() = default;
+    CounterGreaterEqual(size_t counter_id, CounterValue value)
+        : TransitionAnnotation(counter_id, value) {}
+
+    bool operator==(const CounterGreaterEqual& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterGreaterEqual& other) const {
+        if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
+        return value <=> other.value;
+    }
+
+    void execute(CounterSet& counters) const override;
+    bool test(const CounterSet& counters) const override;
+    bool apply(CounterSet& counters) const override;
+    std::string get_type() const override;
+};
+
+/// Class for checking if a counter's value is less than a threshold or equal to it.
+// Note: (<= c0 0) is a counter less or equal check in Mata format.
+class CounterLessEqual : public TransitionAnnotation {
+public:
+    CounterLessEqual() = default;
+    CounterLessEqual(size_t counter_id, CounterValue value)
+        : TransitionAnnotation(counter_id, value) {}
+
+    bool operator==(const CounterLessEqual& other) const {
+        return counter_id == other.counter_id && value == other.value;
+    }
+    auto operator<=>(const CounterLessEqual& other) const {
         if (auto cmp = counter_id <=> other.counter_id; cmp != 0) return cmp;
         return value <=> other.value;
     }
